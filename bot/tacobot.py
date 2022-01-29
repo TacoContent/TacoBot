@@ -71,7 +71,7 @@ class TacoBot():
     def get_prefix(self, client, message):
         # self.db.open()
         # get the prefix for the guild.
-        prefixes = ['.']    # sets the prefixes, you can keep it as an array of only 1 item if you need only one prefix
+        prefixes = ['.taco']    # sets the prefixes, you can keep it as an array of only 1 item if you need only one prefix
         # if message.guild:
         #     guild_settings = self.db.get_guild_settings(message.guild.id)
         #     if guild_settings:
