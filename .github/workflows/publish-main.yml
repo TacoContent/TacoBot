@@ -37,7 +37,7 @@ jobs:
     - name: Prepare
       id: prep
       run: |
-        GHCR_IMAGE="ghcr.io/TacoContent/tacobot";
+        GHCR_IMAGE="ghcr.io/tacocontent/tacobot";
 
         TAGS="${GHCR_IMAGE}:latest,${GHCR_IMAGE}:${{ needs.version.outputs.app_version }}";
         echo ::set-output name=tags::${TAGS}
