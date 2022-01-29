@@ -10,6 +10,8 @@ from . import utils
 
 class MongoDatabase(database.Database):
     def __init__(self):
+        super().__init__()
+        print(f"[DEBUG] [mongo.__init__] [guild:0] INITIALIZE MONGO")
         self.settings = settings.Settings()
         self.client = None
         self.connection = None
@@ -68,43 +70,89 @@ class MongoDatabase(database.Database):
 
 
     def open(self):
-        pass
-        # if not self.settings.db_url:
-        #     raise ValueError("VCB_MONGODB_URL is not set")
-        # self.client = MongoClient(self.settings.db_url)
-        # self.connection = self.client.voicecreate
+        if not self.settings.db_url:
+            raise ValueError("VCB_MONGODB_URL is not set")
+        self.client = MongoClient(self.settings.db_url)
+        self.connection = self.client.tacobot
+        print(f"[DEBUG] [mongo.open] [guild:0] Connected to MongoDB")
     def close(self):
-        pass
-        # try:
-        #     if self.client:
-        #         self.client.close()
-        # except Exception as ex:
-        #     print(ex)
-        #     traceback.print_exc()
+        try:
+            if self.client:
+                self.client.close()
+                print(f"[DEBUG] [mongo.close] [guild:0] Disconnected from MongoDB")
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
 
     def insert_log(self, guildId: int, level: str, method: str, message: str, stackTrace: str = None):
-        pass
-        # try:
-        #     if self.connection is None:
-        #         self.open()
-        #     payload = {
-        #         "guild_id": guildId,
-        #         "timestamp": utils.get_timestamp(),
-        #         "level": level.name,
-        #         "method": method,
-        #         "message": message,
-        #         "stack_trace": stackTrace
-        #     }
-        #     self.connection.logs.insert_one(payload)
-        # except Exception as ex:
-        #     print(ex)
-        #     traceback.print_exc()
+        try:
+            if self.connection is None:
+                self.open()
+            payload = {
+                "guild_id": guildId,
+                "timestamp": utils.get_timestamp(),
+                "level": level.name,
+                "method": method,
+                "message": message,
+                "stack_trace": stackTrace
+            }
+            self.connection.logs.insert_one(payload)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
     def clear_log(self, guildId):
-        pass
-        # try:
-        #     if self.connection is None:
-        #         self.open()
-        #     self.connection.logs.delete_many({ "guild_id": guildId })
-        # except Exception as ex:
-        #     print(ex)
-        #     traceback.print_exc()
+        try:
+            if self.connection is None:
+                self.open()
+            self.connection.logs.delete_many({ "guild_id": guildId })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+
+    def add_stream_team_member(self, guildId: int, teamName: str, userId: int, discordUsername: str, twitchUsername: str):
+        try:
+            if self.connection is None:
+                print("[DEBUG] [mongo.add_stream_team_member] [guild:0] Connecting to MongoDB")
+                self.open()
+            payload = {
+                "guild_id": guildId,
+                "team_name": teamName.lower(),
+                "user_id": userId,
+                "discord_username": discordUsername,
+                "twitch_username": twitchUsername.lower()
+            }
+            # if not in table, insert
+            if not self.connection.stream_team_members.find_one(payload):
+                self.connection.stream_team_members.insert_one(payload)
+            else:
+                print(f"[DEBUG] [mongo.add_stream_team_member] [guild:0] User {discordUsername}, already in table")
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def get_stream_team_members(self, guildId: int, teamName: str):
+        try:
+            if self.connection is None:
+                self.open()
+            return self.connection.stream_team_members.find({ "guild_id": guildId, "team_name": teamName.lower() })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def remove_stream_team_member(self, guildId: int, teamName: str, userId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            self.connection.stream_team_members.delete_many({ "guild_id": guildId, "team_name": teamName.lower(), "user_id": userId })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
