@@ -19,6 +19,15 @@
 		]
 	},
 	"commands": {
-
+		"set-twitch-name": {
+			"title": "help_set_twitch_name_title",
+			"message": "help_set_twitch_name_message",
+			"fields": [
+				{
+					"name": "help_set_twitch_name_field_0",
+					"value": "`.taco set-twitch-name @user twitchName`"
+				}
+			]
+		}
 	}
 }

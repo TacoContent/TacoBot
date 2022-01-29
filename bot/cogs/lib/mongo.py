@@ -71,7 +71,7 @@ class MongoDatabase(database.Database):
 
     def open(self):
         if not self.settings.db_url:
-            raise ValueError("VCB_MONGODB_URL is not set")
+            raise ValueError("MONGODB_URL is not set")
         self.client = MongoClient(self.settings.db_url)
         self.connection = self.client.tacobot
         print(f"[DEBUG] [mongo.open] [guild:0] Connected to MongoDB")
@@ -115,9 +115,9 @@ class MongoDatabase(database.Database):
                 print("[DEBUG] [mongo.add_stream_team_member] [guild:0] Connecting to MongoDB")
                 self.open()
             payload = {
-                "guild_id": guildId,
+                "guild_id": str(guildId),
                 "team_name": teamName.lower(),
-                "user_id": userId,
+                "user_id": str(userId),
                 "discord_username": discordUsername,
                 "twitch_username": twitchUsername.lower()
             }
@@ -137,19 +137,29 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.stream_team_members.find({ "guild_id": guildId, "team_name": teamName.lower() })
+            return self.connection.stream_team_members.find({ "guild_id": str(guildId), "team_name": teamName.lower() })
         except Exception as ex:
             print(ex)
             traceback.print_exc()
         finally:
             if self.connection:
                 self.close()
-
+    def update_stream_team_member(self, guildId: int, userId: int, twitchUsername: str):
+        try:
+            if self.connection is None:
+                self.open()
+            self.connection.stream_team_members.update_many({ "guild_id": str(guildId), "user_id": str(userId) }, { "$set": { "twitch_username": twitchUsername.lower() } })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
     def remove_stream_team_member(self, guildId: int, teamName: str, userId: int):
         try:
             if self.connection is None:
                 self.open()
-            self.connection.stream_team_members.delete_many({ "guild_id": guildId, "team_name": teamName.lower(), "user_id": userId })
+            self.connection.stream_team_members.delete_many({ "guild_id": str(guildId), "team_name": teamName.lower(), "user_id": userId })
         except Exception as ex:
             print(ex)
             traceback.print_exc()

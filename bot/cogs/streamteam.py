@@ -109,5 +109,38 @@ class StreamTeam(commands.Cog):
     async def on_error(self, event, *args, **kwargs):
         self.log.error(0, "streamteam.on_error", f"{str(event)}", traceback.format_exc())
 
+
+    @commands.group()
+    async def team(self, ctx):
+        pass
+
+    @team.command(alias=["set-twitch-name"])
+    async def set_twitch_name(self, ctx, memberOrName: typing.Union[str, discord.Member], twitch_name: str):
+        try:
+            _method = inspect.stack()[1][3]
+            self.log.debug(ctx.guild.id, _method, f"{twitch_name}")
+            # when memberOrName is a string then get the member
+            if isinstance(memberOrName, str):
+                member = await commands.MemberConverter().convert(ctx, memberOrName)
+            else:
+                member = memberOrName
+
+            self.db.update_stream_team_member(ctx.guild.id, member.id, twitch_name)
+            await ctx.send(f"Twitch Account set to {twitch_name}")
+        except Exception as ex:
+            self.log.error(ctx.guild_method, str(ex), traceback.format_exc())
+
+    def isAdmin(self, ctx):
+        _method = inspect.stack()[1][3]
+        # self.db.open()
+        # guild_settings = self.db.get_guild_settings(ctx.guild.id)
+        # is_in_guild_admin_role = False
+        # # see if there are guild settings for admin role
+        # if guild_settings:
+        #     guild_admin_role = self.get_by_name_or_id(ctx.guild.roles, guild_settings.admin_role)
+        #     is_in_guild_admin_role = guild_admin_role in ctx.author.roles
+        is_bot_owner = str(ctx.author.id) == self.settings.bot_owner
+        return is_bot_owner # or is_in_guild_admin_role
+
 def setup(bot):
     bot.add_cog(StreamTeam(bot))
