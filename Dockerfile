@@ -14,11 +14,12 @@ LABEL VERSION="${BUILD_VERSION}"
 LABEL BRANCH="${BRANCH}"
 LABEL PROJECT_NAME="${PROJECT_NAME}"
 
+	# git clone --single-branch --branch ${VCB_BRANCH} https://github.com/camalot/VoiceCreateBot.git /app && \
+COPY ./ /app/
 RUN \
 	apk update && \
 	apk add --update git curl build-base && \
 	mkdir -p /app /data && \
-	git clone --single-branch --branch ${VCB_BRANCH} https://github.com/camalot/VoiceCreateBot.git /app && \
 	pip install --upgrade pip && \
 	pip install -r /app/setup/requirements.txt && \
 	sed -i "s/APP_VERSION = \"1.0.0-snapshot\"/APP_VERSION = \"${APP_VERSION}\"/g" "/app/bot/cogs/lib/settings.py" && \
