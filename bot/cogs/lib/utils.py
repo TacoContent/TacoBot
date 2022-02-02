@@ -10,6 +10,7 @@ import requests
 import random
 import re
 import datetime
+import inspect
 
 def dict_get(dictionary, key, default_value = None):
     if key in dictionary.keys():
@@ -90,3 +91,24 @@ def str_replace(input_string: str, *args, **kwargs):
     for a in xargs:
         result = result.replace(f"{{{a}}}", kwargs[a])
     return result
+
+def isAdmin(ctx, settings):
+    _method = inspect.stack()[1][3]
+    # self.db.open()
+    # guild_settings = self.db.get_guild_settings(ctx.guild.id)
+    # is_in_guild_admin_role = False
+    # # see if there are guild settings for admin role
+    # if guild_settings:
+    #     guild_admin_role = self.get_by_name_or_id(ctx.guild.roles, guild_settings.admin_role)
+    #     is_in_guild_admin_role = guild_admin_role in ctx.author.roles
+    is_bot_owner = str(ctx.author.id) == settings.bot_owner
+    return is_bot_owner # or is_in_guild_admin_role
+
+def get_by_name_or_id(iterable, nameOrId: typing.Union[int, str]):
+    if isinstance(nameOrId, str):
+        return discord.utils.get(iterable, name=str(nameOrId))
+    elif isinstance(nameOrId, int):
+        return discord.utils.get(iterable, id=int(nameOrId))
+    else:
+        return None
+

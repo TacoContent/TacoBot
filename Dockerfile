@@ -14,7 +14,6 @@ LABEL VERSION="${BUILD_VERSION}"
 LABEL BRANCH="${BRANCH}"
 LABEL PROJECT_NAME="${PROJECT_NAME}"
 
-	# git clone --single-branch --branch ${VCB_BRANCH} https://github.com/camalot/VoiceCreateBot.git /app && \
 COPY ./ /app/
 RUN \
 	apk update && \

@@ -1,7 +1,12 @@
-class StreamTeamMember:
-    def __init__(self, guildId: int, teamName: int, userId: int, discordUsername: str, twitchUsername: str):
-        self.guild_id = int(guildId)
-        self.team_name = str(teamName)
-        self.user_id = int(userId)
-        self.discord_username = str(discordUsername)
-        self.twitch_username = str(twitchUsername)
+import sys
+import os
+import traceback
+import glob
+import typing
+import json
+
+class GuildTeamsSettings:
+    def __init__(self, guildId: int, teamRoleId: int, teamName: str ):
+        self.guild_id = guildId
+        self.team_role = teamRoleId
+        self.team_name = teamName.lower()
