@@ -33,6 +33,7 @@ class Tacos(commands.Cog):
         self.TACO_LOG_CHANNEL_ID = 938291623056519198
         self.JOIN_COUNT = 5
         self.REACTION_COUNT = 1
+        self.BOOST_COUNT = 100
 
         if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
             self.db = mongo.MongoDatabase()
@@ -57,6 +58,26 @@ class Tacos(commands.Cog):
         await ctx.message.delete()
 
     @commands.Cog.listener()
+    async def on_message(self, message):
+        try:
+            if message.type == discord.MessageType.premium_guild_subscription:
+                # add tacos to user that boosted the server
+                member = message.author
+                guild_id = message.guild.id
+                if member.bot:
+                    return
+                _method = inspect.stack()[0][3]
+                self.log.debug(member.guild.id, _method, f"{member} boosted the server")
+                taco_count = self.db.add_tacos(guild_id, member.id, self.BOOST_COUNT)
+                log_channel = await self.get_or_fetch_channel(self.TACO_LOG_CHANNEL_ID)
+
+                self.log.debug(guild_id, _method, f"🌮 added {self.BOOST_COUNT} tacos to user {member.name} for boosting the server")
+                if log_channel:
+                    await log_channel.send(f"{member.name} has received {self.BOOST_COUNT} tacos for boosting the server, giving them {taco_count} 🌮.")
+
+        except Exception as ex:
+            self.log.error(member.guild.id, _method, str(ex), traceback.format_exc())
+    @commands.Cog.listener()
     async def on_member_remove(self, member):
         # remove all tacos from the user
         try:
@@ -75,7 +96,7 @@ class Tacos(commands.Cog):
         _method = inspect.stack()[0][3]
         guild_id = member.guild.id
         self.log.info(guild_id, _method, f"{member} joined the server")
-        taco_count = self.db.add_tacos(guild_id, member.id, 5)
+        taco_count = self.db.add_tacos(guild_id, member.id, self.JOIN_COUNT)
         log_channel = await self.get_or_fetch_channel(self.TACO_LOG_CHANNEL_ID)
 
         self.log.debug(guild_id, _method, f"🌮 added {self.JOIN_COUNT} tacos to user {member.name} for joining the server")
