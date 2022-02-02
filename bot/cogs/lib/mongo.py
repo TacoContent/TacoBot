@@ -181,6 +181,18 @@ class MongoDatabase(database.Database):
         pass
 
     # Tacos
+    def remove_all_tacos(self, guildId: int, userId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            print(f"[DEBUG] [mongo.remove_all_tacos] [guild:0] Removing tacos for user {userId}")
+            self.connection.tacos.delete_many({ "guild_id": guildId, "user_id": userId })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
 
     def add_tacos(self, guildId: int, userId: int, count: int):
         try:
