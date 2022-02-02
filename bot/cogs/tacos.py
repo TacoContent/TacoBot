@@ -30,6 +30,10 @@ class Tacos(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(self.settings)
+        self.TACO_LOG_CHANNEL_ID = 938291623056519198
+        self.JOIN_COUNT = 5
+        self.REACTION_COUNT = 1
+
         if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
             self.db = mongo.MongoDatabase()
         else:
@@ -46,14 +50,37 @@ class Tacos(commands.Cog):
     async def tacos(self, ctx):
         pass
 
-    
-
     @tacos.command()
     async def help(self, ctx):
         # todo: add help command
         await self.discord_helper.sendEmbed(ctx.channel, "Help", f"I don't know how to help with this yet.", delete_after=20)
         await ctx.message.delete()
-        pass
+
+    @commands.Cog.listener()
+    async def on_member_remove(self, member):
+        # remove all tacos from the user
+        try:
+            if member.bot:
+                return
+            _method = inspect.stack()[0][3]
+            self.log.debug(member.guild.id, _method, f"{member} left the server")
+            await self.db.remove_all_tacos(member.guild.id, member.id)
+        except Exception as ex:
+            self.log.error(member.guild.id, _method, str(ex), traceback.format_exc())
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member):
+        if member.bot:
+            return
+        _method = inspect.stack()[0][3]
+        guild_id = member.guild.id
+        self.log.info(guild_id, _method, f"{member} joined the server")
+        taco_count = self.db.add_tacos(guild_id, member.id, 5)
+        log_channel = await self.get_or_fetch_channel(self.TACO_LOG_CHANNEL_ID)
+
+        self.log.debug(guild_id, _method, f"🌮 added {self.JOIN_COUNT} tacos to user {member.name} for joining the server")
+        if log_channel:
+            await log_channel.send(f"{member.name} has received {self.JOIN_COUNT} tacos for joining the server, giving them {taco_count} 🌮.")
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -67,14 +94,14 @@ class Tacos(commands.Cog):
             user = await self.get_or_fetch_user(payload.user_id)
             channel = await self.bot.fetch_channel(payload.channel_id)
             message = await channel.fetch_message(payload.message_id)
-            # guild = self.bot.get_guild(guild_id)
-            log_channel = await self.get_or_fetch_channel(938291623056519198)
-            self.log.debug(guild_id, _method, f"{payload.emoji} adding taco to user {message.author.name}")
-            taco_count = self.db.add_tacos(guild_id, message.author.id, 1)
-            self.log.debug(guild_id, _method, f"{payload.emoji} added taco to user {message.author.name} successfully")
+            if message.author.bot:
+                return
+            log_channel = await self.get_or_fetch_channel(self.TACO_LOG_CHANNEL_ID)
+            self.log.debug(guild_id, _method, f"🌮 adding taco to user {message.author.name}")
+            taco_count = self.db.add_tacos(guild_id, message.author.id, self.REACTION_COUNT)
+            self.log.debug(guild_id, _method, f"🌮 added taco to user {message.author.name} successfully")
             if log_channel:
-                self.log.debug(guild_id, _method, f"{payload.emoji} sending message to log channel")
-                await log_channel.send(f"{message.author.name} has received 1 taco from {user.name}, giving them {taco_count} 🌮.")
+                await log_channel.send(f"{message.author.name} has received {self.REACTION_COUNT} taco from {user.name}, giving them {taco_count} 🌮.")
             # await self.discord_helper.sendEmbed(reaction.message.channel, "Tacos", f"{user.mention} has been added to the tacos list.", delete_after=20)
         else:
             self.log.debug(guild_id, _method, f"{payload.emoji} not a taco")
