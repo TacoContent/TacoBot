@@ -52,7 +52,7 @@ class TacoBot():
             intents=discord.Intents.all()
         )
 
-        initial_extensions = ['bot.cogs.events', 'bot.cogs.streamteam']
+        initial_extensions = ['bot.cogs.events', 'bot.cogs.init', 'bot.cogs.streamteam', 'bot.cogs.tacos']
         for extension in initial_extensions:
             try:
                 self.bot.load_extension(extension)
@@ -62,7 +62,7 @@ class TacoBot():
 
         # slash = SlashCommand(self.bot, override_type = True, sync_commands = True)
 
-        self.bot.remove_command("help")
+        # self.bot.remove_command("help")
         self.bot.run(self.DISCORD_TOKEN)
 
     def initDB(self):
@@ -71,7 +71,7 @@ class TacoBot():
     def get_prefix(self, client, message):
         # self.db.open()
         # get the prefix for the guild.
-        prefixes = ['.taco']    # sets the prefixes, you can keep it as an array of only 1 item if you need only one prefix
+        prefixes = ['.taco ']    # sets the prefixes, you can keep it as an array of only 1 item if you need only one prefix
         # if message.guild:
         #     guild_settings = self.db.get_guild_settings(message.guild.id)
         #     if guild_settings:

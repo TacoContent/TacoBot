@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 import traceback
 import json
-
+import typing
 # from discord.ext.commands.converter import CategoryChannelConverter
 from . import database
 from . import settings
@@ -166,3 +166,61 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
+
+
+    # GuildTeamsSettings
+    def add_guild_team_settings(self, guildId: int, teamRole: typing.Union[str,int], teamName: str):
+        pass
+    def update_guild_team_settings(self, guildId: int, teamRole: typing.Union[str,int], teamName: str):
+        pass
+    def remove_guild_team_settings(self, guildId: int, teamRole: typing.Union[str,int]):
+        pass
+    def get_guild_team_settings_by_team_name(self, guildId: int, teamName: str):
+        pass
+    def get_guild_team_settings_by_team_role(self, guildId: int, teamRole: typing.Union[str, int]):
+        pass
+
+    # Tacos
+
+    def add_tacos(self, guildId: int, userId: int, count: int):
+        try:
+            if count < 0:
+                print(f"[DEBUG] [mongo.add_tacos] [guild:0] Count is less than 0")
+                return 0
+            if self.connection is None:
+                self.open()
+
+            user_tacos = self.get_tacos_count(guildId, userId)
+            if user_tacos is None:
+                print(f"[DEBUG] [mongo.add_tacos] [guild:0] User {userId} not in table")
+                user_tacos = 0
+            else:
+                user_tacos = user_tacos or 0
+                print(f"[DEBUG] [mongo.add_tacos] [guild:0] User {userId} has {user_tacos} tacos")
+
+            user_tacos += count
+            print(f"[DEBUG] [mongo.add_tacos] [guild:0] User {userId} now has {user_tacos} tacos")
+            self.connection.tacos.update_one({ "guild_id": str(guildId), "user_id": str(userId) }, { "$set": { "count": user_tacos } }, upsert=True)
+            return user_tacos
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def get_tacos_count(self, guildId: int, userId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            data = self.connection.tacos.find_one({ "guild_id": str(guildId), "user_id": str(userId) })
+            if data is None:
+                return None
+            return data['count']
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+        pass
