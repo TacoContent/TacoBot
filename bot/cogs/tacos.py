@@ -77,6 +77,7 @@ class Tacos(commands.Cog):
 
         except Exception as ex:
             self.log.error(member.guild.id, _method, str(ex), traceback.format_exc())
+            
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         # remove all tacos from the user
