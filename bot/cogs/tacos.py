@@ -77,7 +77,7 @@ class Tacos(commands.Cog):
 
         except Exception as ex:
             self.log.error(member.guild.id, _method, str(ex), traceback.format_exc())
-            
+
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         # remove all tacos from the user
@@ -107,26 +107,35 @@ class Tacos(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         _method = inspect.stack()[0][3]
-        guild_id = payload.guild_id
-        if payload.event_type != 'REACTION_ADD':
-            return
-
-        self.log.debug(guild_id, _method, f"{payload.emoji.name} added to {payload.message_id}")
-        if str(payload.emoji) == '🌮':
-            user = await self.get_or_fetch_user(payload.user_id)
-            channel = await self.bot.fetch_channel(payload.channel_id)
-            message = await channel.fetch_message(payload.message_id)
-            if message.author.bot:
+        try:
+            guild_id = payload.guild_id
+            if payload.event_type != 'REACTION_ADD':
                 return
-            log_channel = await self.get_or_fetch_channel(self.TACO_LOG_CHANNEL_ID)
-            self.log.debug(guild_id, _method, f"🌮 adding taco to user {message.author.name}")
-            taco_count = self.db.add_tacos(guild_id, message.author.id, self.REACTION_COUNT)
-            self.log.debug(guild_id, _method, f"🌮 added taco to user {message.author.name} successfully")
-            if log_channel:
-                await log_channel.send(f"{message.author.name} has received {self.REACTION_COUNT} taco from {user.name}, giving them {taco_count} 🌮.")
-            # await self.discord_helper.sendEmbed(reaction.message.channel, "Tacos", f"{user.mention} has been added to the tacos list.", delete_after=20)
-        else:
-            self.log.debug(guild_id, _method, f"{payload.emoji} not a taco")
+
+            self.log.debug(guild_id, _method, f"{payload.emoji.name} added to {payload.message_id}")
+            if str(payload.emoji) == '🌮':
+                user = await self.get_or_fetch_user(payload.user_id)
+                channel = await self.bot.fetch_channel(payload.channel_id)
+                message = await channel.fetch_message(payload.message_id)
+                if message.author.bot:
+                    return
+                log_channel = await self.get_or_fetch_channel(self.TACO_LOG_CHANNEL_ID)
+                self.log.debug(guild_id, _method, f"🌮 adding taco to user {message.author.name}")
+                taco_count = self.db.add_tacos(guild_id, message.author.id, self.REACTION_COUNT)
+                self.log.debug(guild_id, _method, f"🌮 added taco to user {message.author.name} successfully")
+                if log_channel:
+                    await log_channel.send(f"{message.author.name} has received {self.REACTION_COUNT} taco from {user.name}, giving them {taco_count} 🌮.")
+                # give taco giver tacos too
+                self.log.debug(guild_id, _method, f"🌮 adding taco to user {user.name}")
+                taco_count = self.db.add_tacos(guild_id, user.id, self.REACTION_COUNT)
+                self.log.debug(guild_id, _method, f"🌮 added taco to user {user.name} successfully")
+                if log_channel:
+                    await log_channel.send(f"{user.name} has received {self.REACTION_COUNT} taco for giving {message.author.name} a taco, giving them {taco_count} 🌮.")
+
+            else:
+                self.log.debug(guild_id, _method, f"{payload.emoji} not a taco")
+        except Exception as ex:
+            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
 
     # @setup.error
     # async def info_error(self, ctx, error):

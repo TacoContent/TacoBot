@@ -43,7 +43,7 @@ class StreamTeam(commands.Cog):
         self.log.debug(0, "streamteam.__init__", f"Logger initialized with level {log_level.name}")
 
     def get_stream_team_roles(self, guild):
-        return [discord.utils.get(guild.roles, name="STREAM TEAM")]
+        return [discord.utils.get(guild.roles, name="STREAMER")]
 
     def get_stream_team_name(self, guild, team_role_id: int):
         return "Taco"
