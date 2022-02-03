@@ -52,7 +52,7 @@ class TacoBot():
             intents=discord.Intents.all()
         )
 
-        initial_extensions = ['bot.cogs.events', 'bot.cogs.init', 'bot.cogs.streamteam', 'bot.cogs.tacos']
+        initial_extensions = ['bot.cogs.events', 'bot.cogs.init', 'bot.cogs.streamteam', 'bot.cogs.tacos', 'bot.cogs.suggestions']
         for extension in initial_extensions:
             try:
                 self.bot.load_extension(extension)
