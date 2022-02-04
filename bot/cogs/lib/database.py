@@ -23,6 +23,10 @@ class Database():
         pass
     def remove_stream_team_member(self, guildId: int, teamName: str, userId: int):
         pass
+    def add_stream_team_request(self, guildId: int, userName: str, userId: int):
+        pass
+    def remove_stream_team_request(self, guildId: int, userId: int):
+        pass
 
     # GuildTeamsSettings
     def add_guild_team_settings(self, guildId: int, teamRole: typing.Union[str,int], teamName: str):

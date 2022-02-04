@@ -29,7 +29,7 @@ class Tacos(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.settings = settings.Settings()
-        self.discord_helper = discordhelper.DiscordHelper(self.settings)
+        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.TACO_LOG_CHANNEL_ID = 938291623056519198
         self.JOIN_COUNT = 5
         self.REACTION_COUNT = 1
@@ -54,8 +54,24 @@ class Tacos(commands.Cog):
     @tacos.command()
     async def help(self, ctx):
         # todo: add help command
-        await self.discord_helper.sendEmbed(ctx.channel, "Help", f"I don't know how to help with this yet.", delete_after=20)
+        await self.discord_helper.sendEmbed(ctx.channel, "Help", f"I don't know how to help with this yet.", delete_after=30)
         await ctx.message.delete()
+
+    @tacos.command()
+    async def count(self, ctx):
+        try:
+            # get taco count for message author
+            taco_count = self.db.get_tacos_count(ctx.guild.id, ctx.author.id)
+            tacos_word = "taco"
+            if taco_count is None:
+                taco_count = 0
+            if taco_count == 0 or taco_count > 1:
+                tacos_word = "tacos"
+            await ctx.message.delete()
+            await self.discord_helper.sendEmbed(ctx.channel, "Tacos", f"{ctx.author.mention}, You have {taco_count} {tacos_word} 🌮.\n\nThis message will delete in 30 seconds.", delete_after=30)
+        except Exception as e:
+            self.log.error(ctx.guild.id, "tacos.get", str(e), traceback.format_exc())
+            await self.discord_helper.notify_of_error(ctx)
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -69,7 +85,7 @@ class Tacos(commands.Cog):
                 _method = inspect.stack()[0][3]
                 self.log.debug(member.guild.id, _method, f"{member} boosted the server")
                 taco_count = self.db.add_tacos(guild_id, member.id, self.BOOST_COUNT)
-                log_channel = await self.get_or_fetch_channel(self.TACO_LOG_CHANNEL_ID)
+                log_channel = await self.discord_helper.get_or_fetch_channel(self.TACO_LOG_CHANNEL_ID)
 
                 self.log.debug(guild_id, _method, f"🌮 added {self.BOOST_COUNT} tacos to user {member.name} for boosting the server")
                 if log_channel:
@@ -98,7 +114,7 @@ class Tacos(commands.Cog):
         guild_id = member.guild.id
         self.log.info(guild_id, _method, f"{member} joined the server")
         taco_count = self.db.add_tacos(guild_id, member.id, self.JOIN_COUNT)
-        log_channel = await self.get_or_fetch_channel(self.TACO_LOG_CHANNEL_ID)
+        log_channel = await self.discord_helper.get_or_fetch_channel(self.TACO_LOG_CHANNEL_ID)
 
         self.log.debug(guild_id, _method, f"🌮 added {self.JOIN_COUNT} tacos to user {member.name} for joining the server")
         if log_channel:
@@ -114,12 +130,13 @@ class Tacos(commands.Cog):
 
             self.log.debug(guild_id, _method, f"{payload.emoji.name} added to {payload.message_id}")
             if str(payload.emoji) == '🌮':
-                user = await self.get_or_fetch_user(payload.user_id)
+                user = await self.discord_helper.get_or_fetch_user(payload.user_id)
                 channel = await self.bot.fetch_channel(payload.channel_id)
                 message = await channel.fetch_message(payload.message_id)
-                if message.author.bot:
+                # if the message is from a bot, or reacted by the author, ignore it
+                if message.author.bot or message.author.id == user.id:
                     return
-                log_channel = await self.get_or_fetch_channel(self.TACO_LOG_CHANNEL_ID)
+                log_channel = await self.discord_helper.get_or_fetch_channel(self.TACO_LOG_CHANNEL_ID)
                 self.log.debug(guild_id, _method, f"🌮 adding taco to user {message.author.name}")
                 taco_count = self.db.add_tacos(guild_id, message.author.id, self.REACTION_COUNT)
                 self.log.debug(guild_id, _method, f"🌮 added taco to user {message.author.name} successfully")
@@ -147,45 +164,5 @@ class Tacos(commands.Cog):
     def get_string(self, guild_id, key):
         return key
 
-    def get_by_name_or_id(self, iterable, nameOrId: typing.Union[int, str]):
-        if isinstance(nameOrId, str):
-            return discord.utils.get(iterable, name=str(nameOrId))
-        elif isinstance(nameOrId, int):
-            return discord.utils.get(iterable, id=int(nameOrId))
-        else:
-            return None
-
-    async def get_or_fetch_user(self, userId: int):
-        _method = inspect.stack()[1][3]
-        try:
-            if userId:
-                user = self.bot.get_user(userId)
-                if not user:
-                    user = await self.bot.fetch_user(userId)
-                return user
-            return None
-        except discord.errors.NotFound as nf:
-            self.log.warn(0, _method, str(nf), traceback.format_exc())
-            return None
-        except Exception as ex:
-            self.log.error(0, _method, str(ex), traceback.format_exc())
-            return None
-
-    async def get_or_fetch_channel(self, channelId: int):
-        _method = inspect.stack()[1][3]
-        try:
-            if channelId:
-                chan = self.bot.get_channel(channelId)
-                if not chan:
-                    chan = await self.bot.fetch_channel(channelId)
-                return chan
-            else:
-                return  None
-        except discord.errors.NotFound as nf:
-            self.log.warn(0, _method, str(nf), traceback.format_exc())
-            return None
-        except Exception as ex:
-            self.log.error(0, _method, str(ex), traceback.format_exc())
-            return None
 def setup(bot):
     bot.add_cog(Tacos(bot))

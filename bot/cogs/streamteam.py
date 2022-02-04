@@ -29,7 +29,9 @@ class StreamTeam(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.settings = settings.Settings()
-        self.discord_helper = discordhelper.DiscordHelper(self.settings)
+        self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.STREAMER_ROLE_EMOJI = "<:Streamer:938621185229480086>"
+        self.STREAMER_ROLE_REQUEST_MESSAGE_ID = 938621319673692170
         if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
             self.db = mongo.MongoDatabase()
         else:
@@ -93,6 +95,7 @@ class StreamTeam(commands.Cog):
                 # if streamteam role is in before.roles and not in after.roles then remove from db
                 elif streamteam_role in before.roles and streamteam_role not in after.roles:
                     self.db.remove_stream_team_member(guild_id, STREAM_TEAM_NAME, after.id)
+                    self.db.remove_stream_team_request(guild_id, after.id)
                     self.log.debug(guild_id, "streamteam.on_member_update", f"{after} removed from STREAM TEAM")
         except discord.errors.NotFound as nf:
             self.log.warn(guild_id, _method, str(nf), traceback.format_exc())
@@ -114,8 +117,28 @@ class StreamTeam(commands.Cog):
                 for member in guild.members:
                     if role in member.roles:
                         self.db.add_stream_team_member(guild.id, STREAM_TEAM_NAME, member.id, f"{member.name}#{member.discriminator}", member.name.lower())
+                        # self.db.remove_stream_team_request(guild.id, member.id)
                         self.log.debug(guild.id, "streamteam.on_ready", f"{member} is in STREAM TEAM: {STREAM_TEAM_NAME}")
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        _method = inspect.stack()[0][3]
+        try:
+            guild_id = payload.guild_id
+            if payload.event_type != 'REACTION_ADD':
+                return
+            channel = await self.bot.fetch_channel(payload.channel_id)
+            message = await channel.fetch_message(payload.message_id)
+            user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+            if user.bot:
+                return
+            if message.id != self.STREAMER_ROLE_REQUEST_MESSAGE_ID:
+                return
 
+            if str(payload.emoji) == self.STREAMER_ROLE_EMOJI:
+                # add user to the stream team requests
+                self.db.add_stream_team_request(guild_id, f"{user.name}#{user.discriminator}", user.id)
+        except Exception as ex:
+            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
     @commands.Cog.listener()
     async def on_disconnect(self):
         pass
@@ -137,7 +160,11 @@ class StreamTeam(commands.Cog):
         # todo: add help command
         await self.discord_helper.sendEmbed(ctx.channel, "Help", f"I don't know how to help with this yet.", delete_after=20)
         pass
-
+    @team.command()
+    async def signup(self, ctx):
+        # ask the user for their twitch name
+        
+        pass
     @team.command()
     async def list(self, ctx):
         try:

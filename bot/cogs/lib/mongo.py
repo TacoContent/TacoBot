@@ -166,6 +166,38 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
+    def add_stream_team_request(self, guildId: int, userName: str, userId: int):
+        try:
+            if self.connection is None:
+                print("[DEBUG] [mongo.add_stream_team_request] [guild:0] Connecting to MongoDB")
+                self.open()
+            payload = {
+                "guild_id": str(guildId),
+                "user_id": str(userId),
+                "username": userName
+            }
+            # if not in table, insert
+            if not self.connection.stream_team_requests.find_one(payload):
+                self.connection.stream_team_requests.insert_one(payload)
+            else:
+                print(f"[DEBUG] [mongo.add_stream_team_request] [guild:0] User {userName}, already in table")
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+    def remove_stream_team_request(self, guildId: int, userId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            self.connection.stream_team_requests.delete_many({ "guild_id": str(guildId), "user_id": userId })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
 
 
     # GuildTeamsSettings

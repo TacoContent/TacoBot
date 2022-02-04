@@ -29,7 +29,7 @@ class InitHandler(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.settings = settings.Settings()
-        self.discord_helper = discordhelper.DiscordHelper(self.settings)
+        self.discord_helper = discordhelper.DiscordHelper(bot)
         if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
             self.db = mongo.MongoDatabase()
         else:

@@ -29,6 +29,18 @@
 						"value": "`.taco set-twitch-name @user twitchName`"
 					}
 				]
+			},
+			"tacos": {
+				"count": {
+					"title": "help_tacos_count_title",
+					"message": "help_tacos_count_message",
+					"fields": [
+						{
+							"name": "help_tacos_count_field_0",
+							"value": "`.taco tacos`"
+						}
+					]
+				}
 			}
 		}
 	}

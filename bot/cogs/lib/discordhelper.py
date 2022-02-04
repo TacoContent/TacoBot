@@ -15,12 +15,21 @@ from discord_slash.model import ButtonStyle
 from discord.ext.commands import has_permissions, CheckFailure
 
 from . import utils
+from . import logger
+from . import loglevel
+from . import settings
 
 import inspect
 
 class DiscordHelper():
-    def __init__(self, settings):
-        self.settings = settings
+    def __init__(self, bot):
+        self.settings = settings.Settings()
+        self.bot = bot
+        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        if not log_level:
+            log_level = loglevel.LogLevel.DEBUG
+
+        self.log = logger.Log(minimumLogLevel=log_level)
         pass
 
     async def sendEmbed(self, channel, title, message, fields=None, delete_after=None, footer=None, components=None):
@@ -35,9 +44,48 @@ class DiscordHelper():
         return await channel.send(embed=embed, delete_after=delete_after, components=components)
 
     async def notify_of_error(self, ctx):
-        guild_id = ctx.guild.id
-        await self.sendEmbed(ctx.channel, self.get_string(guild_id, 'title_error'), f'{ctx.author.mention}, {self.get_string(guild_id, "info_error")}', delete_after=30)
+        await self.sendEmbed(ctx.channel, "Error", f'{ctx.author.mention}, There was an error trying to complete your request. The error has been logged. I am very sorry.', delete_after=30)
 
+    async def get_or_fetch_user(self, userId: int):
+        _method = inspect.stack()[1][3]
+        try:
+            if userId:
+                user = self.bot.get_user(userId)
+                if not user:
+                    user = await self.bot.fetch_user(userId)
+                return user
+            return None
+        except discord.errors.NotFound as nf:
+            self.log.warn(0, _method, str(nf), traceback.format_exc())
+            return None
+        except Exception as ex:
+            self.log.error(0, _method, str(ex), traceback.format_exc())
+            return None
+
+    async def get_or_fetch_channel(self, channelId: int):
+        _method = inspect.stack()[1][3]
+        try:
+            if channelId:
+                chan = self.bot.get_channel(channelId)
+                if not chan:
+                    chan = await self.bot.fetch_channel(channelId)
+                return chan
+            else:
+                return  None
+        except discord.errors.NotFound as nf:
+            self.log.warn(0, _method, str(nf), traceback.format_exc())
+            return None
+        except Exception as ex:
+            self.log.error(0, _method, str(ex), traceback.format_exc())
+            return None
+
+    def get_by_name_or_id(self, iterable, nameOrId: typing.Union[int, str]):
+        if isinstance(nameOrId, str):
+            return discord.utils.get(iterable, name=str(nameOrId))
+        elif isinstance(nameOrId, int):
+            return discord.utils.get(iterable, id=int(nameOrId))
+        else:
+            return None
 
     async def ask_yes_no(self, ctx, question: str, title: str = "Voice Channel Setup"):
         guild_id = ctx.guild.id
