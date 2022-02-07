@@ -23,22 +23,25 @@ class Database():
         pass
     def remove_stream_team_member(self, guildId: int, teamName: str, userId: int):
         pass
-
-    # GuildTeamsSettings
-    def add_guild_team_settings(self, guildId: int, teamRole: typing.Union[str,int], teamName: str):
+    def add_stream_team_request(self, guildId: int, userName: str, userId: int):
         pass
-    def update_guild_team_settings(self, guildId: int, teamRole: typing.Union[str,int], teamName: str):
-        pass
-    def remove_guild_team_settings(self, guildId: int, teamRole: typing.Union[str,int]):
-        pass
-    def get_guild_team_settings_by_team_name(self, guildId: int, teamName: str):
-        pass
-    def get_guild_team_settings_by_team_role(self, guildId: int, teamRole: typing.Union[str, int]):
+    def remove_stream_team_request(self, guildId: int, userId: int):
         pass
 
     def add_tacos(self, guildId: int, userId: int, count: int):
         pass
+    def remove_tacos(self, guildId: int, userId: int, count: int):
+        pass
     def get_tacos_count(self, guildId: int, userId: int):
         pass
+    def get_total_gifted_tacos(self, guildId: int, userId: int, timespan_seconds: int = 86400):
+        pass
+    def add_taco_gift(self, guildId: int, userId: int, count: int):
+        pass
+    def add_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int):
+        pass
+    def get_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int):
+        pass
+
     def UPDATE_SCHEMA(self):
         pass

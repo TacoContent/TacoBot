@@ -19,6 +19,7 @@ from .cogs.lib import mongo
 from .cogs.lib import logger
 from .cogs.lib import loglevel
 from .cogs.lib import dbprovider
+from discord_slash import SlashCommand
 
 class TacoBot():
     DISCORD_TOKEN = os.environ['DISCORD_TOKEN']
@@ -52,7 +53,7 @@ class TacoBot():
             intents=discord.Intents.all()
         )
 
-        initial_extensions = ['bot.cogs.events', 'bot.cogs.init', 'bot.cogs.streamteam', 'bot.cogs.tacos', 'bot.cogs.suggestions']
+        initial_extensions = ['bot.cogs.events', 'bot.cogs.init', 'bot.cogs.streamteam', 'bot.cogs.tacos', 'bot.cogs.suggestions', 'bot.cogs.tacopost']
         for extension in initial_extensions:
             try:
                 self.bot.load_extension(extension)
@@ -60,7 +61,7 @@ class TacoBot():
                 print(f'Failed to load extension {extension}.', file=sys.stderr)
                 traceback.print_exc()
 
-        # slash = SlashCommand(self.bot, override_type = True, sync_commands = True)
+        slash = SlashCommand(self.bot, override_type = True, sync_commands = True)
 
         # self.bot.remove_command("help")
         self.bot.run(self.DISCORD_TOKEN)
@@ -71,7 +72,7 @@ class TacoBot():
     def get_prefix(self, client, message):
         # self.db.open()
         # get the prefix for the guild.
-        prefixes = ['.taco ']    # sets the prefixes, you can keep it as an array of only 1 item if you need only one prefix
+        prefixes = ['.taco ', '?taco ', '!taco ']    # sets the prefixes, you can keep it as an array of only 1 item if you need only one prefix
         # if message.guild:
         #     guild_settings = self.db.get_guild_settings(message.guild.id)
         #     if guild_settings:

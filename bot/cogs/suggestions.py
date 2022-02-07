@@ -32,7 +32,7 @@ class SuggestionHelper(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.settings = settings.Settings()
-        self.discord_helper = discordhelper.DiscordHelper(self.settings)
+        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.SUGGESTION_CHANNEL_ID = 938838459722907711
         self.CB_PREFIX = "?cb "
         if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
@@ -63,5 +63,6 @@ class SuggestionHelper(commands.Cog):
         except Exception as e:
             self.log.error(0, "suggestions.on_message", f"{e}")
             self.log.error(0, "suggestions.on_message", f"{traceback.format_exc()}")
+
 def setup(bot):
     bot.add_cog(SuggestionHelper(bot))
