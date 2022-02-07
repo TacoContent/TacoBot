@@ -1,7 +1,9 @@
+from tkinter.messagebox import NO
 from pymongo import MongoClient
 import traceback
 import json
 import typing
+import datetime
 # from discord.ext.commands.converter import CategoryChannelConverter
 from . import database
 from . import settings
@@ -169,7 +171,6 @@ class MongoDatabase(database.Database):
     def add_stream_team_request(self, guildId: int, userName: str, userId: int):
         try:
             if self.connection is None:
-                print("[DEBUG] [mongo.add_stream_team_request] [guild:0] Connecting to MongoDB")
                 self.open()
             payload = {
                 "guild_id": str(guildId),
@@ -200,25 +201,13 @@ class MongoDatabase(database.Database):
                 self.close()
 
 
-    # GuildTeamsSettings
-    def add_guild_team_settings(self, guildId: int, teamRole: typing.Union[str,int], teamName: str):
-        pass
-    def update_guild_team_settings(self, guildId: int, teamRole: typing.Union[str,int], teamName: str):
-        pass
-    def remove_guild_team_settings(self, guildId: int, teamRole: typing.Union[str,int]):
-        pass
-    def get_guild_team_settings_by_team_name(self, guildId: int, teamName: str):
-        pass
-    def get_guild_team_settings_by_team_role(self, guildId: int, teamRole: typing.Union[str, int]):
-        pass
-
     # Tacos
     def remove_all_tacos(self, guildId: int, userId: int):
         try:
             if self.connection is None:
                 self.open()
             print(f"[DEBUG] [mongo.remove_all_tacos] [guild:0] Removing tacos for user {userId}")
-            self.connection.tacos.delete_many({ "guild_id": guildId, "user_id": userId })
+            self.connection.tacos.delete_many({ "guild_id": str(guildId), "user_id": str(userId) })
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -253,6 +242,35 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
+    def remove_tacos(self, guildId: int, userId: int, count: int):
+        try:
+            if count < 0:
+                print(f"[DEBUG] [mongo.remove_tacos] [guild:0] Count is less than 0")
+                return 0
+            if self.connection is None:
+                self.open()
+
+            user_tacos = self.get_tacos_count(guildId, userId)
+            if user_tacos is None:
+                print(f"[DEBUG] [mongo.remove_tacos] [guild:0] User {userId} not in table")
+                user_tacos = 0
+            else:
+                user_tacos = user_tacos or 0
+                print(f"[DEBUG] [mongo.remove_tacos] [guild:0] User {userId} has {user_tacos} tacos")
+
+            user_tacos -= count
+            if user_tacos < 0:
+                user_tacos = 0
+
+            print(f"[DEBUG] [mongo.remove_tacos] [guild:0] User {userId} now has {user_tacos} tacos")
+            self.connection.tacos.update_one({ "guild_id": str(guildId), "user_id": str(userId) }, { "$set": { "count": user_tacos } }, upsert=True)
+            return user_tacos
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
     def get_tacos_count(self, guildId: int, userId: int):
         try:
             if self.connection is None:
@@ -268,3 +286,86 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
         pass
+    def get_total_gifted_tacos(self, guildId: int, userId: int, timespan_seconds: int = 86400):
+        try:
+            if self.connection is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            data = self.connection.tacos.find({ "guild_id": str(guildId), "user_id": str(userId), "timestamp": { "$gt": timestamp - timespan_seconds } })
+            if data is None:
+                return 0
+            # add up all the gifts from the count column
+            total_gifts = 0
+            for gift in data:
+                total_gifts += gift['count']
+            return total_gifts
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+    def add_taco_gift(self, guildId: int, userId: int, count: int, max_for_day: int):
+        try:
+            if self.connection is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            payload = {
+                "guild_id": str(guildId),
+                "user_id": str(userId),
+                "count": count,
+                "timestamp": timestamp
+            }
+            total_gifts = self.get_total_gifted_tacos(guildId, userId, 86400)
+            # if there are more than the max, then don't add
+            if total_gifts >= max_for_day:
+                print(f"[DEBUG] [mongo.add_taco_gift] [guild:0] User {userId} has given {total_gifts} tacos, which is more than the max of {max_for_day}")
+                return False
+
+            # add the gift
+            self.connection.tacos.update_one({ "guild_id": str(guildId), "user_id": str(userId), "timestamp": timestamp }, { "$set": payload }, upsert=True)
+            return True
+
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return False
+        finally:
+            if self.connection:
+                self.close()
+
+    def add_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            payload = {
+                "guild_id": str(guildId),
+                "user_id": str(userId),
+                "channel_id": str(channelId),
+                "message_id": str(messageId),
+                "timestamp": timestamp
+            }
+            # log entry for the user
+            print(f"[DEBUG] [mongo.add_taco_reaction] [guild:0] Adding taco reaction for user {userId}")
+            self.connection.tacos_reactions.update_one({ "guild_id": str(guildId), "user_id": str(userId), "timestamp": timestamp }, { "$set": payload }, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+    def get_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            reaction = self.connection.tacos_reactions.find_one({ "guild_id": str(guildId), "user_id": str(userId), "channel_id": str(channelId), "message_id": str(messageId) })
+            if reaction is None:
+                return None
+            return reaction
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()

@@ -40,6 +40,16 @@
 							"value": "`.taco tacos`"
 						}
 					]
+				},
+				"give": {
+					"title": "help_tacos_give_title",
+					"message": "help_tacos_give_message",
+					"fields": [
+						{
+							"name": "help_tacos_give_field_0",
+							"value": "`.taco give <@user> <count> [reason]`"
+						}
+					]
 				}
 			}
 		}

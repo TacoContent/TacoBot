@@ -25,6 +25,7 @@ class DiscordHelper():
     def __init__(self, bot):
         self.settings = settings.Settings()
         self.bot = bot
+        self.TACO_LOG_CHANNEL_ID = int(os.environ['TACO_LOG_CHANNEL_ID'] or '938291623056519198')
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -45,6 +46,18 @@ class DiscordHelper():
 
     async def notify_of_error(self, ctx):
         await self.sendEmbed(ctx.channel, "Error", f'{ctx.author.mention}, There was an error trying to complete your request. The error has been logged. I am very sorry.', delete_after=30)
+
+    async def tacos_log(self, guild_id: int, toMember: discord.Member, fromMember: discord.Member, count: int, total_tacos: int, reason: str):
+        _method = inspect.stack()[0][3]
+        log_channel = await self.get_or_fetch_channel(self.TACO_LOG_CHANNEL_ID)
+        taco_word = "tacos"
+        if count == 1:
+            taco_word = "taco"
+
+        self.log.debug(guild_id, _method, f"🌮 added {count} {taco_word} to user {toMember.name} from {fromMember.name} for {reason}")
+        if log_channel:
+            await log_channel.send(f"{toMember.name} has received {count} {taco_word} from {fromMember.name} for {reason}, giving them {total_tacos} 🌮.")
+
 
     async def get_or_fetch_user(self, userId: int):
         _method = inspect.stack()[1][3]
@@ -87,22 +100,22 @@ class DiscordHelper():
         else:
             return None
 
-    async def ask_yes_no(self, ctx, question: str, title: str = "Voice Channel Setup"):
+    async def ask_yes_no(self, ctx, question: str, title: str = "TacoBot"):
         guild_id = ctx.guild.id
         def check_user(m):
             same = m.author.id == ctx.author.id
             return same
         buttons = [
-            create_button(style=ButtonStyle.green, label=self.get_string(guild_id, 'yes'), custom_id="YES"),
-            create_button(style=ButtonStyle.red, label=self.get_string(guild_id, 'no'), custom_id="NO")
+            create_button(style=ButtonStyle.green, label="Yes", custom_id="YES"),
+            create_button(style=ButtonStyle.red, label="No", custom_id="NO")
         ]
         yes_no = False
         action_row = create_actionrow(*buttons)
-        yes_no_req = await self.sendEmbed(ctx.channel, title, question, components=[action_row], delete_after=60, footer=self.get_string(guild_id, 'footer_60_seconds'))
+        yes_no_req = await self.sendEmbed(ctx.channel, title, question, components=[action_row], delete_after=60, footer="You have 60 seconds to respond.")
         try:
             button_ctx: ComponentContext = await wait_for_component(self.bot, check=check_user, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
-            await self.sendEmbed(ctx.channel, title, self.get_string(guild_id, 'took_too_long'), delete_after=5)
+            await self.sendEmbed(ctx.channel, title, "You took too long to respond", delete_after=5)
         else:
             yes_no = utils.str2bool(button_ctx.custom_id)
             await yes_no_req.delete()
