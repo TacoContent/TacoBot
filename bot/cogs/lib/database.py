@@ -43,5 +43,11 @@ class Database():
     def get_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int):
         pass
 
+
+    def add_settings(self, guildId: int, name:str, settings: dict):
+        pass
+    def get_settings(self, guildId: int, name:str):
+        pass
+
     def UPDATE_SCHEMA(self):
         pass

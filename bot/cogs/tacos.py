@@ -77,8 +77,8 @@ class Tacos(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def give(self, ctx, member: discord.Member, amount: int, *, reason: str = None):
         try:
-
             guild_id = ctx.guild.id
+
             await ctx.message.delete()
             # if the user that ran the command is the same as member, then exit the function
             if ctx.author.id == member.id:
@@ -98,8 +98,8 @@ class Tacos(commands.Cog):
             await self.discord_helper.tacos_log(ctx.guild.id, member, ctx.author, amount, taco_count, reason_msg)
 
         except Exception as e:
-            await self.discord_helper.sendEmbed(ctx.channel, "Error", f"{e}", delete_after=30)
-            await ctx.message.delete()
+            self.log.error(ctx.guild.id, "tacos.give", str(e), traceback.format_exc())
+            await self.discord_helper.notify_of_error(ctx)
 
     @tacos.command()
     async def count(self, ctx):
@@ -121,17 +121,23 @@ class Tacos(commands.Cog):
     @tacos.command()
     async def gift(self, ctx, member: discord.Member, amount: int, *, reason: str = None):
         try:
+            guild_id = ctx.guild.id
             # get taco count for message author
             await ctx.message.delete()
+            taco_settings = self.settings.get_settings(self.db, guild_id, "tacos")
+            if not taco_settings:
+                # raise exception if there are no tacos settings
+                raise Exception("No tacos settings found")
 
             # if the user that ran the command is the same as member, then exit the function
             if ctx.author.id == member.id:
                 await self.discord_helper.sendEmbed(ctx.channel, "Error", f"You can't gift yourself tacos.", delete_after=30)
                 return
-
+            max_gift_tacos = taco_settings["max_gift_tacos"]
+            max_gift_taco_timespan = taco_settings["max_gift_taco_timespan"]
             # get the total number of tacos the user has gifted in the last 24 hours
-            total_gifted = self.db.get_total_gifted_tacos(ctx.guild.id, ctx.author.id, self.MAX_GIFT_TACO_TIMESPAN)
-            remaining_gifts = self.MAX_GIFT_TACOS - total_gifted
+            total_gifted = self.db.get_total_gifted_tacos(ctx.guild.id, ctx.author.id, max_gift_taco_timespan)
+            remaining_gifts = max_gift_tacos - total_gifted
             if remaining_gifts <= 0:
                 await self.discord_helper.sendEmbed(ctx.channel, "Error", f"You have reached the maximum amount of gifts you can give. You can only give {self.MAX_GIFT_TACOS} tacos per 24 hours.", delete_after=30)
                 return
@@ -169,7 +175,7 @@ class Tacos(commands.Cog):
                 self.log.debug(member.guild.id, _method, f"{member} boosted the server")
                 taco_count = self.db.add_tacos(guild_id, member.id, self.BOOST_COUNT)
 
-                await self.discord_helper.tacos_log(message.guild.id, member, self.bot.user, self.JOIN_COUNT, taco_count, "boosting the server")
+                await self.discord_helper.tacos_log(message.guild.id, member, self.bot.user, self.BOOST_COUNT, taco_count, "boosting the server")
         except Exception as ex:
             self.log.error(member.guild.id, _method, str(ex), traceback.format_exc())
 
@@ -222,13 +228,13 @@ class Tacos(commands.Cog):
                 self.db.add_taco_reaction(guild_id, user.id, channel.id, message.id)
                 self.log.debug(guild_id, _method, f"🌮 adding taco to user {message.author.name}")
                 self.log.debug(guild_id, _method, f"🌮 added taco to user {message.author.name} successfully")
-                await self.discord_helper.tacos_log(guild_id, message.author, user, self.REACTION_COUNT, taco_count, f"reacting to {message.author}'s message with a 🌮")
+                await self.discord_helper.tacos_log(guild_id, message.author, user, self.REACTION_COUNT, taco_count, f"reacting to {message.author.name}'s message with a 🌮")
 
                 # give taco giver tacos too
                 taco_count = self.db.add_tacos(guild_id, user.id, self.REACTION_COUNT)
                 self.log.debug(guild_id, _method, f"🌮 adding taco to user {user.name}")
                 self.log.debug(guild_id, _method, f"🌮 added taco to user {user.name} successfully")
-                await self.discord_helper.tacos_log(guild_id, user, self.bot.user, self.REACTION_COUNT, taco_count, f"reacting to {message.author}'s message with a 🌮")
+                await self.discord_helper.tacos_log(guild_id, user, self.bot.user, self.REACTION_COUNT, taco_count, f"reacting to {message.author.name}'s message with a 🌮")
 
             else:
                 self.log.debug(guild_id, _method, f"{payload.emoji} not a taco")

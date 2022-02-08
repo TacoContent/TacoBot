@@ -4,6 +4,15 @@
 	"version": "1.0.0-snapshot",
 	"icon": "https://i.imgur.com/EIqP24c.png",
 	"author": "DarthMinos#1161",
+	"tacopost": {
+		"channels": [
+			{
+				"id": 935318426677825536,
+				"cost": 10,
+				"exempt": [ 935295514130403398 ]
+			}
+		]
+	},
 	"initMessage": {
 		"title": "help_init_title",
 		"message": "help_init_message",
@@ -41,6 +50,16 @@
 						}
 					]
 				},
+				"gift": {
+					"title": "help_tacos_gift_title",
+					"message": "help_tacos_gift_message",
+					"fields": [
+						{
+							"name": "help_tacos_gift_field_0",
+							"value": "`.taco gift <@user> <count> [reason]`"
+						}
+					]
+				},
 				"give": {
 					"title": "help_tacos_give_title",
 					"message": "help_tacos_give_message",
@@ -48,6 +67,18 @@
 						{
 							"name": "help_tacos_give_field_0",
 							"value": "`.taco give <@user> <count> [reason]`"
+						}
+					],
+					"admin": true
+				},
+				"purge": {
+					"admin": true,
+					"title": "help_tacos_purge_title",
+					"message": "help_tacos_purge_message",
+					"fields": [
+						{
+							"name": "help_tacos_purge_field_0",
+							"value": "`.taco purge <@user>`"
 						}
 					]
 				}

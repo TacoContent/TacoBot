@@ -32,9 +32,8 @@ class TacoPost(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
-        self.CHANNELS = [
-            { "id": 935318426677825536, "cost": 10 }, # bot-spam channel (for testing)
-        ]
+        # pull from database instead of app.manifest
+        self.CHANNELS = self.settings.tacopost['channels']
 
         if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
             self.db = mongo.MongoDatabase()
@@ -60,11 +59,22 @@ class TacoPost(commands.Cog):
             # if channel.id is not in CHANNELS[].id return
             if channel.id not in [c['id'] for c in self.CHANNELS]:
                 return
+            channel_settings = [c for c in self.CHANNELS if c['id'] == channel.id][0]
+            if channel_settings is None:
+                return
+
+            # check if the user is in the role set in channel_settings['exempt'][]
+            if channel_settings['exempt'] is not None:
+                for role in user.roles:
+                    if role.id in channel_settings['exempt'] or user.id in channel_settings['exempt']:
+                        self.log.debug(guild_id, _method, f"User {user.name} is exempt from having to pay tacos in channel {channel.name}")
+                        return
 
             prefix = await self.bot.get_prefix(message)
             # if the message starts with one of the items in the array self.bot.command_prefix, exit the function
             if any(message.content.startswith(p) for p in prefix):
                 return
+                
             # get required tacos cost for channel in CHANNELS[]
             taco_cost = [c for c in self.CHANNELS if c['id'] == channel.id][0]['cost']
             # get tacos count for user

@@ -369,3 +369,41 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
+
+    def add_settings(self, guildId: int, name:str, settings: dict):
+        try:
+            if self.connection is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            payload = {
+                "guild_id": str(guildId),
+                "name": name,
+                "settings": settings,
+                "timestamp": timestamp
+            }
+            # insert the settings for the guild in to the database with key name and timestamp
+            self.connection.settings.update_one({ "guild_id": str(guildId), "name": name }, { "$set": payload }, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+
+    def get_settings(self, guildId: int, name:str):
+        try:
+            if self.connection is None:
+                self.open()
+            settings = self.connection.settings.find_one({ "guild_id": str(guildId), "name": name })
+            # explicitly return None if no settings are found
+            if settings is None:
+                return None
+            # return the settings object
+            return settings['settings']
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()

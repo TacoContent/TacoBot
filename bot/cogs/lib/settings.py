@@ -31,6 +31,8 @@ class Settings:
         if not self.db_provider:
             self.db_provider = dbprovider.DatabaseProvider.DEFAULT
 
+    def get_settings(self, db, guildId: int, name:str):
+        return db.get_settings(guildId, name)
 
     # def load_strings(self):
     #     self.strings = {}

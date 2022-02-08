@@ -1,4 +1,4 @@
-# this is a helper for the carlbot suggestions
+# this is a helper for the myuu bot
 
 import discord
 from discord.ext import commands
@@ -28,13 +28,11 @@ from .lib import dbprovider
 
 import inspect
 
-class SuggestionHelper(commands.Cog):
+class Pokemon(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
-        self.SUGGESTION_CHANNEL_IDS = [ 938838459722907711 ]
-        self.CB_PREFIX = "?cb "
         if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
             self.db = mongo.MongoDatabase()
         else:
@@ -44,26 +42,34 @@ class SuggestionHelper(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "suggestions.__init__", f"DB Provider {self.settings.db_provider.name}")
-        self.log.debug(0, "suggestions.__init__", f"Logger initialized with level {log_level.name}")
+        self.log.debug(0, "pokemon.__init__", f"DB Provider {self.settings.db_provider.name}")
+        self.log.debug(0, "pokemon.__init__", f"Logger initialized with level {log_level.name}")
 
     @commands.Cog.listener()
     async def on_message(self, message):
         try:
             if message.author.bot:
                 return
-            # if channel.id is not in SUGGESTION_CHANNEL_IDS[] return
-            if message.channel.id not in self.SUGGESTION_CHANNEL_IDS:
-                return
-            allowed_commands = "suggest|approve|consider|deny|implemented|suggestions"
 
-            if not message.content.startswith(self.CB_PREFIX) and not bool(re.match(allowed_commands, message.content)):
-                # not a suggestion command message, remove it
-                await self.discord_helper.sendEmbed(message.channel, "Suggestions", f"Please only use the `{self.CB_PREFIX}suggest <MY SUGGESTION>` command in the suggestion channel.", delete_after=30)
+            p_settings = self.settings.get_settings(self.db, message.guild.id, "pokemon")
+            if not p_settings:
+                # log that we are not configured
+                self.log.debug(message.guild.id, "pokemon.on_message", "Settings for pokemon is configured")
+                return
+
+            # if channel.id is not in SUGGESTION_CHANNEL_IDS[] return
+            if str(message.channel.id) not in p_settings['pokemon_channel_ids']:
+                print(f"{json.dumps(p_settings['pokemon_channel_ids'])}")
+                self.log.debug(message.guild.id, "pokemon.on_message", f"Channel {message.channel.id} is not in the list of pokemon channels")
+                return
+
+            if message.content.startswith(p_settings['pokemon_prefix']):
+                self.log.debug(message.guild.id, "pokemon.on_message", f"Message starts with {p_settings['pokemon_prefix']} so we will remove it.")
                 await message.delete()
+
         except Exception as e:
-            self.log.error(0, "suggestions.on_message", f"{e}")
-            self.log.error(0, "suggestions.on_message", f"{traceback.format_exc()}")
+            self.log.error(0, "pokemon.on_message", f"{e}")
+            self.log.error(0, "pokemon.on_message", f"{traceback.format_exc()}")
 
 def setup(bot):
-    bot.add_cog(SuggestionHelper(bot))
+    bot.add_cog(Pokemon(bot))

@@ -111,4 +111,3 @@ def get_by_name_or_id(iterable, nameOrId: typing.Union[int, str]):
         return discord.utils.get(iterable, id=int(nameOrId))
     else:
         return None
-
