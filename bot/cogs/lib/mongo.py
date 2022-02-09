@@ -291,7 +291,7 @@ class MongoDatabase(database.Database):
             if self.connection is None:
                 self.open()
             timestamp = utils.to_timestamp(datetime.datetime.utcnow())
-            data = self.connection.tacos.find({ "guild_id": str(guildId), "user_id": str(userId), "timestamp": { "$gt": timestamp - timespan_seconds } })
+            data = self.connection.taco_gifts.find({ "guild_id": str(guildId), "user_id": str(userId), "timestamp": { "$gt": timestamp - timespan_seconds } })
             if data is None:
                 return 0
             # add up all the gifts from the count column
@@ -305,7 +305,7 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-    def add_taco_gift(self, guildId: int, userId: int, count: int, max_for_day: int):
+    def add_taco_gift(self, guildId: int, userId: int, count: int):
         try:
             if self.connection is None:
                 self.open()
@@ -316,14 +316,10 @@ class MongoDatabase(database.Database):
                 "count": count,
                 "timestamp": timestamp
             }
-            total_gifts = self.get_total_gifted_tacos(guildId, userId, 86400)
-            # if there are more than the max, then don't add
-            if total_gifts >= max_for_day:
-                print(f"[DEBUG] [mongo.add_taco_gift] [guild:0] User {userId} has given {total_gifts} tacos, which is more than the max of {max_for_day}")
-                return False
+            # total_gifts = self.get_total_gifted_tacos(guildId, userId, 86400)
 
             # add the gift
-            self.connection.tacos.update_one({ "guild_id": str(guildId), "user_id": str(userId), "timestamp": timestamp }, { "$set": payload }, upsert=True)
+            self.connection.taco_gifts.insert_one( payload )
             return True
 
         except Exception as ex:
@@ -363,6 +359,44 @@ class MongoDatabase(database.Database):
             if reaction is None:
                 return None
             return reaction
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def add_settings(self, guildId: int, name:str, settings: dict):
+        try:
+            if self.connection is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            payload = {
+                "guild_id": str(guildId),
+                "name": name,
+                "settings": settings,
+                "timestamp": timestamp
+            }
+            # insert the settings for the guild in to the database with key name and timestamp
+            self.connection.settings.update_one({ "guild_id": str(guildId), "name": name }, { "$set": payload }, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+
+    def get_settings(self, guildId: int, name:str):
+        try:
+            if self.connection is None:
+                self.open()
+            settings = self.connection.settings.find_one({ "guild_id": str(guildId), "name": name })
+            # explicitly return None if no settings are found
+            if settings is None:
+                return None
+            # return the settings object
+            return settings['settings']
         except Exception as ex:
             print(ex)
             traceback.print_exc()

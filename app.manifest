@@ -41,6 +41,16 @@
 						}
 					]
 				},
+				"gift": {
+					"title": "help_tacos_gift_title",
+					"message": "help_tacos_gift_message",
+					"fields": [
+						{
+							"name": "help_tacos_gift_field_0",
+							"value": "`.taco gift <@user> <count> [reason]`"
+						}
+					]
+				},
 				"give": {
 					"title": "help_tacos_give_title",
 					"message": "help_tacos_give_message",
@@ -48,6 +58,18 @@
 						{
 							"name": "help_tacos_give_field_0",
 							"value": "`.taco give <@user> <count> [reason]`"
+						}
+					],
+					"admin": true
+				},
+				"purge": {
+					"admin": true,
+					"title": "help_tacos_purge_title",
+					"message": "help_tacos_purge_message",
+					"fields": [
+						{
+							"name": "help_tacos_purge_field_0",
+							"value": "`.taco purge <@user>`"
 						}
 					]
 				}

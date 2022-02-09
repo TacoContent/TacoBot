@@ -32,9 +32,8 @@ class TacoPost(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
-        self.CHANNELS = [
-            { "id": 935318426677825536, "cost": 10 }, # bot-spam channel (for testing)
-        ]
+        # pull from database instead of app.manifest
+        self.SETTINGS_SECTION = 'tacopost'
 
         if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
             self.db = mongo.MongoDatabase()
@@ -57,16 +56,36 @@ class TacoPost(commands.Cog):
         try:
             if message.author.bot:
                 return
+
+            # get the settings for tacopost out of the settings
+            tacopost_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+            # get the channels for tacopost out of the settings
+            tacopost_channels = tacopost_settings['channels']
             # if channel.id is not in CHANNELS[].id return
-            if channel.id not in [c['id'] for c in self.CHANNELS]:
+            if str(channel.id) not in [c['id'] for c in tacopost_channels]:
                 return
+
+            channel_settings = [c for c in tacopost_channels if c['id'] == str(channel.id)][0]
+            if channel_settings is None:
+                return
+
+            # check if the user is in the role set in channel_settings['exempt'][]
+            if channel_settings['exempt'] is not None:
+                if str(user.id) in channel_settings['exempt']:
+                    self.log.debug(guild_id, _method, f"User {user.name} is exempt from having to pay tacos in channel {channel.name}")
+                    return
+                for role in user.roles:
+                    if str(role.id) in channel_settings['exempt']:
+                        self.log.debug(guild_id, _method, f"User {user.name} is exempt from having to pay tacos in channel {channel.name}")
+                        return
 
             prefix = await self.bot.get_prefix(message)
             # if the message starts with one of the items in the array self.bot.command_prefix, exit the function
             if any(message.content.startswith(p) for p in prefix):
                 return
+
             # get required tacos cost for channel in CHANNELS[]
-            taco_cost = [c for c in self.CHANNELS if c['id'] == channel.id][0]['cost']
+            taco_cost = [c for c in tacopost_channels if c['id'] == str(channel.id)][0]['cost']
             # get tacos count for user
             taco_count = self.db.get_tacos_count(guild_id, user.id)
             # if user has doesnt have enough tacos, send a message, and delete their message

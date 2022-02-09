@@ -33,8 +33,12 @@ class SuggestionHelper(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
-        self.SUGGESTION_CHANNEL_ID = 938838459722907711
+        self.SETTINGS_SECTION = "suggestions"
+
+        self.SUGGESTION_CHANNEL_IDS = [ 938838459722907711 ]
         self.CB_PREFIX = "?cb "
+
+
         if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
             self.db = mongo.MongoDatabase()
         else:
@@ -49,20 +53,56 @@ class SuggestionHelper(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        guild_id = message.guild.id
+        _method = inspect.stack()[0][3]
+
         try:
             if message.author.bot:
                 return
-            if message.channel.id != self.SUGGESTION_CHANNEL_ID:
-                return
-            allowed_commands = "suggest|approve|consider|deny|implemented|suggestions"
 
-            if not message.content.startswith(self.CB_PREFIX) and not bool(re.match(allowed_commands, message.content)):
+            # get the suggestion settings from settings
+            suggestion_settings = self.settings.get_settings(self.db, message.guild.id, self.SETTINGS_SECTION)
+            if not suggestion_settings:
+                # raise exception if there are no suggestion settings
+                self.log.debug(guild_id, "suggestions.on_message", f"No suggestion settings found for guild {guild_id}")
+                raise Exception("No suggestion settings found")
+
+            # get the suggestion channel ids from settings
+            suggestion_channel_ids = suggestion_settings["suggestion_channel_ids"]
+            # if channel.id is not in SUGGESTION_CHANNEL_IDS[] return
+            if str(message.channel.id) not in suggestion_channel_ids:
+                return
+
+            # get allowed commands from settings
+            allowed_commands = suggestion_settings["allowed_commands"]
+            # get cb prefix from settings
+            cb_prefix = suggestion_settings["cb_prefix"]
+
+            if not message.content.startswith(cb_prefix) and not bool(re.match(allowed_commands, message.content)):
                 # not a suggestion command message, remove it
-                await self.discord_helper.sendEmbed(message.channel, "Suggestions", f"Please only use the `{self.CB_PREFIX}suggest <MY SUGGESTION>` command in the suggestion channel.", delete_after=30)
+                await self.discord_helper.sendEmbed(message.channel, "Suggestions", f"Please only use the `{cb_prefix}suggest <MY SUGGESTION>` command in the suggestion channel.", delete_after=30)
                 await message.delete()
+            else:
+                # lets give them tacos if they created a suggestion
+                if message.content.startswith(cb_prefix):
+
+                    if bool(re.match(f'^\?cb\s+suggest\s(.+)?$', message.content)):
+                        taco_settings = self.settings.get_settings(self.db, guild_id, "tacos")
+                        if not taco_settings:
+                            # raise exception if there are no tacos settings
+                            raise Exception("No tacos settings found")
+                        # get the suggestion taco count
+                        taco_suggest_amount = taco_settings["suggest_count"]
+                        self.log.debug(guild_id, _method, f"{message.author} boosted the server")
+                        # add the tacos to the user for suggestion
+                        taco_count = self.db.add_tacos(guild_id, message.author.id, taco_suggest_amount)
+                        # log the tacos suggestion
+                        await self.discord_helper.tacos_log(guild_id, message.author, self.bot.user, taco_suggest_amount, taco_count, "creating a suggestion")
+                        # thank them for the suggestion
+                        await self.discord_helper.sendEmbed(message.channel, "Suggestions", f"{message.author.mention}, Thank you for the suggestion! We will look into it as soon as possible.", delete_after=10)
         except Exception as e:
-            self.log.error(0, "suggestions.on_message", f"{e}")
-            self.log.error(0, "suggestions.on_message", f"{traceback.format_exc()}")
+            self.log.error(guild_id, "suggestions.on_message", f"{e}")
+            self.log.error(guild_id, "suggestions.on_message", f"{traceback.format_exc()}")
 
 def setup(bot):
     bot.add_cog(SuggestionHelper(bot))
