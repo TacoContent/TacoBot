@@ -47,7 +47,7 @@ class Trivia(commands.Cog):
         await self.bot.wait_until_ready()
         channel = await self.discord_helper.get_or_fetch_channel(935318426677825536)
         while not self.bot.is_closed:
-            time = random.randint(60,360)
+            time = random.randint(60,300)
             chance = random.randint(1,1)
             if chance == 1:
                 await self.run_trivia(channel)

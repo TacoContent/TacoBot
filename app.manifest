@@ -4,15 +4,6 @@
 	"version": "1.0.0-snapshot",
 	"icon": "https://i.imgur.com/EIqP24c.png",
 	"author": "DarthMinos#1161",
-	"tacopost": {
-		"channels": [
-			{
-				"id": 935318426677825536,
-				"cost": 10,
-				"exempt": [ 935295514130403398 ]
-			}
-		]
-	},
 	"initMessage": {
 		"title": "help_init_title",
 		"message": "help_init_message",

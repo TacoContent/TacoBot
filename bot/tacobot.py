@@ -60,7 +60,6 @@ class TacoBot():
             'bot.cogs.tacos',
             'bot.cogs.suggestions',
             'bot.cogs.tacopost',
-            'bot.cogs.pokemon',
             # 'bot.cogs.trivia',
         ]
         for extension in initial_extensions:

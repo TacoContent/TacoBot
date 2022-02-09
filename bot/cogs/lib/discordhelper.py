@@ -18,6 +18,8 @@ from . import utils
 from . import logger
 from . import loglevel
 from . import settings
+from . import mongo
+from . import dbprovider
 
 import inspect
 
@@ -25,13 +27,15 @@ class DiscordHelper():
     def __init__(self, bot):
         self.settings = settings.Settings()
         self.bot = bot
-        self.TACO_LOG_CHANNEL_ID = int(os.environ['TACO_LOG_CHANNEL_ID'] or '938291623056519198')
+        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
+            self.db = mongo.MongoDatabase()
+        else:
+            self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
-
         self.log = logger.Log(minimumLogLevel=log_level)
-        pass
+
 
     async def sendEmbed(self, channel, title, message, fields=None, delete_after=None, footer=None, components=None):
         embed = discord.Embed(title=title, description=message, color=0x7289da)
@@ -49,15 +53,24 @@ class DiscordHelper():
 
     async def tacos_log(self, guild_id: int, toMember: discord.Member, fromMember: discord.Member, count: int, total_tacos: int, reason: str):
         _method = inspect.stack()[0][3]
-        log_channel = await self.get_or_fetch_channel(self.TACO_LOG_CHANNEL_ID)
-        taco_word = "tacos"
-        if count == 1:
-            taco_word = "taco"
+        try:
 
-        self.log.debug(guild_id, _method, f"🌮 added {count} {taco_word} to user {toMember.name} from {fromMember.name} for {reason}")
-        if log_channel:
-            await log_channel.send(f"{toMember.name} has received {count} {taco_word} from {fromMember.name} for {reason}, giving them {total_tacos} 🌮.")
+            taco_settings = self.settings.get_settings(self.db, guild_id, "tacos")
+            if not taco_settings:
+                # raise exception if there are no tacos settings
+                raise Exception("No tacos settings found")
 
+            taco_log_channel_id = taco_settings["taco_log_channel_id"]
+            log_channel = await self.get_or_fetch_channel(int(taco_log_channel_id))
+            taco_word = "tacos"
+            if count == 1:
+                taco_word = "taco"
+
+            self.log.debug(guild_id, _method, f"🌮 added {count} {taco_word} to user {toMember.name} from {fromMember.name} for {reason}")
+            if log_channel:
+                await log_channel.send(f"{toMember.name} has received {count} {taco_word} from {fromMember.name} for {reason}, giving them {total_tacos} 🌮.")
+        except Exception as e:
+            self.log.error(guild_id, _method, str(e), traceback.format_exc())
 
     async def get_or_fetch_user(self, userId: int):
         _method = inspect.stack()[1][3]
