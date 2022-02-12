@@ -32,7 +32,8 @@ class Trivia(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.API_URL = "https://opentdb.com/api.php?amount=1&category={0}&difficulty={1}&type={2}"
-        self.CHOICES = [ "1️⃣", "2️⃣", "3️⃣", "4️⃣" ]
+        # self.CHOICES = [ "1️⃣", "2️⃣", "3️⃣", "4️⃣" ]
+        self.CHOICES = [ "🇦", "🇧", "🇨", "🇩" ]
         self.POINTS = { "hard": 10, "medium": 5, "easy": 1 }
         self.TIMEOUT = 60
         self.ALLOWED_CHANNELS = [ '942152708268359741' ]
@@ -72,7 +73,6 @@ class Trivia(commands.Cog):
                 if ctx.guild:
                     guild_id = ctx.guild.id
                     await ctx.message.delete()
-
                 channel_id = ctx.channel.id
 
                 if self.ALLOWED_CHANNELS and str(channel_id) not in self.ALLOWED_CHANNELS:
@@ -152,8 +152,8 @@ class Trivia(commands.Cog):
             self.log.error(guild_id, "trivia", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
-    def get_question(self, category: str = "", difficulty: str = "", type: str = ""):
-        url = self.API_URL.format(category, difficulty, type)
+    def get_question(self):
+        url = self.API_URL.format("", "", "")
         response = requests.get(url)
         data = response.json()
         if data["response_code"] == 0:
