@@ -95,7 +95,7 @@ class Trivia(commands.Cog):
                         # get the index of the answer
                         index = answers.index(answer)
                         choices.append(f"{self.CHOICES[index]} **{answer}**")
-                    choice_message = '\n'.join(choices)
+                    choice_message = html.unescape('\n'.join(choices))
                     reward = self.POINTS[question.difficulty] or 1
                     taco_word = "taco" if reward == 1 else "tacos"
 
@@ -140,8 +140,8 @@ class Trivia(commands.Cog):
 
                             await self.discord_helper.sendEmbed(ctx.channel,
                                 "Trivia - Results",
-                                f"{html.unescape(question.question)}\n\nThe correct answer was **{self.CHOICES[correct_index]} {answers[correct_index]}**\n\nCorrect answers receive {reward} {taco_word}🌮.",
-                                fields=fields, footer="`.taco triva` to play again")
+                                f"{html.unescape(question.question)}\n\nThe correct answer was **{self.CHOICES[correct_index]} {html.unescape(answers[correct_index])}**\n\nCorrect answers receive {reward} {taco_word} 🌮.\n\n`.taco trivia` to play again.",
+                                fields=fields)
                             await qm.delete()
                             break
                 else:
