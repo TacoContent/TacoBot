@@ -52,7 +52,9 @@ class Tacos(commands.Cog):
     async def help(self, ctx):
         # todo: add help command
         await self.discord_helper.sendEmbed(ctx.channel, "Help", f"I don't know how to help with this yet.", delete_after=30)
-        await ctx.message.delete()
+        # only delete if the message is in a guild channel
+        if ctx.guild:
+            await ctx.message.delete()
 
     # create command called remove_all_tacos that asks for the user
     @tacos.command(aliases=['purge'])
@@ -160,25 +162,29 @@ class Tacos(commands.Cog):
     async def on_message(self, message):
         try:
             _method = inspect.stack()[0][3]
-            guild_id = message.guild.id
-            member = message.author
+            # if we are in a guild
+            if message.guild:
+                guild_id = message.guild.id
+                member = message.author
 
-            if member.bot:
+                if member.bot:
+                    return
+
+                taco_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+                if not taco_settings:
+                    # raise exception if there are no tacos settings
+                    raise Exception("No tacos settings found")
+
+                if message.type == discord.MessageType.premium_guild_subscription:
+                    # add tacos to user that boosted the server
+                    taco_boost_amount = taco_settings["boost_count"]
+                    self.log.debug(member.guild.id, _method, f"{member} boosted the server")
+                    taco_count = self.db.add_tacos(guild_id, member.id, taco_boost_amount)
+
+                    await self.discord_helper.tacos_log(guild_id, member, self.bot.user, taco_boost_amount, taco_count, "boosting the server")
+            # if we are in a DM
+            else:
                 return
-
-            taco_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
-            if not taco_settings:
-                # raise exception if there are no tacos settings
-                raise Exception("No tacos settings found")
-
-            if message.type == discord.MessageType.premium_guild_subscription:
-                # add tacos to user that boosted the server
-                taco_boost_amount = taco_settings["boost_count"]
-                self.log.debug(member.guild.id, _method, f"{member} boosted the server")
-                taco_count = self.db.add_tacos(guild_id, member.id, taco_boost_amount)
-
-                await self.discord_helper.tacos_log(guild_id, member, self.bot.user, taco_boost_amount, taco_count, "boosting the server")
-
         except Exception as ex:
             self.log.error(member.guild.id, _method, str(ex), traceback.format_exc())
 

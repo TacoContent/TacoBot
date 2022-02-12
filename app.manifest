@@ -4,33 +4,35 @@
 	"version": "1.0.0-snapshot",
 	"icon": "https://i.imgur.com/EIqP24c.png",
 	"author": "DarthMinos#1161",
-	"initMessage": {
-		"title": "help_init_title",
-		"message": "help_init_message",
-		"fields": [
-			{
-				"name": "help_init_field_0",
-				"value": "`.taco name`"
-			},
-			{
-				"name": "help_init_field_1",
-				"value": "`.taco help`"
-			}
-		]
-	},
 	"commands": {
 		"team": {
-			"set-twitch-name": {
-				"title": "help_set_twitch_name_title",
-				"message": "help_set_twitch_name_message",
-				"fields": [
-					{
-						"name": "help_set_twitch_name_field_0",
-						"value": "`.taco set-twitch-name @user twitchName`"
-					}
-				]
-			},
-			"tacos": {
+			"title": "help_team_title",
+			"message": "help_team_message",
+			"usage": ".taco team <command>",
+			"example": ".taco team help",
+			"fields": [],
+			"admin": false,
+			"subcommands": {
+				"set-twitch-name": {
+					"title": "help_set_twitch_name_title",
+					"message": "help_set_twitch_name_message",
+					"fields": [
+						{
+							"name": "help_set_twitch_name_field_0",
+							"value": "`.taco set-twitch-name @user twitchName`"
+						}
+					]
+				}
+			}
+		},
+		"tacos": {
+			"title": "help_team_title",
+			"message": "help_team_message",
+			"usage": ".taco tacos <command>",
+			"example": ".taco tacos help",
+			"fields": [],
+			"admin": false,
+			"subcommands": {
 				"count": {
 					"title": "help_tacos_count_title",
 					"message": "help_tacos_count_message",
@@ -74,6 +76,15 @@
 					]
 				}
 			}
+		},
+		"trivia": {
+			"title": "help_trivia_title",
+			"message": "help_trivia_message",
+			"usage": ".taco trivia [command]",
+			"example": ".taco trivia help",
+			"fields": [],
+			"admin": false,
+			"subcommands": {}
 		}
 	}
 }
