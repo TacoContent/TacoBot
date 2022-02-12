@@ -35,9 +35,6 @@ class SuggestionHelper(commands.Cog):
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.SETTINGS_SECTION = "suggestions"
 
-        self.SUGGESTION_CHANNEL_IDS = [ 938838459722907711 ]
-        self.CB_PREFIX = "?cb "
-
 
         if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
             self.db = mongo.MongoDatabase()
@@ -53,12 +50,17 @@ class SuggestionHelper(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        guild_id = message.guild.id
         _method = inspect.stack()[0][3]
-
         try:
+            # if in a DM, ignore
+            if message.guild is None:
+                return
+            # if the message is from a bot, ignore
             if message.author.bot:
                 return
+
+            guild_id = message.guild.id
+
 
             # get the suggestion settings from settings
             suggestion_settings = self.settings.get_settings(self.db, message.guild.id, self.SETTINGS_SECTION)
@@ -93,13 +95,16 @@ class SuggestionHelper(commands.Cog):
                             raise Exception("No tacos settings found")
                         # get the suggestion taco count
                         taco_suggest_amount = taco_settings["suggest_count"]
-                        self.log.debug(guild_id, _method, f"{message.author} boosted the server")
+
+                        taco_word = "taco"
+                        if taco_suggest_amount != 1:
+                            taco_word = "tacos"
                         # add the tacos to the user for suggestion
                         taco_count = self.db.add_tacos(guild_id, message.author.id, taco_suggest_amount)
                         # log the tacos suggestion
                         await self.discord_helper.tacos_log(guild_id, message.author, self.bot.user, taco_suggest_amount, taco_count, "creating a suggestion")
                         # thank them for the suggestion
-                        await self.discord_helper.sendEmbed(message.channel, "Suggestions", f"{message.author.mention}, Thank you for the suggestion! We will look into it as soon as possible.", delete_after=10)
+                        await self.discord_helper.sendEmbed(message.channel, "Suggestions", f"{message.author.mention}, Thank you for the suggestion! We will look into it as soon as possible.\n\nI have given you {taco_suggest_amount} {taco_word}🌮.", delete_after=10)
         except Exception as e:
             self.log.error(guild_id, "suggestions.on_message", f"{e}")
             self.log.error(guild_id, "suggestions.on_message", f"{traceback.format_exc()}")

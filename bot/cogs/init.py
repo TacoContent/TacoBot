@@ -7,6 +7,7 @@ import sys
 import os
 import glob
 import typing
+import math
 
 from discord.ext.commands.cooldowns import BucketType
 from discord_slash import ComponentContext
@@ -50,17 +51,10 @@ class InitHandler(commands.Cog):
     async def help(self, ctx):
         # todo: add help command
         await self.discord_helper.sendEmbed(ctx.channel, "Help", f"I don't know how to help with this yet.", delete_after=20)
-        await ctx.message.delete()
+        if ctx.guild:
+            # only delete if in guild channel
+            await ctx.message.delete()
         pass
 
-    # @setup.error
-    # async def info_error(self, ctx, error):
-    #     _method = inspect.stack()[1][3]
-    #     if isinstance(error, discord.errors.NotFound):
-    #         self.log.warn(ctx.guild.id, _method , str(error), traceback.format_exc())
-    #     else:
-    #         self.log.error(ctx.guild.id, _method , str(error), traceback.format_exc())
-    def get_string(self, guild_id, key):
-        return key
 def setup(bot):
     bot.add_cog(InitHandler(bot))

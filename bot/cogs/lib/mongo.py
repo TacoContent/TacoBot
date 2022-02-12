@@ -76,12 +76,10 @@ class MongoDatabase(database.Database):
             raise ValueError("MONGODB_URL is not set")
         self.client = MongoClient(self.settings.db_url)
         self.connection = self.client.tacobot
-        print(f"[DEBUG] [mongo.open] [guild:0] Connected to MongoDB")
     def close(self):
         try:
             if self.client:
                 self.client.close()
-                print(f"[DEBUG] [mongo.close] [guild:0] Disconnected from MongoDB")
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -111,63 +109,6 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
 
-    def add_stream_team_member(self, guildId: int, teamName: str, userId: int, discordUsername: str, twitchUsername: str):
-        try:
-            if self.connection is None:
-                print("[DEBUG] [mongo.add_stream_team_member] [guild:0] Connecting to MongoDB")
-                self.open()
-            payload = {
-                "guild_id": str(guildId),
-                "team_name": teamName.lower(),
-                "user_id": str(userId),
-                "discord_username": discordUsername,
-                "twitch_username": twitchUsername.lower()
-            }
-            # if not in table, insert
-            if not self.connection.stream_team_members.find_one(payload):
-                self.connection.stream_team_members.insert_one(payload)
-            else:
-                print(f"[DEBUG] [mongo.add_stream_team_member] [guild:0] User {discordUsername}, already in table")
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-        finally:
-            if self.connection:
-                self.close()
-
-    def get_stream_team_members(self, guildId: int, teamName: str):
-        try:
-            if self.connection is None:
-                self.open()
-            return self.connection.stream_team_members.find({ "guild_id": str(guildId), "team_name": teamName.lower() })
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-        finally:
-            if self.connection:
-                self.close()
-    def update_stream_team_member(self, guildId: int, userId: int, twitchUsername: str):
-        try:
-            if self.connection is None:
-                self.open()
-            self.connection.stream_team_members.update_many({ "guild_id": str(guildId), "user_id": str(userId) }, { "$set": { "twitch_username": twitchUsername.lower() } })
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-        finally:
-            if self.connection:
-                self.close()
-    def remove_stream_team_member(self, guildId: int, teamName: str, userId: int):
-        try:
-            if self.connection is None:
-                self.open()
-            self.connection.stream_team_members.delete_many({ "guild_id": str(guildId), "team_name": teamName.lower(), "user_id": userId })
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-        finally:
-            if self.connection:
-                self.close()
     def add_stream_team_request(self, guildId: int, userName: str, userId: int):
         try:
             if self.connection is None:

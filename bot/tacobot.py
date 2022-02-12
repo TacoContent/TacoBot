@@ -12,6 +12,8 @@ import sys
 import os
 import glob
 import typing
+import inspect
+
 from .cogs.lib import utils
 from .cogs.lib import settings
 # from .cogs.lib import sqlite
@@ -23,16 +25,12 @@ from discord_slash import SlashCommand
 
 class TacoBot():
     DISCORD_TOKEN = os.environ['DISCORD_TOKEN']
-    DBVERSION = 6 # CHANGED WHEN THERE ARE NEW SQL FILES TO PROCESS
 
     def __init__(self):
         self.settings = settings.Settings()
         print(f"APP VERSION: {self.settings.APP_VERSION}")
         self.client = discord.Client()
 
-        # if self.settings.db_provider == dbprovider.DatabaseProvider.SQLITE:
-        #     self.db = sqlite.SqliteDatabase()
-        # elif ...
         if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
             self.db = mongo.MongoDatabase()
         else:
@@ -54,13 +52,14 @@ class TacoBot():
         )
 
         initial_extensions = [
+            'bot.cogs.help',
             'bot.cogs.events',
             'bot.cogs.init',
-            # 'bot.cogs.streamteam',
+            'bot.cogs.streamteam',
             'bot.cogs.tacos',
             'bot.cogs.suggestions',
             'bot.cogs.tacopost',
-            # 'bot.cogs.trivia',
+            'bot.cogs.trivia',
         ]
         for extension in initial_extensions:
             try:
@@ -71,23 +70,41 @@ class TacoBot():
 
         slash = SlashCommand(self.bot, override_type = True, sync_commands = True)
 
-        # self.bot.remove_command("help")
+        self.bot.remove_command("help")
         self.bot.run(self.DISCORD_TOKEN)
 
     def initDB(self):
         pass
 
     def get_prefix(self, client, message):
-        # self.db.open()
-        # get the prefix for the guild.
-        prefixes = ['.taco ', '?taco ', '!taco ']    # sets the prefixes, you can keep it as an array of only 1 item if you need only one prefix
-        # if message.guild:
-        #     guild_settings = self.db.get_guild_settings(message.guild.id)
-        #     if guild_settings:
-        #         prefixes = guild_settings.prefix or "."
-        # elif not message.guild:
-        #     prefixes = ['.']   # Only allow '.' as a prefix when in DMs, this is optional
+        try:
+            _method = inspect.stack()[0][3]
+            # default prefixes
+            # sets the prefixes, you can keep it as an array of only 1 item if you need only one prefix
+            prefixes = ['.taco ', '?taco ', '!taco ']
+            # get the prefix for the guild.
+            if message.guild:
+                guild_id = message.guild.id
+                # get settings from db
+                settings = self.settings.get_settings(self.db, guild_id, "tacobot")
+                if not settings:
+                    raise Exception("No bot settings found")
+                prefixes = settings['command_prefixes']
+                # # log the prefixes that we are launching with for this guild
+                # self.log.debug(0, _method, f"Prefixes for guild {message.guild.name} are {prefixes}")
 
-        # Allow users to @mention the bot instead of using a prefix when using a command. Also optional
-        # Do `return prefixes` if you don't want to allow mentions instead of prefix.
-        return commands.when_mentioned_or(*prefixes)(client, message)
+            elif not message.guild:
+                # get the prefix for the DM using 0 for the guild_id
+                settings = self.settings.get_settings(self.db, 0, "tacobot")
+                if not settings:
+                    raise Exception("No bot settings found")
+                prefixes = settings['command_prefixes']
+                # # log the prefixes that we are launching with for DMs
+                # self.log.debug(0, _method, f"Prefixes for DM are {prefixes}")
+
+            # Allow users to @mention the bot instead of using a prefix when using a command. Also optional
+            # Do `return prefixes` if you don't want to allow mentions instead of prefix.
+            return commands.when_mentioned_or(*prefixes)(client, message)
+        except Exception as e:
+            self.log.error(0, _method, f"Failed to get prefixes: {e}")
+            return commands.when_mentioned_or(*prefixes)(client, message)

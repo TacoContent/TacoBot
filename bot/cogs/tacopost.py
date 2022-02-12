@@ -50,6 +50,10 @@ class TacoPost(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         _method = inspect.stack()[0][3]
+        # if in a DM, ignore
+        if message.guild is None:
+            return
+
         guild_id = message.guild.id
         user = message.author
         channel = message.channel
