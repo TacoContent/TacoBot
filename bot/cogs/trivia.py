@@ -31,13 +31,7 @@ from .lib import dbprovider
 class Trivia(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.API_URL = "https://opentdb.com/api.php?amount=1&category={0}&difficulty={1}&type={2}"
-        # self.CHOICES = [ "1️⃣", "2️⃣", "3️⃣", "4️⃣" ]
-        self.CHOICES = [ "🇦", "🇧", "🇨", "🇩" ]
-        self.POINTS = { "hard": 10, "medium": 5, "easy": 1 }
-        self.TIMEOUT = 60
-        self.ALLOWED_CHANNELS = [ '942152708268359741' ]
-
+        self.SETTINGS_SECTION = "trivia"
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
 
@@ -73,20 +67,39 @@ class Trivia(commands.Cog):
                 if ctx.guild:
                     guild_id = ctx.guild.id
                     await ctx.message.delete()
+                else:
+                    self.log.warning(guild_id, "trivia", "Cannot run trivia command in DM")
+                    return
+
                 channel_id = ctx.channel.id
 
-                if self.ALLOWED_CHANNELS and str(channel_id) not in self.ALLOWED_CHANNELS:
+                trivia_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+                if not trivia_settings:
+                    # raise exception if there are no tacos settings
+                    raise Exception("No trivia settings found")
+
+                allowed_channels = trivia_settings["allowed_channels"]
+                if allowed_channels and str(channel_id) not in allowed_channels:
                     # log that the user tried to use the command in a channel that is not allowed
                     self.log.debug(guild_id, "trivia.trivia", f"User {ctx.author.name}#{ctx.author.discriminator} tried to use the trivia command in channel {channel_id}")
                     return
+
                 # start trivia
-                question = self.get_question()
+                question = self.get_question(ctx)
                 if question:
+                    choice_emojis = trivia_settings["choices"]
+
                     print(f"{question.category} {question.difficulty} {question.type} {question.question}")
-                    answers = question.incorrect_answers
-                    answers.append(question.correct_answer)
-                    random.shuffle(answers)
-                    correct_index = answers.index(question.correct_answer)
+                    # get incorrect answers unescaped and add them to the list
+                    answers = [ html.unescape(ia) for ia in question.incorrect_answers ]
+                    # get correct answer unescaped and add it to the list
+                    answers.append(html.unescape(question.correct_answer))
+                    # if not a boolean question, shuffle the answers
+                    if question.type != "boolean":
+                        random.shuffle(answers)
+                    else:
+                        answers = ["True", "False"]
+                    correct_index = answers.index(question.correct_answer.capitalize())
 
                     choices = []
                     correct_users = []
@@ -94,24 +107,26 @@ class Trivia(commands.Cog):
                     for answer in answers:
                         # get the index of the answer
                         index = answers.index(answer)
-                        choices.append(f"{self.CHOICES[index]} **{answer}**")
-                    choice_message = html.unescape('\n'.join(choices))
-                    reward = self.POINTS[question.difficulty] or 1
-                    taco_word = "taco" if reward == 1 else "tacos"
+                        choices.append(f"{choice_emojis[index]} **{answer}**")
+                    choice_message = '\n'.join(choices)
 
-                    question_message = f"{html.unescape(question.question)}\n\n{choice_message}\n\nReact with the correct answer. Only your first answer counts.\n\nYou have {self.TIMEOUT} seconds to answer"
+                    reward = trivia_settings['category_points'][question.difficulty] or 1
+                    taco_word = "taco" if reward == 1 else "tacos"
+                    trivia_timeout = trivia_settings['timeout'] or 60
+
+                    question_message = f"{html.unescape(question.question)}\n\n{choice_message}\n\nReact with the correct answer. Only your first answer counts.\n\nYou have {trivia_timeout} seconds to answer"
                     qm = await self.discord_helper.sendEmbed(ctx.channel,
                         f"Trivia - {html.unescape(question.category)} - {question.difficulty.capitalize()} - {reward} 🌮",
                         question_message,
                         fields=[])
-                    for ritem in self.CHOICES[0:len(answers)]:
+                    for ritem in choice_emojis[0:len(answers)]:
                         print(f"adding reaction: {ritem}")
                         # add reaction to the message from the bot
                         await qm.add_reaction(ritem)
                     await asyncio.sleep(1)
                     while True:
                         try:
-                            available_choices = self.CHOICES[0:len(answers)]
+                            available_choices = choice_emojis[0:len(answers)]
                             def check (reaction, user):
                                 # check if user already reacted
                                 # or if the user.id is in the correct or incorrect list of users
@@ -119,12 +134,12 @@ class Trivia(commands.Cog):
                                     return False
 
                                 if reaction.emoji in available_choices:
-                                    if reaction.emoji == self.CHOICES[correct_index]:
+                                    if reaction.emoji == choice_emojis[correct_index]:
                                         correct_users.append(user)
                                     else:
                                         incorrect_users.append(user)
                                     return True
-                            reaction, user = await self.bot.wait_for('reaction_add', timeout=self.TIMEOUT, check=check)
+                            reaction, user = await self.bot.wait_for('reaction_add', timeout=trivia_timeout, check=check)
                         except asyncio.TimeoutError:
                             correct_list = '\n'.join([ u.mention for u in correct_users ])
                             incorrect_list = '\n'.join([ u.mention for u in incorrect_users ])
@@ -140,7 +155,7 @@ class Trivia(commands.Cog):
 
                             await self.discord_helper.sendEmbed(ctx.channel,
                                 "Trivia - Results",
-                                f"{html.unescape(question.question)}\n\nThe correct answer was **{self.CHOICES[correct_index]} {html.unescape(answers[correct_index])}**\n\nCorrect answers receive {reward} {taco_word} 🌮.\n\n`.taco trivia` to play again.",
+                                f"{html.unescape(question.question)}\n\nThe correct answer was **{choice_emojis[correct_index]} {html.unescape(answers[correct_index])}**\n\nCorrect answers receive {reward} {taco_word} 🌮.\n\n`.taco trivia` to play again.",
                                 fields=fields)
                             await qm.delete()
                             break
@@ -152,27 +167,42 @@ class Trivia(commands.Cog):
             self.log.error(guild_id, "trivia", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
-    def get_question(self):
-        url = self.API_URL.format("", "", "")
-        response = requests.get(url)
-        data = response.json()
-        if data["response_code"] == 0:
-            # {
-            #   "category":"History",
-            #   "type":"multiple",
-            #   "difficulty":"easy",
-            #   "question":"When was Google founded?",
-            #   "correct_answer":"September 4, 1998",
-            #   "incorrect_answers":[
-            #       "October 9, 1997",
-            #       "December 12, 1989",
-            #       "Feburary 7th, 2000"
-            #   ]
-            # }
-            dict = data["results"][0]
-            x = collections.namedtuple("TriviaQuestion", dict.keys())(*dict.values())
-            return x
-        else:
+    def get_question(self, ctx: ComponentContext):
+        try:
+            guild_id = 0
+            if ctx.guild:
+                guild_id = ctx.guild.id
+            else:
+                return None
+
+            trivia_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+            if not trivia_settings:
+                # raise exception if there are no tacos settings
+                raise Exception("No trivia settings found")
+
+            url = trivia_settings['api_url'].format("", "", "")
+            response = requests.get(url)
+            data = response.json()
+            if data["response_code"] == 0:
+                # {
+                #   "category":"History",
+                #   "type":"multiple",
+                #   "difficulty":"easy",
+                #   "question":"When was Google founded?",
+                #   "correct_answer":"September 4, 1998",
+                #   "incorrect_answers":[
+                #       "October 9, 1997",
+                #       "December 12, 1989",
+                #       "Feburary 7th, 2000"
+                #   ]
+                # }
+                dict = data["results"][0]
+                x = collections.namedtuple("TriviaQuestion", dict.keys())(*dict.values())
+                return x
+            else:
+                return None
+        except Exception as e:
+            self.log.error(guild_id, "trivia", str(e), traceback.format_exc())
             return None
 
 def setup(bot):
