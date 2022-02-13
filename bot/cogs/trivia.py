@@ -99,7 +99,7 @@ class Trivia(commands.Cog):
                         random.shuffle(answers)
                     else:
                         answers = ["True", "False"]
-                    correct_index = answers.index(question.correct_answer)
+                    correct_index = answers.index(html.unescape(question.correct_answer))
 
                     choices = []
                     correct_users = []
@@ -130,7 +130,7 @@ class Trivia(commands.Cog):
                             def check (reaction, user):
                                 # check if user already reacted
                                 # or if the user.id is in the correct or incorrect list of users
-                                if user.id in [ r.users for r in ctx.message.reactions ] or user.id in [ u.id for u in correct_users ] or user.id in [ u.id for u in incorrect_users ]:
+                                if user.bot or user.id in [ r.users for r in ctx.message.reactions ] or user.id in [ u.id for u in correct_users ] or user.id in [ u.id for u in incorrect_users ]:
                                     return False
 
                                 if reaction.emoji in available_choices:
@@ -150,8 +150,9 @@ class Trivia(commands.Cog):
                             # add tacos to the correct users
                             reason_msg = "Getting trivia question correct"
                             for u in correct_users:
-                                taco_count = self.db.add_tacos(guild_id, u.id, reward)
-                                await self.discord_helper.tacos_log(guild_id, u, self.bot.user, reward, taco_count, reason_msg)
+                                if not u.bot:
+                                    taco_count = self.db.add_tacos(guild_id, u.id, reward)
+                                    await self.discord_helper.tacos_log(guild_id, u, self.bot.user, reward, taco_count, reason_msg)
 
                             await self.discord_helper.sendEmbed(ctx.channel,
                                 "Trivia - Results",
