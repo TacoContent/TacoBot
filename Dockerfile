@@ -17,7 +17,7 @@ LABEL PROJECT_NAME="${PROJECT_NAME}"
 COPY ./ /app/
 RUN \
 	apk update && \
-	apk add --update git curl build-base && \
+	apk add --update git curl build-base tcl tk && \
 	mkdir -p /app /data && \
 	pip install --upgrade pip && \
 	pip install -r /app/setup/requirements.txt && \
