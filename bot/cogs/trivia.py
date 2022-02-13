@@ -99,7 +99,7 @@ class Trivia(commands.Cog):
                         random.shuffle(answers)
                     else:
                         answers = ["True", "False"]
-                    correct_index = answers.index(question.correct_answer.capitalize())
+                    correct_index = answers.index(question.correct_answer)
 
                     choices = []
                     correct_users = []
