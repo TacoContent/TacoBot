@@ -141,6 +141,38 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
+    def get_stream_team_requests(self, guildId: int):
+        pass
+
+    def set_user_twitch_info(self, userId: int, twitchId: str, twitchName: str):
+        try:
+            if self.connection is None:
+                self.open()
+            payload = {
+                "user_id": str(userId),
+                "twitch_id": twitchId,
+                "twitch_name": twitchName
+            }
+            # insert or update user twitch info
+            self.connection.twitch_user.update_one({ "user_id": str(userId) }, { "$set": payload }, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def get_user_twitch_info(self, userId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            return self.connection.twitch_user.find_one({ "user_id": str(userId) })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
 
     # Tacos
     def remove_all_tacos(self, guildId: int, userId: int):
@@ -218,6 +250,7 @@ class MongoDatabase(database.Database):
                 self.open()
             data = self.connection.tacos.find_one({ "guild_id": str(guildId), "user_id": str(userId) })
             if data is None:
+                print(f"[DEBUG] [mongo.get_tacos_count] [guild:{guildId}] User {userId} not in table")
                 return None
             return data['count']
         except Exception as ex:

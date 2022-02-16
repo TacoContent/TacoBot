@@ -75,8 +75,10 @@ class Trivia(commands.Cog):
 
                 trivia_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
                 if not trivia_settings:
-                    # raise exception if there are no tacos settings
-                    raise Exception("No trivia settings found")
+                    # log error if there are no tacos settings
+                    self.log.error(guild_id, "trivia.trivia", "No trivia settings found")
+                    self.discord_helper.notify_bot_not_initialized(ctx, "trivia")
+                    return
 
                 allowed_channels = trivia_settings["allowed_channels"]
                 if allowed_channels and str(channel_id) not in allowed_channels:
@@ -120,7 +122,6 @@ class Trivia(commands.Cog):
                         question_message,
                         fields=[])
                     for ritem in choice_emojis[0:len(answers)]:
-                        print(f"adding reaction: {ritem}")
                         # add reaction to the message from the bot
                         await qm.add_reaction(ritem)
                     await asyncio.sleep(1)

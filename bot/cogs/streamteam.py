@@ -7,6 +7,8 @@ import sys
 import os
 import glob
 import typing
+import inspect
+import collections
 
 from discord.ext.commands.cooldowns import BucketType
 from discord_slash import ComponentContext
@@ -23,15 +25,13 @@ from .lib import settings
 from .lib import mongo
 from .lib import dbprovider
 
-import inspect
 
 class StreamTeam(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
-        self.STREAMER_ROLE_EMOJI = "<:Streamer:938621185229480086>"
-        self.STREAMER_ROLE_REQUEST_MESSAGE_ID = 938621319673692170
+        self.SETTINGS_SECTION = "streamteam"
         if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
             self.db = mongo.MongoDatabase()
         else:
@@ -67,12 +67,37 @@ class StreamTeam(commands.Cog):
             user = await self.discord_helper.get_or_fetch_user(payload.user_id)
             if user.bot:
                 return
-            if message.id != self.STREAMER_ROLE_REQUEST_MESSAGE_ID:
+
+            # get the streamteam settings from settings
+            streamteam_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+            if not streamteam_settings:
+                # raise exception if there are no streamteam settings
+                self.log.error(guild_id, "streamteam.on_message", f"No streamteam settings found for guild {guild_id}")
+                self.discord_helper.notify_bot_not_initialized(message, "streamteam")
                 return
 
-            if str(payload.emoji) == self.STREAMER_ROLE_EMOJI:
+            # get the reaction emoji
+            emoji = streamteam_settings["emoji"]
+            team_name = streamteam_settings["name"]
+            # get the message ids to check
+            watch_message_ids = streamteam_settings["message_ids"]
+
+            # check if the message that is reacted to is in the list of message ids and the emoji is one that is configured.
+            if str(message.id) in streamteam_settings["message_ids"] and str(payload.emoji) in emoji:
                 # add user to the stream team requests
                 self.db.add_stream_team_request(guild_id, f"{user.name}#{user.discriminator}", user.id)
+
+                # send a message to the user and ask them their twitch name if it is not yet set
+                twitch_user = self.db.get_user_twitch_info(user.id)
+                if not twitch_user:
+                    ctx_dict = {"bot": self.bot, "author": user, "guild": None, "channel": None}
+                    ctx = collections.namedtuple("TriviaQuestion", ctx_dict.keys())(*ctx_dict.values())
+                    twitch_user = await self.discord_helper.ask_text(ctx, "Twitch Name", f"You have requested to join the {team_name} twitch team, please respond with your twitch username.", 60)
+                    if twitch_user:
+                        self.log.debug(0, _method, f"{user} requested to set twitch name {twitch_user}")
+                        self.db.set_user_twitch_info(user.id, None, twitch_user.lower().strip())
+                        await self.discord_helper.sendEmbed(user, "Success", f"Your Twitch name has been recorded as `{twitch_user}`. Keep an eye out for an invite soon.\n\nGo here: https://dashboard.twitch.tv/u/{twitch_user}/settings/channel\n\nTwitch Dashboard -> Settings -> Channel -> Featured Content => Scroll to the bottom.", color=0x00ff00)
+
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
 

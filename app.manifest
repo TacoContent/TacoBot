@@ -85,6 +85,36 @@
 			"fields": [],
 			"admin": false,
 			"subcommands": {}
+		},
+		"twitch": {
+			"title": "help_twitch_title",
+			"message": "help_twitch_message",
+			"usage": ".taco twitch <command>",
+			"example": ".taco twitch help",
+			"fields": [],
+			"admin": false,
+			"subcommands": {
+				"set": {
+					"title": "help_set_twitch_name_title",
+					"message": "help_set_twitch_name_message",
+					"fields": [
+						{
+							"name": "help_set_twitch_name_field_0",
+							"value": "`.taco set-twitch-name @user twitchName`"
+						}
+					]
+				},
+				"get": {
+					"title": "help_get_twitch_name_title",
+					"message": "help_get_twitch_name_message",
+					"fields": [
+						{
+							"name": "help_get_twitch_name_field_0",
+							"value": "`.taco get-twitch-name @user`"
+						}
+					]
+				}
+			}
 		}
 	}
 }

@@ -37,8 +37,8 @@ class DiscordHelper():
         self.log = logger.Log(minimumLogLevel=log_level)
 
 
-    async def sendEmbed(self, channel, title, message, fields=None, delete_after=None, footer=None, components=None):
-        embed = discord.Embed(title=title, description=message, color=0x7289da)
+    async def sendEmbed(self, channel, title, message, fields=None, delete_after=None, footer=None, components=None, color=0x7289da):
+        embed = discord.Embed(title=title, description=message, color=color)
         if fields is not None:
             for f in fields:
                 embed.add_field(name=f['name'], value=f['value'], inline='false')
@@ -50,6 +50,18 @@ class DiscordHelper():
 
     async def notify_of_error(self, ctx):
         await self.sendEmbed(ctx.channel, "Error", f'{ctx.author.mention}, There was an error trying to complete your request. The error has been logged. I am very sorry.', delete_after=30)
+
+    async def notify_bot_not_initialized(self, ctx, subcommand: str = None):
+        channel = ctx.channel
+        if not channel:
+            channel = ctx.author
+        # if user is an admin, then we can skip this
+        if not ctx.author.guild_permissions.administrator:
+            await self.sendEmbed(ctx.channel, "Error", f'{ctx.author.mention}, I am not initialized yet. Please try again in a few minutes.\n\nIf you are still having issues, please contact the bot owner.', delete_after=30)
+        else:
+            # get the bot's prefix
+            prefix = self.settings.get_prefix(self.db, ctx.guild.id)[0]
+            await self.sendEmbed(ctx.channel, "Error", f'{ctx.author.mention}, I am not initialized yet. Please run {prefix}init {subcommand} to initialize.', delete_after=30)
 
     async def tacos_log(self, guild_id: int, toMember: discord.Member, fromMember: discord.Member, count: int, total_tacos: int, reason: str):
         _method = inspect.stack()[0][3]
@@ -133,3 +145,153 @@ class DiscordHelper():
             yes_no = utils.str2bool(button_ctx.custom_id)
             await yes_no_req.delete()
         return yes_no
+
+    async def ask_channel(self, ctx, title: str = "Choose Channel", message: str = "Please choose a channel.", allow_none: bool = False):
+        def check_user(m):
+            same = m.author.id == ctx.author.id
+            return same
+        _method = inspect.stack()[1][3]
+        guild_id = ctx.guild.id
+        options = []
+        channels = [c for c in ctx.guild.channels if c.type == discord.ChannelType.text]
+        channels.sort(key=lambda c: c.position)
+        sub_message = ""
+        if len(channels) >= 24:
+            self.log.warn(ctx.guild.id, _method, f"Guild has more than 24 channels. Total Channels: {str(len(channels))}")
+            options.append(create_select_option(label="OTHER", value="0", emoji="⏭"))
+            # sub_message = self.get_string(guild_id, 'ask_admin_role_submessage')
+        if allow_none:
+            options.append(create_select_option(label="NONE", value="-1", emoji="⛔"))
+
+        for c in channels[:24]:
+            options.append(create_select_option(label=c.name, value=str(c.id), emoji="🏷"))
+
+        select = create_select(
+            options=options,
+            placeholder="Channel",
+            min_values=1, # the minimum number of options a user must select
+            max_values=1 # the maximum number of options a user can select
+        )
+
+        action_row = create_actionrow(select)
+        ask_context = await self.sendEmbed(ctx.channel, title, message, delete_after=60, footer="You have 60 seconds to respond.", components=[action_row])
+        try:
+            button_ctx: ComponentContext = await wait_for_component(self.bot, check=check_user, components=action_row, timeout=60.0)
+        except asyncio.TimeoutError:
+            await self.sendEmbed(ctx.channel, title, "Took too long to respond.", delete_after=5)
+        else:
+            chan_id = int(button_ctx.selected_options[0])
+            if chan_id == 0:
+                await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, ENTER CHANNEL NAME", delete_after=5)
+                return
+                # chan_id = await self.ask_channel_by_name_or_id(ctx, title)
+
+            await ask_context.delete()
+            selected_channel = discord.utils.get(ctx.guild.channels, id=chan_id)
+            if selected_channel:
+                self.log.debug(guild_id, _method, f"{ctx.author.mention} selected the channel '{selected_channel.name}'")
+                await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, You have selected channel '{selected_channel.name}'", delete_after=5)
+                return selected_channel
+            else:
+                await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, Unknown Channel.", delete_after=5)
+                return None
+
+
+    async def ask_number(self, ctx, title: str = "Enter Number", message: str = "Please enter a number.", min_value: int = 0, max_value: int = 100):
+        def check_user(m):
+            same = m.author.id == ctx.author.id
+            return same
+        def check_range(m):
+            if check_user(m):
+                if m.content.isnumeric():
+                    val = int(m.content)
+                    return (val >= min_value and val <= max_value)
+                return False
+
+        number_ask = await self.sendEmbed(ctx.channel, title, f'{message}', delete_after=60, footer="You have 60 seconds to respond.")
+        try:
+            numberResp = await self.bot.wait_for('message', check=check_range, timeout=60)
+        except asyncio.TimeoutError:
+            await self.sendEmbed(ctx.channel, title, "You took too long to respond", delete_after=5)
+            return None
+        else:
+            numberValue = int(numberResp.content)
+            await numberResp.delete()
+            await number_ask.delete()
+        return numberValue
+
+    async def ask_text(self, ctx, title: str = "Enter Text Response", message: str = "Please enter your response.", timeout: int = 60):
+        def check_user(m):
+            same = m.author.id == ctx.author.id
+            return same
+        channel = ctx.channel
+        delete_user_message = True
+        if not ctx.guild:
+            channel = ctx.author
+            delete_user_message = False
+
+        text_ask = await self.sendEmbed(channel, title, f'{message}', delete_after=timeout, footer=f"You have {timeout} seconds to respond.")
+        try:
+            textResp = await self.bot.wait_for('message', check=check_user, timeout=timeout)
+        except asyncio.TimeoutError:
+            await self.sendEmbed(channel, title, "You took too long to respond", delete_after=5)
+            return None
+        else:
+            if delete_user_message:
+                await textResp.delete()
+            await text_ask.delete()
+        return textResp.content
+
+    async def ask_role_list(self, ctx, title: str = "Choose Role", message: str = "Please choose a role.", allow_none: bool = False, min_select: int = 1, max_select: int = 1, exclude_roles: list = None ):
+        def check_user(m):
+            same = m.author.id == ctx.author.id
+            return same
+        _method = inspect.stack()[1][3]
+        guild_id = ctx.guild.id
+        options = []
+        roles = [r for r in ctx.guild.roles if exclude_roles is None or r.id not in [x.id for x in exclude_roles]]
+        print(f"{len(roles)} roles")
+        roles.sort(key=lambda r: r.position)
+        sub_message = ""
+        if len(roles) == 0:
+            self.log.warn(ctx.guild.id, _method, f"Forcing 'other' option for role list as there are no roles to select.")
+            options.append(create_select_option(label="OTHER", value="0", emoji="⏭"))
+        if len(roles) >= 24:
+            self.log.warn(ctx.guild.id, _method, f"Guild has more than 24 roles. Total roles: {str(len(roles))}")
+            options.append(create_select_option(label="OTHER", value="0", emoji="⏭"))
+            # sub_message = self.get_string(guild_id, 'ask_admin_role_submessage')
+        if allow_none:
+            options.append(create_select_option(label="NONE", value="-1", emoji="⛔"))
+
+        for r in roles[:24]:
+            options.append(create_select_option(label=r.name, value=str(r.id), emoji="🏷"))
+
+        select = create_select(
+            options=options,
+            placeholder=title,
+            min_values=1, # the minimum number of options a user must select
+            max_values=1 # the maximum number of options a user can select
+        )
+
+        action_row = create_actionrow(select)
+        ask_context = await self.sendEmbed(ctx.channel, title, message, delete_after=60, footer="You have 60 seconds to respond.", components=[action_row])
+        try:
+            button_ctx: ComponentContext = await wait_for_component(self.bot, check=check_user, components=action_row, timeout=60.0)
+        except asyncio.TimeoutError:
+            await self.sendEmbed(ctx.channel, title, "Took too long to respond.", delete_after=5)
+        else:
+            role_id = int(button_ctx.selected_options[0])
+            if role_id == 0:
+                await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, ENTER ROLE NAME", delete_after=5)
+                return
+                # chan_id = await self.ask_channel_by_name_or_id(ctx, title)
+
+            await ask_context.delete()
+            selected_role= discord.utils.get(ctx.guild.roles, id=role_id)
+            if selected_role:
+                self.log.debug(guild_id, _method, f"{ctx.author.mention} selected the role '{selected_role.name}'")
+                await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, You have selected channel '{selected_role.name}'", delete_after=5)
+                return selected_role
+            else:
+                await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, Unknown Role.", delete_after=5)
+                return None
