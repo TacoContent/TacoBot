@@ -69,7 +69,9 @@ class TwitchInfo(commands.Cog):
 
     @twitch.command()
     async def get(self, ctx, member: typing.Union[discord.Member, discord.User] = None):
-        if member is None:
+        check_member = member
+
+        if check_member is None:
             member = ctx.author
             who = "you"
         else:
@@ -89,10 +91,12 @@ class TwitchInfo(commands.Cog):
 
         twitch_name = None
         twitch_info = self.db.get_user_twitch_info(member.id)
+        # if ctx.author is administrator, then we can get the twitch name from the database
         if twitch_info is None:
-            twitch_name = await self.discord_helper.ask_text(alt_ctx, "Twitch Name", "You have not yet told me your twitch name, please respond with your twitch name.", 60)
-            if not twitch_name is None:
-                self.db.set_user_twitch_info(ctx.author.id, None, twitch_name.lower().strip())
+            if ctx.author.guild_permissions.administrator or check_member is None:
+                twitch_name = await self.discord_helper.ask_text(alt_ctx, "Twitch Name", "You have not yet told me your twitch name, please respond with your twitch name.", 60)
+                if not twitch_name is None:
+                    self.db.set_user_twitch_info(ctx.author.id, None, twitch_name.lower().strip())
         else:
             twitch_name = twitch_info['twitch_name']
         if not twitch_name is None:
