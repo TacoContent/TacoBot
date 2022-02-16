@@ -76,7 +76,7 @@ class Restricted(commands.Cog):
             if not restricted_settings:
                 # raise exception if there are no suggestion settings
                 self.log.debug(guild_id, "restricted.on_message", f"No suggestion settings found for guild {guild_id}")
-                self.discord_helper.notify_bot_not_initialized(message, "restricted")
+                await self.discord_helper.notify_bot_not_initialized(message, "restricted")
                 return
 
             # get the suggestion channel ids from settings

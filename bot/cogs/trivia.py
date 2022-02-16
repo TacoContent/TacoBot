@@ -77,7 +77,7 @@ class Trivia(commands.Cog):
                 if not trivia_settings:
                     # log error if there are no tacos settings
                     self.log.error(guild_id, "trivia.trivia", "No trivia settings found")
-                    self.discord_helper.notify_bot_not_initialized(ctx, "trivia")
+                    await self.discord_helper.notify_bot_not_initialized(ctx, "trivia")
                     return
 
                 allowed_channels = trivia_settings["allowed_channels"]

@@ -66,7 +66,7 @@ class TacoPost(commands.Cog):
             if not tacopost_settings:
                 # raise exception if there are no suggestion settings
                 self.log.error(guild_id, "tacopost.on_message", f"No tacopost settings found for guild {guild_id}")
-                self.discord_helper.notify_bot_not_initialized(message, "tacopost")
+                await self.discord_helper.notify_bot_not_initialized(message, "tacopost")
                 return
 
             # get the channels for tacopost out of the settings
