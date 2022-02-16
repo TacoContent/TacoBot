@@ -67,6 +67,7 @@ class TwitchInfo(commands.Cog):
             await ctx.message.delete()
 
 
+
     @twitch.command()
     async def get(self, ctx, member: typing.Union[discord.Member, discord.User] = None):
         check_member = member
@@ -100,7 +101,7 @@ class TwitchInfo(commands.Cog):
         else:
             twitch_name = twitch_info['twitch_name']
         if not twitch_name is None:
-            await self.discord_helper.sendEmbed(ctx.author, "Twitch Name", f"The Twitch name for {who} has been set to `{twitch_name}`.\n\nIf the twitch name changes in the future, you can use `.taco twitch set` in a discord channel, or `.twitch set` in the DM with me.", color=0x00ff00)
+            await self.discord_helper.sendEmbed(ctx.author, "Twitch Name", f"The Twitch name for {who} has been set to `{twitch_name}`.\n\nhttps://twitch.tv/{twitch_name}\n\nIf your twitch name changes in the future, you can use `.taco twitch set` in a discord channel, or `.twitch set` in the DM with me to set it.", color=0x00ff00)
 
 
     @twitch.command()
