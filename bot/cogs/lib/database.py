@@ -22,6 +22,14 @@ class Database():
     def remove_stream_team_request(self, guildId: int, userId: int):
         pass
 
+    def get_stream_team_requests(self, guildId: int):
+        pass
+
+    def set_user_twitch_info(self, userId: int, twitchId: str, twitchName: str):
+        pass
+    def get_user_twitch_info(self, userId: int):
+        pass
+
     def add_tacos(self, guildId: int, userId: int, count: int):
         pass
     def remove_tacos(self, guildId: int, userId: int, count: int):

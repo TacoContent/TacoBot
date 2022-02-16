@@ -60,6 +60,8 @@ class TacoBot():
             'bot.cogs.suggestions',
             'bot.cogs.tacopost',
             'bot.cogs.trivia',
+            'bot.cogs.restricted',
+            'bot.cogs.twitchinfo',
         ]
         for extension in initial_extensions:
             try:

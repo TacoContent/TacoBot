@@ -85,7 +85,7 @@ class Tacos(commands.Cog):
                 tacos_word = "tacos"
 
             self.db.add_tacos(guild_id, member.id, amount)
-            reason_msg = f"For just being Awesome!"
+            reason_msg = f"just being Awesome!"
             if reason:
                 reason_msg = f"{reason}"
 
@@ -121,6 +121,12 @@ class Tacos(commands.Cog):
             # get taco count for message author
             await ctx.message.delete()
             taco_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+            if not taco_settings:
+                # raise exception if there are no tacos settings
+                self.log.error(guild_id, "tacos.on_message", f"No tacos settings found for guild {guild_id}")
+                self.discord_helper.notify_bot_not_initialized(ctx, "tacos")
+                return
+
             if not taco_settings:
                 # raise exception if there are no tacos settings
                 raise Exception("No tacos settings found")
@@ -173,7 +179,9 @@ class Tacos(commands.Cog):
                 taco_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
                 if not taco_settings:
                     # raise exception if there are no tacos settings
-                    raise Exception("No tacos settings found")
+                    self.log.error(guild_id, "tacos.on_message", f"No tacos settings found for guild {guild_id}")
+                    self.discord_helper.notify_bot_not_initialized(ctx, "tacos")
+                    return
 
                 if message.type == discord.MessageType.premium_guild_subscription:
                     # add tacos to user that boosted the server
@@ -210,7 +218,8 @@ class Tacos(commands.Cog):
             taco_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
             if not taco_settings:
                 # raise exception if there are no tacos settings
-                raise Exception("No tacos settings found")
+                self.log.error(guild_id, "tacos.on_member_join", f"No tacos settings found for guild {guild_id}")
+                return
 
             join_count = taco_settings["join_count"]
             self.log.info(guild_id, _method, f"{member} joined the server")
@@ -245,7 +254,8 @@ class Tacos(commands.Cog):
                 taco_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
                 if not taco_settings:
                     # raise exception if there are no tacos settings
-                    raise Exception("No tacos settings found")
+                    self.log.error(guild_id, "tacos.on_raw_reaction_add", f"No tacos settings found for guild {guild_id}")
+                    return
 
                 reaction_count = taco_settings["reaction_count"]
                 reaction_reward_count = taco_settings["reaction_reward_count"]

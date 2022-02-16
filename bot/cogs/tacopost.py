@@ -63,6 +63,12 @@ class TacoPost(commands.Cog):
 
             # get the settings for tacopost out of the settings
             tacopost_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+            if not tacopost_settings:
+                # raise exception if there are no suggestion settings
+                self.log.error(guild_id, "tacopost.on_message", f"No tacopost settings found for guild {guild_id}")
+                self.discord_helper.notify_bot_not_initialized(message, "tacopost")
+                return
+
             # get the channels for tacopost out of the settings
             tacopost_channels = tacopost_settings['channels']
             # if channel.id is not in CHANNELS[].id return
@@ -92,8 +98,9 @@ class TacoPost(commands.Cog):
             taco_cost = [c for c in tacopost_channels if c['id'] == str(channel.id)][0]['cost']
             # get tacos count for user
             taco_count = self.db.get_tacos_count(guild_id, user.id)
+            print(f"taco_count: {taco_count}")
             # if user has doesnt have enough tacos, send a message, and delete their message
-            if taco_count < taco_cost:
+            if taco_count is None or taco_count < taco_cost:
                 await self.discord_helper.sendEmbed(channel, "Not Enough Tacos", f"{user.mention}, You need {taco_cost} tacos to post in this channel.", delete_after=15)
                 await message.delete()
             else:
