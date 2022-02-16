@@ -124,7 +124,7 @@ class Tacos(commands.Cog):
             if not taco_settings:
                 # raise exception if there are no tacos settings
                 self.log.error(guild_id, "tacos.on_message", f"No tacos settings found for guild {guild_id}")
-                self.discord_helper.notify_bot_not_initialized(ctx, "tacos")
+                await self.discord_helper.notify_bot_not_initialized(ctx, "tacos")
                 return
 
             if not taco_settings:
@@ -180,7 +180,7 @@ class Tacos(commands.Cog):
                 if not taco_settings:
                     # raise exception if there are no tacos settings
                     self.log.error(guild_id, "tacos.on_message", f"No tacos settings found for guild {guild_id}")
-                    self.discord_helper.notify_bot_not_initialized(ctx, "tacos")
+                    await self.discord_helper.notify_bot_not_initialized(ctx, "tacos")
                     return
 
                 if message.type == discord.MessageType.premium_guild_subscription:

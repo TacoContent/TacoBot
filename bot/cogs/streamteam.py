@@ -73,7 +73,7 @@ class StreamTeam(commands.Cog):
             if not streamteam_settings:
                 # raise exception if there are no streamteam settings
                 self.log.error(guild_id, "streamteam.on_message", f"No streamteam settings found for guild {guild_id}")
-                self.discord_helper.notify_bot_not_initialized(message, "streamteam")
+                await self.discord_helper.notify_bot_not_initialized(message, "streamteam")
                 return
 
             # get the reaction emoji
