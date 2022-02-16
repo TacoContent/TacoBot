@@ -57,7 +57,7 @@ class TacoBot():
             'bot.cogs.init',
             'bot.cogs.streamteam',
             'bot.cogs.tacos',
-            'bot.cogs.suggestions',
+            'bot.cogs.cbsuggestions',
             'bot.cogs.tacopost',
             'bot.cogs.trivia',
             'bot.cogs.restricted',

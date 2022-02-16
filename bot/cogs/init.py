@@ -8,6 +8,7 @@ import os
 import glob
 import typing
 import math
+import inspect
 
 from discord.ext.commands.cooldowns import BucketType
 from discord_slash import ComponentContext
@@ -24,7 +25,6 @@ from .lib import settings
 from .lib import mongo
 from .lib import dbprovider
 
-import inspect
 
 class InitHandler(commands.Cog):
     def __init__(self, bot):
