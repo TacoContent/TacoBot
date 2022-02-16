@@ -94,7 +94,7 @@ class TwitchInfo(commands.Cog):
         # if ctx.author is administrator, then we can get the twitch name from the database
         if twitch_info is None:
             if ctx.author.guild_permissions.administrator or check_member is None:
-                twitch_name = await self.discord_helper.ask_text(alt_ctx, "Twitch Name", "You have not yet told me your twitch name, please respond with your twitch name.", 60)
+                twitch_name = await self.discord_helper.ask_text(alt_ctx, "Twitch Name", "I do not have a twitch name set for {who}, please respond with the twitch name.", 60)
                 if not twitch_name is None:
                     self.db.set_user_twitch_info(ctx.author.id, None, twitch_name.lower().strip())
         else:
