@@ -117,11 +117,12 @@ class TwitchInfo(commands.Cog):
             if twitch_name is None:
                 twitch_name = await self.discord_helper.ask_text(ctx, channel, "Twitch Name", "You asked to set your twitch username, please respond with your twitch username.", 60)
             self.log.debug(0, _method, f"{ctx.author} requested to set twitch name {twitch_name}")
-            self.db.set_user_twitch_info(ctx.author.id, None, twitch_name.lower().strip())
-            await self.discord_helper.sendEmbed(channel, "Success", f"Your Twitch name has been set to {twitch_name}.\n\nIf you change your twitch name in the future, you can use `.taco twitch set` in a discord channel, or `.twitch set` in the DM with me.", color=0x00ff00, delete_after=30)
+            if twitch_name is not None:
+                twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
+                self.db.set_user_twitch_info(ctx.author.id, None, twitch_name)
+                await self.discord_helper.sendEmbed(channel, "Success", f"Your Twitch name has been set to {twitch_name}.\n\nIf you change your twitch name in the future, you can use `.taco twitch set` in a discord channel, or `.twitch set` in the DM with me.", color=0x00ff00, delete_after=30)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
-
 def setup(bot):
     bot.add_cog(TwitchInfo(bot))

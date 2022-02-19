@@ -138,8 +138,10 @@ class StreamTeam(commands.Cog):
                     ctx = collections.namedtuple("Context", ctx_dict.keys())(*ctx_dict.values())
                     twitch_name = await self.discord_helper.ask_text(ctx, user, "Twitch Name", f"You have requested to join the **{team_name}** twitch team, please respond with your twitch username.", 60)
                     if twitch_name:
+                        twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
+
                         self.log.debug(0, _method, f"{user} requested to set twitch name {twitch_user}")
-                        self.db.set_user_twitch_info(user.id, None, twitch_name.lower().strip())
+                        self.db.set_user_twitch_info(user.id, None, twitch_name)
                         await self.discord_helper.sendEmbed(user, "Success", f"Your Twitch name has been recorded as `{twitch_name}`. Keep an eye out for an invite soon.\n\nGo here: https://dashboard.twitch.tv/u/{twitch_name}/settings/channel\n\nTwitch Dashboard -> Settings -> Channel -> Featured Content => Scroll to the bottom.\n\nIf you change your twitch name in the future, you can use `.taco twitch set` in a discord channel, or `.twitch set` in the DM with me.", color=0x00ff00)
                 else:
                     twitch_name = twitch_user['twitch_name']
