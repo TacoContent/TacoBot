@@ -13,3 +13,4 @@ class SuggestionStates():
         self.CLOSED = "CLOSED"
         self.IMPLEMENTED = "IMPLEMENTED"
         self.CONSIDERED = "CONSIDERED"
+        self.DELETED = "DELETED"

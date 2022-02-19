@@ -96,7 +96,7 @@ class Suggestions(commands.Cog):
 
                     legend = [
                         { "name": "Voting", "value": f"{channel_settings['vote_up_emoji']} Up Vote\n{channel_settings['vote_neutral_emoji']} Neutral Vote\n{channel_settings['vote_down_emoji']} Down Vote", "inline": True },
-                        { "name": "🛡 Actions", "value": f"{channel_settings['admin_approve_emoji']} Approve\n{channel_settings['admin_consider_emoji']} Consider\n{channel_settings['admin_implemented_emoji']} Implemented\n{channel_settings['admin_reject_emoji']} Reject\n{channel_settings['admin_close_emoji']} Close\n{channel_settings['admin_delete_emoji']} Delete", "inline": True },
+                        { "name": "🛡 Actions", "value": f"{channel_settings['admin_approve_emoji']} Approved\n{channel_settings['admin_consider_emoji']} Considered\n{channel_settings['admin_implemented_emoji']} Implemented\n{channel_settings['admin_reject_emoji']} Rejected\n{channel_settings['admin_close_emoji']} Closed\n{channel_settings['admin_delete_emoji']} Deleted", "inline": True },
                     ]
 
                     s_message = await self.discord_helper.sendEmbed(response_channel, f"{suggestion_title}", message=f"{suggestion_message}", author=ctx.author, fields=legend)
@@ -174,9 +174,15 @@ class Suggestions(commands.Cog):
             else:
                 channel_settings = channel_settings[0]
 
-            log_channel = await self.discord_helper.get_or_fetch_channel(int(channel_settings['log_channel_id']))
+            log_channel = None
+            if 'log_channel_id' in channel_settings and channel_settings['log_channel_id'] != "":
+                log_channel = await self.discord_helper.get_or_fetch_channel(int(channel_settings['log_channel_id']))
 
-            vote_emoji = [ channel_settings["vote_up_emoji"], channel_settings["vote_neutral_emoji"] , channel_settings["vote_down_emoji"] ]
+            vote_emoji = [
+                channel_settings["vote_up_emoji"],
+                channel_settings["vote_neutral_emoji"],
+                channel_settings["vote_down_emoji"]
+            ]
             admin_emoji = [
                 channel_settings["admin_approve_emoji"],
                 channel_settings["admin_consider_emoji"],
@@ -184,7 +190,7 @@ class Suggestions(commands.Cog):
                 channel_settings["admin_reject_emoji"],
                 channel_settings["admin_close_emoji"],
                 channel_settings["admin_delete_emoji"]
-                ]
+            ]
 
             if str(payload.emoji) in vote_emoji:
                 # vote up or down
@@ -216,60 +222,78 @@ class Suggestions(commands.Cog):
                     ctx = self.discord_helper.create_context(bot=self.bot, author=user, guild=None, channel=None, message=None)
                     reason = await self.discord_helper.ask_text(ctx, user, "Approve Suggestion", "Please enter a reason for approving this suggestion.", timeout=60) or "No reason given."
                     self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.APPROVED, user.id, reason)
-                    await self.close_suggestion(message, states.APPROVED, user, reason, author=author)
+                    await self.update_suggestion_state(message, states.APPROVED, user, reason, author=author)
                 elif str(payload.emoji) == channel_settings["admin_consider_emoji"]:
                     self.log.debug(guild_id, "suggestions.on_raw_reaction_add", f"{user.name} considered suggestion {suggestion['id']}")
                     # build ctx to pass to the ask_text function
                     ctx = self.discord_helper.create_context(bot=self.bot, author=user, guild=None, channel=None, message=None)
                     reason = await self.discord_helper.ask_text(ctx, user, "Consider Suggestion", "Please enter a reason for considering this suggestion.", timeout=60) or "No reason given."
                     self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.CONSIDERED, user.id, reason)
-                    await self.close_suggestion(message, states.CONSIDERED, user, reason, author=author)
+                    await self.update_suggestion_state(message, states.CONSIDERED, user, reason, author=author)
                 elif str(payload.emoji) == channel_settings["admin_implemented_emoji"]:
                     self.log.debug(guild_id, "suggestions.on_raw_reaction_add", f"{user.name} implemented suggestion {suggestion['id']}")
                     # build ctx to pass to the ask_text function
                     ctx = self.discord_helper.create_context(bot=self.bot, author=user, guild=None, channel=None, message=None)
                     reason = await self.discord_helper.ask_text(ctx, user, "Implement Suggestion", "Please enter a reason for implementing this suggestion.", timeout=60) or "No reason given."
                     self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.IMPLEMENTED, user.id, reason)
-                    await self.close_suggestion(message, states.IMPLEMENTED, user, reason, author=author)
+                    await self.update_suggestion_state(message, states.IMPLEMENTED, user, reason, author=author)
                 elif str(payload.emoji) == channel_settings["admin_reject_emoji"]:
                     self.log.debug(guild_id, "suggestions.on_raw_reaction_add", f"{user.name} rejected suggestion {suggestion['id']}")
                     # build ctx to pass to the ask_text function
                     ctx = self.discord_helper.create_context(bot=self.bot, author=user, guild=None, channel=None, message=None)
                     reason = await self.discord_helper.ask_text(ctx, user, "Reject Suggestion", "Please enter a reason for rejecting this suggestion.", timeout=60) or "No reason given."
                     self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.REJECTED, user.id, reason)
-                    await self.close_suggestion(message, states.REJECTED, user, reason, author=author)
+                    await self.update_suggestion_state(message, states.REJECTED, user, reason, author=author)
                 elif str(payload.emoji) == channel_settings["admin_close_emoji"]:
                     # close the suggestion and move it to the archive
                     self.log.debug(guild_id, "suggestions.on_raw_reaction_add", f"{user.name} closed suggestion {suggestion['id']}")
+
+
+                    # get the current state of the suggestion
+                    state = suggestion['state']
+                    self.log.debug(guild_id, "suggestions.on_raw_reaction_add", f"Current state of the suggestion is {state}")
+                    close_state_color = self.get_color_for_state(state)
+                    self.log.debug(guild_id, "suggestions.on_raw_reaction_add", f"Close state color is {close_state_color}")
+
                     # build ctx to pass to the ask_text function
                     ctx = self.discord_helper.create_context(bot=self.bot, author=user, guild=None, channel=None, message=None)
                     reason = await self.discord_helper.ask_text(ctx, user, "Close Suggestion", "Please enter a reason for closing this suggestion.", timeout=60) or "Closed by admin."
                     self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.CLOSED, user.id, reason)
-                    await self.close_suggestion(message, states.CLOSED, user, reason, author=author)
+                    await self.update_suggestion_state(message, states.CLOSED, user, reason, author=author, color=close_state_color)
                     # move it to the archive channel
-                    if log_channel:
-                        # add fields with the votes
-                        # get the votes from the database
-                        votes = self.db.get_suggestion_votes_by_id(suggestion['id'])
-                        # get count of each type of vote. either -1, 0, or 1
-                        up_votes = [ vote for vote in votes if vote['vote'] == 1 ] or []
-                        neutral_votes = [ vote for vote in votes if vote['vote'] == 0 ] or []
-                        down_votes = [ vote for vote in votes if vote['vote'] == -1 ] or []
-                        remove_fields = [
-                            { "name": "Voting" },
-                            { "name": "🛡 Actions" }
-                        ]
-                        # rogelioVzz98 - hosted the channel
-                        fields = [
-                            { "name": "Votes", "value": f"{channel_settings['vote_up_emoji']} {len(up_votes)} Up Votes\n{channel_settings['vote_neutral_emoji']} {len(neutral_votes)} Neutral Votes\n{channel_settings['vote_down_emoji']} {len(down_votes)} Down Votes" },
-                        ]
-                        await self.discord_helper.move_message(message, log_channel, author=author, who = user, reason = reason, fields=fields, remove_fields = remove_fields)
-                        await message.delete()
-                    else:
-                        self.log.debug(guild_id, "suggestions.on_raw_reaction_add", f"{user.name} tried to close suggestion {suggestion['id']} but there is no log channel")
-                        await self.discord_helper.sendEmbed(user, "No log channel", f"There is no log channel configured. Please make sure `.taco init suggestions` was ran.", color=0xff0000, delete_after=30)
-                        # if no log channel. Set status to no longer "answer" to votes.
-                        return
+                    if log_channel is None:
+                        self.log.debug(guild_id, "suggestions.on_raw_reaction_add", f"No log suggestion channel. Will use message suggestion channel instead.")
+                        log_channel = message.channel
+
+                    # add fields with the votes
+                    # get the votes from the database
+                    votes = self.db.get_suggestion_votes_by_id(suggestion['id'])
+                    # get count of each type of vote. either -1, 0, or 1
+                    up_votes = [ vote for vote in votes if vote['vote'] == 1 ] or []
+                    up_word = "Vote" if len(up_votes) == 1 else "Votes"
+                    neutral_votes = [ vote for vote in votes if vote['vote'] == 0 ] or []
+                    neutral_word = "Vote" if len(neutral_votes) == 1 else "Votes"
+                    down_votes = [ vote for vote in votes if vote['vote'] == -1 ] or []
+                    down_word = "Vote" if len(down_votes) == 1 else "Votes"
+
+                    remove_fields = [
+                        { "name": "Voting" },
+                        { "name": "🛡 Actions" }
+                    ]
+                    # rogelioVzz98 - hosted the channel
+                    fields = [
+                        { "name": "Votes", "value": f"{channel_settings['vote_up_emoji']} {len(up_votes)} Up {up_word}\n{channel_settings['vote_neutral_emoji']} {len(neutral_votes)} Neutral {neutral_word}\n{channel_settings['vote_down_emoji']} {len(down_votes)} Down {down_word}" },
+                    ]
+                    await self.discord_helper.move_message(message, log_channel, author=author, who = user, reason = reason, fields=fields, remove_fields = remove_fields)
+                    await message.delete()
+                elif str(payload.emoji) == channel_settings["admin_delete_emoji"]:
+                    # delete the suggestion
+                    self.log.debug(guild_id, "suggestions.on_raw_reaction_add", f"{user.name} deleted suggestion {suggestion['id']}")
+                    # build ctx to pass to the ask_text function
+                    ctx = self.discord_helper.create_context(bot=self.bot, author=user, guild=None, channel=None, message=None)
+                    reason = await self.discord_helper.ask_text(ctx, user, "Delete Suggestion", "Please enter a reason for deleting this suggestion.", timeout=60) or "Deleted by admin."
+                    self.db.delete_suggestion_by_id(guild_id, suggestion['id'], user.id, reason=reason)
+                    await message.delete()
 
             else:
                 # unknown emoji. remove it
@@ -305,7 +329,6 @@ class Suggestions(commands.Cog):
                 return
 
             author = await self.discord_helper.get_or_fetch_user(int(suggestion['author_id']))
-            print(f"author: {author}")
 
             ss = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
             if not ss:
@@ -360,58 +383,58 @@ class Suggestions(commands.Cog):
                     if reject_count <= 0:
                         if implemented_count != 0:
                             self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.IMPLEMENTED, user.id, "Reject State Was Removed")
-                            await self.close_suggestion(message, states.IMPLEMENTED, user, "Reject State Was Removed", author=author)
+                            await self.update_suggestion_state(message, states.IMPLEMENTED, user, "Reject State Was Removed", author=author)
                         elif consider_count != 0:
                             self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.CONSIDERED, user.id, "Reject State Was Removed")
-                            await self.close_suggestion(message, states.CONSIDERED, user, "Reject State Was Removed", author=author)
+                            await self.update_suggestion_state(message, states.CONSIDERED, user, "Reject State Was Removed", author=author)
                         elif approve_count != 0:
                             self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.APPROVED, user.id, "Reject State Was Removed")
-                            await self.close_suggestion(message, states.APPROVED, user, "Reject State Was Removed", author=author)
+                            await self.update_suggestion_state(message, states.APPROVED, user, "Reject State Was Removed", author=author)
                         else:
                             self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.ACTIVE, user.id, "Reject State Was Removed")
-                            await self.close_suggestion(message, states.ACTIVE, user, "Reject State Was Removed", author=author)
+                            await self.update_suggestion_state(message, states.ACTIVE, user, "Reject State Was Removed", author=author)
                 elif str(payload.emoji) == channel_settings["admin_implemented_emoji"]:
                     if implemented_count <= 0:
                         if reject_count > 0:
                             self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.REJECTED, user.id, "Implemented State Was Removed")
-                            await self.close_suggestion(message, states.REJECTED, user, "Implemented State Was Removed", author=author)
+                            await self.update_suggestion_state(message, states.REJECTED, user, "Implemented State Was Removed", author=author)
                         elif consider_count > 0:
                             self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.CONSIDERED, user.id, "Implemented State Was Removed")
-                            await self.close_suggestion(message, states.CONSIDERED, user, "Reject State Was Removed", author=author)
+                            await self.update_suggestion_state(message, states.CONSIDERED, user, "Reject State Was Removed", author=author)
                         elif approve_count > 0:
                             self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.APPROVED, user.id, "Implemented State Was Removed")
-                            await self.close_suggestion(message, states.APPROVED, user, "Reject State Was Removed", author=author)
+                            await self.update_suggestion_state(message, states.APPROVED, user, "Reject State Was Removed", author=author)
                         else:
                             self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.ACTIVE, user.id, "Implemented State Was Removed")
-                            await self.close_suggestion(message, states.ACTIVE, user, "Reject State Was Removed", author=author)
+                            await self.update_suggestion_state(message, states.ACTIVE, user, "Reject State Was Removed", author=author)
                 elif str(payload.emoji) == channel_settings["admin_consider_emoji"]:
                     if consider_count <= 0:
                         if reject_count > 0:
                             self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.REJECTED, user.id, "Consider State Was Removed")
-                            await self.close_suggestion(message, states.REJECTED, user, "Consider State Was Removed", author=author)
+                            await self.update_suggestion_state(message, states.REJECTED, user, "Consider State Was Removed", author=author)
                         elif implemented_count > 0:
                             self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.IMPLEMENTED, user.id, "Consider State Was Removed")
-                            await self.close_suggestion(message, states.IMPLEMENTED, user, "Consider State Was Removed", author=author)
+                            await self.update_suggestion_state(message, states.IMPLEMENTED, user, "Consider State Was Removed", author=author)
                         elif approve_count > 0:
                             self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.APPROVED, user.id, "Consider State Was Removed")
-                            await self.close_suggestion(message, states.APPROVED, user, "Consider State Was Removed", author=author)
+                            await self.update_suggestion_state(message, states.APPROVED, user, "Consider State Was Removed", author=author)
                         else:
                             self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.ACTIVE, user.id, "Consider State Was Removed")
-                            await self.close_suggestion(message, states.ACTIVE, user, "Consider State Was Removed", author=author)
+                            await self.update_suggestion_state(message, states.ACTIVE, user, "Consider State Was Removed", author=author)
                 elif str(payload.emoji) == channel_settings["admin_approve_emoji"]:
                     if approve_count <= 0:
                         if reject_count > 0:
                             self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.REJECTED, user.id, "Approve State Was Removed")
-                            await self.close_suggestion(message, states.REJECTED, user, "Approve State Was Removed", author=author)
+                            await self.update_suggestion_state(message, states.REJECTED, user, "Approve State Was Removed", author=author)
                         elif implemented_count > 0:
                             self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.IMPLEMENTED, user.id, "Approve State Was Removed")
-                            await self.close_suggestion(message, states.IMPLEMENTED, user, "Approve State Was Removed", author=author)
+                            await self.update_suggestion_state(message, states.IMPLEMENTED, user, "Approve State Was Removed", author=author)
                         elif consider_count > 0:
                             self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.CONSIDERED, user.id, "Approve State Was Removed")
-                            await self.close_suggestion(message, states.CONSIDERED, user, "Approve State Was Removed", author=author)
+                            await self.update_suggestion_state(message, states.CONSIDERED, user, "Approve State Was Removed", author=author)
                         else:
                             self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.ACTIVE, user.id, "Approve State Was Removed")
-                            await self.close_suggestion(message, states.ACTIVE, user, "Approve State Was Removed", author=author)
+                            await self.update_suggestion_state(message, states.ACTIVE, user, "Approve State Was Removed", author=author)
             else:
                 # unknown emoji. remove it
                 pass
@@ -420,25 +443,43 @@ class Suggestions(commands.Cog):
             self.log.error(guild_id, "trivia", str(e), traceback.format_exc())
             return
 
-    async def close_suggestion(self, message, state: str, user: discord.User, reason: str, author: discord.User = None):
+    async def update_suggestion_state(self, message, state: str, user: discord.User, reason: str, author: discord.User = None, color = None):
         if not state:
             return
         states = models.SuggestionStates()
         if not message or len(message.embeds) == 0:
             return
-        if state == states.APPROVED:
-            color = 0x00ff00
-        elif state == states.CONSIDERED:
-            color = 0xffff00
-        elif state == states.IMPLEMENTED:
-            color = 0xaaaaaa
-        elif state == states.REJECTED:
-            color = 0xff0000
-        else: # active
-            color = 0x7289da
+        # get the state before it was closed to determine the color to use
+        if color is None:
+            color = self.get_color_for_state(state)
+
         # get the date and time now formatted MM/dd/yyyy HH:mm:ss
         now = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
         fields = [ {"name": f"{state} @ {now}", "value": f"{user.mention}: {reason}", "inline": False }]
         await self.discord_helper.updateEmbed(message, fields=fields, color=color, author=author)
+
+    def get_color_for_state(self, state: str):
+        states = models.SuggestionStates()
+
+        self.log.debug(0, "get_color_for_state", f"The state is {state}")
+        if state == states.APPROVED:
+            self.log.debug(0, "get_color_for_state", f"The state matches {states.APPROVED}")
+            return 0x00ff00
+        elif state == states.CONSIDERED:
+            self.log.debug(0, "get_color_for_state", f"The state matches {states.CONSIDERED}")
+            return 0xffff00
+        elif state == states.IMPLEMENTED:
+            self.log.debug(0, "get_color_for_state", f"The state matches {states.IMPLEMENTED}")
+            return 0xaaaaaa
+        elif state == states.REJECTED:
+            self.log.debug(0, "get_color_for_state", f"The state matches {states.REJECTED}")
+            return 0xff0000
+        elif state == states.ACTIVE:
+            self.log.debug(0, "get_color_for_state", f"The state matches {states.ACTIVE}")
+            return 0x7289da
+        elif state == states.CLOSED:
+            self.log.debug(0, "get_color_for_state", f"The state matches {states.CLOSED}")
+            return None
+
 def setup(bot):
     bot.add_cog(Suggestions(bot))

@@ -42,7 +42,7 @@ class DiscordHelper():
         ctx = collections.namedtuple("Context", ctx_dict.keys())(*ctx_dict.values())
         return ctx
 
-    async def move_message(self, message, targetChannel, author: discord.User = None, who: discord.User = None, reason: str = None, fields = None, remove_fields = None):
+    async def move_message(self, message, targetChannel, author: discord.User = None, who: discord.User = None, reason: str = None, fields = None, remove_fields = None, color: int = None):
         if not message:
             return
         if not targetChannel:
@@ -60,10 +60,16 @@ class DiscordHelper():
                 description = f"{embed.description}"
                 # lib3ration 500 bits: oh look a Darth Fajitas
                 embed_fields = embed.fields
+                if color is None and embed.color is not None:
+                    color = embed.color
+
             if who:
                 footer = f"Moved by {who.name}#{who.discriminator} - {reason or 'No reason given'}"
 
-            target_embed = discord.Embed(title=title, description=description, color=0x7289da)
+            if color is None:
+                color = 0x7289da
+
+            target_embed = discord.Embed(title=title, description=description, color=color)
             target_embed.set_author(name=author.name, icon_url=author.avatar_url)
             if footer:
                 target_embed.set_footer(text=footer)

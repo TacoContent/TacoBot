@@ -500,6 +500,7 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
+
     def unvote_suggestion(self, guildId: int, messageId: int, userId: int ):
         try:
             if self.connection is None:
@@ -591,6 +592,32 @@ class MongoDatabase(database.Database):
             }
             # insert the suggestion for the guild in to the database with key name and timestamp
             self.connection.suggestions.insert_one( payload )
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def delete_suggestion_by_id(self, guildId: int, suggestionId: str, userId: int, reason: str):
+        try:
+            if self.connection is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            states = models.SuggestionStates()
+            state = states.DELETED
+            payload = {
+                "guild_id": str(guildId),
+                "id": suggestionId,
+            }
+            action_payload = {
+                "state": state.upper().strip(),
+                "user_id": str(userId),
+                "reason": reason,
+                "timestamp": timestamp
+            }
+            # insert the suggestion into the database
+            self.connection.suggestions.update_one({ "guild_id": str(guildId), "id": str(suggestionId) }, { "$set": { "state": state }, "$push": { "actions": action_payload } }, upsert=True)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
