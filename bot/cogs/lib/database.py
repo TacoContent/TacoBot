@@ -51,5 +51,12 @@ class Database():
     def get_settings(self, guildId: int, name:str):
         pass
 
+    def get_suggestion(self, guildId: int, messageId: int):
+        pass
+    def get_suggestion_by_id(self, guildId: int, suggestionId: str):
+        pass
+    def add_suggestion(self, guildId: int, messageId: int, suggestion: dict):
+        pass
+
     def UPDATE_SCHEMA(self):
         pass

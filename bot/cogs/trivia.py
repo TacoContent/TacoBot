@@ -44,8 +44,7 @@ class Trivia(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "trivia.__init__", f"DB Provider {self.settings.db_provider.name}")
-        self.log.debug(0, "trivia.__init__", f"Logger initialized with level {log_level.name}")
+        self.log.debug(0, "trivia.__init__", "Initialized")
 
         # self.bot.loop.create_task(self.trivia_init())
     # async def trivia_init(self):

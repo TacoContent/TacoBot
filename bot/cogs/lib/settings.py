@@ -14,7 +14,6 @@ class Settings:
     def __init__(self):
         try:
             with open('app.manifest', encoding="UTF-8") as json_file:
-                print(f"load app mainfest")
                 self.__dict__.update(json.load(json_file))
         except Exception as e:
             print(e, file=sys.stderr)

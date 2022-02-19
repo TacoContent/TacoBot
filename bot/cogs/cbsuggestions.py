@@ -45,8 +45,7 @@ class SuggestionHelper(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "suggestions.__init__", f"DB Provider {self.settings.db_provider.name}")
-        self.log.debug(0, "suggestions.__init__", f"Logger initialized with level {log_level.name}")
+        self.log.debug(0, "cbsuggestions.__init__", "Initialized")
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -66,7 +65,7 @@ class SuggestionHelper(commands.Cog):
             suggestion_settings = self.settings.get_settings(self.db, message.guild.id, self.SETTINGS_SECTION)
             if not suggestion_settings:
                 # raise exception if there are no suggestion settings
-                self.log.debug(guild_id, "suggestions.on_message", f"No suggestion settings found for guild {guild_id}")
+                self.log.debug(guild_id, "cbsuggestions.on_message", f"No suggestion settings found for guild {guild_id}")
                 raise Exception("No suggestion settings found")
 
             # get the suggestion channel ids from settings
@@ -106,8 +105,8 @@ class SuggestionHelper(commands.Cog):
                         # thank them for the suggestion
                         await self.discord_helper.sendEmbed(message.channel, "Suggestions", f"{message.author.mention}, Thank you for the suggestion! We will look into it as soon as possible.\n\nI have given you {taco_suggest_amount} {taco_word}🌮.", delete_after=10)
         except Exception as e:
-            self.log.error(guild_id, "suggestions.on_message", f"{e}")
-            self.log.error(guild_id, "suggestions.on_message", f"{traceback.format_exc()}")
+            self.log.error(guild_id, "cbsuggestions.on_message", f"{e}")
+            self.log.error(guild_id, "cbsuggestions.on_message", f"{traceback.format_exc()}")
 
 def setup(bot):
     bot.add_cog(SuggestionHelper(bot))

@@ -16,19 +16,19 @@ class Events(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.settings = settings.Settings()
+        self.SETTINGS_SECTION = "tacobot"
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "events.__init__", f"DB Provider {self.settings.db_provider.name}")
-        self.log.debug(0, "events.__init__", f"Logger initialized with level {log_level.name}")
-
+        self.log.debug(0, "events.__init__", "Initialized")
 
 
     @commands.Cog.listener()
     async def on_ready(self):
         self.log.debug(0, "events.on_ready", f"Logged in as {self.bot.user.name}:{self.bot.user.id}")
+        # TODO: load this from the database
         self.log.debug(0, "events.on_ready", f"Setting Bot Presence '🌮 Taco; Not Just For Tuesday's 🌮'")
         await self.bot.change_presence(activity=discord.Game(name="🌮 Taco; Not Just For Tuesday's 🌮"))
 

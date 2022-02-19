@@ -41,8 +41,7 @@ class StreamTeam(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "streamteam.__init__", f"DB Provider {self.settings.db_provider.name}")
-        self.log.debug(0, "streamteam.__init__", f"Logger initialized with level {log_level.name}")
+        self.log.debug(0, "streamteam.__init__", "Initialized")
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):
@@ -137,7 +136,7 @@ class StreamTeam(commands.Cog):
                 if not twitch_user:
                     ctx_dict = {"bot": self.bot, "author": user, "guild": None, "channel": None}
                     ctx = collections.namedtuple("Context", ctx_dict.keys())(*ctx_dict.values())
-                    twitch_name = await self.discord_helper.ask_text(ctx, "Twitch Name", f"You have requested to join the **{team_name}** twitch team, please respond with your twitch username.", 60)
+                    twitch_name = await self.discord_helper.ask_text(ctx, user, "Twitch Name", f"You have requested to join the **{team_name}** twitch team, please respond with your twitch username.", 60)
                     if twitch_name:
                         self.log.debug(0, _method, f"{user} requested to set twitch name {twitch_user}")
                         self.db.set_user_twitch_info(user.id, None, twitch_name.lower().strip())

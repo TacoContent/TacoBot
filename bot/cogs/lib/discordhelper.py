@@ -7,6 +7,7 @@ import sys
 import os
 import glob
 import typing
+import collections
 
 from discord.ext.commands.cooldowns import BucketType
 from discord_slash import ComponentContext
@@ -36,17 +37,96 @@ class DiscordHelper():
             log_level = loglevel.LogLevel.DEBUG
         self.log = logger.Log(minimumLogLevel=log_level)
 
+    def create_context(self, bot = None, author = None, guild = None, channel = None, message = None, **kwargs):
+        ctx_dict = {"bot": bot, "author": author, "guild": None, "channel": None, "message": None}
+        ctx = collections.namedtuple("Context", ctx_dict.keys())(*ctx_dict.values())
+        return ctx
 
-    async def sendEmbed(self, channel, title, message, fields=None, delete_after=None, footer=None, components=None, color=0x7289da):
+    async def move_message(self, message, targetChannel, author: discord.User = None, who: discord.User = None, reason: str = None, fields = None, remove_fields = None):
+        if not message:
+            return
+        if not targetChannel:
+            return
+        if not author:
+            author = message.author
+
+        try:
+            if len(message.embeds) == 0:
+                description = f"{message.content}"
+                title = ""
+            else:
+                embed = message.embeds[0]
+                title = embed.title
+                description = f"{embed.description}"
+                # lib3ration 500 bits: oh look a Darth Fajitas
+                embed_fields = embed.fields
+            if who:
+                footer = f"Moved by {who.name}#{who.discriminator} - {reason or 'No reason given'}"
+
+            target_embed = discord.Embed(title=title, description=description, color=0x7289da)
+            target_embed.set_author(name=author.name, icon_url=author.avatar_url)
+            if footer:
+                target_embed.set_footer(text=footer)
+            else:
+                target_embed.set_footer(text=f'Developed by {self.settings.author}')
+            for f in [ ef for ef in embed_fields if ef.name not in [ rfi['name'] for rfi in remove_fields ]]:
+                target_embed.add_field(name=f.name, value=f.value, inline=f.inline)
+            if fields is not None:
+                for f in [ rf for rf in fields if rf['name'] not in [ rfi['name'] for rfi in remove_fields ] ]:
+                    target_embed.add_field(name=f['name'], value=f['value'], inline=f['inline'] if 'inline' in f else False)
+
+            await targetChannel.send(embed=target_embed)
+        except Exception as ex:
+            self.log.error(0, "move_message", str(ex), traceback.format_exc())
+
+    async def sendEmbed(self, channel, title, message, fields=None, delete_after=None, footer=None, components=None, color=0x7289da, author=None):
+        if color is None:
+            color = 0x7289da
         embed = discord.Embed(title=title, description=message, color=color)
+        if author:
+            embed.set_author(name=author.name, icon_url=author.avatar_url)
+        if embed.fields is not None:
+            for f in embed.fields:
+                embed.add_field(name=f['name'], value=f['value'], inline=f['inline'] if 'inline' in f else False)
         if fields is not None:
             for f in fields:
-                embed.add_field(name=f['name'], value=f['value'], inline='false')
+                embed.add_field(name=f['name'], value=f['value'], inline=f['inline'] if 'inline' in f else False)
         if footer is None:
             embed.set_footer(text=f'Developed by {self.settings.author}')
         else:
             embed.set_footer(text=footer)
         return await channel.send(embed=embed, delete_after=delete_after, components=components)
+
+    async def updateEmbed(self, message, title = None, description = None, description_append: bool = True, fields = None, footer = None, components = None, color = 0x7289da, author = None):
+        if not message or len(message.embeds) == 0:
+            return
+        if color is None:
+            color = 0x7289da
+        embed = message.embeds[0]
+        if title is None:
+            title = embed.title
+        if description is not None:
+            if description_append:
+                description = embed.description + "\n\n" + description
+            else:
+                description = description
+        else:
+            description = embed.description
+        updated_embed = discord.Embed(color=color, title=embed.title, description=f"{description}", footer=embed.footer)
+        for f in embed.fields:
+            updated_embed.add_field(name=f.name, value=f.value, inline=f.inline)
+        if fields is not None:
+            for f in fields:
+                updated_embed.add_field(name=f['name'], value=f['value'], inline=f['inline'] if 'inline' in f else False)
+        if footer is None:
+            updated_embed.set_footer(text=f'Developed by {self.settings.author}')
+        else:
+            updated_embed.set_footer(text=footer)
+
+        if author:
+            updated_embed.set_author(name=f"{author.name}#{author.discriminator}", icon_url=author.avatar_url)
+
+        await message.edit(embed=updated_embed)
 
     async def notify_of_error(self, ctx):
         await self.sendEmbed(ctx.channel, "Error", f'{ctx.author.mention}, There was an error trying to complete your request. The error has been logged. I am very sorry.', delete_after=30)
@@ -100,6 +180,30 @@ class DiscordHelper():
             self.log.error(0, _method, str(ex), traceback.format_exc())
             return None
 
+    async def get_or_fetch_member(self, guildId: int, userId: int):
+        _method = inspect.stack()[1][3]
+        try:
+            if not guildId:
+                return None
+            guild = self.bot.get_guild(guildId)
+            if not guild:
+                guild = await self.bot.fetch_guild(guildId)
+            if not guild:
+                return None
+
+            if userId:
+                user = guild.get_member(userId)
+                if not user:
+                    user = await guild.fetch_member(userId)
+                return user
+            return None
+        except discord.errors.NotFound as nf:
+            self.log.warn(0, _method, str(nf), traceback.format_exc())
+            return None
+        except Exception as ex:
+            self.log.error(0, _method, str(ex), traceback.format_exc())
+            return None
+
     async def get_or_fetch_channel(self, channelId: int):
         _method = inspect.stack()[1][3]
         try:
@@ -125,22 +229,22 @@ class DiscordHelper():
         else:
             return None
 
-    async def ask_yes_no(self, ctx, question: str, title: str = "TacoBot"):
-        guild_id = ctx.guild.id
+    async def ask_yes_no(self, ctx, targetChannel, question: str, title: str = "TacoBot", timeout: int = 60):
         def check_user(m):
             same = m.author.id == ctx.author.id
             return same
+        channel = targetChannel if targetChannel else ctx.channel if ctx.channel else ctx.author
         buttons = [
             create_button(style=ButtonStyle.green, label="Yes", custom_id="YES"),
             create_button(style=ButtonStyle.red, label="No", custom_id="NO")
         ]
         yes_no = False
         action_row = create_actionrow(*buttons)
-        yes_no_req = await self.sendEmbed(ctx.channel, title, question, components=[action_row], delete_after=60, footer="You have 60 seconds to respond.")
+        yes_no_req = await self.sendEmbed(channel, title, question, components=[action_row], delete_after=60, footer="You have 60 seconds to respond.")
         try:
             button_ctx: ComponentContext = await wait_for_component(self.bot, check=check_user, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
-            await self.sendEmbed(ctx.channel, title, "You took too long to respond", delete_after=5)
+            await self.sendEmbed(channel, title, "You took too long to respond", delete_after=5)
         else:
             yes_no = utils.str2bool(button_ctx.custom_id)
             await yes_no_req.delete()
@@ -220,17 +324,17 @@ class DiscordHelper():
             await number_ask.delete()
         return numberValue
 
-    async def ask_text(self, ctx, title: str = "Enter Text Response", message: str = "Please enter your response.", timeout: int = 60):
+    async def ask_text(self, ctx, targetChannel, title: str = "Enter Text Response", message: str = "Please enter your response.", timeout: int = 60, color=None):
         def check_user(m):
             same = m.author.id == ctx.author.id
             return same
-        channel = ctx.channel
+        channel = targetChannel if targetChannel else ctx.channel if ctx.channel else ctx.author
         delete_user_message = True
         if not ctx.guild:
             channel = ctx.author
             delete_user_message = False
 
-        text_ask = await self.sendEmbed(channel, title, f'{message}', delete_after=timeout, footer=f"You have {timeout} seconds to respond.")
+        text_ask = await self.sendEmbed(channel, title, f'{message}', delete_after=timeout, footer=f"You have {timeout} seconds to respond.", color=color)
         try:
             textResp = await self.bot.wait_for('message', check=check_user, timeout=timeout)
         except asyncio.TimeoutError:
@@ -238,7 +342,10 @@ class DiscordHelper():
             return None
         else:
             if delete_user_message:
-                await textResp.delete()
+                try:
+                    await textResp.delete()
+                except:
+                    pass
             await text_ask.delete()
         return textResp.content
 
@@ -295,3 +402,10 @@ class DiscordHelper():
             else:
                 await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, Unknown Role.", delete_after=5)
                 return None
+
+    async def is_admin(self, guildId: int, userId: int):
+        member = await self.get_or_fetch_member(guildId, userId)
+        if not member:
+            return False
+        # does the user have admin permissions?
+        return member.guild_permissions.administrator

@@ -50,6 +50,7 @@ class TacoBot():
             case_insensitive=True,
             intents=discord.Intents.all()
         )
+        self.bot.remove_command("help")
 
         initial_extensions = [
             'bot.cogs.help',
@@ -57,7 +58,8 @@ class TacoBot():
             'bot.cogs.init',
             'bot.cogs.streamteam',
             'bot.cogs.tacos',
-            'bot.cogs.cbsuggestions',
+            # 'bot.cogs.cbsuggestions',
+            'bot.cogs.suggestions',
             'bot.cogs.tacopost',
             'bot.cogs.trivia',
             'bot.cogs.restricted',
@@ -72,7 +74,6 @@ class TacoBot():
 
         slash = SlashCommand(self.bot, override_type = True, sync_commands = True)
 
-        self.bot.remove_command("help")
         self.bot.run(self.DISCORD_TOKEN)
 
     def initDB(self):
