@@ -38,7 +38,7 @@ class DiscordHelper():
         self.log = logger.Log(minimumLogLevel=log_level)
 
     def create_context(self, bot = None, author = None, guild = None, channel = None, message = None, **kwargs):
-        ctx_dict = {"bot": bot, "author": author, "guild": None, "channel": None, "message": None}
+        ctx_dict = {"bot": bot, "author": author, "guild": guild, "channel": channel, "message": message}
         ctx = collections.namedtuple("Context", ctx_dict.keys())(*ctx_dict.values())
         return ctx
 
@@ -255,6 +255,53 @@ class DiscordHelper():
             yes_no = utils.str2bool(button_ctx.custom_id)
             await yes_no_req.delete()
         return yes_no
+
+    async def wait_for_user_invoke_cleanup(self, ctx):
+        try:
+            guild_id = ctx.guild.id
+            channel = ctx.channel
+
+            waiting_invokes = self.db.get_wait_invokes(guildId=guild_id, channelId=channel.id)
+            if waiting_invokes:
+                for w in waiting_invokes:
+                    wi_message_id = int(w['message_id'])
+                    if wi_message_id:
+                        self.log.debug(guild_id, "suggestions.on_ready", f"Found waiting invoke {w['message_id']}")
+                        wi_message = await channel.fetch_message(wi_message_id)
+                        if wi_message:
+                            await wi_message.delete()
+                            self.log.debug(guild_id, "suggestions.on_ready", f"Deleted waiting invoke {w['message_id']}")
+                            self.db.untrack_wait_invoke(guildId=guild_id, channelId=channel.id, messageId=wi_message_id)
+        except Exception as e:
+            self.log.error(guild_id, "suggestions.on_ready", str(e), traceback.format_exc())
+
+    async def wait_for_user_invoke(self, ctx, targetChannel, title: str, description: str, button_label: str = "Yes", button_id: str = "YES"):
+        def check(m):
+            return True
+        channel = targetChannel if targetChannel else ctx.channel if ctx.channel else ctx.author
+
+        if ctx.guild:
+            guild_id = ctx.guild.id
+        else:
+            guild_id = 0
+
+
+
+        buttons = [
+            create_button(style=ButtonStyle.green, label=button_label or "Yes", custom_id=button_id or "YES"),
+        ]
+        action_row = create_actionrow(*buttons)
+        invoke_req = await self.sendEmbed(channel, title, description, components=[action_row])
+        self.db.track_wait_invoke(guild_id, channel.id, invoke_req.id)
+        try:
+            button_ctx: ComponentContext = await wait_for_component(self.bot, check=check, components=action_row)
+        except asyncio.TimeoutError:
+            # this should never happen because there is no timeout
+            await self.sendEmbed(channel, title, "You took too long to respond", delete_after=5)
+        else:
+            await invoke_req.delete()
+            self.db.untrack_wait_invoke(guild_id, channel.id, invoke_req.id)
+        return button_ctx
 
     async def ask_channel(self, ctx, title: str = "Choose Channel", message: str = "Please choose a channel.", allow_none: bool = False):
         def check_user(m):

@@ -57,6 +57,17 @@ class Database():
         pass
     def add_suggestion(self, guildId: int, messageId: int, suggestion: dict):
         pass
+    def add_suggestion_create_message(self, guildId: int, channelId: int, messageId: int):
+        pass
+    def remove_suggestion_create_message(self, guildId: int, channelId: int, messageId: int):
+        pass
+
+    def track_wait_invoke(self, guildId: int, channelId: int, messageId: int):
+        pass
+    def untrack_wait_invoke(self, guildId: int, channelId: int, messageId: int):
+        pass
+    def get_wait_invokes(self, guildId: int, channelId: int):
+        pass
 
     def UPDATE_SCHEMA(self):
         pass

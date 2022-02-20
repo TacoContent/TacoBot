@@ -47,6 +47,118 @@ class Suggestions(commands.Cog):
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, "suggestions.__init__", "Initialized")
 
+
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        try:
+            self.log.debug(0, "suggestions.on_ready", "suggestion cog is ready")
+
+            # get all the guilds that the bot is in
+            guilds = self.bot.guilds
+
+            for g in guilds:
+                guild_id = g.id
+                self.log.debug(guild_id, "suggestions.on_ready", f"guild ready {g.name}:{g.id}")
+                # get suggestion settings for the guild
+
+                ss = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+                if not ss:
+                    # raise exception if there are no suggestion settings
+                    self.log.debug(guild_id, "suggestions.on_ready", f"No suggestion settings found for guild {guild_id}")
+                    continue
+
+                # get all the suggestion channels
+                while True:
+                    for c in [ c['id'] for c in ss['channels'] ]:
+                        channel = await self.bot.fetch_channel(int(c))
+                        if not channel:
+                            self.log.debug(guild_id, "suggestions.on_ready", f"Channel {c} not found")
+                            continue
+
+                        # build ctx to pass to the ask_text function
+                        ctx = self.discord_helper.create_context(bot=self.bot, author=None, guild=g, channel=channel, message=None)
+                        await self.discord_helper.wait_for_user_invoke_cleanup(ctx)
+
+                        create_context = await self.discord_helper.wait_for_user_invoke(ctx, channel, "Do you want to create a new suggestion?", "Click the `New Suggestion` button below. I will message you and ask you some questions about your suggestion.", button_label = "New Suggestion", button_id = "CREATE_SUGGESTION")
+
+                        if create_context:
+                            self.log.debug(guild_id, "suggestions.on_ready", f"create_suggestion invoked: {create_context.author}")
+                            await self.create_suggestion(ctx=create_context, suggestion_settings=ss)
+                        else:
+                            self.log.debug(guild_id, "suggestions.on_ready", f"create_suggestion not invoked")
+
+        except Exception as e:
+            self.log.error(0, "suggestions.on_ready", str(e), traceback.format_exc())
+
+    async def create_suggestion(self, ctx, suggestion_settings):
+        if ctx is None:
+            return
+        if ctx.author is None or ctx.author.bot:
+            return
+        if ctx.guild is None:
+            return
+
+        guild_id = ctx.guild.id
+
+        channel_settings = [ c for c in suggestion_settings['channels'] if c['id'] == str(ctx.channel.id) ]
+        if not channel_settings:
+            self.log.debug(guild_id, "suggestions.on_message", f"No suggestion settings found for channel {ctx.channel.id}")
+            # notify user that the channel they are in is not configured for suggestions
+            await self.discord_helper.sendEmbed(ctx.channel, "Suggestions", "This channel is not configured for suggestions. Please run the `.taco suggest` in a channel that is configured for suggestions.", delete_after=20, color=0xFF0000)
+            return
+        else:
+            channel_settings = channel_settings[0]
+
+        response_channel = await self.discord_helper.get_or_fetch_channel(int(channel_settings['id']))
+        if not response_channel:
+            self.log.debug(guild_id, "suggestions.on_message", f"No channel found for channel id {channel_settings['id']}")
+            return
+
+        suggestion_title = await self.discord_helper.ask_text(ctx, ctx.author, "Create Suggestion", "What is the title of your suggestion?", timeout=60)
+        if suggestion_title is None:
+            suggestion_title = "Suggestion"
+        suggestion_message = await self.discord_helper.ask_text(ctx, ctx.author, "Create Suggestion", "Please enter your suggestion below.\n\n**Note:**\nYou can respond with `cancel` to cancel your suggestion request.", color=0x00ff00, timeout=None)
+        if suggestion_message is None or suggestion_message.lower().strip() == "cancel":
+            await self.discord_helper.sendEmbed(ctx.author, "Suggestion Cancelled", "Your suggestion request has been cancelled.", color=0x00ff00)
+            return
+
+        legend = [
+            { "name": "Voting", "value": f"{channel_settings['vote_up_emoji']} Up Vote\n{channel_settings['vote_neutral_emoji']} Neutral Vote\n{channel_settings['vote_down_emoji']} Down Vote", "inline": True },
+            { "name": "🛡 Actions", "value": f"{channel_settings['admin_approve_emoji']} Approved\n{channel_settings['admin_consider_emoji']} Considered\n{channel_settings['admin_implemented_emoji']} Implemented\n{channel_settings['admin_reject_emoji']} Rejected\n{channel_settings['admin_close_emoji']} Closed\n{channel_settings['admin_delete_emoji']} Deleted", "inline": True },
+        ]
+
+        s_message = await self.discord_helper.sendEmbed(response_channel, f"{suggestion_title}", message=f"{suggestion_message}", author=ctx.author, fields=legend)
+
+        vote_emoji = [
+            channel_settings["vote_up_emoji"],
+            channel_settings["vote_neutral_emoji"],
+            channel_settings["vote_down_emoji"]
+        ]
+        admin_emoji = [
+            channel_settings["admin_approve_emoji"],
+            channel_settings["admin_consider_emoji"],
+            channel_settings["admin_implemented_emoji"],
+            channel_settings["admin_reject_emoji"],
+            channel_settings["admin_close_emoji"],
+            channel_settings["admin_delete_emoji"]
+            ]
+        reactions = vote_emoji
+        for r in reactions:
+            # add reaction to the message from the bot
+            await s_message.add_reaction(r)
+
+        suggestion_data = {
+            "id": uuid.uuid4().hex,
+            "message_id": s_message.id,
+            "author_id": ctx.author.id,
+            "suggestion" : {
+                "title": suggestion_title,
+                "description": suggestion_message
+            }
+        }
+        self.db.add_suggestion(guild_id, s_message.id, suggestion_data)
+
     @commands.group(aliases=["suggestion"])
     async def suggest(self, ctx):
         try:
@@ -69,66 +181,7 @@ class Suggestions(commands.Cog):
                     self.log.debug(guild_id, "suggestions.on_message", f"No suggestion settings found for guild {guild_id}")
                     raise Exception("No suggestion settings found")
 
-                # create suggestion
-                channel_settings = [ c for c in ss['channels'] if c['id'] == str(ctx.channel.id) ]
-                if not channel_settings:
-                    self.log.debug(guild_id, "suggestions.on_message", f"No suggestion settings found for channel {ctx.channel.id}")
-                    # notify user that the channel they are in is not configured for suggestions
-                    await self.discord_helper.sendEmbed(ctx.channel, "Suggestions", "This channel is not configured for suggestions. Please run the `.taco suggest` in a channel that is configured for suggestions.", delete_after=20, color=0xFF0000)
-                    return
-                else:
-                    channel_settings = channel_settings[0]
-                response_channel = await self.discord_helper.get_or_fetch_channel(int(channel_settings['id']))
-                if not response_channel:
-                    self.log.debug(guild_id, "suggestions.on_message", f"No channel found for channel id {channel_settings['id']}")
-                    return
-
-                # dm user with a message and ask for their suggestion
-                create_now = await self.discord_helper.ask_yes_no(ctx, ctx.author, "Are you ready to enter your suggestion?", "Create Suggestion", timeout=60)
-                if create_now:
-                    suggestion_title = await self.discord_helper.ask_text(ctx, ctx.author, "Create Suggestion", "What is the title of your suggestion?", timeout=60)
-                    if suggestion_title is None:
-                        suggestion_title = "Suggestion"
-                    suggestion_message = await self.discord_helper.ask_text(ctx, ctx.author, "Create Suggestion", "Please enter your suggestion below.\n\n**Note:**\nYou can respond with `cancel` to cancel your suggestion request.", color=0x00ff00, timeout=None)
-                    if suggestion_message is None or suggestion_message.lower().strip() == "cancel":
-                        await self.discord_helper.sendEmbed(ctx.author, "Suggestion Cancelled", "Your suggestion request has been cancelled.", color=0x00ff00)
-                        return
-
-                    legend = [
-                        { "name": "Voting", "value": f"{channel_settings['vote_up_emoji']} Up Vote\n{channel_settings['vote_neutral_emoji']} Neutral Vote\n{channel_settings['vote_down_emoji']} Down Vote", "inline": True },
-                        { "name": "🛡 Actions", "value": f"{channel_settings['admin_approve_emoji']} Approved\n{channel_settings['admin_consider_emoji']} Considered\n{channel_settings['admin_implemented_emoji']} Implemented\n{channel_settings['admin_reject_emoji']} Rejected\n{channel_settings['admin_close_emoji']} Closed\n{channel_settings['admin_delete_emoji']} Deleted", "inline": True },
-                    ]
-
-                    s_message = await self.discord_helper.sendEmbed(response_channel, f"{suggestion_title}", message=f"{suggestion_message}", author=ctx.author, fields=legend)
-
-                    vote_emoji = [
-                        channel_settings["vote_up_emoji"],
-                        channel_settings["vote_neutral_emoji"],
-                        channel_settings["vote_down_emoji"]
-                 ]
-                    admin_emoji = [
-                        channel_settings["admin_approve_emoji"],
-                        channel_settings["admin_consider_emoji"],
-                        channel_settings["admin_implemented_emoji"],
-                        channel_settings["admin_reject_emoji"],
-                        channel_settings["admin_close_emoji"],
-                        channel_settings["admin_delete_emoji"]
-                        ]
-                    reactions = vote_emoji
-                    for r in reactions:
-                        # add reaction to the message from the bot
-                        await s_message.add_reaction(r)
-
-                    suggestion_data = {
-                        "id": uuid.uuid4().hex,
-                        "message_id": s_message.id,
-                        "author_id": ctx.author.id,
-                        "suggestion" : {
-                            "title": suggestion_title,
-                            "description": suggestion_message
-                        }
-                    }
-                    self.db.add_suggestion(guild_id, s_message.id, suggestion_data)
+                await self.create_suggestion(ctx, ss)
                 pass
             else:
                 pass

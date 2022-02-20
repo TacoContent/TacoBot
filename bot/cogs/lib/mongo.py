@@ -343,6 +343,39 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
+    def add_suggestion_create_message(self, guildId: int, channelId: int, messageId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            payload = {
+                "guild_id": str(guildId),
+                "channel_id": str(channelId),
+                "message_id": str(messageId),
+                "timestamp": timestamp
+            }
+            # log entry for the user
+            print(f"[DEBUG] [mongo.add_suggestion_create_message] [guild:0] Adding suggestion create message for guild {guildId}")
+            self.connection.suggestion_create_messages.update_one({ "guild_id": str(guildId), "channel_id": str(channelId), "message_id": messageId }, { "$set": payload }, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def remove_suggestion_create_message(self, guildId: int, channelId: int, messageId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            self.connection.suggestion_create_messages.delete_one({ "guild_id": str(guildId), "channel_id": str(channelId), "message_id": str(messageId), "timestamp": timestamp })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
     def add_settings(self, guildId: int, name:str, settings: dict):
         try:
             if self.connection is None:
@@ -618,6 +651,55 @@ class MongoDatabase(database.Database):
             }
             # insert the suggestion into the database
             self.connection.suggestions.update_one({ "guild_id": str(guildId), "id": str(suggestionId) }, { "$set": { "state": state }, "$push": { "actions": action_payload } }, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def track_wait_invoke(self, guildId: int, channelId: int, messageId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            payload = {
+                "guild_id": str(guildId),
+                "channel_id": str(channelId),
+                "message_id": str(messageId),
+                "timestamp": timestamp
+            }
+            self.connection.wait_invokes.update_one({ "guild_id": str(guildId), "channel_id": str(channelId), "message_id": str(messageId) }, { "$set": payload }, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def untrack_wait_invoke(self, guildId: int, channelId: int, messageId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            payload = {
+                "guild_id": str(guildId),
+                "channel_id": str(channelId),
+                "message_id": str(messageId),
+                "timestamp": timestamp
+            }
+            self.connection.wait_invokes.delete_one({ "guild_id": str(guildId), "channel_id": str(channelId), "message_id": str(messageId) })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+    def get_wait_invokes(self, guildId: int, channelId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            return self.connection.wait_invokes.find({ "guild_id": str(guildId), "channel_id": str(channelId) })
         except Exception as ex:
             print(ex)
             traceback.print_exc()
