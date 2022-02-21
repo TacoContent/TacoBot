@@ -52,21 +52,23 @@ class TacoBot():
         )
         self.bot.remove_command("help")
 
-        initial_extensions = [
-            'bot.cogs.help',
-            'bot.cogs.events',
-            'bot.cogs.init',
-            'bot.cogs.streamteam',
-            'bot.cogs.tacos',
-            # 'bot.cogs.cbsuggestions',
-            'bot.cogs.move_message',
-            'bot.cogs.suggestions',
-            'bot.cogs.tacopost',
-            'bot.cogs.trivia',
-            'bot.cogs.restricted',
-            'bot.cogs.twitchinfo',
-        ]
-        for extension in initial_extensions:
+        cogs = [ f"bot.cogs.{os.path.splitext(f)[0]}" for f in os.listdir("bot/cogs") if f.endswith(".py") and not f.startswith("_") ]
+
+        # initial_extensions = [
+        #     'bot.cogs.help',
+        #     'bot.cogs.events',
+        #     'bot.cogs.init',
+        #     'bot.cogs.streamteam',
+        #     'bot.cogs.tacos',
+        #     # 'bot.cogs.cbsuggestions',
+        #     'bot.cogs.move_message',
+        #     'bot.cogs.suggestions',
+        #     'bot.cogs.tacopost',
+        #     'bot.cogs.trivia',
+        #     'bot.cogs.restricted',
+        #     'bot.cogs.twitchinfo',
+        # ]
+        for extension in cogs:
             try:
                 self.bot.load_extension(extension)
             except Exception as e:
