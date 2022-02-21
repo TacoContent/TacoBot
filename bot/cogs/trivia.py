@@ -44,8 +44,7 @@ class Trivia(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "trivia.__init__", f"DB Provider {self.settings.db_provider.name}")
-        self.log.debug(0, "trivia.__init__", f"Logger initialized with level {log_level.name}")
+        self.log.debug(0, "trivia.__init__", "Initialized")
 
         # self.bot.loop.create_task(self.trivia_init())
     # async def trivia_init(self):
@@ -59,6 +58,48 @@ class Trivia(commands.Cog):
 
     #         await asyncio.sleep(time)
 
+    @commands.Cog.listener()
+    async def on_ready(self):
+        try:
+            self.log.debug(0, "trivia.on_ready", "trivia cog is ready")
+            # get all the guilds that the bot is in
+            guilds = self.bot.guilds
+
+            for g in guilds:
+                guild_id = g.id
+                self.log.debug(guild_id, "trivia.on_ready", f"guild ready {g.name}:{g.id}")
+                ts = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+                if not ts:
+                    # raise exception if there are no trivia settings
+                    self.log.debug(guild_id, "trivia.on_ready", f"No trivia settings found for guild {guild_id}")
+                    continue
+
+                # get all the trivia channels
+                while True:
+                    for c in [ c for c in ts['allowed_channels'] ]:
+                        channel = await self.bot.fetch_channel(int(c))
+                        if not channel:
+                            self.log.debug(guild_id, "trivia.on_ready", f"Channel {c} not found")
+                            continue
+
+                        # build ctx to pass to the ask_text function
+                        ctx = self.discord_helper.create_context(bot=self.bot, author=None, guild=g, channel=channel, message=None, invoked_subcommand=None)
+                        await self.discord_helper.wait_for_user_invoke_cleanup(ctx)
+
+                        create_context = await self.discord_helper.wait_for_user_invoke(ctx, channel, "Looking for a trivia question?", "Click the `Start Trivia` button below.", button_label = "Start Trivia", button_id = "CREATE_TRIVIA_QUESTION")
+
+                        if create_context:
+                            self.log.debug(guild_id, "trivia.on_ready", f"trivia invoked: {create_context.author}")
+                            ctx = self.discord_helper.create_context(bot=self.bot, author=create_context.author, guild=g, channel=channel, message=None, invoked_subcommand=None)
+
+                            await self.trivia(ctx)
+                            # create the trivia question
+
+
+        except Exception as e:
+            self.log.error(0, "trivia.on_ready", str(e), traceback.format_exc())
+
+
     @commands.group(name="trivia", invoke_without_command=True)
     async def trivia(self, ctx: ComponentContext):
         try:
@@ -66,7 +107,8 @@ class Trivia(commands.Cog):
                 guild_id = 0
                 if ctx.guild:
                     guild_id = ctx.guild.id
-                    await ctx.message.delete()
+                    if ctx.message:
+                        await ctx.message.delete()
                 else:
                     self.log.warning(guild_id, "trivia", "Cannot run trivia command in DM")
                     return
@@ -86,9 +128,14 @@ class Trivia(commands.Cog):
                     self.log.debug(guild_id, "trivia.trivia", f"User {ctx.author.name}#{ctx.author.discriminator} tried to use the trivia command in channel {channel_id}")
                     return
 
-                # start trivia
+                # # start trivia
+                # ctx_ = self.discord_helper.create_context(bot=self.bot, author=ctx.author, guild=ctx.guild, channel=ctx.channel, message=ctx.message, invoked_subcommand=None)
+                # await self.discord_helper.wait_for_user_invoke_cleanup(ctx_)
+
+
                 question = self.get_question(ctx)
                 if question:
+
                     choice_emojis = trivia_settings["choices"]
 
                     print(f"{question.category} {question.difficulty} {question.type} {question.question}")
@@ -131,7 +178,7 @@ class Trivia(commands.Cog):
                             def check (reaction, user):
                                 # check if user already reacted
                                 # or if the user.id is in the correct or incorrect list of users
-                                if user.bot or user.id in [ r.users for r in ctx.message.reactions ] or user.id in [ u.id for u in correct_users ] or user.id in [ u.id for u in incorrect_users ]:
+                                if user.bot or user.id in [ r.users for r in qm.reactions ] or user.id in [ u.id for u in correct_users ] or user.id in [ u.id for u in incorrect_users ]:
                                     return False
 
                                 if reaction.emoji in available_choices:
@@ -168,6 +215,48 @@ class Trivia(commands.Cog):
         except Exception as e:
             self.log.error(guild_id, "trivia", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
+
+    # async def on_message_delete(self, message):
+    #     try:
+    #         self.log.debug(0, "trivia.on_ready", "trivia cog is ready")
+    #         if not message:
+    #              return
+    #         if not message.channel:
+    #             return
+    #         # get all the guilds that the bot is in
+    #         guild = message.guild
+    #         guild_id = guild.id
+    #         ts = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+    #         if not ts:
+    #             # raise exception if there are no trivia settings
+    #             self.log.debug(guild_id, "trivia.on_message_delete", f"No trivia settings found for guild {guild_id}")
+    #             return
+
+    #         channel = message.channel
+    #         if str(channel.id) not in ts["allowed_channels"]:
+    #             known_invokes = self.db.get_wait_invokes(guildId=guild_id, channelId=channel.id)
+    #             if not known_invokes:
+    #                 return
+    #             filtered_invokes = [ ki['message_id'] for ki in known_invokes if ki['message_id'] == str(message.id)]
+    #             if not filtered_invokes or len(filtered_invokes) == 0:
+    #                 return
+
+
+    #             # build ctx to pass to the ask_text function
+    #             ctx = self.discord_helper.create_context(bot=self.bot, author=None, guild=guild, channel=channel, message=None, invoked_subcommand=None)
+    #             # await self.discord_helper.wait_for_user_invoke_cleanup(ctx)
+
+    #             create_context = await self.discord_helper.wait_for_user_invoke(ctx, channel, "Looking for a trivia question?", "Click the `Start Trivia` button below.", button_label = "Start Trivia", button_id = "CREATE_TRIVIA_QUESTION")
+
+    #             if create_context:
+    #                 self.log.debug(guild_id, "trivia.on_ready", f"trivia invoked: {create_context.author}")
+    #                 ctx = self.discord_helper.create_context(bot=self.bot, author=create_context.author, guild=g, channel=channel, message=None, invoked_subcommand=None)
+    #                 await self.trivia(ctx)
+    #                 # create the trivia question
+
+
+        except Exception as e:
+            self.log.error(0, "trivia.on_ready", str(e), traceback.format_exc())
 
     def get_question(self, ctx: ComponentContext):
         try:

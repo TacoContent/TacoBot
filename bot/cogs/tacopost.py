@@ -44,8 +44,7 @@ class TacoPost(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "tacopost.__init__", f"DB Provider {self.settings.db_provider.name}")
-        self.log.debug(0, "tacopost.__init__", f"Logger initialized with level {log_level.name}")
+        self.log.debug(0, "tacopost.__init__", "Initialized")
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -104,7 +103,7 @@ class TacoPost(commands.Cog):
                 await self.discord_helper.sendEmbed(channel, "Not Enough Tacos", f"{user.mention}, You need {taco_cost} tacos to post in this channel.", delete_after=15)
                 await message.delete()
             else:
-                choice = await self.discord_helper.ask_yes_no(message, f"{user.mention}, Are you sure you want to post in this channel?\n\n**It will cost you {taco_cost} tacos 🌮.**\n\nYou currently have {taco_count} tacos 🌮.", "Use tacos to post?")
+                choice = await self.discord_helper.ask_yes_no(message, message.channel, f"{user.mention}, Are you sure you want to post in this channel?\n\n**It will cost you {taco_cost} tacos 🌮.**\n\nYou currently have {taco_count} tacos 🌮.", "Use tacos to post?")
                 if choice:
                     # remove the tacos from the user
                     self.db.remove_tacos(guild_id, user.id, taco_cost)

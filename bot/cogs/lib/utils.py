@@ -111,3 +111,11 @@ def get_by_name_or_id(iterable, nameOrId: typing.Union[int, str]):
         return discord.utils.get(iterable, id=int(nameOrId))
     else:
         return None
+
+def get_last_section_in_url(name):
+    if "/" in name:
+        # if the name has a slash in it, then it is a url. Remove everything before and including the slash
+        name_split = name.rsplit("/", 1)
+        if len(name_split) > 1:
+            name = name_split[1]
+    return name

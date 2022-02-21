@@ -47,8 +47,7 @@ class TwitchInfo(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "twitchinfo.__init__", f"DB Provider {self.settings.db_provider.name}")
-        self.log.debug(0, "twitchinfo.__init__", f"Logger initialized with level {log_level.name}")
+        self.log.debug(0, "twitchinfo.__init__", "Initialized")
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -95,7 +94,7 @@ class TwitchInfo(commands.Cog):
         # if ctx.author is administrator, then we can get the twitch name from the database
         if twitch_info is None:
             if ctx.author.guild_permissions.administrator or check_member is None:
-                twitch_name = await self.discord_helper.ask_text(alt_ctx, "Twitch Name", "I do not have a twitch name set for {who}, please respond with the twitch name.", 60)
+                twitch_name = await self.discord_helper.ask_text(alt_ctx, ctx.author, "Twitch Name", "I do not have a twitch name set for {who}, please respond with the twitch name.", 60)
                 if not twitch_name is None:
                     self.db.set_user_twitch_info(ctx.author.id, None, twitch_name.lower().strip())
         else:
@@ -116,13 +115,14 @@ class TwitchInfo(commands.Cog):
                 await ctx.message.delete()
 
             if twitch_name is None:
-                twitch_name = await self.discord_helper.ask_text(ctx, "Twitch Name", "You asked to set your twitch username, please respond with your twitch username.", 60)
+                twitch_name = await self.discord_helper.ask_text(ctx, channel, "Twitch Name", "You asked to set your twitch username, please respond with your twitch username.", 60)
             self.log.debug(0, _method, f"{ctx.author} requested to set twitch name {twitch_name}")
-            self.db.set_user_twitch_info(ctx.author.id, None, twitch_name.lower().strip())
-            await self.discord_helper.sendEmbed(channel, "Success", f"Your Twitch name has been set to {twitch_name}.\n\nIf you change your twitch name in the future, you can use `.taco twitch set` in a discord channel, or `.twitch set` in the DM with me.", color=0x00ff00, delete_after=30)
+            if twitch_name is not None:
+                twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
+                self.db.set_user_twitch_info(ctx.author.id, None, twitch_name)
+                await self.discord_helper.sendEmbed(channel, "Success", f"Your Twitch name has been set to {twitch_name}.\n\nIf you change your twitch name in the future, you can use `.taco twitch set` in a discord channel, or `.twitch set` in the DM with me.", color=0x00ff00, delete_after=30)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
-
 def setup(bot):
     bot.add_cog(TwitchInfo(bot))

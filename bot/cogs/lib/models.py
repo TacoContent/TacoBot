@@ -5,8 +5,12 @@ import glob
 import typing
 import json
 
-class GuildTeamsSettings:
-    def __init__(self, guildId: int, teamRoleId: int, teamName: str ):
-        self.guild_id = guildId
-        self.team_role = teamRoleId
-        self.team_name = teamName.lower()
+class SuggestionStates():
+    def __init__(self):
+        self.ACTIVE = "ACTIVE"
+        self.APPROVED = "APPROVED"
+        self.REJECTED = "REJECTED"
+        self.CLOSED = "CLOSED"
+        self.IMPLEMENTED = "IMPLEMENTED"
+        self.CONSIDERED = "CONSIDERED"
+        self.DELETED = "DELETED"

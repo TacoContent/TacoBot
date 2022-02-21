@@ -8,6 +8,7 @@ import os
 import glob
 import typing
 import math
+import inspect
 
 from discord.ext.commands.cooldowns import BucketType
 from discord_slash import ComponentContext
@@ -24,7 +25,6 @@ from .lib import settings
 from .lib import mongo
 from .lib import dbprovider
 
-import inspect
 
 class InitHandler(commands.Cog):
     def __init__(self, bot):
@@ -40,8 +40,7 @@ class InitHandler(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "init.__init__", f"DB Provider {self.settings.db_provider.name}")
-        self.log.debug(0, "init.__init__", f"Logger initialized with level {log_level.name}")
+        self.log.debug(0, "init.__init__", "Initialized")
 
     @commands.group()
     @commands.has_permissions(administrator=True)
@@ -124,7 +123,7 @@ class InitHandler(commands.Cog):
                     })
                 add_another_channel = True
                 while add_another_channel:
-                    add_another_channel = await self.discord_helper.ask_yes_no(ctx, "Pay to Post", "Do you want to configure a channel to require paying to post?")
+                    add_another_channel = await self.discord_helper.ask_yes_no(ctx, ctx.channel, "Pay to Post", "Do you want to configure a channel to require paying to post?")
                     if add_another_channel:
                         # ask for channel from list
                         channel = await self.discord_helper.ask_channel(ctx, "Pay to Post", "Please select a channel to require paying to post.")
@@ -157,7 +156,7 @@ class InitHandler(commands.Cog):
             cost = await self.discord_helper.ask_number(ctx, "Pay to Post", "How much do you want to charge per post?", min_value=0, max_value=100000)
             if cost is None:
                 return
-            ask_exempt = await self.discord_helper.ask_yes_no(ctx, "Pay to Post", "Do you want to exempt a role from paying to post in this channel?")
+            ask_exempt = await self.discord_helper.ask_yes_no(ctx, ctx.channel, "Pay to Post", "Do you want to exempt a role from paying to post in this channel?")
             exempt_roles = []
             ask_exempt = True
             while ask_exempt:
@@ -166,7 +165,7 @@ class InitHandler(commands.Cog):
                     exempt_role = await self.discord_helper.ask_role_list(ctx, "Select Roles", "Select roles to exempt from paying to post in this channel", allow_none=True, exclude_roles=excluded_roles)
                     if exempt_role:
                         exempt_roles.append(str(exempt_role.id))
-                        ask_exempt = await self.discord_helper.ask_yes_no(ctx, "Pay to Post", "Do you want to exempt another role from paying to post in this channel?")
+                        ask_exempt = await self.discord_helper.ask_yes_no(ctx, ctx.channel, "Pay to Post", "Do you want to exempt another role from paying to post in this channel?")
                     else:
                         ask_exempt = False
             if str(channel.id) in [ c.id for c in post_settings["channels"] ]:
@@ -217,7 +216,7 @@ class InitHandler(commands.Cog):
             tacos_settings = self.settings.get_settings(self.db, guild_id, "tacos")
             edit_settings = tacos_settings is None
             if tacos_settings:
-                edit_settings = await self.discord_helper.ask_yes_no(ctx, "Edit Tacos Settings", "Do you want to edit tacos settings?")
+                edit_settings = await self.discord_helper.ask_yes_no(ctx, ctx.channel, "Edit Tacos Settings", "Do you want to edit tacos settings?")
 
             if edit_settings:
                 log_channel = await self.discord_helper.ask_channel(ctx, "Select Taco Log Channel", "Select Channel use for Taco Logs", allow_none=False)
