@@ -59,6 +59,7 @@ class TacoBot():
             'bot.cogs.streamteam',
             'bot.cogs.tacos',
             # 'bot.cogs.cbsuggestions',
+            'bot.cogs.move_message',
             'bot.cogs.suggestions',
             'bot.cogs.tacopost',
             'bot.cogs.trivia',

@@ -208,11 +208,9 @@ class Suggestions(commands.Cog):
             # get suggestion from database
             suggestion = self.db.get_suggestion(guild_id, payload.message_id)
             if not suggestion or suggestion['message_id'] != str(payload.message_id):
-                self.log.debug(guild_id, "suggestions.on_raw_reaction_add", f"No suggestion found for message id {payload.message_id}")
                 return
 
             author = await self.discord_helper.get_or_fetch_user(int(suggestion['author_id']))
-            print(f"author: {author}")
 
             ss = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
             if not ss:
@@ -363,22 +361,18 @@ class Suggestions(commands.Cog):
         try:
             guild_id = payload.guild_id
             if guild_id is None or guild_id == 0:
-                self.log.debug(0, "suggestions.on_raw_reaction_remove", f"{_method} - guild_id is None or 0")
                 return
             if payload.event_type != 'REACTION_REMOVE':
-                self.log.debug(guild_id, "suggestions.on_raw_reaction_remove", f"{_method} - payload.event_type != 'REACTION_REMOVE'")
                 return
             channel = await self.bot.fetch_channel(payload.channel_id)
             message = await channel.fetch_message(payload.message_id)
             user = await self.discord_helper.get_or_fetch_user(payload.user_id)
             if user.bot:
-                self.log.debug(guild_id, "suggestions.on_raw_reaction_remove", f"{_method} - user.bot")
                 return
 
             # get suggestion from database
             suggestion = self.db.get_suggestion(guild_id, payload.message_id)
             if not suggestion or suggestion['message_id'] != str(payload.message_id):
-                self.log.debug(guild_id, "suggestions.on_raw_reaction_remove", f"{user.name} removed reaction to non-existent suggestion")
                 return
 
             author = await self.discord_helper.get_or_fetch_user(int(suggestion['author_id']))
@@ -391,7 +385,6 @@ class Suggestions(commands.Cog):
 
             channel_settings = [ c for c in ss['channels'] if c['id'] == str(channel.id) ]
             if not channel_settings:
-                self.log.debug(guild_id, "suggestions.on_message", f"No suggestion settings found for channel {channel.id}")
                 return
             else:
                 channel_settings = channel_settings[0]

@@ -37,8 +37,8 @@ class DiscordHelper():
             log_level = loglevel.LogLevel.DEBUG
         self.log = logger.Log(minimumLogLevel=log_level)
 
-    def create_context(self, bot = None, author = None, guild = None, channel = None, message = None, **kwargs):
-        ctx_dict = {"bot": bot, "author": author, "guild": guild, "channel": channel, "message": message}
+    def create_context(self, bot = None, author = None, guild = None, channel = None, message = None, invoked_subcommand = None, **kwargs):
+        ctx_dict = {"bot": bot, "author": author, "guild": guild, "channel": channel, "message": message, "invoked_subcommand": invoked_subcommand}
         ctx = collections.namedtuple("Context", ctx_dict.keys())(*ctx_dict.values())
         return ctx
 
@@ -54,6 +54,7 @@ class DiscordHelper():
             if len(message.embeds) == 0:
                 description = f"{message.content}"
                 title = ""
+                embed_fields = []
             else:
                 embed = message.embeds[0]
                 title = embed.title
@@ -81,7 +82,10 @@ class DiscordHelper():
                 for f in [ rf for rf in fields if rf['name'] not in [ rfi['name'] for rfi in remove_fields ] ]:
                     target_embed.add_field(name=f['name'], value=f['value'], inline=f['inline'] if 'inline' in f else False)
 
-            await targetChannel.send(embed=target_embed)
+            files = [await a.to_file() for a in message.attachments]
+
+            if len(files) > 0 or target_embed != discord.Embed.Empty:
+                await targetChannel.send(files=files, embed=target_embed)
         except Exception as ex:
             self.log.error(0, "move_message", str(ex), traceback.format_exc())
 
@@ -267,11 +271,15 @@ class DiscordHelper():
                     wi_message_id = int(w['message_id'])
                     if wi_message_id:
                         self.log.debug(guild_id, "suggestions.on_ready", f"Found waiting invoke {w['message_id']}")
-                        wi_message = await channel.fetch_message(wi_message_id)
-                        if wi_message:
-                            await wi_message.delete()
-                            self.log.debug(guild_id, "suggestions.on_ready", f"Deleted waiting invoke {w['message_id']}")
-                            self.db.untrack_wait_invoke(guildId=guild_id, channelId=channel.id, messageId=wi_message_id)
+                        try:
+                            wi_message = await channel.fetch_message(wi_message_id)
+                            if wi_message:
+                                await wi_message.delete()
+                                self.log.debug(guild_id, "suggestions.on_ready", f"Deleted waiting invoke {w['message_id']}")
+                        except discord.errors.NotFound as nf:
+                            self.log.warn(guild_id, "suggestions.on_ready", str(nf))
+
+                        self.db.untrack_wait_invoke(guildId=guild_id, channelId=channel.id, messageId=wi_message_id)
         except Exception as e:
             self.log.error(guild_id, "suggestions.on_ready", str(e), traceback.format_exc())
 
@@ -303,7 +311,7 @@ class DiscordHelper():
             self.db.untrack_wait_invoke(guild_id, channel.id, invoke_req.id)
         return button_ctx
 
-    async def ask_channel(self, ctx, title: str = "Choose Channel", message: str = "Please choose a channel.", allow_none: bool = False):
+    async def ask_channel(self, ctx, title: str = "Choose Channel", message: str = "Please choose a channel.", allow_none: bool = False, timeout: int = 60):
         def check_user(m):
             same = m.author.id == ctx.author.id
             return same
@@ -331,7 +339,7 @@ class DiscordHelper():
         )
 
         action_row = create_actionrow(select)
-        ask_context = await self.sendEmbed(ctx.channel, title, message, delete_after=60, footer="You have 60 seconds to respond.", components=[action_row])
+        ask_context = await self.sendEmbed(ctx.channel, title, message, delete_after=timeout, footer=f"You have {timeout} seconds to respond.", components=[action_row])
         try:
             button_ctx: ComponentContext = await wait_for_component(self.bot, check=check_user, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
@@ -339,7 +347,8 @@ class DiscordHelper():
         else:
             chan_id = int(button_ctx.selected_options[0])
             if chan_id == 0:
-                await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, ENTER CHANNEL NAME", delete_after=5)
+                # TODO: implement this
+                await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, This needs to be implemented still.", delete_after=5)
                 return
                 # chan_id = await self.ask_channel_by_name_or_id(ctx, title)
 
