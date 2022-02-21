@@ -192,11 +192,55 @@ class InitHandler(commands.Cog):
             suggestions_settings = self.settings.get_settings(self.db, guild_id, "suggestions")
             if not suggestions_settings:
                 self.db.add_settings(guild_id, "suggestions", {
-                    "suggestion_channel_ids": [ ],
-                    "cb_prefix": '?cb ',
-                    "allowed_commands": 'suggest|approve|consider|deny|implemented|suggestions'
+                    "channels": [ ],
                 })
                 # await self.discord_helper.ask_channel(ctx, "Pay to Post", "Select Channel to add for Pay to Post", allow_none=True)
+            add_another_channel = True
+            first_ask = True
+            while add_another_channel:
+                if first_ask:
+                    first_ask = False
+                    another = "a "
+                else:
+                    another = "another "
+                add_another_channel = await self.discord_helper.ask_yes_no(ctx, ctx.channel, "Suggestions", f"Do you want to configure {another} channel to receive suggestions?")
+                if add_another_channel:
+                    # ask for channel from list
+                    settings_channel = await self.discord_helper.ask_channel(ctx, "Suggestions", "Please select a channel to receive suggestions.")
+                    if settings_channel:
+                        channel_settings = [ c for c in suggestions_settings["channels"] if c["id"] == str(settings_channel.id) ]
+
+                        if channel_settings and len(channel_settings) > 0:
+                            channel_settings = channel_settings[0]
+                            suggestions_settings["channels"].remove(channel_settings)
+                            channel_settings['id'] = str(settings_channel.id)
+                        else:
+                            channel_settings = {
+                                'id': str(settings_channel.id),
+                                'vote_up_emoji': '🔼',
+                                'vote_down_emoji': '🔽',
+                                'vote_neutral_emoji': '🟦',
+                                'admin_approve_emoji': '✅',
+                                'admin_reject_emoji': '❌',
+                                'admin_consider_emoji': '👀',
+                                'admin_implemented_emoji': '🟢',
+                                'admin_close_emoji': '🔒',
+                                'admin_delete_emoji': '⛔'
+                            }
+                        add_log_channel = await self.discord_helper.ask_yes_no(ctx, ctx.channel, "Suggestions", "Do you want to add a log channel for this channel?")
+                        log_channel = None
+                        if add_log_channel:
+                            log_channel = await self.discord_helper.ask_channel(ctx, "Suggestions", "Please select a channel to log closed suggestions to.")
+                            if log_channel:
+                                channel_settings['log_channel_id'] = str(log_channel.id)
+                            else:
+                                channel_settings['log_channel_id'] = None
+                        suggestions_settings["channels"].append(channel_settings)
+                        self.db.add_settings(guild_id, "suggestions", suggestions_settings)
+                        await self.discord_helper.sendEmbed(ctx.channel, "Suggestions", "Channel added to suggestions.", color=0x00FF00, delete_after=20)
+                    else:
+                        await self.discord_helper.sendEmbed(ctx.channel, "Suggestions", "The channel selected was not found.", color=0xFF0000, delete_after=20)
+
         except Exception as e:
             self.log.error(guild_id, "init.suggestions", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)

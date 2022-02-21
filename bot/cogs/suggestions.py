@@ -47,49 +47,88 @@ class Suggestions(commands.Cog):
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, "suggestions.__init__", "Initialized")
 
+    # async def start_constant_ask(self):
+        # # get all the guilds that the bot is in
+        # guilds = self.bot.guilds
 
+        # for g in guilds:
+        #     guild_id = g.id
+        #     self.log.debug(guild_id, "suggestions.on_ready", f"guild ready {g.name}:{g.id}")
+        #     # get suggestion settings for the guild
+
+        #     ss = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+        #     if not ss:
+        #         # raise exception if there are no suggestion settings
+        #         self.log.debug(guild_id, "suggestions.on_ready", f"No suggestion settings found for guild {guild_id}")
+        #         continue
+
+            # # get all the suggestion channels
+            # while True:
+            #     for c in [ c['id'] for c in ss['channels'] ]:
+            #         channel = await self.bot.fetch_channel(int(c))
+            #         if not channel:
+            #             self.log.debug(guild_id, "suggestions.on_ready", f"Channel {c} not found")
+            #             continue
+
+            #         # build ctx to pass to the ask_text function
+            #         ctx = self.discord_helper.create_context(bot=self.bot, author=None, guild=g, channel=channel, message=None)
+            #         # build ctx to pass to the ask_text function
+            #         await self.discord_helper.wait_for_user_invoke_cleanup(ctx)
+
+            #         create_context = await self.discord_helper.wait_for_user_invoke(ctx, channel, "Do you want to create a new suggestion?", "Click the `New Suggestion` button below. I will message you and ask you some questions about your suggestion.", button_label = "New Suggestion", button_id = "CREATE_SUGGESTION")
+
+            #         if create_context:
+            #             self.log.debug(guild_id, "suggestions.on_ready", f"create_suggestion invoked: {create_context.author}")
+            #             await self.create_suggestion(ctx=create_context, suggestion_settings=ss)
+            #         else:
+            #             self.log.debug(guild_id, "suggestions.on_ready", f"create_suggestion not invoked")
 
     @commands.Cog.listener()
     async def on_ready(self):
         try:
             self.log.debug(0, "suggestions.on_ready", "suggestion cog is ready")
-
-            # get all the guilds that the bot is in
-            guilds = self.bot.guilds
-
-            for g in guilds:
+            # await self.start_constant_ask()
+            for g in self.bot.guilds:
                 guild_id = g.id
-                self.log.debug(guild_id, "suggestions.on_ready", f"guild ready {g.name}:{g.id}")
-                # get suggestion settings for the guild
-
                 ss = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
                 if not ss:
                     # raise exception if there are no suggestion settings
                     self.log.debug(guild_id, "suggestions.on_ready", f"No suggestion settings found for guild {guild_id}")
                     continue
 
-                # get all the suggestion channels
-                while True:
-                    for c in [ c['id'] for c in ss['channels'] ]:
-                        channel = await self.bot.fetch_channel(int(c))
-                        if not channel:
-                            self.log.debug(guild_id, "suggestions.on_ready", f"Channel {c} not found")
-                            continue
+                # verify all configured channels still exist.
+                changed = False
+                for c in ss['channels']:
+                    channel = self.bot.get_channel(int(c['id']))
+                    if not channel:
+                        changed = True
+                        self.log.debug(guild_id, "suggestions.on_ready", f"Channel {c['id']} not found. Removing settings for channel.")
+                        ss['channels'].remove(c)
+                if changed:
+                    self.db.add_settings(guild_id, self.SETTINGS_SECTION, ss)
 
-                        # build ctx to pass to the ask_text function
-                        ctx = self.discord_helper.create_context(bot=self.bot, author=None, guild=g, channel=channel, message=None)
-                        await self.discord_helper.wait_for_user_invoke_cleanup(ctx)
-
-                        create_context = await self.discord_helper.wait_for_user_invoke(ctx, channel, "Do you want to create a new suggestion?", "Click the `New Suggestion` button below. I will message you and ask you some questions about your suggestion.", button_label = "New Suggestion", button_id = "CREATE_SUGGESTION")
-
-                        if create_context:
-                            self.log.debug(guild_id, "suggestions.on_ready", f"create_suggestion invoked: {create_context.author}")
-                            await self.create_suggestion(ctx=create_context, suggestion_settings=ss)
-                        else:
-                            self.log.debug(guild_id, "suggestions.on_ready", f"create_suggestion not invoked")
 
         except Exception as e:
             self.log.error(0, "suggestions.on_ready", str(e), traceback.format_exc())
+
+    @commands.Cog.listener()
+    async def on_guild_channel_delete(self, channel):
+        try:
+            guild_id = channel.guild.id
+
+            ss = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+            if not ss:
+                # raise exception if there are no suggestion settings
+                self.log.debug(guild_id, "suggestions.on_ready", f"No suggestion settings found for guild {guild_id}")
+                return
+            tracked_channel = [ c for c in ss['channels'] if c['id'] == str(channel.id) ]
+            if tracked_channel and len(tracked_channel) > 0:
+                # if this channel was in the settings, remove it
+                ss['channels'].remove(tracked_channel[0])
+                self.db.add_settings(guild_id, self.SETTINGS_SECTION, ss)
+
+        except Exception as e:
+            self.log.error(channel.guild.id, "suggestions.on_guild_channel_delete", str(e), traceback.format_exc())
 
     async def create_suggestion(self, ctx, suggestion_settings):
         if ctx is None:
@@ -103,9 +142,16 @@ class Suggestions(commands.Cog):
 
         channel_settings = [ c for c in suggestion_settings['channels'] if c['id'] == str(ctx.channel.id) ]
         if not channel_settings:
+            allowed_channel_ids = [ int(c['id']) for c in suggestion_settings['channels'] ]
+            allowed_channels = []
+            for aci in allowed_channel_ids:
+                ac = await self.bot.fetch_channel(aci)
+                if ac:
+                    allowed_channels.append(f"<#{ac.id}>")
+            ac_list = "\n".join(allowed_channels)
             self.log.debug(guild_id, "suggestions.on_message", f"No suggestion settings found for channel {ctx.channel.id}")
             # notify user that the channel they are in is not configured for suggestions
-            await self.discord_helper.sendEmbed(ctx.channel, "Suggestions", "This channel is not configured for suggestions. Please run the `.taco suggest` in a channel that is configured for suggestions.", delete_after=20, color=0xFF0000)
+            await self.discord_helper.sendEmbed(ctx.channel, "Suggestions", f"This channel is not configured for suggestions. Please run the `.taco suggest` in a channel that is configured for suggestions.\n\n{ac_list}", delete_after=20, color=0xFF0000)
             return
         else:
             channel_settings = channel_settings[0]
@@ -188,6 +234,12 @@ class Suggestions(commands.Cog):
         except Exception as e:
             self.log.error(guild_id, "suggestions.suggest", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
+
+    @suggest.command()
+    async def start(self, ctx):
+        if ctx.message:
+            await ctx.message.delete()
+        # await self.start_constant_ask()
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
