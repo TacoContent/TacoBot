@@ -70,7 +70,7 @@ class MoveMessage(commands.Cog):
 
             react_member = await self.discord_helper.get_or_fetch_member(guild_id, user.id)
             if react_member.guild_permissions.manage_messages:
-                self.log.debug(0, _method, f"{user.name} reacted to message {message.id} with {str(payload.emoji)}")
+                self.log.debug(guild_id, _method, f"{user.name} reacted to message {message.id} with {str(payload.emoji)}")
                 if str(payload.emoji) == '⏭️':
                     self.log.debug(guild_id, _method, "Received reaction ⏭️")
                     target_channel = await self.discord_helper.ask_channel(message, "Choose Target Channel", "Please select the channel you want to move the message to.", timeout=60)
