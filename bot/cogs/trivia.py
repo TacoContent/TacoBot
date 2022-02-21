@@ -63,37 +63,37 @@ class Trivia(commands.Cog):
         try:
             self.log.debug(0, "trivia.on_ready", "trivia cog is ready")
             # get all the guilds that the bot is in
-            guilds = self.bot.guilds
+            # guilds = self.bot.guilds
 
-            for g in guilds:
-                guild_id = g.id
-                self.log.debug(guild_id, "trivia.on_ready", f"guild ready {g.name}:{g.id}")
-                ts = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
-                if not ts:
-                    # raise exception if there are no trivia settings
-                    self.log.debug(guild_id, "trivia.on_ready", f"No trivia settings found for guild {guild_id}")
-                    continue
+            # for g in guilds:
+            #     guild_id = g.id
+            #     self.log.debug(guild_id, "trivia.on_ready", f"guild ready {g.name}:{g.id}")
+            #     ts = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+            #     if not ts:
+            #         # raise exception if there are no trivia settings
+            #         self.log.debug(guild_id, "trivia.on_ready", f"No trivia settings found for guild {guild_id}")
+            #         continue
 
-                # get all the trivia channels
-                while True:
-                    for c in [ c for c in ts['allowed_channels'] ]:
-                        channel = await self.bot.fetch_channel(int(c))
-                        if not channel:
-                            self.log.debug(guild_id, "trivia.on_ready", f"Channel {c} not found")
-                            continue
+            #     # get all the trivia channels
+            #     while True:
+            #         for c in [ c for c in ts['allowed_channels'] ]:
+            #             channel = await self.bot.fetch_channel(int(c))
+            #             if not channel:
+            #                 self.log.debug(guild_id, "trivia.on_ready", f"Channel {c} not found")
+            #                 continue
 
-                        # build ctx to pass to the ask_text function
-                        ctx = self.discord_helper.create_context(bot=self.bot, author=None, guild=g, channel=channel, message=None, invoked_subcommand=None)
-                        await self.discord_helper.wait_for_user_invoke_cleanup(ctx)
+            #             # build ctx to pass to the ask_text function
+            #             ctx = self.discord_helper.create_context(bot=self.bot, author=None, guild=g, channel=channel, message=None, invoked_subcommand=None)
+            #             await self.discord_helper.wait_for_user_invoke_cleanup(ctx)
 
-                        create_context = await self.discord_helper.wait_for_user_invoke(ctx, channel, "Looking for a trivia question?", "Click the `Start Trivia` button below.", button_label = "Start Trivia", button_id = "CREATE_TRIVIA_QUESTION")
+            #             create_context = await self.discord_helper.wait_for_user_invoke(ctx, channel, "Looking for a trivia question?", "Click the `Start Trivia` button below.", button_label = "Start Trivia", button_id = "CREATE_TRIVIA_QUESTION")
 
-                        if create_context:
-                            self.log.debug(guild_id, "trivia.on_ready", f"trivia invoked: {create_context.author}")
-                            ctx = self.discord_helper.create_context(bot=self.bot, author=create_context.author, guild=g, channel=channel, message=None, invoked_subcommand=None)
+            #             if create_context:
+            #                 self.log.debug(guild_id, "trivia.on_ready", f"trivia invoked: {create_context.author}")
+            #                 ctx = self.discord_helper.create_context(bot=self.bot, author=create_context.author, guild=g, channel=channel, message=None, invoked_subcommand=None)
 
-                            await self.trivia(ctx)
-                            # create the trivia question
+            #                 await self.trivia(ctx)
+            #                 # create the trivia question
 
 
         except Exception as e:
