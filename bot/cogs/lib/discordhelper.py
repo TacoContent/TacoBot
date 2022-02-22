@@ -292,9 +292,6 @@ class DiscordHelper():
             guild_id = ctx.guild.id
         else:
             guild_id = 0
-
-
-
         buttons = [
             create_button(style=ButtonStyle.green, label=button_label or "Yes", custom_id=button_id or "YES"),
         ]
@@ -310,6 +307,35 @@ class DiscordHelper():
             await invoke_req.delete()
             self.db.untrack_wait_invoke(guild_id, channel.id, invoke_req.id)
         return button_ctx
+
+    async def ask_channel_by_name_or_id(self, ctx, title: str = "TacoBot", description: str = "Enter the name of the channel", timeout: int = 60):
+        _method = inspect.stack()[1][3]
+        try:
+            guild = ctx.guild
+            if not guild:
+                return None
+            def check_channel(m):
+                c = self.get_by_name_or_id(guild.channels, m.content)
+                if c:
+                    return True
+                else:
+                    return False
+            target_channel = ctx.channel if ctx.channel else ctx.author
+
+            channel_ask = await self.sendEmbed(target_channel, title, f'{description}', delete_after=60, footer="You have 60 seconds to respond.")
+            try:
+                channelResp = await self.bot.wait_for('message', check=check_channel, timeout=60)
+            except asyncio.TimeoutError:
+                await self.sendEmbed(target_channel, title, "You took too long to respond", delete_after=5)
+                return None
+            else:
+                selected_channel = self.get_by_name_or_id(guild.channels, channelResp.content)
+                await channelResp.delete()
+                await channel_ask.delete()
+                return selected_channel
+        except Exception as ex:
+            self.log.error(ctx.guild.id, _method, str(ex), traceback.format_exc())
+            return None
 
     async def ask_channel(self, ctx, title: str = "Choose Channel", message: str = "Please choose a channel.", allow_none: bool = False, timeout: int = 60):
         def check_user(m):
@@ -347,11 +373,8 @@ class DiscordHelper():
         else:
             chan_id = int(button_ctx.selected_options[0])
             if chan_id == 0:
-                # TODO: implement this
-                await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, This needs to be implemented still.", delete_after=5)
-                return
-                # chan_id = await self.ask_channel_by_name_or_id(ctx, title)
-
+                asked_channel = self.ask_channel_by_name_or_id(ctx, title, "Enter the name of the channel", timeout=timeout)
+                chan_id = asked_channel.id if asked_channel else None
             await ask_context.delete()
             selected_channel = discord.utils.get(ctx.guild.channels, id=chan_id)
             if selected_channel:
