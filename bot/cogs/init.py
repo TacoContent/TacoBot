@@ -55,6 +55,7 @@ class InitHandler(commands.Cog):
             await self.paypost_action(ctx, delete_message=False)
             await self.suggestions_action(ctx, delete_message=False)
             await self.tacos_action(ctx, delete_message=False)
+            await self.restricted_action(ctx, delete_message=False)
 
         else:
             pass
@@ -93,6 +94,98 @@ class InitHandler(commands.Cog):
                 await ctx.message.delete()
         except Exception as e:
             self.log.error(guild_id, "init.prefix", str(e), traceback.format_exc())
+            await self.discord_helper.notify_of_error(ctx)
+
+    @init.group()
+    @commands.has_permissions(administrator=True)
+    async def restricted(self, ctx: ComponentContext):
+        if ctx.invoked_subcommand is None:
+            if not ctx.guild:
+                return
+            guild_id = ctx.guild.id
+            await ctx.message.delete()
+
+            await self.restricted_action(ctx, delete_message=False)
+        else:
+            pass
+
+
+    async def restricted_action(self, ctx: ComponentContext, delete_message=True):
+        if ctx.invoked_subcommand is None:
+            try:
+                if not ctx.guild:
+                    return
+                guild_id = ctx.guild.id
+                if delete_message:
+                    await ctx.message.delete()
+                post_settings = self.settings.get_settings(self.db, guild_id, "restricted")
+                if not post_settings:
+                    self.db.add_settings(guild_id, "restricted", {
+                        "channels": [ ],
+                    })
+                add_another_channel = True
+                while add_another_channel:
+                    add_another_channel = await self.discord_helper.ask_yes_no(ctx, ctx.channel, "Restricted", "Do you want to configure a channel to be restricted what can be posted?")
+                    if add_another_channel:
+                        # ask for channel from list
+                        channel = await self.discord_helper.ask_channel(ctx, "Restricted", "Please select a channel to configure as restricted.")
+                        if channel:
+                            await self.restricted_add_action(ctx, channel, delete_message=False)
+                        else:
+                            await self.discord_helper.sendEmbed(ctx.channel, "Restricted", "The channel selected was not found.", color=0xFF0000, delete_after=20)
+            except Exception as e:
+                self.log.error(guild_id, "init.restricted", str(e), traceback.format_exc())
+                await self.discord_helper.notify_of_error(ctx)
+        else:
+            pass
+
+    @restricted.command()
+    @commands.has_permissions(administrator=True)
+    async def restricted_add(self, ctx: ComponentContext, channel: discord.TextChannel):
+        await self.restricted_add_action(ctx, channel)
+
+    async def restricted_add_action(self, ctx: ComponentContext, channel: discord.TextChannel, delete_message=True):
+        try:
+            if not ctx.guild:
+                return
+            guild_id = ctx.guild.id
+            if delete_message:
+                await ctx.message.delete()
+            restricted_settings = self.settings.get_settings(self.db, guild_id, "restricted")
+            if not restricted_settings:
+                self.db.add_settings(guild_id, "restricted", {
+                    "channels": [ ],
+                })
+            allow_pattern = await self.discord_helper.ask_text(ctx, ctx.channel, "Restricted", "Please enter a pattern to allow.")
+            if not allow_pattern:
+                return
+            deny_message = await self.discord_helper.ask_text(ctx, ctx.channel, "Restricted", "Please enter the message that will be sent if the message is denied.")
+            if not deny_message:
+                deny_message = "You are not allowed to send that in this channel."
+            r_channels = [ c for c in restricted_settings["channels"] if c["channel_id"] == str(channel.id) ]
+
+            # if we have settings already, remove it to add the new one
+            if len(r_channels) > 0:
+                restricted_settings["channels"].remove(r_channels[0])
+
+
+            restricted_settings["channels"].append({
+                "id": channel.id,
+                "allowed": allow_pattern,
+                "denied": [],
+                "deny_message": deny_message,
+                "exempt" : []
+            })
+
+            self.db.add_settings(guild_id, "restricted", restricted_settings)
+            fields = [
+                { "name": "Channel", "value": channel.mention, "inline": True },
+                { "name": "Allow Pattern", "value": allow_pattern, "inline": True },
+                { "name": "Deny Message", "value": deny_message, "inline": True },
+            ]
+            await self.discord_helper.sendEmbed(ctx.channel, "Restricted", "Restricted channel added.", fields=fields, color=0x00FF00, delete_after=20)
+        except Exception as e:
+            self.log.error(guild_id, "init.restricted_add", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     @init.group()
