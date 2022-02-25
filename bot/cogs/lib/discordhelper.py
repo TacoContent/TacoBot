@@ -94,7 +94,7 @@ class DiscordHelper():
             color = 0x7289da
         embed = discord.Embed(title=title, description=message, color=color)
         if author:
-            embed.set_author(name=author.name, icon_url=author.avatar_url)
+            embed.set_author(name=f"{author.name}#{author.discriminator}", icon_url=author.avatar_url)
         if embed.fields is not None:
             for f in embed.fields:
                 embed.add_field(name=f['name'], value=f['value'], inline=f['inline'] if 'inline' in f else False)
@@ -372,10 +372,20 @@ class DiscordHelper():
             await self.sendEmbed(ctx.channel, title, "Took too long to respond.", delete_after=5)
         else:
             chan_id = int(button_ctx.selected_options[0])
+            await ask_context.delete()
             if chan_id == 0:
                 asked_channel = self.ask_channel_by_name_or_id(ctx, title, "Enter the name of the channel", timeout=timeout)
                 chan_id = asked_channel.id if asked_channel else None
-            await ask_context.delete()
+
+            if chan_id is None:
+                # manual entered channel not found
+                await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, Unknown Channel.", delete_after=5)
+                return None
+
+            if chan_id == -1:
+                # user selected none
+                return None
+
             selected_channel = discord.utils.get(ctx.guild.channels, id=chan_id)
             if selected_channel:
                 self.log.debug(guild_id, _method, f"{ctx.author.mention} selected the channel '{selected_channel.name}'")
