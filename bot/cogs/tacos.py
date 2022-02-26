@@ -50,7 +50,7 @@ class Tacos(commands.Cog):
     @tacos.command()
     async def help(self, ctx):
         # todo: add help command
-        await self.discord_helper.sendEmbed(ctx.channel, "Help", f"I don't know how to help with this yet.", delete_after=30)
+        await self.discord_helper.sendEmbed(ctx.channel, "Help", f"Use `.taco help tacos` for help on this topic.", delete_after=30)
         # only delete if the message is in a guild channel
         if ctx.guild:
             await ctx.message.delete()
@@ -58,12 +58,15 @@ class Tacos(commands.Cog):
     # create command called remove_all_tacos that asks for the user
     @tacos.command(aliases=['purge'])
     @commands.has_permissions(administrator=True)
-    async def remove_all_tacos(self, ctx, user: discord.Member):
+    async def remove_all_tacos(self, ctx, user: discord.Member, *, reason: str = None):
         try:
             guild_id = ctx.guild.id
             await ctx.message.delete()
             self.db.remove_all_tacos(guild_id, user.id)
+            reason_msg = reason if reason else "No reason given."
             await self.discord_helper.sendEmbed(ctx.channel, "Removed All Tacos", f"{user.mention} has lost all their tacos.", delete_after=30)
+            await self.discord_helper.taco_purge_log(ctx.guild.id, user, ctx.author, reason_msg)
+
         except Exception as e:
             await self.discord_helper.sendEmbed(ctx.channel, "Error", f"{e}", delete_after=30)
             await ctx.message.delete()
