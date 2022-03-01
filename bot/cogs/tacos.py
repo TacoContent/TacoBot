@@ -129,10 +129,6 @@ class Tacos(commands.Cog):
                 await self.discord_helper.notify_bot_not_initialized(ctx, "tacos")
                 return
 
-            if not taco_settings:
-                # raise exception if there are no tacos settings
-                raise Exception("No tacos settings found")
-
             # if the user that ran the command is the same as member, then exit the function
             if ctx.author.id == member.id:
                 await self.discord_helper.sendEmbed(ctx.channel, "Error", f"You can't gift yourself tacos.", delete_after=30)

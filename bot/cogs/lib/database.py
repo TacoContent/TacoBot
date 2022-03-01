@@ -69,5 +69,10 @@ class Database():
     def get_wait_invokes(self, guildId: int, channelId: int):
         pass
 
+    def track_invite_code(self, guildId: int, inviteCode: str, inviteInfo: dict):
+        pass
+    def get_invite_code(self, guildId: int, inviteCode: str):
+        pass
+
     def UPDATE_SCHEMA(self):
         pass
