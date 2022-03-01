@@ -131,6 +131,8 @@ class Suggestions(commands.Cog):
             self.log.error(channel.guild.id, "suggestions.on_guild_channel_delete", str(e), traceback.format_exc())
 
     async def create_suggestion(self, ctx, suggestion_settings):
+        _method = inspect.stack()[0][3]
+
         if ctx is None:
             return
         if ctx.author is None or ctx.author.bot:
@@ -193,6 +195,20 @@ class Suggestions(commands.Cog):
         for r in reactions:
             # add reaction to the message from the bot
             await s_message.add_reaction(r)
+
+        ts = self.settings.get_settings(self.db, guild_id, "tacos")
+        if ts:
+            # raise exception if there are no suggestion settings
+            self.log.debug(guild_id, "suggestions.create_suggestion", f"No tacos settings found for guild {guild_id}")
+
+        # get taco settings
+        taco_settings = self.settings.get_settings(self.db, guild_id, "tacos")
+        if taco_settings:
+            suggest_count = taco_settings["suggest_count"]
+
+            taco_count = self.db.add_tacos(guild_id, ctx.author.id, suggest_count)
+            self.log.debug(guild_id, _method, f"🌮 added taco to user {ctx.author.name} successfully")
+            await self.discord_helper.tacos_log(guild_id, ctx.author, self.bot.user, suggest_count, taco_count, f"creating a new suggestion")
 
         suggestion_data = {
             "id": uuid.uuid4().hex,
