@@ -706,3 +706,36 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
+
+    def track_invite_code(self, guildId: int, inviteCode: str, inviteInfo: dict, userInvite: dict):
+        try:
+            if self.connection is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            payload = {
+                "guild_id": str(guildId),
+                "code": inviteCode,
+                "info": inviteInfo,
+                "timestamp": timestamp
+            }
+            if userInvite is None:
+                self.connection.invite_codes.update_one({ "guild_id": str(guildId), "code": inviteCode }, { "$set": payload }, upsert=True)
+            else:
+                self.connection.invite_codes.update_one({ "guild_id": str(guildId), "code": inviteCode }, { "$set": payload, "$push": { "invites": userInvite }  }, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+    def get_invite_code(self, guildId: int, inviteCode: str):
+        try:
+            if self.connection is None:
+                self.open()
+            return self.connection.invite_codes.find_one({ "guild_id": str(guildId), "code": inviteCode })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()

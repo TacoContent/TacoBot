@@ -1,3 +1,4 @@
+import async_timeout
 import discord
 from discord.ext import commands
 import asyncio
@@ -152,6 +153,24 @@ class DiscordHelper():
             # get the bot's prefix
             prefix = self.settings.get_prefix(self.db, ctx.guild.id)[0]
             await self.sendEmbed(ctx.channel, "Error", f'{ctx.author.mention}, I am not initialized yet. Please run {prefix}init {subcommand} to initialize.', delete_after=30)
+    async def taco_purge_log(self, guild_id: int, toMember: discord.Member, fromMember: discord.Member, reason: str):
+        _method = inspect.stack()[0][3]
+        try:
+
+            taco_settings = self.settings.get_settings(self.db, guild_id, "tacos")
+            if not taco_settings:
+                # raise exception if there are no tacos settings
+                raise Exception("No tacos settings found")
+
+            taco_log_channel_id = taco_settings["taco_log_channel_id"]
+            log_channel = await self.get_or_fetch_channel(int(taco_log_channel_id))
+
+            self.log.debug(guild_id, _method, f"{fromMember.name} purged all tacos from {toMember.name} for {reason}")
+            if log_channel:
+                await log_channel.send(f"{fromMember.name} purged all tacos from {toMember.name} for {reason}")
+        except Exception as e:
+            self.log.error(guild_id, _method, str(e), traceback.format_exc())
+
 
     async def tacos_log(self, guild_id: int, toMember: discord.Member, fromMember: discord.Member, count: int, total_tacos: int, reason: str):
         _method = inspect.stack()[0][3]

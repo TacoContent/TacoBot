@@ -102,6 +102,31 @@ class TwitchInfo(commands.Cog):
         if not twitch_name is None:
             await self.discord_helper.sendEmbed(ctx.author, "Twitch Name", f"The Twitch name for {who} has been set to `{twitch_name}`.\n\nhttps://twitch.tv/{twitch_name}\n\nIf your twitch name changes in the future, you can use `.taco twitch set` in a discord channel, or `.twitch set` in the DM with me to set it.", color=0x00ff00)
 
+    @twitch.command(aliases=["set-user"])
+    @commands.has_permissions(administrator=True)
+    async def set_user(self, ctx, user: discord.Member, twitch_name: str = None):
+        try:
+            _method = inspect.stack()[0][3]
+            guild_id = 0
+            channel = ctx.author
+            if ctx.guild:
+                guild_id = ctx.guild.id
+                channel = ctx.channel
+                await ctx.message.delete()
+
+            # if user is None:
+            #     user = await self.discord_helper.ask_member(ctx, "User", "Please respond with the user you want to set the twitch name for.")
+
+            if twitch_name is None:
+                twitch_name = await self.discord_helper.ask_text(ctx, ctx.author, "Twitch Name", "Please respond with the twitch name you want to set for the user.")
+
+            if twitch_name is not None and user is not None:
+                twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
+                self.db.set_user_twitch_info(user.id, None, twitch_name)
+                await self.discord_helper.sendEmbed(channel, "Success", f"{ctx.author.mention}, The Twitch name has been set to {twitch_name} for {user.name}#{user.discriminator}.", color=0x00ff00, delete_after=30)
+        except Exception as e:
+            self.log.error(guild_id, _method, str(e), traceback.format_exc())
+            await self.discord_helper.notify_of_error(ctx)
 
     @twitch.command()
     async def set(self, ctx, twitch_name: str = None):

@@ -45,11 +45,87 @@ class Help(commands.Cog):
 
 
     @commands.group(name="help", aliases=["h"], invoke_without_command=True)
-    async def help(self, ctx):
-        pass
+    async def help(self, ctx, command: str = None, subcommand: str = None):
+        _method = inspect.stack()[1][3]
+        if ctx.guild:
+            guild_id = ctx.guild.id
+        else:
+            guild_id = 0
+        if guild_id != 0:
+            await ctx.message.delete()
+        if command is None:
+            await self.root_help(ctx)
+        else:
+            await self.subcommand_help(ctx, command, subcommand)
+    async def subcommand_help(self, ctx, command: str = None, subcommand: str = None):
+        _method = inspect.stack()[1][3]
+        if ctx.guild:
+            guild_id = ctx.guild.id
+        else:
+            guild_id = 0
 
-    @help.command(name="")
-    async def help_command(self, ctx):
+        try:
+            command = command.lower() if command else None
+            subcommand = subcommand.lower() if subcommand else None
+
+            command_list = self.settings.commands
+            if command not in command_list.keys():
+                await self.discord_helper.sendEmbed(ctx.channel, f"{self.settings.name} Help", f"No Help for command `{command}`", color=0xFF0000, delete_after=20)
+                return
+
+            cmd = command_list[command]
+
+            fields = list()
+            is_admin = False
+            if 'admin' in cmd:
+                is_admin = cmd['admin']
+            shield = '🛡️' if is_admin else ''
+            fields.append({"name": f"{shield}{cmd['title']}", "value": cmd['message']})
+            fields.append({"name": 'help', "value": f"`{cmd['usage']}`"})
+            fields.append({"name": 'more', "value": f"`.taco help {command.lower()}`"})
+            if 'example' in cmd:
+                example_list = [ f"`{e}`" for e in cmd['example'] ]
+                if example_list and len(example_list) > 0:
+                    examples = '\n'.join(example_list)
+                    fields.append({"name": 'examples', "value": examples})
+            await self.discord_helper.sendEmbed(ctx.channel, f"{self.settings.name} {command} Help", "", footer=f"Version {self.settings.version}", fields=fields)
+
+
+            subcommands = cmd["subcommands"]
+            if subcommand is None:
+                filtered_list = subcommands.keys()
+            else:
+                filtered_list = [i for i in subcommands.keys() if i.lower() == subcommand]
+
+            chunked = utils.chunk_list(list(filtered_list), 10)
+            pages = math.ceil(len(filtered_list) / 10)
+            page = 1
+            for chunk in chunked:
+                fields = list()
+                for k in chunk:
+                    scmd = subcommands[k.lower()]
+                    is_admin = False
+                    if 'admin' in scmd:
+                        is_admin = scmd['admin']
+                    shield = '🛡️' if is_admin else ''
+                    fields.append({"name": f"{shield}{scmd['title']}", "value": scmd['message']})
+                    fields.append({"name": 'help', "value": f"`{scmd['usage']}`"})
+                    fields.append({"name": 'more', "value": f"`.taco help {command} {k.lower()}`"})
+                    if 'example' in scmd:
+                        example_list = [ f"`{e}`" for e in scmd['example'] ]
+                        if example_list and len(example_list) > 0:
+                            examples = '\n'.join(example_list)
+                            fields.append({"name": 'examples', "value": examples})
+
+                await self.discord_helper.sendEmbed(ctx.channel, f"{self.settings.name} Help ({page}/{pages})", "", footer=f"Version {self.settings.version}", fields=fields)
+                page += 1
+
+
+        except Exception as ex:
+            self.log.error(guild_id, _method , str(ex), traceback.format_exc())
+            await self.discord_helper.notify_of_error(ctx)
+
+    async def root_help(self, ctx):
         _method = inspect.stack()[1][3]
         if ctx.guild:
             guild_id = ctx.guild.id
@@ -59,10 +135,7 @@ class Help(commands.Cog):
         try:
             command_list = self.settings.commands
             filtered_list = list()
-            # if self.isAdmin(ctx):
             filtered_list = [i for i in command_list.keys()]
-            # else:
-            #     filtered_list = [i for i in command_list.keys() if command_list[i]['admin'] == False]
 
             chunked = utils.chunk_list(list(filtered_list), 10)
             pages = math.ceil(len(filtered_list) / 10)
@@ -71,22 +144,26 @@ class Help(commands.Cog):
                 fields = list()
                 for k in chunk:
                     cmd = command_list[k.lower()]
-                    if cmd['admin'] and self.isAdmin(ctx):
-                        fields.append({"name": cmd['title'], "value": cmd['message']})
-                        fields.append({"name": 'help', "value": f"`{cmd['usage']}`"})
-                        fields.append({"name": 'more', "value": f"`.taco {k.lower()} help`"})
-                    else:
-                        fields.append({"name": cmd['title'], "value": cmd['message']})
-                        fields.append({"name": 'help', "value": f"`{cmd['usage']}`"})
-                        fields.append({"name": 'more', "value": f"`.taco {k.lower()} help`"})
-
-                await self.sendEmbed(ctx.channel, f"{self.settings.name} Help ({page}/{pages})", f"Version {self.settings.version}", fields=fields)
+                    is_admin = False
+                    if 'admin' in cmd:
+                        is_admin = cmd['admin']
+                    shield = '🛡️' if is_admin else ''
+                    fields.append({"name": f"{shield}{cmd['title']}", "value": cmd['message']})
+                    fields.append({"name": 'help', "value": f"`{cmd['usage']}`"})
+                    fields.append({"name": 'more', "value": f"`.taco help {k.lower()}`"})
+                    if 'example' in cmd:
+                        example_list = [ f"`{e}`" for e in cmd['example'] ]
+                        if example_list and len(example_list) > 0:
+                            examples = '\n'.join(example_list)
+                            fields.append({"name": 'examples', "value": examples})
+                await self.discord_helper.sendEmbed(ctx.channel, f"{self.settings.name} Help ({page}/{pages})", "", footer=f"Version {self.settings.version}", fields=fields)
                 page += 1
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
-            await self.notify_of_error(ctx)
-        if guild_id != 0:
-            await ctx.message.delete()
+            await self.discord_helper.notify_of_error(ctx)
+    @help.command(name="")
+    async def help_command(self, ctx):
+        pass
 
 def setup(bot):
     bot.add_cog(Help(bot))

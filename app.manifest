@@ -5,17 +5,29 @@
 	"icon": "https://i.imgur.com/EIqP24c.png",
 	"author": "DarthMinos#1161",
 	"commands": {
+		"suggest": {
+			"title": "Create a Suggestion",
+			"message": "Starts a suggestion. I will DM you to ask you questions to create the suggestion.",
+			"usage": ".taco suggest",
+			"example": [ ".taco suggest" ],
+			"admin": false,
+			"fields": [],
+			"subcommands": {}
+		},
 		"team": {
 			"title": "help_team_title",
 			"message": "help_team_message",
 			"usage": ".taco team <command>",
-			"example": ".taco team help",
 			"fields": [],
 			"admin": false,
 			"subcommands": {
-				"set-twitch-name": {
+				"invite": {
 					"title": "help_set_twitch_name_title",
 					"message": "help_set_twitch_name_message",
+					"usage": ".taco team invite <twitch name>",
+					"example": [
+						".taco team invite darthminos"
+					],
 					"fields": [
 						{
 							"name": "help_set_twitch_name_field_0",
@@ -29,13 +41,16 @@
 			"title": "help_team_title",
 			"message": "help_team_message",
 			"usage": ".taco tacos <command>",
-			"example": ".taco tacos help",
 			"fields": [],
 			"admin": false,
 			"subcommands": {
 				"count": {
 					"title": "help_tacos_count_title",
 					"message": "help_tacos_count_message",
+					"usage": ".taco tacos count",
+					"example": [
+						".taco tacos count"
+					],
 					"fields": [
 						{
 							"name": "help_tacos_count_field_0",
@@ -46,20 +61,26 @@
 				"gift": {
 					"title": "help_tacos_gift_title",
 					"message": "help_tacos_gift_message",
+					"usage": ".taco tacos gift <@user#1234> <amount> [reason]",
+					"example": [
+						".taco tacos gift @user#1234 10",
+						".taco tacos gift @user#1234 10 \"I love you\""
+					],
 					"fields": [
 						{
 							"name": "help_tacos_gift_field_0",
-							"value": "`.taco gift <@user> <count> [reason]`"
+							"value": "`.taco gift <@user#1234> <amount> [reason]`"
 						}
 					]
 				},
 				"give": {
 					"title": "help_tacos_give_title",
 					"message": "help_tacos_give_message",
+					"usage": ".taco tacos give <@user#1234> <amount> [reason]",
 					"fields": [
 						{
 							"name": "help_tacos_give_field_0",
-							"value": "`.taco give <@user> <count> [reason]`"
+							"value": "`.taco give <@user#1234> <amount> [reason]`"
 						}
 					],
 					"admin": true
@@ -68,10 +89,15 @@
 					"admin": true,
 					"title": "help_tacos_purge_title",
 					"message": "help_tacos_purge_message",
+					"usage": ".taco tacos purge <@user#1234> [reason]",
+					"example": [
+						".taco tacos purge @user#1234",
+						".taco tacos purge @user#1234 \"Exploited the taco system\""
+					],
 					"fields": [
 						{
 							"name": "help_tacos_purge_field_0",
-							"value": "`.taco purge <@user>`"
+							"value": "`.taco purge <@user#1234> [reason]`"
 						}
 					]
 				}
@@ -80,8 +106,10 @@
 		"trivia": {
 			"title": "help_trivia_title",
 			"message": "help_trivia_message",
-			"usage": ".taco trivia [command]",
-			"example": ".taco trivia help",
+			"usage": ".taco trivia",
+			"example": [
+				".taco trivia"
+			],
 			"fields": [],
 			"admin": false,
 			"subcommands": {}
@@ -90,29 +118,36 @@
 			"title": "help_twitch_title",
 			"message": "help_twitch_message",
 			"usage": ".taco twitch <command>",
-			"example": ".taco twitch help",
 			"fields": [],
 			"admin": false,
 			"subcommands": {
 				"set": {
 					"title": "help_set_twitch_name_title",
 					"message": "help_set_twitch_name_message",
-					"fields": [
-						{
-							"name": "help_set_twitch_name_field_0",
-							"value": "`.taco set-twitch-name @user twitchName`"
-						}
-					]
+					"usage": ".taco twitch set [twitchName]",
+					"example": [
+						"taco twitch set darthminos"
+					],
+					"fields": []
+				},
+				"set-user": {
+					"title": "Set Twitch Username User",
+					"message": "Set a user's twitch name so Taco Bot can resolve a discord user to a twitch user, and vice versa.",
+					"usage": ".taco twitch set-user <@user#1234> [twitchName]",
+					"example": [
+						"taco twitch set-user @DarthMinos#1161 darthminos"
+					],
+					"fields": [],
+					"admin": true
 				},
 				"get": {
-					"title": "help_get_twitch_name_title",
-					"message": "help_get_twitch_name_message",
-					"fields": [
-						{
-							"name": "help_get_twitch_name_field_0",
-							"value": "`.taco get-twitch-name @user`"
-						}
-					]
+					"title": "Get Twitch User",
+					"message": "Will tell you what the twitch username is associated with your, or the specified, account.",
+					"usage": ".taco twitch get [@user#1234]",
+					"example": [
+						"taco twitch get @DarthMinos#1161"
+					],
+					"fields": []
 				}
 			}
 		}
