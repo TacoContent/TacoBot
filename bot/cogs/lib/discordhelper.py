@@ -151,7 +151,7 @@ class DiscordHelper():
             await self.sendEmbed(ctx.channel, "Error", f'{ctx.author.mention}, I am not initialized yet. Please try again in a few minutes.\n\nIf you are still having issues, please contact the bot owner.', delete_after=30)
         else:
             # get the bot's prefix
-            prefix = self.settings.get_prefix(self.db, ctx.guild.id)[0]
+            prefix = await self.bot.get_prefix(ctx.message)[0]
             await self.sendEmbed(ctx.channel, "Error", f'{ctx.author.mention}, I am not initialized yet. Please run {prefix}init {subcommand} to initialize.', delete_after=30)
     async def taco_purge_log(self, guild_id: int, toMember: discord.Member, fromMember: discord.Member, reason: str):
         _method = inspect.stack()[0][3]
