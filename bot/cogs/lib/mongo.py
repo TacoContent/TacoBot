@@ -196,9 +196,6 @@ class MongoDatabase(database.Database):
 
     def add_tacos(self, guildId: int, userId: int, count: int):
         try:
-            if count < 0:
-                print(f"[DEBUG] [mongo.add_tacos] [guild:0] Count is less than 0")
-                return 0
             if self.connection is None:
                 self.open()
 

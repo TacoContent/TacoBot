@@ -232,9 +232,16 @@ class DiscordHelper():
             if count == 1:
                 taco_word = "taco"
 
-            self.log.debug(guild_id, _method, f"🌮 added {count} {taco_word} to user {toMember.name} from {fromMember.name} for {reason}")
+            action = "received"
+
+            if count < 0:
+                action  = "lost"
+
+            positive_count = abs(count)
+
+            self.log.debug(guild_id, _method, f"{toMember.name}#{toMember.discriminator} {action} {positive_count} {taco_word} from {fromMember.name} for {reason}")
             if log_channel:
-                await log_channel.send(f"{toMember.name} has received {count} {taco_word} from {fromMember.name} for {reason}, giving them {total_tacos} 🌮.")
+                await log_channel.send(f"{toMember.name} has {action} {positive_count} {taco_word} from {fromMember.name} for {reason}, giving them {total_tacos} 🌮.")
         except Exception as e:
             self.log.error(guild_id, _method, str(e), traceback.format_exc())
 

@@ -160,10 +160,18 @@ class Trivia(commands.Cog):
                     choice_message = '\n'.join(choices)
 
                     reward = trivia_settings['category_points'][question.difficulty] or 1
+                    punishment = reward * -1
                     taco_word = "taco" if reward == 1 else "tacos"
                     trivia_timeout = trivia_settings['timeout'] or 60
 
-                    question_message = f"{html.unescape(question.question)}\n\n{choice_message}\n\nReact with the correct answer. Only your first answer counts.\n\nYou have {trivia_timeout} seconds to answer"
+                    notify_role_id = trivia_settings['notify_role']
+                    notify_role_mention = ""
+                    if notify_role_id:
+                        notify_role = ctx.guild.get_role(int(notify_role_id))
+                        if notify_role:
+                            notify_role_mention = f"{notify_role.mention}"
+
+                    question_message = f"{html.unescape(question.question)}\n\n{choice_message}\n\nReact with the correct answer. Only your first answer counts.\n\nYou have {trivia_timeout} seconds to answer.\nYou will be rewarded **{reward} {taco_word}** for answering correctly.\nYou will lose **{reward} {taco_word}** for answering incorrectly.\n\n{notify_role_mention}"
                     qm = await self.discord_helper.sendEmbed(ctx.channel,
                         f"Trivia - {html.unescape(question.category)} - {question.difficulty.capitalize()} - {reward} 🌮",
                         question_message,
@@ -201,10 +209,15 @@ class Trivia(commands.Cog):
                                 if not u.bot:
                                     taco_count = self.db.add_tacos(guild_id, u.id, reward)
                                     await self.discord_helper.tacos_log(guild_id, u, self.bot.user, reward, taco_count, reason_msg)
+                            reason_msg = "Getting trivia question incorrect"
+                            for u in incorrect_users:
+                                if not u.bot:
+                                    taco_count = self.db.add_tacos(guild_id, u.id, punishment)
+                                    await self.discord_helper.tacos_log(guild_id, u, self.bot.user, punishment, taco_count, reason_msg)
 
                             await self.discord_helper.sendEmbed(ctx.channel,
                                 "Trivia - Results",
-                                f"{html.unescape(question.question)}\n\nThe correct answer was **{choice_emojis[correct_index]} {html.unescape(answers[correct_index])}**\n\nCorrect answers receive {reward} {taco_word} 🌮.\n\n`.taco trivia` to play again.",
+                                f"{html.unescape(question.question)}\n\nThe correct answer was **{choice_emojis[correct_index]} {html.unescape(answers[correct_index])}**\n\nCorrect answers receive {reward} {taco_word} 🌮.\nIncorrect answers lose {reward} {taco_word} 🌮.\n\n`.taco trivia` to play again.",
                                 fields=fields)
                             await qm.delete()
                             break
