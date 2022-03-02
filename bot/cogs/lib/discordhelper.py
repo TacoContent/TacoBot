@@ -163,7 +163,7 @@ class DiscordHelper():
             channel = ctx.author
         # if user is an admin, then we can skip this
         if not ctx.author.guild_permissions.administrator:
-            await self.sendEmbed(ctx.channel, "Error", f'{ctx.author.mention}, I am not initialized yet. Please try again in a few minutes.\n\nIf you are still having issues, please contact the bot owner.', delete_after=30)
+            await self.sendEmbed(ctx.channel, "Error", f'{ctx.author.mention}, I am not initialized yet. Please try again in a few minutes.\n\nIf you are still having issues, please contact the an administrator.', delete_after=30)
         else:
             # get the bot's prefix
             prefix = await self.bot.get_prefix(ctx.message)[0]
