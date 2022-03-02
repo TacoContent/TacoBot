@@ -15,91 +15,83 @@
 			"subcommands": {}
 		},
 		"team": {
-			"title": "help_team_title",
-			"message": "help_team_message",
+			"title": "Twitch Team Commands",
+			"message": "Commands that will allow you to be a part of the Twitch Team.",
 			"usage": ".taco team <command>",
 			"fields": [],
 			"admin": false,
 			"subcommands": {
 				"invite": {
-					"title": "help_set_twitch_name_title",
-					"message": "help_set_twitch_name_message",
+					"title": "Request an invite to the team",
+					"message": "This will put in a request to join the twitch team. Once approved, you will have to accept it from your creator dashboard. Twitch Dashboard -> Settings -> Channel -> Featured Content => Scroll to the bottom.",
 					"usage": ".taco team invite <twitch name>",
 					"example": [
 						".taco team invite darthminos"
 					],
-					"fields": [
-						{
-							"name": "help_set_twitch_name_field_0",
-							"value": "`.taco set-twitch-name @user twitchName`"
-						}
-					]
+					"admin": false,
+					"fields": []
+				},
+				"invite-user": {
+					"title": "Invite a user to the team",
+					"message": "Admin version of the `invite` command. This will invite a user to the twitch team. Once approved, they will have to accept it from their creator dashboard. Twitch Dashboard -> Settings -> Channel -> Featured Content => Scroll to the bottom.",
+					"usage": ".taco team invite-user @user#1234 <twitch name>",
+					"example": [
+						".taco team invite-user @DarthMinos#1161 darthminos"
+					],
+					"admin": true,
+					"fields": []
 				}
 			}
 		},
 		"tacos": {
-			"title": "help_team_title",
-			"message": "help_team_message",
+			"title": "Tacos Commands",
+			"message": "Commands that will give info on tacos🌮.",
 			"usage": ".taco tacos <command>",
 			"fields": [],
 			"admin": false,
 			"subcommands": {
 				"count": {
-					"title": "help_tacos_count_title",
-					"message": "help_tacos_count_message",
+					"title": "Get your taco count",
+					"message": "Retrieve the number of tacos you have.",
 					"usage": ".taco tacos count",
 					"example": [
 						".taco tacos count"
 					],
-					"fields": [
-						{
-							"name": "help_tacos_count_field_0",
-							"value": "`.taco tacos`"
-						}
-					]
+					"fields": [],
+					"admin": false
 				},
 				"gift": {
-					"title": "help_tacos_gift_title",
-					"message": "help_tacos_gift_message",
+					"title": "Gift Tacos",
+					"message": "Gift someone a number of tacos. You can gift a maximum of 10 tacos per 24 hours (rolling).",
 					"usage": ".taco tacos gift <@user#1234> <amount> [reason]",
 					"example": [
 						".taco tacos gift @user#1234 10",
-						".taco tacos gift @user#1234 10 \"I love you\""
+						".taco tacos gift @user#1234 10 You are awesome!"
 					],
-					"fields": [
-						{
-							"name": "help_tacos_gift_field_0",
-							"value": "`.taco gift <@user#1234> <amount> [reason]`"
-						}
-					]
+					"admin": false,
+					"fields": []
 				},
 				"give": {
-					"title": "help_tacos_give_title",
-					"message": "help_tacos_give_message",
+					"title": "Give Tacos",
+					"message": "Allows an admin to give someone tacos.",
 					"usage": ".taco tacos give <@user#1234> <amount> [reason]",
-					"fields": [
-						{
-							"name": "help_tacos_give_field_0",
-							"value": "`.taco give <@user#1234> <amount> [reason]`"
-						}
+					"example": [
+						".taco tacos give @user#1234 10",
+						".taco tacos give @user#1234 10 You are awesome!"
 					],
-					"admin": true
+					"admin": true,
+					"fields": []
 				},
 				"purge": {
 					"admin": true,
-					"title": "help_tacos_purge_title",
-					"message": "help_tacos_purge_message",
+					"title": "Purge Tacos",
+					"message": "Allows an admin to purge all tacos from a user.",
 					"usage": ".taco tacos purge <@user#1234> [reason]",
 					"example": [
 						".taco tacos purge @user#1234",
 						".taco tacos purge @user#1234 \"Exploited the taco system\""
 					],
-					"fields": [
-						{
-							"name": "help_tacos_purge_field_0",
-							"value": "`.taco purge <@user#1234> [reason]`"
-						}
-					]
+					"fields": []
 				}
 			}
 		},
