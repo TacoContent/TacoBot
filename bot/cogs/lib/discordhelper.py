@@ -60,7 +60,10 @@ class DiscordHelper():
             else:
                 embed = message.embeds[0]
                 title = embed.title
-                description = f"{embed.description}"
+                if embed.description is None or embed.description == discord.Embed.Empty:
+                    description = ""
+                else:
+                    description = f"{embed.description}"
                 # lib3ration 500 bits: oh look a Darth Fajitas
                 embed_fields = embed.fields
                 if color is None and embed.color is not None:
@@ -78,8 +81,12 @@ class DiscordHelper():
                 target_embed.set_footer(text=footer)
             else:
                 target_embed.set_footer(text=f'Developed by {self.settings.author}')
-            for f in [ ef for ef in embed_fields if ef.name not in [ rfi['name'] for rfi in remove_fields ]]:
-                target_embed.add_field(name=f.name, value=f.value, inline=f.inline)
+            if remove_fields is None:
+                remove_fields = []
+
+            if embed_fields is not None:
+                for f in [ ef for ef in embed_fields if ef.name not in [ rfi['name'] for rfi in remove_fields ]]:
+                    target_embed.add_field(name=f.name, value=f.value, inline=f.inline)
             if fields is not None:
                 for f in [ rf for rf in fields if rf['name'] not in [ rfi['name'] for rfi in remove_fields ] ]:
                     target_embed.add_field(name=f['name'], value=f['value'], inline=f['inline'] if 'inline' in f else False)
@@ -119,11 +126,18 @@ class DiscordHelper():
             title = embed.title
         if description is not None:
             if description_append:
+                edescription = ""
+                if embed.description is not None and embed.description != discord.Embed.Empty:
+                    edescription = embed.description
+
                 description = embed.description + "\n\n" + description
             else:
                 description = description
         else:
-            description = embed.description
+            if embed.description is not None and embed.description != discord.Embed.Empty:
+                description = embed.description
+            else:
+                description = ""
         updated_embed = discord.Embed(color=color, title=embed.title, description=f"{description}", footer=embed.footer)
         for f in embed.fields:
             updated_embed.add_field(name=f.name, value=f.value, inline=f.inline)
@@ -397,14 +411,15 @@ class DiscordHelper():
         channels = [c for c in ctx.guild.channels if c.type == discord.ChannelType.text]
         channels.sort(key=lambda c: c.position)
         sub_message = ""
-        if len(channels) >= 24:
+        max_items = 24 if not allow_none else 23
+        if len(channels) >= max_items:
             self.log.warn(ctx.guild.id, _method, f"Guild has more than 24 channels. Total Channels: {str(len(channels))}")
             options.append(create_select_option(label="OTHER", value="0", emoji="⏭"))
             # sub_message = self.get_string(guild_id, 'ask_admin_role_submessage')
         if allow_none:
             options.append(create_select_option(label="NONE", value="-1", emoji="⛔"))
 
-        for c in channels[:24]:
+        for c in channels[:max_items]:
             options.append(create_select_option(label=c.name, value=str(c.id), emoji="🏷"))
 
         select = create_select(
