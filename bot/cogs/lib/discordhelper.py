@@ -126,11 +126,18 @@ class DiscordHelper():
             title = embed.title
         if description is not None:
             if description_append:
+                edescription = ""
+                if embed.description is not None and embed.description != discord.Embed.Empty:
+                    edescription = embed.description
+
                 description = embed.description + "\n\n" + description
             else:
                 description = description
         else:
-            description = embed.description
+            if embed.description is not None and embed.description != discord.Embed.Empty:
+                description = embed.description
+            else:
+                description = ""
         updated_embed = discord.Embed(color=color, title=embed.title, description=f"{description}", footer=embed.footer)
         for f in embed.fields:
             updated_embed.add_field(name=f.name, value=f.value, inline=f.inline)
