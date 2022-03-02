@@ -22,6 +22,7 @@ from . import loglevel
 from . import settings
 from . import mongo
 from . import dbprovider
+from . import tacotypes
 
 import inspect
 
@@ -153,7 +154,37 @@ class DiscordHelper():
             # get the bot's prefix
             prefix = await self.bot.get_prefix(ctx.message)[0]
             await self.sendEmbed(ctx.channel, "Error", f'{ctx.author.mention}, I am not initialized yet. Please run {prefix}init {subcommand} to initialize.', delete_after=30)
-    async def taco_purge_log(self, guild_id: int, toMember: discord.Member, fromMember: discord.Member, reason: str):
+
+    async def taco_give_user(self, guildId: int, fromUser: typing.Union[discord.User, discord.Member], toUser: typing.Union[discord.User, discord.Member], reason: str = None, give_type: tacotypes.TacoTypes = tacotypes.TacoTypes.CUSTOM, taco_amount: int = 1):
+        _method = inspect.stack()[0][3]
+        # get taco settings
+        taco_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not taco_settings:
+            # raise exception if there are no tacos settings
+            self.log.error(guildId, "tacos.on_message", f"No tacos settings found for guild {guildId}")
+            return
+        taco_count = taco_amount
+
+        if give_type != tacotypes.TacoTypes.CUSTOM:
+            taco_count = taco_settings[tacotypes.TacoTypes.get_string_from_taco_type(give_type)]
+        elif give_type == tacotypes.TacoTypes.CUSTOM:
+            taco_count = taco_amount if taco_amount > 0 else 1
+        else:
+            self.log.warn(guildId, "tacos.on_message", f"Invalid taco type {give_type}")
+            return
+
+        if taco_count <= 0:
+            self.log.warn(guildId, "tacos.on_message", f"Invalid taco count {taco_count}")
+            return
+
+        reason_msg = reason if reason else f"No reason given"
+
+        taco_count = self.db.add_tacos(guildId, toUser.id, taco_count)
+        self.log.debug(guildId, _method, f"🌮 added taco to user {toUser.name} successfully")
+        await self.tacos_log(guildId, toUser, self.bot.user, taco_count, taco_count, reason_msg)
+
+
+    async def taco_purge_log(self, guild_id: int, toMember: typing.Union[discord.User, discord.Member], fromMember: typing.Union[discord.User, discord.Member], reason: str):
         _method = inspect.stack()[0][3]
         try:
 
@@ -393,7 +424,7 @@ class DiscordHelper():
             chan_id = int(button_ctx.selected_options[0])
             await ask_context.delete()
             if chan_id == 0:
-                asked_channel = self.ask_channel_by_name_or_id(ctx, title, "Enter the name of the channel", timeout=timeout)
+                asked_channel = await self.ask_channel_by_name_or_id(ctx, title, "Enter the name of the channel", timeout=timeout)
                 chan_id = asked_channel.id if asked_channel else None
 
             if chan_id is None:

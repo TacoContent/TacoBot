@@ -25,6 +25,7 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import dbprovider
+from .lib import tacotypes
 
 
 class InviteTracker(commands.Cog):
@@ -99,18 +100,18 @@ class InviteTracker(commands.Cog):
                         }
 
                         self.db.track_invite_code(guild_id, invite.code, invite_payload, invite_use_payload)
+                        self.discord_helper.taco_give_user(guild_id, self.bot.user, inviter, f"inviting {member.name} to the server", tacotypes.TacoType.INVITE )
+                        # # get taco settings
+                        # taco_settings = self.settings.get_settings(self.db, guild_id, "tacos")
+                        # if not taco_settings:
+                        #     # raise exception if there are no tacos settings
+                        #     self.log.error(guild_id, "tacos.on_message", f"No tacos settings found for guild {guild_id}")
+                        #     return
+                        # invite_count = taco_settings["invite_count"]
 
-                        # get taco settings
-                        taco_settings = self.settings.get_settings(self.db, guild_id, "tacos")
-                        if not taco_settings:
-                            # raise exception if there are no tacos settings
-                            self.log.error(guild_id, "tacos.on_message", f"No tacos settings found for guild {guild_id}")
-                            return
-                        invite_count = taco_settings["invite_count"]
-
-                        taco_count = self.db.add_tacos(guild_id, inviter.id, invite_count)
-                        self.log.debug(guild_id, _method, f"🌮 added taco to user {inviter.name} successfully")
-                        await self.discord_helper.tacos_log(guild_id, inviter, self.bot.user, invite_count, taco_count, f"inviting {member.name} to the discord")
+                        # taco_count = self.db.add_tacos(guild_id, inviter.id, invite_count)
+                        # self.log.debug(guild_id, _method, f"🌮 added taco to user {inviter.name} successfully")
+                        # await self.discord_helper.tacos_log(guild_id, inviter, self.bot.user, invite_count, taco_count, f"inviting {member.name} to the discord")
 
                     return
         except Exception as e:
