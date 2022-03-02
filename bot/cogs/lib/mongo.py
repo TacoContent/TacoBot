@@ -112,14 +112,17 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
 
-    def add_stream_team_request(self, guildId: int, userName: str, userId: int):
+    def add_stream_team_request(self, guildId: int, userName: str, userId: int, twitchName: str = None):
         try:
             if self.connection is None:
                 self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
             payload = {
                 "guild_id": str(guildId),
                 "user_id": str(userId),
-                "username": userName
+                "user_name": userName,
+                "twitch_name": twitchName,
+                "timestamp": timestamp
             }
             # if not in table, insert
             if not self.connection.stream_team_requests.find_one(payload):

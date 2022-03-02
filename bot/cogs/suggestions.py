@@ -163,12 +163,12 @@ class Suggestions(commands.Cog):
             self.log.debug(guild_id, "suggestions.on_message", f"No channel found for channel id {channel_settings['id']}")
             return
 
-        suggestion_title = await self.discord_helper.ask_text(ctx, ctx.author, "Create Suggestion", "What is the title of your suggestion?", timeout=60)
+        suggestion_title = await self.discord_helper.ask_text(ctx, ctx.channel, "Create Suggestion", f"{ctx.author.mention}, What is the title of your suggestion?", timeout=60)
         if suggestion_title is None:
             suggestion_title = "Suggestion"
-        suggestion_message = await self.discord_helper.ask_text(ctx, ctx.author, "Create Suggestion", "Please enter your suggestion below.\n\n**Note:**\nYou can respond with `cancel` to cancel your suggestion request.", color=0x00ff00, timeout=None)
+        suggestion_message = await self.discord_helper.ask_text(ctx, ctx.channel, "Create Suggestion", f"{ctx.author.mention}, Please enter your suggestion below.\n\n**Note:**\nYou can respond with `cancel` to cancel your suggestion request.", color=0x00ff00, timeout=300)
         if suggestion_message is None or suggestion_message.lower().strip() == "cancel":
-            await self.discord_helper.sendEmbed(ctx.author, "Suggestion Cancelled", "Your suggestion request has been cancelled.", color=0x00ff00)
+            await self.discord_helper.sendEmbed(ctx.channel, "Suggestion Cancelled", f"{ctx.author.mention}, Your suggestion request has been cancelled.", color=0x00ff00)
             return
 
         legend = [
