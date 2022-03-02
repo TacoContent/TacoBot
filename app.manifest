@@ -2,7 +2,7 @@
 	"name": "Taco Bot",
 	"url": "http://darthminos.tv",
 	"version": "1.0.0-snapshot",
-	"icon": "https://i.imgur.com/EIqP24c.png",
+	"icon": "https://i.imgur.com/ejJu8de.png",
 	"author": "DarthMinos#1161",
 	"commands": {
 		"suggest": {
@@ -96,8 +96,8 @@
 			}
 		},
 		"trivia": {
-			"title": "help_trivia_title",
-			"message": "help_trivia_message",
+			"title": "Trivia Commands",
+			"message": "Start a trivia question to earn tacos.",
 			"usage": ".taco trivia",
 			"example": [
 				".taco trivia"
@@ -107,18 +107,18 @@
 			"subcommands": {}
 		},
 		"twitch": {
-			"title": "help_twitch_title",
-			"message": "help_twitch_message",
+			"title": "Twitch Commands",
+			"message": "Commands to set up your Twitch account with Taco Bot.",
 			"usage": ".taco twitch <command>",
 			"fields": [],
 			"admin": false,
 			"subcommands": {
 				"set": {
-					"title": "help_set_twitch_name_title",
-					"message": "help_set_twitch_name_message",
+					"title": "Set your Twitch name",
+					"message": "Set your twitch name. This will allow the bot to know your twitch account associated with your discord account.",
 					"usage": ".taco twitch set [twitchName]",
 					"example": [
-						"taco twitch set darthminos"
+						".taco twitch set darthminos"
 					],
 					"fields": []
 				},
