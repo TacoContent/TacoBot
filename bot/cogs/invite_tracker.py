@@ -100,7 +100,7 @@ class InviteTracker(commands.Cog):
                         }
 
                         self.db.track_invite_code(guild_id, invite.code, invite_payload, invite_use_payload)
-                        self.discord_helper.taco_give_user(guild_id, self.bot.user, inviter, f"inviting {member.name} to the server", tacotypes.TacoType.INVITE )
+                        self.discord_helper.taco_give_user(guild_id, self.bot.user, inviter, f"inviting {member.name} to the server", tacotypes.TacoTypes.INVITE )
                         # # get taco settings
                         # taco_settings = self.settings.get_settings(self.db, guild_id, "tacos")
                         # if not taco_settings:
