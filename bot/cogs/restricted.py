@@ -87,11 +87,20 @@ class Restricted(commands.Cog):
                 return
 
             # get allowed commands from settings
-            allowed = restricted_channel["allowed"]
+            if "allowed" in restricted_channel:
+                allowed = restricted_channel["allowed"]
+            else:
+                allowed = []
             # get denied commands from settings
-            denied = restricted_channel["denied"]
+            if "denied" in restricted_channel:
+                denied = restricted_channel["denied"]
+            else:
+                denied = []
             # get the deny message from settings
-            deny_message = restricted_channel["deny_message"]
+            if "deny_message" in restricted_channel:
+                deny_message = restricted_channel["deny_message"]
+            else:
+                deny_message = "That message is not allowed in this channel."
 
             # if message matches the allowed[] regular expressions then continue
             if not any(re.search(r, message.content) for r in allowed) or any(re.search(r, message.content) for r in denied):
