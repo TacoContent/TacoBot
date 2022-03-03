@@ -170,33 +170,35 @@ class DiscordHelper():
             await self.sendEmbed(ctx.channel, "Error", f'{ctx.author.mention}, I am not initialized yet. Please run {prefix}init {subcommand} to initialize.', delete_after=30)
 
     async def taco_give_user(self, guildId: int, fromUser: typing.Union[discord.User, discord.Member], toUser: typing.Union[discord.User, discord.Member], reason: str = None, give_type: tacotypes.TacoTypes = tacotypes.TacoTypes.CUSTOM, taco_amount: int = 1):
-        _method = inspect.stack()[0][3]
-        # get taco settings
-        taco_settings = self.settings.get_settings(self.db, guildId, "tacos")
-        if not taco_settings:
-            # raise exception if there are no tacos settings
-            self.log.error(guildId, "tacos.on_message", f"No tacos settings found for guild {guildId}")
-            return
-        taco_count = taco_amount
+        try:
+            _method = inspect.stack()[0][3]
+            # get taco settings
+            taco_settings = self.settings.get_settings(self.db, guildId, "tacos")
+            if not taco_settings:
+                # raise exception if there are no tacos settings
+                self.log.error(guildId, "tacos.on_message", f"No tacos settings found for guild {guildId}")
+                return
+            taco_count = taco_amount
 
-        if give_type != tacotypes.TacoTypes.CUSTOM:
-            taco_count = taco_settings[tacotypes.TacoTypes.get_string_from_taco_type(give_type)]
-        elif give_type == tacotypes.TacoTypes.CUSTOM:
-            taco_count = taco_amount if taco_amount > 0 else 1
-        else:
-            self.log.warn(guildId, "tacos.on_message", f"Invalid taco type {give_type}")
-            return
+            if give_type != tacotypes.TacoTypes.CUSTOM:
+                taco_count = taco_settings[tacotypes.TacoTypes.get_string_from_taco_type(give_type)]
+            elif give_type == tacotypes.TacoTypes.CUSTOM:
+                taco_count = taco_amount if taco_amount > 0 else 1
+            else:
+                self.log.warn(guildId, "tacos.on_message", f"Invalid taco type {give_type}")
+                return
 
-        if taco_count <= 0:
-            self.log.warn(guildId, "tacos.on_message", f"Invalid taco count {taco_count}")
-            return
+            if taco_count <= 0:
+                self.log.warn(guildId, "tacos.on_message", f"Invalid taco count {taco_count}")
+                return
 
-        reason_msg = reason if reason else f"No reason given"
+            reason_msg = reason if reason else f"No reason given"
 
-        taco_count = self.db.add_tacos(guildId, toUser.id, taco_count)
-        self.log.debug(guildId, _method, f"🌮 added taco to user {toUser.name} successfully")
-        await self.tacos_log(guildId, toUser, self.bot.user, taco_count, taco_count, reason_msg)
-
+            taco_count = self.db.add_tacos(guildId, toUser.id, taco_count)
+            self.log.debug(guildId, _method, f"🌮 added taco to user {toUser.name} successfully")
+            await self.tacos_log(guildId, toUser, self.bot.user, taco_count, taco_count, reason_msg)
+        except Exception as e:
+            self.log.error(guildId, _method, str(e), traceback.format_exc())
 
     async def taco_purge_log(self, guild_id: int, toMember: typing.Union[discord.User, discord.Member], fromMember: typing.Union[discord.User, discord.Member], reason: str):
         _method = inspect.stack()[0][3]
