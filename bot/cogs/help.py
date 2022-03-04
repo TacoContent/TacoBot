@@ -42,6 +42,10 @@ class Help(commands.Cog):
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, "help.__init__", "Initialized")
 
+    @commands.command(name='changelog', aliases=['changes'])
+    async def changelog(self, ctx):
+        pass
+
 
 
     @commands.group(name="help", aliases=["h"], invoke_without_command=True)
