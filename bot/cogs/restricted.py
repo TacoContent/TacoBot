@@ -87,7 +87,7 @@ class Restricted(commands.Cog):
                 return
 
             silent = True
-            if 'silent' in restricted_channel["silent"]:
+            if 'silent' in restricted_channel:
                 silent = restricted_channel['silent']
 
             # get allowed commands from settings

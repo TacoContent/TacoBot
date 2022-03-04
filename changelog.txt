@@ -1,7 +1,8 @@
 
 
 **1.0.45**
-- added `.taco changelog`
+- added `.taco changelog` [WIP]
+- Added silent option for restricted module
 
 **1.0.44**
 - Allow suggestion to be canceled when asking for the suggestion title
