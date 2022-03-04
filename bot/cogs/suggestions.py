@@ -27,7 +27,7 @@ from .lib import models
 from .lib import settings
 from .lib import mongo
 from .lib import dbprovider
-
+from .lib import tacotypes
 class Suggestions(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -163,9 +163,16 @@ class Suggestions(commands.Cog):
             self.log.debug(guild_id, "suggestions.on_message", f"No channel found for channel id {channel_settings['id']}")
             return
 
-        suggestion_title = await self.discord_helper.ask_text(ctx, ctx.channel, "Create Suggestion", f"{ctx.author.mention}, What is the title of your suggestion?", timeout=60)
+        # get suggestion title
+        suggestion_title = await self.discord_helper.ask_text(ctx, ctx.channel, "Create Suggestion", f"{ctx.author.mention}, What is the title of your suggestion?\n\n**Note:**\nYou can respond with `cancel` to cancel your suggestion request.", timeout=60)
+        if suggestion_title is None or suggestion_title.lower().strip() == "cancel":
+            await self.discord_helper.sendEmbed(ctx.channel, "Suggestion Cancelled", f"{ctx.author.mention}, Your suggestion request has been cancelled.", color=0x00ff00)
+            return
+
         if suggestion_title is None:
             suggestion_title = "Suggestion"
+
+        # get suggestion message
         suggestion_message = await self.discord_helper.ask_text(ctx, ctx.channel, "Create Suggestion", f"{ctx.author.mention}, Please enter your suggestion below.\n\n**Note:**\nYou can respond with `cancel` to cancel your suggestion request.", color=0x00ff00, timeout=300)
         if suggestion_message is None or suggestion_message.lower().strip() == "cancel":
             await self.discord_helper.sendEmbed(ctx.channel, "Suggestion Cancelled", f"{ctx.author.mention}, Your suggestion request has been cancelled.", color=0x00ff00)
@@ -196,19 +203,7 @@ class Suggestions(commands.Cog):
             # add reaction to the message from the bot
             await s_message.add_reaction(r)
 
-        ts = self.settings.get_settings(self.db, guild_id, "tacos")
-        if ts:
-            # raise exception if there are no suggestion settings
-            self.log.debug(guild_id, "suggestions.create_suggestion", f"No tacos settings found for guild {guild_id}")
-
-        # get taco settings
-        taco_settings = self.settings.get_settings(self.db, guild_id, "tacos")
-        if taco_settings:
-            suggest_count = taco_settings["suggest_count"]
-
-            taco_count = self.db.add_tacos(guild_id, ctx.author.id, suggest_count)
-            self.log.debug(guild_id, _method, f"🌮 added taco to user {ctx.author.name} successfully")
-            await self.discord_helper.tacos_log(guild_id, ctx.author, self.bot.user, suggest_count, taco_count, f"creating a new suggestion")
+        await self.discord_helper.taco_give_user(guild_id, self.bot.user, ctx.author, f"creating a new suggestion", tacotypes.TacoTypes.SUGGEST )
 
         suggestion_data = {
             "id": uuid.uuid4().hex,
@@ -295,7 +290,10 @@ class Suggestions(commands.Cog):
 
             log_channel = None
             if 'log_channel_id' in channel_settings and channel_settings['log_channel_id'] != "":
-                log_channel = await self.discord_helper.get_or_fetch_channel(int(channel_settings['log_channel_id']))
+                if channel_settings['log_channel_id'] == "0" or channel_settings['log_channel_id'] == None:
+                    log_channel = None
+                else:
+                    log_channel = await self.discord_helper.get_or_fetch_channel(int(channel_settings['log_channel_id']))
 
             vote_emoji = [
                 channel_settings["vote_up_emoji"],
