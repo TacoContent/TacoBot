@@ -86,6 +86,10 @@ class Restricted(commands.Cog):
             if not restricted_channel:
                 return
 
+            silent = True
+            if 'silent' in restricted_channel["silent"]:
+                silent = restricted_channel['silent']
+
             # get allowed commands from settings
             if "allowed" in restricted_channel:
                 allowed = restricted_channel["allowed"]
@@ -104,7 +108,8 @@ class Restricted(commands.Cog):
 
             # if message matches the allowed[] regular expressions then continue
             if not any(re.search(r, message.content) for r in allowed) or any(re.search(r, message.content) for r in denied):
-                await self.discord_helper.sendEmbed(message.channel, "Restricted", f"{message.author.mention}, {deny_message}", delete_after=30, color=0xFF0000)
+                if not silent:
+                    await self.discord_helper.sendEmbed(message.channel, "Restricted", f"{message.author.mention}, {deny_message}", delete_after=30, color=0xFF0000)
                 await message.delete()
 
         except Exception as e:
