@@ -96,7 +96,7 @@ class InviteTracker(commands.Cog):
                         invite_payload = self.get_payload_for_invite(invite)
 
                         invite_use_payload = {
-                            "user_id": member.id,
+                            "user_id": str(member.id),
                             "timestamp": timestamp
                         }
 
@@ -122,14 +122,14 @@ class InviteTracker(commands.Cog):
         return {
             "id": invite.id,
             "code": invite.code,
-            "inviter_id": invite.inviter.id,
+            "inviter_id": str(invite.inviter.id),
             "uses": invite.uses,
             "max_uses": invite.max_uses,
             "max_age": invite.max_age,
             "temporary": invite.temporary,
             "created_at": invite.created_at,
             "revoked": invite.revoked,
-            "channel_id": invite.channel.id,
+            "channel_id": str(invite.channel.id),
             "url": invite.url
         }
 
