@@ -1,9 +1,7 @@
 
-
-**1.0.45**
+**1.0.48**
+- set the timeout for the suggestion canceled message to 20 seconds
 - added `.taco changelog` [WIP]
 - Added silent option for restricted module
-
-**1.0.44**
 - Allow suggestion to be canceled when asking for the suggestion title
 - Use the shared function to add tacos for a suggestion
