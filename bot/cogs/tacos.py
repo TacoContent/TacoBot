@@ -202,7 +202,7 @@ class Tacos(commands.Cog):
                 return
             _method = inspect.stack()[0][3]
             self.log.debug(member.guild.id, _method, f"{member} left the server")
-            await self.db.remove_all_tacos(member.guild.id, member.id)
+            self.db.remove_all_tacos(member.guild.id, member.id)
         except Exception as ex:
             self.log.error(member.guild.id, _method, str(ex), traceback.format_exc())
 
