@@ -94,7 +94,7 @@ class LeaveSurvey(commands.Cog):
                     await self.discord_helper.sendEmbed(member, "Thank You!", "Thank you for your feedback. We will review your feedback and take action accordingly.")
             except Exception as e:
                 # an error occurred while asking the user if they want to take the surveys
-                self.log.error(guild_id, "leave_survey.on_message", f"Error in leave_survey.ask_survey: {e}")
+                self.log.error(guild_id, "leave_survey.on_member_remove", f"Error in leave_survey.ask_survey: {e}")
 
             if log_channel:
                 await self.discord_helper.sendEmbed(log_channel, "Leave Survey", f"{member.name}#{member.discriminator} ({member.id}) has left the server. \n\n**Reason given:**\n\n{reason}", author=member)

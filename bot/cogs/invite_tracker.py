@@ -83,7 +83,8 @@ class InviteTracker(commands.Cog):
             invites_before_join = self.invites[member.guild.id]
             invites_after_join = await member.guild.invites()
             for invite in invites_before_join:
-                if invite.uses < self.find_invite_by_code(invites_after_join, invite.code).uses:
+                found_code = self.find_invite_by_code(invites_after_join, invite.code)
+                if found_code is not None and invite.uses < found_code.uses:
                     self.log.debug(0, "invite_tracker.on_member_join", "Invite used: " + invite.code)
                     self.invites[member.guild.id] = invites_after_join
 
