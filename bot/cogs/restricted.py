@@ -108,12 +108,15 @@ class Restricted(commands.Cog):
 
             # if message matches the allowed[] regular expressions then continue
             if not any(re.search(r, message.content) for r in allowed) or any(re.search(r, message.content) for r in denied):
-                if not silent:
-                    await self.discord_helper.sendEmbed(message.channel, "Restricted", f"{message.author.mention}, {deny_message}", delete_after=30, color=0xFF0000)
+                # wait
+                await asyncio.sleep(500)
                 await message.delete()
 
+                if not silent:
+                    await self.discord_helper.sendEmbed(message.channel, "Restricted", f"{message.author.mention}, {deny_message}", delete_after=20, color=0xFF0000)
+        except discord.NotFound as nf:
+            self.log.info(guild_id, "restricted.on_message", f"Message not found: {nf}")
         except Exception as e:
-            self.log.error(guild_id, "restricted.on_message", f"{e}")
-            self.log.error(guild_id, "restricted.on_message", f"{traceback.format_exc()}")
+            self.log.error(guild_id, "restricted.on_message", f"{e}", traceback.format_exc())
 def setup(bot):
     bot.add_cog(Restricted(bot))

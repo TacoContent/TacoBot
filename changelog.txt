@@ -1,5 +1,6 @@
 
 **1.0.48**
+- Wait 500ms before deleting a message in restricted. This will allow others to handle it first, if needed.
 - set the timeout for the suggestion canceled message to 20 seconds
 - added `.taco changelog` [WIP]
 - Added silent option for restricted module
