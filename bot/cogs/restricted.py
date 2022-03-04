@@ -109,7 +109,7 @@ class Restricted(commands.Cog):
             # if message matches the allowed[] regular expressions then continue
             if not any(re.search(r, message.content) for r in allowed) or any(re.search(r, message.content) for r in denied):
                 # wait
-                await asyncio.sleep(500)
+                await asyncio.sleep(0.5)
                 await message.delete()
 
                 if not silent:
