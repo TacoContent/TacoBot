@@ -163,19 +163,27 @@ class Suggestions(commands.Cog):
             self.log.debug(guild_id, "suggestions.on_message", f"No channel found for channel id {channel_settings['id']}")
             return
 
+        title_ask = "What is the title of your suggestion?"
+        message_ask = "Please enter your suggestion below."
+
+        if "title_ask" in channel_settings and channel_settings['title_ask'] != "" and channel_settings['title_ask'] is not None:
+            title_ask = channel_settings['title_ask']
+        if "message_ask" in channel_settings and channel_settings['message_ask'] != "" and channel_settings['message_ask'] is not None:
+            message_ask = channel_settings['message_ask']
+
         # get suggestion title
-        suggestion_title = await self.discord_helper.ask_text(ctx, ctx.channel, "Create Suggestion", f"{ctx.author.mention}, What is the title of your suggestion?\n\n**Note:**\nYou can respond with `cancel` to cancel your suggestion request.", timeout=60)
+        suggestion_title = await self.discord_helper.ask_text(ctx, ctx.channel, "Create Suggestion", f"{ctx.author.mention}, {title_ask}\n\n**Note:**\nYou can respond with `cancel` to cancel your suggestion request.", timeout=60)
         if suggestion_title is None or suggestion_title.lower().strip() == "cancel":
-            await self.discord_helper.sendEmbed(ctx.channel, "Suggestion Cancelled", f"{ctx.author.mention}, Your suggestion request has been cancelled.", color=0x00ff00)
+            await self.discord_helper.sendEmbed(ctx.channel, "Suggestion Cancelled", f"{ctx.author.mention}, Your suggestion request has been cancelled.", color=0x00ff00, delete_after=20)
             return
 
         if suggestion_title is None:
             suggestion_title = "Suggestion"
 
         # get suggestion message
-        suggestion_message = await self.discord_helper.ask_text(ctx, ctx.channel, "Create Suggestion", f"{ctx.author.mention}, Please enter your suggestion below.\n\n**Note:**\nYou can respond with `cancel` to cancel your suggestion request.", color=0x00ff00, timeout=300)
+        suggestion_message = await self.discord_helper.ask_text(ctx, ctx.channel, "Create Suggestion", f"{ctx.author.mention}, {message_ask}\n\n**Note:**\nYou can respond with `cancel` to cancel your suggestion request.", color=0x00ff00, timeout=300)
         if suggestion_message is None or suggestion_message.lower().strip() == "cancel":
-            await self.discord_helper.sendEmbed(ctx.channel, "Suggestion Cancelled", f"{ctx.author.mention}, Your suggestion request has been cancelled.", color=0x00ff00)
+            await self.discord_helper.sendEmbed(ctx.channel, "Suggestion Cancelled", f"{ctx.author.mention}, Your suggestion request has been cancelled.", color=0x00ff00, delete_after=20)
             return
 
         legend = [
