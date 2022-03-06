@@ -1,5 +1,10 @@
+**v1.0.50**
+- implement `.taco changelog` command
+- fix minor bugs with some restricted channel actions
+- implemented the `.taco move` command.
+- Changes to the taco reward functions to use the shared function instead of repeating code
 
-**1.0.48**
+**v1.0.48**
 - Wait 500ms before deleting a message in restricted. This will allow others to handle it first, if needed.
 - set the timeout for the suggestion canceled message to 20 seconds
 - added `.taco changelog` [WIP]

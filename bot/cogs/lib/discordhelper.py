@@ -197,6 +197,7 @@ class DiscordHelper():
             total_taco_count = self.db.add_tacos(guildId, toUser.id, taco_count)
             self.log.debug(guildId, _method, f"🌮 added {taco_count} tacos to user {toUser.name}#{toUser.discriminator} successfully")
             await self.tacos_log(guildId, toUser, self.bot.user, taco_count, total_taco_count, reason_msg)
+            return total_taco_count
         except Exception as e:
             self.log.error(guildId, _method, str(e), traceback.format_exc())
 

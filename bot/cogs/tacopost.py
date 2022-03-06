@@ -97,7 +97,6 @@ class TacoPost(commands.Cog):
             taco_cost = [c for c in tacopost_channels if c['id'] == str(channel.id)][0]['cost']
             # get tacos count for user
             taco_count = self.db.get_tacos_count(guild_id, user.id)
-            print(f"taco_count: {taco_count}")
             # if user has doesnt have enough tacos, send a message, and delete their message
             if taco_count is None or taco_count < taco_cost:
                 await self.discord_helper.sendEmbed(channel, "Not Enough Tacos", f"{user.mention}, You need {taco_cost} tacos to post in this channel.", delete_after=15)

@@ -229,6 +229,7 @@ class InitHandler(commands.Cog):
                 await self.discord_helper.notify_of_error(ctx)
         else:
             pass
+
     @paypost.command(aliases=["add-channel"])
     @commands.has_permissions(administrator=True)
     async def add(self, ctx: ComponentContext, channel: discord.TextChannel):
@@ -275,6 +276,7 @@ class InitHandler(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def suggestions(self, ctx: ComponentContext):
         await self.suggestions_action(ctx, delete_message=True)
+
     async def suggestions_action(self, ctx: ComponentContext, delete_message=True):
         try:
             if not ctx.guild:
@@ -365,7 +367,8 @@ class InitHandler(commands.Cog):
                     "join_count": 5,
                     "boost_count": 100,
                     "reaction_reward_count": 1,
-                    "suggest_count": 5
+                    "suggest_count": 5,
+                    "invite_count": 25,
                 })
 
         except Exception as e:
@@ -376,7 +379,7 @@ class InitHandler(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def help(self, ctx):
         # todo: add help command
-        await self.discord_helper.sendEmbed(ctx.channel, "Help", f"I don't know how to help with this yet.", delete_after=20)
+        await self.discord_helper.sendEmbed(ctx.channel, "Help", f"To get help on this command use `.taco help init`.", delete_after=20)
         if ctx.guild:
             # only delete if in guild channel
             await ctx.message.delete()

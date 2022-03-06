@@ -4,7 +4,19 @@
 	"version": "1.0.0-snapshot",
 	"icon": "https://i.imgur.com/ejJu8de.png",
 	"author": "DarthMinos#1161",
+	"changelog": "changelog.txt",
 	"commands": {
+		"move": {
+			"title": "Move a message",
+			"message": "Moves a message from one channel to another. Must be ran in the channel that the message is in.",
+			"usage": ".taco move <message id>",
+			"example": [
+				".taco move 12345678901234567890123456789"
+			],
+			"admin": true,
+			"fields": [],
+			"subcommands": {}
+		},
 		"suggest": {
 			"title": "Create a Suggestion",
 			"message": "Starts a suggestion. I will DM you to ask you questions to create the suggestion.",
