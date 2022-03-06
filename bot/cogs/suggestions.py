@@ -18,6 +18,8 @@ from discord_slash.utils.manage_components import create_button, create_actionro
 from discord_slash.model import ButtonStyle
 from discord.ext.commands import has_permissions, CheckFailure
 
+from discord_slash import cog_ext, SlashContext
+
 from .lib import settings
 from .lib import discordhelper
 from .lib import logger
@@ -29,6 +31,7 @@ from .lib import mongo
 from .lib import dbprovider
 from .lib import tacotypes
 class Suggestions(commands.Cog):
+
     def __init__(self, bot):
         self.bot = bot
         self.settings = settings.Settings()
@@ -106,8 +109,6 @@ class Suggestions(commands.Cog):
                         ss['channels'].remove(c)
                 if changed:
                     self.db.add_settings(guild_id, self.SETTINGS_SECTION, ss)
-
-
         except Exception as e:
             self.log.error(0, "suggestions.on_ready", str(e), traceback.format_exc())
 
@@ -215,8 +216,8 @@ class Suggestions(commands.Cog):
 
         suggestion_data = {
             "id": uuid.uuid4().hex,
-            "message_id": s_message.id,
-            "author_id": ctx.author.id,
+            "message_id": str(s_message.id),
+            "author_id": str(ctx.author.id),
             "suggestion" : {
                 "title": suggestion_title,
                 "description": suggestion_message
@@ -225,7 +226,7 @@ class Suggestions(commands.Cog):
         self.db.add_suggestion(guild_id, s_message.id, suggestion_data)
 
     @commands.group(aliases=["suggestion"])
-    async def suggest(self, ctx):
+    async def suggest(self, ctx: SlashContext):
         try:
             guild_id = 0
             if ctx.guild is not None:

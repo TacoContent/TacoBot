@@ -72,7 +72,6 @@ class MoveMessage(commands.Cog):
             if react_member.guild_permissions.manage_messages:
                 self.log.debug(guild_id, _method, f"{user.name} reacted to message {message.id} with {str(payload.emoji)}")
                 if str(payload.emoji) == '⏭️':
-                    self.log.debug(guild_id, _method, "Received reaction ⏭️")
                     ctx = self.discord_helper.create_context(bot=self.bot, message=message, channel=channel, author=user, guild=message.guild)
                     target_channel = await self.discord_helper.ask_channel(ctx, "Choose Target Channel", "Please select the channel you want to move the message to.", timeout=60)
                     if target_channel is None:
@@ -83,6 +82,33 @@ class MoveMessage(commands.Cog):
 
         except Exception as e:
             self.log.error(guild_id, "move_message.on_raw_reaction_add", str(e), traceback.format_exc())
+            return
+
+    @commands.group()
+    @commands.has_permissions(manage_messages=True)
+    async def move(self, ctx, messageId: int):
+        try:
+            _method = inspect.stack()[0][3]
+            if ctx.guild is None:
+                return
+            await ctx.message.delete()
+            guild_id = ctx.guild.id
+            self.log.debug(guild_id, _method, f"{ctx.author.name} called move message {messageId}")
+            channel = ctx.channel
+
+            message = await ctx.channel.fetch_message(messageId)
+            if message is None:
+                await self.discord_helper.sendEmbed(channel, "Move Message", f"{ctx.author.mention}, the message id ({messageId}) was not found.", color=0xff0000, delete_after=20)
+                return
+            ctx = self.discord_helper.create_context(bot=self.bot, message=message, channel=channel, author=message.author, guild=ctx.guild)
+            target_channel = await self.discord_helper.ask_channel(ctx, "Choose Target Channel", "Please select the channel you want to move the message to.", timeout=60)
+            if target_channel is None:
+                return
+
+            await self.discord_helper.move_message(message, targetChannel=target_channel, author=message.author, who=ctx.author, reason="Moved by admin")
+            await message.delete()
+        except Exception as e:
+            self.log.error(ctx.guild.id, "move.move", str(e), traceback.format_exc())
             return
 
 def setup(bot):

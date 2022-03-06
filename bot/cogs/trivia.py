@@ -27,7 +27,7 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import dbprovider
-
+from .lib import tacotypes
 class Trivia(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -207,13 +207,16 @@ class Trivia(commands.Cog):
                             reason_msg = "Getting trivia question correct"
                             for u in correct_users:
                                 if not u.bot:
-                                    taco_count = self.db.add_tacos(guild_id, u.id, reward)
-                                    await self.discord_helper.tacos_log(guild_id, u, self.bot.user, reward, taco_count, reason_msg)
+                                    # taco_count = self.db.add_tacos(guild_id, u.id, reward)
+                                    # await self.discord_helper.tacos_log(guild_id, u, self.bot.user, reward, taco_count, reason_msg)
+                                    await self.discord_helper.taco_give_user(guild_id, self.bot.user, u, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=reward )
+
                             reason_msg = "Getting trivia question incorrect"
                             for u in incorrect_users:
                                 if not u.bot:
-                                    taco_count = self.db.add_tacos(guild_id, u.id, punishment)
-                                    await self.discord_helper.tacos_log(guild_id, u, self.bot.user, punishment, taco_count, reason_msg)
+                                    # taco_count = self.db.add_tacos(guild_id, u.id, punishment)
+                                    # await self.discord_helper.tacos_log(guild_id, u, self.bot.user, punishment, taco_count, reason_msg)
+                                    await self.discord_helper.taco_give_user(guild_id, self.bot.user, u, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=punishment )
 
                             await self.discord_helper.sendEmbed(ctx.channel,
                                 "Trivia - Results",

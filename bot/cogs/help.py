@@ -8,6 +8,7 @@ import os
 import glob
 import typing
 import math
+import re
 
 from discord.ext.commands.cooldowns import BucketType
 from discord_slash import ComponentContext
@@ -42,9 +43,50 @@ class Help(commands.Cog):
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, "help.__init__", "Initialized")
 
-    @commands.command(name='changelog', aliases=['changes'])
+    @commands.command(name='changelog', aliases=['changes', "cl"])
     async def changelog(self, ctx):
-        pass
+        _method = inspect.stack()[0][3]
+        try:
+            await ctx.message.delete()
+            with open(self.settings.changelog, 'r', encoding="UTF-8") as f:
+                changelog_data = f.read().strip()
+
+            # split changelog into sections based on '**\d{1,}\.\d{1,}\.\d{1,}**'
+            sections = re.split(r'^(\*\*v?\d{1,}\.\d{1,}\.\d{1,}\*\*)', changelog_data)
+            versions = {}
+            cversion = None
+            for s in list(filter(lambda x: x != '' and x != None, sections)):
+                if s == '' or s == None:
+                    continue
+
+                if s.startswith('**'):
+                    cversion = s.strip()
+                    versions[cversion] = ''
+                else:
+                    if cversion and cversion in versions:
+                        versions[cversion] += s
+            # chunk in to 25 sections
+            chunked = utils.chunk_list(list(versions.keys()), 25)
+            pages = math.ceil(len(list(versions.keys())) / 10)
+            page = 1
+            for chunk in chunked:
+                fields = list()
+                for v in chunk:
+                    # get the version from the section
+                    if v and v in versions:
+                        section = versions[v]
+                        if section:
+                            # if section is longer than 1024 characters, truncate and add '…'
+                            if len(section) > 1024:
+                                section = section[:1023] + '…'
+                            fields.append({"name": v, "value": section})
+                            # ({page}/{len(chunked)})
+                if len(fields) > 0:
+                    await self.discord_helper.sendEmbed(ctx.channel, f"{self.settings.name} Changelog ({page}/{pages})", "", footer=f"Version {self.settings.version}", fields=fields)
+                page += 1
+        except Exception as ex:
+            self.log.error(ctx.guild.id, _method, str(ex), traceback.format_exc())
+            await self.discord_helper.notify_of_error(ctx)
 
 
 

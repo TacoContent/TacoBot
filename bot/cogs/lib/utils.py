@@ -102,7 +102,8 @@ def isAdmin(ctx, settings):
     #     guild_admin_role = self.get_by_name_or_id(ctx.guild.roles, guild_settings.admin_role)
     #     is_in_guild_admin_role = guild_admin_role in ctx.author.roles
     is_bot_owner = str(ctx.author.id) == settings.bot_owner
-    return is_bot_owner # or is_in_guild_admin_role
+    has_admin = ctx.author.guild_permissions.administrator or ctx.author.permission_in(ctx.channel).manage_guild
+    return is_bot_owner or has_admin
 
 def get_by_name_or_id(iterable, nameOrId: typing.Union[int, str]):
     if isinstance(nameOrId, str):

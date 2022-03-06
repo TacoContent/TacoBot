@@ -183,20 +183,21 @@ class DiscordHelper():
             if give_type != tacotypes.TacoTypes.CUSTOM:
                 taco_count = taco_settings[tacotypes.TacoTypes.get_string_from_taco_type(give_type)]
             elif give_type == tacotypes.TacoTypes.CUSTOM:
-                taco_count = taco_amount if taco_amount > 0 else 1
+                taco_count = taco_amount
             else:
                 self.log.warn(guildId, "tacos.on_message", f"Invalid taco type {give_type}")
                 return
 
-            if taco_count <= 0:
+            # only reject <= 0 tacos if it is not custom type
+            if taco_count <= 0 and give_type != tacotypes.TacoTypes.CUSTOM:
                 self.log.warn(guildId, "tacos.on_message", f"Invalid taco count {taco_count}")
                 return
 
             reason_msg = reason if reason else f"No reason given"
 
             total_taco_count = self.db.add_tacos(guildId, toUser.id, taco_count)
-            self.log.debug(guildId, _method, f"🌮 added {taco_count} tacos to user {toUser.name}#{toUser.discriminator} successfully")
             await self.tacos_log(guildId, toUser, self.bot.user, taco_count, total_taco_count, reason_msg)
+            return total_taco_count
         except Exception as e:
             self.log.error(guildId, _method, str(e), traceback.format_exc())
 
