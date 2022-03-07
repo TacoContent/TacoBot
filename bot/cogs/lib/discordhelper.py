@@ -52,6 +52,10 @@ class DiscordHelper():
         if not author:
             author = message.author
 
+        if not message.guild:
+            return
+        guild_id = message.guild.id
+
         try:
             if len(message.embeds) == 0:
                 description = f"{message.content}"
@@ -70,7 +74,7 @@ class DiscordHelper():
                     color = embed.color
 
             if who:
-                footer = f"Moved by {who.name}#{who.discriminator} - {reason or 'No reason given'}"
+                footer = f"{self.settings.get_string(guild_id, 'moved_by', user=f'{who.name}#{who.discriminator}')} - {reason or self.settings.get_string(guild_id, 'no_reason')}"
 
             if color is None:
                 color = 0x7289da
@@ -80,7 +84,7 @@ class DiscordHelper():
             if footer:
                 target_embed.set_footer(text=footer)
             else:
-                target_embed.set_footer(text=f'Developed by {self.settings.author}')
+                target_embed.set_footer(text=self.settings.get_string(guild_id, 'developed_by', user=self.settings.author))
             if remove_fields is None:
                 remove_fields = []
 
@@ -96,11 +100,14 @@ class DiscordHelper():
             if len(files) > 0 or target_embed != discord.Embed.Empty:
                 await targetChannel.send(files=files, embed=target_embed)
         except Exception as ex:
-            self.log.error(0, "move_message", str(ex), traceback.format_exc())
+            self.log.error(0, "discordhelper.move_message", str(ex), traceback.format_exc())
 
     async def sendEmbed(self, channel, title, message, fields=None, delete_after=None, footer=None, components=None, color=0x7289da, author=None):
         if color is None:
             color = 0x7289da
+        guild_id = 0
+        if channel.guild:
+            guild_id = channel.guild.id
         embed = discord.Embed(title=title, description=message, color=color)
         if author:
             embed.set_author(name=f"{author.name}#{author.discriminator}", icon_url=author.avatar_url)
@@ -111,7 +118,7 @@ class DiscordHelper():
             for f in fields:
                 embed.add_field(name=f['name'], value=f['value'], inline=f['inline'] if 'inline' in f else False)
         if footer is None:
-            embed.set_footer(text=f'Developed by {self.settings.author}')
+            embed.set_footer(text=self.settings.get_string(guild_id, 'developed_by', user=self.settings.author))
         else:
             embed.set_footer(text=footer)
         return await channel.send(embed=embed, delete_after=delete_after, components=components)
@@ -121,6 +128,9 @@ class DiscordHelper():
             return
         if color is None:
             color = 0x7289da
+        guild_id = 0
+        if message.guild:
+            guild_id = message.guild.id
         embed = message.embeds[0]
         if title is None:
             title = embed.title
@@ -130,7 +140,7 @@ class DiscordHelper():
                 if embed.description is not None and embed.description != discord.Embed.Empty:
                     edescription = embed.description
 
-                description = embed.description + "\n\n" + description
+                description = edescription + "\n\n" + description
             else:
                 description = description
         else:
@@ -145,7 +155,7 @@ class DiscordHelper():
             for f in fields:
                 updated_embed.add_field(name=f['name'], value=f['value'], inline=f['inline'] if 'inline' in f else False)
         if footer is None:
-            updated_embed.set_footer(text=f'Developed by {self.settings.author}')
+            updated_embed.set_footer(text=self.settings.get_string(guild_id, 'developed_by', user=self.settings.author))
         else:
             updated_embed.set_footer(text=footer)
 
@@ -155,19 +165,30 @@ class DiscordHelper():
         await message.edit(embed=updated_embed)
 
     async def notify_of_error(self, ctx):
-        await self.sendEmbed(ctx.channel, "Error", f'{ctx.author.mention}, There was an error trying to complete your request. The error has been logged. I am very sorry.', delete_after=30)
+        guild_id = 0
+        if ctx.guild:
+            guild_id = ctx.guild.id
+        await self.sendEmbed(ctx.channel, self.settings.get_string(guild_id, 'error'), self.settings.get_string(guild_id, 'error_ocurred', user=ctx.author.mention), delete_after=30)
 
     async def notify_bot_not_initialized(self, ctx, subcommand: str = None):
         channel = ctx.channel
         if not channel:
             channel = ctx.author
-        # if user is an admin, then we can skip this
+        guild_id = 0
+        if ctx.guild:
+            guild_id = ctx.guild.id
+
         if not ctx.author.guild_permissions.administrator:
-            await self.sendEmbed(ctx.channel, "Error", f'{ctx.author.mention}, I am not initialized yet. Please try again in a few minutes.\n\nIf you are still having issues, please contact the an administrator.', delete_after=30)
+            await self.sendEmbed(ctx.channel, self.settings.get_string(guild_id, 'error'),
+                self.settings.get_string(guild_id, 'not_initialized_user', user=ctx.author.mention), delete_after=30)
         else:
             # get the bot's prefix
             prefix = await self.bot.get_prefix(ctx.message)[0]
-            await self.sendEmbed(ctx.channel, "Error", f'{ctx.author.mention}, I am not initialized yet. Please run {prefix}init {subcommand} to initialize.', delete_after=30)
+            await self.sendEmbed(ctx.channel, self.settings.get_string(guild_id, 'error'),
+                self.settings.get_string(guild_id, 'not_initialized_admin',
+                    user=ctx.author.mention, prefix=prefix,
+                    subcommand=subcommand),
+                delete_after=30)
 
     async def taco_give_user(self, guildId: int, fromUser: typing.Union[discord.User, discord.Member], toUser: typing.Union[discord.User, discord.Member], reason: str = None, give_type: tacotypes.TacoTypes = tacotypes.TacoTypes.CUSTOM, taco_amount: int = 1):
         try:
@@ -193,10 +214,10 @@ class DiscordHelper():
                 self.log.warn(guildId, "tacos.on_message", f"Invalid taco count {taco_count}")
                 return
 
-            reason_msg = reason if reason else f"No reason given"
+            reason_msg = reason if reason else self.settings.get_string(guildId, 'no_reason')
 
             total_taco_count = self.db.add_tacos(guildId, toUser.id, taco_count)
-            await self.tacos_log(guildId, toUser, self.bot.user, taco_count, total_taco_count, reason_msg)
+            await self.tacos_log(guildId, toUser, fromUser, taco_count, total_taco_count, reason_msg)
             return total_taco_count
         except Exception as e:
             self.log.error(guildId, _method, str(e), traceback.format_exc())
@@ -215,7 +236,7 @@ class DiscordHelper():
 
             self.log.debug(guild_id, _method, f"{fromMember.name} purged all tacos from {toMember.name} for {reason}")
             if log_channel:
-                await log_channel.send(f"{fromMember.name} purged all tacos from {toMember.name} for {reason}")
+                await log_channel.send(self.settings.get_string(guild_id, "tacos_purged_log", touser=toMember.name, fromuser=fromMember.name, reason=reason))
         except Exception as e:
             self.log.error(guild_id, _method, str(e), traceback.format_exc())
 
@@ -231,20 +252,23 @@ class DiscordHelper():
 
             taco_log_channel_id = taco_settings["taco_log_channel_id"]
             log_channel = await self.get_or_fetch_channel(int(taco_log_channel_id))
-            taco_word = "tacos"
+            taco_word = self.settings.get_string(guild_id, "taco_plural")
             if count == 1:
-                taco_word = "taco"
+                taco_word = self.settings.get_string(guild_id, "taco_singular")
 
-            action = "received"
-
+            action = self.settings.get_string(guild_id, "tacos_log_action_received")
             if count < 0:
-                action  = "lost"
+                action  = self.settings.get_string(guild_id, "tacos_log_action_lost")
 
             positive_count = abs(count)
 
-            self.log.debug(guild_id, _method, f"{toMember.name}#{toMember.discriminator} {action} {positive_count} {taco_word} from {fromMember.name} for {reason}")
+            self.log.debug(guild_id, _method, f"{toMember.name}#{toMember.discriminator} {action} {positive_count} {taco_word} from {fromMember.name}#{fromMember.discriminator} for {reason}")
             if log_channel:
-                await log_channel.send(f"{toMember.name} has {action} {positive_count} {taco_word} from {fromMember.name} for {reason}, giving them {total_tacos} 🌮.")
+                await log_channel.send(self.settings.get_string(guild_id, "tacos_log_message",
+                    touser=toMember.name, action=action,
+                    positive_count=positive_count, taco_word=taco_word,
+                    fromuser=fromMember.name, reason=reason,
+                    total_tacos=total_tacos))
         except Exception as e:
             self.log.error(guild_id, _method, str(e), traceback.format_exc())
 
@@ -450,12 +474,12 @@ class DiscordHelper():
             chan_id = int(button_ctx.selected_options[0])
             await ask_context.delete()
             if chan_id == 0:
-                asked_channel = await self.ask_channel_by_name_or_id(ctx, title, "Enter the name of the channel", timeout=timeout)
+                asked_channel = await self.ask_channel_by_name_or_id(ctx, title, self.settings.get_string(guild_id, "ask_name_of_channel"), timeout=timeout)
                 chan_id = asked_channel.id if asked_channel else None
 
             if chan_id is None:
                 # manual entered channel not found
-                await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, Unknown Channel.", delete_after=5)
+                await self.sendEmbed(ctx.channel, title, self.settings.get_string(guild_id, "unknown_channel", user=ctx.author.mention, channel_id=chan_id), delete_after=5)
                 return None
 
             if chan_id == -1:
@@ -465,10 +489,10 @@ class DiscordHelper():
             selected_channel = discord.utils.get(ctx.guild.channels, id=chan_id)
             if selected_channel:
                 self.log.debug(guild_id, _method, f"{ctx.author.mention} selected the channel '{selected_channel.name}'")
-                await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, You have selected channel '{selected_channel.name}'", delete_after=5)
+                await self.sendEmbed(ctx.channel, title, self.settings.get_string(guild_id, "selected_channel_message", user=ctx.author.mention, channel=selected_channel.name), delete_after=5)
                 return selected_channel
             else:
-                await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, Unknown Channel.", delete_after=5)
+                await self.sendEmbed(ctx.channel, title, self.settings.get_string(guild_id, "unknown_channel", user=ctx.author.mention, channel_id=chan_id), delete_after=5)
                 return None
 
 

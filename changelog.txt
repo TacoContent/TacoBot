@@ -1,6 +1,17 @@
+**v1.0.52**
+- Added more locialized strings to replace hard coded strings
+- Update restricted module to use localized strings.
+- removed unused carlgg suggestion module
+- updated help module to use localized strings.
+- updated tacos module to use localized strings.
+- fixed the log of the receiving of tacos to be the correct user.
+- fixed the taco log message key name
+- fixed the changelog to separate and group correctly.
+
 **v1.0.51**
 - Started using localized strings. Starting with english.
 - Start adding strings to load from localization files.
+- Fixed issue with the 🌮 reaction
 
 **v1.0.50**
 - implement `.taco changelog` command
@@ -9,8 +20,8 @@
 - Changes to the taco reward functions to use the shared function instead of repeating code
 
 **v1.0.48**
-- Wait 500ms before deleting a message in restricted. This will allow others to handle it first, if needed.
-- set the timeout for the suggestion canceled message to 20 seconds
+- Wait 500ms before deleting a message in restricted.
+- Set the timeout for the suggestion canceled message to 20 seconds
 - added `.taco changelog` [WIP]
 - Added silent option for restricted module
 - Allow suggestion to be canceled when asking for the suggestion title

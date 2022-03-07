@@ -58,12 +58,14 @@ class Settings:
                 return utils.str_replace(self.strings[self.language][key], *args, **kwargs)
             else:
                 # self.log.warn(guildId, _method, f"UNKNOWN STRING KEY: {key}")
+                print(f"UNKNOWN KEY: LANG: {self.language} - {key}", file=sys.stderr)
                 return utils.str_replace(f"{key}", *args, **kwargs)
         else:
             if key in self.strings[self.language]:
                 return utils.str_replace(self.strings[self.language][key], *args, **kwargs)
             else:
                 # self.log.warn(guildId, _method, f"UNKNOWN STRING KEY: {key}")
+                print(f"UNKNOWN KEY: LANG: {self.language} - {key}", file=sys.stderr)
                 return utils.str_replace(f"{key}", *args, **kwargs)
 
     def set_guild_strings(self, guildId: int, lang: str = None):
