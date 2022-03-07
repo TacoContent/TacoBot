@@ -1,10 +1,11 @@
 {
 	"took_too_long": "Took too long to answer. ⏱",
-	"footer_60_seconds": "**You have 60 seconds to answer**",
+	"footer_XX_seconds": "**You have {{seconds}} seconds to answer**",
 	"yes": "YES",
 	"no": "NO",
 	"new": "->NEW<-",
 	"other": "->OTHER<-",
+	"none": "->NONE<-",
 	"enabled": "enabled",
 	"disabled": "disabled"
 }

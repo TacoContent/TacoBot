@@ -1,3 +1,7 @@
+**v1.0.51**
+- Started using localized strings. Starting with english.
+- Start adding strings to load from localization files.
+
 **v1.0.50**
 - implement `.taco changelog` command
 - fix minor bugs with some restricted channel actions
