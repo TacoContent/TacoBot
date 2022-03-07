@@ -104,7 +104,7 @@ class Restricted(commands.Cog):
             if "deny_message" in restricted_channel:
                 deny_message = restricted_channel["deny_message"]
             else:
-                deny_message = "That message is not allowed in this channel."
+                deny_message = self.settings.get_string(guild_id, "restricted_deny_message")
 
             # if message matches the allowed[] regular expressions then continue
             if not any(re.search(r, message.content) for r in allowed) or any(re.search(r, message.content) for r in denied):
@@ -113,7 +113,9 @@ class Restricted(commands.Cog):
                 await message.delete()
 
                 if not silent:
-                    await self.discord_helper.sendEmbed(message.channel, "Restricted", f"{message.author.mention}, {deny_message}", delete_after=20, color=0xFF0000)
+                    await self.discord_helper.sendEmbed(message.channel, self.settings.get_string(guild_id, "restricted"),
+                        self.settings.get_string(guild_id, "restricted_deny_message", user=message.author.mention, reason=deny_message),
+                        delete_after=20, color=0xFF0000)
         except discord.NotFound as nf:
             self.log.info(guild_id, "restricted.on_message", f"Message not found: {nf}")
         except Exception as e:

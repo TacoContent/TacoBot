@@ -23,5 +23,8 @@
 	"tacos_log_message:": "{{touser}} has {{action}} {{positive_count}} {{taco_word}} from {{fromuser}} for {{reason}}, giving them {{total_tacos}} 🌮.",
 	"ask_name_of_channel": "Enter the name of the channel",
 	"unknown_channel": "{{user}}, The channel id ({{channel_id}}) is not a valid channel.",
-	"selected_channel_message": "{{user}}, You have selected channel '{{channel}}'."
+	"selected_channel_message": "{{user}}, You have selected channel '{{channel}}'.",
+	"restricted": "Restricted",
+	"restricted_default_deny_message": "That message is not allowed in this channel.",
+	"restricted_deny_message": "{{user}}, {{reason}}"
 }
