@@ -33,5 +33,18 @@
 	"restricted": "Restricted",
 	"restricted_default_deny_message": "That message is not allowed in this channel.",
 	"restricted_deny_message": "{{user}}, {{reason}}",
-	"taco_reason_invite": "inviting {{user} to the server"
+	"taco_reason_invite": "inviting {{user} to the server",
+	"taco_reason_join": "joining the server",
+	"taco_reason_react": "reacting to {{user}}'s message with a 🌮",
+	"taco_reason_boost": "boosting the server",
+	"taco_reason_default": "just being Awesome!",
+	"taco_gift_title": "Gift Tacos",
+	"taco_give_title": "Give Tacos",
+	"taco_gift_limit_exceeded": "{{user}, You can only gift between 1 and {{remaining}} {{taco_word}}.",
+	"taco_gift_maximum": "You have reached the maximum amount of gifts you can give. You can only give {{max} {{taco_word}} per 24 hours.",
+	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",
+	"taco_count_title": "Taco Count",
+	"taco_count_message": "{{user}}, You have {{count}} {{taco_word}}🌮.",
+	"taco_self_gift_message": "{{user}}, You can't gift yourself 🌮.",
+	"embed_delete_footer": "This message will delete in {{seconds}} seconds."
 }
