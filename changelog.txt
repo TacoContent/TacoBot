@@ -1,6 +1,10 @@
+**v1.0.52**
+- Added more locialized strings to replace hard coded strings
+
 **v1.0.51**
 - Started using localized strings. Starting with english.
 - Start adding strings to load from localization files.
+- Fixed issue with the 🌮 reaction
 
 **v1.0.50**
 - implement `.taco changelog` command
