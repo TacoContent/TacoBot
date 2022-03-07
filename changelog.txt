@@ -3,6 +3,8 @@
 - Update restricted module to use localized strings.
 - removed unused carlgg suggestion module
 - updated help module to use localized strings.
+- updated tacos module to use localized strings.
+- fixed the log of the receiving of tacos to be the correct user.
 
 **v1.0.51**
 - Started using localized strings. Starting with english.

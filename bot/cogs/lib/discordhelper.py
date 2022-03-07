@@ -179,11 +179,16 @@ class DiscordHelper():
             guild_id = ctx.guild.id
 
         if not ctx.author.guild_permissions.administrator:
-            await self.sendEmbed(ctx.channel, self.settings.get_string(guild_id, 'error'), self.settings.get_string(guild_id, 'not_initialized_user', user=ctx.author.mention), delete_after=30)
+            await self.sendEmbed(ctx.channel, self.settings.get_string(guild_id, 'error'),
+                self.settings.get_string(guild_id, 'not_initialized_user', user=ctx.author.mention), delete_after=30)
         else:
             # get the bot's prefix
             prefix = await self.bot.get_prefix(ctx.message)[0]
-            await self.sendEmbed(ctx.channel, self.settings.get_string(guild_id, 'error'),self.settings.get_string(guild_id, 'not_initialized_admin', user=ctx.author.mention, prefix=prefix, subcommand=subcommand), delete_after=30)
+            await self.sendEmbed(ctx.channel, self.settings.get_string(guild_id, 'error'),
+                self.settings.get_string(guild_id, 'not_initialized_admin',
+                    user=ctx.author.mention, prefix=prefix,
+                    subcommand=subcommand),
+                delete_after=30)
 
     async def taco_give_user(self, guildId: int, fromUser: typing.Union[discord.User, discord.Member], toUser: typing.Union[discord.User, discord.Member], reason: str = None, give_type: tacotypes.TacoTypes = tacotypes.TacoTypes.CUSTOM, taco_amount: int = 1):
         try:
@@ -212,7 +217,7 @@ class DiscordHelper():
             reason_msg = reason if reason else self.settings.get_string(guildId, 'no_reason')
 
             total_taco_count = self.db.add_tacos(guildId, toUser.id, taco_count)
-            await self.tacos_log(guildId, toUser, self.bot.user, taco_count, total_taco_count, reason_msg)
+            await self.tacos_log(guildId, toUser, fromUser, taco_count, total_taco_count, reason_msg)
             return total_taco_count
         except Exception as e:
             self.log.error(guildId, _method, str(e), traceback.format_exc())
@@ -257,7 +262,7 @@ class DiscordHelper():
 
             positive_count = abs(count)
 
-            self.log.debug(guild_id, _method, f"{toMember.name}#{toMember.discriminator} {action} {positive_count} {taco_word} from {fromMember.name} for {reason}")
+            self.log.debug(guild_id, _method, f"{toMember.name}#{toMember.discriminator} {action} {positive_count} {taco_word} from {fromMember.name}#{fromMember.discriminator} for {reason}")
             if log_channel:
                 await log_channel.send(self.settings.get_string(guild_id, "tacos_log_message",
                     touser=toMember.name, action=action,

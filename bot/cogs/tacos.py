@@ -99,7 +99,8 @@ class Tacos(commands.Cog):
 
             await self.discord_helper.sendEmbed(ctx.channel,
                 self.settings.get_string(guild_id, "taco_give_title"),
-                self.settings.get_string(guild_id, "taco_gift_success", user=member.mention, amount=amount, taco_word=tacos_word, reason=reason_msg),
+                # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",
+                self.settings.get_string(guild_id, "taco_gift_success", user=ctx.author.mention, touser=member.mention, amount=amount, taco_word=tacos_word, reason=reason_msg),
                 footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT),
                 delete_after=self.SELF_DESTRUCT_TIMEOUT)
 
