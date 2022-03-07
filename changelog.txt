@@ -5,6 +5,7 @@
 - updated help module to use localized strings.
 - updated tacos module to use localized strings.
 - fixed the log of the receiving of tacos to be the correct user.
+- fixed the taco log message key name
 
 **v1.0.51**
 - Started using localized strings. Starting with english.
