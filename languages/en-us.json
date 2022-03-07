@@ -32,5 +32,6 @@
 	"selected_channel_message": "{{user}}, You have selected channel '{{channel}}'.",
 	"restricted": "Restricted",
 	"restricted_default_deny_message": "That message is not allowed in this channel.",
-	"restricted_deny_message": "{{user}}, {{reason}}"
+	"restricted_deny_message": "{{user}}, {{reason}}",
+	"taco_reason_invite": "inviting {{user} to the server"
 }

@@ -101,7 +101,9 @@ class InviteTracker(commands.Cog):
                         }
 
                         self.db.track_invite_code(guild_id, invite.code, invite_payload, invite_use_payload)
-                        await self.discord_helper.taco_give_user(guild_id, self.bot.user, inviter, f"inviting {member.name} to the server", tacotypes.TacoTypes.INVITE )
+                        await self.discord_helper.taco_give_user(guild_id, self.bot.user, inviter,
+                            self.settings.get_string(guild_id, "taco_reason_invite", user=member.name),
+                            tacotypes.TacoTypes.INVITE )
                     return
         except Exception as e:
             self.log.error(guild_id, _method, str(e), traceback.format_exc())
