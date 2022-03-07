@@ -48,6 +48,10 @@ class Help(commands.Cog):
         _method = inspect.stack()[0][3]
         try:
             await ctx.message.delete()
+            guild_id = 0
+            if ctx.guild:
+                guild_id = ctx.guild.id
+
             with open(self.settings.changelog, 'r', encoding="UTF-8") as f:
                 changelog_data = f.read().strip()
 
@@ -82,7 +86,9 @@ class Help(commands.Cog):
                             fields.append({"name": v, "value": section})
                             # ({page}/{len(chunked)})
                 if len(fields) > 0:
-                    await self.discord_helper.sendEmbed(ctx.channel, f"{self.settings.name} Changelog ({page}/{pages})", "", footer=f"Version {self.settings.version}", fields=fields)
+                    await self.discord_helper.sendEmbed(ctx.channel,
+                    self.settings.get_string(guild_id, "help_changelog_title", bot_name=self.settings.name, page=page, total_pages=pages),
+                    "", footer=self.settings.get_string(guild_id, "version_footer", version=self.settings.version), fields=fields)
                 page += 1
         except Exception as ex:
             self.log.error(ctx.guild.id, _method, str(ex), traceback.format_exc())
@@ -116,7 +122,10 @@ class Help(commands.Cog):
 
             command_list = self.settings.commands
             if command not in command_list.keys():
-                await self.discord_helper.sendEmbed(ctx.channel, f"{self.settings.name} Help", f"No Help for command `{command}`", color=0xFF0000, delete_after=20)
+                await self.discord_helper.sendEmbed(ctx.channel,
+                    self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
+                    self.settings.get_string(guild_id, "help_no_command", command=command),
+                    color=0xFF0000, delete_after=20)
                 return
 
             cmd = command_list[command]
@@ -134,7 +143,9 @@ class Help(commands.Cog):
                 if example_list and len(example_list) > 0:
                     examples = '\n'.join(example_list)
                     fields.append({"name": 'examples', "value": examples})
-            await self.discord_helper.sendEmbed(ctx.channel, f"{self.settings.name} {command} Help", "", footer=f"Version {self.settings.version}", fields=fields)
+            await self.discord_helper.sendEmbed(ctx.channel,
+                self.settings.get_string(guild_id, "help_command_title", bot_name=self.settings.name, command=command), "",
+                footer=self.settings.get_string(guild_id, "version_footer", version=self.settings.version), fields=fields)
 
 
             subcommands = cmd["subcommands"]
@@ -163,7 +174,9 @@ class Help(commands.Cog):
                             examples = '\n'.join(example_list)
                             fields.append({"name": 'examples', "value": examples})
 
-                await self.discord_helper.sendEmbed(ctx.channel, f"{self.settings.name} Help ({page}/{pages})", "", footer=f"Version {self.settings.version}", fields=fields)
+                await self.discord_helper.sendEmbed(ctx.channel,
+                    self.settings.get_string(guild_id, "help_group_title", bot_name=self.settings.name, page=page, total_pages=pages), "",
+                    footer=self.settings.get_string(guild_id, "version_footer", version=self.settings.version), fields=fields)
                 page += 1
 
 
@@ -202,7 +215,8 @@ class Help(commands.Cog):
                         if example_list and len(example_list) > 0:
                             examples = '\n'.join(example_list)
                             fields.append({"name": 'examples', "value": examples})
-                await self.discord_helper.sendEmbed(ctx.channel, f"{self.settings.name} Help ({page}/{pages})", "", footer=f"Version {self.settings.version}", fields=fields)
+                await self.discord_helper.sendEmbed(ctx.channel, f"{self.settings.name} Help ({page}/{pages})", "",
+                    footer=self.settings.get_string(guild_id, "version_footer", version=self.settings.version), fields=fields)
                 page += 1
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())

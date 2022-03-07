@@ -1,5 +1,8 @@
 **v1.0.52**
 - Added more locialized strings to replace hard coded strings
+- Update restricted module to use localized strings.
+- removed unused carlgg suggestion module
+- updated help module to use localized strings.
 
 **v1.0.51**
 - Started using localized strings. Starting with english.
