@@ -282,7 +282,7 @@ class Tacos(commands.Cog):
                     # taco_count = self.db.add_tacos(guild_id, user.id, reaction_reward_count)
                     # self.log.debug(guild_id, _method, f"🌮 added taco to user {user.name} successfully")
                     # await self.discord_helper.tacos_log(guild_id, user, self.bot.user, reaction_reward_count, taco_count, f"reacting to {message.author.name}'s message with a 🌮")
-                    await self.discord_helper.taco_give_user(guild_id, self.bot.user, user, f"reacting to {message.author.name}'s message with a 🌮", tacotypes.TacoTypes.REACT )
+                    await self.discord_helper.taco_give_user(guild_id, self.bot.user, user, f"reacting to {message.author.name}'s message with a 🌮", tacotypes.TacoTypes.REACTION )
                 else:
                     # log that the user cannot gift anymore tacos via reactions
                     self.log.debug(guild_id, _method, f"{user} cannot gift anymore tacos. remaining gifts: {remaining_gifts}")

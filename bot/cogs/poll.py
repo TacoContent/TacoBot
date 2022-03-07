@@ -46,5 +46,7 @@ class Poll(commands.Cog):
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, "poll.__init__", "Initialized")
 
+        self.log.debug(0, "poll.__init__", self.settings.get_string(0, "footer_XX_seconds", seconds=33))
+
 def setup(bot):
     bot.add_cog(Poll(bot))

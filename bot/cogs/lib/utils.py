@@ -89,7 +89,7 @@ def str_replace(input_string: str, *args, **kwargs):
     xargs = get_args_dict(str_replace, args, kwargs)
     result = input_string
     for a in xargs:
-        result = result.replace(f"{{{a}}}", kwargs[a])
+        result = result.replace(f"{{{{{a}}}}}", str(kwargs[a]))
     return result
 
 def isAdmin(ctx, settings):

@@ -319,16 +319,17 @@ class DiscordHelper():
             return same
         channel = targetChannel if targetChannel else ctx.channel if ctx.channel else ctx.author
         buttons = [
-            create_button(style=ButtonStyle.green, label="Yes", custom_id="YES"),
-            create_button(style=ButtonStyle.red, label="No", custom_id="NO")
+            create_button(style=ButtonStyle.green, label=self.settings.get_string(ctx.guild.id, "yes"), custom_id="YES"),
+            create_button(style=ButtonStyle.red, label=self.settings.get_string(ctx.guild.id, "no"), custom_id="NO")
         ]
         yes_no = False
         action_row = create_actionrow(*buttons)
-        yes_no_req = await self.sendEmbed(channel, title, question, components=[action_row], delete_after=60, footer="You have 60 seconds to respond.")
+        timeout = timeout if timeout else 60
+        yes_no_req = await self.sendEmbed(channel, title, question, components=[action_row], delete_after=timeout, footer=self.settings.get_string(ctx.guild.id, "footer_XX_seconds", seconds=timeout))
         try:
-            button_ctx: ComponentContext = await wait_for_component(self.bot, check=check_user, components=action_row, timeout=60.0)
+            button_ctx: ComponentContext = await wait_for_component(self.bot, check=check_user, components=action_row, timeout=timeout)
         except asyncio.TimeoutError:
-            await self.sendEmbed(channel, title, "You took too long to respond", delete_after=5)
+            await self.sendEmbed(channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5)
         else:
             yes_no = utils.str2bool(button_ctx.custom_id)
             await yes_no_req.delete()
@@ -367,7 +368,7 @@ class DiscordHelper():
         else:
             guild_id = 0
         buttons = [
-            create_button(style=ButtonStyle.green, label=button_label or "Yes", custom_id=button_id or "YES"),
+            create_button(style=ButtonStyle.green, label=button_label or self.settings.get_string(ctx.guild.id, "yes"), custom_id=button_id or "YES"),
         ]
         action_row = create_actionrow(*buttons)
         invoke_req = await self.sendEmbed(channel, title, description, components=[action_row])
@@ -376,7 +377,7 @@ class DiscordHelper():
             button_ctx: ComponentContext = await wait_for_component(self.bot, check=check, components=action_row)
         except asyncio.TimeoutError:
             # this should never happen because there is no timeout
-            await self.sendEmbed(channel, title, "You took too long to respond", delete_after=5)
+            await self.sendEmbed(channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5)
         else:
             await invoke_req.delete()
             self.db.untrack_wait_invoke(guild_id, channel.id, invoke_req.id)
@@ -396,11 +397,11 @@ class DiscordHelper():
                     return False
             target_channel = ctx.channel if ctx.channel else ctx.author
 
-            channel_ask = await self.sendEmbed(target_channel, title, f'{description}', delete_after=60, footer="You have 60 seconds to respond.")
+            channel_ask = await self.sendEmbed(target_channel, title, f'{description}', delete_after=timeout, footer=self.settings.get_string(ctx.guild.id, "footer_XX_seconds", seconds=timeout))
             try:
-                channelResp = await self.bot.wait_for('message', check=check_channel, timeout=60)
+                channelResp = await self.bot.wait_for('message', check=check_channel, timeout=timeout)
             except asyncio.TimeoutError:
-                await self.sendEmbed(target_channel, title, "You took too long to respond", delete_after=5)
+                await self.sendEmbed(target_channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5)
                 return None
             else:
                 selected_channel = self.get_by_name_or_id(guild.channels, channelResp.content)
@@ -424,10 +425,10 @@ class DiscordHelper():
         max_items = 24 if not allow_none else 23
         if len(channels) >= max_items:
             self.log.warn(ctx.guild.id, _method, f"Guild has more than 24 channels. Total Channels: {str(len(channels))}")
-            options.append(create_select_option(label="OTHER", value="0", emoji="⏭"))
+            options.append(create_select_option(label=self.settings.get_string(ctx.guild.id, "other"), value="0", emoji="⏭"))
             # sub_message = self.get_string(guild_id, 'ask_admin_role_submessage')
         if allow_none:
-            options.append(create_select_option(label="NONE", value="-1", emoji="⛔"))
+            options.append(create_select_option(label=self.settings.get_string(ctx.guild.id, "none"), value="-1", emoji="⛔"))
 
         for c in channels[:max_items]:
             options.append(create_select_option(label=c.name, value=str(c.id), emoji="🏷"))
@@ -444,7 +445,7 @@ class DiscordHelper():
         try:
             button_ctx: ComponentContext = await wait_for_component(self.bot, check=check_user, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
-            await self.sendEmbed(ctx.channel, title, "Took too long to respond.", delete_after=5)
+            await self.sendEmbed(ctx.channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5)
         else:
             chan_id = int(button_ctx.selected_options[0])
             await ask_context.delete()
@@ -471,7 +472,7 @@ class DiscordHelper():
                 return None
 
 
-    async def ask_number(self, ctx, title: str = "Enter Number", message: str = "Please enter a number.", min_value: int = 0, max_value: int = 100):
+    async def ask_number(self, ctx, title: str = "Enter Number", message: str = "Please enter a number.", min_value: int = 0, max_value: int = 100, timeout: int = 60):
         def check_user(m):
             same = m.author.id == ctx.author.id
             return same
@@ -482,11 +483,11 @@ class DiscordHelper():
                     return (val >= min_value and val <= max_value)
                 return False
 
-        number_ask = await self.sendEmbed(ctx.channel, title, f'{message}', delete_after=60, footer="You have 60 seconds to respond.")
+        number_ask = await self.sendEmbed(ctx.channel, title, f'{message}', delete_after=timeout, footer=self.settings.get_string(ctx.guild.id, "footer_XX_seconds", seconds=timeout))
         try:
-            numberResp = await self.bot.wait_for('message', check=check_range, timeout=60)
+            numberResp = await self.bot.wait_for('message', check=check_range, timeout=timeout)
         except asyncio.TimeoutError:
-            await self.sendEmbed(ctx.channel, title, "You took too long to respond", delete_after=5)
+            await self.sendEmbed(ctx.channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5)
             return None
         else:
             numberValue = int(numberResp.content)
@@ -504,11 +505,11 @@ class DiscordHelper():
             channel = ctx.author
             delete_user_message = False
 
-        text_ask = await self.sendEmbed(channel, title, f'{message}', delete_after=timeout, footer=f"You have {timeout} seconds to respond.", color=color)
+        text_ask = await self.sendEmbed(channel, title, f'{message}', delete_after=timeout, footer=self.settings.get_string(ctx.guild.id, "footer_XX_seconds", seconds=timeout), color=color)
         try:
             textResp = await self.bot.wait_for('message', check=check_user, timeout=timeout)
         except asyncio.TimeoutError:
-            await self.sendEmbed(channel, title, "You took too long to respond", delete_after=5)
+            await self.sendEmbed(channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5)
             return None
         else:
             if delete_user_message:
@@ -519,7 +520,7 @@ class DiscordHelper():
             await text_ask.delete()
         return textResp.content
 
-    async def ask_role_list(self, ctx, title: str = "Choose Role", message: str = "Please choose a role.", allow_none: bool = False, min_select: int = 1, max_select: int = 1, exclude_roles: list = None ):
+    async def ask_role_list(self, ctx, title: str = "Choose Role", message: str = "Please choose a role.", allow_none: bool = False, min_select: int = 1, max_select: int = 1, exclude_roles: list = None, timeout: int = 60):
         def check_user(m):
             same = m.author.id == ctx.author.id
             return same
@@ -532,13 +533,13 @@ class DiscordHelper():
         sub_message = ""
         if len(roles) == 0:
             self.log.warn(ctx.guild.id, _method, f"Forcing 'other' option for role list as there are no roles to select.")
-            options.append(create_select_option(label="OTHER", value="0", emoji="⏭"))
+            options.append(create_select_option(label=self.settings.get_string(ctx.guild.id, "other"), value="0", emoji="⏭"))
         if len(roles) >= 24:
             self.log.warn(ctx.guild.id, _method, f"Guild has more than 24 roles. Total roles: {str(len(roles))}")
-            options.append(create_select_option(label="OTHER", value="0", emoji="⏭"))
+            options.append(create_select_option(label=self.settings.get_string(ctx.guild.id, "other"), value="0", emoji="⏭"))
             # sub_message = self.get_string(guild_id, 'ask_admin_role_submessage')
         if allow_none:
-            options.append(create_select_option(label="NONE", value="-1", emoji="⛔"))
+            options.append(create_select_option(label=self.settings.get_string(ctx.guild.id, "none"), value="-1", emoji="⛔"))
 
         for r in roles[:24]:
             options.append(create_select_option(label=r.name, value=str(r.id), emoji="🏷"))
@@ -551,11 +552,11 @@ class DiscordHelper():
         )
 
         action_row = create_actionrow(select)
-        ask_context = await self.sendEmbed(ctx.channel, title, message, delete_after=60, footer="You have 60 seconds to respond.", components=[action_row])
+        ask_context = await self.sendEmbed(ctx.channel, title, message, delete_after=timeout, footer=self.settings.get_string(ctx.guild.id, "footer_XX_seconds", seconds=timeout), components=[action_row])
         try:
-            button_ctx: ComponentContext = await wait_for_component(self.bot, check=check_user, components=action_row, timeout=60.0)
+            button_ctx: ComponentContext = await wait_for_component(self.bot, check=check_user, components=action_row, timeout=timeout)
         except asyncio.TimeoutError:
-            await self.sendEmbed(ctx.channel, title, "Took too long to respond.", delete_after=5)
+            await self.sendEmbed(ctx.channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5)
         else:
             role_id = int(button_ctx.selected_options[0])
             if role_id == 0:
