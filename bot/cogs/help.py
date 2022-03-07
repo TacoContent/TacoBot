@@ -56,7 +56,7 @@ class Help(commands.Cog):
                 changelog_data = f.read().strip()
 
             # split changelog into sections based on '**\d{1,}\.\d{1,}\.\d{1,}**'
-            sections = re.split(r'^(\*\*v?\d{1,}\.\d{1,}\.\d{1,}\*\*)', changelog_data)
+            sections = re.split(r'(\*\*v?\d{1,}\.\d{1,}\.\d{1,}\*\*)', changelog_data)
             versions = {}
             cversion = None
             for s in list(filter(lambda x: x != '' and x != None, sections)):
@@ -71,7 +71,7 @@ class Help(commands.Cog):
                         versions[cversion] += s
             # chunk in to 25 sections
             chunked = utils.chunk_list(list(versions.keys()), 25)
-            pages = math.ceil(len(list(versions.keys())) / 10)
+            pages = math.ceil(len(list(versions.keys())) / 25)
             page = 1
             for chunk in chunked:
                 fields = list()
@@ -79,12 +79,12 @@ class Help(commands.Cog):
                     # get the version from the section
                     if v and v in versions:
                         section = versions[v]
-                        if section:
+                        s = section
+                        if s:
                             # if section is longer than 1024 characters, truncate and add '…'
                             if len(section) > 1024:
-                                section = section[:1023] + '…'
-                            fields.append({"name": v, "value": section})
-                            # ({page}/{len(chunked)})
+                                s = section[:1023] + '…'
+                            fields.append({"name": v, "value": s, "inline": False})
                 if len(fields) > 0:
                     await self.discord_helper.sendEmbed(ctx.channel,
                     self.settings.get_string(guild_id, "help_changelog_title", bot_name=self.settings.name, page=page, total_pages=pages),
