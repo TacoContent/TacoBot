@@ -1,6 +1,7 @@
 **v1.0.53**
 - Update stream team module with localized strings
 - Update trivia module with localized strings
+- Added unified `.taco <group> help` command that directs to the correct help command.
 
 **v1.0.52**
 - Added more locialized strings to replace hard coded strings

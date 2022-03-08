@@ -225,8 +225,12 @@ class Suggestions(commands.Cog):
         }
         self.db.add_suggestion(guild_id, s_message.id, suggestion_data)
 
+
     @commands.group(aliases=["suggestion"])
-    async def suggest(self, ctx: SlashContext):
+    async def suggest(self, ctx):
+        if ctx.invoked_subcommand is not None:
+            return
+
         try:
             guild_id = 0
             if ctx.guild is not None:
@@ -260,6 +264,19 @@ class Suggestions(commands.Cog):
         if ctx.message:
             await ctx.message.delete()
         # await self.start_constant_ask()
+
+    @suggest.command()
+    async def help(self, ctx):
+        guild_id = 0
+        if ctx.guild:
+            guild_id = ctx.guild.id
+            await ctx.message.delete()
+        await self.discord_helper.sendEmbed(ctx.channel,
+            self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
+            self.settings.get_string(guild_id, "help_module_message", bot_name=self.settings.name, command="suggest"),
+            footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
+            color=0xff0000, delete_after=30)
+        pass
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):

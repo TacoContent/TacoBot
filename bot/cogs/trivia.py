@@ -241,6 +241,19 @@ class Trivia(commands.Cog):
             self.log.error(guild_id, "trivia", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
+    @trivia.command()
+    async def help(self, ctx):
+        guild_id = 0
+        if ctx.guild:
+            guild_id = ctx.guild.id
+            await ctx.message.delete()
+        await self.discord_helper.sendEmbed(ctx.channel,
+            self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
+            self.settings.get_string(guild_id, "help_module_message", bot_name=self.settings.name, command="trivia"),
+            footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
+            color=0xff0000, delete_after=30)
+        pass
+
     # async def on_message_delete(self, message):
     #     try:
     #         self.log.debug(0, "trivia.on_ready", "trivia cog is ready")

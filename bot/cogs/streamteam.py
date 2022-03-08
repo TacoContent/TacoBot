@@ -268,9 +268,10 @@ class StreamTeam(commands.Cog):
         guild_id = 0
         if ctx.guild:
             guild_id = ctx.guild.id
+            await ctx.message.delete()
         await self.discord_helper.sendEmbed(ctx.channel,
-            self.settings.get_string(guild_id, "help_title"),
-            self.settings.get_string(guild_id, "help_module_message", command="team"),
+            self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
+            self.settings.get_string(guild_id, "help_module_message", bot_name=self.settings.name, command="team"),
             footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
             color=0xff0000, delete_after=30)
         pass
