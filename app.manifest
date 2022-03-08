@@ -6,6 +6,18 @@
 	"author": "DarthMinos#1161",
 	"changelog": "changelog.txt",
 	"commands": {
+		"gif" : {
+			"description": "Gets a random gif from the given tag",
+			"usage": ".taco gif [search term]",
+			"enabled": true,
+			"example": [
+				".taco gif",
+				".taco gif taco tuesday"
+			],
+			"fields": [],
+			"subcommands": {},
+			"aliases": ["giphy"]
+		},
 		"move": {
 			"title": "Move a message",
 			"message": "Moves a message from one channel to another. Must be ran in the channel that the message is in.",
@@ -26,35 +38,7 @@
 			"fields": [],
 			"subcommands": {}
 		},
-		"team": {
-			"title": "Twitch Team Commands",
-			"message": "Commands that will allow you to be a part of the Twitch Team.",
-			"usage": ".taco team <command>",
-			"fields": [],
-			"admin": false,
-			"subcommands": {
-				"invite": {
-					"title": "Request an invite to the team",
-					"message": "This will put in a request to join the twitch team. Once approved, you will have to accept it from your creator dashboard. Twitch Dashboard -> Settings -> Channel -> Featured Content => Scroll to the bottom.",
-					"usage": ".taco team invite <twitch name>",
-					"example": [
-						".taco team invite darthminos"
-					],
-					"admin": false,
-					"fields": []
-				},
-				"invite-user": {
-					"title": "Invite a user to the team",
-					"message": "Admin version of the `invite` command. This will invite a user to the twitch team. Once approved, they will have to accept it from their creator dashboard. Twitch Dashboard -> Settings -> Channel -> Featured Content => Scroll to the bottom.",
-					"usage": ".taco team invite-user @user#1234 <twitch name>",
-					"example": [
-						".taco team invite-user @DarthMinos#1161 darthminos"
-					],
-					"admin": true,
-					"fields": []
-				}
-			}
-		},
+
 		"tacos": {
 			"title": "Tacos Commands",
 			"message": "Commands that will give info on tacos🌮.",
@@ -103,6 +87,35 @@
 						".taco tacos purge @user#1234",
 						".taco tacos purge @user#1234 \"Exploited the taco system\""
 					],
+					"fields": []
+				}
+			}
+		},
+		"team": {
+			"title": "Twitch Team Commands",
+			"message": "Commands that will allow you to be a part of the Twitch Team.",
+			"usage": ".taco team <command>",
+			"fields": [],
+			"admin": false,
+			"subcommands": {
+				"invite": {
+					"title": "Request an invite to the team",
+					"message": "This will put in a request to join the twitch team. Once approved, you will have to accept it from your creator dashboard. Twitch Dashboard -> Settings -> Channel -> Featured Content => Scroll to the bottom.",
+					"usage": ".taco team invite <twitch name>",
+					"example": [
+						".taco team invite darthminos"
+					],
+					"admin": false,
+					"fields": []
+				},
+				"invite-user": {
+					"title": "Invite a user to the team",
+					"message": "Admin version of the `invite` command. This will invite a user to the twitch team. Once approved, they will have to accept it from their creator dashboard. Twitch Dashboard -> Settings -> Channel -> Featured Content => Scroll to the bottom.",
+					"usage": ".taco team invite-user @user#1234 <twitch name>",
+					"example": [
+						".taco team invite-user @DarthMinos#1161 darthminos"
+					],
+					"admin": true,
 					"fields": []
 				}
 			}

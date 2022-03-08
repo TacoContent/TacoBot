@@ -86,7 +86,12 @@ class StreamTeam(commands.Cog):
                     twitch_name = twitch_user['twitch_name']
 
                 if log_channel:
-                    await self.discord_helper.sendEmbed(log_channel, "Stream Team Removal", f"{user} has requested to be removed from the **{team_name}** twitch team.\n\nTwitch Name: `{twitch_name}`", color=0x00ff00)
+                    await self.discord_helper.sendEmbed(log_channel,
+                        self.setttings.get_string(guild_id, "streamteam_removal_tile"),
+                        self.settings.get_string(guild_id, "streamteam_removal_message",
+                            user=f"{user.name}#{user.discriminator}",
+                            team_name=team_name,
+                            twitch_name=twitch_name), color=0xff0000)
 
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
@@ -129,31 +134,45 @@ class StreamTeam(commands.Cog):
             if str(message.id) in watch_message_ids and str(payload.emoji) in emoji:
                 # add user to the stream team requests
                 self.db.add_stream_team_request(guild_id, f"{user.name}#{user.discriminator}", user.id)
-
+                unknown = self.settings.get_string(guild_id, "unknown")
                 # send a message to the user and ask them their twitch name if it is not yet set
-                twitch_name = "UNKNOWN"
+                twitch_name = unknown
                 twitch_user = self.db.get_user_twitch_info(user.id)
                 if not twitch_user:
                     try:
                         ctx_dict = {"bot": self.bot, "author": user, "guild": None, "channel": None}
                         ctx = collections.namedtuple("Context", ctx_dict.keys())(*ctx_dict.values())
-                        twitch_name = await self.discord_helper.ask_text(ctx, user, "Twitch Name", f"You have requested to join the **{team_name}** twitch team, please respond with your twitch username.", 60)
+                        twitch_name = await self.discord_helper.ask_text(ctx, user,
+                            self.settings.get_string(guild_id, "twitch_name_title"),
+                            self.settings.get_string(guild_id, "twitch_name_question", team_name=team_name),
+                            timeout=60)
                         if twitch_name:
                             twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
 
                             self.log.debug(0, _method, f"{user} requested to set twitch name {twitch_user}")
                             self.db.set_user_twitch_info(user.id, None, twitch_name)
-                            await self.discord_helper.sendEmbed(user, "Success", f"Your Twitch name has been recorded as `{twitch_name}`. Keep an eye out for an invite.\n\nGo here: https://dashboard.twitch.tv/u/{twitch_name}/settings/channel\n\nTwitch Dashboard -> Settings -> Channel -> Featured Content => Scroll to the bottom.\n\nIf you change your twitch name in the future, you can use `.taco twitch set` in a discord channel, or `.twitch set` in the DM with me.", color=0x00ff00)
+                            await self.discord_helper.sendEmbed(user,
+                                self.settings.get_string(guild_id, "success"),
+                                self.settings.get_string(guild_id, "streamteam_set_twitch_name_message", twitch_name=twitch_name),
+                                color=0x00ff00)
                     except discord.Forbidden as e:
                         # cant send them a message. Put it in the channel...
-                        await self.discord_helper.sendEmbed(channel, "Error", f"{user.mention}, I was unable to send you a message to set your twitch name. Please use `.taco twitch set` in a discord channel, or `.twitch set` in the DM with me.", color=0xff0000, delete_after=20)
+                        await self.discord_helper.sendEmbed(channel,
+                            self.settings.get_string(guild_id, "error"),
+                            self.settings.get_string(guild_id, "twitch_name_dm_error", user=user.mention),
+                            footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
+                            color=0xff0000, delete_after=30)
 
                 else:
                     twitch_name = twitch_user['twitch_name']
 
                 if log_channel:
-                    twitch_name = "UNKNOWN" if twitch_name is None else twitch_name
-                    await self.discord_helper.sendEmbed(log_channel, "Stream Team Join", f"{user} has requested to join the **{team_name}** twitch team.\n\nTwitch Name: `{twitch_name}`", color=0x00ff00)
+                    twitch_name = unknown if twitch_name is None else twitch_name
+                    await self.discord_helper.sendEmbed(log_channel,
+                        self.setttings.get_string(guild_id, "streamteam_join_tile"),
+                        self.settings.get_string(guild_id, "streamteam_join_message",
+                            user=user, team_name=team_name, twitch_name=twitch_name),
+                        color=0x00ff00)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
 
@@ -182,8 +201,20 @@ class StreamTeam(commands.Cog):
             if twitchName is None:
                 twitchName = self.db.get_user_twitch_info(ctx.author.id)['twitch_name']
             if twitchName is None:
-                await self.discord_helper.sendEmbed(ctx.author, "Error", "You have not set your twitch name yet. Please do so with `.taco twitch set`.")
-                return
+                try:
+                    await self.discord_helper.sendEmbed(ctx.author,
+                        self.settings.get_string(guild_id, "error"),
+                        self.settings.get_string(guild_id, "streamteam_invite_no_twitch_name_message"),
+                        color=0xff0000)
+                    return
+                except discord.Forbidden:
+                    # if we cant send to user, then we send to channel
+                    await self.discord_helper.sendEmbed(ctx.channel,
+                        self.settings.get_string(guild_id, "error"),
+                        self.settings.get_string(guild_id, "streamteam_invite_no_twitch_name_message"),
+                        footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
+                        color=0xff0000, delete_after=30)
+                    return
 
             await self._invite_user(ctx, ctx.author, twitchName)
 
@@ -206,7 +237,7 @@ class StreamTeam(commands.Cog):
                 self.log.error(guild_id, "streamteam.on_message", f"No streamteam settings found for guild {guild_id}")
                 await self.discord_helper.notify_bot_not_initialized(ctx, "streamteam")
                 return
-
+            unknown = self.settings.get_string(guild_id, "unknown")
             log_channel_id = streamteam_settings["log_channel"]
             if log_channel_id:
                 log_channel = await self.discord_helper.get_or_fetch_channel(log_channel_id)
@@ -215,11 +246,18 @@ class StreamTeam(commands.Cog):
             self.db.set_user_twitch_info(user.id, None, twitchName)
             self.db.add_stream_team_request(ctx.guild.id, twitchName, user.id)
 
-            await self.discord_helper.sendEmbed(ctx.channel, "Success", f"A request has been made for {user.name}#{user.discriminator} to be added to join the **{team_name}** stream team.\n\Keep an eye out for your invite.\n\nGo here: https://dashboard.twitch.tv/u/{twitchName}/settings/channel\n\nTwitch Dashboard -> Settings -> Channel -> Featured Content => Scroll to the bottom.\n\nIf you change your twitch name in the future, you can use `.taco twitch set` in a discord channel, or `.twitch set` in a DM with me.", color=0x00ff00, delete_after=20)
+            await self.discord_helper.sendEmbed(ctx.channel,
+                self.settings.get_string(guild_id, "success"),
+                self.settings.get_string(guild_id, "streamteam_invite_success_message", user=f"{user.name}#{user.discriminator}", team_name=team_name, twitch_name=twitchName),
+                footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
+                color=0x00ff00, delete_after=30)
 
             if log_channel:
-                twitch_name = "UNKNOWN" if twitch_name is None else twitch_name
-                await self.discord_helper.sendEmbed(log_channel, "Stream Team Join", f"{user.name}#{user.discriminator} has requested to join the **{team_name}** twitch team.\n\nTwitch Name: `{twitch_name}`", color=0x00ff00)
+                twitch_name = unknown if twitch_name is None else twitch_name
+                await self.discord_helper.sendEmbed(log_channel,
+                    self.settings.get_string(guild_id, "streamteam_join_title"),
+                    self.settings.get_string(guild_id, "streamteam_join_message", user=f"{user.name}#{user.discriminator}", team_name=team_name, twitch_name=twitchName),
+                    color=0x00ff00)
 
         except Exception as ex:
             self.log.error(ctx.guild.id, "streamteam.invite", str(ex), traceback.format_exc())
@@ -227,7 +265,15 @@ class StreamTeam(commands.Cog):
 
     @team.command()
     async def help(self, ctx):
-        await self.discord_helper.sendEmbed(ctx.channel, "Help", f"Use `.taco help team` for help on this command set.", delete_after=20)
+        guild_id = 0
+        if ctx.guild:
+            guild_id = ctx.guild.id
+            await ctx.message.delete()
+        await self.discord_helper.sendEmbed(ctx.channel,
+            self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
+            self.settings.get_string(guild_id, "help_module_message", bot_name=self.settings.name, command="team"),
+            footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
+            color=0xff0000, delete_after=30)
         pass
 
 def setup(bot):

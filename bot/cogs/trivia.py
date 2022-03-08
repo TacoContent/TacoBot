@@ -137,8 +137,6 @@ class Trivia(commands.Cog):
                 if question:
 
                     choice_emojis = trivia_settings["choices"]
-
-                    print(f"{question.category} {question.difficulty} {question.type} {question.question}")
                     # get incorrect answers unescaped and add them to the list
                     answers = [ html.unescape(ia) for ia in question.incorrect_answers ]
                     # get correct answer unescaped and add it to the list
@@ -161,7 +159,7 @@ class Trivia(commands.Cog):
 
                     reward = trivia_settings['category_points'][question.difficulty] or 1
                     punishment = reward * -1
-                    taco_word = "taco" if reward == 1 else "tacos"
+                    taco_word = self.settings.get_string(guild_id, "taco_singular") if reward == 1 else self.settings.get_string(guild_id, "taco_plural")
                     trivia_timeout = trivia_settings['timeout'] or 60
 
                     notify_role_id = trivia_settings['notify_role']
@@ -171,9 +169,18 @@ class Trivia(commands.Cog):
                         if notify_role:
                             notify_role_mention = f"{notify_role.mention}"
 
-                    question_message = f"{html.unescape(question.question)}\n\n{choice_message}\n\nReact with the correct answer. Only your first answer counts.\n\nYou have {trivia_timeout} seconds to answer.\nYou will be rewarded **{reward} {taco_word}** for answering correctly.\nYou will lose **{reward} {taco_word}** for answering incorrectly.\n\n{notify_role_mention}"
+                    question_message = self.settings.get_string(guild_id, "trivia_question",
+                        question=html.unescape(question.question),
+                        choice_message=choice_message,
+                        trivia_timeout=trivia_timeout,
+                        reward=reward,
+                        taco_word=taco_word,
+                        notify_role_mention=notify_role_mention)
                     qm = await self.discord_helper.sendEmbed(ctx.channel,
-                        f"Trivia - {html.unescape(question.category)} - {question.difficulty.capitalize()} - {reward} 🌮",
+                        self.settings.get_string(guild_id, "trivia_question_title",
+                            category=html.unescape(question.category),
+                            difficulty=question.difficulty.capitalize(),
+                            reward=reward),
                         question_message,
                         fields=[])
                     for ritem in choice_emojis[0:len(answers)]:
@@ -199,38 +206,53 @@ class Trivia(commands.Cog):
                         except asyncio.TimeoutError:
                             correct_list = '\n'.join([ u.mention for u in correct_users ])
                             incorrect_list = '\n'.join([ u.mention for u in incorrect_users ])
+                            no_one = self.settings.get_string(guild_id, "no_one")
                             fields = [
-                                { "name": "Correct", "value": f"{correct_list or 'No one'}", "inline": True },
-                                { "name": "Incorrect", "value": f"{incorrect_list or 'No one'}", "inline": True },
+                                { "name": self.settings.get_string(guild_id, "correct"), "value": f"{correct_list or no_one}", "inline": True },
+                                { "name": self.settings.get_string(guild_id, "incorrect"), "value": f"{incorrect_list or no_one}", "inline": True },
                             ]
                             # add tacos to the correct users
-                            reason_msg = "Getting trivia question correct"
+                            reason_msg = self.settings.get_string(guild_id, "taco_reason_trivia_correct")
                             for u in correct_users:
                                 if not u.bot:
-                                    # taco_count = self.db.add_tacos(guild_id, u.id, reward)
-                                    # await self.discord_helper.tacos_log(guild_id, u, self.bot.user, reward, taco_count, reason_msg)
                                     await self.discord_helper.taco_give_user(guild_id, self.bot.user, u, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=reward )
 
-                            reason_msg = "Getting trivia question incorrect"
+                            reason_msg = self.settings.get_string(guild_id, "taco_reason_trivia_incorrect")
                             for u in incorrect_users:
                                 if not u.bot:
-                                    # taco_count = self.db.add_tacos(guild_id, u.id, punishment)
-                                    # await self.discord_helper.tacos_log(guild_id, u, self.bot.user, punishment, taco_count, reason_msg)
                                     await self.discord_helper.taco_give_user(guild_id, self.bot.user, u, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=punishment )
 
                             await self.discord_helper.sendEmbed(ctx.channel,
-                                "Trivia - Results",
-                                f"{html.unescape(question.question)}\n\nThe correct answer was **{choice_emojis[correct_index]} {html.unescape(answers[correct_index])}**\n\nCorrect answers receive {reward} {taco_word} 🌮.\nIncorrect answers lose {reward} {taco_word} 🌮.\n\n`.taco trivia` to play again.",
+                                self.settings.get_string(guild_id, "trivia_results_title"),
+                                self.settings.get_string(guild_id, "trivia_results_message",
+                                    question=html.unescape(question.question),
+                                    correct_emoji=choice_emojis[correct_index],
+                                    correct_answer=html.unescape(answers[correct_index]),
+                                    reward=reward,
+                                    taco_word=taco_word),
                                 fields=fields)
                             await qm.delete()
                             break
                 else:
-                    print(f"Error getting question")
+                    self.log.error(guild_id, "trivia.trivia", "Error retrieving the trivia question")
             else:
                 pass
         except Exception as e:
             self.log.error(guild_id, "trivia", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
+
+    @trivia.command()
+    async def help(self, ctx):
+        guild_id = 0
+        if ctx.guild:
+            guild_id = ctx.guild.id
+            await ctx.message.delete()
+        await self.discord_helper.sendEmbed(ctx.channel,
+            self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
+            self.settings.get_string(guild_id, "help_module_message", bot_name=self.settings.name, command="trivia"),
+            footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
+            color=0xff0000, delete_after=30)
+        pass
 
     # async def on_message_delete(self, message):
     #     try:
@@ -271,8 +293,8 @@ class Trivia(commands.Cog):
     #                 # create the trivia question
 
 
-        except Exception as e:
-            self.log.error(0, "trivia.on_ready", str(e), traceback.format_exc())
+        # except Exception as e:
+        #     self.log.error(0, "trivia.on_ready", str(e), traceback.format_exc())
 
     def get_question(self, ctx: ComponentContext):
         try:

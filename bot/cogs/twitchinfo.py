@@ -59,11 +59,15 @@ class TwitchInfo(commands.Cog):
 
     @twitch.command()
     async def help(self, ctx):
-        # todo: add help command
-        await self.discord_helper.sendEmbed(ctx.channel, "Help", f"I don't know how to help with this yet.", delete_after=30)
-        # only delete if the message is in a guild channel
+        guild_id = 0
         if ctx.guild:
+            guild_id = ctx.guild.id
             await ctx.message.delete()
+        await self.discord_helper.sendEmbed(ctx.channel,
+            self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
+            self.settings.get_string(guild_id, "help_module_message", bot_name=self.settings.name, command="twitch"),
+            footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
+            color=0xff0000, delete_after=30)
 
 
 

@@ -87,6 +87,9 @@ class MoveMessage(commands.Cog):
     @commands.group()
     @commands.has_permissions(manage_messages=True)
     async def move(self, ctx, messageId: int):
+        if ctx.invoked_subcommand is not None:
+            return
+
         try:
             _method = inspect.stack()[0][3]
             if ctx.guild is None:
@@ -111,5 +114,18 @@ class MoveMessage(commands.Cog):
             self.log.error(ctx.guild.id, "move.move", str(e), traceback.format_exc())
             return
 
+    # @move.command()
+    # @commands.has_permissions(administrator=True)
+    # async def help(self, ctx):
+    #     guild_id = 0
+    #     if ctx.guild:
+    #         guild_id = ctx.guild.id
+    #         await ctx.message.delete()
+    #     await self.discord_helper.sendEmbed(ctx.channel,
+    #         self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
+    #         self.settings.get_string(guild_id, "help_module_message", bot_name=self.settings.name, command="move"),
+    #         footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
+    #         color=0xff0000, delete_after=30)
+    #     pass
 def setup(bot):
     bot.add_cog(MoveMessage(bot))
