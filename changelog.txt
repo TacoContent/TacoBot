@@ -1,5 +1,6 @@
 **v1.0.54**
 - Update commands with "guild_only" decorators
+- fix issue when asking text where it would fail.
 
 **v1.0.53**
 - Update stream team module with localized strings
