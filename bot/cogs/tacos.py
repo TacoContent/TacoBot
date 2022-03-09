@@ -49,6 +49,7 @@ class Tacos(commands.Cog):
         pass
 
     @tacos.command()
+    @commands.guild_only()
     async def help(self, ctx):
         guild_id = 0
         if ctx.guild:
@@ -78,6 +79,7 @@ class Tacos(commands.Cog):
 
     @tacos.command()
     @commands.has_permissions(administrator=True)
+    @commands.guild_only()
     async def give(self, ctx, member: discord.Member, amount: int, *, reason: str = None):
         try:
             guild_id = ctx.guild.id
@@ -140,6 +142,7 @@ class Tacos(commands.Cog):
             await self.discord_helper.notify_of_error(ctx)
 
     @tacos.command()
+    @commands.guild_only()
     async def gift(self, ctx, member: discord.Member, amount: int, *, reason: str = None):
         try:
             guild_id = ctx.guild.id

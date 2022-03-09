@@ -85,6 +85,7 @@ class MoveMessage(commands.Cog):
             return
 
     @commands.group()
+    @commands.guild_only()
     @commands.has_permissions(manage_messages=True)
     async def move(self, ctx, messageId: int):
         if ctx.invoked_subcommand is not None:

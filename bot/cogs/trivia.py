@@ -101,6 +101,7 @@ class Trivia(commands.Cog):
 
 
     @commands.group(name="trivia", invoke_without_command=True)
+    @commands.guild_only()
     async def trivia(self, ctx: ComponentContext):
         try:
             if ctx.invoked_subcommand is None:
@@ -242,6 +243,7 @@ class Trivia(commands.Cog):
             await self.discord_helper.notify_of_error(ctx)
 
     @trivia.command()
+    @commands.guild_only()
     async def help(self, ctx):
         guild_id = 0
         if ctx.guild:
