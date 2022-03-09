@@ -115,8 +115,10 @@ class DiscordHelper():
         if color is None:
             color = 0x7289da
         guild_id = 0
-        if channel.guild:
+
+        if hasattr(channel, 'guild') and channel.guild:
             guild_id = channel.guild.id
+
         embed = discord.Embed(title=title, description=message, color=color)
         if author:
             embed.set_author(name=f"{author.name}#{author.discriminator}", icon_url=author.avatar_url)
