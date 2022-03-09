@@ -58,6 +58,7 @@ class TwitchInfo(commands.Cog):
         pass
 
     @twitch.command()
+    @commands.guild_only()
     async def help(self, ctx):
         guild_id = 0
         if ctx.guild:
@@ -108,6 +109,7 @@ class TwitchInfo(commands.Cog):
 
     @twitch.command(aliases=["set-user"])
     @commands.has_permissions(administrator=True)
+    @commands.guild_only()
     async def set_user(self, ctx, user: discord.Member, twitch_name: str = None):
         try:
             _method = inspect.stack()[0][3]

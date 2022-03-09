@@ -190,10 +190,12 @@ class StreamTeam(commands.Cog):
         self.log.error(0, "streamteam.on_error", f"{str(event)}", traceback.format_exc())
 
     @commands.group()
+    @commands.guild_only()
     async def team(self, ctx):
         pass
 
     @team.command()
+    @commands.guild_only()
     async def invite(self, ctx, twitchName: str = None):
         try:
             guild_id = ctx.guild.id
@@ -223,6 +225,7 @@ class StreamTeam(commands.Cog):
             await self.discord_helper.notify_of_error(ctx)
 
     @team.command(aliases=["invite-user"])
+    @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
     async def invite_user(self, ctx, user: discord.User, twitchName: str):
         await self._invite_user(ctx, user, twitchName)
@@ -264,6 +267,7 @@ class StreamTeam(commands.Cog):
             await self.discord_helper.notify_of_error(ctx)
 
     @team.command()
+    @commands.guild_only()
     async def help(self, ctx):
         guild_id = 0
         if ctx.guild:

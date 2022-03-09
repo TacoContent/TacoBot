@@ -61,6 +61,7 @@ class DiscordHelper():
                 description = f"{message.content}"
                 title = ""
                 embed_fields = []
+                image = None
             else:
                 embed = message.embeds[0]
                 title = embed.title
@@ -70,6 +71,11 @@ class DiscordHelper():
                     description = f"{embed.description}"
                 # lib3ration 500 bits: oh look a Darth Fajitas
                 embed_fields = embed.fields
+                if embed.image is not None and embed.image != discord.Embed.Empty:
+                    image = embed.image.url
+                else:
+                    image = None
+
                 if color is None and embed.color is not None:
                     color = embed.color
 
@@ -87,6 +93,9 @@ class DiscordHelper():
                 target_embed.set_footer(text=self.settings.get_string(guild_id, 'developed_by', user=self.settings.author))
             if remove_fields is None:
                 remove_fields = []
+
+            if image is not None:
+                target_embed.set_image(url=image)
 
             if embed_fields is not None:
                 for f in [ ef for ef in embed_fields if ef.name not in [ rfi['name'] for rfi in remove_fields ]]:
@@ -506,12 +515,16 @@ class DiscordHelper():
                     val = int(m.content)
                     return (val >= min_value and val <= max_value)
                 return False
+        guild_id = 0
+        if ctx.guild:
+            guild_id = ctx.guild.id
 
-        number_ask = await self.sendEmbed(ctx.channel, title, f'{message}', delete_after=timeout, footer=self.settings.get_string(ctx.guild.id, "footer_XX_seconds", seconds=timeout))
+        number_ask = await self.sendEmbed(ctx.channel, title, f'{message}', delete_after=timeout,
+            footer=self.settings.get_string(guild_id, "footer_XX_seconds", seconds=timeout))
         try:
             numberResp = await self.bot.wait_for('message', check=check_range, timeout=timeout)
         except asyncio.TimeoutError:
-            await self.sendEmbed(ctx.channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5)
+            await self.sendEmbed(ctx.channel, title, self.settings.get_string(guild_id, "took_too_long"), delete_after=5)
             return None
         else:
             numberValue = int(numberResp.content)
@@ -523,17 +536,22 @@ class DiscordHelper():
         def check_user(m):
             same = m.author.id == ctx.author.id
             return same
+        guild_id = 0
+        if ctx.guild:
+            guild_id = ctx.guild.id
+
         channel = targetChannel if targetChannel else ctx.channel if ctx.channel else ctx.author
         delete_user_message = True
         if not ctx.guild:
             channel = ctx.author
             delete_user_message = False
 
-        text_ask = await self.sendEmbed(channel, title, f'{message}', delete_after=timeout, footer=self.settings.get_string(ctx.guild.id, "footer_XX_seconds", seconds=timeout), color=color)
+        text_ask = await self.sendEmbed(channel, title, f'{message}', delete_after=timeout,
+            footer=self.settings.get_string(guild_id, "footer_XX_seconds", seconds=timeout), color=color)
         try:
             textResp = await self.bot.wait_for('message', check=check_user, timeout=timeout)
         except asyncio.TimeoutError:
-            await self.sendEmbed(channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5)
+            await self.sendEmbed(channel, title, self.settings.get_string(guild_id, "took_too_long"), delete_after=5)
             return None
         else:
             if delete_user_message:

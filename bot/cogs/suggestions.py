@@ -227,6 +227,7 @@ class Suggestions(commands.Cog):
 
 
     @commands.group(aliases=["suggestion"])
+    @commands.guild_only()
     async def suggest(self, ctx):
         if ctx.invoked_subcommand is not None:
             return
@@ -236,10 +237,6 @@ class Suggestions(commands.Cog):
             if ctx.guild is not None:
                 guild_id = ctx.guild.id
                 await ctx.message.delete()
-            else:
-                # only allow suggestions in guilds
-                self.log.debug(0, "suggestions.suggest", f"Command {ctx.command.name} not allowed in DM")
-                return
             if ctx.author.bot:
                 return # ignore bots
 
