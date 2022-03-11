@@ -202,8 +202,6 @@ class LiveNow(commands.Cog):
                 { "name": "Game", "value": game_name, "inline": False },
             ]
             profile_icon = profile_icon if profile_icon else user.avatar_url
-            self.log.debug(guild_id, "live_now.live_now", f"profile_icon: {profile_icon}")
-
             await self.discord_helper.sendEmbed(logging_channel, f"🔴 {user.display_name}", description, fields, thumbnail=profile_icon, author=user, color=0x6a0dad)
         except Exception as e:
             self.log.error(guild_id, "live_now.live_now", str(e), traceback.format_exc())
