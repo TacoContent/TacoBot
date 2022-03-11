@@ -58,82 +58,109 @@ class LiveNow(commands.Cog):
             guild_id = after.guild.id
 
         try:
-            # if the user is now streaming
-            if before.activity is None and after.activity is not None:
-                if after.activity.type == discord.ActivityType.streaming:
-                    ## TODO: check if the user is on twitch or youtube
-                    twitch_name = None
+            before_streaming_activities = [ a for a in before.activities if a.type == discord.ActivityType.streaming ]
+            after_streaming_activities = [ a for a in after.activities if a.type == discord.ActivityType.streaming ]
 
-                    if after.activity.twitch_name:
-                        # make sure the user's twitch info is tracked in the database
-                        self.db.add_twitch_user(after.id, "", after.activity.twitch_name)
-                        twitch_name = after.activity.twitch_name
+            # if the streaming activity isn't found in the collection, but it is in the singular activity, then use that.
+            if len(before_streaming_activities) == 0:
+                if before.activity and before.activity.type == discord.ActivityType.streaming:
+                    before_streaming_activities = [ before.activity ]
+            if len(after_streaming_activities) == 0:
+                if after.activity and after.activity.type == discord.ActivityType.streaming:
+                    after_streaming_activities = [ after.activity ]
 
-                    cog_settings = self.get_cog_settings(guild_id)
-                    if cog_settings.get("enabled", False):
-                        # get the watch groups
-                        watch_groups = cog_settings.get("watch", [])
-                        logging_channel_id = cog_settings.get("logging_channel", None)
-                        for wg in watch_groups:
-                            watch_roles = wg.get("roles", [])
-                            add_roles = wg.get("add_roles", [])
-                            remove_roles = wg.get("remove_roles", [])
-                            await self.add_remove_roles(user=after, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
+            before_has_streaming_activity = len(before_streaming_activities) > 0
+            after_has_streaming_activity = len(after_streaming_activities) > 0
 
-                        # get the logging channel
-                        logging_channel = None
-                        if logging_channel_id:
-                            logging_channel = self.bot.get_channel(int(logging_channel_id))
-                        if logging_channel:
-                            # if we are logging this to a channel...
-
-                            if not twitch_name:
-                                # get twitch streamer name from database
-                                twitch_info = self.db.get_user_twitch_info(after.id)
-                                if twitch_info:
-                                    twitch_name = twitch_info.get("twitch_name", None)
-
-                            if twitch_name:
-                                profile_icon = self.get_user_profile_image(twitch_name)
-                                description = f"{after.activity.name}\n\n<https://twitch.tv/{twitch_name}>"
-                                # embed = discord.Embed(title=f"🔴 {after.display_name}", description=description, color=0x6a0dad)
-                                fields = [
-                                    { "name": "Game", "value": after.activity.game, "inline": False },
-                                ]
-                                profile_icon = profile_icon if profile_icon else after.avatar_url
-                                # embed.set_thumbnail(url=profile_icon)
-                                # embed.set_author(name=f"{after.name}#{after.discriminator}", icon_url=after.avatar_url)
-                                message = await self.discord_helper.sendEmbed(logging_channel,
-                                    f"🔴 {after.display_name}", description,
-                                    fields, thumbnail=profile_icon,
-                                    author=after, color=0x6a0dad)
-
-                                # message = await logging_channel.send(embed=embed, fields=fields)
-                                self.db.track_live_post(guild_id, logging_channel.id, message.id, after.id)
-                        # await self.handle_streaming(after, cog_settings)
-            # should this check the before? or just check the after to make sure there are no stragglers left behind.
-            elif before.activity and before.activity.type == discord.ActivityType.streaming and after.activity == None:
+            if not before_has_streaming_activity and after_has_streaming_activity:
+                # user started streaming
                 cog_settings = self.get_cog_settings(guild_id)
-                if cog_settings.get("enabled", False):
-                    # get the watch groups
-                        watch_groups = cog_settings.get("watch", [])
-                        for wg in watch_groups:
-                            watch_roles = wg.get("roles", [])
-                            # do opposite here, to put back to original roles
-                            add_roles = wg.get("remove_roles", [])
-                            remove_roles = wg.get("add_roles", [])
-                            await self.add_remove_roles(user=after, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
+                if not cog_settings:
+                    self.log.warn(guild_id, "live_now.on_member_update", f"No live_now settings found for guild {guild_id}")
+                    return
 
-                            track_list = self.db.get_tracked_live_post(guild_id, after.id)
-                            logging_channel_id = cog_settings.get("logging_channel", None)
-                            logging_channel = self.bot.get_channel(int(logging_channel_id))
-                            for track in track_list:
-                                if logging_channel:
-                                    message_id = track.get("message_id", None)
-                                    if message_id:
-                                        message = await logging_channel.fetch_message(int(message_id))
-                                        await message.delete()
-                                        self.db.untrack_live_post(guild_id, message.id)
+                if not cog_settings.get("enabled", False):
+                    self.log.debug(guild_id, "live_now.on_member_update", f"live_now is disabled for guild {guild_id}")
+                    return
+
+                self.log.info(guild_id, "live_now.on_member_update", f"{before.display_name} started streaming")
+                self.db.track_live_activity(guild_id, after.id, True)
+                twitch_name = None
+
+                twitch_info = self.db.get_user_twitch_info(after.id)
+
+                if len(after_streaming_activities) > 1:
+                    self.log.error(guild_id, "live_now.on_member_update", f"{after.display_name} has more than one streaming activity")
+
+                # Only add the twitch name if we don't have it already
+                # and only if we can get the twitch name from the url or activity
+                # or if we have a different twitch name in the database
+                for activity in after_streaming_activities:
+                    if activity.twitch_name:
+                        twitch_name = activity.twitch_name.lower()
+                        break
+                    elif activity.url and "twitch.tv/" in activity.url.lower():
+                        twitch_name = activity.url.lower().split("twitch.tv/")[1]
+                        break
+                    if twitch_name:
+                        # track the users twitch name
+                        self.db.add_twitch_user(after.id, "", twitch_name.lower())
+
+                twitch_info_name = twitch_info.get("twitch_name", None)
+                if twitch_name and twitch_name != "" and twitch_name != twitch_info_name:
+                    self.log.info(guild_id, "live_now.on_member_update", f"{after.display_name} has a different twitch name: {twitch_name}")
+                    self.db.add_twitch_user(after.id, "", twitch_name)
+                elif not twitch_name and twitch_info_name:
+                    twitch_name = twitch_info_name
+
+                if not twitch_name:
+                    self.log.error(guild_id, "live_now.on_member_update", f"{after.display_name} has no twitch name")
+                    return
+
+                # get the watch groups
+                watch_groups = cog_settings.get("watch", [])
+                logging_channel_id = cog_settings.get("logging_channel", None)
+                for wg in watch_groups:
+                    watch_roles = wg.get("roles", [])
+                    add_roles = wg.get("add_roles", [])
+                    remove_roles = wg.get("remove_roles", [])
+                    await self.add_remove_roles(user=after, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
+
+                if logging_channel_id:
+                    self.log_live_post(int(logging_channel_id), after_streaming_activities[0], after)
+
+            elif before_has_streaming_activity and not after_has_streaming_activity:
+                # user stopped streaming
+                cog_settings = self.get_cog_settings(guild_id)
+                if not cog_settings:
+                    self.log.warn(guild_id, "live_now.on_member_update", f"No live_now settings found for guild {guild_id}")
+                    return
+
+                if not cog_settings.get("enabled", False):
+                    self.log.debug(guild_id, "live_now.on_member_update", f"live_now is disabled for guild {guild_id}")
+                    return
+
+                self.log.info(guild_id, "live_now.on_member_update", f"{before.display_name} stopped streaming")
+                self.db.track_live_activity(guild_id, after.id, False)
+                # await self.add_remove_roles(after, [], [], [])
+                watch_groups = cog_settings.get("watch", [])
+                for wg in watch_groups:
+                    watch_roles = wg.get("roles", [])
+                    # do opposite here, to put back to original roles
+                    add_roles = wg.get("remove_roles", [])
+                    remove_roles = wg.get("add_roles", [])
+                    await self.add_remove_roles(user=before, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
+
+                    track_list = self.db.get_tracked_live_post(guild_id, after.id)
+                    logging_channel_id = cog_settings.get("logging_channel", None)
+                    logging_channel = self.bot.get_channel(int(logging_channel_id))
+                    for track in track_list:
+                        if logging_channel:
+                            message_id = track.get("message_id", None)
+                            if message_id:
+                                message = await logging_channel.fetch_message(int(message_id))
+                                await message.delete()
+                                self.db.untrack_live_post(guild_id, message.id)
         except Exception as e:
             self.log.error(guild_id, "live_now.on_member_update", str(e), traceback.format_exc())
 
@@ -171,22 +198,11 @@ class LiveNow(commands.Cog):
                 self.log.debug(guild_id, "live_now.live_now", "No game title given")
                 return
             description = f"{twitch_title}\n\n<https://twitch.tv/{twitch_name}>"
-            # embed = discord.Embed(title=f"🔴 {user.display_name}", description=description, color=0x6a0dad)
             fields = [
                 { "name": "Game", "value": game_name, "inline": False },
             ]
             profile_icon = profile_icon if profile_icon else user.avatar_url
-            self.log.debug(guild_id, "live_now.live_now", f"profile_icon: {profile_icon}")
-
-            message = await self.discord_helper.sendEmbed(logging_channel, f"🔴 {user.display_name}", description, fields, thumbnail=profile_icon, author=user, color=0x6a0dad)
-
-            # embed.set_thumbnail(url=profile_icon)
-            # embed.set_author(name=f"{user.name}#{user.discriminator}", icon_url=user.avatar_url)
-            # # embed.set_image(url=profile_icon)
-            # for f in fields:
-            #     embed.add_field(name=f["name"], value=f["value"], inline=f["inline"])
-            # message = await logging_channel.send(embed=embed)
-            # self.db.track_live_post(guild_id, logging_channel.id, message.id, user.id)
+            await self.discord_helper.sendEmbed(logging_channel, f"🔴 {user.display_name}", description, fields, thumbnail=profile_icon, author=user, color=0x6a0dad)
         except Exception as e:
             self.log.error(guild_id, "live_now.live_now", str(e), traceback.format_exc())
             return
@@ -198,6 +214,36 @@ class LiveNow(commands.Cog):
             # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No live_now settings found for guild {guildId}")
         return cog_settings
+
+    async def log_live_post(self, channel_id: int, activity: discord.Streaming, user: discord.Member):
+        guild_id = user.guild.id
+        # get the logging channel
+        logging_channel = None
+        if channel_id:
+            logging_channel = self.bot.get_channel(channel_id)
+        if logging_channel:
+            # if we are logging this to a channel...
+
+            if not twitch_name:
+                # get twitch streamer name from database
+                twitch_info = self.db.get_user_twitch_info(user.id)
+                if twitch_info:
+                    twitch_name = twitch_info.get("twitch_name", None)
+
+            if twitch_name:
+                profile_icon = self.get_user_profile_image(twitch_name)
+                description = f"{activity.name}\n\n<https://twitch.tv/{twitch_name}>"
+                fields = [
+                    { "name": "Game", "value": activity.game, "inline": False },
+                ]
+                profile_icon = profile_icon if profile_icon else user.avatar_url
+                message = await self.discord_helper.sendEmbed(logging_channel,
+                    f"🔴 {user.display_name}", description,
+                    fields, thumbnail=profile_icon,
+                    author=user, color=0x6a0dad)
+
+                self.db.track_live_post(guild_id, logging_channel.id, message.id, user.id)
+
     async def add_remove_roles(self, user: discord.Member, check_list: list, add_list: list, remove_list: list):
         if user is None or user.guild is None:
             return

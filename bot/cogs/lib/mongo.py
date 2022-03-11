@@ -739,7 +739,25 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-
+    def track_live_activity(self, guildId: int, userId: int, live: bool):
+        try:
+            if self.connection is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            payload = {
+                "guild_id": str(guildId),
+                "user_id": str(userId),
+                "status": "ONLINE" if live else "OFFLINE",
+                "timestamp": timestamp
+            }
+            self.connection.live_activity.insert_one(payload)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+                
     def track_live_post(self, guildId: int, channelId: int, messageId: int, userId: int):
         try:
             if self.connection is None:
