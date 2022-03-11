@@ -99,7 +99,7 @@ class LiveNow(commands.Cog):
                     if activity.twitch_name:
                         twitch_name = activity.twitch_name.lower()
                         break
-                    elif activity.url and activity.url.lower().startswith("twitch.tv/"):
+                    elif activity.url and "twitch.tv/" in activity.url.lower():
                         twitch_name = activity.url.lower().split("twitch.tv/")[1]
                         break
                     if twitch_name:
