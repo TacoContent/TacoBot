@@ -1,4 +1,4 @@
-**v1.0.54**
+**v1.0.57**
 - Update commands with "guild_only" decorators
 - fix issue when asking text where it would fail.
 - Fix reason string for invite.
