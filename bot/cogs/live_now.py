@@ -96,14 +96,19 @@ class LiveNow(commands.Cog):
                             if twitch_name:
                                 profile_icon = self.get_user_profile_image(twitch_name)
                                 description = f"{after.activity.name}\n\n<https://twitch.tv/{twitch_name}>"
-                                embed = discord.Embed(title=f"🔴 {after.display_name}", description=description, color=0x6a0dad)
+                                # embed = discord.Embed(title=f"🔴 {after.display_name}", description=description, color=0x6a0dad)
                                 fields = [
                                     { "name": "Game", "value": after.activity.game, "inline": False },
                                 ]
                                 profile_icon = profile_icon if profile_icon else after.avatar_url
-                                embed.set_thumbnail(url=profile_icon)
-                                embed.set_author(name=f"{after.name}#{after.discriminator}", icon_url=after.avatar_url)
-                                message = await logging_channel.send(embed=embed, fields=fields)
+                                # embed.set_thumbnail(url=profile_icon)
+                                # embed.set_author(name=f"{after.name}#{after.discriminator}", icon_url=after.avatar_url)
+                                message = await self.discord_helper.sendEmbed(logging_channel,
+                                    f"🔴 {after.display_name}", description,
+                                    fields, thumbnail=profile_icon,
+                                    author=after, color=0x6a0dad)
+
+                                # message = await logging_channel.send(embed=embed, fields=fields)
                                 self.db.track_live_post(guild_id, logging_channel.id, message.id, after.id)
                         # await self.handle_streaming(after, cog_settings)
             # should this check the before? or just check the after to make sure there are no stragglers left behind.
