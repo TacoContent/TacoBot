@@ -1,6 +1,13 @@
 **v1.0.54**
 - Update commands with "guild_only" decorators
 - fix issue when asking text where it would fail.
+- Fix reason string for invite.
+- fix typo in stream team module.
+- fix stream team join request log title.
+- added image and thumbnail option for embeds
+- updated default footer text
+- add a live-now watch to move to live role
+- live now also tracks their twitch name, if available.
 
 **v1.0.53**
 - Update stream team module with localized strings
