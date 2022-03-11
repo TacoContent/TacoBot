@@ -104,12 +104,12 @@ class LiveNow(commands.Cog):
                         break
                     if twitch_name:
                         # track the users twitch name
-                        self.db.add_twitch_user(after.id, "", twitch_name.lower())
+                        self.db.set_user_twitch_info(after.id, "", twitch_name.lower())
 
                 twitch_info_name = twitch_info.get("twitch_name", None)
                 if twitch_name and twitch_name != "" and twitch_name != twitch_info_name:
                     self.log.info(guild_id, "live_now.on_member_update", f"{after.display_name} has a different twitch name: {twitch_name}")
-                    self.db.add_twitch_user(after.id, "", twitch_name)
+                    self.db.set_user_twitch_info(after.id, "", twitch_name)
                 elif not twitch_name and twitch_info_name:
                     twitch_name = twitch_info_name
 
