@@ -111,7 +111,8 @@ class DiscordHelper():
         except Exception as ex:
             self.log.error(0, "discordhelper.move_message", str(ex), traceback.format_exc())
 
-    async def sendEmbed(self, channel, title, message, fields=None, delete_after=None, footer=None, components=None, color=0x7289da, author=None):
+    async def sendEmbed(self, channel, title, message, fields=None, delete_after=None,
+        footer=None, components=None, color=0x7289da, author=None, thumbnail=None, image=None):
         if color is None:
             color = 0x7289da
         guild_id = 0
@@ -129,9 +130,15 @@ class DiscordHelper():
             for f in fields:
                 embed.add_field(name=f['name'], value=f['value'], inline=f['inline'] if 'inline' in f else False)
         if footer is None:
-            embed.set_footer(text=self.settings.get_string(guild_id, 'developed_by', user=self.settings.author))
+            embed.set_footer(text=self.settings.get_string(guild_id, 'developed_by', user=self.settings.author, bot_name=self.settings.name, version=self.settings.version))
         else:
             embed.set_footer(text=footer)
+
+        if thumbnail is not None:
+            embed.set_thumbnail(url=thumbnail)
+        if image is not None:
+            embed.set_image(url=image)
+
         return await channel.send(embed=embed, delete_after=delete_after, components=components)
 
     async def updateEmbed(self, message, title = None, description = None, description_append: bool = True, fields = None, footer = None, components = None, color = 0x7289da, author = None):

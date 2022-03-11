@@ -87,7 +87,7 @@ class StreamTeam(commands.Cog):
 
                 if log_channel:
                     await self.discord_helper.sendEmbed(log_channel,
-                        self.setttings.get_string(guild_id, "streamteam_removal_tile"),
+                        self.settings.get_string(guild_id, "streamteam_removal_tile"),
                         self.settings.get_string(guild_id, "streamteam_removal_message",
                             user=f"{user.name}#{user.discriminator}",
                             team_name=team_name,
@@ -169,7 +169,7 @@ class StreamTeam(commands.Cog):
                 if log_channel:
                     twitch_name = unknown if twitch_name is None else twitch_name
                     await self.discord_helper.sendEmbed(log_channel,
-                        self.setttings.get_string(guild_id, "streamteam_join_tile"),
+                        self.settings.get_string(guild_id, "streamteam_join_title"),
                         self.settings.get_string(guild_id, "streamteam_join_message",
                             user=user, team_name=team_name, twitch_name=twitch_name),
                         color=0x00ff00)
