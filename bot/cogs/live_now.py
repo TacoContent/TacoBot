@@ -127,7 +127,7 @@ class LiveNow(commands.Cog):
                     await self.add_remove_roles(user=after, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
 
                 if logging_channel_id:
-                    await self.log_live_post(int(logging_channel_id), after_streaming_activities[0], after)
+                    await self.log_live_post(int(logging_channel_id), after_streaming_activities[0], after, twitch_name)
 
             elif before_has_streaming_activity and not after_has_streaming_activity:
                 # user stopped streaming
@@ -215,7 +215,7 @@ class LiveNow(commands.Cog):
             raise Exception(f"No live_now settings found for guild {guildId}")
         return cog_settings
 
-    async def log_live_post(self, channel_id: int, activity: discord.Streaming, user: discord.Member):
+    async def log_live_post(self, channel_id: int, activity: discord.Streaming, user: discord.Member, twitch_name: str):
         guild_id = user.guild.id
         # get the logging channel
         logging_channel = None
