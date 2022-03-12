@@ -127,7 +127,7 @@ class LiveNow(commands.Cog):
                     await self.add_remove_roles(user=after, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
 
                 if logging_channel_id:
-                    self.log_live_post(int(logging_channel_id), after_streaming_activities[0], after)
+                    await self.log_live_post(int(logging_channel_id), after_streaming_activities[0], after)
 
             elif before_has_streaming_activity and not after_has_streaming_activity:
                 # user stopped streaming
