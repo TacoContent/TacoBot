@@ -236,6 +236,10 @@ class LiveNow(commands.Cog):
             if activity.assets:
                 image_url = activity.assets.get("large_image", None)
                 if image_url:
+                    if "twitch:" in image_url and not profile_icon and not twitch_name:
+                        twitch_name = image_url.replace("twitch:", "")
+                        profile_icon = self.get_user_profile_image(twitch_name)
+                        
                     self.log.debug(guild_id, "live_now.log_live_post", f"Found large image {image_url}")
 
             message = await self.discord_helper.sendEmbed(logging_channel,
