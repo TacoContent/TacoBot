@@ -162,14 +162,15 @@ class LiveNow(commands.Cog):
                                 self.db.untrack_live_post(guild_id, message.id)
         except Exception as e:
             self.log.error(guild_id, "live_now.on_member_update", str(e), traceback.format_exc())
-    def handle_youtube_live(self, user: discord.Member, activities: list[discord.Streaming]):
+
+    def handle_youtube_live(self, user: discord.Member, activities: typing.List[discord.Streaming]):
         guild_id = user.guild.id
         if len(activities) > 1:
             self.log.error(guild_id, "live_now.on_member_update", f"{user.display_name} has more than one streaming activity")
 
         self.log.info(guild_id, "live_now.handle_youtube_live", f"{user.display_name} started streaming on youtube")
 
-    def handle_twitch_live(self, user: discord.Member, activities: list[discord.Streaming]):
+    def handle_twitch_live(self, user: discord.Member, activities: typing.List[discord.Streaming]):
         guild_id = user.guild.id
 
         twitch_name = None
