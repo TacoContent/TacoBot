@@ -1,14 +1,10 @@
-**v1.0.65**
+**v1.0.66**
 - fixed call to add twitch user info
 - fix issue with live_now
 - rework live_now to support youtube.
 - fixed the stopped streaming check in live now
-
-**v1.0.59**
 - Add track of when a user starts and ends stream
 - refactor the live_now to look at all activities
-
-**v1.0.58**
 - Update commands with "guild_only" decorators
 - fix issue when asking text where it would fail.
 - Fix reason string for invite.
@@ -18,14 +14,13 @@
 - updated default footer text
 - add a live-now watch to move to live role
 - live now also tracks their twitch name, if available.
+- fix call to handle twitch/youtube live
 
 **v1.0.53**
 - Update stream team module with localized strings
 - Update trivia module with localized strings
 - Added unified `.taco <group> help` command that directs to the correct help command.
 - Added `.taco gif [search]` that will return a `taco gif` by default.
-
-**v1.0.52**
 - Added more locialized strings to replace hard coded strings
 - Update restricted module to use localized strings.
 - removed unused carlgg suggestion module
@@ -34,13 +29,9 @@
 - fixed the log of the receiving of tacos to be the correct user.
 - fixed the taco log message key name
 - fixed the changelog to separate and group correctly.
-
-**v1.0.51**
 - Started using localized strings. Starting with english.
 - Start adding strings to load from localization files.
 - Fixed issue with the 🌮 reaction
-
-**v1.0.50**
 - implement `.taco changelog` command
 - fix minor bugs with some restricted channel actions
 - implemented the `.taco move` command.

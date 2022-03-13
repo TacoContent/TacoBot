@@ -97,9 +97,9 @@ class LiveNow(commands.Cog):
                 self.db.track_live_activity(guild_id, after.id, True, current_activity.platform)
                 twitch_name = None
                 if current_activity.platform.lower() == "twitch":
-                    twitch_name = self.handle_twitch_live(guild_id, after, after_streaming_activities)
+                    twitch_name = self.handle_twitch_live(after, after_streaming_activities)
                 elif current_activity.platform.lower() == "youtube":
-                    self.handle_youtube_live(guild_id, after, after_streaming_activities)
+                    self.handle_youtube_live(after, after_streaming_activities)
                 else:
                     self.log.warn(guild_id, "live_now.on_member_update", f"{before.display_name} started streaming, but platform {current_activity.platform} is not supported")
 
