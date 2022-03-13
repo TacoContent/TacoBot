@@ -1,4 +1,4 @@
-**v1.0.66**
+**v1.0.67**
 - fixed call to add twitch user info
 - fix issue with live_now
 - rework live_now to support youtube.
@@ -15,6 +15,7 @@
 - add a live-now watch to move to live role
 - live now also tracks their twitch name, if available.
 - fix call to handle twitch/youtube live
+- fixed the default footer for some instances
 
 **v1.0.53**
 - Update stream team module with localized strings

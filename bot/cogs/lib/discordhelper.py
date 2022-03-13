@@ -90,7 +90,7 @@ class DiscordHelper():
             if footer:
                 target_embed.set_footer(text=footer)
             else:
-                target_embed.set_footer(text=self.settings.get_string(guild_id, 'developed_by', user=self.settings.author))
+                target_embed.set_footer(text=self.settings.get_string(guild_id, 'developed_by', user=self.settings.author, bot_name=self.settings.name, version=self.settings.version))
             if remove_fields is None:
                 remove_fields = []
 
@@ -173,7 +173,7 @@ class DiscordHelper():
             for f in fields:
                 updated_embed.add_field(name=f['name'], value=f['value'], inline=f['inline'] if 'inline' in f else False)
         if footer is None:
-            updated_embed.set_footer(text=self.settings.get_string(guild_id, 'developed_by', user=self.settings.author))
+            updated_embed.set_footer(text=self.settings.get_string(guild_id, 'developed_by', user=self.settings.author, bot_name=self.settings.name, version=self.settings.version))
         else:
             updated_embed.set_footer(text=footer)
 
