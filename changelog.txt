@@ -1,4 +1,4 @@
-**v1.0.68**
+**v1.0.69**
 - fixed call to add twitch user info
 - fix issue with live_now
 - rework live_now to support youtube.
