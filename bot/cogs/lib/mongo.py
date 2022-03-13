@@ -739,7 +739,7 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-    def track_live_activity(self, guildId: int, userId: int, live: bool):
+    def track_live_activity(self, guildId: int, userId: int, live: bool, platform: str):
         try:
             if self.connection is None:
                 self.open()
@@ -748,6 +748,7 @@ class MongoDatabase(database.Database):
                 "guild_id": str(guildId),
                 "user_id": str(userId),
                 "status": "ONLINE" if live else "OFFLINE",
+                "platform": platform.upper().strip(),
                 "timestamp": timestamp
             }
             self.connection.live_activity.insert_one(payload)
@@ -757,7 +758,7 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-                
+
     def track_live_post(self, guildId: int, channelId: int, messageId: int, userId: int):
         try:
             if self.connection is None:
