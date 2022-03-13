@@ -68,5 +68,5 @@
 	"trivia_question_title": "Trivia - {{category}} - {{difficulty}} - {{reward}} 🌮",
 	"trivia_question": "{{question}}\n\n{{choice_message}}\n\nReact with the correct answer. Only your first answer counts.\n\nYou have {{trivia_timeout}} seconds to answer.\nYou will be rewarded **{{reward}} {{taco_word}}** for answering correctly.\nYou will lose **{{reward}} {{taco_word}}** for answering incorrectly.\n\n{{notify_role_mention}}",
 	"trivia_results_title": "Trivia Results",
-	"trivia_results_message": "{{question}}\n\nThe correct answer was **{{correct_emoji}} {{correct_answer}**\n\nCorrect answers receive {{reward}} {{taco_word}} 🌮.\nIncorrect answers lose {{reward}} {{taco_word}} 🌮.\n\n`.taco trivia` to play again."
+	"trivia_results_message": "{{question}}\n\nThe correct answer was **{{correct_emoji}} {{correct_answer}}**\n\nCorrect answers receive {{reward}} {{taco_word}} 🌮.\nIncorrect answers lose {{reward}} {{taco_word}} 🌮.\n\n`.taco trivia` to play again."
 }
