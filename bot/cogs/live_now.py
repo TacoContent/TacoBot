@@ -127,11 +127,11 @@ class LiveNow(commands.Cog):
                     return
 
                 current_activity = None
-                for activity in after_streaming_activities:
+                for activity in before_streaming_activities:
                     current_activity = activity
                     break
                 if not current_activity:
-                    self.log.warn(guild_id, "live_now.on_member_update", f"{before.display_name} started streaming, but no activity found")
+                    self.log.warn(guild_id, "live_now.on_member_update", f"{before.display_name} ended streaming, but no prior activity was found")
                     return
 
 

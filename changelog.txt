@@ -1,7 +1,8 @@
-**v1.0.63**
+**v1.0.65**
 - fixed call to add twitch user info
 - fix issue with live_now
 - rework live_now to support youtube.
+- fixed the stopped streaming check in live now
 
 **v1.0.59**
 - Add track of when a user starts and ends stream
