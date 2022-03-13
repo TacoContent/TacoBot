@@ -235,11 +235,12 @@ class LiveNow(commands.Cog):
 
             if activity.assets:
                 image_url = activity.assets.get("large_image", None)
+                if image_url:
+                    self.log.debug(guild_id, "live_now.log_live_post", f"Found large image {image_url}")
 
             message = await self.discord_helper.sendEmbed(logging_channel,
                 f"🔴 {user.display_name}", description,
                 fields, thumbnail=profile_icon,
-                image=image_url,
                 author=user, color=0x6a0dad)
 
             self.db.track_live_post(guild_id, logging_channel.id, message.id, user.id)
