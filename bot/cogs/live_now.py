@@ -229,7 +229,12 @@ class LiveNow(commands.Cog):
             if activity.game:
                 fields.append({ "name": "Game", "value": activity.game, "inline": False },)
             if activity.platform:
-                fields.append({ "name": "Platform", "value": f":{activity.platform.lower()}:{activity.platform}", "inline": True },)
+                platform_emoji = self.find_platform_emoji(user.guild, activity.platform)
+                emoji = ""
+                if platform_emoji:
+                    emoji = f"<:{platform_emoji.name}:{platform_emoji.id}> "
+
+                fields.append({ "name": "Platform", "value": f"{emoji}{activity.platform}", "inline": True },)
 
             profile_icon = profile_icon if profile_icon else user.avatar_url
 
@@ -239,7 +244,7 @@ class LiveNow(commands.Cog):
                     if "twitch:" in image_url and not profile_icon and not twitch_name:
                         twitch_name = image_url.replace("twitch:", "")
                         profile_icon = self.get_user_profile_image(twitch_name)
-                        
+
                     self.log.debug(guild_id, "live_now.log_live_post", f"Found large image {image_url}")
 
             message = await self.discord_helper.sendEmbed(logging_channel,
@@ -284,6 +289,12 @@ class LiveNow(commands.Cog):
 
             else:
                 self.log.debug(guild_id, "live_now.add_remove_roles", f"User {user.display_name} is not in any of the watch roles")
+    def find_platform_emoji(self, guild: discord.Guild, platform: str):
+        if guild is None:
+            return None
+
+        platform_emoji = discord.utils.get(lambda m: m.name.lower() == platform.lower(), guild.emojis)
+        return platform_emoji
 
     def get_user_profile_image(self, twitch_user: str):
         if twitch_user:

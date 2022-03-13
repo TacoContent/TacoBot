@@ -1,4 +1,4 @@
-**v1.0.69**
+**v1.0.71**
 - fixed call to add twitch user info
 - fix issue with live_now
 - rework live_now to support youtube.
@@ -17,6 +17,7 @@
 - fix call to handle twitch/youtube live
 - fixed the default footer for some instances
 - fix the call to embed with an image
+- fix twitch emoji in live message
 
 **v1.0.53**
 - Update stream team module with localized strings

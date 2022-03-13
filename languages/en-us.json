@@ -61,7 +61,7 @@
 	"streamteam_removal_tile": "Stream Team Removal",
 	"streamteam_join_title": "Stream Team Join",
 	"streamteam_removal_message": "{{user}} has requested to be removed from the **{{team_name}}** twitch team.\n\nTwitch Name: `{{twitch_name}}`",
-	"streamteam_join_message": "{{user}} has requested to join the **{{team_name}}** twitch team.\n\n:twitch: Twitch Name: `{{twitch_name}}`",
+	"streamteam_join_message": "{{user}} has requested to join the **{{team_name}}** twitch team.\n\nTwitch Name: `{{twitch_name}}`",
 	"streamteam_set_twitch_name_message": "Your Twitch name has been recorded as `{{twitch_name}}`. Keep an eye out for an invite.\n\nGo here: https://dashboard.twitch.tv/u/{{twitch_name}}/settings/channel\n\nTwitch Dashboard -> Settings -> Channel -> Featured Content => Scroll to the bottom.\n\nIf you change your twitch name in the future, you can use `.taco twitch set` in a discord channel, or `.twitch set` in the DM with me.",
 	"streamteam_invite_no_twitch_name_message": "You have not set your twitch name yet. Please do so with `.taco twitch set`.",
 	"streamteam_invite_success_message": "A request has been made for {{user}} to be added to join the **{{team_name}}** stream team.\n\nKeep an eye out for your invite.\n\nGo here: https://dashboard.twitch.tv/u/{{twitch_name}}/settings/channel\n\nTwitch Dashboard -> Settings -> Channel -> Featured Content => Scroll to the bottom.\n\nIf you change your twitch name in the future, you can use `.taco twitch set` in a discord channel, or `.twitch set` in a DM with me.",
