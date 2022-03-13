@@ -239,7 +239,7 @@ class LiveNow(commands.Cog):
             message = await self.discord_helper.sendEmbed(logging_channel,
                 f"🔴 {user.display_name}", description,
                 fields, thumbnail=profile_icon,
-                image_url=image_url,
+                image=image_url,
                 author=user, color=0x6a0dad)
 
             self.db.track_live_post(guild_id, logging_channel.id, message.id, user.id)
