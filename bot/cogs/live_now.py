@@ -190,7 +190,10 @@ class LiveNow(commands.Cog):
             if twitch_name:
                 # track the users twitch name
                 self.db.set_user_twitch_info(user.id, "", twitch_name.lower())
-        twitch_info_name = twitch_info.get("twitch_name", None)
+        if twitch_info:
+            twitch_info_name = twitch_info.get("twitch_name", None)
+        else:
+            twitch_info_name = None
         if twitch_name and twitch_name != "" and twitch_name != twitch_info_name:
             self.log.info(guild_id, "live_now.on_member_update", f"{user.display_name} has a different twitch name: {twitch_name}")
             self.db.set_user_twitch_info(user.id, "", twitch_name)
@@ -293,7 +296,7 @@ class LiveNow(commands.Cog):
         if guild is None:
             return None
 
-        platform_emoji = discord.utils.get(lambda m: m.name.lower() == platform.lower(), guild.emojis)
+        platform_emoji = discord.utils.find(lambda m: m.name.lower() == platform.lower(), guild.emojis)
         return platform_emoji
 
     def get_user_profile_image(self, twitch_user: str):
