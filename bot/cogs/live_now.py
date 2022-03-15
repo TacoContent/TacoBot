@@ -73,6 +73,7 @@ class LiveNow(commands.Cog):
             after_has_streaming_activity = len(after_streaming_activities) > 0
 
             if not before_has_streaming_activity and after_has_streaming_activity:
+                self.log.debug(guild_id, "live_now.on_member_update", f"{after.display_name} started streaming and we have activity")
                 # user started streaming
                 cog_settings = self.get_cog_settings(guild_id)
                 if not cog_settings:
@@ -82,8 +83,6 @@ class LiveNow(commands.Cog):
                     self.log.debug(guild_id, "live_now.on_member_update", f"live_now is disabled for guild {guild_id}")
                     return
 
-
-
                 for activity in after_streaming_activities:
                     tracked = self.db.get_tracked_live(guild_id, after.id, activity.platform)
                     if not tracked:
@@ -91,8 +90,10 @@ class LiveNow(commands.Cog):
                         self.db.track_live_activity(guild_id, after.id, True, activity.platform)
                         twitch_name = None
                         if activity.platform.lower() == "twitch":
+                            self.log.debug(guild_id, "live_now.on_member_update", f"{after.display_name} started streaming on twitch")
                             twitch_name = self.handle_twitch_live(after, after_streaming_activities)
                         elif activity.platform.lower() == "youtube":
+                            self.log.debug(guild_id, "live_now.on_member_update", f"{after.display_name} started streaming on youtube")
                             self.handle_youtube_live(after, after_streaming_activities)
                         else:
                             self.log.warn(guild_id, "live_now.on_member_update", f"{before.display_name} started streaming, but platform {activity.platform} is not supported")
@@ -110,8 +111,12 @@ class LiveNow(commands.Cog):
                             await self.log_live_post(int(logging_channel_id), activity, after, twitch_name)
                         else:
                             self.db.track_live(guild_id, after.id, activity.platform)
+                    else:
+                        self.log.debug(guild_id, "live_now.on_member_update", f"{before.display_name} started streaming on {activity.platform} but was already tracked")
+
 
             elif before_has_streaming_activity and not after_has_streaming_activity:
+                self.log.debug(guild_id, "live_now.on_member_update", f"{before.display_name} stopped streaming and activity is gone")
                 # user stopped streaming
                 cog_settings = self.get_cog_settings(guild_id)
                 if not cog_settings:
@@ -122,7 +127,7 @@ class LiveNow(commands.Cog):
                     self.log.debug(guild_id, "live_now.on_member_update", f"live_now is disabled for guild {guild_id}")
                     return
 
-                for activity in after_streaming_activities:
+                for activity in before_streaming_activities:
                     tracked = self.db.get_tracked_live(guild_id, after.id, activity.platform)
                     if tracked:
 
