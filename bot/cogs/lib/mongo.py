@@ -819,7 +819,7 @@ class MongoDatabase(database.Database):
                 "message_id": str(messageId),
                 "timestamp": timestamp
             }
-            self.connection.live_posts.update_one({ "guild_id": str(guildId), "user_id": str(userId), "platform": platform.upper().strip()}, { "$set": payload }, upsert=True)
+            self.connection.live_tracked.update_one({ "guild_id": str(guildId), "user_id": str(userId), "platform": platform.upper().strip()}, { "$set": payload }, upsert=True)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -831,7 +831,7 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.live_posts.find({ "guild_id": str(guildId), "user_id": str(userId), "platform": platform })
+            return self.connection.live_tracked.find({ "guild_id": str(guildId), "user_id": str(userId), "platform": platform })
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -843,7 +843,7 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            self.connection.live_posts.delete_one({ "guild_id": str(guildId),  "user_id": str(userId), "platform": platform.upper().strip() })
+            self.connection.live_tracked.delete_one({ "guild_id": str(guildId),  "user_id": str(userId), "platform": platform.upper().strip() })
         except Exception as ex:
             print(ex)
             traceback.print_exc()
