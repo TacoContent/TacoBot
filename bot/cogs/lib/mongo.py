@@ -739,6 +739,7 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
+
     def track_live_activity(self, guildId: int, userId: int, live: bool, platform: str):
         try:
             if self.connection is None:
@@ -759,19 +760,66 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def track_live_post(self, guildId: int, channelId: int, messageId: int, userId: int):
+    # def track_live_post(self, guildId: int, channelId: int, messageId: int, userId: int, platform: str):
+    #     try:
+    #         if self.connection is None:
+    #             self.open()
+    #         timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+    #         payload = {
+    #             "guild_id": str(guildId),
+    #             "channel_id": str(channelId),
+    #             "message_id": str(messageId),
+    #             "user_id": str(userId),
+    #             "platform": platform.upper().strip(),
+    #             "timestamp": timestamp
+    #         }
+    #         self.connection.live_posts.update_one({ "guild_id": str(guildId), "message_id": str(messageId) }, { "$set": payload }, upsert=True)
+    #     except Exception as ex:
+    #         print(ex)
+    #         traceback.print_exc()
+    #     finally:
+    #         if self.connection:
+    #             self.close()
+
+    # def get_tracked_live_post(self, guildId: int, userId: int, platform: str):
+    #     try:
+    #         if self.connection is None:
+    #             self.open()
+    #         return self.connection.live_posts.find({ "guild_id": str(guildId), "user_id": str(userId), "platform": platform })
+    #     except Exception as ex:
+    #         print(ex)
+    #         traceback.print_exc()
+    #     finally:
+    #         if self.connection:
+    #             self.close()
+
+    # def untrack_live_post(self, guildId: int, messageId: int):
+    #     try:
+    #         if self.connection is None:
+    #             self.open()
+    #         self.connection.live_posts.delete_one({ "guild_id": str(guildId), "message_id": str(messageId) })
+    #     except Exception as ex:
+    #         print(ex)
+    #         traceback.print_exc()
+    #     finally:
+    #         if self.connection:
+    #             self.close()
+
+
+    def track_live(self, guildId: int, userId: int, platform: str, channelId: int = None, messageId: int = None,):
         try:
             if self.connection is None:
                 self.open()
             timestamp = utils.to_timestamp(datetime.datetime.utcnow())
             payload = {
                 "guild_id": str(guildId),
+                "user_id": str(userId),
+                "platform": platform.upper().strip(),
                 "channel_id": str(channelId),
                 "message_id": str(messageId),
-                "user_id": str(userId),
                 "timestamp": timestamp
             }
-            self.connection.live_posts.update_one({ "guild_id": str(guildId), "message_id": str(messageId) }, { "$set": payload }, upsert=True)
+            self.connection.live_posts.update_one({ "guild_id": str(guildId), "user_id": str(userId), "platform": platform.upper().strip()}, { "$set": payload }, upsert=True)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -779,11 +827,11 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def get_tracked_live_post(self, guildId: int, userId: int):
+    def get_tracked_live(self, guildId: int, userId: int, platform: str):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.live_posts.find({ "guild_id": str(guildId), "user_id": str(userId) })
+            return self.connection.live_posts.find({ "guild_id": str(guildId), "user_id": str(userId), "platform": platform })
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -791,11 +839,11 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def untrack_live_post(self, guildId: int, messageId: int):
+    def untrack_live(self, guildId: int, userId: int, platform: str):
         try:
             if self.connection is None:
                 self.open()
-            self.connection.live_posts.delete_one({ "guild_id": str(guildId), "message_id": str(messageId) })
+            self.connection.live_posts.delete_one({ "guild_id": str(guildId),  "user_id": str(userId), "platform": platform.upper().strip() })
         except Exception as ex:
             print(ex)
             traceback.print_exc()

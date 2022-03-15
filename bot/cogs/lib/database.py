@@ -74,11 +74,11 @@ class Database():
     def get_invite_code(self, guildId: int, inviteCode: str):
         pass
 
-    def track_live_post(self, guildId: int, channelId: int, messageId: int, userId: int):
+    def track_live(self, guildId: int, userId: int, platform: str, channelId: int = None, messageId: int = None,):
         pass
-    def get_tracked_live_post(self, guildId: int, userId: int):
+    def get_tracked_live(self, guildId: int, userId: int, platform: str):
         pass
-    def untrack_live_post(self, guildId: int, messageId: int):
+    def untrack_live(self, guildId: int, userId: int, platform: str):
         pass
     def UPDATE_SCHEMA(self):
         pass
