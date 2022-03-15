@@ -1,3 +1,6 @@
+**v1.0.73**
+
+
 **v1.0.72**
 - fixed call to add twitch user info
 - fix issue with live_now
