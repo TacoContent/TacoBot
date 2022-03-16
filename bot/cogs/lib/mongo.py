@@ -850,3 +850,72 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
+
+    def add_user_birthday(self, guildId: int, userId: int, month: int, day: int):
+        try:
+            if self.connection is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            payload = {
+                "guild_id": str(guildId),
+                "user_id": str(userId),
+                "month": month,
+                "day": day,
+                "timestamp": timestamp
+            }
+            self.connection.birthdays.update_one( { "guild_id": str(guildId), "user_id": str(userId) }, { "$set": payload }, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+    def get_user_birthdays(self, guildId: int, month: int, day: int):
+        try:
+            if self.connection is None:
+                self.open()
+            return self.connection.birthdays.find({ "guild_id": str(guildId), "month": month, "day": day })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+    def track_birthday_check(self, guildId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            payload = {
+                "guild_id": str(guildId),
+                "timestamp": timestamp
+            }
+            self.connection.birthday_checks.update_one({ "guild_id": str(guildId) }, { "$set": payload}, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+    def birthday_was_checked_today(self, guildId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            checks = self.connection.birthday_checks.find({ "guild_id": str(guildId) })
+            if checks.count() > 0:
+                date = datetime.datetime.utcnow().date()
+                start = datetime.datetime.combine(date, datetime.time.min)
+                end = datetime.datetime.combine(date, datetime.time.max)
+                start_ts = utils.to_timestamp(datetime.datetime.combine(date, datetime.time.min))
+                end_ts = utils.to_timestamp(datetime.datetime.combine(date, datetime.time.max))
+                timestamp = checks[0]["timestamp"]
+
+                if timestamp >= start_ts and timestamp <= end_ts:
+                    return True
+            return False
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()

@@ -1,9 +1,10 @@
-**v1.0.80**
+**v1.0.83**
 - change live now to track for multiple live platforms
 - more changes to support multiple live platforms
 - update giphy to use shared embed call
 - update result of tracked live to return list
 - Change embed to allow null for message / title
+- Added birthday wishes [wip]
 
 **v1.0.72**
 - fixed call to add twitch user info
