@@ -34,6 +34,7 @@ class Birthday(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.settings = settings.Settings()
+        self.SETTINGS_SECTION = "birthday"
         self.discord_helper = discordhelper.DiscordHelper(bot)
         if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
             self.db = mongo.MongoDatabase()
@@ -96,6 +97,14 @@ class Birthday(commands.Cog):
             self.log.error(guild_id, "birthday.check_birthday", str(e), traceback.format_exc())
             self.discord_helper.notify_of_error(ctx)
 
+    def get_cog_settings(self, guildId: int = 0):
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        if not cog_settings:
+            # raise exception if there are no leave_survey settings
+            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
+            # raise Exception(f"No live_now settings found for guild {guildId}")
+            return None
+        return cog_settings
 
     def was_checked_today(self, guildId: int):
         try:
@@ -123,6 +132,15 @@ class Birthday(commands.Cog):
             if self.was_checked_today(guild_id):
                 return
 
+            # user started streaming
+            cog_settings = self.get_cog_settings(guild_id)
+            if not cog_settings:
+                self.log.warn(guild_id, "birthday.on_member_update", f"No live_now settings found for guild {guild_id}")
+                return
+            if not cog_settings.get("enabled", False):
+                self.log.debug(guild_id, "birthday.on_member_update", f"birthday is disabled for guild {guild_id}")
+                return
+
 
             if birthdays.count() == 0:
                 return
@@ -138,20 +156,15 @@ class Birthday(commands.Cog):
             # Get a random birthday message
 
             # These should be pulled from database settings
-            birthday_messsages = [
-                "Happy Birthday!",
-                "Happy Level Up Day!",
-                "Party like it's your birthday! On wait it is...",
-                "Did you hear the news? Guess who's birthday is today!",
-                "You don't look a day older than yesterday! Happy Birthday!",
-                "You don't look a day older than yesterday! Happy Level Up Day!",
-            ]
-            output_channel_id = '942532971418775555'
+            birthday_messsages = cog_settings.get("messages", [])
+            output_channel_id = cog_settings.get("channel_id", "0")
 
             output_channel = ctx.guild.get_channel(int(output_channel_id))
             if output_channel:
                 message = birthday_messsages[int(random() * len(birthday_messsages))]
-                await self.discord_helper.sendEmbed(output_channel, "Birthday Wishes!", f"{', '.join(users)}\n\n{message}")
+                await self.discord_helper.sendEmbed(output_channel,
+                    self.settings.get_string(guild_id, "birthday_wishes_title"),
+                    f"{', '.join(users)}\n\n{message}")
             else:
                 self.log.debug(guild_id, "birthday.send_birthday_message", f"Could not find channel {output_channel_id}")
 
