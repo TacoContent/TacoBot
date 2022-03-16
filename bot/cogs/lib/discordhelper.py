@@ -111,7 +111,7 @@ class DiscordHelper():
         except Exception as ex:
             self.log.error(0, "discordhelper.move_message", str(ex), traceback.format_exc())
 
-    async def sendEmbed(self, channel, title, message, fields=None, delete_after=None,
+    async def sendEmbed(self, channel, title=None, message=None, fields=None, delete_after=None,
         footer=None, components=None, color=0x7289da, author=None, thumbnail=None, image=None):
         if color is None:
             color = 0x7289da
