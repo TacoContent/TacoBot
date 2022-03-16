@@ -5,6 +5,7 @@
 - update result of tracked live to return list
 - Change embed to allow null for message / title
 - Added birthday wishes [wip]
+- fix language file
 
 **v1.0.72**
 - fixed call to add twitch user info
