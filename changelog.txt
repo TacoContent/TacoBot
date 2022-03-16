@@ -1,6 +1,7 @@
-**v1.0.74**
+**v1.0.76**
 - change live now to track for multiple live platforms
 - more changes to support multiple live platforms
+- update giphy to use shared embed call
 
 **v1.0.72**
 - fixed call to add twitch user info
