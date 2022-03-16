@@ -112,7 +112,9 @@ class DiscordHelper():
             self.log.error(0, "discordhelper.move_message", str(ex), traceback.format_exc())
 
     async def sendEmbed(self, channel, title: str = None, message: str = None, fields=None, delete_after: float = None,
-        footer=None, components=None, color=0x7289da, author: typing.Union[discord.User, discord.Member] = None, thumbnail: str =None, image: str = None, url: str = None,):
+        footer=None, components=None, color=0x7289da,
+        author: typing.Union[discord.User, discord.Member] = None,
+        thumbnail: str =None, image: str = None, url: str = "",):
         if color is None:
             color = 0x7289da
         guild_id = 0
