@@ -69,7 +69,7 @@ class Giphy(commands.Cog):
             title = data['data'][random_index]['title']
             url = data['data'][random_index]['url']
 
-            await self.discord_helper.sendEmbed(ctx.channel, title, url, fields=None, color=0x00ff00, author=ctx.author, footer="Powered by Giphy")
+            await self.discord_helper.sendEmbed(ctx.channel, title, image=url, fields=None, color=0x00ff00, author=ctx.author, footer="Powered by Giphy")
             # embed = discord.Embed(title=data['data'][random_index]['title'], url=data['data'][random_index]['url'], color=0x00ff00)
             # embed.set_image(url=data['data'][random_index]['images']['original']['url'])
             # await ctx.send(embed=embed)
