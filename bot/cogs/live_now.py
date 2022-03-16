@@ -85,7 +85,7 @@ class LiveNow(commands.Cog):
 
                 for activity in after_streaming_activities:
                     tracked = self.db.get_tracked_live(guild_id, after.id, activity.platform)
-                    if len(tracked) == 0:
+                    if tracked.count() == 0:
                         self.log.info(guild_id, "live_now.on_member_update", f"{before.display_name} started streaming on {activity.platform}")
                         self.db.track_live_activity(guild_id, after.id, True, activity.platform)
                         twitch_name = None
@@ -128,10 +128,10 @@ class LiveNow(commands.Cog):
                     return
 
                 for activity in before_streaming_activities:
-                    tracked = self.db.get_tracked_live(guild_id, after.id, activity.platform)
-                    if len(tracked) > 0:
+                    tracked = self.db.get_tracked_live(guild_id, before.id, activity.platform)
+                    if tracked.count() > 0:
                         self.log.info(guild_id, "live_now.on_member_update", f"{before.display_name} stopped streaming")
-                        self.db.track_live_activity(guild_id, after.id, False, activity.platform)
+                        self.db.track_live_activity(guild_id, before.id, False, activity.platform)
 
                         logging_channel_id = cog_settings.get("logging_channel", None)
                         logging_channel = self.bot.get_channel(int(logging_channel_id))
