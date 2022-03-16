@@ -3,6 +3,7 @@
 - more changes to support multiple live platforms
 - update giphy to use shared embed call
 - update result of tracked live to return list
+- Change embed to allow null for message / title
 
 **v1.0.72**
 - fixed call to add twitch user info
