@@ -67,7 +67,7 @@ class Giphy(commands.Cog):
         if 'data' in data and len(data['data']) > 0:
             random_index = math.floor(random() * len(data['data']))
             title = data['data'][random_index]['title']
-            url = data['data'][random_index]['url']
+            url = data['data'][random_index]['images']['original']['url']
 
             await self.discord_helper.sendEmbed(ctx.channel, title, "", image=url, fields=None, color=0x00ff00, author=ctx.author, footer="Powered by Giphy")
             # embed = discord.Embed(title=data['data'][random_index]['title'], url=data['data'][random_index]['url'], color=0x00ff00)

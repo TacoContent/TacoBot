@@ -111,8 +111,8 @@ class DiscordHelper():
         except Exception as ex:
             self.log.error(0, "discordhelper.move_message", str(ex), traceback.format_exc())
 
-    async def sendEmbed(self, channel, title=None, message=None, fields=None, delete_after=None,
-        footer=None, components=None, color=0x7289da, author=None, thumbnail=None, image=None):
+    async def sendEmbed(self, channel, title: str = None, message: str = None, fields=None, delete_after: float = None,
+        footer=None, components=None, color=0x7289da, author: typing.Union[discord.User, discord.Member] = None, thumbnail: str =None, image: str = None, url: str = None,):
         if color is None:
             color = 0x7289da
         guild_id = 0
@@ -120,7 +120,7 @@ class DiscordHelper():
         if hasattr(channel, 'guild') and channel.guild:
             guild_id = channel.guild.id
 
-        embed = discord.Embed(title=title, description=message, color=color)
+        embed = discord.Embed(title=title, description=message, color=color, url=url)
         if author:
             embed.set_author(name=f"{author.name}#{author.discriminator}", icon_url=author.avatar_url)
         if embed.fields is not None:
