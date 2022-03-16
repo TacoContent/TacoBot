@@ -164,7 +164,8 @@ class Birthday(commands.Cog):
                 message = birthday_messsages[int(random() * len(birthday_messsages))]
                 await self.discord_helper.sendEmbed(output_channel,
                     self.settings.get_string(guild_id, "birthday_wishes_title"),
-                    f"{', '.join(users)}\n\n{message}")
+                    self.settings.get_string(guild_id, "birthday_wishes_message", message=message, users=' '.join(users)),
+                    color=None)
             else:
                 self.log.debug(guild_id, "birthday.send_birthday_message", f"Could not find channel {output_channel_id}")
 
