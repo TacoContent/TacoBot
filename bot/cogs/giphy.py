@@ -47,33 +47,37 @@ class Giphy(commands.Cog):
 
     @commands.command(name='giphy', aliases=['gif'])
     async def giphy(self, ctx, *, query: str = "tacos"):
-        guild_id = 0
-        if ctx.guild:
-            guild_id = ctx.guild.id
-            await ctx.message.delete()
+        try:
+            guild_id = 0
+            if ctx.guild:
+                guild_id = ctx.guild.id
+                await ctx.message.delete()
 
-        url = 'http://api.giphy.com/v1/gifs/search'
-        params = {
-            'q': query,
-            'api_key': self.settings.giphy_api_key,
-            'limit': 50,
-            'offset': math.floor(random() * 50),
-            "random_id": uuid.uuid4().hex,
-            'rating': 'r'
-        }
-        url = url + '?' + parse.urlencode(params)
-        with request.urlopen(url) as f:
-            data = json.loads(f.read().decode())
-        if 'data' in data and len(data['data']) > 0:
-            random_index = math.floor(random() * len(data['data']))
-            title = data['data'][random_index]['title']
-            image_url = data['data'][random_index]['images']['original']['url']
-            url = data['data'][random_index]['url']
+            url = 'http://api.giphy.com/v1/gifs/search'
+            params = {
+                'q': query,
+                'api_key': self.settings.giphy_api_key,
+                'limit': 50,
+                'offset': math.floor(random() * 50),
+                "random_id": uuid.uuid4().hex,
+                'rating': 'r'
+            }
+            url = url + '?' + parse.urlencode(params)
+            with request.urlopen(url) as f:
+                data = json.loads(f.read().decode())
+            if 'data' in data and len(data['data']) > 0:
+                random_index = math.floor(random() * len(data['data']))
+                title = data['data'][random_index]['title']
+                image_url = data['data'][random_index]['images']['original']['url']
+                url = data['data'][random_index]['url']
 
-            await self.discord_helper.sendEmbed(ctx.channel, title, "", image=image_url, url=url, fields=None, color=0x00ff00, author=ctx.author, footer="Powered by Giphy")
-            # embed = discord.Embed(title=data['data'][random_index]['title'], url=data['data'][random_index]['url'], color=0x00ff00)
-            # embed.set_image(url=data['data'][random_index]['images']['original']['url'])
-            # await ctx.send(embed=embed)
+                await self.discord_helper.sendEmbed(ctx.channel, title, "", image=image_url, url=url, fields=None, color=0x00ff00, author=ctx.author, footer="Powered by Giphy")
+                # embed = discord.Embed(title=data['data'][random_index]['title'], url=data['data'][random_index]['url'], color=0x00ff00)
+                # embed.set_image(url=data['data'][random_index]['images']['original']['url'])
+                # await ctx.send(embed=embed)
+        except Exception as e:
+            self.log.error(guild_id, "giphy.giphy", str(e), traceback.format_exc())
+            self.discord_helper.notify_of_error(ctx)
 
 def setup(bot):
     bot.add_cog(Giphy(bot))
