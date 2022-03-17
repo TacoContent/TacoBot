@@ -58,15 +58,43 @@ class Birthday(commands.Cog):
             if ctx.guild:
                 guild_id = ctx.guild.id
                 await ctx.message.delete()
-            month = await self.discord_helper.ask_number(ctx, "Set Birthday", "What month is your birthday? (use numbers 1 - 12)", 1, 12, timeout=60)
-            day = await self.discord_helper.ask_number(ctx, "Set Birthday", "What day is your birthday? (use numbers 1 - 31)", 1, 31, timeout=60)
+            month = None
+            day = None
+            _ctx = ctx
+            out_channel = ctx.author
+            try:
+                _ctx = self.discord_helper.create_context(self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild)
+                month = await self.discord_helper.ask_number(_ctx,
+                    self.settings.get_string(guild_id, "birthday_set_title"),
+                    self.settings.get_string(guild_id, "birthday_set_month_question"),
+                    1, 12, timeout=60)
+                _ctx = self.discord_helper.create_context(self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild)
+                day = await self.discord_helper.ask_number(_ctx,
+                    self.settings.get_string(guild_id, "birthday_set_title"),
+                    self.settings.get_string(guild_id, "birthday_set_day_question"),
+                    1, 31, timeout=60)
+            except discord.Forbidden:
+                self.log.info(guild_id, "birthday.birthday", "Forbidden", traceback.format_exc())
+                _ctx = ctx
+                out_channel = ctx.channel
+                month = await self.discord_helper.ask_number(_ctx,
+                    self.settings.get_string(guild_id, "birthday_set_title"),
+                    self.settings.get_string(guild_id, "birthday_set_month_question"),
+                    1, 12, timeout=60)
+                day = await self.discord_helper.ask_number(_ctx,
+                    self.settings.get_string(guild_id, "birthday_set_title"),
+                    self.settings.get_string(guild_id, "birthday_set_day_question"),
+                    1, 31, timeout=60)
 
             self.db.add_user_birthday(guild_id, ctx.author.id, month, day)
             fields = [
-                { 'name': 'Month', 'value': str(month), 'inline': True },
-                { 'name': 'Day', 'value': str(day), 'inline': True }
+                { 'name': self.settings.get_string(guild_id, "month"), 'value': str(month), 'inline': True },
+                { 'name': self.settings.get_string(guild_id, "day"), 'value': str(day), 'inline': True }
             ]
-            await self.discord_helper.sendEmbed(ctx.channel, "Birthday Set!", f"{ctx.author.mention}'s birthday has been set", fields=fields, delete_after=10)
+            await self.discord_helper.sendEmbed(out_channel,
+                self.settings.get_string(guild_id, "birthday_set_title"),
+                self.settings.get_string(guild_id, "birthday_set_confirm", user=ctx.author.mention),
+                fields=fields, delete_after=10)
             pass
         except Exception as e:
             self.log.error(guild_id, "birthday.birthday", str(e), traceback.format_exc())
@@ -157,15 +185,18 @@ class Birthday(commands.Cog):
 
             # These should be pulled from database settings
             birthday_messsages = cog_settings.get("messages", [])
+            birthday_images = cog_settings.get("images", [])
             output_channel_id = cog_settings.get("channel_id", "0")
 
             output_channel = ctx.guild.get_channel(int(output_channel_id))
             if output_channel:
                 message = birthday_messsages[int(random() * len(birthday_messsages))]
+                image = birthday_images[int(random() * len(birthday_images))]
+
                 await self.discord_helper.sendEmbed(output_channel,
                     self.settings.get_string(guild_id, "birthday_wishes_title"),
                     self.settings.get_string(guild_id, "birthday_wishes_message", message=message, users=' '.join(users)),
-                    color=None)
+                    image=image, color=None)
             else:
                 self.log.debug(guild_id, "birthday.send_birthday_message", f"Could not find channel {output_channel_id}")
 
@@ -217,6 +248,7 @@ class Birthday(commands.Cog):
             await asyncio.sleep(.5)
         except Exception as e:
             self.log.error(guild_id, "birthday.on_member_join", str(e), traceback.format_exc())
+
     @commands.Cog.listener()
     async def on_ready(self):
         pass

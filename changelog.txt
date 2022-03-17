@@ -6,6 +6,8 @@
 - Change embed to allow null for message / title
 - Added birthday wishes [wip]
 - fix language file
+- allow birthday to message in DM to ask for values.
+- added gifs for birthday message
 
 **v1.0.72**
 - fixed call to add twitch user info

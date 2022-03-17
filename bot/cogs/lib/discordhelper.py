@@ -530,6 +530,8 @@ class DiscordHelper():
         if ctx.guild:
             guild_id = ctx.guild.id
 
+        channel = ctx.channel if ctx.channel else ctx.author
+
         number_ask = await self.sendEmbed(ctx.channel, title, f'{message}', delete_after=timeout,
             footer=self.settings.get_string(guild_id, "footer_XX_seconds", seconds=timeout))
         try:
@@ -539,8 +541,18 @@ class DiscordHelper():
             return None
         else:
             numberValue = int(numberResp.content)
-            await numberResp.delete()
-            await number_ask.delete()
+            try:
+                await numberResp.delete()
+            except discord.NotFound as e:
+                self.log.debug(guild_id, "ask_number", f"Tried to clean up, but the messages were not found.")
+            except discord.Forbidden as f:
+                self.log.debug(guild_id, "ask_number", f"Tried to clean up, but the bot does not have permissions to delete messages.")
+            try:
+                await number_ask.delete()
+            except discord.NotFound as e:
+                self.log.debug(guild_id, "ask_number", f"Tried to clean up, but the messages were not found.")
+            except discord.Forbidden as f:
+                self.log.debug(guild_id, "ask_number", f"Tried to clean up, but the bot does not have permissions to delete messages.")
         return numberValue
 
     async def ask_text(self, ctx, targetChannel, title: str = "Enter Text Response", message: str = "Please enter your response.", timeout: int = 60, color=None):

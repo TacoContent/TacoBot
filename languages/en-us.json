@@ -14,6 +14,8 @@
 	"unknown": "UNKNOWN",
 	"correct": "Correct",
 	"incorrect": "Incorrect",
+	"month": "Month",
+	"day": "Day",
 	"no_one": "No one",
 	"no_reason": "No reason given.",
 	"moved_by": "Moved by {{user}}",
@@ -70,5 +72,9 @@
 	"trivia_results_title": "Trivia Results",
 	"trivia_results_message": "{{question}}\n\nThe correct answer was **{{correct_emoji}} {{correct_answer}}**\n\nCorrect answers receive {{reward}} {{taco_word}} 🌮.\nIncorrect answers lose {{reward}} {{taco_word}} 🌮.\n\n`.taco trivia` to play again.",
 	"birthday_wishes_title": "Birthday Wishes!",
-	"birthday_wishes_message": "{{message}}\n\n{{users}}\n\n**Make sure you set your birthday with `.taco birthday` in a discord channel.**"
+	"birthday_wishes_message": "{{message}}\n\n{{users}}\n\n**Make sure you set your birthday with `.taco birthday` in a discord channel.**",
+	"birthday_set_title": "Set Birthday",
+	"birthday_set_month_question": "What month is your birthday? (use numbers 1 - 12)",
+	"birthday_set_day_question": "What day is your birthday? (use numbers 1 - 31)",
+	"birthday_set_confirm": "{{user}}, your birthday has been set.\n\n`.taco birthday` to change it."
 }
