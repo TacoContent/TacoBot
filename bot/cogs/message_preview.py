@@ -62,7 +62,6 @@ class MessagePreview(commands.Cog):
             pattern = re.compile(r'https:\/\/discord(?:app)?\.com\/channels\/(\d+)\/(\d+)\/(\d+)$', flags=re.MULTILINE | re.IGNORECASE)
             match = pattern.search(message.content)
             if not match:
-
                 return
 
             ref_guild_id = int(match.group(1))
@@ -85,14 +84,16 @@ class MessagePreview(commands.Cog):
 
     async def create_message_preview(self, ctx, message):
         try:
+            guild_id = message.guild.id
             target_channel = ctx.channel
             author = message.author
             message_content = message.content
             message_url = message.jump_url
             created = message.created_at
             embed_content = ""
-            embed_title = "Jump to Message"
+            embed_title = self.settings.get_string(guild_id, "message_preview_title")
             embed_thumbnail = None
+            embed_color = None
             fields = []
             if message.embeds:
                 e = message.embeds[0]
@@ -100,6 +101,8 @@ class MessagePreview(commands.Cog):
                     embed_content = e.description
                 if e.title != discord.Embed.Empty:
                     embed_title = e.title
+                if e.color != discord.Embed.Empty:
+                    embed_color = e.color
 
                 for f in e.fields:
                     fields.append({ "name": f.name, "value": f.value, "inline": f.inline })
@@ -114,7 +117,8 @@ class MessagePreview(commands.Cog):
                 fields=fields,
                 url=message_url,
                 author=author,
-                footer=f"Message Preview - created: {created.strftime('%Y-%m-%d %H:%M:%S')}")
+                color=embed_color,
+                footer=self.settings.get_string(guild_id, "message_preview_footer", created=created.strftime('%Y-%m-%d %H:%M:%S')))
         except Exception as e:
             self.log.error(ctx.guild.id, "message_preview.create_message_preview", f"{e}", traceback.format_exc())
 def setup(bot):

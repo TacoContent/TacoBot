@@ -76,5 +76,7 @@
 	"birthday_set_title": "Set Birthday",
 	"birthday_set_month_question": "What month is your birthday? (use numbers 1 - 12)",
 	"birthday_set_day_question": "What day is your birthday? (use numbers 1 - 31)",
-	"birthday_set_confirm": "{{user}}, your birthday has been set.\n\n`.taco birthday` to change it."
+	"birthday_set_confirm": "{{user}}, your birthday has been set.\n\n`.taco birthday` to change it.",
+	"message_preview_title": "Jump to Message",
+	"message_preview_footer": "Message Preview - created: {{created}}"
 }
