@@ -267,16 +267,6 @@ class LiveNow(commands.Cog):
 
             if user_is_in_watch_role:
                 # remove the roles from the user
-                if add_list:
-                    role_list = []
-                    for role_id in add_list:
-                        role = user.guild.get_role(int(role_id))
-                        if role:
-                            role_list.append(role)
-                            self.log.info(guild_id, "live_now.add_remove_roles", f"Added role {role.name} to user {user.display_name}")
-                    if role_list and len(role_list) > 0:
-                        await user.remove_roles(*role_list)
-                # add the existing roles back to the user
                 if remove_list:
                     role_list = []
                     for role_id in remove_list:
@@ -284,6 +274,22 @@ class LiveNow(commands.Cog):
                         if role:
                             role_list.append(role)
                             self.log.info(guild_id, "live_now.add_remove_roles", f"Removed role {role.name} from user {user.display_name}")
+                        else:
+                            self.log.error(guild_id, "live_now.add_remove_roles", f"Role {role_id} not found")
+
+                    if role_list and len(role_list) > 0:
+                        await user.remove_roles(*role_list)
+                # add the existing roles back to the user
+                if add_list:
+                    role_list = []
+                    for role_id in add_list:
+                        role = user.guild.get_role(int(role_id))
+                        if role:
+                            role_list.append(role)
+                            self.log.info(guild_id, "live_now.add_remove_roles", f"Added role {role.name} to user {user.display_name}")
+                        else:
+                            self.log.error(guild_id, "live_now.add_remove_roles", f"Role {role_id} not found")
+
                     if role_list and len(role_list) > 0:
                         await user.add_roles(*role_list)
 
