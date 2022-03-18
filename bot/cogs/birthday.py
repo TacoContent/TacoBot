@@ -227,6 +227,31 @@ class Birthday(commands.Cog):
             self.log.error(guild_id, "birthday.on_message", str(e), traceback.format_exc())
 
     @commands.Cog.listener()
+
+
+    @commands.Cog.listener()
+    async def on_member_update(self, before, after):
+        try:
+            guild_id = 0
+            if after.guild:
+                guild_id = after.guild.id
+            # check if the birthday check is enabled
+            # check if the birthday check has not ran today yet
+            if self.was_checked_today(guild_id):
+                return
+            # get if there are any birthdays today in the database
+            birthdays = self.get_todays_birthdays(guild_id)
+            # wish the users a happy birthday
+            if birthdays.count() > 0:
+                self.log.debug(guild_id, "birthday.on_member_update", f"Sending birthday wishes from on_member_update for {guild_id}")
+                await self.send_birthday_message(after, birthdays)
+            # track the check
+            self.db.track_birthday_check(guild_id)
+            await asyncio.sleep(.5)
+        except Exception as e:
+            self.log.error(guild_id, "birthday.on_member_update", str(e), traceback.format_exc())
+
+    @commands.Cog.listener()
     async def on_member_join(self, member):
         try:
             guild_id = 0

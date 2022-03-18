@@ -16,6 +16,8 @@
 	"incorrect": "Incorrect",
 	"month": "Month",
 	"day": "Day",
+	"game": "Game",
+	"platform": "Platform",
 	"no_one": "No one",
 	"no_reason": "No reason given.",
 	"moved_by": "Moved by {{user}}",
