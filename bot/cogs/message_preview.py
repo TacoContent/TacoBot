@@ -88,10 +88,32 @@ class MessagePreview(commands.Cog):
             author = message.author
             message_content = message.content
             message_url = message.jump_url
+            created = message.created_at
+            embed_content = ""
+            embed_title = "Jump to Message"
+            embed_thumbnail = None
+            fields = []
+            if message.embeds:
+                e = message.embeds[0]
+                if e.description != discord.Embed.Empty:
+                    embed_content = e.description
+                if e.title != discord.Embed.Empty:
+                    embed_title = e.title
 
+                for f in e.fields:
+                    fields.append({ "name": f.name, "value": f.value, "inline": f.inline })
+                if e.thumbnail:
+                    embed_thumbnail = e.thumbnail.url
 
             # create the message preview
-            embed = await self.discord_helper.sendEmbed(target_channel, "Jump To Message", message=message_content, url=message_url, author=author, footer="Message Preview")
+            embed = await self.discord_helper.sendEmbed(target_channel,
+                embed_title,
+                message=f"{message_content}\n\n{embed_content}",
+                thumbnail=embed_thumbnail,
+                fields=fields,
+                url=message_url,
+                author=author,
+                footer=f"Message Preview - created: {created.strftime('%Y-%m-%d %H:%M:%S')}")
         except Exception as e:
             self.log.error(ctx.guild.id, "message_preview.create_message_preview", f"{e}", traceback.format_exc())
 def setup(bot):
