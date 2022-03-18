@@ -227,14 +227,14 @@ class LiveNow(commands.Cog):
 
             fields = []
             if activity.game:
-                fields.append({ "name": "Game", "value": activity.game, "inline": False },)
+                fields.append({ "name": self.settings.get_string(guild_id, "game"), "value": activity.game, "inline": False },)
             if activity.platform:
                 platform_emoji = self.find_platform_emoji(user.guild, activity.platform)
                 emoji = ""
                 if platform_emoji:
                     emoji = f"<:{platform_emoji.name}:{platform_emoji.id}> "
 
-                fields.append({ "name": "Platform", "value": f"{emoji}{activity.platform}", "inline": True },)
+                fields.append({ "name": self.settings.get_string(guild_id, "platform"), "value": f"{emoji}{activity.platform}", "inline": True },)
 
             profile_icon = profile_icon if profile_icon else user.avatar_url
 

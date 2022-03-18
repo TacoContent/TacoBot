@@ -6,6 +6,17 @@
 	"author": "DarthMinos#1161",
 	"changelog": "changelog.txt",
 	"commands": {
+		"birthday": {
+			"description": "Sets your birthday",
+			"usage": "birthday",
+			"example": [ ".taco birthday", ".taco bday"],
+			"fields": [],
+			"subcommands": {},
+			"aliases": [
+				"bday"
+			],
+			"enabled": true
+		},
 		"gif" : {
 			"description": "Gets a random gif from the given tag",
 			"usage": ".taco gif [search term]",
