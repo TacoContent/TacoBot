@@ -1,4 +1,4 @@
-**v1.0.93**
+**v1.0.94**
 - change live now to track for multiple live platforms
 - more changes to support multiple live platforms
 - update giphy to use shared embed call
@@ -11,6 +11,7 @@
 - fixed the text replacement for taco_word
 - update live_now to properly add/remove roles
 - added a message preview when linked
+- set the color of the preview from the original, if it has a color
 
 **v1.0.72**
 - fixed call to add twitch user info
