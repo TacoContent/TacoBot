@@ -1,4 +1,4 @@
-**v1.0.92**
+**v1.0.93**
 - change live now to track for multiple live platforms
 - more changes to support multiple live platforms
 - update giphy to use shared embed call
