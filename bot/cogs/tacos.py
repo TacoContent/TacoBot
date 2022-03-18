@@ -133,7 +133,7 @@ class Tacos(commands.Cog):
                 tacos_word = self.settings.get_string(guild_id, "taco_plural")
             await self.discord_helper.sendEmbed(ctx.channel,
                 self.settings.get_string(guild_id, "taco_count_title"),
-                self.settings.get_string(guild_id, "taco_count_message", user=ctx.author.mention, count=taco_count, tacos_word=tacos_word),
+                self.settings.get_string(guild_id, "taco_count_message", user=ctx.author.mention, count=taco_count, taco_word=tacos_word),
                 footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT),
                 delete_after=self.SELF_DESTRUCT_TIMEOUT)
         except Exception as e:
