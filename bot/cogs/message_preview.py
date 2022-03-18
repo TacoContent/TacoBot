@@ -59,9 +59,10 @@ class MessagePreview(commands.Cog):
                 return
             guild_id = message.guild.id
 
-            pattern = re.compile(r'https:\/\/discord(?:app)?\.com\/channels\/(\d+)/(\d+)/(\d+)')
-            match = pattern.match(message.content)
+            pattern = re.compile(r'https:\/\/discord(?:app)?\.com\/channels\/(\d+)\/(\d+)\/(\d+)$', flags=re.MULTILINE | re.IGNORECASE)
+            match = pattern.search(message.content)
             if not match:
+
                 return
 
             ref_guild_id = int(match.group(1))
