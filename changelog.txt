@@ -1,4 +1,4 @@
-**v1.0.88**
+**v1.0.89**
 - change live now to track for multiple live platforms
 - more changes to support multiple live platforms
 - update giphy to use shared embed call
@@ -8,6 +8,7 @@
 - fix language file
 - allow birthday to message in DM to ask for values.
 - added gifs for birthday message
+- fixed the text replacement for taco_word
 
 **v1.0.72**
 - fixed call to add twitch user info
