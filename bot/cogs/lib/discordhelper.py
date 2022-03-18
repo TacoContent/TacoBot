@@ -485,7 +485,9 @@ class DiscordHelper():
         )
 
         action_row = create_actionrow(select)
-        ask_context = await self.sendEmbed(ctx.channel, title, message, delete_after=timeout, footer=f"You have {timeout} seconds to respond.", components=[action_row])
+        ask_context = await self.sendEmbed(ctx.channel, title, message, delete_after=timeout,
+            footer=self.settings.get_string(ctx.guild.id, "footer_XX_seconds", timeout=timeout),
+            components=[action_row])
         try:
             button_ctx: ComponentContext = await wait_for_component(self.bot, check=check_user, components=action_row, timeout=60.0)
         except asyncio.TimeoutError:
