@@ -279,6 +279,9 @@ class LiveNow(commands.Cog):
 
                     if role_list and len(role_list) > 0:
                         await user.remove_roles(*role_list)
+                else:
+                    self.log.info(guild_id, "live_now.add_remove_roles", f"No roles to remove from user {user.display_name}")
+
                 # add the existing roles back to the user
                 if add_list:
                     role_list = []
@@ -292,9 +295,12 @@ class LiveNow(commands.Cog):
 
                     if role_list and len(role_list) > 0:
                         await user.add_roles(*role_list)
-
+                else:
+                    self.log.info(guild_id, "live_now.add_remove_roles", f"No roles to add to user {user.display_name}")
             else:
                 self.log.debug(guild_id, "live_now.add_remove_roles", f"User {user.display_name} is not in any of the watch roles")
+
+
     def find_platform_emoji(self, guild: discord.Guild, platform: str):
         if guild is None:
             return None
