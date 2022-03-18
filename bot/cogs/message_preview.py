@@ -91,7 +91,7 @@ class MessagePreview(commands.Cog):
 
 
             # create the message preview
-            embed = await self.discord_helper.sendEmbed(target_channel, "Message Preview", message=message_content, url=message_url, author=author, footer="Message Preview")
+            embed = await self.discord_helper.sendEmbed(target_channel, "Jump To Message", message=message_content, url=message_url, author=author, footer="Message Preview")
         except Exception as e:
             self.log.error(ctx.guild.id, "message_preview.create_message_preview", f"{e}", traceback.format_exc())
 def setup(bot):
