@@ -63,10 +63,13 @@ def get_random_name(noun_count = 1, adjective_count = 1):
                 traceback.print_exc()
                 return "New Voice Channel"
 
-def to_timestamp(date):
-    return (date - datetime.datetime(1970,1,1)).total_seconds()
+def to_timestamp(date, tz: datetime.timezone = None):
+    return (date - datetime.datetime(1970,1,1, tzinfo=tz)).total_seconds()
+def from_timestamp(timestamp):
+    return datetime.datetime.fromtimestamp(timestamp)
+
 def get_timestamp():
-    return to_timestamp(datetime.datetime.now())
+    return to_timestamp(datetime.datetime.utcnow())
 
 def load_from_gist(type, count):
     types = [ "adjectives", "nouns", "verbs" ]

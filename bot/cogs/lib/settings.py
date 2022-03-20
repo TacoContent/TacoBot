@@ -27,6 +27,7 @@ class Settings:
         self.db_url = utils.dict_get(os.environ, "MONGODB_URL", default_value = "mongodb://localhost:27017/tacobot")
         self.strawpoll_api_key = utils.dict_get(os.environ, "STRAWPOLL_API_KEY", default_value = "")
         self.giphy_api_key = utils.dict_get(os.environ, "GIPHY_API_KEY", default_value = "")
+        self.timezone = utils.dict_get(os.environ, "TIMEZONE", default_value = "America/Chicago")
 
         # log_level = loglevel.LogLevel[self.log_level.upper()]
         # if not log_level:
