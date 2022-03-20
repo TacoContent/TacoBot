@@ -2,6 +2,7 @@ import json
 from random import random
 from urllib import parse, request
 import discord
+import pytz
 import datetime
 from discord.ext import commands
 import asyncio
@@ -143,7 +144,8 @@ class Birthday(commands.Cog):
 
     def get_todays_birthdays(self, guildId: int):
         try:
-            date = datetime.datetime.now(tz=None)
+            central_tz= pytz.timezone(self.settings.timezone)
+            date = datetime.datetime.now(tz=central_tz)
             month = date.month
             day = date.day
             birthdays = self.db.get_user_birthdays(guildId, month, day)
@@ -227,9 +229,6 @@ class Birthday(commands.Cog):
             self.log.error(guild_id, "birthday.on_message", str(e), traceback.format_exc())
 
     @commands.Cog.listener()
-
-
-    @commands.Cog.listener()
     async def on_member_update(self, before, after):
         try:
             guild_id = 0
@@ -239,6 +238,7 @@ class Birthday(commands.Cog):
             # check if the birthday check has not ran today yet
             if self.was_checked_today(guild_id):
                 return
+            await asyncio.sleep(1)
             # get if there are any birthdays today in the database
             birthdays = self.get_todays_birthdays(guild_id)
             # wish the users a happy birthday
