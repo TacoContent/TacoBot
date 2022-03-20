@@ -278,7 +278,10 @@ class LiveNow(commands.Cog):
                             self.log.error(guild_id, "live_now.add_remove_roles", f"Role {role_id} not found")
 
                     if role_list and len(role_list) > 0:
-                        await user.remove_roles(*role_list)
+                        try:
+                            await user.remove_roles(*role_list)
+                        except Exception as e:
+                            self.log.error(guild_id, "live_now.add_remove_roles", str(e), traceback.format_exc())
                 else:
                     self.log.info(guild_id, "live_now.add_remove_roles", f"No roles to remove from user {user.display_name}")
 
@@ -294,7 +297,11 @@ class LiveNow(commands.Cog):
                             self.log.error(guild_id, "live_now.add_remove_roles", f"Role {role_id} not found")
 
                     if role_list and len(role_list) > 0:
-                        await user.add_roles(*role_list)
+                        try:
+                            await user.add_roles(*role_list)
+                        except Exception as e:
+                            self.log.error(guild_id, "live_now.add_remove_roles", str(e), traceback.format_exc())
+
                 else:
                     self.log.info(guild_id, "live_now.add_remove_roles", f"No roles to add to user {user.display_name}")
             else:
