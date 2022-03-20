@@ -281,7 +281,7 @@ class LiveNow(commands.Cog):
                         try:
                             await user.remove_roles(*role_list)
                         except Exception as e:
-                            self.log.error(guild_id, "live_now.add_remove_roles", str(e), traceback.format_exc())
+                            self.log.warn(guild_id, "live_now.add_remove_roles", str(e), traceback.format_exc())
                 else:
                     self.log.info(guild_id, "live_now.add_remove_roles", f"No roles to remove from user {user.display_name}")
 
@@ -300,7 +300,7 @@ class LiveNow(commands.Cog):
                         try:
                             await user.add_roles(*role_list)
                         except Exception as e:
-                            self.log.error(guild_id, "live_now.add_remove_roles", str(e), traceback.format_exc())
+                            self.log.warn(guild_id, "live_now.add_remove_roles", str(e), traceback.format_exc())
 
                 else:
                     self.log.info(guild_id, "live_now.add_remove_roles", f"No roles to add to user {user.display_name}")
