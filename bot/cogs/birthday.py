@@ -144,8 +144,8 @@ class Birthday(commands.Cog):
 
     def get_todays_birthdays(self, guildId: int):
         try:
-            central_tz= pytz.timezone(self.settings.timezone)
-            date = datetime.datetime.now(tz=central_tz)
+            # central_tz= pytz.timezone(self.settings.timezone)
+            date = datetime.datetime.now(tz=None)
             month = date.month
             day = date.day
             birthdays = self.db.get_user_birthdays(guildId, month, day)
