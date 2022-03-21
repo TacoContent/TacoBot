@@ -1,4 +1,4 @@
-**v1.0.98**
+**v1.0.101**
 - change live now to track for multiple live platforms
 - more changes to support multiple live platforms
 - update giphy to use shared embed call
@@ -14,6 +14,7 @@
 - set the color of the preview from the original, if it has a color
 - use central time for the birthday bot for now instead of UTC.
 - logging if can't add role for live
+- fixed bug with giving tacos from admin. it doubled the "give".
 
 **v1.0.72**
 - fixed call to add twitch user info

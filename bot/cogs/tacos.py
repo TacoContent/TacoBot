@@ -98,7 +98,6 @@ class Tacos(commands.Cog):
             if amount > 1:
                 tacos_word = self.settings.get_string(guild_id, "taco_plural")
 
-            self.db.add_tacos(guild_id, member.id, amount)
             reason_msg = self.settings.get_string(guild_id, "taco_reason_default")
             if reason:
                 reason_msg = f"{reason}"
