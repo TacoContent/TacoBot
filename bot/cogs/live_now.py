@@ -279,7 +279,7 @@ class LiveNow(commands.Cog):
 
                     if role_list and len(role_list) > 0:
                         try:
-                            await user.remove_roles(*role_list)
+                            await user.remove_roles(*role_list, reason="Taco Bot - LIVE NOW")
                         except Exception as e:
                             self.log.warn(guild_id, "live_now.add_remove_roles", str(e), traceback.format_exc())
                 else:
@@ -298,7 +298,7 @@ class LiveNow(commands.Cog):
 
                     if role_list and len(role_list) > 0:
                         try:
-                            await user.add_roles(*role_list)
+                            await user.add_roles(*role_list, reason="Taco Bot - LIVE NOW")
                         except Exception as e:
                             self.log.warn(guild_id, "live_now.add_remove_roles", str(e), traceback.format_exc())
 

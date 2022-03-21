@@ -905,7 +905,7 @@ class MongoDatabase(database.Database):
                 self.open()
             checks = self.connection.birthday_checks.find({ "guild_id": str(guildId) })
             if checks.count() > 0:
-                central_tz= pytz.timezone(self.settings.timezone)
+                # central_tz= pytz.timezone(self.settings.timezone)
                 date = datetime.datetime.utcnow().date()
                 start = datetime.datetime.combine(date, datetime.time.min)
                 end = datetime.datetime.combine(date, datetime.time.max)
@@ -913,20 +913,19 @@ class MongoDatabase(database.Database):
                 end_ts = utils.to_timestamp(datetime.datetime.combine(date, datetime.time.max))
                 timestamp = checks[0]["timestamp"]
 
-                ts_date = utils.from_timestamp(timestamp)
+                # ts_date = utils.from_timestamp(timestamp)
+                # cst_dt = ts_date.replace(tzinfo=central_tz)
+                # cst_ts = utils.to_timestamp(cst_dt, tz=central_tz)
+                # cst_start = start.replace(tzinfo=central_tz)
+                # cst_end = end.replace(tzinfo=central_tz)
+                # cst_start_ts = utils.to_timestamp(cst_start, tz=central_tz)
+                # cst_end_ts = utils.to_timestamp(cst_end, tz=central_tz)
 
-                cst_dt = ts_date.replace(tzinfo=central_tz)
-                cst_ts = utils.to_timestamp(cst_dt, tz=central_tz)
-                cst_start = start.replace(tzinfo=central_tz)
-                cst_end = end.replace(tzinfo=central_tz)
-                cst_start_ts = utils.to_timestamp(cst_start, tz=central_tz)
-                cst_end_ts = utils.to_timestamp(cst_end, tz=central_tz)
-
-                # if timestamp >= start_ts and timestamp <= end_ts:
-                #     return True
-
-                if cst_ts >= cst_start_ts and cst_ts <= cst_end_ts:
+                if timestamp >= start_ts and timestamp <= end_ts:
                     return True
+
+                # if cst_ts >= cst_start_ts and cst_ts <= cst_end_ts:
+                #     return True
             return False
         except Exception as ex:
             print(ex)
