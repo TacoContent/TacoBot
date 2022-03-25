@@ -80,5 +80,14 @@ class Database():
         pass
     def untrack_live(self, guildId: int, userId: int, platform: str):
         pass
+
+    def birthday_was_checked_today(self, guildId: int):
+        pass
+    def track_birthday_check(self, guildId: int):
+        pass
+    def get_user_birthdays(self, guildId: int, month: int, day: int):
+        pass
+    def add_user_birthday(self, guildId: int, userId: int, month: int, day: int):
+        pass
     def UPDATE_SCHEMA(self):
         pass

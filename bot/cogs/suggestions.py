@@ -101,7 +101,8 @@ class Suggestions(commands.Cog):
 
                 # verify all configured channels still exist.
                 changed = False
-                for c in ss['channels']:
+                ss_channels = ss.get('channels', [])
+                for c in ss_channels:
                     channel = self.bot.get_channel(int(c['id']))
                     if not channel:
                         changed = True
@@ -122,7 +123,8 @@ class Suggestions(commands.Cog):
                 # raise exception if there are no suggestion settings
                 self.log.debug(guild_id, "suggestions.on_ready", f"No suggestion settings found for guild {guild_id}")
                 return
-            tracked_channel = [ c for c in ss['channels'] if c['id'] == str(channel.id) ]
+            ss_channels = ss.get('channels', [])
+            tracked_channel = [ c for c in ss_channels if c['id'] == str(channel.id) ]
             if tracked_channel and len(tracked_channel) > 0:
                 # if this channel was in the settings, remove it
                 ss['channels'].remove(tracked_channel[0])
@@ -142,10 +144,11 @@ class Suggestions(commands.Cog):
             return
 
         guild_id = ctx.guild.id
-
-        channel_settings = [ c for c in suggestion_settings['channels'] if c['id'] == str(ctx.channel.id) ]
+        ss_channels = suggestion_settings.get('channels', [])
+        channel_settings = [ c for c in ss_channels if c['id'] == str(ctx.channel.id) ]
         if not channel_settings:
-            allowed_channel_ids = [ int(c['id']) for c in suggestion_settings['channels'] ]
+
+            allowed_channel_ids = [ int(c['id']) for c in ss_channels ]
             allowed_channels = []
             for aci in allowed_channel_ids:
                 ac = await self.bot.fetch_channel(aci)
