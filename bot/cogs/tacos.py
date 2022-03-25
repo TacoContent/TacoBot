@@ -204,6 +204,16 @@ class Tacos(commands.Cog):
             self.log.error(ctx.guild.id, "tacos.gift", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
+            
+    @tacos.error()
+    async def tacos_error(self, ctx, error):
+        _method = inspect.stack()[1][3]
+        if isinstance(error, discord.errors.NotFound):
+            self.log.warn(ctx.guild.id, _method , str(error), traceback.format_exc())
+        else:
+            self.log.error(ctx.guild.id, _method , str(error), traceback.format_exc())
+            await self.discord_helper.notify_of_error(ctx)
+
     @commands.Cog.listener()
     async def on_message(self, message):
         try:
