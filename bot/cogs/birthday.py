@@ -195,10 +195,17 @@ class Birthday(commands.Cog):
                 message = birthday_messsages[int(random() * len(birthday_messsages))]
                 image = birthday_images[int(random() * len(birthday_images))]
 
+                date = datetime.datetime.now(tz=None)
+                month_name = date.strftime("%B")
+                month_day = date.strftime("%d")
+                fields = [
+                    { 'name': self.settings.get_string(guild_id, "month"), 'value': month_name, 'inline': True },
+                    { 'name': self.settings.get_string(guild_id, "day"), 'value': month_day, 'inline': True }
+                ]
                 await self.discord_helper.sendEmbed(output_channel,
                     self.settings.get_string(guild_id, "birthday_wishes_title"),
                     self.settings.get_string(guild_id, "birthday_wishes_message", message=message, users=' '.join(users)),
-                    image=image, color=None)
+                    image=image, color=None, fields=fields)
             else:
                 self.log.debug(guild_id, "birthday.send_birthday_message", f"Could not find channel {output_channel_id}")
 
