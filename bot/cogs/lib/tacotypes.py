@@ -6,6 +6,7 @@ class TacoTypes(Enum):
     SUGGEST = 4
     INVITE = 5
     REACTION = 6
+    REPLY = 7
 
     CUSTOM = 9999
 
@@ -23,6 +24,8 @@ class TacoTypes(Enum):
             return TacoTypes.INVITE
         elif taco_type_string == "reaction_count":
             return TacoTypes.REACTION
+        elif taco_type_string == "reply_count":
+            return TacoTypes.REPLY
         else:
             return TacoTypes.CUSTOM
 
@@ -40,5 +43,7 @@ class TacoTypes(Enum):
             return "invite_count"
         elif taco_type == TacoTypes.REACTION:
             return "reaction_count"
+        elif taco_type == TacoTypes.REPLY:
+            return "reply_count"
         else:
             return "custom"

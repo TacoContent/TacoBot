@@ -48,6 +48,7 @@
 	"taco_reason_join": "joining the server",
 	"taco_reason_react": "reacting to {{user}}'s message with a 🌮",
 	"taco_reason_boost": "boosting the server",
+	"taco_reason_reply": "replying to {{user}}'s message",
 	"taco_reason_default": "just being Awesome!",
 	"taco_reason_trivia_correct": "getting trivia question correct",
 	"taco_reason_trivia_incorrect": "getting trivia question incorrect",
