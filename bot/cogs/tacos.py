@@ -231,6 +231,25 @@ class Tacos(commands.Cog):
                     await self.discord_helper.taco_give_user(guild_id, self.bot.user, member,
                         self.settings.get_string(guild_id, "taco_reason_boost"),
                         tacotypes.TacoTypes.BOOST )
+                    return
+
+                if message.type == discord.MessageType.default:
+                    try:
+                        if message.reference is not None:
+                            ref = message.reference.resolved
+                            if ref is None:
+                                return
+                            if ref.author == message.author or ref.author == self.bot.user:
+                                self.log.debug(guild_id, _method, f"Ignoring message reference from {ref.author}")
+                                return
+                            # it is a reply to another user
+                            await self.discord_helper.taco_give_user(guild_id, self.bot.user, member,
+                                self.settings.get_string(guild_id, "taco_reason_reply", user=ref.author.name),
+                                tacotypes.TacoTypes.REPLY )
+
+                    except Exception as e:
+                        self.log.error(guild_id, _method, str(e), traceback.format_exc())
+                        return
 
             # if we are in a DM
             else:
