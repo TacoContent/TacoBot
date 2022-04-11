@@ -15,6 +15,7 @@
 - use central time for the birthday bot for now instead of UTC.
 - logging if can't add role for live
 - fixed bug with giving tacos from admin. it doubled the "give".
+- added `tqotd` commands
 
 **v1.0.72**
 - fixed call to add twitch user info
