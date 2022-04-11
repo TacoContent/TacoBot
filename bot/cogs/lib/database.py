@@ -89,5 +89,9 @@ class Database():
         pass
     def add_user_birthday(self, guildId: int, userId: int, month: int, day: int):
         pass
+
+    def save_tqotd(self, guildId: int, quote: str, author: int):
+        pass
+    
     def UPDATE_SCHEMA(self):
         pass

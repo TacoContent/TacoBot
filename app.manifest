@@ -49,7 +49,25 @@
 			"fields": [],
 			"subcommands": {}
 		},
-
+		"tqotd": {
+			"title": "Taco Quote of the Day",
+			"message": "Adds a question of the day",
+			"usage": ".taco tqotd [command]",
+			"admin": true,
+			"fields": [],
+			"subcommands": {
+				"give": {
+					"title": "Give TQotD Tacos",
+					"message": "Gives TQotD tacos to the user who answered the question",
+					"usage": ".taco tqotd give <@user>",
+					"example": [
+						".taco tqotd give @DarthMinos#1161"
+					],
+					"admin": true,
+					"fields": []
+				}
+			}
+		},
 		"tacos": {
 			"title": "Tacos Commands",
 			"message": "Commands that will give info on tacos🌮.",
