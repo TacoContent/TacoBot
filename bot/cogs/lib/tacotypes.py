@@ -10,6 +10,7 @@ class TacoTypes(Enum):
     TQOTD = 8
     BIRTHDAY = 9
     TWITCH = 10
+    STREAM = 11
 
     CUSTOM = 9999
 
@@ -35,6 +36,8 @@ class TacoTypes(Enum):
             return TacoTypes.BIRTHDAY
         elif taco_type_string == "twitch_count":
             return TacoTypes.TWITCH
+        elif taco_type_string == "stream_count":
+            return TacoTypes.STREAM
         else:
             return TacoTypes.CUSTOM
 
@@ -60,5 +63,7 @@ class TacoTypes(Enum):
             return "birthday_count"
         elif taco_type == TacoTypes.TWITCH:
             return "twitch_count"
+        elif taco_type == TacoTypes.STREAM:
+            return "stream_count"
         else:
             return "custom"
