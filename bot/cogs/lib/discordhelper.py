@@ -114,7 +114,7 @@ class DiscordHelper():
     async def sendEmbed(self, channel, title: str = None, message: str = None, fields=None, delete_after: float = None,
         footer=None, components=None, color=0x7289da,
         author: typing.Union[discord.User, discord.Member] = None,
-        thumbnail: str =None, image: str = None, url: str = "",):
+        thumbnail: str =None, image: str = None, url: str = "", content: str = None,):
         if color is None:
             color = 0x7289da
         guild_id = 0
@@ -140,8 +140,7 @@ class DiscordHelper():
             embed.set_thumbnail(url=thumbnail)
         if image is not None:
             embed.set_image(url=image)
-
-        return await channel.send(embed=embed, delete_after=delete_after, components=components)
+        return await channel.send(content=content, embed=embed, delete_after=delete_after, components=components)
 
     async def updateEmbed(self, message, title = None, description = None, description_append: bool = True, fields = None, footer = None, components = None, color = 0x7289da, author = None):
         if not message or len(message.embeds) == 0:

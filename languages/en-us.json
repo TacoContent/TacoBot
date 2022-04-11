@@ -82,7 +82,7 @@
 	"birthday_set_confirm": "{{user}}, your birthday has been set.\n\n`.taco birthday` to change it.",
 	"message_preview_title": "Jump to Message",
 	"message_preview_footer": "Message Preview - created: {{created}}",
-	"tqotd_out_message": "{{question}}\n\n{{taco_count}} {{taco_word}} 🌮 for answering.{{role_tag}}",
+	"tqotd_out_message": "{{question}}\n\n{{taco_count}} {{taco_word}} 🌮 for answering.",
 	"tqotd_out_title": "TACO Question of the Day",
 	"tqotd_ask_title": "What is the TACO question of the Day?",
 	"tqotd_ask_message": "Please respond with the question you would like to ask.\n\nRespond with `cancel` to cancel.",
