@@ -28,6 +28,7 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import dbprovider
+from .lib import tacotypes
 
 class LiveNow(commands.Cog):
     def __init__(self, bot):
@@ -96,6 +97,18 @@ class LiveNow(commands.Cog):
                     tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform)
                     if tracked.count() == 0:
                         self.log.info(guild_id, "live_now.on_member_update", f"{before.display_name} started streaming on {asa.platform}")
+
+                        # get the tacos settings
+                        taco_settings = self.settings.get_settings(self.db, guild_id, "tacos")
+                        if not taco_settings:
+                            self.log.error(guild_id, "live_now.on_member_update", f"No tacos settings found for guild {guild_id}")
+                            return
+
+                        # give the user tacos for going live
+                        taco_amount = taco_settings.get("stream_count", 5)
+                        reason_msg = self.settings.get_string(guild_id, "taco_reason_stream")
+                        await self.discord_helper.taco_give_user(guild_id, self.bot.user, before, reason_msg, tacotypes.TacoTypes.STREAM, taco_amount=taco_amount )
+
                         self.db.track_live_activity(guild_id, after.id, True, asa.platform, asa.url)
                         twitch_name = None
                         if asa.platform.lower() == "twitch":
