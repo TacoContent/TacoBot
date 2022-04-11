@@ -164,7 +164,7 @@ class Trivia(commands.Cog):
                     trivia_timeout = trivia_settings['timeout'] or 60
 
                     notify_role_id = trivia_settings['notify_role']
-                    notify_role_mention = ""
+                    notify_role_mention = None
                     if notify_role_id:
                         notify_role = ctx.guild.get_role(int(notify_role_id))
                         if notify_role:
@@ -175,15 +175,15 @@ class Trivia(commands.Cog):
                         choice_message=choice_message,
                         trivia_timeout=trivia_timeout,
                         reward=reward,
-                        taco_word=taco_word,
-                        notify_role_mention=notify_role_mention)
+                        taco_word=taco_word)
                     qm = await self.discord_helper.sendEmbed(ctx.channel,
                         self.settings.get_string(guild_id, "trivia_question_title",
                             category=html.unescape(question.category),
                             difficulty=question.difficulty.capitalize(),
                             reward=reward),
                         question_message,
-                        fields=[])
+                        fields=[],
+                        content=notify_role_mention)
                     for ritem in choice_emojis[0:len(answers)]:
                         # add reaction to the message from the bot
                         await qm.add_reaction(ritem)
