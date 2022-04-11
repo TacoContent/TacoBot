@@ -140,8 +140,10 @@ class TwitchInfo(commands.Cog):
         try:
             _method = inspect.stack()[0][3]
             guild_id = 0
+            resp_channel = ctx.author
             if ctx.guild:
                 guild_id = ctx.guild.id
+                resp_channel = ctx.channel
                 await ctx.message.delete()
 
             if twitch_name is None:
