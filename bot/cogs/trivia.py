@@ -161,9 +161,9 @@ class Trivia(commands.Cog):
                     reward = trivia_settings['category_points'][question.difficulty] or 1
                     punishment = reward * -1
                     taco_word = self.settings.get_string(guild_id, "taco_singular") if reward == 1 else self.settings.get_string(guild_id, "taco_plural")
-                    trivia_timeout = trivia_settings['timeout'] or 60
+                    trivia_timeout = trivia_settings.get('timeout', 60)
 
-                    notify_role_id = trivia_settings['notify_role']
+                    notify_role_id = trivia_settings.get('notify_role', None)
                     notify_role_mention = None
                     if notify_role_id:
                         notify_role = ctx.guild.get_role(int(notify_role_id))
