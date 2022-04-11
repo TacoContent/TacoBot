@@ -96,7 +96,7 @@ class LiveNow(commands.Cog):
                     tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform)
                     if tracked.count() == 0:
                         self.log.info(guild_id, "live_now.on_member_update", f"{before.display_name} started streaming on {asa.platform}")
-                        self.db.track_live_activity(guild_id, after.id, True, asa.platform)
+                        self.db.track_live_activity(guild_id, after.id, True, asa.platform, asa.url)
                         twitch_name = None
                         if asa.platform.lower() == "twitch":
                             twitch_name = self.handle_twitch_live(after, after_streaming_activities)
@@ -117,7 +117,7 @@ class LiveNow(commands.Cog):
                         if logging_channel_id:
                             await self.log_live_post(int(logging_channel_id), asa, after, twitch_name)
                         else:
-                            self.db.track_live(guild_id, after.id, asa.platform)
+                            self.db.track_live(guild_id, after.id, asa.platform, asa.url)
                     else:
                         self.log.debug(guild_id, "live_now.on_member_update", f"{before.display_name} started streaming on {asa.platform} but was already tracked")
 
@@ -134,7 +134,7 @@ class LiveNow(commands.Cog):
                     tracked = self.db.get_tracked_live(guild_id, before.id, bsa.platform)
                     if tracked.count() > 0:
                         self.log.info(guild_id, "live_now.on_member_update", f"{before.display_name} stopped streaming")
-                        self.db.track_live_activity(guild_id, before.id, False, bsa.platform)
+                        self.db.track_live_activity(guild_id, before.id, False, bsa.platform, bsa.url)
 
                         logging_channel_id = cog_settings.get("logging_channel", None)
                         logging_channel = self.bot.get_channel(int(logging_channel_id))

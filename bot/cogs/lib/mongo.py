@@ -742,7 +742,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def track_live_activity(self, guildId: int, userId: int, live: bool, platform: str):
+    def track_live_activity(self, guildId: int, userId: int, live: bool, platform: str, url: str):
         try:
             if self.connection is None:
                 self.open()
@@ -752,6 +752,7 @@ class MongoDatabase(database.Database):
                 "user_id": str(userId),
                 "status": "ONLINE" if live else "OFFLINE",
                 "platform": platform.upper().strip(),
+                "url": url,
                 "timestamp": timestamp
             }
             self.connection.live_activity.insert_one(payload)
@@ -762,53 +763,8 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    # def track_live_post(self, guildId: int, channelId: int, messageId: int, userId: int, platform: str):
-    #     try:
-    #         if self.connection is None:
-    #             self.open()
-    #         timestamp = utils.to_timestamp(datetime.datetime.utcnow())
-    #         payload = {
-    #             "guild_id": str(guildId),
-    #             "channel_id": str(channelId),
-    #             "message_id": str(messageId),
-    #             "user_id": str(userId),
-    #             "platform": platform.upper().strip(),
-    #             "timestamp": timestamp
-    #         }
-    #         self.connection.live_posts.update_one({ "guild_id": str(guildId), "message_id": str(messageId) }, { "$set": payload }, upsert=True)
-    #     except Exception as ex:
-    #         print(ex)
-    #         traceback.print_exc()
-    #     finally:
-    #         if self.connection:
-    #             self.close()
 
-    # def get_tracked_live_post(self, guildId: int, userId: int, platform: str):
-    #     try:
-    #         if self.connection is None:
-    #             self.open()
-    #         return self.connection.live_posts.find({ "guild_id": str(guildId), "user_id": str(userId), "platform": platform })
-    #     except Exception as ex:
-    #         print(ex)
-    #         traceback.print_exc()
-    #     finally:
-    #         if self.connection:
-    #             self.close()
-
-    # def untrack_live_post(self, guildId: int, messageId: int):
-    #     try:
-    #         if self.connection is None:
-    #             self.open()
-    #         self.connection.live_posts.delete_one({ "guild_id": str(guildId), "message_id": str(messageId) })
-    #     except Exception as ex:
-    #         print(ex)
-    #         traceback.print_exc()
-    #     finally:
-    #         if self.connection:
-    #             self.close()
-
-
-    def track_live(self, guildId: int, userId: int, platform: str, channelId: int = None, messageId: int = None,):
+    def track_live(self, guildId: int, userId: int, platform: str, channelId: int = None, messageId: int = None, url: str = None):
         try:
             if self.connection is None:
                 self.open()
@@ -817,6 +773,7 @@ class MongoDatabase(database.Database):
                 "guild_id": str(guildId),
                 "user_id": str(userId),
                 "platform": platform.upper().strip(),
+                "url": url,
                 "channel_id": str(channelId),
                 "message_id": str(messageId),
                 "timestamp": timestamp
@@ -866,6 +823,18 @@ class MongoDatabase(database.Database):
                 "timestamp": timestamp
             }
             self.connection.birthdays.update_one( { "guild_id": str(guildId), "user_id": str(userId) }, { "$set": payload }, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def get_user_birthday(self, guildId: int, userId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            return self.connection.birthdays.find_one({ "guild_id": str(guildId), "user_id": str(userId) })
         except Exception as ex:
             print(ex)
             traceback.print_exc()
