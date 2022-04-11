@@ -162,8 +162,8 @@ class Tacos(commands.Cog):
                     footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT),
                     delete_after=self.SELF_DESTRUCT_TIMEOUT)
                 return
-            max_gift_tacos = taco_settings["max_gift_tacos"]
-            max_gift_taco_timespan = taco_settings["max_gift_taco_timespan"]
+            max_gift_tacos = taco_settings.get("max_gift_tacos", 10)
+            max_gift_taco_timespan = taco_settings.get("max_gift_taco_timespan", 86400)
             # get the total number of tacos the user has gifted in the last 24 hours
             total_gifted = self.db.get_total_gifted_tacos(ctx.guild.id, ctx.author.id, max_gift_taco_timespan)
             remaining_gifts = max_gift_tacos - total_gifted
@@ -291,8 +291,16 @@ class Tacos(commands.Cog):
             if payload.event_type != 'REACTION_ADD':
                 return
 
+            taco_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+            if not taco_settings:
+                # raise exception if there are no tacos settings
+                self.log.error(guild_id, "tacos.on_raw_reaction_add", f"No tacos settings found for guild {guild_id}")
+                return
+
+            reaction_emoji = taco_settings.get("reaction_emoji", "🌮")
+
             self.log.debug(guild_id, _method, f"{payload.emoji.name} added to {payload.message_id}")
-            if str(payload.emoji) == '🌮':
+            if str(payload.emoji) == reaction_emoji:
                 user = await self.discord_helper.get_or_fetch_user(payload.user_id)
                 channel = await self.bot.fetch_channel(payload.channel_id)
                 message = await channel.fetch_message(payload.message_id)
@@ -306,17 +314,13 @@ class Tacos(commands.Cog):
                     self.log.debug(guild_id, _method, f"{user} has already reacted to {message.id} so no tacos given.")
                     return
 
-                taco_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
-                if not taco_settings:
-                    # raise exception if there are no tacos settings
-                    self.log.error(guild_id, "tacos.on_raw_reaction_add", f"No tacos settings found for guild {guild_id}")
-                    return
 
-                reaction_count = taco_settings["reaction_count"]
+
+                reaction_count = taco_settings.get("reaction_count", 1)
                 # reaction_reward_count = taco_settings["reaction_reward_count"]
 
-                max_gift_tacos = taco_settings["max_gift_tacos"]
-                max_gift_taco_timespan = taco_settings["max_gift_taco_timespan"]
+                max_gift_tacos = taco_settings.get("max_gift_tacos", 10)
+                max_gift_taco_timespan = taco_settings.get("max_gift_taco_timespan", 86400)
                 # get the total number of tacos the user has gifted in the last 24 hours
                 total_gifted = self.db.get_total_gifted_tacos(guild_id, user.id, max_gift_taco_timespan)
                 # log the total number of tacos the user has gifted
