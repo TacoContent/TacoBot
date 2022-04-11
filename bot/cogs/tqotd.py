@@ -82,8 +82,13 @@ class TacoQuestionOfTheDay(commands.Cog):
                 self.log.debug(guild_id, "tqotd.tqotd", f"tqotd is disabled for guild {guild_id}")
                 return
 
+            tacos_settings = self.get_tacos_settings(guild_id)
+            if not tacos_settings:
+                self.log.warn(guild_id, "tqotd.tqotd", f"No tacos settings found for guild {guild_id}")
+                return
 
-            amount = 5
+            amount = tacos_settings.get("tqotd_amount", 5)
+
             role_tag = None
             role = ctx.guild.get_role(int(cog_settings.get("tag_role", 0)))
             if role:
@@ -116,7 +121,13 @@ class TacoQuestionOfTheDay(commands.Cog):
             await ctx.message.delete()
             # track that the user answered the question.
             self.db.track_tqotd_answer(guild_id, member.id)
-            amount = 5
+
+            tacos_settings = self.get_tacos_settings(guild_id)
+            if not tacos_settings:
+                self.log.warn(guild_id, "tqotd.tqotd", f"No tacos settings found for guild {guild_id}")
+                return
+
+            amount = tacos_settings.get("tqotd_amount", 5)
 
             tacos_word = self.settings.get_string(guild_id, "taco_singular")
             if amount > 1:
@@ -143,7 +154,14 @@ class TacoQuestionOfTheDay(commands.Cog):
         if not cog_settings:
             # raise exception if there are no leave_survey settings
             # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
-            raise Exception(f"No live_now settings found for guild {guildId}")
+            raise Exception(f"No tqotd settings found for guild {guildId}")
+        return cog_settings
+    def get_tacos_settings(self, guildId: int = 0):
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not cog_settings:
+            # raise exception if there are no leave_survey settings
+            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
+            raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
 def setup(bot):
     bot.add_cog(TacoQuestionOfTheDay(bot))

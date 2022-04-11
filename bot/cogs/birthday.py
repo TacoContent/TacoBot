@@ -30,6 +30,7 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import dbprovider
+from .lib import tacotypes
 
 class Birthday(commands.Cog):
     def __init__(self, bot):
@@ -87,7 +88,15 @@ class Birthday(commands.Cog):
                     self.settings.get_string(guild_id, "birthday_set_day_question"),
                     1, 31, timeout=60)
 
+            user_bday_set = self.db.get_user_birthday(guild_id, ctx.author.id)
             self.db.add_user_birthday(guild_id, ctx.author.id, month, day)
+
+            if not user_bday_set:
+                taco_settings = self.get_tacos_settings(guild_id)
+                taco_amount = taco_settings.get("birthday_count", 25)
+                reason_msg = self.settings.get_string(guild_id, "taco_reason_birthday")
+                await self.discord_helper.taco_give_user(guild_id, self.bot.user, ctx.author, reason_msg, tacotypes.TacoTypes.BIRTHDAY, taco_amount=taco_amount )
+
             fields = [
                 { 'name': self.settings.get_string(guild_id, "month"), 'value': str(month), 'inline': True },
                 { 'name': self.settings.get_string(guild_id, "day"), 'value': str(day), 'inline': True }
@@ -153,6 +162,7 @@ class Birthday(commands.Cog):
         except Exception as e:
             self.log.error(guildId, "birthday.get_todays_birthdays", str(e), traceback.format_exc())
             return []
+
     async def send_birthday_message(self, ctx: ComponentContext, birthdays: typing.List[typing.Dict]):
         try:
             guild_id = 0
@@ -306,6 +316,12 @@ class Birthday(commands.Cog):
                 await asyncio.sleep(.5)
         except Exception as e:
             self.log.error(guild_id, "birthday.on_member_join", str(e), traceback.format_exc())
-
+    def get_tacos_settings(self, guildId: int = 0):
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not cog_settings:
+            # raise exception if there are no leave_survey settings
+            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
+            raise Exception(f"No tacos settings found for guild {guildId}")
+        return cog_settings
 def setup(bot):
     bot.add_cog(Birthday(bot))

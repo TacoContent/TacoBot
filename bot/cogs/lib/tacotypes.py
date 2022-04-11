@@ -7,6 +7,8 @@ class TacoTypes(Enum):
     INVITE = 5
     REACTION = 6
     REPLY = 7
+    TQOTD = 8
+    BIRTHDAY = 9
 
     CUSTOM = 9999
 
@@ -26,6 +28,10 @@ class TacoTypes(Enum):
             return TacoTypes.REACTION
         elif taco_type_string == "reply_count":
             return TacoTypes.REPLY
+        elif taco_type_string == "tqotd_count":
+            return TacoTypes.TQOTD
+        elif taco_type_string == "birthday_count":
+            return TacoTypes.BIRTHDAY
         else:
             return TacoTypes.CUSTOM
 
@@ -45,5 +51,9 @@ class TacoTypes(Enum):
             return "reaction_count"
         elif taco_type == TacoTypes.REPLY:
             return "reply_count"
+        elif taco_type == TacoTypes.TQOTD:
+            return "tqotd_count"
+        elif taco_type == TacoTypes.BIRTHDAY:
+            return "birthday_count"
         else:
             return "custom"
