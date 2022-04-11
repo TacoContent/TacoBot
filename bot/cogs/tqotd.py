@@ -51,11 +51,12 @@ class TacoQuestionOfTheDay(commands.Cog):
         if ctx.invoked_subcommand is not None:
             return
         try:
+            await ctx.message.delete()
             guild_id = 0
             if ctx.guild:
                 guild_id = ctx.guild.id
             qotd = None
-            # out_channel = ctx.author
+
             try:
                 _ctx = self.discord_helper.create_context(self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild)
                 qotd = await self.discord_helper.ask_text(_ctx, ctx.author,
@@ -97,7 +98,7 @@ class TacoQuestionOfTheDay(commands.Cog):
             if amount != 1:
                 taco_word = self.settings.get_string(guild_id, "taco_plural")
             out_message = self.settings.get_string(guild_id, "tqotd_out_message", question=qotd, taco_count=amount, taco_word=taco_word)
-            await self.discord_helper.sendEmbed(channel=out_channel, title=self.settings.get_string(guild_id, "tqotd_out_title"), message=out_message, content=role_tag)
+            await self.discord_helper.sendEmbed(channel=out_channel, title=self.settings.get_string(guild_id, "tqotd_out_title"), message=out_message, content=role_tag, color=0x00ff00)
             # save the TQOTD
             self.db.save_tqotd(guild_id, qotd, ctx.author.id)
 
