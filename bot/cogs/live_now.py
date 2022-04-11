@@ -253,7 +253,7 @@ class LiveNow(commands.Cog):
                 fields, thumbnail=profile_icon,
                 author=user, color=0x6a0dad)
 
-            self.db.track_live(guild_id, user.id, activity.platform, logging_channel.id, message.id, url=activty.url)
+            self.db.track_live(guild_id, user.id, activity.platform, logging_channel.id, message.id, url=activity.url)
 
     async def add_remove_roles(self, user: discord.Member, check_list: list, add_list: list, remove_list: list):
         if user is None or user.guild is None:
