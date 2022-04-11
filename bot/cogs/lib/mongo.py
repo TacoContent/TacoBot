@@ -933,3 +933,39 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
+
+    def save_tqotd(self, guildId: int, quote: str, author: int):
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow().date()
+            ts_date = datetime.datetime.combine(date, datetime.time.min)
+            timestamp = utils.to_timestamp(ts_date)
+            payload = {
+                "guild_id": str(guildId),
+                "quote": quote,
+                "author": str(author),
+                "answered": [],
+                "timestamp": timestamp
+            }
+            self.connection.tqotd.update_one({ "guild_id": str(guildId), "timestamp": timestamp }, { "$set": payload }, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+    def track_tqotd_answer(self, guildId: int, userId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow().date()
+            ts_date = datetime.datetime.combine(date, datetime.time.min)
+            timestamp = utils.to_timestamp(ts_date)
+            self.connection.tqotd.update_one({ "guild_id": str(guildId), "timestamp": timestamp }, { "$push": { "answered": str(userId) } }, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()

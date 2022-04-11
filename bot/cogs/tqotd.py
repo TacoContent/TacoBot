@@ -1,0 +1,146 @@
+import discord
+from discord.ext import commands
+import asyncio
+import json
+import traceback
+import sys
+import os
+import glob
+import typing
+
+from discord.ext.commands.cooldowns import BucketType
+from discord_slash import ComponentContext
+from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
+from discord_slash.model import ButtonStyle
+from discord.ext.commands import has_permissions, CheckFailure
+
+from .lib import settings
+from .lib import discordhelper
+from .lib import logger
+from .lib import loglevel
+from .lib import utils
+from .lib import settings
+from .lib import mongo
+from .lib import dbprovider
+from .lib import tacotypes
+
+import inspect
+
+class Tacos(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.settings = settings.Settings()
+        self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.SETTINGS_SECTION = "tqotd"
+        self.SELF_DESTRUCT_TIMEOUT = 30
+        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
+            self.db = mongo.MongoDatabase()
+        else:
+            self.db = mongo.MongoDatabase()
+        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        if not log_level:
+            log_level = loglevel.LogLevel.DEBUG
+
+        self.log = logger.Log(minimumLogLevel=log_level)
+        self.log.debug(0, "tqotd.__init__", "Initialized")
+
+    @commands.group(name="tqotd", invoke_without_command=True)
+    @commands.has_permissions(administrator=True)
+    @commands.guild_only()
+    async def tqotd(self, ctx: ComponentContext):
+        if ctx.invoked_subcommand is not None:
+            return
+        try:
+            guild_id = 0
+            if ctx.guild:
+                guild_id = ctx.guild.id
+            qotd = None
+            # out_channel = ctx.author
+            try:
+                _ctx = self.discord_helper.create_context(self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild)
+                qotd = await self.discord_helper.ask_text(_ctx, ctx.author,
+                    self.settings.get_string(guild_id, "tqotd_ask_title"),
+                    self.settings.get_string(guild_id, "tqotd_ask_message"),
+                    timeout=60 * 5)
+            except discord.Forbidden:
+                _ctx = ctx
+                qotd = await self.discord_helper.ask_text(_ctx, ctx.author,
+                    self.settings.get_string(guild_id, "tqotd_ask_title"),
+                    self.settings.get_string(guild_id, "tqotd_ask_message"),
+                    timeout=60 * 5)
+
+            # ask the user for the TQOTD in DM
+            if qotd is None or qotd.lower() == "cancel":
+                return
+
+            cog_settings = self.get_cog_settings(guild_id)
+            if not cog_settings:
+                self.log.warn(guild_id, "tqotd.tqotd", f"No tqotd settings found for guild {guild_id}")
+                return
+            if not cog_settings.get("enabled", False):
+                self.log.debug(guild_id, "tqotd.tqotd", f"tqotd is disabled for guild {guild_id}")
+                return
+
+
+            amount = 5
+            role_tag = ""
+            role = ctx.guild.get_role(int(cog_settings.get("tag_role", 0)))
+            if role:
+                role_tag = f"\n{role.mention}"
+
+            out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
+            if not out_channel:
+                self.log.warn(guild_id, "tqotd.tqotd", f"No output channel found for guild {guild_id}")
+
+            # get role
+            taco_word = self.settings.get_string(guild_id, "taco_singular")
+            if amount != 1:
+                taco_word = self.settings.get_string(guild_id, "taco_plural")
+            out_message = self.settings.get_string(guild_id, "tqotd_out_message", question=qotd, taco_count=amount, taco_word=taco_word, role_tag=role_tag)
+            await self.discord_helper.sendEmbed(out_channel, self.settings.get_string(guild_id, "tqotd_out_title"), out_message)
+            # save the TQOTD
+            self.db.save_tqotd(guild_id, qotd, ctx.author.id)
+
+        except Exception as e:
+            self.log.error(guild_id, "tqotd.tqotd", str(e), traceback.format_exc())
+            await self.discord_helper.notify_of_error(ctx)
+
+    @tqotd.command(name="give")
+    @commands.has_permissions(administrator=True)
+    @commands.guild_only()
+    async def give(self, ctx, member: discord.Member):
+        try:
+            guild_id = ctx.guild.id
+
+            await ctx.message.delete()
+            # track that the user answered the question.
+            self.db.track_tqotd_answer(guild_id, member.id)
+            amount = 5
+
+            tacos_word = self.settings.get_string(guild_id, "taco_singular")
+            if amount > 1:
+                tacos_word = self.settings.get_string(guild_id, "taco_plural")
+
+            reason_msg = self.settings.get_string(guild_id, "tqotd_reason_default")
+
+            await self.discord_helper.sendEmbed(ctx.channel,
+                self.settings.get_string(guild_id, "taco_give_title"),
+                # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",
+                self.settings.get_string(guild_id, "taco_gift_success", user=ctx.author.mention, touser=member.mention, amount=amount, taco_word=tacos_word, reason=reason_msg),
+                footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT),
+                delete_after=self.SELF_DESTRUCT_TIMEOUT)
+
+            await self.discord_helper.taco_give_user(guild_id, ctx.author, member, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount )
+
+
+        except Exception as e:
+            self.log.error(ctx.guild.id, "tqotd.give", str(e), traceback.format_exc())
+            await self.discord_helper.notify_of_error(ctx)
+
+    def get_cog_settings(self, guildId: int = 0):
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        if not cog_settings:
+            # raise exception if there are no leave_survey settings
+            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
+            raise Exception(f"No live_now settings found for guild {guildId}")
+        return cog_settings
