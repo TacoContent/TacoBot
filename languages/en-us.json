@@ -51,6 +51,7 @@
 	"taco_reason_reply": "replying to {{user}}'s message",
 	"taco_reason_default": "just being Awesome!",
 	"taco_reason_birthday": "setting their birthday",
+	"taco_reason_twitch": "setting twitch username",
 	"taco_reason_trivia_correct": "getting trivia question correct",
 	"taco_reason_trivia_incorrect": "getting trivia question incorrect",
 	"taco_gift_title": "Gift Tacos",
@@ -87,5 +88,9 @@
 	"tqotd_out_title": "TACO Question of the Day",
 	"tqotd_ask_title": "What is the TACO question of the Day?",
 	"tqotd_ask_message": "Please respond with the question you would like to ask.\n\nRespond with `cancel` to cancel.",
-	"tqotd_reason_default": "answering TQotD"
+	"tqotd_reason_default": "answering TQotD",
+	"twitch_ask_message": "{{user}}, Please respond with the twitch name you want to set for yourself.",
+	"twitch_ask_title": "Twitch Name",
+	"twitch_set_title": "Twitch Name Set",
+	"twitch_set_message": "{{user}}, Your Twitch name has been set to {{twitch_name}}.\n\nIf you change your twitch name in the future, you can use `.taco twitch set` in a discord channel, or `.twitch set` in the DM with me."
 }

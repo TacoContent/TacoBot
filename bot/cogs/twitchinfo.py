@@ -27,6 +27,7 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import dbprovider
+from .lib import tacotypes
 
 import inspect
 
@@ -139,21 +140,52 @@ class TwitchInfo(commands.Cog):
         try:
             _method = inspect.stack()[0][3]
             guild_id = 0
-            channel = ctx.author
             if ctx.guild:
                 guild_id = ctx.guild.id
-                channel = ctx.channel
                 await ctx.message.delete()
 
             if twitch_name is None:
-                twitch_name = await self.discord_helper.ask_text(ctx, channel, "Twitch Name", "You asked to set your twitch username, please respond with your twitch username.", 60)
+                # try DM. if that doesnt work, use channel that they used...
+                try:
+                    resp_channel = ctx.author
+                    twitch_name = await self.discord_helper.ask_text(ctx, ctx.author,
+                        self.settings.get_string(guild_id, "twitch_ask_title"),
+                        self.settings.get_string(guild_id, "twitch_ask_message", user=ctx.author.mention),
+                        timeout = 60)
+                except discord.errors.Forbidden:
+                    resp_channel = ctx.channel
+                    twitch_name = await self.discord_helper.ask_text(ctx, ctx.channel,
+                        self.settings.get_string(guild_id, "twitch_ask_title"),
+                        self.settings.get_string(guild_id, "twitch_ask_message", user=ctx.author.mention),
+                        timeout = 60)
+
             self.log.debug(0, _method, f"{ctx.author} requested to set twitch name {twitch_name}")
             if twitch_name is not None:
                 twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
+                found_twitch = self.db.get_user_twitch_info(ctx.author.id)
+                if found_twitch is None:
+                    # only set if we haven't set it already.
+                    taco_settings = self.get_tacos_settings(guild_id)
+                    taco_amount = taco_settings.get("twitch_count", 25)
+                    reason_msg = self.settings.get_string(guild_id, "taco_reason_twitch")
+                    await self.discord_helper.taco_give_user(guild_id, self.bot.user, ctx.author, reason_msg, tacotypes.TacoTypes.TWITCH, taco_amount=taco_amount )
+
                 self.db.set_user_twitch_info(ctx.author.id, None, twitch_name)
-                await self.discord_helper.sendEmbed(channel, "Success", f"Your Twitch name has been set to {twitch_name}.\n\nIf you change your twitch name in the future, you can use `.taco twitch set` in a discord channel, or `.twitch set` in the DM with me.", color=0x00ff00, delete_after=30)
+
+                await self.discord_helper.sendEmbed(resp_channel,
+                    self.settings.get_string(guild_id, "twitch_set_title"),
+                    self.settings.get_string(guild_id, "twitch_set_message", user=ctx.author.mention, twitch_name=twitch_name),
+                    color=0x00ff00, delete_after=30)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
+
+    def get_tacos_settings(self, guildId: int = 0):
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not cog_settings:
+            # raise exception if there are no leave_survey settings
+            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
+            raise Exception(f"No tacos settings found for guild {guildId}")
+        return cog_settings
 def setup(bot):
     bot.add_cog(TwitchInfo(bot))
