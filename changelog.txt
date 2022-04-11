@@ -15,6 +15,7 @@
 - use central time for the birthday bot for now instead of UTC.
 - logging if can't add role for live
 - fixed bug with giving tacos from admin. it doubled the "give".
+- reply to a message will now give a taco
 - added `tqotd` commands
 
 **v1.0.72**

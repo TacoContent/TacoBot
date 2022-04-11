@@ -26,7 +26,7 @@ from .lib import tacotypes
 
 import inspect
 
-class Tacos(commands.Cog):
+class TacoQuestionOfTheDay(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.settings = settings.Settings()
@@ -144,3 +144,5 @@ class Tacos(commands.Cog):
             # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No live_now settings found for guild {guildId}")
         return cog_settings
+def setup(bot):
+    bot.add_cog(TacoQuestionOfTheDay(bot))
