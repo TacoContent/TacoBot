@@ -117,7 +117,7 @@ class LiveNow(commands.Cog):
                         if logging_channel_id:
                             await self.log_live_post(int(logging_channel_id), asa, after, twitch_name)
                         else:
-                            self.db.track_live(guild_id, after.id, asa.platform, asa.url)
+                            self.db.track_live(guild_id, after.id, asa.platform, url=asa.url)
                     else:
                         self.log.debug(guild_id, "live_now.on_member_update", f"{before.display_name} started streaming on {asa.platform} but was already tracked")
 
@@ -134,7 +134,7 @@ class LiveNow(commands.Cog):
                     tracked = self.db.get_tracked_live(guild_id, before.id, bsa.platform)
                     if tracked.count() > 0:
                         self.log.info(guild_id, "live_now.on_member_update", f"{before.display_name} stopped streaming")
-                        self.db.track_live_activity(guild_id, before.id, False, bsa.platform, bsa.url)
+                        self.db.track_live_activity(guild_id, before.id, False, bsa.platform, url=bsa.url)
 
                         logging_channel_id = cog_settings.get("logging_channel", None)
                         logging_channel = self.bot.get_channel(int(logging_channel_id))
@@ -253,7 +253,7 @@ class LiveNow(commands.Cog):
                 fields, thumbnail=profile_icon,
                 author=user, color=0x6a0dad)
 
-            self.db.track_live(guild_id, user.id, activity.platform, logging_channel.id, message.id,)
+            self.db.track_live(guild_id, user.id, activity.platform, logging_channel.id, message.id, url=activty.url)
 
     async def add_remove_roles(self, user: discord.Member, check_list: list, add_list: list, remove_list: list):
         if user is None or user.guild is None:
