@@ -74,7 +74,7 @@ class Database():
     def get_invite_code(self, guildId: int, inviteCode: str):
         pass
 
-    def track_live(self, guildId: int, userId: int, platform: str, channelId: int = None, messageId: int = None,):
+    def track_live(self, guildId: int, userId: int, platform: str, channelId: int = None, messageId: int = None, url: str = None):
         pass
     def get_tracked_live(self, guildId: int, userId: int, platform: str):
         pass
@@ -92,6 +92,6 @@ class Database():
 
     def save_tqotd(self, guildId: int, quote: str, author: int):
         pass
-    
+
     def UPDATE_SCHEMA(self):
         pass
