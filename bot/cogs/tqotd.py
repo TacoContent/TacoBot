@@ -83,10 +83,10 @@ class TacoQuestionOfTheDay(commands.Cog):
 
 
             amount = 5
-            role_tag = ""
+            role_tag = None
             role = ctx.guild.get_role(int(cog_settings.get("tag_role", 0)))
             if role:
-                role_tag = f"\n{role.mention}"
+                role_tag = f"{role.mention}"
 
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
@@ -96,8 +96,8 @@ class TacoQuestionOfTheDay(commands.Cog):
             taco_word = self.settings.get_string(guild_id, "taco_singular")
             if amount != 1:
                 taco_word = self.settings.get_string(guild_id, "taco_plural")
-            out_message = self.settings.get_string(guild_id, "tqotd_out_message", question=qotd, taco_count=amount, taco_word=taco_word, role_tag=role_tag)
-            await self.discord_helper.sendEmbed(out_channel, self.settings.get_string(guild_id, "tqotd_out_title"), out_message)
+            out_message = self.settings.get_string(guild_id, "tqotd_out_message", question=qotd, taco_count=amount, taco_word=taco_word)
+            await self.discord_helper.sendEmbed(channel=out_channel, title=self.settings.get_string(guild_id, "tqotd_out_title"), message=out_message, content=role_tag)
             # save the TQOTD
             self.db.save_tqotd(guild_id, qotd, ctx.author.id)
 
