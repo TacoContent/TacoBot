@@ -934,7 +934,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def save_tqotd(self, guildId: int, quote: str, author: int):
+    def save_tqotd(self, guildId: int, question: str, author: int):
         try:
             if self.connection is None:
                 self.open()
@@ -943,7 +943,7 @@ class MongoDatabase(database.Database):
             timestamp = utils.to_timestamp(ts_date)
             payload = {
                 "guild_id": str(guildId),
-                "quote": quote,
+                "question": question,
                 "author": str(author),
                 "answered": [],
                 "timestamp": timestamp
