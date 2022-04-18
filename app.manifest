@@ -29,6 +29,18 @@
 			"subcommands": {},
 			"aliases": ["giphy"]
 		},
+		"link": {
+			"title": "Link Discord -> Twitch",
+			"message": "Link your discord and twitch account together",
+			"usage": ".taco link [code]",
+			"example": [
+				".taco link",
+				".taco link 123456"
+			],
+			"admin": false,
+			"fields": [],
+			"subcommands": {}
+		},
 		"move": {
 			"title": "Move a message",
 			"message": "Moves a message from one channel to another. Must be ran in the channel that the message is in.",

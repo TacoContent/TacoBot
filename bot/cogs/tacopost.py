@@ -69,7 +69,7 @@ class TacoPost(commands.Cog):
                 return
 
             # get the channels for tacopost out of the settings
-            tacopost_channels = tacopost_settings['channels']
+            tacopost_channels = tacopost_settings.get('channels', [])
             # if channel.id is not in CHANNELS[].id return
             if str(channel.id) not in [c['id'] for c in tacopost_channels]:
                 return
@@ -79,14 +79,14 @@ class TacoPost(commands.Cog):
                 return
 
             # check if the user is in the role set in channel_settings['exempt'][]
-            if channel_settings['exempt'] is not None:
-                if str(user.id) in channel_settings['exempt']:
+            exempt_list = channel_settings.get('exempt', [])
+            if str(user.id) in exempt_list:
+                self.log.debug(guild_id, _method, f"User {user.name} is exempt from having to pay tacos in channel {channel.name}")
+                return
+            for role in user.roles:
+                if str(role.id) in exempt_list:
                     self.log.debug(guild_id, _method, f"User {user.name} is exempt from having to pay tacos in channel {channel.name}")
                     return
-                for role in user.roles:
-                    if str(role.id) in channel_settings['exempt']:
-                        self.log.debug(guild_id, _method, f"User {user.name} is exempt from having to pay tacos in channel {channel.name}")
-                        return
 
             prefix = await self.bot.get_prefix(message)
             # if the message starts with one of the items in the array self.bot.command_prefix, exit the function
