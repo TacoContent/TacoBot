@@ -1,5 +1,3 @@
-from email import message
-from tkinter.messagebox import NO
 from pymongo import MongoClient
 import traceback
 import json
@@ -938,3 +936,63 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
+
+    def _get_twitch_name(self, userId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            result = self.connection.twitch_names.find_one({ "user_id": str(userId) })
+            if result:
+                return result["twitch_name"]
+            return None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def set_twitch_discord_link_code(self, userId: int, code: str):
+        try:
+            if self.connection is None:
+                self.open()
+            twitch_name = self._get_twitch_name(userId)
+            if not twitch_name:
+                payload = {
+                    "user_id": str(userId),
+                    "link_code": code.strip()
+                }
+                self.connection.twitch_user.update_one( { "user_id": str(userId) }, { "$set": payload }, upsert=True )
+                return True
+            else:
+                raise ValueError(f"Twitch user {twitch_name} already linked")
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            raise ex
+        finally:
+            self.close()
+
+    def link_twitch_to_discord_from_code(self, userId: int, code: str):
+        try:
+            if self.connection is None:
+                self.open()
+            twitch_name = self._get_twitch_name(userId)
+            if not twitch_name:
+                result = self.connection.twitch_user.find_one({ "link_code": code.strip() } )
+                if result:
+                    payload = {
+                        "user_id": str(userId),
+                    }
+                    self.connection.twitch_user.update_one( { "link_code": code.strip() }, { "$set": payload }, upsert=True )
+                    return True
+                else:
+                    raise ValueError(f"Unable to find an entry for a user with link code: {code}")
+            else:
+                raise ValueError(f"Twitch user {twitch_name} already linked")
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            raise ex
+        finally:
+            self.close()
