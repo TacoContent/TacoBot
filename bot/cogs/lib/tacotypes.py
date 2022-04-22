@@ -1,3 +1,7 @@
+### NOTE: UPDATE THIS FILE WHEN CHANGING TACO TYPES ###
+### UPDATE TacoBotTwitch/cogs/lib/tacotypes.py WHEN CHANGING TACO TYPES ###
+
+
 from enum import Enum
 class TacoTypes(Enum):
     JOIN = 1

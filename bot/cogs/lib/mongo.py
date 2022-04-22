@@ -112,6 +112,29 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
 
+    def add_twitchbot_to_channel(self, guildId: int, twitch_channel: str):
+        try:
+            if self.connection is None:
+                self.open()
+            twitch_channel = utils.clean_channel_name(twitch_channel)
+
+            date = datetime.datetime.utcnow().date()
+            ts_date = datetime.datetime.combine(date, datetime.time.min)
+            timestamp = utils.to_timestamp(ts_date)
+            payload = {
+                "guild_id": str(guildId),
+                "channel": twitch_channel,
+                "timestamp": timestamp,
+            }
+            self.connection.twitch_channels.update_one({"guild_id": self.settings.discord_guild_id, "channel": twitch_channel}, {"$set": payload}, upsert=True)
+            return True
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            raise ex
+        finally:
+            self.close()
+
     def add_stream_team_request(self, guildId: int, userName: str, userId: int, twitchName: str = None):
         try:
             if self.connection is None:

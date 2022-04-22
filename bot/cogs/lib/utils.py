@@ -29,6 +29,9 @@ def get_scalar_result(conn, sql, default_value = None, *args):
         traceback.print_exc()
         return default_value
 
+def clean_channel_name(channel: str):
+    return channel.lower().strip().replace("#", "").replace("@", "")
+
 def str2bool(v):
     return v.lower() in ("yes", "true", "yup", "1", "t", "y", "on")
 
