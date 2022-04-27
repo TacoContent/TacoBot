@@ -107,15 +107,16 @@ class TwitchInfo(commands.Cog):
             # add the twitch name to the twitch_channels collection
             # send http request to nodered tacobot api to add the channel to the bot
             url = f"https://nodered.bit13.local/tacobot/guild/{guild_id}/invite/{twitch_name}"
-            requests.post(url, headers={"X-AUTH-TOKEN": str(self.bot.id)})
-            await self.discord_helper.sendEmbed(
-                channel,
-                "Invite Bot",
-                f"Invited @OurTacoBot to {twitch_name}",
-                footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
-                color=0xFF0000,
-                delete_after=30,
-            )
+            result = requests.post(url, headers={"X-AUTH-TOKEN": str(self.bot.id)})
+            if result.status_code == 200:
+                await self.discord_helper.sendEmbed(
+                    channel,
+                    "Invite Bot",
+                    f"Invited @OurTacoBot to {twitch_name}",
+                    footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
+                    color=0xFF0000,
+                    delete_after=30,
+                )
 
     @twitch.command()
     async def get(self, ctx, member: typing.Union[discord.Member, discord.User] = None):
