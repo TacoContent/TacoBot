@@ -952,7 +952,23 @@ class MongoDatabase(database.Database):
             date = datetime.datetime.utcnow().date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
-            self.connection.tqotd.update_one({ "guild_id": str(guildId), "timestamp": timestamp }, { "$push": { "answered": str(userId) } }, upsert=True)
+
+            result = self.connection.tqotd.find_one(
+                {"guild_id": str(guildId), "timestamp": timestamp}
+            )
+            if result:
+                self.connection.tqotd.update_one({ "guild_id": str(guildId), "timestamp": timestamp }, { "$push": { "answered": str(userId) } }, upsert=True)
+            else:
+                date = date - datetime.timedelta(days=1)
+                ts_date = datetime.datetime.combine(date, datetime.time.min)
+                timestamp = utils.to_timestamp(ts_date)
+                result = self.connection.tqotd.find_one(
+                    {"guild_id": str(guildId), "timestamp": timestamp}
+                )
+                if result:
+                    self.connection.tqotd.update_one({ "guild_id": str(guildId), "timestamp": timestamp }, { "$push": { "answered": str(userId) } }, upsert=True)
+                else:
+                    raise Exception(f"No TQOTD found for guild {guildId} for {datetime.datetime.utcnow().date()}")
         except Exception as ex:
             print(ex)
             traceback.print_exc()
