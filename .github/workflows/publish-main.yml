@@ -102,6 +102,6 @@ jobs:
     - name: dispatch build event
       run: |
         curl -X POST https://api.github.com/repos/TacoContent/ourtacobot/dispatches \
-          -H 'Accept: application/vnd.github.everest-preview+json' \
+          -H 'Accept: application/vnd.github.v3+json' \
           -u ${{ github.token }} \
           --data '{"event_type": "build_documentation"}'
