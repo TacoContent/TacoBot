@@ -100,8 +100,9 @@ jobs:
     - merge
     steps:
     - name: dispatch build event
+      # ACTION_DISPATCH_TOKEN Format: user:token
       run: |
         curl -X POST https://api.github.com/repos/TacoContent/ourtacobot/dispatches \
           -H 'Accept: application/vnd.github.v3+json' \
-          -u ${{ github.token }} \
+          -u "${{ secrets.ACTION_DISPATCH_TOKEN }}" \
           --data '{"event_type": "build_documentation"}'
