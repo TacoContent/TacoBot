@@ -24,24 +24,41 @@
 		},
 		"gif" : {
 			"description": "Gets a random gif from the given tag",
-			"usage": ".taco gif [search term]",
+			"usage": ".taco gif [search_term]",
 			"enabled": true,
 			"example": [
 				".taco gif",
 				".taco gif taco tuesday"
 			],
-			"arguments": {},
+			"arguments": {
+				"search_term": {
+					"required": false,
+					"type": "string",
+					"description": "The string to search for"
+				}
+			},
 			"fields": [],
 			"subcommands": {},
 			"aliases": ["giphy"]
 		},
 		"link": {
 			"title": "Link Discord -> Twitch",
-			"description": "Link your discord and twitch account together",
-			"usage": ".taco link [code]",
+			"description": "Request a code from the bot to link your discord account to your twitch account",
+			"usage": ".taco link",
 			"example": [
-				".taco link",
-				".taco link 123456"
+				".taco link"
+			],
+			"arguments": {},
+			"admin": false,
+			"fields": [],
+			"subcommands": {}
+		},
+		"_link": {
+			"title": "Link Discord -> Twitch",
+			"description": "Use a code from the bot to link your discord account to your twitch account",
+			"usage": ".taco link <code>",
+			"example": [
+				".taco link ABC123"
 			],
 			"arguments": {
 				"code": {
