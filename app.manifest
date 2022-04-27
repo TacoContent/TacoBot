@@ -5,6 +5,11 @@
 	"icon": "https://i.imgur.com/ejJu8de.png",
 	"author": "DarthMinos#1161",
 	"changelog": "changelog.txt",
+	"prefixes": [
+		".taco ",
+		"!taco ",
+		"?taco "
+	],
 	"commands": {
 		"birthday": {
 			"description": "Sets your birthday",
@@ -25,56 +30,80 @@
 				".taco gif",
 				".taco gif taco tuesday"
 			],
+			"arguments": {},
 			"fields": [],
 			"subcommands": {},
 			"aliases": ["giphy"]
 		},
 		"link": {
 			"title": "Link Discord -> Twitch",
-			"message": "Link your discord and twitch account together",
+			"description": "Link your discord and twitch account together",
 			"usage": ".taco link [code]",
 			"example": [
 				".taco link",
 				".taco link 123456"
 			],
+			"arguments": {
+				"code": {
+					"type": "string",
+					"description": "The code given to you by the bot in twitch chat",
+					"required": true
+				}
+			},
 			"admin": false,
 			"fields": [],
 			"subcommands": {}
 		},
 		"move": {
 			"title": "Move a message",
-			"message": "Moves a message from one channel to another. Must be ran in the channel that the message is in.",
-			"usage": ".taco move <message id>",
+			"description": "Moves a message from one channel to another. Must be ran in the channel that the message is in.",
+			"usage": ".taco move <message_id>",
 			"example": [
 				".taco move 12345678901234567890123456789"
 			],
+			"arguments": {
+				"message_id": {
+					"description": "The message id of the message to move",
+					"type": "string",
+					"required": true
+				}
+			},
 			"admin": true,
 			"fields": [],
 			"subcommands": {}
 		},
 		"suggest": {
 			"title": "Create a Suggestion",
-			"message": "Starts a suggestion. I will DM you to ask you questions to create the suggestion.",
+			"description": "Starts a suggestion. I will DM you to ask you questions to create the suggestion.",
 			"usage": ".taco suggest",
 			"example": [ ".taco suggest" ],
 			"admin": false,
+			"arguments": {},
 			"fields": [],
 			"subcommands": {}
 		},
 		"tqotd": {
 			"title": "Taco Quote of the Day",
-			"message": "Adds a question of the day",
+			"description": "Adds a question of the day",
 			"usage": ".taco tqotd [command]",
 			"admin": true,
+			"arguments": {},
 			"fields": [],
 			"subcommands": {
 				"give": {
 					"title": "Give TQotD Tacos",
-					"message": "Gives TQotD tacos to the user who answered the question",
+					"description": "Gives TQotD tacos to the user who answered the question",
 					"usage": ".taco tqotd give <@user>",
 					"example": [
 						".taco tqotd give @DarthMinos#1161"
 					],
+					"arguments": {
+						"user": {
+							"description": "The user to give tacos to for answering the question",
+							"type": "user",
+							"required": true
+						}
+					},
 					"admin": true,
 					"fields": []
 				}
@@ -82,80 +111,153 @@
 		},
 		"tacos": {
 			"title": "Tacos Commands",
-			"message": "Commands that will give info on tacos🌮.",
+			"description": "Commands that will give info on tacos🌮.",
 			"usage": ".taco tacos <command>",
 			"fields": [],
 			"admin": false,
 			"subcommands": {
 				"count": {
 					"title": "Get your taco count",
-					"message": "Retrieve the number of tacos you have.",
+					"description": "Retrieve the number of tacos you have.",
 					"usage": ".taco tacos count",
 					"example": [
 						".taco tacos count"
 					],
+					"arguments": {},
 					"fields": [],
 					"admin": false
 				},
 				"gift": {
 					"title": "Gift Tacos",
-					"message": "Gift someone a number of tacos. You can gift a maximum of 10 tacos per 24 hours (rolling).",
+					"description": "Gift someone a number of tacos. You can gift a maximum of 10 tacos per 24 hours (rolling).",
 					"usage": ".taco tacos gift <@user#1234> <amount> [reason]",
 					"example": [
 						".taco tacos gift @user#1234 10",
 						".taco tacos gift @user#1234 10 You are awesome!"
 					],
+					"arguments": {
+						"user": {
+							"description": "The user to gift tacos to",
+							"type": "user",
+							"required": true
+						},
+						"amount": {
+							"description": "The amount of tacos to gift",
+							"type": "number",
+							"required": true,
+							"min": 1,
+							"max": 10
+						},
+						"reason": {
+							"description": "The reason for the gift",
+							"type": "string",
+							"required": false,
+							"default": "No reason given"
+						}
+					},
 					"admin": false,
 					"fields": []
 				},
 				"give": {
 					"title": "Give Tacos",
-					"message": "Allows an admin to give someone tacos.",
+					"description": "Allows an admin to give someone tacos.",
 					"usage": ".taco tacos give <@user#1234> <amount> [reason]",
 					"example": [
 						".taco tacos give @user#1234 10",
 						".taco tacos give @user#1234 10 You are awesome!"
 					],
+					"arguments": {
+						"user": {
+							"description": "The user to give tacos to",
+							"type": "user",
+							"required": true
+						},
+						"amount": {
+							"description": "The amount of tacos to give",
+							"type": "number",
+							"required": true,
+							"min": 1,
+							"max": 10
+						},
+						"reason": {
+							"description": "The reason for the gift",
+							"type": "string",
+							"required": false,
+							"default": "No reason given"
+						}
+					},
 					"admin": true,
 					"fields": []
 				},
 				"purge": {
 					"admin": true,
 					"title": "Purge Tacos",
-					"message": "Allows an admin to purge all tacos from a user.",
+					"description": "Allows an admin to purge all tacos from a user.",
 					"usage": ".taco tacos purge <@user#1234> [reason]",
 					"example": [
 						".taco tacos purge @user#1234",
-						".taco tacos purge @user#1234 \"Exploited the taco system\""
+						".taco tacos purge @user#1234 Exploited the taco system"
 					],
+					"arguments": {
+						"user": {
+							"description": "The user to purge tacos from",
+							"type": "user",
+							"required": true
+						},
+						"reason": {
+							"description": "The reason for the purge",
+							"type": "string",
+							"required": false,
+							"default": "No reason given"
+						}
+					},
 					"fields": []
 				}
 			}
 		},
 		"team": {
 			"title": "Twitch Team Commands",
-			"message": "Commands that will allow you to be a part of the Twitch Team.",
+			"description": "Commands that will allow you to be a part of the Twitch Team.",
 			"usage": ".taco team <command>",
 			"fields": [],
 			"admin": false,
 			"subcommands": {
 				"invite": {
 					"title": "Request an invite to the team",
-					"message": "This will put in a request to join the twitch team. Once approved, you will have to accept it from your creator dashboard. Twitch Dashboard -> Settings -> Channel -> Featured Content => Scroll to the bottom.",
-					"usage": ".taco team invite <twitch name>",
+					"description": "This will put in a request to join the twitch team. Once approved, you will have to accept it from your creator dashboard. Twitch Dashboard -> Settings -> Channel -> Featured Content => Scroll to the bottom.",
+					"usage": ".taco team invite <twitch_name>",
 					"example": [
 						".taco team invite darthminos"
 					],
+					"arguments": {
+						"twitch_name": {
+							"description": "The twitch name of the user to invite",
+							"type": "string",
+							"required": true
+						}
+					},
 					"admin": false,
 					"fields": []
 				},
 				"invite-user": {
 					"title": "Invite a user to the team",
-					"message": "Admin version of the `invite` command. This will invite a user to the twitch team. Once approved, they will have to accept it from their creator dashboard. Twitch Dashboard -> Settings -> Channel -> Featured Content => Scroll to the bottom.",
-					"usage": ".taco team invite-user @user#1234 <twitch name>",
+					"description": "Admin version of the `invite` command. This will invite a user to the twitch team. Once approved, they will have to accept it from their creator dashboard. Twitch Dashboard -> Settings -> Channel -> Featured Content => Scroll to the bottom.",
+					"usage": ".taco team invite-user <@user#1234> <twitch_name>",
 					"example": [
 						".taco team invite-user @DarthMinos#1161 darthminos"
 					],
+					"arguments": {
+						"user": {
+							"description": "The user to invite",
+							"type": "user",
+							"required": true
+						},
+						"twitch_name": {
+							"description": "The twitch name of the user to invite",
+							"type": "string",
+							"required": true
+						}
+					},
 					"admin": true,
 					"fields": []
 				}
@@ -163,48 +265,76 @@
 		},
 		"trivia": {
 			"title": "Trivia Commands",
-			"message": "Start a trivia question to earn tacos.",
+			"description": "Start a trivia question to earn tacos.",
 			"usage": ".taco trivia",
 			"example": [
 				".taco trivia"
 			],
 			"fields": [],
+			"arguments": {},
 			"admin": false,
 			"subcommands": {}
 		},
 		"twitch": {
 			"title": "Twitch Commands",
-			"message": "Commands to set up your Twitch account with Taco Bot.",
+			"description": "Commands to set up your Twitch account with Taco Bot.",
 			"usage": ".taco twitch <command>",
 			"fields": [],
+			"arguments": {},
 			"admin": false,
 			"subcommands": {
 				"set": {
 					"title": "Set your Twitch name",
-					"message": "Set your twitch name. This will allow the bot to know your twitch account associated with your discord account.",
-					"usage": ".taco twitch set [twitchName]",
+					"description": "Set your twitch name. This will allow the bot to know your twitch account associated with your discord account.",
+					"usage": ".taco twitch set [twitch_name]",
 					"example": [
 						".taco twitch set darthminos"
 					],
+					"arguments": {
+						"twitch_name": {
+							"description": "The twitch name of the user to invite",
+							"type": "string",
+							"required": true
+						}
+					},
 					"fields": []
 				},
 				"set-user": {
 					"title": "Set Twitch Username User",
-					"message": "Set a user's twitch name so Taco Bot can resolve a discord user to a twitch user, and vice versa.",
-					"usage": ".taco twitch set-user <@user#1234> [twitchName]",
+					"description": "Set a user's twitch name so Taco Bot can resolve a discord user to a twitch user, and vice versa.",
+					"usage": ".taco twitch set-user <@user#1234> [twitch_name]",
 					"example": [
 						"taco twitch set-user @DarthMinos#1161 darthminos"
 					],
+					"arguments": {
+						"user": {
+							"description": "The user to set the twitch name for",
+							"type": "user",
+							"required": true
+						},
+						"twitch_name": {
+							"description": "The twitch name of the user to set",
+							"type": "string",
+							"required": false
+						}
+					},
 					"fields": [],
 					"admin": true
 				},
 				"get": {
 					"title": "Get Twitch User",
-					"message": "Will tell you what the twitch username is associated with your, or the specified, account.",
+					"description": "Will tell you what the twitch username is associated with your, or the specified, account.",
 					"usage": ".taco twitch get [@user#1234]",
 					"example": [
 						"taco twitch get @DarthMinos#1161"
 					],
+					"arguments": {
+						"user": {
+							"description": "The user to get the twitch name for",
+							"type": "user",
+							"required": false
+						}
+					},
 					"fields": []
 				}
 			}
