@@ -13,8 +13,8 @@
 	"commands": {
 		"birthday": {
 			"description": "Sets your birthday",
-			"usage": "birthday",
-			"example": [ ".taco birthday", ".taco bday"],
+			"usage": "{{prefix}}birthday",
+			"examples": [ "{{prefix}}birthday", "{{prefix}}bday"],
 			"fields": [],
 			"subcommands": {},
 			"aliases": [
@@ -22,13 +22,29 @@
 			],
 			"enabled": true
 		},
+		"changelog": {
+			"title": "Taco Bot Changelog",
+			"description": "Shows the changelog",
+			"usage": "{{prefix}}changelog",
+			"examples": [
+				"{{prefix}}changelog",
+				"{{prefix}}cl"
+			],
+			"fields": [],
+			"subcommands": {},
+			"aliases": [
+				"cl"
+			],
+			"enabled": true,
+			"admin": false
+		},
 		"gif" : {
 			"description": "Gets a random gif from the given tag",
-			"usage": ".taco gif [search_term]",
+			"usage": "{{prefix}}gif [search_term]",
 			"enabled": true,
-			"example": [
-				".taco gif",
-				".taco gif taco tuesday"
+			"examples": [
+				"{{prefix}}gif",
+				"{{prefix}}gif taco tuesday"
 			],
 			"arguments": {
 				"search_term": {
@@ -44,9 +60,9 @@
 		"link": {
 			"title": "Link Discord -> Twitch",
 			"description": "Request a code from the bot to link your discord account to your twitch account",
-			"usage": ".taco link",
-			"example": [
-				".taco link"
+			"usage": "{{prefix}}link",
+			"examples": [
+				"{{prefix}}link"
 			],
 			"arguments": {},
 			"admin": false,
@@ -56,9 +72,9 @@
 		"_link": {
 			"title": "Link Discord -> Twitch",
 			"description": "Use a code from the bot to link your discord account to your twitch account",
-			"usage": ".taco link <code>",
-			"example": [
-				".taco link ABC123"
+			"usage": "{{prefix}}link <code>",
+			"examples": [
+				"{{prefix}}link ABC123"
 			],
 			"arguments": {
 				"code": {
@@ -74,9 +90,8 @@
 		"move": {
 			"title": "Move a message",
 			"description": "Moves a message from one channel to another. Must be ran in the channel that the message is in.",
-			"usage": ".taco move <message_id>",
-			"example": [
-				".taco move 12345678901234567890123456789"
+			"usage": "{{prefix}}move <message_id>",
+			"examples": [ "{{prefix}}move 12345678901234567890123456789"
 			],
 			"arguments": {
 				"message_id": {
@@ -92,8 +107,8 @@
 		"suggest": {
 			"title": "Create a Suggestion",
 			"description": "Starts a suggestion. I will DM you to ask you questions to create the suggestion.",
-			"usage": ".taco suggest",
-			"example": [ ".taco suggest" ],
+			"usage": "{{prefix}}suggest",
+			"examples": [ "{{prefix}}suggest" ],
 			"admin": false,
 			"arguments": {},
 			"fields": [],
@@ -102,7 +117,7 @@
 		"tqotd": {
 			"title": "Taco Quote of the Day",
 			"description": "Adds a question of the day",
-			"usage": ".taco tqotd [command]",
+			"usage": "{{prefix}}tqotd [command]",
 			"admin": true,
 			"arguments": {},
 			"fields": [],
@@ -110,9 +125,9 @@
 				"give": {
 					"title": "Give TQotD Tacos",
 					"description": "Gives TQotD tacos to the user who answered the question",
-					"usage": ".taco tqotd give <@user>",
-					"example": [
-						".taco tqotd give @DarthMinos#1161"
+					"usage": "{{prefix}}tqotd give <@user>",
+					"examples": [
+						"{{prefix}}tqotd give @DarthMinos#1161"
 					],
 					"arguments": {
 						"user": {
@@ -129,16 +144,16 @@
 		"tacos": {
 			"title": "Tacos Commands",
 			"description": "Commands that will give info on tacos🌮.",
-			"usage": ".taco tacos <command>",
+			"usage": "{{prefix}}tacos <command>",
 			"fields": [],
 			"admin": false,
 			"subcommands": {
 				"count": {
 					"title": "Get your taco count",
 					"description": "Retrieve the number of tacos you have.",
-					"usage": ".taco tacos count",
-					"example": [
-						".taco tacos count"
+					"usage": "{{prefix}}tacos count",
+					"examples": [
+						"{{prefix}}tacos count"
 					],
 					"arguments": {},
 					"fields": [],
@@ -147,10 +162,10 @@
 				"gift": {
 					"title": "Gift Tacos",
 					"description": "Gift someone a number of tacos. You can gift a maximum of 10 tacos per 24 hours (rolling).",
-					"usage": ".taco tacos gift <@user#1234> <amount> [reason]",
-					"example": [
-						".taco tacos gift @user#1234 10",
-						".taco tacos gift @user#1234 10 You are awesome!"
+					"usage": "{{prefix}}tacos gift <@user#1234> <amount> [reason]",
+					"examples": [
+						"{{prefix}}tacos gift @user#1234 10",
+						"{{prefix}}tacos gift @user#1234 10 You are awesome!"
 					],
 					"arguments": {
 						"user": {
@@ -178,10 +193,10 @@
 				"give": {
 					"title": "Give Tacos",
 					"description": "Allows an admin to give someone tacos.",
-					"usage": ".taco tacos give <@user#1234> <amount> [reason]",
-					"example": [
-						".taco tacos give @user#1234 10",
-						".taco tacos give @user#1234 10 You are awesome!"
+					"usage": "{{prefix}}tacos give <@user#1234> <amount> [reason]",
+					"examples": [
+						"{{prefix}}tacos give @user#1234 10",
+						"{{prefix}}tacos give @user#1234 10 You are awesome!"
 					],
 					"arguments": {
 						"user": {
@@ -210,10 +225,10 @@
 					"admin": true,
 					"title": "Purge Tacos",
 					"description": "Allows an admin to purge all tacos from a user.",
-					"usage": ".taco tacos purge <@user#1234> [reason]",
-					"example": [
-						".taco tacos purge @user#1234",
-						".taco tacos purge @user#1234 Exploited the taco system"
+					"usage": "{{prefix}}tacos purge <@user#1234> [reason]",
+					"examples": [
+						"{{prefix}}tacos purge @user#1234",
+						"{{prefix}}tacos purge @user#1234 Exploited the taco system"
 					],
 					"arguments": {
 						"user": {
@@ -235,16 +250,16 @@
 		"team": {
 			"title": "Twitch Team Commands",
 			"description": "Commands that will allow you to be a part of the Twitch Team.",
-			"usage": ".taco team <command>",
+			"usage": "{{prefix}}team <command>",
 			"fields": [],
 			"admin": false,
 			"subcommands": {
 				"invite": {
 					"title": "Request an invite to the team",
 					"description": "This will put in a request to join the twitch team. Once approved, you will have to accept it from your creator dashboard. Twitch Dashboard -> Settings -> Channel -> Featured Content => Scroll to the bottom.",
-					"usage": ".taco team invite <twitch_name>",
-					"example": [
-						".taco team invite darthminos"
+					"usage": "{{prefix}}team invite <twitch_name>",
+					"examples": [
+						"{{prefix}}team invite darthminos"
 					],
 					"arguments": {
 						"twitch_name": {
@@ -259,9 +274,9 @@
 				"invite-user": {
 					"title": "Invite a user to the team",
 					"description": "Admin version of the `invite` command. This will invite a user to the twitch team. Once approved, they will have to accept it from their creator dashboard. Twitch Dashboard -> Settings -> Channel -> Featured Content => Scroll to the bottom.",
-					"usage": ".taco team invite-user <@user#1234> <twitch_name>",
-					"example": [
-						".taco team invite-user @DarthMinos#1161 darthminos"
+					"usage": "{{prefix}}team invite-user <@user#1234> <twitch_name>",
+					"examples": [
+						"{{prefix}}team invite-user @DarthMinos#1161 darthminos"
 					],
 					"arguments": {
 						"user": {
@@ -283,9 +298,9 @@
 		"trivia": {
 			"title": "Trivia Commands",
 			"description": "Start a trivia question to earn tacos.",
-			"usage": ".taco trivia",
-			"example": [
-				".taco trivia"
+			"usage": "{{prefix}}trivia",
+			"examples": [
+				"{{prefix}}trivia"
 			],
 			"fields": [],
 			"arguments": {},
@@ -295,7 +310,7 @@
 		"twitch": {
 			"title": "Twitch Commands",
 			"description": "Commands to set up your Twitch account with Taco Bot.",
-			"usage": ".taco twitch <command>",
+			"usage": "{{prefix}}twitch <command>",
 			"fields": [],
 			"arguments": {},
 			"admin": false,
@@ -303,9 +318,9 @@
 				"set": {
 					"title": "Set your Twitch name",
 					"description": "Set your twitch name. This will allow the bot to know your twitch account associated with your discord account.",
-					"usage": ".taco twitch set [twitch_name]",
-					"example": [
-						".taco twitch set darthminos"
+					"usage": "{{prefix}}twitch set [twitch_name]",
+					"examples": [
+						"{{prefix}}twitch set darthminos"
 					],
 					"arguments": {
 						"twitch_name": {
@@ -319,9 +334,9 @@
 				"set-user": {
 					"title": "Set Twitch Username User",
 					"description": "Set a user's twitch name so Taco Bot can resolve a discord user to a twitch user, and vice versa.",
-					"usage": ".taco twitch set-user <@user#1234> [twitch_name]",
-					"example": [
-						"taco twitch set-user @DarthMinos#1161 darthminos"
+					"usage": "{{prefix}}twitch set-user <@user#1234> [twitch_name]",
+					"examples": [
+						"{{prefix}}twitch set-user @DarthMinos#1161 darthminos"
 					],
 					"arguments": {
 						"user": {
@@ -341,9 +356,9 @@
 				"get": {
 					"title": "Get Twitch User",
 					"description": "Will tell you what the twitch username is associated with your, or the specified, account.",
-					"usage": ".taco twitch get [@user#1234]",
-					"example": [
-						"taco twitch get @DarthMinos#1161"
+					"usage": "{{prefix}}twitch get [@user#1234]",
+					"examples": [
+						"{{prefix}}twitch get @DarthMinos#1161"
 					],
 					"arguments": {
 						"user": {

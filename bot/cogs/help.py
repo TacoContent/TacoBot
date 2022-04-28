@@ -109,6 +109,7 @@ class Help(commands.Cog):
             await self.root_help(ctx)
         else:
             await self.subcommand_help(ctx, command, subcommand)
+
     async def subcommand_help(self, ctx, command: str = None, subcommand: str = None):
         _method = inspect.stack()[1][3]
         if ctx.guild:
@@ -135,11 +136,11 @@ class Help(commands.Cog):
             if 'admin' in cmd:
                 is_admin = cmd['admin']
             shield = '🛡️' if is_admin else ''
-            fields.append({"name": f"{shield}{cmd['title']}", "value": cmd['message']})
-            fields.append({"name": 'help', "value": f"`{cmd['usage']}`"})
-            fields.append({"name": 'more', "value": f"`.taco help {command.lower()}`"})
-            if 'example' in cmd:
-                example_list = [ f"`{e}`" for e in cmd['example'] ]
+            fields.append({"name": f"{shield}{cmd['title']}", "value": cmd['description']})
+            fields.append({"name": 'help', "value": f"`{self._prefix(cmd['usage'])}`"})
+            fields.append({"name": 'more', "value": self.prefix(f'`{{{{prefix}}}} help {command.lower()}`')})
+            if 'examples' in cmd:
+                example_list = [ f"`{self._prefix(e)}`" for e in cmd['examples'] ]
                 if example_list and len(example_list) > 0:
                     examples = '\n'.join(example_list)
                     fields.append({"name": 'examples', "value": examples})
@@ -165,11 +166,11 @@ class Help(commands.Cog):
                     if 'admin' in scmd:
                         is_admin = scmd['admin']
                     shield = '🛡️' if is_admin else ''
-                    fields.append({"name": f"{shield}{scmd['title']}", "value": scmd['message']})
-                    fields.append({"name": 'help', "value": f"`{scmd['usage']}`"})
-                    fields.append({"name": 'more', "value": f"`.taco help {command} {k.lower()}`"})
-                    if 'example' in scmd:
-                        example_list = [ f"`{e}`" for e in scmd['example'] ]
+                    fields.append({"name": f"{shield}{scmd['title']}", "value": scmd['description']})
+                    fields.append({"name": 'help', "value": f"`{self.prefix(scmd['usage'])}`"})
+                    fields.append({"name": 'more', "value": self.prefix(f'`{{{{prefix}}}} help {command.lower()} {k.lower()}`')})
+                    if 'examples' in scmd:
+                        example_list = [ f"`{self._prefix(e)}`" for e in scmd['examples'] ]
                         if example_list and len(example_list) > 0:
                             examples = '\n'.join(example_list)
                             fields.append({"name": 'examples', "value": examples})
@@ -207,11 +208,11 @@ class Help(commands.Cog):
                     if 'admin' in cmd:
                         is_admin = cmd['admin']
                     shield = '🛡️' if is_admin else ''
-                    fields.append({"name": f"{shield}{cmd['title']}", "value": cmd['message']})
-                    fields.append({"name": 'help', "value": f"`{cmd['usage']}`"})
-                    fields.append({"name": 'more', "value": f"`.taco help {k.lower()}`"})
-                    if 'example' in cmd:
-                        example_list = [ f"`{e}`" for e in cmd['example'] ]
+                    fields.append({"name": f"{shield}{cmd['title']}", "value": cmd['description']})
+                    fields.append({"name": 'help', "value": f"`{self._prefix(cmd['usage'])}`"})
+                    fields.append({"name": 'more', "value": self.prefix(f'`{{{{prefix}}}} help {k.lower()}`')})
+                    if 'examples' in cmd:
+                        example_list = [ f"`{self._prefix(e)}`" for e in cmd['examples'] ]
                         if example_list and len(example_list) > 0:
                             examples = '\n'.join(example_list)
                             fields.append({"name": 'examples', "value": examples})
@@ -221,6 +222,13 @@ class Help(commands.Cog):
         except Exception as ex:
             self.log.error(guild_id, _method , str(ex), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
+
+    def clean_command_name(self, command):
+        return command.replace("_", " ").lower()
+
+    def _prefix(self, s):
+        return utils.str_replace(s, prefix=self.settings.get("prefixes", [".taco "]))
+
     @help.command(name="")
     async def help_command(self, ctx):
         pass
