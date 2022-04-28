@@ -50,7 +50,8 @@
 				"search_term": {
 					"required": false,
 					"type": "string",
-					"description": "The string to search for"
+					"description": "The string to search for",
+					"default": "taco"
 				}
 			},
 			"fields": [],
