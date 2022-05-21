@@ -142,7 +142,7 @@ class GameKeys(commands.Cog):
             action_row = create_actionrow(*buttons)
 
             offer_message = await self.discord_helper.sendEmbed(
-                ctx,
+                reward_channel,
                 self.settings.get_string(guild_id, "game_key_offer_title"),
                 self.settings.get_string(guild_id, "game_key_offer_message", cost=cost, tacos_word=tacos_word),
                 fields=fields,
