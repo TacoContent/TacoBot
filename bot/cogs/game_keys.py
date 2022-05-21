@@ -129,7 +129,7 @@ class GameKeys(commands.Cog):
                 {"name": self.settings.get_string(guild_id, "cost"), "value": f"{cost} {tacos_word}🌮"},
                 {
                     "name": self.settings.get_string(guild_id, "link"),
-                    "value": game_data.get("info_link", "[Unavailable]"),
+                    "value": game_data.get("info_url", "[Unavailable]"),
                 },
                 {
                     "name": self.settings.get_string(guild_id, "expires"),
