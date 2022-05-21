@@ -127,7 +127,14 @@ class GameKeys(commands.Cog):
                 {"name": self.settings.get_string(guild_id, "game"), "value": game_data.get("title", "UNKNOWN")},
                 {"name": self.settings.get_string(guild_id, "platform"), "value": game_data.get("platform", "UNKNOWN")},
                 {"name": self.settings.get_string(guild_id, "cost"), "value": f"{cost} {tacos_word}🌮"},
-                {"name": self.settings.get_string(guild_id, "expires"), "value": f"{expires.strftime('%Y-%m-%d %H:%M:%S')} UTC"},
+                {
+                    "name": self.settings.get_string(guild_id, "link"),
+                    "value": game_data.get("info_url", "[Unavailable]"),
+                },
+                {
+                    "name": self.settings.get_string(guild_id, "expires"),
+                    "value": f"{expires.strftime('%Y-%m-%d %H:%M:%S')} UTC",
+                },
             ]
 
             buttons = [
@@ -287,7 +294,9 @@ class GameKeys(commands.Cog):
                         "game_keys._claim_offer",
                         f"Game key {game_data['id']} already redeemed by {game_data['redeemed_by']}",
                     )
-                    await ctx.send(self.settings.get_string(guild_id, "game_key_already_redeemed_message"), delete_after=10)
+                    await ctx.send(
+                        self.settings.get_string(guild_id, "game_key_already_redeemed_message"), delete_after=10
+                    )
                     return False
                 if str(game_id) != str(offer["game_key_id"]) or str(game_data["_id"]) != str(game_id):
                     self.log.warn(
