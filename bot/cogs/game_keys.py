@@ -198,12 +198,16 @@ class GameKeys(commands.Cog):
 
             offer = self.db.find_open_game_key_offer(reward_channel.id)
             if offer:
-                offer_message = await reward_channel.fetch_message(int(offer["offer_message_id"]))
-                if offer_message:
-                    try:
-                        await offer_message.delete()
-                    except Exception as e:
-                        pass
+                try:
+                    offer_message = await reward_channel.fetch_message(int(offer["offer_message_id"]))
+                    if offer_message:
+                        try:
+                            await offer_message.delete()
+                        except Exception as e:
+                            pass
+                except discord.NotFound as nfe:
+                    self.log.debug(guild_id, "game_keys._create_offer", f"Offer message not found for guild {guild_id}")
+                    pass
                 self.db.close_game_key_offer(offer["game_key_id"])
             else:
                 self.log.debug(
