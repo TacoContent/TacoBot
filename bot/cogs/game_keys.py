@@ -272,7 +272,7 @@ class GameKeys(commands.Cog):
                     self.log.warn(
                         guild_id,
                         "game_keys._claim_offer",
-                        f"Requested game_id {game_id} does not match offer game_id {game_data['id']}",
+                        f"Requested game_id '{game_id}' does not match offer game id '{str(game_data['_id'])}'",
                     )
                     return False
             else:
@@ -296,7 +296,7 @@ class GameKeys(commands.Cog):
                 self.log.warn(
                     guild_id,
                     "game_keys._claim_offer",
-                    f"No game key found for game '{game_data['title']}' ({game_data['id']})",
+                    f"No game key found for game '{game_data['title']}' ({str(game_data['_id'])})",
                 )
                 await ctx.send(
                     self.settings.get_string(guild_id, "game_key_unable_to_claim_message", user=ctx.author.mention),
