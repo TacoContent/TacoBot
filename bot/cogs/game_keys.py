@@ -150,7 +150,7 @@ class GameKeys(commands.Cog):
                 components=[action_row],
             )
             # record offer
-            self.db.open_game_key_offer(game_data["id"], offer_message.id, ctx.channel.id)
+            self.db.open_game_key_offer(game_data["id"], guild_id, offer_message.id, ctx.channel.id)
             timeout = 60 * 60 * 24
             try:
                 button_ctx: ComponentContext = await wait_for_component(
@@ -196,7 +196,7 @@ class GameKeys(commands.Cog):
                 self.log.warn(guild_id, "game_keys._create_offer", f"No reward channel found for guild {guild_id}")
                 return
 
-            offer = self.db.find_open_game_key_offer(reward_channel.id)
+            offer = self.db.find_open_game_key_offer(guild_id, reward_channel.id)
             if offer:
                 try:
                     offer_message = await reward_channel.fetch_message(int(offer["message_id"]))
@@ -206,10 +206,11 @@ class GameKeys(commands.Cog):
                         except Exception as e:
                             pass
                 except discord.NotFound as nfe:
-                    self.db.
                     self.log.debug(guild_id, "game_keys._create_offer", f"Offer message not found for guild {guild_id}")
                     pass
-                self.db.close_game_key_offer(offer["game_key_id"])
+
+                self.db.close_game_key_offer_by_message(guild_id, int(offer["message_id"]))
+
             else:
                 self.log.debug(
                     guild_id,
@@ -262,7 +263,7 @@ class GameKeys(commands.Cog):
                 )
                 return False
 
-            offer = self.db.find_open_game_key_offer(reward_channel.id)
+            offer = self.db.find_open_game_key_offer(guild_id, reward_channel.id)
             game_data = None
             if offer:
                 game_data = self.db.get_game_key_data(str(offer["game_key_id"]))

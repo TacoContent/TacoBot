@@ -1094,11 +1094,11 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def find_open_game_key_offer(self, channel_id: int):
+    def find_open_game_key_offer(self, guild_id: int, channel_id: int):
         try:
             if self.connection is None:
                 self.open()
-            result = self.connection.game_key_offers.find_one({ "channel_id": str(channel_id) })
+            result = self.connection.game_key_offers.find_one({ "guild_id": str(guild_id), "channel_id": str(channel_id) })
             if result:
                 return result
             return None
