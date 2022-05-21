@@ -268,6 +268,15 @@ class GameKeys(commands.Cog):
                         f"No open offer found for game_key_id {offer['game_key_id']} in channel {reward_channel.name}",
                     )
                     return False
+                if game_data["redeemed_by"] is not None:
+                    # already redeemed
+                    self.log.debug(
+                        guild_id,
+                        "game_keys._claim_offer",
+                        f"Game key {game_data['id']} already redeemed by {game_data['redeemed_by']}",
+                    )
+                    await ctx.send(self.settings.get_string(guild_id, "game_key_already_redeemed_message"), delete_after=10)
+                    return False
                 if str(game_id) != str(offer["game_key_id"]) or str(game_data["_id"]) != str(game_id):
                     self.log.warn(
                         guild_id,
