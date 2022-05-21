@@ -1179,8 +1179,9 @@ class MongoDatabase(database.Database):
                 { "$match": { "redeemed_by": None } },
                 { "$sample": { "size": 1 } }
             ])
-            if result:
-                record = result[0]
+            records = list(result)
+            if records and len(records) > 0:
+                record = records[0]
                 return {
                     "id": record["_id"],
                     "title": record["title"],
