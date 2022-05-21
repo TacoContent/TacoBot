@@ -318,9 +318,13 @@ class GameKeys(commands.Cog):
                 download_link = game_data["download_link"]
                 if download_link:
                     download_link = f"\n\n{download_link}"
+                else:
+                    download_link = ""
                 help_link = game_data["help_link"]
                 if help_link:
                     help_link = f"\n\n{help_link}"
+                else:
+                    help_link = ""
                 await ctx.author.send(
                     self.settings.get_string(
                         guild_id,
@@ -336,7 +340,7 @@ class GameKeys(commands.Cog):
                 self.log.warn(
                     guild_id,
                     "game_keys._claim_offer",
-                    f"Unable to send game key for game '{game_data['title']}' ({game_data['id']})",
+                    f"Unable to send game key for game '{game_data['title']}' ({game_id})",
                 )
                 await ctx.send(
                     self.settings.get_string(guild_id, "game_key_unable_to_send_message", user=ctx.author.mention),
@@ -344,7 +348,7 @@ class GameKeys(commands.Cog):
                 )
                 return False
             # set the game as claimed
-            self.db.claim_game_key_offer(game_data["id"], ctx.author.id)
+            self.db.claim_game_key_offer(game_id, ctx.author.id)
             # remove the tacos from the user
             self.db.remove_tacos(guild_id, ctx.author.id, cost)
             # log that the offer was claimed
