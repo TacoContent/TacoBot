@@ -1186,7 +1186,7 @@ class MongoDatabase(database.Database):
                     "id": record["_id"],
                     "title": record["title"],
                     "platform": record["type"],
-                    "info_url": record["info_url"],
+                    "info_url": record["info_link"] or "",
                     "offered_by": record["user_owner"],
                 }
             return None

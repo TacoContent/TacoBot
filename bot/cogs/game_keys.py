@@ -118,7 +118,7 @@ class GameKeys(commands.Cog):
 
             game_data = self.db.get_random_game_key_data()
             if not game_data:
-                await ctx.send("No game keys available")
+                await ctx.send(self.settings.get_string(guild_id, "game_key_no_keys_found_message"), delete_after=10)
                 return
 
             offered_by = self.bot.fetch_user(int(game_data["offered_by"]))
@@ -206,7 +206,11 @@ class GameKeys(commands.Cog):
                         pass
                 self.db.close_game_key_offer(offer["game_key_id"])
             else:
-                self.log.debug(guild_id, "game_keys._close_offer", f"No open offer found for guild {guild_id} in channel {reward_channel.name}")
+                self.log.debug(
+                    guild_id,
+                    "game_keys._close_offer",
+                    f"No open offer found for guild {guild_id} in channel {reward_channel.name}",
+                )
         except Exception as e:
             self.log.error(ctx.guild.id, "game_keys._close_offer", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
@@ -258,7 +262,11 @@ class GameKeys(commands.Cog):
             if offer:
                 game_data = self.db.get_game_key(offer["game_key_id"])
                 if game_id != str(game_data["id"]):
-                    self.log.warn(guild_id, "game_keys._claim_offer", f"Requested game_id {game_id} does not match offer game_id {game_data['id']}")
+                    self.log.warn(
+                        guild_id,
+                        "game_keys._claim_offer",
+                        f"Requested game_id {game_id} does not match offer game_id {game_data['id']}",
+                    )
                     return False
             else:
                 self.log.warn(
@@ -320,7 +328,7 @@ class GameKeys(commands.Cog):
                 )
                 return False
             # set the game as claimed
-            self.db.claim_game_key_offer(game_data['id'], ctx.author.id)
+            self.db.claim_game_key_offer(game_data["id"], ctx.author.id)
             # remove the tacos from the user
             self.db.remove_tacos(guild_id, ctx.author.id, cost)
             # log that the offer was claimed
