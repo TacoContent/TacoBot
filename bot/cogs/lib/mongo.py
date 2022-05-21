@@ -1158,7 +1158,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def get_game_key(self, game_key_id: str):
+    def get_game_key_data(self, game_key_id: str):
         try:
             if self.connection is None:
                 self.open()

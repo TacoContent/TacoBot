@@ -260,7 +260,7 @@ class GameKeys(commands.Cog):
             offer = self.db.find_open_game_key_offer(reward_channel.id)
             game_data = None
             if offer:
-                game_data = self.db.get_game_key(str(offer["game_key_id"]))
+                game_data = self.db.get_game_key_data(str(offer["game_key_id"]))
                 if not game_data:
                     self.log.debug(
                         guild_id,
@@ -268,7 +268,7 @@ class GameKeys(commands.Cog):
                         f"No open offer found for game_key_id {offer['game_key_id']} in channel {reward_channel.name}",
                     )
                     return False
-                if game_id != str(game_data["id"]):
+                if game_id != str(game_data["_id"]):
                     self.log.warn(
                         guild_id,
                         "game_keys._claim_offer",
