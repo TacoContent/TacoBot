@@ -268,11 +268,11 @@ class GameKeys(commands.Cog):
                         f"No open offer found for game_key_id {offer['game_key_id']} in channel {reward_channel.name}",
                     )
                     return False
-                if game_id != str(game_data["_id"]):
+                if str(game_id) != str(offer["game_key_id"]) or str(game_data["_id"]) != str(game_id):
                     self.log.warn(
                         guild_id,
                         "game_keys._claim_offer",
-                        f"Requested game_id '{game_id}' does not match offer game id '{str(game_data['_id'])}'",
+                        f"Requested game_id ('{str(game_id)}') with offer game_key_id ('{str(offer['game_key_id'])}') does not match offer game id '{str(game_data['_id'])}'",
                     )
                     return False
             else:
