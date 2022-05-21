@@ -50,6 +50,7 @@ class TacoQuestionOfTheDay(commands.Cog):
     async def tqotd(self, ctx: ComponentContext):
         if ctx.invoked_subcommand is not None:
             return
+        guild_id = 0
         try:
             await ctx.message.delete()
             guild_id = 0

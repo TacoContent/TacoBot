@@ -18,6 +18,8 @@
 	"day": "Day",
 	"game": "Game",
 	"platform": "Platform",
+	"cost": "Cost",
+	"expires": "Expires",
 	"no_one": "No one",
 	"no_reason": "No reason given.",
 	"moved_by": "Moved by {{user}}",
@@ -93,5 +95,17 @@
 	"twitch_ask_message": "{{user}}, Please respond with the twitch name you want to set for yourself.",
 	"twitch_ask_title": "Twitch Name",
 	"twitch_set_title": "Twitch Name Set",
-	"twitch_set_message": "{{user}}, Your Twitch name has been set to {{twitch_name}}.\n\nIf you change your twitch name in the future, you can use `.taco twitch set` in a discord channel, or `.twitch set` in the DM with me."
+	"twitch_set_message": "{{user}}, Your Twitch name has been set to {{twitch_name}}.\n\nIf you change your twitch name in the future, you can use `.taco twitch set` in a discord channel, or `.twitch set` in the DM with me.",
+	"minecraft_ask_username_title": "Minecraft Username",
+	"minecraft_ask_username_message": "{{user}}, Please respond with your Minecraft username.\n\nRespond with `cancel` to cancel.",
+	"minecraft_confirm_user_message": "{{user}}, Does this look like your Minecraft Avatar?",
+	"game_key_claim_button": "Claim {{tacos}} {{taco_word}}🌮",
+	"game_key_offer_title": "TACO Game Key Offer",
+	"game_key_offer_message": "I have a game key for you. Please claim it by clicking the **CLAIM** button below. It will cost {{cost}} {{tacos_word}}🌮. If it is not claimed it in 24 hours, this offer will be removed and a new game will be offered.",
+	"game_key_not_enough_tacos_message": "{{user}}, You need {{cost}} {{tacos_word}}🌮 to claim this offer. You only have {{taco_count}} {{tacos_word}}🌮.",
+	"game_key_unable_to_claim_message": "{{user}}, I was unable to claim the offer. The error has been logged. No tacos have been removed.",
+	"game_key_unable_to_send_message": "{{user}}, I was unable to send the game key via DM. No tacos have been removed.",
+	"game_key_claim_log_message": "{{user}} claimed '{{game}}' game key for {{tacos}} {{taco_word}}🌮",
+	"game_key_unclaimed_log_message": "{{game}} was unclaimed in the 24 hour period. A new offer will be made.",
+	"game_key_claim_message": "Your game key for **{{game}}** is **{{game_key}}**.\n\nThis key is for {{platform}}.\n\nThis key is not to be used for a giveaway.{{help_link}}{{download_link}}"
 }

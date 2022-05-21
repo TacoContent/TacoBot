@@ -6,6 +6,8 @@ import datetime
 import pytz
 
 import uuid
+
+from bot.cogs.lib.minecraft_op import MinecraftOpLevel
 # from discord.ext.commands.converter import CategoryChannelConverter
 from . import database
 from . import settings
@@ -1035,3 +1037,161 @@ class MongoDatabase(database.Database):
             raise ex
         finally:
             self.close()
+
+    def get_minecraft_user(self, userId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            result = self.connection.minecraft_users.find_one({ "user_id": str(userId) })
+            if result:
+                return result
+            return None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def whitelist_minecraft_user(self, userId: int, username: str, uuid: str, whitelist: bool = True):
+        try:
+            if self.connection is None:
+                self.open()
+            payload = {
+                "user_id": str(userId),
+                "username": username,
+                "uuid": uuid,
+                "whitelist": whitelist
+            }
+            self.connection.minecraft_users.update_one( { "user_id": str(userId) }, { "$set": payload }, upsert=True )
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def op_minecraft_user(self, userId: int, username: str, uuid: str, op: bool = True, level: MinecraftOpLevel = MinecraftOpLevel.LEVEL1, bypassPlayerCount: bool = False):
+        try:
+            if self.connection is None:
+                self.open()
+            payload = {
+                "user_id": str(userId),
+                "username": username,
+                "uuid": uuid,
+                "op": {
+                    "enabled": op,
+                    "level": int(level),
+                    "bypassesPlayerLimit": bypassPlayerCount
+                }
+            }
+            self.connection.minecraft_users.update_one( { "user_id": str(userId) }, { "$set": payload }, upsert=True )
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def find_open_game_key_offer(self, channel_id: int):
+        try:
+            if self.connection is None:
+                self.open()
+            result = self.connection.game_key_offers.find_one({ "channel_id": str(channel_id) })
+            if result:
+                return result
+            return None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def open_game_key_offer(self, game_key_id, message_id:int, channel_id: int):
+        try:
+            if self.connection is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            payload = {
+                "game_key_id": str(game_key_id),
+                "message_id": str(message_id),
+                "channel_id": str(channel_id),
+                "timestamp": timestamp
+            }
+            self.connection.game_key_offers.update_one( { "game_key_id": game_key_id }, { "$set": payload }, upsert=True )
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def close_game_key_offer(self, game_key_id):
+        try:
+            if self.connection is None:
+                self.open()
+            self.connection.game_key_offers.delete_one({ "game_key_id": game_key_id })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def claim_game_key_offer(self, game_key_id, user_id: int):
+        try:
+            if self.connection is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            payload = {
+                "redeemed_by": str(user_id),
+                "redeemed_timestamp": timestamp
+            }
+            self.connection.game_keys.update_one( { "_id": game_key_id }, { "$set": payload }, upsert=True )
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            raise ex
+        finally:
+            if self.connection:
+                self.close()
+
+    def get_game_key(self, game_key_id):
+        try:
+            if self.connection is None:
+                self.open()
+            result = self.connection.game_keys.find_one({ "_id": game_key_id })
+            if result:
+                return result
+            return None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+    def get_random_game_key_data(self):
+        try:
+            if self.connection is None:
+                self.open()
+            result = self.connection.game_keys.aggregate([
+                { "$match": { "redeemed_by": None } },
+                { "$sample": { "size": 1 } }
+            ])
+            if result:
+                record = result[0]
+                return {
+                    "id": record["_id"],
+                    "title": record["title"],
+                    "platform": record["type"],
+                    "info_url": record["info_url"],
+                    "offered_by": record["user_owner"],
+                }
+            return None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
