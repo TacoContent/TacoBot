@@ -59,13 +59,23 @@ class GameKeys(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def open(self, ctx) -> None:
-        await self._create_offer(ctx)
+        try:
+            await ctx.message.delete()
+            await self._create_offer(ctx)
+        except Exception as e:
+            self.log.error(ctx.guild.id, "game_keys.open", str(e), traceback.format_exc())
+            await self.discord_helper.notify_of_error(ctx)
 
     @game_keys.command(name="close")
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def close(self, ctx):
-        await self._close_offer(ctx)
+        try:
+            await ctx.message.delete()
+            await self._close_offer(ctx)
+        except Exception as e:
+            self.log.error(ctx.guild.id, "game_keys.close", str(e), traceback.format_exc())
+            await self.discord_helper.notify_of_error(ctx)
 
     async def _create_offer(self, ctx) -> None:
         try:
