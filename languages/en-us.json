@@ -21,6 +21,7 @@
 	"cost": "Cost",
 	"expires": "Expires",
 	"no_one": "No one",
+	"error_ocurred": "Something happened that wasn't supposed to. The error has been logged, and I am sure I will be fixed as soon as possible.",
 	"no_reason": "No reason given.",
 	"moved_by": "Moved by {{user}}",
 	"developed_by": "{{bot_name}} v{{version}} developed by {{user}}",

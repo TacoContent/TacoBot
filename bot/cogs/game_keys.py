@@ -121,7 +121,7 @@ class GameKeys(commands.Cog):
                 await ctx.send(self.settings.get_string(guild_id, "game_key_no_keys_found_message"), delete_after=10)
                 return
 
-            offered_by = self.bot.fetch_user(int(game_data["offered_by"]))
+            offered_by = await self.bot.fetch_user(int(game_data["offered_by"]))
             expires = datetime.datetime.now() + datetime.timedelta(days=1)
             fields = [
                 {"name": self.settings.get_string(guild_id, "game"), "value": game_data.get("title", "UNKNOWN")},
