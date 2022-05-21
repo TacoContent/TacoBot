@@ -317,8 +317,11 @@ class GameKeys(commands.Cog):
                     self.settings.get_string(guild_id, "game_key_unable_to_claim_message", user=ctx.author.mention),
                     delete_after=10,
                 )
-                await self._close_offer(ctx)
-                await self._create_offer(ctx)
+                # need to create a new ctx for this
+                # bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
+                new_ctx = self.discord_helper.create_context(self.bot, author=ctx.bot.user, guild=ctx.guild, channel=reward_channel, message=None, invoked_subcommand=None)
+                await self._close_offer(new_ctx)
+                await self._create_offer(new_ctx)
                 return False
             try:
                 download_link = game_data["download_link"]
@@ -370,7 +373,10 @@ class GameKeys(commands.Cog):
                     )
                 )
             # create a new offer
-            await self._create_offer(ctx)
+            # need to create a new ctx for this
+            # bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
+            new_ctx = self.discord_helper.create_context(self.bot, author=ctx.bot.user, guild=ctx.guild, channel=reward_channel, message=None, invoked_subcommand=None)
+            await self._create_offer(new_ctx)
             return True
         except Exception as e:
             self.log.error(ctx.guild.id, "game_keys._claim_offer", str(e), traceback.format_exc())
