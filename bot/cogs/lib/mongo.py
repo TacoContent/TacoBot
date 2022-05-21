@@ -1094,11 +1094,11 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def find_open_game_key_offer(self, channel_id: int):
+    def find_open_game_key_offer(self, guild_id: int, channel_id: int):
         try:
             if self.connection is None:
                 self.open()
-            result = self.connection.game_key_offers.find_one({ "channel_id": str(channel_id) })
+            result = self.connection.game_key_offers.find_one({ "guild_id": str(guild_id), "channel_id": str(channel_id) })
             if result:
                 return result
             return None
@@ -1109,30 +1109,41 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def open_game_key_offer(self, game_key_id: str, message_id:int, channel_id: int):
+    def open_game_key_offer(self, game_key_id: str, guild_id: int, message_id:int, channel_id: int):
         try:
             if self.connection is None:
                 self.open()
             timestamp = utils.to_timestamp(datetime.datetime.utcnow())
             payload = {
+                "guild_id": str(guild_id),
                 "game_key_id": str(game_key_id),
                 "message_id": str(message_id),
                 "channel_id": str(channel_id),
                 "timestamp": timestamp
             }
-            self.connection.game_key_offers.update_one( { "game_key_id": game_key_id }, { "$set": payload }, upsert=True )
+            self.connection.game_key_offers.update_one( { "guild_id": str(guild_id), "game_key_id": game_key_id }, { "$set": payload }, upsert=True )
         except Exception as ex:
             print(ex)
             traceback.print_exc()
         finally:
             if self.connection:
                 self.close()
-
-    def close_game_key_offer(self, game_key_id: str):
+    def close_game_key_offer_by_message(self, guild_id: int, message_id: int):
         try:
             if self.connection is None:
                 self.open()
-            self.connection.game_key_offers.delete_one({ "game_key_id": game_key_id })
+            self.connection.game_key_offers.delete_one({ "guild_id": str(guild_id), "message_id": str(message_id) })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+    def close_game_key_offer(self, guild_id: int, game_key_id: str):
+        try:
+            if self.connection is None:
+                self.open()
+            self.connection.game_key_offers.delete_one({ "guild_id": str(guild_id), "game_key_id": game_key_id })
         except Exception as ex:
             print(ex)
             traceback.print_exc()
