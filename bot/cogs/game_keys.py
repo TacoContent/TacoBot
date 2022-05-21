@@ -127,7 +127,7 @@ class GameKeys(commands.Cog):
                 {"name": self.settings.get_string(guild_id, "game"), "value": game_data.get("title", "UNKNOWN")},
                 {"name": self.settings.get_string(guild_id, "platform"), "value": game_data.get("platform", "UNKNOWN")},
                 {"name": self.settings.get_string(guild_id, "cost"), "value": f"{cost} {tacos_word}🌮"},
-                {"name": self.settings.get_string(guild_id, "expires"), "value": expires.strftime("%Y-%m-%d %H:%M:%S")},
+                {"name": self.settings.get_string(guild_id, "expires"), "value": f"{expires.strftime('%Y-%m-%d %H:%M:%S')} UTC"},
             ]
 
             buttons = [
