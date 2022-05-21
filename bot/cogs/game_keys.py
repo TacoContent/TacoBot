@@ -164,10 +164,16 @@ class GameKeys(commands.Cog):
             else:
                 claimed = await self._claim_offer(button_ctx, game_data.get("id", None))
                 if claimed:
-                    try:
-                        await offer_message.delete()
-                    except Exception as e:
-                        pass
+                    # try:
+                    #     await offer_message.delete()
+                    # except Exception as e:
+                    #     pass
+                    # create a new offer
+                    # need to create a new ctx for this
+                    # bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
+                    # new_ctx = self.discord_helper.create_context(self.bot, author=ctx.bot.user, guild=ctx.guild, channel=reward_channel, message=None, invoked_subcommand=None)
+                    await self._create_offer(ctx)
+
                 # else:
                 #   the claim failed, so do not claim this offer
         except Exception as e:
@@ -319,10 +325,9 @@ class GameKeys(commands.Cog):
                 )
                 # need to create a new ctx for this
                 # bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
-                new_ctx = self.discord_helper.create_context(self.bot, author=ctx.bot.user, guild=ctx.guild, channel=reward_channel, message=None, invoked_subcommand=None)
-                await self._close_offer(new_ctx)
-                await self._create_offer(new_ctx)
-                return False
+                # new_ctx = self.discord_helper.create_context(self.bot, author=ctx.bot.user, guild=ctx.guild, channel=reward_channel, message=None, invoked_subcommand=None)
+                # await self._create_offer(new_ctx)
+                raise Exception(f"No game key found for game '{game_data['title']}' ({str(game_data['_id'])})")
             try:
                 download_link = game_data["download_link"]
                 if download_link:
@@ -372,16 +377,9 @@ class GameKeys(commands.Cog):
                         tacos_word=tacos_word,
                     )
                 )
-            # create a new offer
-            # need to create a new ctx for this
-            # bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
-            new_ctx = self.discord_helper.create_context(self.bot, author=ctx.bot.user, guild=ctx.guild, channel=reward_channel, message=None, invoked_subcommand=None)
-            await self._create_offer(new_ctx)
             return True
         except Exception as e:
-            self.log.error(ctx.guild.id, "game_keys._claim_offer", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
-            return False
+            raise e
 
     def get_cog_settings(self, guildId: int = 0):
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
