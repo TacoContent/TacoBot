@@ -1,4 +1,5 @@
 from pymongo import MongoClient
+from bson.objectid import ObjectId
 import traceback
 import json
 import typing
@@ -1108,7 +1109,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def open_game_key_offer(self, game_key_id, message_id:int, channel_id: int):
+    def open_game_key_offer(self, game_key_id: str, message_id:int, channel_id: int):
         try:
             if self.connection is None:
                 self.open()
@@ -1127,7 +1128,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def close_game_key_offer(self, game_key_id):
+    def close_game_key_offer(self, game_key_id: str):
         try:
             if self.connection is None:
                 self.open()
@@ -1139,7 +1140,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def claim_game_key_offer(self, game_key_id, user_id: int):
+    def claim_game_key_offer(self, game_key_id: str, user_id: int):
         try:
             if self.connection is None:
                 self.open()
@@ -1148,7 +1149,7 @@ class MongoDatabase(database.Database):
                 "redeemed_by": str(user_id),
                 "redeemed_timestamp": timestamp
             }
-            self.connection.game_keys.update_one( { "_id": game_key_id }, { "$set": payload }, upsert=True )
+            self.connection.game_keys.update_one( { "_id": ObjectId(game_key_id) }, { "$set": payload }, upsert=True )
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -1157,11 +1158,11 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def get_game_key(self, game_key_id):
+    def get_game_key(self, game_key_id: str):
         try:
             if self.connection is None:
                 self.open()
-            result = self.connection.game_keys.find_one({ "_id": game_key_id })
+            result = self.connection.game_keys.find_one({ "_id": ObjectId(game_key_id) })
             if result:
                 return result
             return None
