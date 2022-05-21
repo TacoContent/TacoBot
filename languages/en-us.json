@@ -109,5 +109,6 @@
 	"game_key_claim_log_message": "{{user}} claimed '{{game}}' game key for {{tacos}} {{tacos_word}}🌮",
 	"game_key_unclaimed_log_message": "{{game}} was unclaimed in the 24 hour period. A new offer will be made.",
 	"game_key_no_keys_found_message": "I was unable to find any game keys to start a new offer. Please try again later.",
+	"game_key_no_game_data_message": "I was unable to locate the key based on the offer",
 	"game_key_claim_message": "Your game key for **{{game}}** is **{{game_key}}**.\n\nThis key is for {{platform}}.\n\nThis key is not to be used for a giveaway.{{help_link}}{{download_link}}"
 }

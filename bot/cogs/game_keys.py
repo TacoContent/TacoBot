@@ -288,7 +288,7 @@ class GameKeys(commands.Cog):
                     "game_keys._claim_offer",
                     f"No game_key found while looking up id '{offer['game_key_id']}'",
                 )
-                await ctx.send("No game data found for the game.", delete_after=10)
+                await ctx.send(self.settings.get_string(guild_id, "game_key_no_game_data_message"), delete_after=10)
                 return False
 
             # send them the game key
@@ -318,7 +318,7 @@ class GameKeys(commands.Cog):
                         "game_key_claim_message",
                         game=game_data["title"],
                         game_key=game_data["key"],
-                        platform=game_data["platform"],
+                        platform=game_data["type"],
                         download_link=download_link,
                         help_link=help_link,
                     ),
