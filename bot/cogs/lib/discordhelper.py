@@ -57,7 +57,8 @@ class DiscordHelper:
             "message": message,
             "invoked_subcommand": invoked_subcommand,
         }
-        ctx = collections.namedtuple("Context", ctx_dict.keys())(*ctx_dict.values())
+        merged_ctx = {**ctx_dict, **kwargs}
+        ctx = collections.namedtuple("Context", merged_ctx.keys())(*merged_ctx.values())
         return ctx
 
     async def move_message(

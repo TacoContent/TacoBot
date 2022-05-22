@@ -77,6 +77,15 @@ class GameKeys(commands.Cog):
             self.log.error(ctx.guild.id, "game_keys.close", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
+
+    # @commands.Cog.listener()
+    # async def on_component(self, ctx: ComponentContext):
+    #     self.log.debug(ctx.guild.id, "game_keys.on_component", f"Received component {ctx.component_name}")
+    #     await ctx.defer(
+    #         ignore=True
+    #     )  # ignore, i.e. don't do anything *with the button* when it's pressed.
+    #     pass
+
     async def _create_offer(self, ctx) -> None:
         try:
             guild_id = 0
@@ -143,7 +152,8 @@ class GameKeys(commands.Cog):
                     label=self.settings.get_string(
                         ctx.guild.id, "game_key_claim_button", tacos=cost, tacos_word=tacos_word
                     ),
-                    custom_id="CLAIM",
+                    # custom_id="CLAIM",
+                    custom_id=game_data["id"],
                 ),
             ]
             action_row = create_actionrow(*buttons)
@@ -163,13 +173,15 @@ class GameKeys(commands.Cog):
                 button_ctx: ComponentContext = await wait_for_component(
                     self.bot, components=action_row, timeout=timeout
                 )
+                await button_ctx.defer(ignore = True)
             except asyncio.TimeoutError:
                 try:
                     await self._create_offer(ctx)
                 except Exception as e:
                     self.log.error(ctx.guild.id, "game_keys._create_offer", str(e), traceback.format_exc())
             else:
-                claimed = await self._claim_offer(button_ctx, game_data.get("id", None))
+                new_ctx = self.discord_helper.create_context(self.bot, author=ctx.author, channel=ctx.channel, message=ctx.message, guild=ctx.guild, custom_id=button_ctx.custom_id)
+                claimed = await self._claim_offer(new_ctx, game_data.get("id", None))
                 if claimed:
                     # try:
                     #     await offer_message.delete()
@@ -263,7 +275,7 @@ class GameKeys(commands.Cog):
             # does the user have enough tacos?
             taco_count = self.db.get_tacos_count(guild_id, ctx.author.id)
             if taco_count < cost:
-                await ctx.send(
+                await ctx.channel.send(
                     self.settings.get_string(
                         guild_id,
                         "game_key_not_enough_tacos_message",
@@ -328,7 +340,7 @@ class GameKeys(commands.Cog):
                     "game_keys._claim_offer",
                     f"No game key found for game '{game_data['title']}' ({str(game_data['_id'])})",
                 )
-                await ctx.send(
+                await ctx.channel.send(
                     self.settings.get_string(guild_id, "game_key_unable_to_claim_message", user=ctx.author.mention),
                     delete_after=10,
                 )
