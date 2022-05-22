@@ -153,7 +153,7 @@ class GameKeys(commands.Cog):
                         ctx.guild.id, "game_key_claim_button", tacos=cost, tacos_word=tacos_word
                     ),
                     # custom_id="CLAIM",
-                    custom_id=game_data["id"],
+                    custom_id=str(game_data["id"]),
                 ),
             ]
             action_row = create_actionrow(*buttons)
