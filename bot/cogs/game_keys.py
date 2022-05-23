@@ -180,7 +180,7 @@ class GameKeys(commands.Cog):
                 except Exception as e:
                     self.log.error(ctx.guild.id, "game_keys._create_offer", str(e), traceback.format_exc())
             else:
-                new_ctx = self.discord_helper.create_context(self.bot, author=ctx.author, channel=ctx.channel, message=ctx.message, guild=ctx.guild, custom_id=button_ctx.custom_id)
+                new_ctx = self.discord_helper.create_context(self.bot, author=button_ctx.author, channel=ctx.channel, message=ctx.message, guild=ctx.guild, custom_id=button_ctx.custom_id)
                 claimed = await self._claim_offer(new_ctx, game_data.get("id", None))
                 if claimed:
                     # try:
