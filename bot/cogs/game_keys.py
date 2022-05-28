@@ -173,9 +173,10 @@ class GameKeys(commands.Cog):
                 button_ctx: ComponentContext = await wait_for_component(
                     self.bot, components=action_row, timeout=timeout
                 )
-                await button_ctx.defer(ignore = True)
+                await button_ctx.defer(ignore=True)
             except asyncio.TimeoutError:
                 try:
+                    self.log.debug(guild_id, "game_keys._create_offer", f"Timeout waiting for claim button press.")
                     await self._create_offer(ctx)
                 except Exception as e:
                     self.log.error(ctx.guild.id, "game_keys._create_offer", str(e), traceback.format_exc())
@@ -183,21 +184,23 @@ class GameKeys(commands.Cog):
                 new_ctx = self.discord_helper.create_context(self.bot, author=button_ctx.author, channel=ctx.channel, message=ctx.message, guild=ctx.guild, custom_id=button_ctx.custom_id)
                 claimed = await self._claim_offer(new_ctx, game_data.get("id", None))
                 if claimed:
-                    # try:
-                    #     await offer_message.delete()
-                    # except Exception as e:
-                    #     pass
-                    # create a new offer
-                    # need to create a new ctx for this
-                    # bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
-                    # new_ctx = self.discord_helper.create_context(self.bot, author=ctx.bot.user, guild=ctx.guild, channel=reward_channel, message=None, invoked_subcommand=None)
+                    self.log.debug(guild_id, "game_keys._create_offer", f"Claimed offer for id {button_ctx.custom_id}")
                     await self._create_offer(ctx)
-
-                # else:
-                #   the claim failed, so do not claim this offer
+                else:
+                    self.log.debug(guild_id, "game_keys._create_offer", f"Failed to claim offer for id {button_ctx.custom_id}")
+                    # check if expired offer.
         except Exception as e:
             self.log.error(ctx.guild.id, "game_keys._create_offer", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
+
+    # async def _wait_or_new_offer(self, ctx):
+    #     try:
+    #         await asyncio.wait_for(self.eternity(), timeout=1.0)
+    #     except asyncio.TimeoutError:
+    #         await self._create_offer(ctx)
+    # async def eternity(self):
+    #     # Sleep for 2 days
+    #     await asyncio.sleep((60 * 60 * 24) * 2)
 
     async def _close_offer(self, ctx) -> None:
         # get the current offer and close it
