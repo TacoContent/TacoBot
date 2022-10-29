@@ -112,5 +112,10 @@
 	"game_key_no_keys_found_message": "I was unable to find any game keys to start a new offer. Please try again later.",
 	"game_key_no_game_data_message": "I was unable to locate the key based on the offer",
 	"game_key_already_redeemed_message": "{{user}}, This offer has already been claimed, but there will be a new game available soon. No tacos have been removed.",
-	"game_key_claim_message": "Your game key for **{{game}}** is **{{game_key}}**.\n\nThis key is for {{platform}}.\n\nThank you for being an active part of the TACO Community. Please remember that this key is not to be used for a giveaway.{{help_link}}{{download_link}}"
+	"game_key_claim_message": "Your game key for **{{game}}** is **{{game_key}}**.\n\nThis key is for {{platform}}.\n\nThank you for being an active part of the TACO Community. Please remember that this key is not to be used for a giveaway.{{help_link}}{{download_link}}",
+	"wdyctw_reason_default": "answering WDYCTW",
+	"wdyctw_out_message": "{{question}}\n\n{{taco_count}} {{taco_word}} 🌮 for answering.",
+	"wdyctw_out_title": "What do you call this Wednesday!",
+	"wdyctw_ask_title": "What is the What do you call this Wednesday question?",
+	"wdyctw_ask_message": "Please respond with the question you would like to ask.\n\nRespond with `cancel` to cancel."
 }
