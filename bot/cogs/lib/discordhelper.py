@@ -852,6 +852,10 @@ class DiscordHelper:
             await text_ask.delete()
         return textResp.content
 
+    async def ask_for_image_or_text(
+        
+    )
+
     async def ask_role_list(
         self,
         ctx,

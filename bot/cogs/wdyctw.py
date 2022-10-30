@@ -109,9 +109,9 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             await self.discord_helper.sendEmbed(channel=out_channel,
                 title=self.settings.get_string(guild_id, "wdyctw_out_title"),
                 message=out_message, content=role_tag, color=0x00ff00,
-                image=None, thumbnail=None, footer=None, author=None,
+                image=wdyctw_image, thumbnail=None, footer=None, author=None,
                 fields=None, delete_after=self.SELF_DESTRUCT_TIMEOUT)
-            # save the TQOTD
+            # save the WDYCTW to the database
             self.db.save_wdyctw(guild_id, qotd, ctx.author.id)
 
         except Exception as e:
