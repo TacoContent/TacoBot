@@ -87,13 +87,13 @@ class LiveNow(commands.Cog):
             # check if the user is in any of the "add" roles, but has no streaming activity
             # remove them from those roles
             if len(before_streaming_activities) == 0 and len(after_streaming_activities) == 0:
-                self.log.info(guild_id, "live_now.on_member_update", f"no streaming activity found for {before.display_name}, checking if they are in any of the add roles")
+                # self.log.info(guild_id, "live_now.on_member_update", f"no streaming activity found for {before.display_name}, checking if they are in any of the add roles")
                 watch_groups = cog_settings.get("watch", [])
                 for wg in watch_groups:
                     watch_roles = wg.get("roles", [])
                     add_roles = wg.get("remove_roles", [])
                     remove_roles = wg.get("add_roles", [])
-                    self.log.info(guild_id, "live_now.on_member_update", f"updating roles for {before.display_name}")
+                    # self.log.info(guild_id, "live_now.on_member_update", f"updating roles for {before.display_name}")
                     await self.add_remove_roles(user=after, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
                 return
 
@@ -272,7 +272,7 @@ class LiveNow(commands.Cog):
                         twitch_name = image_url.replace("twitch:", "")
                         profile_icon = self.get_user_profile_image(twitch_name)
 
-                    self.log.debug(guild_id, "live_now.log_live_post", f"Found large image {image_url}")
+                    # self.log.debug(guild_id, "live_now.log_live_post", f"Found large image {image_url}")
 
             message = await self.discord_helper.sendEmbed(logging_channel,
                 f"🔴 {user.display_name}", description,
@@ -301,16 +301,16 @@ class LiveNow(commands.Cog):
                         if role and role in user.roles:
                             role_list.append(role)
                             self.log.info(guild_id, "live_now.add_remove_roles", f"Removed role {role.name} from user {user.display_name}")
-                        else:
-                            self.log.error(guild_id, "live_now.add_remove_roles", f"Role {role_id} not found")
+                        # else:
+                        #     self.log.error(guild_id, "live_now.add_remove_roles", f"Role {role_id} not found")
 
                     if role_list and len(role_list) > 0:
                         try:
                             await user.remove_roles(*role_list)
                         except Exception as e:
                             self.log.warn(guild_id, "live_now.add_remove_roles", str(e), traceback.format_exc())
-                else:
-                    self.log.info(guild_id, "live_now.add_remove_roles", f"No roles to remove from user {user.display_name}")
+                # else:
+                #     self.log.info(guild_id, "live_now.add_remove_roles", f"No roles to remove from user {user.display_name}")
 
                 # add the existing roles back to the user
                 if add_list:
@@ -320,8 +320,8 @@ class LiveNow(commands.Cog):
                         if role and role not in user.roles:
                             role_list.append(role)
                             self.log.info(guild_id, "live_now.add_remove_roles", f"Added role {role.name} to user {user.display_name}")
-                        else:
-                            self.log.error(guild_id, "live_now.add_remove_roles", f"Role {role_id} not found")
+                        # else:
+                        #     self.log.error(guild_id, "live_now.add_remove_roles", f"Role {role_id} not found")
 
                     if role_list and len(role_list) > 0:
                         try:
@@ -329,10 +329,10 @@ class LiveNow(commands.Cog):
                         except Exception as e:
                             self.log.warn(guild_id, "live_now.add_remove_roles", str(e), traceback.format_exc())
 
-                else:
-                    self.log.info(guild_id, "live_now.add_remove_roles", f"No roles to add to user {user.display_name}")
-            else:
-                self.log.debug(guild_id, "live_now.add_remove_roles", f"User {user.display_name} is not in any of the watch roles")
+                # else:
+                #     self.log.info(guild_id, "live_now.add_remove_roles", f"No roles to add to user {user.display_name}")
+            # else:
+            #     self.log.debug(guild_id, "live_now.add_remove_roles", f"User {user.display_name} is not in any of the watch roles")
 
 
     def find_platform_emoji(self, guild: discord.Guild, platform: str):
