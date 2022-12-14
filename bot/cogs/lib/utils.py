@@ -116,6 +116,7 @@ def isAdmin(ctx, settings):
     has_admin = ctx.author.guild_permissions.administrator or ctx.author.permission_in(ctx.channel).manage_guild
     return is_bot_owner or has_admin
 
+
 def get_by_name_or_id(iterable, nameOrId: typing.Union[int, str]):
     if isinstance(nameOrId, str):
         return discord.utils.get(iterable, name=str(nameOrId))
