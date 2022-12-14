@@ -29,6 +29,8 @@ from . import settings
 from . import mongo
 from . import dbprovider
 from . import tacotypes
+from .models import TextWithAttachments
+
 
 import inspect
 
@@ -851,6 +853,52 @@ class DiscordHelper:
                     pass
             await text_ask.delete()
         return textResp.content
+
+    async def ask_for_image_or_text(self,
+        ctx,
+        targetChannel,
+        title: str = "Enter Text Response",
+        message: str = "Please enter your response.",
+        timeout: int = 60,
+        color=None,):
+
+        def check_user(m):
+            same = m.author.id == ctx.author.id
+            return same
+
+        guild_id = 0
+        if ctx.guild:
+            guild_id = ctx.guild.id
+
+        channel = targetChannel if targetChannel else ctx.channel if ctx.channel else ctx.author
+        delete_user_message = True
+        if not ctx.guild:
+            channel = ctx.author
+            delete_user_message = False
+
+        ask_image_or_text = await self.sendEmbed(
+            channel,
+            title,
+            f"{message}",
+            delete_after=timeout,
+            footer=self.settings.get_string(guild_id, "footer_XX_seconds", seconds=timeout),
+            color=color,
+        )
+        try:
+            textResp = await self.bot.wait_for("message", check=check_user, timeout=timeout)
+        except asyncio.TimeoutError:
+            await self.sendEmbed(channel, title, self.settings.get_string(guild_id, "took_too_long"), delete_after=5)
+            return None
+        else:
+            if delete_user_message:
+                try:
+                    await textResp.delete()
+                except:
+                    pass
+            await ask_image_or_text.delete()
+        return TextWithAttachments(textResp.content, textResp.attachments)
+
+        pass
 
     async def ask_role_list(
         self,
