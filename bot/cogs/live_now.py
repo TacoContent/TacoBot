@@ -298,7 +298,7 @@ class LiveNow(commands.Cog):
                     role_list = []
                     for role_id in remove_list:
                         role = user.guild.get_role(int(role_id))
-                        if role:
+                        if role and role in user.roles:
                             role_list.append(role)
                             self.log.info(guild_id, "live_now.add_remove_roles", f"Removed role {role.name} from user {user.display_name}")
                         else:
@@ -317,7 +317,7 @@ class LiveNow(commands.Cog):
                     role_list = []
                     for role_id in add_list:
                         role = user.guild.get_role(int(role_id))
-                        if role:
+                        if role and role not in user.roles:
                             role_list.append(role)
                             self.log.info(guild_id, "live_now.add_remove_roles", f"Added role {role.name} to user {user.display_name}")
                         else:
