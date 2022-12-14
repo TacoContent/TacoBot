@@ -156,11 +156,12 @@ class WhatDoYouCallThisWednesday(commands.Cog):
                 self.log.error(guild_id, "tacos.on_raw_reaction_add", f"No tacos settings found for guild {guild_id}")
                 return
 
-            reaction_emoji = taco_settings.get("wdyctw_reaction_emoji", "🇼")
-            # check if the reaction is the one we are looking for
-            if str(payload.emoji.name) != str(reaction_emoji):
-                self.log.debug(guild_id, "wdyctw.on_raw_reaction_add", f"Reaction {payload.emoji.name} is not the one we are looking for {reaction_emoji}")
+            reaction_emojis = taco_settings.get("wdyctw_reaction_emoji", ["🇼"])
+            # check if the reaction is in the list of ones we are looking for
+            if str(payload.emoji.name) not in reaction_emojis:
+                self.log.debug(guild_id, "wdyctw.on_raw_reaction_add", f"Reaction {payload.emoji.name} is not in the list of ones we are looking for {reaction_emojis}")
                 return
+
             # check if the user that reacted is in the admin role
             if not await self.discord_helper.is_admin(guild_id, payload.user_id):
                 self.log.debug(guild_id, _method, f"User {payload.user_id} is not an admin")
@@ -179,9 +180,13 @@ class WhatDoYouCallThisWednesday(commands.Cog):
                 self.log.debug(guild_id, _method, f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
                 return
 
-            # log that we are giving tacos for this reaction
-            self.log.info(guild_id, _method, f"User {payload.user_id} reacted with {payload.emoji.name} to message {payload.message_id}")
-            await self.give_user_wdyctw_tacos(guild_id, message_author.id, payload.channel_id, payload.message_id)
+            already_tracked = self.db.wdyctw_user_message_tracked(guild_id, message_author.id, message.id)
+            if not already_tracked:
+                # log that we are giving tacos for this reaction
+                self.log.info(guild_id, _method, f"User {payload.user_id} reacted with {payload.emoji.name} to message {payload.message_id}")
+                await self.give_user_wdyctw_tacos(guild_id, message_author.id, payload.channel_id, payload.message_id)
+            else:
+                self.log.debug(guild_id, _method, f"Message {payload.message_id} has already been tracked for WDYCTW. Skipping.")
 
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())

@@ -984,6 +984,43 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
+    def tqotd_user_message_tracked(self, guildId: int, userId: int, messageId: int):
+        # was this message, for this user, already used to answer the TQOTD?
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow().date()
+            ts_date = datetime.datetime.combine(date, datetime.time.min)
+            timestamp = utils.to_timestamp(ts_date)
+            result = self.connection.tqotd.find_one(
+                {"guild_id": str(guildId), "timestamp": timestamp}
+            )
+            if result:
+                for answer in result["answered"]:
+                    if answer["user_id"] == str(userId) and answer["message_id"] == str(messageId):
+                        return True
+                return False
+            else:
+                date = date - datetime.timedelta(days=1)
+                ts_date = datetime.datetime.combine(date, datetime.time.min)
+                timestamp = utils.to_timestamp(ts_date)
+                result = self.connection.tqotd.find_one(
+                    {"guild_id": str(guildId), "timestamp": timestamp}
+                )
+                if result:
+                    for answer in result["answered"]:
+                        if answer["user_id"] == str(userId) and answer["message_id"] == str(messageId):
+                            return True
+                    return False
+                else:
+                    raise Exception(f"No TQOTD found for guild {guildId} for {datetime.datetime.utcnow().date()}")
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            raise ex
+        finally:
+            if self.connection:
+                self.close()
     def _get_twitch_name(self, userId: int):
         try:
             if self.connection is None:
@@ -1269,6 +1306,43 @@ class MongoDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+    def wdyctw_user_message_tracked(self, guildId: int, userId: int, messageId: int):
+        # was this message, for this user, already used to answer the WDYCTW?
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow().date()
+            ts_date = datetime.datetime.combine(date, datetime.time.min)
+            timestamp = utils.to_timestamp(ts_date)
+            result = self.connection.wdyctw.find_one(
+                {"guild_id": str(guildId), "timestamp": timestamp}
+            )
+            if result:
+                for answer in result["answered"]:
+                    if answer["user_id"] == str(userId) and answer["message_id"] == str(messageId):
+                        return True
+                return False
+            else:
+                date = date - datetime.timedelta(days=1)
+                ts_date = datetime.datetime.combine(date, datetime.time.min)
+                timestamp = utils.to_timestamp(ts_date)
+                result = self.connection.wdyctw.find_one(
+                    {"guild_id": str(guildId), "timestamp": timestamp}
+                )
+                if result:
+                    for answer in result["answered"]:
+                        if answer["user_id"] == str(userId) and answer["message_id"] == str(messageId):
+                            return True
+                    return False
+                else:
+                    raise Exception(f"No WDYCTW found for guild {guildId} for {datetime.datetime.utcnow().date()}")
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            raise ex
         finally:
             if self.connection:
                 self.close()

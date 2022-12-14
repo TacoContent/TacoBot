@@ -97,7 +97,11 @@ class Database():
 
     def track_tqotd_answer(self, guildId: int, userId: int):
         pass
+    def tqotd_user_message_tracked(self, guildId: int, userId: int, messageId: int):
+        pass
     def track_wdyctw_answer(self, guildId: int, userId: int):
+        pass
+    def wdyctw_user_message_tracked(self, guildId: int, userId: int, messageId: int):
         pass
 
     def UPDATE_SCHEMA(self):
