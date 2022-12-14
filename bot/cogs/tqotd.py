@@ -140,7 +140,7 @@ class TacoQuestionOfTheDay(commands.Cog):
                 self.log.error(guild_id, "tacos.on_raw_reaction_add", f"No tacos settings found for guild {guild_id}")
                 return
 
-            reaction_emojis = taco_settings.get("tqotd_reaction_emoji", ["🇹", "🌮"])
+            reaction_emojis = taco_settings.get("tqotd_reaction_emoji", ["🇹"])
             # check if the reaction is in the list of ones we are looking for
             if str(payload.emoji.name) not in reaction_emojis:
                 self.log.debug(guild_id, "tqotd.on_raw_reaction_add", f"Reaction {payload.emoji.name} is not in the list of ones we are looking for {reaction_emojis}")
