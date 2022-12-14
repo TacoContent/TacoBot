@@ -92,6 +92,13 @@ class Database():
 
     def save_tqotd(self, guildId: int, quote: str, author: int):
         pass
+    def save_wdyctw(self, guildId: int, message: str, image: str, author: int):
+        pass
+
+    def track_tqotd_answer(self, guildId: int, userId: int):
+        pass
+    def track_wdyctw_answer(self, guildId: int, userId: int):
+        pass
 
     def UPDATE_SCHEMA(self):
         pass

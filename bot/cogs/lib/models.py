@@ -14,3 +14,7 @@ class SuggestionStates():
         self.IMPLEMENTED = "IMPLEMENTED"
         self.CONSIDERED = "CONSIDERED"
         self.DELETED = "DELETED"
+class TextWithAttachments():
+    def __init__(self, text, attachments):
+        self.text = text
+        self.attachments = attachments

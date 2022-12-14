@@ -948,19 +948,24 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-    def track_tqotd_answer(self, guildId: int, userId: int):
+    def track_tqotd_answer(self, guildId: int, userId: int, message_id: int):
         try:
             if self.connection is None:
                 self.open()
             date = datetime.datetime.utcnow().date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
-
+            ts_track = utils.to_timestamp(datetime.datetime.utcnow())
             result = self.connection.tqotd.find_one(
                 {"guild_id": str(guildId), "timestamp": timestamp}
             )
+
+            messageId = str(message_id)
+            if message_id is None or messageId == "" or messageId == "0" or messageId == "None":
+                messageId = None
+
             if result:
-                self.connection.tqotd.update_one({ "guild_id": str(guildId), "timestamp": timestamp }, { "$push": { "answered": str(userId) } }, upsert=True)
+                self.connection.tqotd.update_one({ "guild_id": str(guildId), "timestamp": timestamp }, { "$push": { "answered": { "user_id": str(userId), "message_id": messageId, "timestamp": ts_track } } }, upsert=True)
             else:
                 date = date - datetime.timedelta(days=1)
                 ts_date = datetime.datetime.combine(date, datetime.time.min)
@@ -969,7 +974,7 @@ class MongoDatabase(database.Database):
                     {"guild_id": str(guildId), "timestamp": timestamp}
                 )
                 if result:
-                    self.connection.tqotd.update_one({ "guild_id": str(guildId), "timestamp": timestamp }, { "$push": { "answered": str(userId) } }, upsert=True)
+                    self.connection.tqotd.update_one({ "guild_id": str(guildId), "timestamp": timestamp }, { "$push": { "answered": { "user_id": str(userId), "message_id": messageId, "timestamp": ts_track } } }, upsert=True)
                 else:
                     raise Exception(f"No TQOTD found for guild {guildId} for {datetime.datetime.utcnow().date()}")
         except Exception as ex:
@@ -1202,6 +1207,65 @@ class MongoDatabase(database.Database):
                     "offered_by": record["user_owner"],
                 }
             return None
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def track_wdyctw_answer(self, guild_id: int, user_id: int, message_id: int):
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow().date()
+            ts_date = datetime.datetime.combine(date, datetime.time.min)
+            timestamp = utils.to_timestamp(ts_date)
+            ts_track = utils.to_timestamp(datetime.datetime.utcnow())
+
+            result = self.connection.wdyctw.find_one(
+                {"guild_id": str(guild_id), "timestamp": timestamp}
+            )
+
+            messageId = str(message_id)
+            if message_id is None or messageId == "" or messageId == "0" or messageId == "None":
+                messageId = None
+
+            if result:
+                self.connection.wdyctw.update_one({ "guild_id": str(guild_id), "timestamp": timestamp }, { "$push": { "answered": { "user_id": str(user_id), "message_id": messageId, "timestamp": ts_track } } }, upsert=True)
+            else:
+                date = date - datetime.timedelta(days=1)
+                ts_date = datetime.datetime.combine(date, datetime.time.min)
+                timestamp = utils.to_timestamp(ts_date)
+                result = self.connection.wdyctw.find_one(
+                    {"guild_id": str(guild_id), "timestamp": timestamp}
+                )
+                if result:
+                    self.connection.wdyctw.update_one({ "guild_id": str(guild_id), "timestamp": timestamp }, { "$push": { "answered": { "user_id": str(user_id), "message_id": messageId, "timestamp": ts_track } } }, upsert=True)
+                else:
+                    raise Exception(f"No WDYCTW found for guild {guild_id} for {datetime.datetime.utcnow().date()}")
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+    def save_wdyctw(self, guildId: int, message: str, image: str, author: int):
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow().date()
+            ts_date = datetime.datetime.combine(date, datetime.time.min)
+            timestamp = utils.to_timestamp(ts_date)
+            payload = {
+                "guild_id": str(guildId),
+                "message": message,
+                "image": image,
+                "author": str(author),
+                "answered": [],
+                "timestamp": timestamp
+            }
+            self.connection.wdyctw.update_one({ "guild_id": str(guildId), "timestamp": timestamp }, { "$set": payload }, upsert=True)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
