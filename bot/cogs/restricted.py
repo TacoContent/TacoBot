@@ -12,9 +12,9 @@ import math
 import re
 
 from discord.ext.commands.cooldowns import BucketType
-from discord_slash import ComponentContext
-from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
-from discord_slash.model import ButtonStyle
+from interactions import ComponentContext
+# from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
+# from discord_slash.model import ButtonStyle
 from discord.ext.commands import has_permissions, CheckFailure
 
 from .lib import settings
@@ -120,5 +120,5 @@ class Restricted(commands.Cog):
             self.log.info(guild_id, "restricted.on_message", f"Message not found: {nf}")
         except Exception as e:
             self.log.error(guild_id, "restricted.on_message", f"{e}", traceback.format_exc())
-def setup(bot):
-    bot.add_cog(Restricted(bot))
+async def setup(bot):
+    await bot.add_cog(Restricted(bot))

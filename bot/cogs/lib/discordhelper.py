@@ -10,16 +10,38 @@ import glob
 import typing
 import collections
 
-from discord.ext.commands.cooldowns import BucketType
-from discord_slash import ComponentContext
-from discord_slash.utils.manage_components import (
-    create_button,
-    create_actionrow,
-    create_select,
-    create_select_option,
-    wait_for_component,
+from .ChannelSelect import (
+    ChannelSelect,
+    ChannelSelectView
 )
-from discord_slash.model import ButtonStyle
+
+from discord.ext.commands.cooldowns import BucketType
+from discord import (
+    SelectOption,
+    ActionRow,
+    SelectMenu,
+)
+from discord.ui import (
+    Button,
+    Select,
+    TextInput
+)
+
+from interactions import ComponentContext
+# from interactions import (
+#     Button,
+#     SelectMenu,
+#     SelectOption,
+#     ActionRow
+# )
+# from discord_slash.utils.manage_components import (
+#     create_button,
+#     create_actionrow,
+#     create_select,
+#     create_select_option,
+#     wait_for_component,
+# )
+# from discord_slash.model import ButtonStyle
 from discord.ext.commands import has_permissions, CheckFailure
 
 from . import utils
@@ -115,7 +137,7 @@ class DiscordHelper:
                 color = 0x7289DA
 
             target_embed = discord.Embed(title=title, description=description, color=color)
-            target_embed.set_author(name=author.name, icon_url=author.avatar_url)
+            target_embed.set_author(name=author.name, icon_url=author.avatar.url)
             if footer:
                 target_embed.set_footer(text=footer)
             else:
@@ -175,7 +197,7 @@ class DiscordHelper:
 
         embed = discord.Embed(title=title, description=message, color=color, url=url)
         if author:
-            embed.set_author(name=f"{author.name}#{author.discriminator}", icon_url=author.avatar_url)
+            embed.set_author(name=f"{author.name}#{author.discriminator}", icon_url=author.avatar.url)
         if embed.fields is not None:
             for f in embed.fields:
                 embed.add_field(name=f["name"], value=f["value"], inline=f["inline"] if "inline" in f else False)
@@ -199,7 +221,7 @@ class DiscordHelper:
             embed.set_thumbnail(url=thumbnail)
         if image is not None:
             embed.set_image(url=image)
-        return await channel.send(content=content, embed=embed, delete_after=delete_after, components=components)
+        return await channel.send(content=content, embed=embed, delete_after=delete_after, view=components)
 
     async def updateEmbed(
         self,
@@ -259,7 +281,7 @@ class DiscordHelper:
             updated_embed.set_footer(text=footer)
 
         if author:
-            updated_embed.set_author(name=f"{author.name}#{author.discriminator}", icon_url=author.avatar_url)
+            updated_embed.set_author(name=f"{author.name}#{author.discriminator}", icon_url=author.avatar.url)
 
         await message.edit(embed=updated_embed)
 
@@ -664,25 +686,25 @@ class DiscordHelper:
                 ctx.guild.id, _method, f"Guild has more than 24 channels. Total Channels: {str(len(channels))}"
             )
             options.append(
-                create_select_option(label=self.settings.get_string(ctx.guild.id, "other"), value="0", emoji="⏭")
+                SelectOption(label=self.settings.get_string(ctx.guild.id, "other"), value="0", emoji="⏭")
             )
             # sub_message = self.get_string(guild_id, 'ask_admin_role_submessage')
         if allow_none:
             options.append(
-                create_select_option(label=self.settings.get_string(ctx.guild.id, "none"), value="-1", emoji="⛔")
+                SelectOption(label=self.settings.get_string(ctx.guild.id, "none"), value="-1", emoji="⛔")
             )
 
         for c in channels[:max_items]:
-            options.append(create_select_option(label=c.name, value=str(c.id), emoji="🏷"))
+            options.append(SelectOption(label=c.name, value=str(c.id), emoji="🏷"))
 
-        select = create_select(
-            options=options,
-            placeholder="Channel",
-            min_values=1,  # the minimum number of options a user must select
-            max_values=1,  # the maximum number of options a user can select
-        )
-
-        action_row = create_actionrow(select)
+        # select = Select(
+        #     options=options,
+        #     placeholder="Channel",
+        #     min_values=1,  # the minimum number of options a user must select
+        #     max_values=1,  # the maximum number of options a user can select
+        # )
+        action_row = ChannelSelectView(ctx=ctx, placeholder=title, channels=channels, allow_none=allow_none)
+        # action_row = ActionRow(select)
         ask_context = await self.sendEmbed(
             ctx.channel,
             title,

@@ -45,5 +45,5 @@ class Events(commands.Cog):
         self.log.error(0, "events.on_error", f"{str(event)}", traceback.format_exc())
 
 
-def setup(bot):
-    bot.add_cog(Events(bot))
+async def setup(bot):
+    await bot.add_cog(Events(bot))

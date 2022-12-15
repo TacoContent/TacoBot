@@ -13,12 +13,12 @@ import uuid
 import datetime
 
 from discord.ext.commands.cooldowns import BucketType
-from discord_slash import ComponentContext
-from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
-from discord_slash.model import ButtonStyle
+from interactions import ComponentContext
+# from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
+# from discord_slash.model import ButtonStyle
+# from discord_slash import cog_ext, SlashContext
 from discord.ext.commands import has_permissions, CheckFailure
 
-from discord_slash import cog_ext, SlashContext
 
 from .lib import settings
 from .lib import discordhelper
@@ -619,5 +619,5 @@ class Suggestions(commands.Cog):
             self.log.debug(0, "get_color_for_state", f"The state matches {states.CLOSED}")
             return None
 
-def setup(bot):
-    bot.add_cog(Suggestions(bot))
+async def setup(bot):
+    await bot.add_cog(Suggestions(bot))
