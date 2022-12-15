@@ -125,7 +125,7 @@
 			"subcommands": {
 				"give": {
 					"title": "Give WDYCTW Tacos",
-					"description": "Gives WDYCTW tacos to the user who answered the question. The preferred way to give tacos is to use the reaction on the question with the 'W'.",
+					"description": "Gives WDYCTW tacos to the user who answered the question. The preferred way to give tacos is to use the 'W' emoji reaction on their message.",
 					"usage": "{{prefix}}wdyctw give <@user>",
 					"examples": [
 						"{{prefix}}wdyctw give @DarthMinos#1161"
@@ -152,7 +152,7 @@
 			"subcommands": {
 				"give": {
 					"title": "Give TQotD Tacos",
-					"description": "Gives TQotD tacos to the user who answered the question. The preferred way to give tacos is to use the reaction on the question with the 'T' or a '🌮'.",
+					"description": "Gives TQotD tacos to the user who answered the question. The preferred way to give tacos is to use the 'T' emoji reaction on their message.",
 					"usage": "{{prefix}}tqotd give <@user>",
 					"examples": [
 						"{{prefix}}tqotd give @DarthMinos#1161"
