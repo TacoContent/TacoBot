@@ -74,12 +74,23 @@ class MoveMessage(commands.Cog):
                 self.log.debug(guild_id, _method, f"{user.name} reacted to message {message.id} with {str(payload.emoji)}")
                 if str(payload.emoji) == '⏭️':
                     ctx = self.discord_helper.create_context(bot=self.bot, message=message, channel=channel, author=user, guild=message.guild)
-                    target_channel = await self.discord_helper.ask_channel(ctx, "Choose Target Channel", "Please select the channel you want to move the message to.", timeout=60)
-                    if target_channel is None:
-                        return
 
-                    await self.discord_helper.move_message(message, targetChannel=target_channel, author=message.author, who=react_member, reason="Moved by admin")
-                    await message.delete()
+                    async def callback(target_channel):
+                        await self.discord_helper.move_message(
+                            message,
+                            targetChannel=target_channel,
+                            author=message.author,
+                            who=ctx.author,
+                            reason="Moved by admin"
+                        )
+                        await message.delete()
+
+                    await self.discord_helper.ask_channel(
+                        ctx=ctx,
+                        title="Choose Target Channel",
+                        message="Please select the channel you want to move the message to.",
+                        timeout=60,
+                        callback=callback)
 
         except Exception as e:
             self.log.error(guild_id, "move_message.on_raw_reaction_add", str(e), traceback.format_exc())

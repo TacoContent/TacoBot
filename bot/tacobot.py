@@ -45,11 +45,6 @@ class TacoBot(commands.Bot):
 
 
         print(f"APP VERSION: {self.settings.APP_VERSION}")
-        # self.client = discord.Client(intents=discord.Intents.all())
-
-        # if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-        #     self.db = mongo.MongoDatabase()
-        # else:
         self.db = mongo.MongoDatabase()
         self.initDB()
 
@@ -60,13 +55,6 @@ class TacoBot(commands.Bot):
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, "tacobot.__init__", f"DB Provider {self.settings.db_provider.name}")
         self.log.debug(0, "tacobot.__init__", f"Logger initialized with level {log_level.name}")
-
-
-        # self._bot = commands.Bot(command_prefix=self.get_prefix, case_insensitive=True, intents=intents)
-        # self._bot.remove_command("help")
-
-        # self._bot.run(self.DISCORD_TOKEN)
-
 
     # In this basic example, we just synchronize the app commands to one guild.
     # Instead of specifying a guild to every command, we copy over our global commands instead.
@@ -87,7 +75,7 @@ class TacoBot(commands.Bot):
                 print(f"Failed to load extension {extension}.", file=sys.stderr)
                 traceback.print_exc()
         # slash = SlashCommand(self._bot, override_type=True, sync_commands=True)
-        pass
+
         # This copies the global commands over to your guild.
         # self.tree.copy_global_to(guild=MY_GUILD)
         # await self.tree.sync(guild=MY_GUILD)
