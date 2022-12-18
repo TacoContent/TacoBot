@@ -24,7 +24,6 @@ class Events(commands.Cog):
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, "events.__init__", "Initialized")
 
-
     @commands.Cog.listener()
     async def on_ready(self):
         self.log.debug(0, "events.on_ready", f"Logged in as {self.bot.user.name}:{self.bot.user.id}")

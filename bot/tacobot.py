@@ -42,8 +42,6 @@ class TacoBot(commands.Bot):
         # Note: When using commands.Bot instead of discord.Client, the bot will
         # maintain its own tree instead.
         # self.tree = app_commands.CommandTree(self)
-
-
         print(f"APP VERSION: {self.settings.APP_VERSION}")
         self.db = mongo.MongoDatabase()
         self.initDB()

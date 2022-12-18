@@ -194,6 +194,7 @@ class DiscordHelper:
         image: str = None,
         url: str = "",
         content: str = None,
+        files: list = None,
     ):
         if color is None:
             color = 0x7289DA
@@ -228,7 +229,7 @@ class DiscordHelper:
             embed.set_thumbnail(url=thumbnail)
         if image is not None:
             embed.set_image(url=image)
-        return await channel.send(content=content, embed=embed, delete_after=delete_after, view=view)
+        return await channel.send(content=content, embed=embed, delete_after=delete_after, view=view, files=files)
 
     async def updateEmbed(
         self,

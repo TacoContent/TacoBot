@@ -1,3 +1,8 @@
+**v2.0**
+- update to 2.x version of discord.py
+- rework the integrations to use discord.py
+- updated preview to include the image in an embed and any files that may have been attached
+
 **v1.0.108**
 - change live now to track for multiple live platforms
 - more changes to support multiple live platforms

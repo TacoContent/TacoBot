@@ -31,7 +31,7 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import dbprovider
-
+from .lib.GameRewardView import GameRewardView
 
 class GameKeys(commands.Cog):
     def __init__(self, bot):
@@ -145,18 +145,16 @@ class GameKeys(commands.Cog):
                     "value": f"{expires.strftime('%Y-%m-%d %H:%M:%S')} UTC",
                 },
             ]
+            timeout = 60 * 60 * 24
 
-            buttons = [
-                create_button(
-                    style=ButtonStyle.green,
-                    label=self.settings.get_string(
-                        ctx.guild.id, "game_key_claim_button", tacos=cost, tacos_word=tacos_word
-                    ),
-                    # custom_id="CLAIM",
-                    custom_id=str(game_data["id"]),
-                ),
-            ]
-            action_row = create_actionrow(*buttons)
+            claim_view = GameRewardView(
+                ctx,
+                game_id=str(game_data["id"]),
+                claim_callback=self._claim_offer_callback,
+                timeout_callback=self._claim_timeout_callback,
+                cost=cost,
+                timeout=timeout
+            )
 
             offer_message = await self.discord_helper.sendEmbed(
                 reward_channel,
@@ -164,34 +162,41 @@ class GameKeys(commands.Cog):
                 self.settings.get_string(guild_id, "game_key_offer_message", cost=cost, tacos_word=tacos_word),
                 fields=fields,
                 author=offered_by,
-                components=[action_row],
+                view=claim_view,
             )
+
             # record offer
             self.db.open_game_key_offer(game_data["id"], guild_id, offer_message.id, ctx.channel.id)
-            timeout = 60 * 60 * 24
-            try:
-                button_ctx: ComponentContext = await wait_for_component(
-                    self.bot, components=action_row, timeout=timeout
-                )
-                await button_ctx.defer(ignore=True)
-            except asyncio.TimeoutError:
-                try:
-                    self.log.debug(guild_id, "game_keys._create_offer", f"Timeout waiting for claim button press.")
-                    await self._create_offer(ctx)
-                except Exception as e:
-                    self.log.error(ctx.guild.id, "game_keys._create_offer", str(e), traceback.format_exc())
-            else:
-                new_ctx = self.discord_helper.create_context(self.bot, author=button_ctx.author, channel=ctx.channel, message=ctx.message, guild=ctx.guild, custom_id=button_ctx.custom_id)
-                claimed = await self._claim_offer(new_ctx, game_data.get("id", None))
-                if claimed:
-                    self.log.debug(guild_id, "game_keys._create_offer", f"Claimed offer for id {button_ctx.custom_id}")
-                    await self._create_offer(ctx)
-                else:
-                    self.log.debug(guild_id, "game_keys._create_offer", f"Failed to claim offer for id {button_ctx.custom_id}")
-                    # check if expired offer.
         except Exception as e:
             self.log.error(ctx.guild.id, "game_keys._create_offer", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
+
+    async def _claim_offer_callback(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        # create context from interaction
+        ctx = self.discord_helper.create_context(
+            self.bot,
+            author=interaction.user,
+            channel=interaction.channel,
+            message=interaction.message,
+            guild=interaction.guild,
+            custom_id=interaction.data["custom_id"])
+        self.log.debug(ctx.guild.id, "game_keys._claim_offer_callback", f"Claiming offer {interaction.data['custom_id']}")
+        await self._claim_offer(ctx, interaction.data["custom_id"])
+        await self._create_offer(ctx)
+
+
+    async def _claim_timeout_callback(self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item):
+        # create context from interaction
+        ctx = self.discord_helper.create_context(
+            self.bot,
+            author=interaction.user,
+            channel=interaction.channel,
+            message=interaction.message,
+            guild=interaction.guild
+        )
+        await self._create_offer(ctx)
+        pass
 
     # async def _wait_or_new_offer(self, ctx):
     #     try:
