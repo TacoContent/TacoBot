@@ -123,16 +123,32 @@ class InitHandler(commands.Cog):
                     self.db.add_settings(guild_id, "restricted", {
                         "channels": [ ],
                     })
-                add_another_channel = True
-                while add_another_channel:
-                    add_another_channel = await self.discord_helper.ask_yes_no(ctx, ctx.channel, "Restricted", "Do you want to configure a channel to be restricted what can be posted?")
-                    if add_another_channel:
-                        # ask for channel from list
-                        channel = await self.discord_helper.ask_channel(ctx, "Restricted", "Please select a channel to configure as restricted.")
+
+                async def ask_to_add():
+                    await self.discord_helper.ask_yes_no(
+                        ctx=ctx,
+                        targetChannel=ctx.channel,
+                        title="Restricted",
+                        question="Do you want to configure a channel to be restricted what can be posted?",
+                        result_callback=yes_no_result,)
+
+                async def yes_no_result(result):
+                    async def channel_result(channel):
                         if channel:
-                            await self.restricted_add_action(ctx, channel, delete_message=False)
+                            await self.restricted_add_action(ctx, channel, delete_message=False, complete_callback=ask_to_add)
                         else:
                             await self.discord_helper.sendEmbed(ctx.channel, "Restricted", "The channel selected was not found.", color=0xFF0000, delete_after=20)
+                    if result:
+                        await self.discord_helper.ask_channel(
+                            ctx=ctx,
+                            title="Restricted",
+                            message="Please select a channel to configure as restricted.",
+                            callback=channel_result,)
+
+
+                await ask_to_add()
+
+
             except Exception as e:
                 self.log.error(guild_id, "init.restricted", str(e), traceback.format_exc())
                 await self.discord_helper.notify_of_error(ctx)
@@ -141,10 +157,10 @@ class InitHandler(commands.Cog):
 
     @restricted.command()
     @commands.has_permissions(administrator=True)
-    async def restricted_add(self, ctx: ComponentContext, channel: discord.TextChannel):
-        await self.restricted_add_action(ctx, channel)
+    async def restricted_add(self, ctx: ComponentContext, channel: discord.TextChannel, next: typing.Callable = None):
+        await self.restricted_add_action(ctx=ctx, channel=channel, complete_callback=next)
 
-    async def restricted_add_action(self, ctx: ComponentContext, channel: discord.TextChannel, delete_message=True):
+    async def restricted_add_action(self, ctx: ComponentContext, channel: discord.TextChannel, delete_message=True, complete_callback: typing.Callable = None):
         try:
             if not ctx.guild:
                 return
@@ -184,6 +200,8 @@ class InitHandler(commands.Cog):
                 { "name": "Deny Message", "value": deny_message, "inline": True },
             ]
             await self.discord_helper.sendEmbed(ctx.channel, "Restricted", "Restricted channel added.", fields=fields, color=0x00FF00, delete_after=20)
+            if complete_callback:
+                await complete_callback()
         except Exception as e:
             self.log.error(guild_id, "init.restricted_add", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
@@ -214,16 +232,29 @@ class InitHandler(commands.Cog):
                     self.db.add_settings(guild_id, "tacopost", {
                         "channels": [ ],
                     })
-                add_another_channel = True
-                while add_another_channel:
-                    add_another_channel = await self.discord_helper.ask_yes_no(ctx, ctx.channel, "Pay to Post", "Do you want to configure a channel to require paying to post?")
-                    if add_another_channel:
-                        # ask for channel from list
-                        channel = await self.discord_helper.ask_channel(ctx, "Pay to Post", "Please select a channel to require paying to post.")
+
+                async def ask_to_add():
+                    await self.discord_helper.ask_yes_no(
+                        ctx=ctx,
+                        targetChannel=ctx.channel,
+                        title="Pay to Post",
+                        question="Do you want to configure a channel to require paying to post?",
+                        result_callback=yes_no_result,)
+                async def yes_no_result(result):
+                    async def channel_result(channel):
                         if channel:
                             await self.paypost_add_action(ctx, channel, delete_message=False)
                         else:
                             await self.discord_helper.sendEmbed(ctx.channel, "Pay to Post", "The channel selected was not found.", color=0xFF0000, delete_after=20)
+                    if result:
+                        await self.discord_helper.ask_channel(
+                            ctx=ctx,
+                            title="Pay to Post",
+                            message="Please select a channel to require paying to post.",
+                            callback=channel_result,)
+
+                        await ask_to_add()
+                await ask_to_add()
             except Exception as e:
                 self.log.error(guild_id, "init.paypost", str(e), traceback.format_exc())
                 await self.discord_helper.notify_of_error(ctx)

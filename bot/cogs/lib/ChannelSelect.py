@@ -33,8 +33,6 @@ class ChannelSelect(discord.ui.Select):
             self.log.debug(ctx.guild.id, "ChannelSelect.__init__", f"Adding channel {c.name} to options")
             options.append(discord.SelectOption(label=c.name, value=str(c.id), emoji="🏷"))
         self.options = options
-    async def callback(self, interaction: discord.Interaction):
-        await interaction.response.send_message(content=f"Your choice is {self.values[0]}!", ephemeral=True)
 
 
 class ChannelSelectView(discord.ui.View):

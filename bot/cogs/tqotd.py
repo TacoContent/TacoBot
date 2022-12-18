@@ -5,8 +5,10 @@ import json
 import traceback
 import sys
 import os
+import io
 import glob
 import typing
+import aiohttp
 
 from discord.ext.commands.cooldowns import BucketType
 from interactions import ComponentContext
@@ -60,19 +62,19 @@ class TacoQuestionOfTheDay(commands.Cog):
 
             try:
                 _ctx = self.discord_helper.create_context(self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild)
-                qotd = await self.discord_helper.ask_text(_ctx, ctx.author,
+                qotd = await self.discord_helper.ask_for_image_or_text(_ctx, ctx.author,
                     self.settings.get_string(guild_id, "tqotd_ask_title"),
                     self.settings.get_string(guild_id, "tqotd_ask_message"),
                     timeout=60 * 5)
             except discord.Forbidden:
                 _ctx = ctx
-                qotd = await self.discord_helper.ask_text(_ctx, ctx.author,
+                qotd = await self.discord_helper.ask_for_image_or_text(_ctx, ctx.author,
                     self.settings.get_string(guild_id, "tqotd_ask_title"),
                     self.settings.get_string(guild_id, "tqotd_ask_message"),
                     timeout=60 * 5)
 
             # ask the user for the TQOTD in DM
-            if qotd is None or qotd.lower() == "cancel":
+            if qotd is None or qotd.text.lower() == "cancel":
                 return
 
             cog_settings = self.get_cog_settings(guild_id)
@@ -103,10 +105,34 @@ class TacoQuestionOfTheDay(commands.Cog):
             taco_word = self.settings.get_string(guild_id, "taco_singular")
             if amount != 1:
                 taco_word = self.settings.get_string(guild_id, "taco_plural")
-            out_message = self.settings.get_string(guild_id, "tqotd_out_message", question=qotd, taco_count=amount, taco_word=taco_word)
-            await self.discord_helper.sendEmbed(channel=out_channel, title=self.settings.get_string(guild_id, "tqotd_out_title"), message=out_message, content=role_tag, color=0x00ff00)
+            out_message = self.settings.get_string(guild_id, "tqotd_out_message", question=qotd.text, taco_count=amount, taco_word=taco_word)
+            if qotd.attachments and len(qotd.attachments) > 0:
+                urls = ""
+                for attachment in qotd.attachments:
+                    urls += f"{attachment.url}\n"
+                save_message = f"{out_message}\n\n{urls}"
+            else:
+                save_message = out_message
+            files = []
+            if qotd.attachments and len(qotd.attachments) > 0:
+                for attachment in qotd.attachments:
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(attachment.url) as resp:
+                            if resp.status != 200:
+                                self.log.warn(guild_id, "tqotd.tqotd", f"Unable to download attachment {attachment.url}")
+                                continue
+                            data = io.BytesIO(await resp.read())
+                            files.append(discord.File(data, filename=attachment.filename))
+
+            await self.discord_helper.sendEmbed(
+                channel=out_channel,
+                title=self.settings.get_string(guild_id, "tqotd_out_title"),
+                 message=out_message,
+                 content=role_tag,
+                 files=files,
+                 color=0x00ff00)
             # save the TQOTD
-            self.db.save_tqotd(guild_id, qotd, ctx.author.id)
+            self.db.save_tqotd(guild_id, qotd.text, ctx.author.id)
 
         except Exception as e:
             self.log.error(guild_id, "tqotd.tqotd", str(e), traceback.format_exc())

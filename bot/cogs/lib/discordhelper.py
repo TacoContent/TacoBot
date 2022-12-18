@@ -52,6 +52,7 @@ from . import mongo
 from . import dbprovider
 from . import tacotypes
 from .models import TextWithAttachments
+from .YesOrNoView import YesOrNoView
 
 
 import inspect
@@ -434,19 +435,30 @@ class DiscordHelper:
                 f"{toMember.name}#{toMember.discriminator} {action} {positive_count} {taco_word} from {fromMember.name}#{fromMember.discriminator} for {reason}",
             )
             if log_channel:
-                await log_channel.send(
-                    self.settings.get_string(
-                        guild_id,
-                        "tacos_log_message",
-                        touser=toMember.name,
-                        action=action,
-                        positive_count=positive_count,
-                        taco_word=taco_word,
-                        fromuser=fromMember.name,
-                        reason=reason,
-                        total_tacos=total_tacos,
-                    )
-                )
+
+                fields = [
+                    {"name": "▶ TO USER", "value": toMember.name},
+                    {"name": "◀ FROM USER", "value": fromMember.name},
+                    {"name": f"🎬 {action.upper()}", "value": f"{positive_count} {taco_word}"},
+                    {"name": "🌮 TOTAL TACOS", "value": f"{total_tacos} {taco_word}"},
+                    {"name": "ℹ REASON", "value": reason},
+                ]
+
+                await self.sendEmbed(channel=log_channel, title="", message="", fields=fields, author=fromMember)
+
+                # await log_channel.send(
+                #     self.settings.get_string(
+                #         guild_id,
+                #         "tacos_log_message",
+                #         touser=toMember.name,
+                #         action=action,
+                #         positive_count=positive_count,
+                #         taco_word=taco_word,
+                #         fromuser=fromMember.name,
+                #         reason=reason,
+                #         total_tacos=total_tacos,
+                #     )
+                # )
         except Exception as e:
             self.log.error(guild_id, _method, str(e), traceback.format_exc())
 
@@ -526,26 +538,29 @@ class DiscordHelper:
         thumbnail: str = None,
         image: str = None,
         content: str = None,
-    ) -> bool:
-        def check_user(m):
-            same = m.author.id == ctx.author.id
-            return same
-
+        result_callback: typing.Callable = None,
+    ):
         channel = targetChannel if targetChannel else ctx.channel if ctx.channel else ctx.author
-        buttons = [
-            create_button(
-                style=ButtonStyle.green, label=self.settings.get_string(ctx.guild.id, "yes"), custom_id="YES"
-            ),
-            create_button(style=ButtonStyle.red, label=self.settings.get_string(ctx.guild.id, "no"), custom_id="NO"),
-        ]
-        yes_no = False
-        action_row = create_actionrow(*buttons)
-        timeout = timeout if timeout else 60
-        yes_no_req = await self.sendEmbed(
+
+        async def answer_callback(caller: YesOrNoView, interaction: discord.Interaction):
+            result_id = interaction.data["custom_id"]
+            result = utils.str2bool(result_id)
+            if result_callback:
+                await result_callback(result)
+
+        async def timeout_callback(caller: YesOrNoView, interaction: discord.Interaction):
+            await self.sendEmbed(
+                channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
+            )
+            if result_callback:
+                await result_callback(False)
+
+        yes_no_view = YesOrNoView(ctx, answer_callback=answer_callback, timeout=timeout, timeout_callback=timeout_callback)
+        await self.sendEmbed(
             channel,
             title,
             question,
-            view=action_row,
+            view=yes_no_view,
             delete_after=timeout,
             thumbnail=thumbnail,
             image=image,
@@ -553,22 +568,7 @@ class DiscordHelper:
             content=content,
             footer=self.settings.get_string(ctx.guild.id, "footer_XX_seconds", seconds=timeout),
         )
-        try:
-            button_ctx: ComponentContext = await wait_for_component(
-                self.bot, check=check_user, view=action_row, timeout=timeout
-            )
-        except asyncio.TimeoutError:
-            await self.sendEmbed(
-                channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
-            )
-        else:
-            yes_no = utils.str2bool(button_ctx.custom_id)
-            try:
-                await yes_no_req.delete()
-            except Exception as e:
-                pass
-
-        return yes_no
+        return
 
     async def wait_for_user_invoke_cleanup(self, ctx):
         try:
@@ -679,9 +679,6 @@ class DiscordHelper:
         timeout: int = 60,
         callback=None,
     ):
-        def check_user(m):
-            same = m.author.id == ctx.author.id
-            return same
 
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
