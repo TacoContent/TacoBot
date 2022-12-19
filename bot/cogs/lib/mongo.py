@@ -1287,7 +1287,7 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-    def save_wdyctw(self, guildId: int, message: str, image: str, author: int):
+    def save_wdyctw(self, guildId: int, message: str, image: str, author: int, channel_id: int = None, message_id: int = None):
         try:
             if self.connection is None:
                 self.open()
@@ -1300,7 +1300,9 @@ class MongoDatabase(database.Database):
                 "image": image,
                 "author": str(author),
                 "answered": [],
-                "timestamp": timestamp
+                "timestamp": timestamp,
+                "channel_id": str(channel_id),
+                "message_id": str(message_id)
             }
             self.connection.wdyctw.update_one({ "guild_id": str(guildId), "timestamp": timestamp }, { "$set": payload }, upsert=True)
         except Exception as ex:
