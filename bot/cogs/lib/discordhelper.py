@@ -404,19 +404,30 @@ class DiscordHelper:
                 f"{toMember.name}#{toMember.discriminator} {action} {positive_count} {taco_word} from {fromMember.name}#{fromMember.discriminator} for {reason}",
             )
             if log_channel:
-                await log_channel.send(
-                    self.settings.get_string(
-                        guild_id,
-                        "tacos_log_message",
-                        touser=toMember.name,
-                        action=action,
-                        positive_count=positive_count,
-                        taco_word=taco_word,
-                        fromuser=fromMember.name,
-                        reason=reason,
-                        total_tacos=total_tacos,
-                    )
-                )
+
+                fields = [
+                    {"name": "▶ TO USER", "value": toMember.name},
+                    {"name": "◀ FROM USER", "value": fromMember.name},
+                    {"name": f"🎬 {action.upper()}", "value": f"{positive_count} {taco_word}"},
+                    {"name": "🌮 TOTAL TACOS", "value": f"{total_tacos} {taco_word}"},
+                    {"name": "ℹ REASON", "value": reason},
+                ]
+
+                await self.sendEmbed(channel=log_channel, title="", message="", fields=fields, author=fromMember)
+
+                # await log_channel.send(
+                #     self.settings.get_string(
+                #         guild_id,
+                #         "tacos_log_message",
+                #         touser=toMember.name,
+                #         action=action,
+                #         positive_count=positive_count,
+                #         taco_word=taco_word,
+                #         fromuser=fromMember.name,
+                #         reason=reason,
+                #         total_tacos=total_tacos,
+                #     )
+                # )
         except Exception as e:
             self.log.error(guild_id, _method, str(e), traceback.format_exc())
 
