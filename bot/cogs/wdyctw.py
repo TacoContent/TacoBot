@@ -56,8 +56,6 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             guild_id = 0
             if ctx.guild:
                 guild_id = ctx.guild.id
-            qotd = None
-
 
             # needs to accept an image along with the text
             try:
@@ -116,18 +114,62 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             if amount != 1:
                 taco_word = self.settings.get_string(guild_id, "taco_plural")
             out_message = self.settings.get_string(guild_id, "wdyctw_out_message", question=twa.text, taco_count=amount, taco_word=taco_word)
-            await self.discord_helper.sendEmbed(channel=out_channel,
+            wdyctw_message = await self.discord_helper.sendEmbed(channel=out_channel,
                 title=self.settings.get_string(guild_id, "wdyctw_out_title"),
                 message=out_message, content=message_content, color=0x00ff00,
                 image=twa.attachments[0].url, thumbnail=None, footer=None, author=None,
                 fields=None, delete_after=None)
 
             # save the WDYCTW to the database
-            self.db.save_wdyctw(guild_id, twa.text, twa.attachments[0].url, ctx.author.id)
+            self.db.save_wdyctw (
+                guildId=guild_id,
+                message=twa.text,
+                image=twa.attachments[0].url,
+                author=ctx.author.id,
+                channel_id=out_channel.id,
+                message_id=wdyctw_message.id,
+            )
 
         except Exception as e:
             self.log.error(guild_id, "wdyctw.wdyctw", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
+
+    @wdyctw.command(name="import")
+    @commands.has_permissions(administrator=True)
+    @commands.guild_only()
+    async def import_wdyctw(self, ctx, message_id: int):
+        """Import WDYCTW from an existing post"""
+        guild_id = 0
+        if ctx.guild:
+            guild_id = ctx.guild.id
+
+        try:
+            await ctx.message.delete()
+
+            cog_settings = self.get_cog_settings(guild_id)
+            if not cog_settings:
+                self.log.warn(guild_id, "wdyctw.wdyctw", f"No wdyctw settings found for guild {guild_id}")
+                return
+            if not cog_settings.get("enabled", False):
+                self.log.debug(guild_id, "wdyctw.wdyctw", f"wdyctw is disabled for guild {guild_id}")
+                return
+
+            out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
+            if not out_channel:
+                self.log.warn(guild_id, "wdyctw.wdyctw", f"No output channel found for guild {guild_id}")
+
+
+            # get the message from the id
+            message = await out_channel.fetch_message(message_id)
+            if not message:
+                return
+
+            self._import_wdyctw(message)
+
+        except Exception as e:
+            self.log.error(ctx.guild.id, "wdyctw.import_wdyctw", str(e), traceback.format_exc())
+            await self.discord_helper.notify_of_error(ctx)
+
 
     @wdyctw.command(name="give")
     @commands.has_permissions(administrator=True)
@@ -141,6 +183,59 @@ class WhatDoYouCallThisWednesday(commands.Cog):
         except Exception as e:
             self.log.error(ctx.guild.id, "wdyctw.give", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
+
+
+    async def _on_raw_reaction_add_give(self, payload):
+        _method = inspect.stack()[0][3]
+        guild_id = payload.guild_id
+
+
+        # check if the user that reacted is in the admin role
+        if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+            self.log.debug(guild_id, _method, f"User {payload.user_id} is not an admin")
+            return
+        # in future, check if the user is in a defined role that can grant tacos (e.g. moderator)
+
+        # get the message that was reacted to
+        channel = self.bot.get_channel(payload.channel_id)
+        message = await channel.fetch_message(payload.message_id)
+        message_author = message.author
+        react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+
+        # check if this reaction is the first one of this type on the message
+        reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
+        if reaction.count > 1:
+            self.log.debug(guild_id, _method, f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
+            return
+
+        already_tracked = self.db.wdyctw_user_message_tracked(guild_id, message_author.id, message.id)
+        if not already_tracked:
+            # log that we are giving tacos for this reaction
+            self.log.info(guild_id, _method, f"User {payload.user_id} reacted with {payload.emoji.name} to message {payload.message_id}")
+            await self.give_user_wdyctw_tacos(guild_id, message_author.id, payload.channel_id, payload.message_id)
+        else:
+            self.log.debug(guild_id, _method, f"Message {payload.message_id} has already been tracked for WDYCTW. Skipping.")
+
+    async def _on_raw_reaction_add_import(self, payload):
+        _method = inspect.stack()[0][3]
+        guild_id = payload.guild_id
+
+
+        # check if the user that reacted is in the admin role
+        if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+            self.log.debug(guild_id, _method, f"User {payload.user_id} is not an admin")
+            return
+
+        channel = self.bot.get_channel(payload.channel_id)
+        message = await channel.fetch_message(payload.message_id)
+
+        reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
+        if reaction.count > 1:
+            self.log.debug(guild_id, _method, f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
+            return
+
+        self._import_wdyctw(message)
+
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -156,40 +251,49 @@ class WhatDoYouCallThisWednesday(commands.Cog):
                 self.log.error(guild_id, "tacos.on_raw_reaction_add", f"No tacos settings found for guild {guild_id}")
                 return
 
+
             reaction_emojis = taco_settings.get("wdyctw_reaction_emoji", ["🇼"])
-            # check if the reaction is in the list of ones we are looking for
-            if str(payload.emoji.name) not in reaction_emojis:
-                self.log.debug(guild_id, "wdyctw.on_raw_reaction_add", f"Reaction {payload.emoji.name} is not in the list of ones we are looking for {reaction_emojis}")
+            if str(payload.emoji.name) in reaction_emojis:
+                await self._on_raw_reaction_add_give(payload)
                 return
 
-            # check if the user that reacted is in the admin role
-            if not await self.discord_helper.is_admin(guild_id, payload.user_id):
-                self.log.debug(guild_id, _method, f"User {payload.user_id} is not an admin")
+            reaction_import_emojis = taco_settings.get("wdyctw_reaction_import_emoji", ["🇮"])
+            if str(payload.emoji.name) in reaction_import_emojis:
+                await self._on_raw_reaction_add_import(payload)
                 return
-            # in future, check if the user is in a defined role that can grant tacos (e.g. moderator)
-
-            # get the message that was reacted to
-            channel = self.bot.get_channel(payload.channel_id)
-            message = await channel.fetch_message(payload.message_id)
-            message_author = message.author
-            react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
-
-            # check if this reaction is the first one of this type on the message
-            reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
-            if reaction.count > 1:
-                self.log.debug(guild_id, _method, f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
-                return
-
-            already_tracked = self.db.wdyctw_user_message_tracked(guild_id, message_author.id, message.id)
-            if not already_tracked:
-                # log that we are giving tacos for this reaction
-                self.log.info(guild_id, _method, f"User {payload.user_id} reacted with {payload.emoji.name} to message {payload.message_id}")
-                await self.give_user_wdyctw_tacos(guild_id, message_author.id, payload.channel_id, payload.message_id)
-            else:
-                self.log.debug(guild_id, _method, f"Message {payload.message_id} has already been tracked for WDYCTW. Skipping.")
 
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            # await self.discord_helper.notify_of_error(ctx)
+
+    def _import_wdyctw(self, message: discord.Message):
+        guild_id = message.guild.id
+        channel_id = message.channel.id
+        message_id = message.id
+        message_author = message.author
+        message_content = message.content
+
+        # get the image
+        image_url = None
+        if message.attachments is not None and len(message.attachments) > 0:
+            image_url = message.attachments[0].url
+        else:
+            raise Exception("No image found in message")
+
+        # get the text
+        text = None
+        if message_content is not None and message_content != "":
+            text = message_content
+
+
+        self.db.save_wdyctw (
+            guildId=guild_id,
+            message=text or "",
+            image=image_url,
+            author=message_author.id,
+            channel_id=channel_id,
+            message_id=message_id,
+        )
 
     async def give_user_wdyctw_tacos(self, guild_id, user_id, channel_id, message_id):
         try:
