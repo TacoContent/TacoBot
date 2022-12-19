@@ -143,36 +143,38 @@ class Minecraft(commands.Cog):
             for n in data["data"]["player"]["meta"]["name_history"]:
                 fields.append({"name": "Name", "value": n["name"]})
 
-            response = await self.discord_helper.ask_yes_no(
+            async def yes_no_callback(response: bool):
+                if not response:
+                    await self.discord_helper.sendEmbed(
+                        _ctx.channel,
+                        self.settings.get_string(guild_id, "minecraft_verification_failed_title"),
+                        self.settings.get_string(guild_id, "minecraft_verification_failed_message"),
+                        color=0xFF0000,
+                        delete_after=20,
+                    )
+                else:
+                    # if correct, add to whitelist
+                    # check if user is in the whitelist
+                    # minecraft_user = self.db.get_minecraft_user(ctx.author.id)
+                    self.db.whitelist_minecraft_user(ctx.author.id, mc_username, mc_uuid, True)
+                    await self.discord_helper.sendEmbed(
+                        _ctx.channel,
+                        self.settings.get_string(guild_id, "minecraft_whitelist_title"),
+                        self.settings.get_string(guild_id, "minecraft_whitelist_message", username=mc_username, uuid=mc_uuid, server="mc.fuku.io", modpack="All The Mods 7 v0.4.0")
+                        color=0x00FF00,
+                        delete_after=30,
+                    )
+
+            await self.discord_helper.ask_yes_no(
                 _ctx,
                 _ctx.channel,
-                "Verify Account",
-                f"Is this your avatar associated with the Minecraft account {mc_username}?",
+                self.settings.get_string(guild_id, "minecraft_ask_avatar_title"),
+                self.settings.get_string(guild_id, "minecraft_ask_avatar_message", username=mc_username)
                 fields=fields,
                 image=avatar_url,
+                result_callback=yes_no_callback,
             )
-            if not response:
-                # if not, tell them to try again
-                await self.discord_helper.sendEmbed(
-                    _ctx.channel,
-                    "Unable to Verify Account",
-                    "Please run the command again to verify your account.",
-                    color=0xFF0000,
-                    delete_after=20,
-                )
-                return
 
-            # if correct, add to whitelist
-            # check if user is in the whitelist
-            # minecraft_user = self.db.get_minecraft_user(ctx.author.id)
-            self.db.whitelist_minecraft_user(ctx.author.id, mc_username, mc_uuid, True)
-            await self.discord_helper.sendEmbed(
-                _ctx.channel,
-                "Whitelisted",
-                f"You have been whitelisted for Minecraft account {mc_username}({mc_uuid}).\n\nThe server address is `mc.fuku.io`. Requires **All The Mods 7 v0.3.21** from CurseForge.\n\nIf you need help, message DarthMinos.",
-                color=0x00FF00,
-                delete_after=30,
-            )
 
         except Exception as e:
             self.log.error(guild_id, "minecraft.whitelist", str(e), traceback.format_exc())

@@ -11,9 +11,6 @@ import math
 import datetime
 
 from discord.ext.commands.cooldowns import BucketType
-from interactions import ComponentContext
-# from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
-# from discord_slash.model import ButtonStyle
 from discord.ext.commands import has_permissions, CheckFailure
 import inspect
 
@@ -57,14 +54,18 @@ class AccountLink(commands.Cog):
                 if result:
                     # try DM, if that fails, use the channel that it originated in
                     try:
-                        await ctx.author.send(f"I used the code `{code}` to link your discord account to your twitch account. Thank you!")
+                        await ctx.author.send(
+                            self.settings.get_string(guild_id, "account_link_success_message", code=code)
+                        )
                     except discord.Forbidden:
-                        await ctx.channel.send(f"{ctx.author.mention}, I used the code `{code}` to link your discord account to your twitch account. Thank you!", delete_after=10)
+                        await ctx.channel.send(
+                            f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_success_message", code=code)}',
+                            delete_after=10)
                 else:
                     try:
-                        await ctx.author.send(f"I couldn't find a verification code with that value. Please try again.")
+                        await ctx.author.send(self.settings.get_string(guild_id, key="account_link_unknown_code_message"))
                     except discord.Forbidden:
-                        await ctx.channel.send(f"{ctx.author.mention}, I couldn't find a verification code with that value. Please try again.", delete_after=10)
+                        await ctx.channel.send(f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_unknown_code_message")}', delete_after=10)
             except ValueError as ve:
                 try:
                     await ctx.author.send(f"{ve}")
@@ -79,7 +80,7 @@ class AccountLink(commands.Cog):
                 code = utils.get_random_string(length=6)
                 # save code to db
                 result = self.db.set_twitch_discord_link_code(ctx.author.id, code)
-                notice_message = f"I've generated a verification code for you. Please use `!taco link {code}` in <https://www.twitch.tv/ourtaco> or <https://www.twitch.tv/ourtacobot> chat to link your discord account to your twitch account."
+                notice_message = self.settings.get_string(guild_id, "account_link_notice_message", code=code)
                 if result:
                     try:
                         await ctx.author.send(notice_message)
@@ -87,9 +88,9 @@ class AccountLink(commands.Cog):
                         await ctx.channel.send(f"{ctx.author.mention}, {notice_message}", delete_after=10)
                 else:
                     try:
-                        await ctx.author.send("I couldn't save your code. Please try again.")
+                        await ctx.author.send(self.settings.get_string(guild_id, "account_link_save_error_message"))
                     except discord.Forbidden:
-                        await ctx.channel.send(f"{ctx.author.mention}, I couldn't save your code. Please try again.", delete_after=10)
+                        await ctx.channel.send(f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_save_error_message")}', delete_after=10)
             except ValueError as ver:
                 try:
                     await ctx.author.send(f"{ve}")

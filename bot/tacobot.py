@@ -18,13 +18,10 @@ import inspect
 from .cogs.lib import utils
 from .cogs.lib import settings
 
-# from .cogs.lib import sqlite
 from .cogs.lib import mongo
 from .cogs.lib import logger
 from .cogs.lib import loglevel
 from .cogs.lib import dbprovider
-# from interactions import SlashCommand
-# from .cogs._loader import CogLoader
 
 
 class TacoBot(commands.Bot):
@@ -86,11 +83,11 @@ class TacoBot(commands.Bot):
         pass
 
     async def get_prefix(self, message):
+        _method: str = inspect.stack()[0][3]
+        # default prefixes
+        # sets the prefixes, you can keep it as an array of only 1 item if you need only one prefix
+        prefixes: typing.List[str] = [".taco ", "?taco ", "!taco "]
         try:
-            _method = inspect.stack()[0][3]
-            # default prefixes
-            # sets the prefixes, you can keep it as an array of only 1 item if you need only one prefix
-            prefixes = [".taco ", "?taco ", "!taco "]
             # get the prefix for the guild.
             if message.guild:
                 guild_id = message.guild.id
@@ -99,8 +96,6 @@ class TacoBot(commands.Bot):
                 if not settings:
                     raise Exception("No bot settings found")
                 prefixes = settings["command_prefixes"]
-                # # log the prefixes that we are launching with for this guild
-                # self.log.debug(0, _method, f"Prefixes for guild {message.guild.name} are {prefixes}")
 
             elif not message.guild:
                 # get the prefix for the DM using 0 for the guild_id
@@ -108,9 +103,6 @@ class TacoBot(commands.Bot):
                 if not settings:
                     raise Exception("No bot settings found")
                 prefixes = settings["command_prefixes"]
-                # # log the prefixes that we are launching with for DMs
-                # self.log.debug(0, _method, f"Prefixes for DM are {prefixes}")
-
             # Allow users to @mention the bot instead of using a prefix when using a command. Also optional
             # Do `return prefixes` if you don't want to allow mentions instead of prefix.
             return commands.when_mentioned_or(*prefixes)(self, message)

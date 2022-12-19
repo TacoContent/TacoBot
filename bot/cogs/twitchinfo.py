@@ -182,7 +182,10 @@ class TwitchInfo(commands.Cog):
 
             if twitch_name is None:
                 twitch_name = await self.discord_helper.ask_text(
-                    ctx, ctx.author, "Twitch Name", "Please respond with the twitch name you want to set for the user."
+                    ctx,
+                    ctx.author,
+                    "Twitch Name",
+                    "Please respond with the twitch name you want to set for the user."
                 )
 
             if twitch_name is not None and user is not None:

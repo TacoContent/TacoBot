@@ -87,8 +87,8 @@ class MoveMessage(commands.Cog):
 
                     await self.discord_helper.ask_channel(
                         ctx=ctx,
-                        title="Choose Target Channel",
-                        message="Please select the channel you want to move the message to.",
+                        title=self.settings.get_string(guild_id, "move_choose_channel_title"),
+                        message=self.settings.get_string(guild_id, "move_choose_channel_message"),
                         timeout=60,
                         callback=callback)
 
@@ -114,14 +114,34 @@ class MoveMessage(commands.Cog):
 
             message = await ctx.channel.fetch_message(messageId)
             if message is None:
-                await self.discord_helper.sendEmbed(channel, "Move Message", f"{ctx.author.mention}, the message id ({messageId}) was not found.", color=0xff0000, delete_after=20)
+                await self.discord_helper.sendEmbed(
+                    channel=channel,
+                    title="Move Message",
+                    message=self.settings.get_string(guild_id, "move_message_not_found_message", who=ctx.author.mention, message_id=messageId),
+                    color=0xff0000,
+                    delete_after=20)
                 return
-            ctx = self.discord_helper.create_context(bot=self.bot, message=message, channel=channel, author=message.author, guild=ctx.guild)
-            target_channel = await self.discord_helper.ask_channel(ctx, "Choose Target Channel", "Please select the channel you want to move the message to.", timeout=60)
+            ctx = self.discord_helper.create_context(
+                bot=self.bot,
+                message=message,
+                channel=channel,
+                author=message.author,
+                guild=ctx.guild)
+            target_channel = await self.discord_helper.ask_channel(
+                ctx=ctx,
+                title=self.settings.get_string(guild_id, "move_choose_channel_title"),
+                message=self.settings.get_string(guild_id, "move_choose_channel_message"),
+                timeout=60)
             if target_channel is None:
                 return
 
-            await self.discord_helper.move_message(message, targetChannel=target_channel, author=message.author, who=ctx.author, reason="Moved by admin")
+            await self.discord_helper.move_message(
+                message=message,
+                targetChannel=target_channel,
+                author=message.author,
+                who=ctx.author,
+                reason="Moved by admin"
+            )
             await message.delete()
         except Exception as e:
             self.log.error(ctx.guild.id, "move.move", str(e), traceback.format_exc())

@@ -18,9 +18,6 @@ class ChannelSelect(discord.ui.Select):
         options = []
 
         if len(channels) >= max_items:
-            # self.log.warn(
-            #     ctx.guild.id, _method, f"Guild has more than 24 channels. Total Channels: {str(len(channels))}"
-            # )
             options.append(
                 discord.SelectOption(label=self.settings.get_string(ctx.guild.id, "other"), value="0", emoji="⏭")
             )
@@ -45,14 +42,16 @@ class ChannelSelectView(discord.ui.View):
         self.ctx = ctx
         self.channel_select = ChannelSelect(ctx, placeholder, channels, allow_none)
 
+        self.select_callback = select_callback
         self.timeout_callback = timeout_callback
-        async def callback(interaction):
-            await interaction.response.defer()
-            if select_callback is not None:
-                await select_callback(self.channel_select, interaction)
-        if select_callback is not None:
-            self.channel_select.callback = callback
+
+        self.channel_select.callback = self.on_select
         self.add_item(self.channel_select)
+
+    async def on_select(self, interaction: discord.Interaction):
+            await interaction.response.defer()
+            if self.select_callback is not None:
+                await self.select_callback(self.channel_select, interaction)
 
     async def on_timeout(self):
         self.clear_items()

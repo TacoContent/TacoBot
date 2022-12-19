@@ -88,10 +88,36 @@ class LeaveSurvey(commands.Cog):
             reason = "Did not answer the survey asking why they left."
             try:
                 ctx = self.discord_helper.create_context(bot=self.bot, author=member, guild=member.guild, channe=None)
-                take_survey = await self.discord_helper.ask_yes_no(ctx, member, "We are very sorry to see you leave. \n\nWould you be willing to let us know why you are leaving?","Leave Survey", timeout=60)
-                if take_survey:
-                    reason = await self.discord_helper.ask_text(ctx, member, "Leave Survey", "Please tell us why you are leaving.", timeout=600)
-                    await self.discord_helper.sendEmbed(member, "Thank You!", "Thank you for your feedback. We will review your feedback and take action accordingly.")
+                async def response_callback(result):
+                    if result:
+                        reason = "No reason given."
+                        try:
+                            reason = await self.discord_helper.ask_text(ctx, member, "Leave Survey", "Please tell us why you are leaving.", timeout=600)
+                            await self.discord_helper.sendEmbed(member, "Thank You!", "Thank you for your feedback. We will review your feedback and take action accordingly.")
+                        except discord.Forbidden as f:
+                            self.log.info(guild_id, "leave_survey.on_message", f"Failed to send message to {member.name}#{member.discriminator} ({member.id})")
+                        except discord.NotFound as nf:
+                            self.log.info(guild_id, "leave_survey.on_message", f"Failed to send message to {member.name}#{member.discriminator} ({member.id})")
+                        except Exception as e:
+                            # an error occurred while asking the user if they want to take the surveys
+                            self.log.error(guild_id, "leave_survey.on_member_remove", f"Error in leave_survey.ask_survey: {e}", traceback.format_exc())
+
+                        if log_channel:
+                            await self.discord_helper.sendEmbed(
+                                log_channel,
+                                "Leave Survey",
+                                f"{member.name}#{member.discriminator} ({member.id}) has left the server. \n\n**Reason given:**\n\n{reason}",
+                                author=member
+                            )
+
+                await self.discord_helper.ask_yes_no(
+                    ctx=ctx,
+                    targetChannel=member,
+                    question="We are very sorry to see you leave. \n\nWould you be willing to let us know why you are leaving?",
+                    title="Leave Survey",
+                    timeout=60,
+                    result_callback=response_callback)
+
             except discord.Forbidden as f:
                 self.log.info(guild_id, "leave_survey.on_message", f"Failed to send message to {member.name}#{member.discriminator} ({member.id})")
             except discord.NotFound as nf:
@@ -99,9 +125,6 @@ class LeaveSurvey(commands.Cog):
             except Exception as e:
                 # an error occurred while asking the user if they want to take the surveys
                 self.log.error(guild_id, "leave_survey.on_member_remove", f"Error in leave_survey.ask_survey: {e}", traceback.format_exc())
-
-            if log_channel:
-                await self.discord_helper.sendEmbed(log_channel, "Leave Survey", f"{member.name}#{member.discriminator} ({member.id}) has left the server. \n\n**Reason given:**\n\n{reason}", author=member)
 
         except Exception as e:
             self.log.error(guild_id, "leave_survey.on_member_remove", str(e), traceback.format_exc())

@@ -102,15 +102,21 @@ class TacoPost(commands.Cog):
                 await self.discord_helper.sendEmbed(channel, "Not Enough Tacos", f"{user.mention}, You need {taco_cost} tacos to post in this channel.", delete_after=15)
                 await message.delete()
             else:
-                choice = await self.discord_helper.ask_yes_no(message, message.channel, f"{user.mention}, Are you sure you want to post in this channel?\n\n**It will cost you {taco_cost} tacos 🌮.**\n\nYou currently have {taco_count} tacos 🌮.", "Use tacos to post?")
-                if choice:
-                    # remove the tacos from the user
-                    self.db.remove_tacos(guild_id, user.id, taco_cost)
-                    # send the message that tacos have been removed
-                    await self.discord_helper.sendEmbed(channel, "Tacos Removed", f"{user.mention}, You have been charged {taco_cost} tacos from your account.", delete_after=10)
-                else:
-                    await self.discord_helper.sendEmbed(channel, "Message Removed", f"{user.mention}, You chose to not use your tacos, your message has been removed.", delete_after=10)
-                    await message.delete()
+                async def response_callback(response):
+                    if response:
+                        # remove the tacos from the user
+                        self.db.remove_tacos(guild_id, user.id, taco_cost)
+                        # send the message that tacos have been removed
+                        await self.discord_helper.sendEmbed(channel, "Tacos Removed", f"{user.mention}, You have been charged {taco_cost} tacos from your account.", delete_after=10)
+                    else:
+                        await self.discord_helper.sendEmbed(channel, "Message Removed", f"{user.mention}, You chose to not use your tacos, your message has been removed.", delete_after=10)
+                        await message.delete()
+                await self.discord_helper.ask_yes_no(
+                    ctx=message,
+                    targetChannel=message.channel,
+                    question=f"{user.mention}, Are you sure you want to post in this channel?\n\n**It will cost you {taco_cost} tacos 🌮.**\n\nYou currently have {taco_count} tacos 🌮.",
+                    title="Use tacos to post?",
+                    result_callback=response_callback)
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
 

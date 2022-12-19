@@ -77,15 +77,6 @@ class GameKeys(commands.Cog):
             self.log.error(ctx.guild.id, "game_keys.close", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
-
-    # @commands.Cog.listener()
-    # async def on_component(self, ctx: ComponentContext):
-    #     self.log.debug(ctx.guild.id, "game_keys.on_component", f"Received component {ctx.component_name}")
-    #     await ctx.defer(
-    #         ignore=True
-    #     )  # ignore, i.e. don't do anything *with the button* when it's pressed.
-    #     pass
-
     async def _create_offer(self, ctx) -> None:
         try:
             guild_id = 0

@@ -15,6 +15,11 @@ from .ChannelSelect import (
     ChannelSelectView
 )
 
+from .RoleSelectView import (
+    RoleSelectView,
+    RoleSelect
+)
+
 from discord.ext.commands.cooldowns import BucketType
 from discord import (
     SelectOption,
@@ -918,88 +923,66 @@ class DiscordHelper:
         title: str = "Choose Role",
         message: str = "Please choose a role.",
         allow_none: bool = False,
-        min_select: int = 1,
-        max_select: int = 1,
         exclude_roles: list = None,
         timeout: int = 60,
+        select_callback: typing.Callable = None,
+        # timeout_callback: typing.Callable = None,
     ):
-        def check_user(m):
-            same = m.author.id == ctx.author.id
-            return same
-
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
-        options = []
-        roles = [r for r in ctx.guild.roles if exclude_roles is None or r.id not in [x.id for x in exclude_roles]]
-        print(f"{len(roles)} roles")
-        roles.sort(key=lambda r: r.position)
-        sub_message = ""
-        if len(roles) == 0:
-            self.log.warn(
-                ctx.guild.id, _method, f"Forcing 'other' option for role list as there are no roles to select."
-            )
-            options.append(
-                create_select_option(label=self.settings.get_string(ctx.guild.id, "other"), value="0", emoji="⏭")
-            )
-        if len(roles) >= 24:
-            self.log.warn(ctx.guild.id, _method, f"Guild has more than 24 roles. Total roles: {str(len(roles))}")
-            options.append(
-                create_select_option(label=self.settings.get_string(ctx.guild.id, "other"), value="0", emoji="⏭")
-            )
-            # sub_message = self.get_string(guild_id, 'ask_admin_role_submessage')
-        if allow_none:
-            options.append(
-                create_select_option(label=self.settings.get_string(ctx.guild.id, "none"), value="-1", emoji="⛔")
+
+        async def role_select_callback(select: RoleSelect, interaction: discord.Interaction):
+            await interaction.delete_original_response()
+            if select_callback:
+                if select.values:
+                    role_id = 0
+                    if len(select.values) > 1:
+                        role_id = select.values[0]
+
+                    if role_id == 0:
+                        await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, ENTER ROLE NAME", delete_after=5)
+                        # need to ask for role name
+                        await select_callback(None)
+                        return
+                        # chan_id = await self.ask_channel_by_name_or_id(ctx, title)
+
+                    selected_role: discord.Role = discord.utils.get(ctx.guild.roles, id=str(select.values[0]))
+
+                    if selected_role:
+                        self.log.debug(guild_id, _method, f"{ctx.author.mention} selected the role '{selected_role.name}'")
+                        await select_callback(selected_role)
+                        return
+                    else:
+                        await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, Unknown Role.", delete_after=5)
+                        await select_callback(None)
+                        return
+                else:
+                    await select_callback(None)
+
+        async def timeout_callback(select: RoleSelect, interaction: discord.Interaction):
+            await interaction.delete_original_response()
+            await self.sendEmbed(
+                ctx.channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
             )
 
-        for r in roles[:24]:
-            options.append(create_select_option(label=r.name, value=str(r.id), emoji="🏷"))
-
-        select = create_select(
-            options=options,
+        role_view = RoleSelectView(
+            ctx=ctx,
             placeholder=title,
-            min_values=1,  # the minimum number of options a user must select
-            max_values=1,  # the maximum number of options a user can select
-        )
+            exclude_roles=exclude_roles,
+            select_callback=role_select_callback,
+            timeout_callback=timeout_callback,
+            timeout=timeout)
 
-        action_row = create_actionrow(select)
-        ask_context = await self.sendEmbed(
+
+        await self.sendEmbed(
             ctx.channel,
             title,
             message,
             delete_after=timeout,
             footer=self.settings.get_string(ctx.guild.id, "footer_XX_seconds", seconds=timeout),
-            view=[action_row],
+            view=role_view,
         )
-        try:
-            button_ctx: ComponentContext = await wait_for_component(
-                self.bot, check=check_user, view=action_row, timeout=timeout
-            )
-        except asyncio.TimeoutError:
-            await self.sendEmbed(
-                ctx.channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
-            )
-        else:
-            role_id = int(button_ctx.selected_options[0])
-            if role_id == 0:
-                await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, ENTER ROLE NAME", delete_after=5)
-                return
-                # chan_id = await self.ask_channel_by_name_or_id(ctx, title)
 
-            await ask_context.delete()
-            selected_role = discord.utils.get(ctx.guild.roles, id=role_id)
-            if selected_role:
-                self.log.debug(guild_id, _method, f"{ctx.author.mention} selected the role '{selected_role.name}'")
-                await self.sendEmbed(
-                    ctx.channel,
-                    title,
-                    f"{ctx.author.mention}, You have selected channel '{selected_role.name}'",
-                    delete_after=5,
-                )
-                return selected_role
-            else:
-                await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, Unknown Role.", delete_after=5)
-                return None
 
     async def is_admin(self, guildId: int, userId: int):
         member = await self.get_or_fetch_member(guildId, userId)
