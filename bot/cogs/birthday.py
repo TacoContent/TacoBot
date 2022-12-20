@@ -16,10 +16,7 @@ import re
 import uuid
 
 from discord.ext.commands.cooldowns import BucketType
-from interactions import ComponentContext
-# from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
-# from discord_slash.model import ButtonStyle
-from discord.ext.commands import has_permissions, CheckFailure
+from discord.ext.commands import has_permissions, CheckFailure, Context
 import inspect
 
 from .lib import settings
@@ -163,7 +160,7 @@ class Birthday(commands.Cog):
             self.log.error(guildId, "birthday.get_todays_birthdays", str(e), traceback.format_exc())
             return []
 
-    async def send_birthday_message(self, ctx: ComponentContext, birthdays: typing.List[typing.Dict]):
+    async def send_birthday_message(self, ctx: Context, birthdays: typing.List[typing.Dict]):
         try:
             guild_id = 0
             if ctx.guild:

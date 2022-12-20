@@ -15,10 +15,7 @@ import collections
 import html
 
 from discord.ext.commands.cooldowns import BucketType
-from interactions import ComponentContext
-# from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
-# from discord_slash.model import ButtonStyle
-from discord.ext.commands import has_permissions, CheckFailure
+from discord.ext.commands import has_permissions, CheckFailure, Context
 from .lib import settings
 from .lib import discordhelper
 from .lib import logger
@@ -62,7 +59,7 @@ class Trivia(commands.Cog):
     async def on_ready(self):
         try:
             self.log.debug(0, "trivia.on_ready", "trivia cog is ready")
-         except Exception as e:
+        except Exception as e:
             self.log.error(0, "trivia.on_ready", str(e), traceback.format_exc())
 
 
@@ -219,7 +216,7 @@ class Trivia(commands.Cog):
             color=0xff0000, delete_after=30)
         pass
 
-    def get_question(self, ctx: ComponentContext):
+    def get_question(self, ctx: Context):
         try:
             guild_id = 0
             if ctx.guild:

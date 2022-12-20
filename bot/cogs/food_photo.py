@@ -89,5 +89,5 @@ class FoodPhoto(commands.Cog):
             traceback.print_exc()
 
 
-def setup(bot):
-    bot.add_cog(FoodPhoto(bot))
+async def setup(bot):
+    await bot.add_cog(FoodPhoto(bot))

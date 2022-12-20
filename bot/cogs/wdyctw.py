@@ -9,10 +9,7 @@ import glob
 import typing
 
 from discord.ext.commands.cooldowns import BucketType
-from interactions import ComponentContext
-# from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
-# from discord_slash.model import ButtonStyle
-from discord.ext.commands import has_permissions, CheckFailure
+from discord.ext.commands import has_permissions, CheckFailure, Context
 
 from .lib import settings
 from .lib import discordhelper
@@ -47,7 +44,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
     @commands.group(name="wdyctw", invoke_without_command=True)
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def wdyctw(self, ctx: ComponentContext):
+    async def wdyctw(self, ctx: Context):
         if ctx.invoked_subcommand is not None:
             return
         guild_id = 0

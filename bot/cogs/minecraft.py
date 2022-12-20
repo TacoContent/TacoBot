@@ -14,16 +14,7 @@ import typing
 import requests
 
 from discord.ext.commands.cooldowns import BucketType
-from interactions import ComponentContext
-# from discord_slash.utils.manage_components import (
-#     create_button,
-#     create_actionrow,
-#     create_select,
-#     create_select_option,
-#     wait_for_component,
-# )
-# from discord_slash.model import ButtonStyle
-from discord.ext.commands import has_permissions, CheckFailure
+from discord.ext.commands import has_permissions, CheckFailure, Context
 
 from .lib import settings
 from .lib import discordhelper
@@ -54,7 +45,7 @@ class Minecraft(commands.Cog):
         self.log.debug(0, "minecraft.__init__", "Initialized")
 
     @commands.group(name="minecraft", invoke_without_command=True)
-    async def minecraft(self, ctx: ComponentContext):
+    async def minecraft(self, ctx: Context):
         if ctx.invoked_subcommand is not None:
             return
         guild_id = 0
@@ -66,7 +57,7 @@ class Minecraft(commands.Cog):
 
     @minecraft.command()
     @commands.guild_only()
-    async def whitelist(self, ctx: ComponentContext):
+    async def whitelist(self, ctx: Context):
         guild_id = 0
         try:
             if ctx.guild:
@@ -160,7 +151,7 @@ class Minecraft(commands.Cog):
                     await self.discord_helper.sendEmbed(
                         _ctx.channel,
                         self.settings.get_string(guild_id, "minecraft_whitelist_title"),
-                        self.settings.get_string(guild_id, "minecraft_whitelist_message", username=mc_username, uuid=mc_uuid, server="mc.fuku.io", modpack="All The Mods 7 v0.4.0")
+                        self.settings.get_string(guild_id, "minecraft_whitelist_message", username=mc_username, uuid=mc_uuid, server="mc.fuku.io", modpack="All The Mods 7 v0.4.0"),
                         color=0x00FF00,
                         delete_after=30,
                     )
@@ -169,7 +160,7 @@ class Minecraft(commands.Cog):
                 _ctx,
                 _ctx.channel,
                 self.settings.get_string(guild_id, "minecraft_ask_avatar_title"),
-                self.settings.get_string(guild_id, "minecraft_ask_avatar_message", username=mc_username)
+                self.settings.get_string(guild_id, "minecraft_ask_avatar_message", username=mc_username),
                 fields=fields,
                 image=avatar_url,
                 result_callback=yes_no_callback,

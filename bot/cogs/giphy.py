@@ -14,7 +14,6 @@ import re
 import uuid
 
 from discord.ext.commands.cooldowns import BucketType
-from interactions import ComponentContext
 from discord.ext.commands import has_permissions, CheckFailure
 import inspect
 

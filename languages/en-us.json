@@ -131,5 +131,5 @@
 	"account_link_success_message": "I used the code `{{code}}` to link your discord account to your twitch account. Thank you!",
 	"account_link_unknown_code_message": "I couldn't find a verification code with that value. Please try again.",
 	"account_link_notice_message": "I've generated a verification code for you. Please use the command `!taco link {{code}}` in <https://www.twitch.tv/ourtaco> or <https://www.twitch.tv/ourtacobot> chat to link your discord account to your twitch account.",
-	"account_link_save_error_message": "I couldn't save your verification code. Please try again.",
+	"account_link_save_error_message": "I couldn't save your verification code. Please try again."
 }

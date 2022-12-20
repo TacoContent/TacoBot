@@ -11,9 +11,6 @@ import glob
 import typing
 
 from discord.ext.commands.cooldowns import BucketType
-# from discord_slash import ComponentContext
-# from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
-# from discord_slash.model import ButtonStyle
 from discord.ext.commands import has_permissions, CheckFailure
 
 from .lib import settings
