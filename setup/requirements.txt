@@ -5,3 +5,4 @@ python-dotenv==0.21.0
 requests
 discord-py-slash-command~=3.0.3
 pytz
+aiohttp~=3.7.4
