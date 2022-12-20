@@ -92,3 +92,5 @@ class TacoTuesday(commands.Cog):
             # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
+def setup(bot):
+    bot.add_cog(TacoTuesday(bot))
