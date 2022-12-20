@@ -65,6 +65,16 @@ class FoodPhoto(commands.Cog):
             if not message.attachments:
                 return
 
+
+            # check if the user posted a photo in the channel within the last 5 minutes
+            # if so, ignore
+            now = datetime.datetime.now()
+            five_minutes_ago = now - datetime.timedelta(minutes=5)
+            async for m in message.channel.history(limit=100, after=five_minutes_ago):
+                if m.author == message.author and m.attachments:
+                    self.log.debug(guild_id, "food_photo.on_message", f"User {message.author} already posted a photo in the last 5 minutes")
+                    return
+
             amount = int(food_channel["tacos"] if "tacos" in food_channel else 5)
             amount = amount if amount > 0 else 5
 
