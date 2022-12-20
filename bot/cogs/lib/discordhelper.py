@@ -239,15 +239,15 @@ class DiscordHelper:
 
     async def updateEmbed(
         self,
-        message,
-        title=None,
-        description=None,
+        message: discord.Message = None,
+        title: str = None,
+        description: str = None,
         description_append: bool = True,
-        fields=None,
-        footer=None,
-        view=None,
-        color=0x7289DA,
-        author=None,
+        fields: list = None,
+        footer: str = None,
+        view: discord.ui.View = None,
+        color: int = 0x7289DA,
+        author: typing.Union[discord.User, discord.Member] = None,
     ):
         if not message or len(message.embeds) == 0:
             return
@@ -258,22 +258,22 @@ class DiscordHelper:
             guild_id = message.guild.id
         embed = message.embeds[0]
         if title is None:
-            title = embed.title
+            title = embed.title if embed.title is not None else ""
         if description is not None:
             if description_append:
                 edescription = ""
-                if embed.description is not None and embed.description != discord.Embed.Empty:
+                if embed.description is not None and embed.description != "":
                     edescription = embed.description
 
                 description = edescription + "\n\n" + description
             else:
                 description = description
         else:
-            if embed.description is not None and embed.description != discord.Embed.Empty:
+            if embed.description is not None and embed.description != "":
                 description = embed.description
             else:
                 description = ""
-        updated_embed = discord.Embed(color=color, title=embed.title, description=f"{description}", footer=embed.footer, view=view)
+        updated_embed = discord.Embed(color=color, title=embed.title, description=f"{description}", view=view)
         for f in embed.fields:
             updated_embed.add_field(name=f.name, value=f.value, inline=f.inline)
         if fields is not None:
@@ -346,8 +346,8 @@ class DiscordHelper:
         give_type: tacotypes.TacoTypes = tacotypes.TacoTypes.CUSTOM,
         taco_amount: int = 1,
     ):
+        _method = inspect.stack()[0][3]
         try:
-            _method = inspect.stack()[0][3]
             # get taco settings
             taco_settings = self.settings.get_settings(self.db, guildId, "tacos")
             if not taco_settings:
@@ -372,7 +372,14 @@ class DiscordHelper:
             reason_msg = reason if reason else self.settings.get_string(guildId, "no_reason")
 
             total_taco_count = self.db.add_tacos(guildId, toUser.id, taco_count)
-            await self.tacos_log(guildId, toUser, fromUser, taco_count, total_taco_count, reason_msg)
+            await self.tacos_log(
+                guild_id=guildId,
+                toMember=toUser,
+                fromMember=fromUser,
+                count=taco_count,
+                total_tacos=total_taco_count,
+                reason=reason_msg
+            )
             return total_taco_count
         except Exception as e:
             self.log.error(guildId, _method, str(e), traceback.format_exc())
@@ -408,8 +415,8 @@ class DiscordHelper:
     async def tacos_log(
         self,
         guild_id: int,
-        toMember: discord.Member,
-        fromMember: discord.Member,
+        toMember: typing.Union[discord.User, discord.Member],
+        fromMember: typing.Union[discord.User, discord.Member],
         count: int,
         total_tacos: int,
         reason: str,
@@ -457,7 +464,7 @@ class DiscordHelper:
         except Exception as e:
             self.log.error(guild_id, _method, str(e), traceback.format_exc())
 
-    async def get_or_fetch_user(self, userId: int):
+    async def get_or_fetch_user(self, userId: int) -> typing.Union[discord.User, None]:
         _method = inspect.stack()[1][3]
         try:
             if userId:
@@ -473,7 +480,7 @@ class DiscordHelper:
             self.log.error(0, _method, str(ex), traceback.format_exc())
             return None
 
-    async def get_or_fetch_member(self, guildId: int, userId: int):
+    async def get_or_fetch_member(self, guildId: int, userId: int) -> typing.Union[discord.Member, None]:
         _method = inspect.stack()[1][3]
         try:
             if not guildId:
@@ -497,7 +504,7 @@ class DiscordHelper:
             self.log.error(0, _method, str(ex), traceback.format_exc())
             return None
 
-    async def get_or_fetch_channel(self, channelId: int):
+    async def get_or_fetch_channel(self, channelId: int) -> typing.Union[discord.TextChannel, None]:
         _method = inspect.stack()[1][3]
         try:
             if channelId:
@@ -564,65 +571,6 @@ class DiscordHelper:
             footer=self.settings.get_string(ctx.guild.id, "footer_XX_seconds", seconds=timeout),
         )
         return
-
-    async def wait_for_user_invoke_cleanup(self, ctx):
-        try:
-            guild_id = ctx.guild.id
-            channel = ctx.channel
-
-            waiting_invokes = self.db.get_wait_invokes(guildId=guild_id, channelId=channel.id)
-            if waiting_invokes:
-                for w in waiting_invokes:
-                    wi_message_id = int(w["message_id"])
-                    if wi_message_id:
-                        self.log.debug(guild_id, "suggestions.on_ready", f"Found waiting invoke {w['message_id']}")
-                        try:
-                            wi_message = await channel.fetch_message(wi_message_id)
-                            if wi_message:
-                                await wi_message.delete()
-                                self.log.debug(
-                                    guild_id, "suggestions.on_ready", f"Deleted waiting invoke {w['message_id']}"
-                                )
-                        except discord.errors.NotFound as nf:
-                            self.log.warn(guild_id, "suggestions.on_ready", str(nf))
-
-                        self.db.untrack_wait_invoke(guildId=guild_id, channelId=channel.id, messageId=wi_message_id)
-        except Exception as e:
-            self.log.error(guild_id, "suggestions.on_ready", str(e), traceback.format_exc())
-
-    async def wait_for_user_invoke(
-        self, ctx, targetChannel, title: str, description: str, button_label: str = "Yes", button_id: str = "YES"
-    ):
-        def check(m):
-            return True
-
-        channel = targetChannel if targetChannel else ctx.channel if ctx.channel else ctx.author
-
-        if ctx.guild:
-            guild_id = ctx.guild.id
-        else:
-            guild_id = 0
-        buttons = [
-            create_button(
-                style=ButtonStyle.green,
-                label=button_label or self.settings.get_string(ctx.guild.id, "yes"),
-                custom_id=button_id or "YES",
-            ),
-        ]
-        action_row = create_actionrow(*buttons)
-        invoke_req = await self.sendEmbed(channel, title, description, view=[action_row])
-        self.db.track_wait_invoke(guild_id, channel.id, invoke_req.id)
-        try:
-            button_ctx: ComponentContext = await wait_for_component(self.bot, check=check, view=action_row)
-        except asyncio.TimeoutError:
-            # this should never happen because there is no timeout
-            await self.sendEmbed(
-                channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
-            )
-        else:
-            await invoke_req.delete()
-            self.db.untrack_wait_invoke(guild_id, channel.id, invoke_req.id)
-        return button_ctx
 
     async def ask_channel_by_name_or_id(
         self, ctx, title: str = "TacoBot", description: str = "Enter the name of the channel", timeout: int = 60
