@@ -74,12 +74,18 @@ class TacoTuesday(commands.Cog):
             await self.discord_helper.sendEmbed(ctx.channel,
                 self.settings.get_string(guild_id, "taco_give_title"),
                 # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",
-                self.settings.get_string(guild_id, "taco_gift_success", user=ctx.author.mention, touser=member.mention, amount=amount, taco_word=tacos_word, reason=reason_msg),
+                self.settings.get_string(guild_id, "taco_gift_success", user=self.bot.user, touser=member.mention, amount=amount, taco_word=tacos_word, reason=reason_msg),
                 footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT),
                 delete_after=self.SELF_DESTRUCT_TIMEOUT)
 
-            await self.discord_helper.taco_give_user(guild_id, ctx.author, member, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount )
-
+            await self.discord_helper.taco_give_user(
+                guildId=guild_id,
+                fromUser=self.bot.user,
+                toUser=member,
+                reason=reason_msg,
+                give_type=tacotypes.TacoTypes.CUSTOM,
+                taco_amount=amount
+            )
 
         except Exception as e:
             self.log.error(ctx.guild.id, "taco_tuesday.give", str(e), traceback.format_exc())
