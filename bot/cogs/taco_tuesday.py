@@ -87,7 +87,6 @@ class TacoTuesday(commands.Cog):
                 taco_amount=amount
             )
 
-
         except Exception as e:
             self.log.error(ctx.guild.id, "taco_tuesday.give", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
