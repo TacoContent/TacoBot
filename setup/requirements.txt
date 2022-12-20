@@ -5,3 +5,4 @@ python-dotenv==0.21.0
 requests
 # discord-py-interactions==4.3.4
 pytz
+aiohttp~=3.7.4
