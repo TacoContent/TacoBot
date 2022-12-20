@@ -392,6 +392,10 @@ class DiscordHelper:
             if count == 1:
                 taco_word = self.settings.get_string(guild_id, "taco_singular")
 
+            total_taco_word = self.settings.get_string(guild_id, "taco_plural")
+            if total_tacos == 1:
+                total_taco_word = self.settings.get_string(guild_id, "taco_singular")
+
             action = self.settings.get_string(guild_id, "tacos_log_action_received")
             if count < 0:
                 action = self.settings.get_string(guild_id, "tacos_log_action_lost")
@@ -409,25 +413,11 @@ class DiscordHelper:
                     {"name": "▶ TO USER", "value": toMember.name},
                     {"name": "◀ FROM USER", "value": fromMember.name},
                     {"name": f"🎬 {action.upper()}", "value": f"{positive_count} {taco_word}"},
-                    {"name": "🌮 TOTAL TACOS", "value": f"{total_tacos} {taco_word}"},
+                    {"name": "🌮 TOTAL TACOS", "value": f"{total_tacos} {total_taco_word}"},
                     {"name": "ℹ REASON", "value": reason},
                 ]
 
                 await self.sendEmbed(channel=log_channel, title="", message="", fields=fields, author=fromMember)
-
-                # await log_channel.send(
-                #     self.settings.get_string(
-                #         guild_id,
-                #         "tacos_log_message",
-                #         touser=toMember.name,
-                #         action=action,
-                #         positive_count=positive_count,
-                #         taco_word=taco_word,
-                #         fromuser=fromMember.name,
-                #         reason=reason,
-                #         total_tacos=total_tacos,
-                #     )
-                # )
         except Exception as e:
             self.log.error(guild_id, _method, str(e), traceback.format_exc())
 
