@@ -65,10 +65,8 @@ class FoodPhoto(commands.Cog):
             if not message.attachments:
                 return
 
-
-
-            # check if the user posted a photo in the channel within the last 5 minutes
-            # if so, ignore
+            # # check if the user posted a photo in the channel within the last 5 minutes
+            # # if so, ignore
             # now = datetime.datetime.utcnow()
             # five_minutes_ago = now - datetime.timedelta(minutes=5)
             # async for m in message.channel.history(limit=100, after=five_minutes_ago):
