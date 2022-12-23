@@ -128,6 +128,7 @@ class TacoQuestionOfTheDay(commands.Cog):
                  content=role_tag,
                  files=files,
                  color=0x00ff00)
+
             # save the TQOTD
             self.db.save_tqotd(guild_id, qotd.text, ctx.author.id)
 
@@ -241,10 +242,11 @@ class TacoQuestionOfTheDay(commands.Cog):
 
             reason_msg = self.settings.get_string(guild_id, "tqotd_reason_default")
 
-            await self.discord_helper.sendEmbed(ctx.channel,
-                self.settings.get_string(guild_id, "taco_give_title"),
+            await self.discord_helper.sendEmbed(
+                channel=ctx.channel,
+                title=self.settings.get_string(guild_id, "taco_give_title"),
                 # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",
-                self.settings.get_string(guild_id, "taco_gift_success", user=self.bot.user, touser=member.mention, amount=amount, taco_word=tacos_word, reason=reason_msg),
+                message=self.settings.get_string(guild_id, "taco_gift_success", user=self.bot.user, touser=member.mention, amount=amount, taco_word=tacos_word, reason=reason_msg),
                 footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT),
                 delete_after=self.SELF_DESTRUCT_TIMEOUT)
 

@@ -110,10 +110,11 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             taco_word = self.settings.get_string(guild_id, "taco_singular")
             if amount != 1:
                 taco_word = self.settings.get_string(guild_id, "taco_plural")
-            out_message = self.settings.get_string(guild_id, "wdyctw_out_message", question=twa.text, taco_count=amount, taco_word=taco_word)
+            out_message = self.settings.get_string(guild_id, "wdyctw_out_message", taco_count=amount, taco_word=taco_word)
             wdyctw_message = await self.discord_helper.sendEmbed(channel=out_channel,
                 title=self.settings.get_string(guild_id, "wdyctw_out_title"),
-                message=out_message, content=message_content, color=0x00ff00,
+                message=out_message,
+                content=message_content, color=0x00ff00,
                 image=twa.attachments[0].url, thumbnail=None, footer=None, author=None,
                 fields=None, delete_after=None)
 
@@ -282,7 +283,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
         if message_content is not None and message_content != "":
             text = message_content
 
-
+        self.log.debug(guild_id, "wdyctw._import_wdyctw", f"Importing WDYCTW message {message_id} from channel {channel_id} in guild {guild_id} for user {message_author.id} with text {text} and image {image_url}")
         self.db.save_wdyctw (
             guildId=guild_id,
             message=text or "",
@@ -334,10 +335,11 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
             reason_msg = self.settings.get_string(guild_id, "wdyctw_reason_default")
 
-            await self.discord_helper.sendEmbed(ctx.channel,
-                self.settings.get_string(guild_id, "taco_give_title"),
+            await self.discord_helper.sendEmbed(
+                channel=ctx.channel,
+                title=self.settings.get_string(guild_id, "taco_give_title"),
                 # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",
-                self.settings.get_string(guild_id, "taco_gift_success", user=self.bot.user, touser=member.mention, amount=amount, taco_word=tacos_word, reason=reason_msg),
+                message=self.settings.get_string(guild_id, "taco_gift_success", user=self.bot.user, touser=member.mention, amount=amount, taco_word=tacos_word, reason=reason_msg),
                 footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT),
                 delete_after=self.SELF_DESTRUCT_TIMEOUT)
 
