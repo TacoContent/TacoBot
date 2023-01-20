@@ -89,13 +89,13 @@ class Minecraft(commands.Cog):
             if mc_username is None or mc_username.lower() == "cancel":
                 return
 
-            cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings:
-                self.log.warn(guild_id, "minecraft.whitelist", f"No minecraft settings found for guild {guild_id}")
-                return
-            if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, "minecraft.whitelist", f"minecraft is disabled for guild {guild_id}")
-                return
+            # cog_settings = self.get_cog_settings(guild_id)
+            # if not cog_settings:
+            #     self.log.warn(guild_id, "minecraft.whitelist", f"No minecraft settings found for guild {guild_id}")
+            #     return
+            # if not cog_settings.get("enabled", False):
+            #     self.log.debug(guild_id, "minecraft.whitelist", f"minecraft is disabled for guild {guild_id}")
+            #     return
 
             # {
             #     "code": "player.found",
@@ -171,6 +171,14 @@ class Minecraft(commands.Cog):
             self.log.error(guild_id, "minecraft.whitelist", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
+    def get_cog_settings(self, guildId: int = 0):
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        if not cog_settings:
+            # raise exception if there are no leave_survey settings
+            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
+            # raise Exception(f"No live_now settings found for guild {guildId}")
+            return None
+        return cog_settings
 
 async def setup(bot):
     await bot.add_cog(Minecraft(bot))

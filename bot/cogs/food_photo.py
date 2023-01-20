@@ -47,7 +47,7 @@ class FoodPhoto(commands.Cog):
             if message.author.bot:
                 return
             # get the settings from settings
-            food_settings = self.settings.get_settings(self.db, message.guild.id, self.SETTINGS_SECTION)
+            food_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
             if not food_settings:
                 # raise exception if there are no settings
                 self.log.debug(guild_id, "food_photo.on_message", f"No settings found for guild {guild_id}")

@@ -89,7 +89,7 @@ class TacoQuestionOfTheDay(commands.Cog):
 
             amount = tacos_settings.get("tqotd_amount", 5)
 
-            role_tag = None
+            role_tag = ""
             role = ctx.guild.get_role(int(cog_settings.get("tag_role", 0)))
             if role:
                 role_tag = f"{role.mention}"

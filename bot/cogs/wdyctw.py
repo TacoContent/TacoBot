@@ -87,12 +87,12 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
             amount = tacos_settings.get("wdyctw_amount", 5)
 
-            role_tag = None
+            role_tag = ""
             role = ctx.guild.get_role(int(cog_settings.get("tag_role", 0)))
             if role:
                 role_tag = f"{role.mention}"
 
-            message_content = None
+            message_content = ""
             if twa.text is not None and twa.text != "":
                 if role_tag is not None:
                     message_content = f"{role_tag}\n\n{twa.text}"

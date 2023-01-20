@@ -69,7 +69,6 @@ class TacoBot(commands.Bot):
             except Exception as e:
                 print(f"Failed to load extension {extension}.", file=sys.stderr)
                 traceback.print_exc()
-        # slash = SlashCommand(self._bot, override_type=True, sync_commands=True)
 
         # This copies the global commands over to your guild.
         # self.tree.copy_global_to(guild=MY_GUILD)
