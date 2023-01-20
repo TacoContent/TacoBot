@@ -98,13 +98,13 @@ class Minecraft(commands.Cog):
             if mc_username is None or mc_username.lower() == "cancel":
                 return
 
-            cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings:
-                self.log.warn(guild_id, "minecraft.whitelist", f"No minecraft settings found for guild {guild_id}")
-                return
-            if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, "minecraft.whitelist", f"minecraft is disabled for guild {guild_id}")
-                return
+            # cog_settings = self.get_cog_settings(guild_id)
+            # if not cog_settings:
+            #     self.log.warn(guild_id, "minecraft.whitelist", f"No minecraft settings found for guild {guild_id}")
+            #     return
+            # if not cog_settings.get("enabled", False):
+            #     self.log.debug(guild_id, "minecraft.whitelist", f"minecraft is disabled for guild {guild_id}")
+            #     return
 
             # {
             #     "code": "player.found",
