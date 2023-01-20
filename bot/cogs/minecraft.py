@@ -127,7 +127,10 @@ class Minecraft(commands.Cog):
             # }
             result = requests.get(f"https://playerdb.co/api/player/minecraft/{mc_username}")
             if result.status_code != 200:
-                return
+                # Need to notify of an error
+                self.log.warn(guild_id, "minecraft.whitelist", f"Failed to find player {mc_username}")
+                raise Exception("Failed to find player {mc_username} from playerdb.co api call ({result.status_code} - {result.text})")
+
             data = result.json()
             # get users uuid for minecraft username
             if not data["success"] or data["code"] != "player.found":
@@ -169,7 +172,7 @@ class Minecraft(commands.Cog):
             await self.discord_helper.sendEmbed(
                 _ctx.channel,
                 "Whitelisted",
-                f"You have been whitelisted for Minecraft account {mc_username}({mc_uuid}).\n\nThe server address is `mc.fuku.io`. Requires **All The Mods 7 v0.3.21** from CurseForge.\n\nIf you need help, message DarthMinos.",
+                f"You have been whitelisted for Minecraft account {mc_username}({mc_uuid}). It may take up to 15 minutes for the whitelist to reload.\n\nSee the #minecraft channel for required version and server address.\n\nIf you need help, message DarthMinos.",
                 color=0x00FF00,
                 delete_after=30,
             )
