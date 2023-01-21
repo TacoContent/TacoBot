@@ -11,10 +11,47 @@
 		"?taco "
 	],
 	"commands": {
+		"minecraft": {
+			"title": "Minecraft Server Status",
+			"description": "Gets the info of the minecraft server",
+			"usage": "{{prefix}}minecraft",
+			"examples": [
+				"{{prefix}}minecraft"
+			],
+			"fields": [],
+			"subcommands": {
+				"status": {
+					"title": "Minecraft Server Status",
+					"description": "Gets the info of the minecraft server",
+					"usage": "{{prefix}}minecraft status",
+					"examples": [
+						"{{prefix}}minecraft status"
+					],
+					"fields": [],
+					"subcommands": {},
+					"enabled": true
+				},
+				"whitelist": {
+					"title": "Minecraft Whitelist",
+					"description": "Get whitelisted on the minecraft server",
+					"usage": "{{prefix}}minecraft whitelist",
+					"examples": [
+						"{{prefix}}minecraft whitelist"
+					],
+					"fields": [],
+					"subcommands": {},
+					"enabled": true
+				}
+			},
+			"enabled": true
+		},
 		"birthday": {
 			"description": "Sets your birthday",
 			"usage": "{{prefix}}birthday",
-			"examples": [ "{{prefix}}birthday", "{{prefix}}bday"],
+			"examples": [
+				"{{prefix}}birthday",
+				"{{prefix}}bday"
+			],
 			"fields": [],
 			"subcommands": {},
 			"aliases": [
@@ -38,7 +75,7 @@
 			"enabled": true,
 			"admin": false
 		},
-		"gif" : {
+		"gif": {
 			"description": "Gets a random gif from the given tag",
 			"usage": "{{prefix}}gif [search_term]",
 			"enabled": true,
@@ -56,7 +93,9 @@
 			},
 			"fields": [],
 			"subcommands": {},
-			"aliases": ["giphy"]
+			"aliases": [
+				"giphy"
+			]
 		},
 		"link": {
 			"title": "Link Discord -> Twitch",
@@ -92,7 +131,8 @@
 			"title": "Move a message",
 			"description": "Moves a message from one channel to another. Must be ran in the channel that the message is in.",
 			"usage": "{{prefix}}move <message_id>",
-			"examples": [ "{{prefix}}move 12345678901234567890123456789"
+			"examples": [
+				"{{prefix}}move 12345678901234567890123456789"
 			],
 			"arguments": {
 				"message_id": {
@@ -109,7 +149,9 @@
 			"title": "Create a Suggestion",
 			"description": "Starts a suggestion. I will DM you to ask you questions to create the suggestion.",
 			"usage": "{{prefix}}suggest",
-			"examples": [ "{{prefix}}suggest" ],
+			"examples": [
+				"{{prefix}}suggest"
+			],
 			"admin": false,
 			"arguments": {},
 			"fields": [],
