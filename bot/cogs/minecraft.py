@@ -53,6 +53,22 @@ class Minecraft(commands.Cog):
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, "minecraft.__init__", "Initialized")
 
+    # disable user from whitelist if they leave the discord
+    @commands.Cog.listener()
+    async def on_member_remove(self, member):
+        try:
+            if not self.is_user_whitelisted(member.id):
+                return
+            mc_user = self.db.get_minecraft_user(member.id)
+            if not mc_user:
+                return
+
+            self.log.debug(member.guild.id, "minecraft.on_member_remove", f"Member {member.name} has left the server")
+            self.db.whitelist_minecraft_user(member.id, mc_user['username'], mc_user['uuid'], False)
+
+        except Exception as e:
+            self.log.error(member.guild.id, "minecraft.on_member_remove", str(e), traceback.format_exc())
+
     @commands.group(name="minecraft", invoke_without_command=True)
     async def minecraft(self, ctx: ComponentContext):
         if ctx.invoked_subcommand is not None:
