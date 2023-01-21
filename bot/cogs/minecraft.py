@@ -59,9 +59,64 @@ class Minecraft(commands.Cog):
             return
         guild_id = 0
         try:
-            pass
+            await self.status(ctx)
         except Exception as e:
             self.log.error(guild_id, "minecraft.minecraft", str(e), traceback.format_exc())
+            await self.discord_helper.notify_of_error(ctx)
+
+    async def status(self, ctx):
+        guild_id = 0
+        try:
+            if ctx.guild:
+                await ctx.message.delete()
+                guild_id = ctx.guild.id
+
+
+            cog_settings = self.get_cog_settings(guild_id)
+            if not cog_settings:
+                self.log.warn(guild_id, "minecraft.status", f"No minecraft settings found for guild {guild_id}")
+                return
+            if not cog_settings.get("enabled", False):
+                self.log.debug(guild_id, "minecraft.status", f"minecraft is disabled for guild {guild_id}")
+                return
+
+            if not self.is_user_whitelisted(ctx.author.id):
+                await self.discord_helper.sendEmbed(ctx.channel,
+                    title="Minecraft Whitelist",
+                    message=f"You are not yet whitelisted. Run `.taco minecraft whitelist` to whitelist your account. Only one account can be whitelisted per discord user.",
+                    delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                return
+
+            result = requests.get(f"http://andeddu.bit13.local:10070/tacobot/minecraft/status")
+            if result.status_code != 200:
+                # Need to notify of an error
+                self.log.warn(guild_id, "minecraft.status", f"Failed to get minecraft status ({result.status_code} - {result.text})")
+                raise Exception("Failed to get minecraft status ({result.status_code} - {result.text})")
+
+            data = result.json()
+            # get users uuid for minecraft username
+            if not data["success"]:
+                self.log.warn(guild_id, "minecraft.status", f"Failed to get minecraft status")
+
+            fields = [
+                { "name": "Host Address", "value": f"`{cog_settings['server']}`", "inline": False },
+                { "name": "Players Online/Slots", "value": f"{data['players']['online']}/{data['players']['max']}", "inline": False },
+                { "name": "Version", "value": f"{data['version']}", "inline": False },
+                { "name": "Forge Version", "value": f"{cog_settings['forge_version']}", "inline": False },
+                { "name": "Mods", "value": f"------", "inline": False },
+            ]
+
+            for m in cog_settings["mods"]:
+                fields.append({ "name": f"{m['name']}", "value": f"{m['version']}", "inline": True })
+
+            await self.discord_helper.sendEmbed(ctx.channel,
+                title="Minecraft Server Status",
+                message=f"{data['title']}\n\nFor information on how to install see: <{cog_settings['help']}>",
+                fields=fields,
+                delete_after=self.SELF_DESTRUCT_TIMEOUT)
+
+        except Exception as e:
+            self.log.error(guild_id, "minecraft.status", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     @minecraft.command()
@@ -72,6 +127,13 @@ class Minecraft(commands.Cog):
             if ctx.guild:
                 await ctx.message.delete()
                 guild_id = ctx.guild.id
+
+            if self.is_user_whitelisted(ctx.author.id):
+                await self.discord_helper.sendEmbed(ctx.channel,
+                    title="Minecraft Whitelist",
+                    message=f"You are already whitelisted. Message an admin if you need to remove an account. Only one account can be whitelisted per discord user.",
+                    delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                return
 
             # try DM first
             try:
@@ -181,6 +243,24 @@ class Minecraft(commands.Cog):
             self.log.error(guild_id, "minecraft.whitelist", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
+    def is_user_whitelisted(self, user_id: int):
+        # check if user is in the whitelist
+        minecraft_user = self.db.get_minecraft_user(user_id)
+        if not minecraft_user:
+            return False
 
+        # check if user is whitelisted
+        if not minecraft_user["whitelist"]:
+            return False
+
+        return True
+
+    def get_cog_settings(self, guildId: int = 0):
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        if not cog_settings:
+            # raise exception if there are no leave_survey settings
+            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
+            raise Exception(f"No minecraft settings found for guild {guildId}")
+        return cog_settings
 def setup(bot):
     bot.add_cog(Minecraft(bot))
