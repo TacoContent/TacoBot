@@ -1114,24 +1114,6 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def ban_minecraft_user(self, userId: int, username: str, uuid: str, ban: bool = True):
-        try:
-            if self.connection is None:
-                self.open()
-            payload = {
-                "user_id": str(userId),
-                "username": username,
-                "uuid": uuid,
-                "ban": ban
-            }
-            self.connection.minecraft_users.update_one( { "user_id": str(userId) }, { "$set": payload }, upsert=True )
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-        finally:
-            if self.connection:
-                self.close()
-
     def op_minecraft_user(self, userId: int, username: str, uuid: str, op: bool = True, level: MinecraftOpLevel = MinecraftOpLevel.LEVEL1, bypassPlayerCount: bool = False):
         try:
             if self.connection is None:
