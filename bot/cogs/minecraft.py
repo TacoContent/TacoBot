@@ -216,12 +216,13 @@ class Minecraft(commands.Cog):
 
             # get user avatar for minecraft uuid
             mc_uuid = data["data"]["player"]["id"]
+            mc_raw_id = data["data"]["player"]["raw_id"]
 
             # ask user if the avatar looks correct
             # https://crafthead.net/armor/body/{uuid}
-            avatar_url = f"https://crafthead.net/armor/body/{mc_uuid}"
+            avatar_url = f"https://crafthead.net/armor/body/{mc_raw_id}"
             fields = []
-            for n in data["data"]["player"]["meta"]["name_history"]:
+            for n in data["data"]["player"]["name_history"]:
                 fields.append({"name": "Name", "value": n["name"]})
 
             response = await self.discord_helper.ask_yes_no(
