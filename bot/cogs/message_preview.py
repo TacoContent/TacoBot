@@ -49,6 +49,7 @@ class MessagePreview(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        guild_id = 0
         _method = inspect.stack()[0][3]
         try:
             # if in a DM, ignore
@@ -80,7 +81,7 @@ class MessagePreview(commands.Cog):
             else:
                 self.log.debug(0, "message_preview.on_message", f"Guild ({ref_guild_id}) does not match this guild ({guild_id})")
         except Exception as e:
-            self.log.error(guild_id, "restricted.on_message", f"{e}", traceback.format_exc())
+            self.log.error(guild_id, "message_preview.on_message", f"{e}", traceback.format_exc())
 
     async def create_message_preview(self, ctx, message):
         try:
