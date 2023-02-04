@@ -168,14 +168,16 @@ class LiveNow(commands.Cog):
                             if logging_channel:
                                 message_id = track.get("message_id", None)
                                 if message_id:
-                                    message = await logging_channel.fetch_message(int(message_id))
-                                    if message:
-                                        try:
-                                            await message.delete()
-                                        except discord.errors.NotFound:
-                                            self.log.warn(guild_id, "live_now.on_member_update", f"Message {message_id} not found in channel {logging_channel}")
+                                    try:
+                                        message = await logging_channel.fetch_message(int(message_id))
+                                        if message:
+                                            try:
+                                                await message.delete()
+                                            except discord.errors.NotFound:
+                                                self.log.warn(guild_id, "live_now.on_member_update", f"Message {message_id} not found in channel {logging_channel}")
+                                    except discord.errors.NotFound:
+                                        self.log.warn(guild_id, "live_now.on_member_update", f"Message {message_id} not found in channel {logging_channel}")
                                     self.db.untrack_live(guild_id, after.id, bsa.platform)
-
                     watch_groups = cog_settings.get("watch", [])
                     for wg in watch_groups:
                         watch_roles = wg.get("roles", [])
