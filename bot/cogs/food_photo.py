@@ -100,7 +100,7 @@ class FoodPhoto(commands.Cog):
 
             pass
         except Exception as e:
-            self.log.error(0, "food_photo.on_message", f"Exception: {e}")
+            self.log.error(0, "food_photo.on_message", str(e), traceback.format_exc())
             traceback.print_exc()
 
 
