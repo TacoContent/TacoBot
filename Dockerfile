@@ -30,4 +30,6 @@ RUN \
 VOLUME ["/data"]
 WORKDIR /app
 
+HEALTHCHECK CMD discordhealthcheck || exit 1
+
 CMD ["python", "-u", "/app/main.py"]
