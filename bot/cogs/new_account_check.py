@@ -39,15 +39,15 @@ class NewAccountCheck(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        self.log.debug(0, "new_account_check.on_ready", f"Logged in as {self.bot.user.name}:{self.bot.user.id}")
+        pass
         # self.MINIMUM_ACCOUNT_AGE = self.settings.get_setting(self.SETTINGS_SECTION, "minimum_account_age", 30)
     @commands.Cog.listener()
     async def on_disconnect(self):
-        self.log.debug(0, "new_account_check.on_disconnect", f"Bot Disconnected")
+        pass
 
     @commands.Cog.listener()
     async def on_resumed(self):
-        self.log.debug(0, "new_account_check.on_resumed", f"Bot Session Resumed")
+        pass
 
     @commands.Cog.listener()
     async def on_error(self, event, *args, **kwargs):

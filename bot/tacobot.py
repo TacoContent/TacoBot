@@ -24,6 +24,10 @@ from .cogs.lib import loglevel
 from .cogs.lib import dbprovider
 from discord_slash import SlashCommand
 
+from . import TacoBotClient
+
+import discordhealthcheck
+
 
 class TacoBot:
     DISCORD_TOKEN = os.environ["DISCORD_TOKEN"]
@@ -31,7 +35,8 @@ class TacoBot:
     def __init__(self):
         self.settings = settings.Settings()
         print(f"APP VERSION: {self.settings.APP_VERSION}")
-        self.client = discord.Client()
+        # self.client = discord.Client()
+        self.client = TacoBotClient.TacoBotClient()
 
         if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
             self.db = mongo.MongoDatabase()
