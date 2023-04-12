@@ -30,6 +30,7 @@ RUN \
 VOLUME ["/data"]
 WORKDIR /app
 
-HEALTHCHECK CMD discordhealthcheck || exit 1
+# discordpy upgrade 2.0
+# HEALTHCHECK CMD discordhealthcheck || exit 1
 
 CMD ["python", "-u", "/app/main.py"]
