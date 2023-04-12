@@ -1,4 +1,5 @@
 import discord
+import discordhealthcheck
 from discord import app_commands
 import math
 import asyncio
@@ -69,6 +70,11 @@ class TacoBot(commands.Bot):
             except Exception as e:
                 print(f"Failed to load extension {extension}.", file=sys.stderr)
                 traceback.print_exc()
+
+        self.log.debug(0, "TacoBotClient.setup_hook", "Setting up bot")
+        self.log.debug(0, "TacoBotClient.setup_hook", "Starting Healthcheck Server")
+        self.healthcheck_server = await discordhealthcheck.start(self)
+
 
         # This copies the global commands over to your guild.
         # self.tree.copy_global_to(guild=MY_GUILD)

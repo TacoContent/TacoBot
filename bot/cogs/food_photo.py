@@ -51,7 +51,7 @@ class FoodPhoto(commands.Cog):
             if not food_settings:
                 # raise exception if there are no settings
                 self.log.debug(guild_id, "food_photo.on_message", f"No settings found for guild {guild_id}")
-                await self.discord_helper.notify_bot_not_initialized(message, "food_photo")
+                # await self.discord_helper.notify_bot_not_initialized(message, "food_photo")
                 return
 
             food_channel = [c for c in food_settings["channels"] if str(c["id"]) == str(message.channel.id)]
@@ -99,7 +99,7 @@ class FoodPhoto(commands.Cog):
 
             pass
         except Exception as e:
-            self.log.error(0, "food_photo.on_message", f"Exception: {e}")
+            self.log.error(0, "food_photo.on_message", str(e), traceback.format_exc())
             traceback.print_exc()
 
 
