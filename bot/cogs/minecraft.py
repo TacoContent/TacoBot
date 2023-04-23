@@ -114,6 +114,10 @@ class Minecraft(commands.Cog):
                 { "name": "Mods", "value": f"------", "inline": False },
             ]
 
+            if status['online'] == False:
+                # add field to tell user how to start the server
+                fields.append({ "name": "Server Status", "value": f"Server is offline. Run `.taco minecraft start` to start the server.", "inline": False })
+
             for m in cog_settings["mods"]:
                 fields.append({ "name": f"{m['name']}", "value": f"{m['version']}", "inline": True })
 
@@ -153,7 +157,7 @@ class Minecraft(commands.Cog):
                     delete_after=self.SELF_DESTRUCT_TIMEOUT)
                 return
 
-            self.log.info(guild_id, "minecraft.start_server", f"{ctx.author.name} Started the Minecraft Server.")
+            self.log.warn(guild_id, "minecraft.start_server", f"{ctx.author.name} Started the Minecraft Server.")
 
             # send message to start the server
             resp = requests.post(f"http://andeddu.bit13.local:10070/taco/minecraft/server/start")
@@ -183,6 +187,53 @@ class Minecraft(commands.Cog):
             await self.discord_helper.notify_of_error(ctx)
 
 
+    @minecraft.command(name="stop")
+    @commands.has_permissions(administrator=True)
+    @commands.guild_only()
+    async def stop_server(self, ctx: ComponentContext):
+        guild_id = 0
+        try:
+            if ctx.guild:
+                await ctx.message.delete()
+                guild_id = ctx.guild.id
+
+            status = self.get_minecraft_status(guild_id)
+
+            if status['online'] == False:
+                await self.discord_helper.sendEmbed(ctx.channel,
+                    title="Minecraft Stop Server",
+                    message=f"The server is already shutdown.",
+                    delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                return
+
+            self.log.warn(guild_id, "minecraft.start_server", f"{ctx.author.name} Stopped the Minecraft Server.")
+
+            # send message to stop the server
+            resp = requests.post(f"http://andeddu.bit13.local:10070/taco/minecraft/server/stop")
+            if resp.status_code != 200:
+                await self.discord_helper.sendEmbed(ctx.channel,
+                    title="Minecraft Stop Server",
+                    message=f"Failed to stop the server. The server returned a {resp.status_code} error.",
+                    delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                return
+            data = resp.json()
+            if data['status'] != "success":
+                await self.discord_helper.sendEmbed(ctx.channel,
+                    title="Minecraft Stop Server",
+                    message=f"Failed to stop the server. The server returned an error.\n{data['message']}",
+                    delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                return
+
+            # notify the user that the server was started, and it will take a few minutes for it to be ready
+            await self.discord_helper.sendEmbed(ctx.channel,
+                title="Minecraft Stop Server",
+                message=f"The server is stopping. Any whitelisted user is able to run `.taco minecraft start` to restart the server.",
+                delete_after=self.SELF_DESTRUCT_TIMEOUT)
+
+
+        except Exception as e:
+            self.log.error(guild_id, "minecraft.start_server", str(e), traceback.format_exc())
+            await self.discord_helper.notify_of_error(ctx)
     @minecraft.command()
     @commands.guild_only()
     async def whitelist(self, ctx: ComponentContext):
