@@ -127,7 +127,7 @@ class Minecraft(commands.Cog):
             self.log.error(guild_id, "minecraft.status", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
-    @minecraft.command(alias=["start"])
+    @minecraft.command(name="start")
     @commands.guild_only()
     async def start_server(self, ctx: ComponentContext):
         guild_id = 0
