@@ -41,6 +41,30 @@
 					"fields": [],
 					"subcommands": {},
 					"enabled": true
+				},
+				"start": {
+					"title": "Start Minecraft Server",
+					"description": "Starts the minecraft server. You must be whitelisted to use this command.",
+					"usage": "{{prefix}}minecraft start",
+					"examples": [
+						"{{prefix}}minecraft start"
+					],
+					"fields": [],
+					"subcommands": {},
+					"enabled": true,
+					"admin": false
+				},
+				"stop": {
+					"title": "Stop Minecraft Server",
+					"description": "Stops the minecraft server",
+					"usage": "{{prefix}}minecraft stop",
+					"examples": [
+						"{{prefix}}minecraft stop"
+					],
+					"fields": [],
+					"subcommands": {},
+					"enabled": true,
+					"admin": true
 				}
 			},
 			"enabled": true
