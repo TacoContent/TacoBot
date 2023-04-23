@@ -156,7 +156,7 @@ class Minecraft(commands.Cog):
             self.log.info(guild_id, "minecraft.start_server", f"{ctx.author.name} Started the Minecraft Server.")
 
             # send message to start the server
-            resp = requests.post(f"http://andeddu.bit13.local:10700/taco/minecraft/server/start")
+            resp = requests.post(f"http://andeddu.bit13.local:10070/taco/minecraft/server/start")
             if resp.status_code != 200:
                 await self.discord_helper.sendEmbed(ctx.channel,
                     title="Minecraft Start Server",
