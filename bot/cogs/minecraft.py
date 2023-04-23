@@ -69,6 +69,7 @@ class Minecraft(commands.Cog):
         except Exception as e:
             self.log.error(member.guild.id, "minecraft.on_member_remove", str(e), traceback.format_exc())
 
+
     @commands.group(name="minecraft", invoke_without_command=True)
     async def minecraft(self, ctx: ComponentContext):
         if ctx.invoked_subcommand is not None:
@@ -103,21 +104,12 @@ class Minecraft(commands.Cog):
                     delete_after=self.SELF_DESTRUCT_TIMEOUT)
                 return
 
-            result = requests.get(f"http://andeddu.bit13.local:10070/tacobot/minecraft/status")
-            if result.status_code != 200:
-                # Need to notify of an error
-                self.log.warn(guild_id, "minecraft.status", f"Failed to get minecraft status ({result.status_code} - {result.text})")
-                raise Exception("Failed to get minecraft status ({result.status_code} - {result.text})")
-
-            data = result.json()
-            # get users uuid for minecraft username
-            if not data["success"]:
-                self.log.warn(guild_id, "minecraft.status", f"Failed to get minecraft status")
+            status = self.get_minecraft_status(guild_id)
 
             fields = [
                 { "name": "Host Address", "value": f"`{cog_settings['server']}`", "inline": False },
-                { "name": "Players Online/Slots", "value": f"{data['players']['online']}/{data['players']['max']}", "inline": False },
-                { "name": "Version", "value": f"{data['version']}", "inline": False },
+                { "name": "Players Online/Slots", "value": f"{status['players']['online']}/{status['players']['max']}", "inline": False },
+                { "name": "Version", "value": f"{status['version']}", "inline": False },
                 { "name": "Forge Version", "value": f"{cog_settings['forge_version']}", "inline": False },
                 { "name": "Mods", "value": f"------", "inline": False },
             ]
@@ -127,13 +119,69 @@ class Minecraft(commands.Cog):
 
             await self.discord_helper.sendEmbed(ctx.channel,
                 title="Minecraft Server Status",
-                message=f"{data['title']}\n\nFor information on how to install see: <{cog_settings['help']}>",
+                message=f"{status['title']}\n\nFor information on how to install see: <{cog_settings['help']}>",
                 fields=fields,
                 delete_after=self.SELF_DESTRUCT_TIMEOUT)
 
         except Exception as e:
             self.log.error(guild_id, "minecraft.status", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
+
+    @minecraft.command(alias=["start"])
+    @commands.guild_only()
+    async def start_server(self, ctx: ComponentContext):
+        guild_id = 0
+        try:
+            if ctx.guild:
+                await ctx.message.delete()
+                guild_id = ctx.guild.id
+
+            if not self.is_user_whitelisted(ctx.author.id):
+                await self.discord_helper.sendEmbed(ctx.channel,
+                    title="Minecraft Start Server",
+                    message=f"You are not whitelisted, and cannot start the server. Run `.taco minecraft whitelist` to whitelist your account. Only one account can be whitelisted per discord user.",
+                    delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                return
+
+
+            status = self.get_minecraft_status(guild_id)
+
+            if status['online'] == True:
+                await self.discord_helper.sendEmbed(ctx.channel,
+                    title="Minecraft Start Server",
+                    message=f"The server is already running.",
+                    delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                return
+
+            self.log.info(guild_id, "minecraft.start_server", f"{ctx.author.name} Started the Minecraft Server.")
+
+            # send message to start the server
+            resp = requests.post(f"http://andeddu.bit13.local:10700/taco/minecraft/server/start")
+            if resp.status_code != 200:
+                await self.discord_helper.sendEmbed(ctx.channel,
+                    title="Minecraft Start Server",
+                    message=f"Failed to start the server. The server returned a {resp.status_code} error.",
+                    delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                return
+            data = resp.json()
+            if data['status'] != "success":
+                await self.discord_helper.sendEmbed(ctx.channel,
+                    title="Minecraft Start Server",
+                    message=f"Failed to start the server. The server returned an error.\n{data['message']}",
+                    delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                return
+
+            # notify the user that the server was started, and it will take a few minutes for it to be ready
+            await self.discord_helper.sendEmbed(ctx.channel,
+                title="Minecraft Start Server",
+                message=f"The server is starting. It will take a few minutes for it to be ready.",
+                delete_after=self.SELF_DESTRUCT_TIMEOUT)
+
+
+        except Exception as e:
+            self.log.error(guild_id, "minecraft.start_server", str(e), traceback.format_exc())
+            await self.discord_helper.notify_of_error(ctx)
+
 
     @minecraft.command()
     @commands.guild_only()
@@ -279,5 +327,18 @@ class Minecraft(commands.Cog):
             # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No minecraft settings found for guild {guildId}")
         return cog_settings
+
+    def get_minecraft_status(self, guild_id: int = 0):
+        result = requests.get(f"http://andeddu.bit13.local:10070/tacobot/minecraft/status")
+        if result.status_code != 200:
+            # Need to notify of an error
+            self.log.warn(guild_id, "minecraft.status", f"Failed to get minecraft status ({result.status_code} - {result.text})")
+            raise Exception("Failed to get minecraft status ({result.status_code} - {result.text})")
+
+        data = result.json()
+        # get users uuid for minecraft username
+        if not data["success"]:
+            self.log.warn(guild_id, "minecraft.status", f"Failed to get minecraft status")
+        return data
 def setup(bot):
     bot.add_cog(Minecraft(bot))
