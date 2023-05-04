@@ -117,5 +117,10 @@
 	"wdyctw_out_message": "Say what you call the thing in the photo.\n\n{{taco_count}} {{taco_word}} 🌮 for answering.",
 	"wdyctw_out_title": "What Do You Call This?",
 	"wdyctw_ask_title": "What is the WDYCTW image?",
-	"wdyctw_ask_message": "Please respond with the image you would like to use for WDYCTW.\n\nRespond with `cancel` to cancel."
+	"wdyctw_ask_message": "Please respond with the image you would like to use for WDYCTW.\n\nRespond with `cancel` to cancel.",
+	"techthurs_reason_default": "answering TechThursday",
+	"techthurs_out_message": "This is the Tech Thursday topic.\n\n{{taco_count}} {{taco_word}} 🌮 for answering.",
+	"techthurs_out_title": "Tech Thursday",
+	"techthurs_ask_title": "What is the Tech Thursday Topic?",
+	"techthurs_ask_message": "Please respond with the topic for Tech Thursday.\n\nRespond with `cancel` to cancel."
 }
