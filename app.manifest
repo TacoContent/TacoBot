@@ -181,6 +181,60 @@
 			"fields": [],
 			"subcommands": {}
 		},
+		"techthurs": {
+			"title": "Tech Thursday",
+			"description": "Adds a Tech Thursday topic.",
+			"usage": "{{prefix}}techthurs [command]",
+			"admin": true,
+			"arguments": {},
+			"fields": [],
+			"subcommands": {
+				"give": {
+					"title": "Give Tech Thursday Tacos",
+					"description": "Gives Tech Thursday tacos to the user who answered the question. The preferred way to give tacos is to use the '💻' emoji reaction on their message.",
+					"usage": "{{prefix}}techthurs give <@user>",
+					"examples": [
+						"{{prefix}}techthurs give @DarthMinos#1161"
+					],
+					"arguments": {
+						"user": {
+							"type": "user",
+							"description": "The user to give tacos to",
+							"required": true
+						}
+					},
+					"fields": [],
+					"admin": true
+				}
+			}
+		},
+		"mentalmondays": {
+			"title": "Mental Monday",
+			"description": "Adds a Mental Monday topic.",
+			"usage": "{{prefix}}mentalmondays [command]",
+			"admin": true,
+			"arguments": {},
+			"fields": [],
+			"subcommands": {
+				"give": {
+					"title": "Give Mental Monday Tacos",
+					"description": "Gives Mental Monday tacos to the user who answered the question. The preferred way to give tacos is to use the '🧠' emoji reaction on their message.",
+					"usage": "{{prefix}}mentalmondays give <@user>",
+					"examples": [
+						"{{prefix}}mentalmondays give @DarthMinos#1161"
+					],
+					"arguments": {
+						"user": {
+							"type": "user",
+							"description": "The user to give tacos to",
+							"required": true
+						}
+					},
+					"fields": [],
+					"admin": true
+				}
+			}
+		},
 		"wdyctw": {
 			"title": "What do you call this Wednesday?",
 			"description": "Adds a WDYCTW question.",
