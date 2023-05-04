@@ -285,8 +285,6 @@ class TechThursdays(commands.Cog):
         image_url = None
         if message.attachments is not None and len(message.attachments) > 0:
             image_url = message.attachments[0].url
-        else:
-            raise Exception("No image found in message")
 
         # get the text
         text = None
