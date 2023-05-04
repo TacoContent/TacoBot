@@ -122,5 +122,10 @@
 	"techthurs_out_message": "This is the Tech Thursday topic.\n\n{{taco_count}} {{taco_word}} 🌮 for answering.",
 	"techthurs_out_title": "Tech Thursday",
 	"techthurs_ask_title": "What is the Tech Thursday Topic?",
-	"techthurs_ask_message": "Please respond with the topic for Tech Thursday.\n\nRespond with `cancel` to cancel."
+	"techthurs_ask_message": "Please respond with the topic for Tech Thursday.\n\nRespond with `cancel` to cancel.",
+	"mentalmondays_reason_default": "answering Mental Mondays",
+	"mentalmondays_out_message": "This is the Mental Mondays topic.\n\n{{taco_count}} {{taco_word}} 🌮 for answering.",
+	"mentalmondays_out_title": "Mental Mondays",
+	"mentalmondays_ask_title": "What is the Mental Monday Topic?",
+	"mentalmondays_ask_message": "Please respond with the topic for Mental Monday.\n\nRespond with `cancel` to cancel."
 }
