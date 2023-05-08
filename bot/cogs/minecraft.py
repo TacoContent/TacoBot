@@ -101,7 +101,7 @@ class Minecraft(commands.Cog):
             AUTO_DELETE_TIMEOUT = self.SELF_DESTRUCT_TIMEOUT
             output_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel", 0)))
             if not output_channel or output_channel.id != ctx.channel.id:
-                output_channel = ctx.author.channel
+                output_channel = ctx.author
                 AUTO_DELETE_TIMEOUT = 0
 
             if not self.is_user_whitelisted(ctx.author.id):
@@ -156,7 +156,7 @@ class Minecraft(commands.Cog):
             AUTO_DELETE_TIMEOUT = self.SELF_DESTRUCT_TIMEOUT
             output_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel", 0)))
             if not output_channel or output_channel.id != ctx.channel.id:
-                output_channel = ctx.author.channel
+                output_channel = ctx.author
                 AUTO_DELETE_TIMEOUT = 0
 
 
@@ -226,7 +226,7 @@ class Minecraft(commands.Cog):
             AUTO_DELETE_TIMEOUT = self.SELF_DESTRUCT_TIMEOUT
             output_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel", 0)))
             if not output_channel or output_channel.id != ctx.channel.id:
-                output_channel = ctx.author.channel
+                output_channel = ctx.author
                 AUTO_DELETE_TIMEOUT = 0
 
             status = self.get_minecraft_status(guild_id)
