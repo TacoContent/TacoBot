@@ -306,12 +306,28 @@ class Minecraft(commands.Cog):
             if result.status_code != 200:
                 # Need to notify of an error
                 self.log.warn(guild_id, "minecraft.whitelist", f"Failed to find player {mc_username}")
-                raise Exception("Failed to find player {mc_username} from playerdb.co api call ({result.status_code} - {result.text})")
+                await self.discord_helper.sendEmbed(
+                    _ctx.channel,
+                    "Minecraft Whitelist",
+                    f"Unable to Verify Account. Failed to find player {mc_username} from playerdb.co api call",
+                    color=0xFF0000,
+                    delete_after=30,
+                )
+                return
+                # raise Exception(f"Failed to find player {mc_username} from playerdb.co api call ({result.status_code} - {result.text})")
 
             data = result.json()
             # get users uuid for minecraft username
             if not data["success"] or data["code"] != "player.found":
                 self.log.warn(guild_id, "minecraft.whitelist", f"Failed to find player {mc_username}")
+                await self.discord_helper.sendEmbed(
+                    _ctx.channel,
+                    "Minecraft Whitelist",
+                    f"Unable to Verify Account. Failed to find player {mc_username} from playerdb.co api call",
+                    color=0xFF0000,
+                    delete_after=30,
+                )
+                return
 
             # get user avatar for minecraft uuid
             mc_uuid = data["data"]["player"]["id"]
@@ -339,7 +355,7 @@ class Minecraft(commands.Cog):
                     "Unable to Verify Account",
                     "Please run the command again to verify your account.",
                     color=0xFF0000,
-                    delete_after=20,
+                    delete_after=30,
                 )
                 return
 
