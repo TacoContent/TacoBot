@@ -101,7 +101,7 @@ class Minecraft(commands.Cog):
             AUTO_DELETE_TIMEOUT = self.SELF_DESTRUCT_TIMEOUT
             output_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel", 0)))
             if not output_channel or output_channel.id != ctx.channel.id:
-                output_channel = ctx.author.channel
+                output_channel = ctx.author
                 AUTO_DELETE_TIMEOUT = 0
 
             if not self.is_user_whitelisted(ctx.author.id):
@@ -156,7 +156,7 @@ class Minecraft(commands.Cog):
             AUTO_DELETE_TIMEOUT = self.SELF_DESTRUCT_TIMEOUT
             output_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel", 0)))
             if not output_channel or output_channel.id != ctx.channel.id:
-                output_channel = ctx.author.channel
+                output_channel = ctx.author
                 AUTO_DELETE_TIMEOUT = 0
 
 
@@ -226,7 +226,7 @@ class Minecraft(commands.Cog):
             AUTO_DELETE_TIMEOUT = self.SELF_DESTRUCT_TIMEOUT
             output_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel", 0)))
             if not output_channel or output_channel.id != ctx.channel.id:
-                output_channel = ctx.author.channel
+                output_channel = ctx.author
                 AUTO_DELETE_TIMEOUT = 0
 
             status = self.get_minecraft_status(guild_id)
@@ -432,7 +432,7 @@ class Minecraft(commands.Cog):
         if result.status_code != 200:
             # Need to notify of an error
             self.log.warn(guild_id, "minecraft.status", f"Failed to get minecraft status ({result.status_code} - {result.text})")
-            raise Exception("Failed to get minecraft status ({result.status_code} - {result.text})")
+            raise Exception(f"Failed to get minecraft status ({result.status_code} - {result.text})")
 
         data = result.json()
         # get users uuid for minecraft username
