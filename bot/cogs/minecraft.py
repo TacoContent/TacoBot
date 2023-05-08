@@ -97,11 +97,18 @@ class Minecraft(commands.Cog):
                 self.log.debug(guild_id, "minecraft.status", f"minecraft is disabled for guild {guild_id}")
                 return
 
+            # get the output channel from settings:
+            AUTO_DELETE_TIMEOUT = self.SELF_DESTRUCT_TIMEOUT
+            output_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel", 0)))
+            if not output_channel or output_channel.id != ctx.channel.id:
+                output_channel = ctx.author.channel
+                AUTO_DELETE_TIMEOUT = 0
+
             if not self.is_user_whitelisted(ctx.author.id):
-                await self.discord_helper.sendEmbed(ctx.channel,
+                await self.discord_helper.sendEmbed(output_channel,
                     title="Minecraft Whitelist",
                     message=f"You are not yet whitelisted. Run `.taco minecraft whitelist` to whitelist your account. Only one account can be whitelisted per discord user.",
-                    delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                    delete_after=AUTO_DELETE_TIMEOUT)
                 return
 
             status = self.get_minecraft_status(guild_id)
@@ -121,11 +128,11 @@ class Minecraft(commands.Cog):
             for m in cog_settings["mods"]:
                 fields.append({ "name": f"{m['name']}", "value": f"{m['version']}", "inline": True })
 
-            await self.discord_helper.sendEmbed(ctx.channel,
+            await self.discord_helper.sendEmbed(output_channel,
                 title="Minecraft Server Status",
                 message=f"{status['title']}\n\nFor information on how to install see: <{cog_settings['help']}>",
                 fields=fields,
-                delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                delete_after=AUTO_DELETE_TIMEOUT)
 
         except Exception as e:
             self.log.error(guild_id, "minecraft.status", str(e), traceback.format_exc())
@@ -133,28 +140,41 @@ class Minecraft(commands.Cog):
 
     @minecraft.command(name="start")
     @commands.guild_only()
-    async def start_server(self, ctx: ComponentContext):
+    async def start_server(self, ctx):
         guild_id = 0
         try:
             if ctx.guild:
                 await ctx.message.delete()
                 guild_id = ctx.guild.id
 
+            cog_settings = self.get_cog_settings(guild_id)
+            if not cog_settings:
+                self.log.warn(guild_id, "minecraft.status", f"No minecraft settings found for guild {guild_id}")
+                return
+
+            # get the output channel from settings:
+            AUTO_DELETE_TIMEOUT = self.SELF_DESTRUCT_TIMEOUT
+            output_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel", 0)))
+            if not output_channel or output_channel.id != ctx.channel.id:
+                output_channel = ctx.author.channel
+                AUTO_DELETE_TIMEOUT = 0
+
+
             if not self.is_user_whitelisted(ctx.author.id):
-                await self.discord_helper.sendEmbed(ctx.channel,
+                await self.discord_helper.sendEmbed(output_channel,
                     title="Minecraft Start Server",
                     message=f"You are not whitelisted, and cannot start the server. Run `.taco minecraft whitelist` to whitelist your account. Only one account can be whitelisted per discord user.",
-                    delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                    delete_after=AUTO_DELETE_TIMEOUT)
                 return
 
 
             status = self.get_minecraft_status(guild_id)
 
             if status['online'] == True:
-                await self.discord_helper.sendEmbed(ctx.channel,
+                await self.discord_helper.sendEmbed(output_channel,
                     title="Minecraft Start Server",
                     message=f"The server is already running.",
-                    delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                    delete_after=AUTO_DELETE_TIMEOUT)
                 return
 
             self.log.warn(guild_id, "minecraft.start_server", f"{ctx.author.name} Started the Minecraft Server.")
@@ -162,24 +182,24 @@ class Minecraft(commands.Cog):
             # send message to start the server
             resp = requests.post(f"http://andeddu.bit13.local:10070/taco/minecraft/server/start")
             if resp.status_code != 200:
-                await self.discord_helper.sendEmbed(ctx.channel,
+                await self.discord_helper.sendEmbed(output_channel,
                     title="Minecraft Start Server",
                     message=f"Failed to start the server. The server returned a {resp.status_code} error.",
-                    delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                    delete_after=AUTO_DELETE_TIMEOUT)
                 return
             data = resp.json()
             if data['status'] != "success":
-                await self.discord_helper.sendEmbed(ctx.channel,
+                await self.discord_helper.sendEmbed(output_channel,
                     title="Minecraft Start Server",
                     message=f"Failed to start the server. The server returned an error.\n{data['message']}",
-                    delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                    delete_after=AUTO_DELETE_TIMEOUT)
                 return
 
             # notify the user that the server was started, and it will take a few minutes for it to be ready
-            await self.discord_helper.sendEmbed(ctx.channel,
+            await self.discord_helper.sendEmbed(output_channel,
                 title="Minecraft Start Server",
                 message=f"The server is starting. It will take a few minutes for it to be ready.",
-                delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                delete_after=AUTO_DELETE_TIMEOUT)
 
 
         except Exception as e:
@@ -190,20 +210,32 @@ class Minecraft(commands.Cog):
     @minecraft.command(name="stop")
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def stop_server(self, ctx: ComponentContext):
+    async def stop_server(self, ctx):
         guild_id = 0
         try:
             if ctx.guild:
                 await ctx.message.delete()
                 guild_id = ctx.guild.id
 
+            cog_settings = self.get_cog_settings(guild_id)
+            if not cog_settings:
+                self.log.warn(guild_id, "minecraft.status", f"No minecraft settings found for guild {guild_id}")
+                return
+
+            # get the output channel from settings:
+            AUTO_DELETE_TIMEOUT = self.SELF_DESTRUCT_TIMEOUT
+            output_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel", 0)))
+            if not output_channel or output_channel.id != ctx.channel.id:
+                output_channel = ctx.author.channel
+                AUTO_DELETE_TIMEOUT = 0
+
             status = self.get_minecraft_status(guild_id)
 
             if status['online'] == False:
-                await self.discord_helper.sendEmbed(ctx.channel,
+                await self.discord_helper.sendEmbed(output_channel,
                     title="Minecraft Stop Server",
                     message=f"The server is already shutdown.",
-                    delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                    delete_after=AUTO_DELETE_TIMEOUT)
                 return
 
             self.log.warn(guild_id, "minecraft.start_server", f"{ctx.author.name} Stopped the Minecraft Server.")
@@ -211,24 +243,24 @@ class Minecraft(commands.Cog):
             # send message to stop the server
             resp = requests.post(f"http://andeddu.bit13.local:10070/taco/minecraft/server/stop")
             if resp.status_code != 200:
-                await self.discord_helper.sendEmbed(ctx.channel,
+                await self.discord_helper.sendEmbed(output_channel,
                     title="Minecraft Stop Server",
                     message=f"Failed to stop the server. The server returned a {resp.status_code} error.",
-                    delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                    delete_after=AUTO_DELETE_TIMEOUT)
                 return
             data = resp.json()
             if data['status'] != "success":
-                await self.discord_helper.sendEmbed(ctx.channel,
+                await self.discord_helper.sendEmbed(output_channel,
                     title="Minecraft Stop Server",
                     message=f"Failed to stop the server. The server returned an error.\n{data['message']}",
-                    delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                    delete_after=AUTO_DELETE_TIMEOUT)
                 return
 
             # notify the user that the server was started, and it will take a few minutes for it to be ready
-            await self.discord_helper.sendEmbed(ctx.channel,
+            await self.discord_helper.sendEmbed(output_channel,
                 title="Minecraft Stop Server",
                 message=f"The server is stopping. Any whitelisted user is able to run `.taco minecraft start` to restart the server.",
-                delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                delete_after=AUTO_DELETE_TIMEOUT)
 
 
         except Exception as e:

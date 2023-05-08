@@ -335,7 +335,7 @@ class MentalMondays(commands.Cog):
                 self.log.warn(guild_id, "mentalmondays.mentalmondays", f"No tacos settings found for guild {guild_id}")
                 return
 
-            amount = tacos_settings.get("mentalmondays_amount", 5)
+            amount = tacos_settings.get("mentalmondays_count", 5)
 
             tacos_word = self.settings.get_string(guild_id, "taco_singular")
             if amount > 1:
