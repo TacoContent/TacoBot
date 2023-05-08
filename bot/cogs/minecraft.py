@@ -432,7 +432,7 @@ class Minecraft(commands.Cog):
         if result.status_code != 200:
             # Need to notify of an error
             self.log.warn(guild_id, "minecraft.status", f"Failed to get minecraft status ({result.status_code} - {result.text})")
-            raise Exception("Failed to get minecraft status ({result.status_code} - {result.text})")
+            raise Exception(f"Failed to get minecraft status ({result.status_code} - {result.text})")
 
         data = result.json()
         # get users uuid for minecraft username
