@@ -70,12 +70,14 @@ class NewAccountCheck(commands.Cog):
             age = now - member_created
             age_days = math.floor(age / 86400)
             if age_days < self.MINIMUM_ACCOUNT_AGE:
-                self.log.warn(guild_id, _method, f"Member {member.name}#{member.discriminator} (ID: {member.id}) account age is less than {self.MINIMUM_ACCOUNT_AGE} days.")
+                self.log.error(guild_id, _method, f"Member {member.name}#{member.discriminator} (ID: {member.id}) account age is less than {self.MINIMUM_ACCOUNT_AGE} days.")
                 # kick the member
                 # await member.kick(reason=f"New Account: account age ({age_days} days) is less than required minimum of {self.MINIMUM_ACCOUNT_AGE} days.")
+            else:
+                self.log.warn(guild_id, _method, f"Member {member.name}#{member.discriminator} (ID: {member.id}) account age is {age_days} days.")
             return
         except Exception as e:
             self.log.error(guild_id, _method, str(e), traceback.format_exc())
 
-def setup(bot):
-    bot.add_cog(NewAccountCheck(bot))
+async def setup(bot):
+    await bot.add_cog(NewAccountCheck(bot))
