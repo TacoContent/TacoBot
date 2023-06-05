@@ -100,37 +100,63 @@ class Minecraft(commands.Cog):
             # get the output channel from settings:
             AUTO_DELETE_TIMEOUT = self.SELF_DESTRUCT_TIMEOUT
             output_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel", 0)))
+            self.log.debug(guild_id, "minecraft.status", f"output_channel: {output_channel}")
             if not output_channel or output_channel.id != ctx.channel.id:
+                self.log.debug(guild_id, "minecraft.status", f"output_channel is not set or is not the same as the command channel")
                 output_channel = ctx.author
                 AUTO_DELETE_TIMEOUT = None
 
             if not self.is_user_whitelisted(ctx.author.id):
                 await self.discord_helper.sendEmbed(output_channel,
-                    title="Minecraft Whitelist",
-                    message=f"You are not yet whitelisted. Run `.taco minecraft whitelist` to whitelist your account. Only one account can be whitelisted per discord user.",
+                    title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
+                    message=self.settings.get_string(guild_id, "minecraft_not_whitelisted"),
                     delete_after=AUTO_DELETE_TIMEOUT)
                 return
 
             status = self.get_minecraft_status(guild_id)
 
             fields = [
-                { "name": "Host Address", "value": f"`{cog_settings['server']}`", "inline": False },
-                { "name": "Players Online/Slots", "value": f"{status['players']['online']}/{status['players']['max']}", "inline": False },
-                { "name": "Version", "value": f"{status['version']}", "inline": False },
-                { "name": "Forge Version", "value": f"{cog_settings['forge_version']}", "inline": False },
-                { "name": "Mods", "value": f"------", "inline": False },
+                {
+                    "name": self.settings.get_string(guild_id, "minecraft_status_host"),
+                    "value": f"`{cog_settings['server']}`",
+                    "inline": False
+                },
+                {
+                    "name": self.settings.get_string(guild_id, "minecraft_status_players_slots"),
+                    "value": f"{status['players']['online']}/{status['players']['max']}",
+                    "inline": False
+                },
+                {
+                    "name": self.settings.get_string(guild_id, "minecraft_status_version"),
+                    "value": f"{status['version']}",
+                    "inline": False
+                },
+                {
+                    "name": self.settings.get_string(guild_id, "minecraft_status_forge_version"),
+                    "value": f"{cog_settings['forge_version']}",
+                    "inline": False
+                },
+                {
+                    "name": self.settings.get_string(guild_id, "minecraft_status_mods"),
+                    "value": f"------",
+                    "inline": False
+                },
             ]
 
             if status['online'] == False:
                 # add field to tell user how to start the server
-                fields.append({ "name": "Server Status", "value": f"Server is offline. Run `.taco minecraft start` to start the server.", "inline": False })
+                fields.append({
+                    "name": self.settings.get_string(guild_id, "minecraft_status_server_status"),
+                    "value": f"Server is offline. Run `.taco minecraft start` to start the server.",
+                    "inline": False
+                })
 
             for m in cog_settings["mods"]:
                 fields.append({ "name": f"{m['name']}", "value": f"{m['version']}", "inline": True })
 
             await self.discord_helper.sendEmbed(output_channel,
-                title="Minecraft Server Status",
-                message=f"{status['title']}\n\nFor information on how to install see: <{cog_settings['help']}>",
+                title=self.settings.get_string(guild_id, "minecraft_status_server_status"),
+                message=self.settings.get_string(guild_id, "minecraft_status_message", title=status['title'], help=cog_settings['help']),
                 fields=fields,
                 delete_after=AUTO_DELETE_TIMEOUT)
 
@@ -162,8 +188,8 @@ class Minecraft(commands.Cog):
 
             if not self.is_user_whitelisted(ctx.author.id):
                 await self.discord_helper.sendEmbed(output_channel,
-                    title="Minecraft Start Server",
-                    message=f"You are not whitelisted, and cannot start the server. Run `.taco minecraft whitelist` to whitelist your account. Only one account can be whitelisted per discord user.",
+                    title=self.settings.get_string(guild_id, "minecraft_control_title"),
+                    message=self.settings.get_string(guild_id, "minecraft_control_no_start"),
                     delete_after=AUTO_DELETE_TIMEOUT)
                 return
 
@@ -172,8 +198,8 @@ class Minecraft(commands.Cog):
 
             if status['online'] == True:
                 await self.discord_helper.sendEmbed(output_channel,
-                    title="Minecraft Start Server",
-                    message=f"The server is already running.",
+                    title=self.settings.get_string(guild_id, "minecraft_control_title"),
+                    message=self.settings.get_string(guild_id, "minecraft_control_running"),
                     delete_after=AUTO_DELETE_TIMEOUT)
                 return
 
@@ -183,22 +209,22 @@ class Minecraft(commands.Cog):
             resp = requests.post(f"http://andeddu.bit13.local:10070/taco/minecraft/server/start")
             if resp.status_code != 200:
                 await self.discord_helper.sendEmbed(output_channel,
-                    title="Minecraft Start Server",
-                    message=f"Failed to start the server. The server returned a {resp.status_code} error.",
+                    title=self.settings.get_string(guild_id, "minecraft_control_title"),
+                    message=self.settings.get_string(guild_id, "minecraft_control_start_failure_code", status_code=resp.status_code, action="start"),
                     delete_after=AUTO_DELETE_TIMEOUT)
                 return
             data = resp.json()
             if data['status'] != "success":
                 await self.discord_helper.sendEmbed(output_channel,
-                    title="Minecraft Start Server",
-                    message=f"Failed to start the server. The server returned an error.\n{data['message']}",
+                    title=self.settings.get_string(guild_id, "minecraft_control_title"),
+                    message=self.settings.get_string(guild_id, "minecraft_control_failure", error=data['message'], action="start"),
                     delete_after=AUTO_DELETE_TIMEOUT)
                 return
 
             # notify the user that the server was started, and it will take a few minutes for it to be ready
             await self.discord_helper.sendEmbed(output_channel,
-                title="Minecraft Start Server",
-                message=f"The server is starting. It will take a few minutes for it to be ready.",
+                title=self.settings.get_string(guild_id, "minecraft_control_title"),
+                message=self.settings.get_string(guild_id, "minecraft_control_start_success"),
                 delete_after=AUTO_DELETE_TIMEOUT)
 
 
@@ -233,8 +259,8 @@ class Minecraft(commands.Cog):
 
             if status['online'] == False:
                 await self.discord_helper.sendEmbed(output_channel,
-                    title="Minecraft Stop Server",
-                    message=f"The server is already shutdown.",
+                    title=self.settings.get_string(guild_id, "minecraft_control_title"),
+                    message=self.settings.get_string(guild_id, "minecraft_control_stopped"),
                     delete_after=AUTO_DELETE_TIMEOUT)
                 return
 
@@ -244,22 +270,22 @@ class Minecraft(commands.Cog):
             resp = requests.post(f"http://andeddu.bit13.local:10070/taco/minecraft/server/stop")
             if resp.status_code != 200:
                 await self.discord_helper.sendEmbed(output_channel,
-                    title="Minecraft Stop Server",
-                    message=f"Failed to stop the server. The server returned a {resp.status_code} error.",
+                    title=self.settings.get_string(guild_id, "minecraft_control_title"),
+                    message=self.settings.get_string(guild_id, "minecraft_control_start_failure_code", status_code=resp.status_code, action="stop"),
                     delete_after=AUTO_DELETE_TIMEOUT)
                 return
             data = resp.json()
             if data['status'] != "success":
                 await self.discord_helper.sendEmbed(output_channel,
-                    title="Minecraft Stop Server",
-                    message=f"Failed to stop the server. The server returned an error.\n{data['message']}",
+                    title=self.settings.get_string(guild_id, "minecraft_control_title"),
+                    message=self.settings.get_string(guild_id, "minecraft_control_failure", error=data['message'], action="stop"),
                     delete_after=AUTO_DELETE_TIMEOUT)
                 return
 
             # notify the user that the server was started, and it will take a few minutes for it to be ready
             await self.discord_helper.sendEmbed(output_channel,
-                title="Minecraft Stop Server",
-                message=f"The server is stopping. Any whitelisted user is able to run `.taco minecraft start` to restart the server.",
+                title=self.settings.get_string(guild_id, "minecraft_control_title"),
+                message=self.settings.get_string(guild_id, "minecraft_control_stop_success"),
                 delete_after=AUTO_DELETE_TIMEOUT)
 
 
@@ -277,8 +303,8 @@ class Minecraft(commands.Cog):
 
             if self.is_user_whitelisted(ctx.author.id):
                 await self.discord_helper.sendEmbed(ctx.channel,
-                    title="Minecraft Whitelist",
-                    message=f"You are already whitelisted. Message an admin if you need to remove an account. Only one account can be whitelisted per discord user.",
+                    title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
+                    message=self.settings.get_string(guild_id, "minecraft_whitelist_already_whitelisted_message"),
                     delete_after=self.SELF_DESTRUCT_TIMEOUT)
                 return
 
@@ -340,8 +366,8 @@ class Minecraft(commands.Cog):
                 self.log.warn(guild_id, "minecraft.whitelist", f"Failed to find player {mc_username}")
                 await self.discord_helper.sendEmbed(
                     _ctx.channel,
-                    "Minecraft Whitelist",
-                    f"Unable to Verify Account. Failed to find player {mc_username} from playerdb.co api call",
+                    title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
+                    message=self.settings.get_string(guild_id, "minecraft_whitelist_unable_to_verify", mc_username=mc_username),
                     color=0xFF0000,
                     delete_after=30,
                 )
@@ -354,8 +380,8 @@ class Minecraft(commands.Cog):
                 self.log.warn(guild_id, "minecraft.whitelist", f"Failed to find player {mc_username}")
                 await self.discord_helper.sendEmbed(
                     _ctx.channel,
-                    "Minecraft Whitelist",
-                    f"Unable to Verify Account. Failed to find player {mc_username} from playerdb.co api call",
+                    title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
+                    message=self.settings.get_string(guild_id, "minecraft_whitelist_unable_to_verify", mc_username=mc_username),
                     color=0xFF0000,
                     delete_after=30,
                 )
@@ -375,8 +401,8 @@ class Minecraft(commands.Cog):
             response = await self.discord_helper.ask_yes_no(
                 _ctx,
                 _ctx.channel,
-                "Verify Account",
-                f"Is this your avatar associated with the Minecraft account {mc_username}?",
+                title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
+                message=self.settings.get_string(guild_id, "minecraft_whitelist_account_verify"),
                 fields=fields,
                 image=avatar_url,
             )
@@ -384,8 +410,8 @@ class Minecraft(commands.Cog):
                 # if not, tell them to try again
                 await self.discord_helper.sendEmbed(
                     _ctx.channel,
-                    "Unable to Verify Account",
-                    "Please run the command again to verify your account.",
+                    title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
+                    message=self.settings.get_string(guild_id, "minecraft_whitelist_run_again"),
                     color=0xFF0000,
                     delete_after=30,
                 )
@@ -397,8 +423,8 @@ class Minecraft(commands.Cog):
             self.db.whitelist_minecraft_user(ctx.author.id, mc_username, mc_uuid, True)
             await self.discord_helper.sendEmbed(
                 _ctx.channel,
-                "Whitelisted",
-                f"You have been whitelisted for Minecraft account {mc_username}({mc_uuid}). It may take up to 15 minutes for the whitelist to reload.\n\nSee the #minecraft channel for required version and server address.\n\nIf you need help, message DarthMinos.",
+                title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
+                message=self.settings.get_string(guild_id, "minecraft_whitelist_success_message", mc_username=mc_username, mc_uuid=mc_uuid),
                 color=0x00FF00,
                 delete_after=30,
             )
