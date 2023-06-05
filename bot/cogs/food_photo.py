@@ -10,6 +10,7 @@ import typing
 import inspect
 import collections
 import datetime
+import re
 
 from .lib import settings
 from .lib import discordhelper
@@ -61,8 +62,11 @@ class FoodPhoto(commands.Cog):
             if not food_channel:
                 return
 
+            # check if message has a link to the image in it
+            media_regex = r"(https:\/\/)?((?:cdn|media)\.discordapp\.(?:net|com))\/attachments\/\d+\/\d+\/\w+\.(png|jpg|jpeg|gif|webp))"
             # if the message is not a photo, ignore
-            if not message.attachments:
+            if not message.attachments and not re.match(media_regex, message.content):
+                self.log.debug(guild_id, "food_photo.on_message", f"Message {message.id} does not contain a photo")
                 return
 
 
