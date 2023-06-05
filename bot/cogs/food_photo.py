@@ -63,7 +63,7 @@ class FoodPhoto(commands.Cog):
                 return
 
             # check if message has a link to the image in it
-            media_regex = r"(https:\/\/)?((?:cdn|media)\.discordapp\.(?:net|com))\/attachments\/\d+\/\d+\/\w+\.(png|jpg|jpeg|gif|webp))"
+            media_regex = r"(https:\/\/)?((?:cdn|media)\.discordapp\.(?:net|com))\/attachments\/\d+\/\d+\/\w+\.(png|jpg|jpeg|gif|webp)"
             # if the message is not a photo, ignore
             if not message.attachments and not re.match(media_regex, message.content):
                 self.log.debug(guild_id, "food_photo.on_message", f"Message {message.id} does not contain a photo")
