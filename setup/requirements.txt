@@ -5,6 +5,6 @@ python-dotenv==1.0.0
 requests
 discord-py-slash-command~=3.0.3
 pytz
-aiohttp~=3.7.4
+aiohttp~=3.8.4
 discordhealthcheck~=0.1.1
 
