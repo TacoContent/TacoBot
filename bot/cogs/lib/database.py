@@ -94,7 +94,10 @@ class Database():
         pass
     def save_wdyctw(self, guildId: int, message: str, image: str, author: int):
         pass
-
+    def save_techthurs(self, guildId: int, message: str, image: str, author: int):
+        pass
+    def save_mentalmondays(self, guildId: int, message: str, image: str, author: int):
+        pass
     def track_tqotd_answer(self, guildId: int, userId: int):
         pass
     def tqotd_user_message_tracked(self, guildId: int, userId: int, messageId: int):
@@ -103,6 +106,13 @@ class Database():
         pass
     def wdyctw_user_message_tracked(self, guildId: int, userId: int, messageId: int):
         pass
-
+    def track_techthurs_answer(self, guildId: int, userId: int):
+        pass
+    def techthurs_user_message_tracked(self, guildId: int, userId: int, messageId: int):
+        pass
+    def track_mentalmondays_answer(self, guildId: int, userId: int):
+        pass
+    def mentalmondays_user_message_tracked(self, guildId: int, userId: int, messageId: int):
+        pass
     def UPDATE_SCHEMA(self):
         pass

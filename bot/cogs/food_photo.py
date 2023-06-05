@@ -10,6 +10,7 @@ import typing
 import inspect
 import collections
 import datetime
+import re
 
 from .lib import settings
 from .lib import discordhelper
@@ -46,6 +47,10 @@ class FoodPhoto(commands.Cog):
             # if the message is from a bot, ignore
             if message.author.bot:
                 return
+
+            # check if message has a link to the image in it
+            media_regex = r"(https:\/\/)((?:cdn|media)\.discordapp\.(?:net|com))\/attachments\/\d+\/\d+\/\w+\.(png|jpe?g|gif|webp)"
+
             # get the settings from settings
             food_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
             if not food_settings:
@@ -62,7 +67,9 @@ class FoodPhoto(commands.Cog):
                 return
 
             # if the message is not a photo, ignore
-            if not message.attachments:
+            matches = re.search(media_regex, message.content, re.MULTILINE | re.DOTALL | re.UNICODE | re.IGNORECASE)
+            if not message.attachments and matches is None:
+                self.log.debug(guild_id, "food_photo.on_message", f"Message {message.id} does not contain a photo")
                 return
 
 
