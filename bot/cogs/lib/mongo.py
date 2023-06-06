@@ -1668,3 +1668,71 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
+
+    def track_first_message(self, guildId: int, userId: int, channelId: int, messageId: int):
+        try:
+
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow().date()
+            ts_date = datetime.datetime.combine(date, datetime.time.min)
+            timestamp = utils.to_timestamp(ts_date)
+            payload = {
+                "guild_id": str(guildId),
+                "channel_id": str(channelId),
+                "message_id": str(messageId),
+                "user_id": str(userId),
+                "timestamp": timestamp
+            }
+
+            # if self.is_first_message_today(guildId=guildId, userId=userId):
+            self.connection.first_message.update_one({ "guild_id": str(guildId), "timestamp": timestamp }, { "$set": payload }, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def track_message(self, guildId: int, userId: int, channelId: int, messageId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow()
+            timestamp = utils.to_timestamp(date)
+
+            payload = {
+                "guild_id": str(guildId),
+                "user_id": str(userId)
+            }
+
+            result = self.connection.messages.find_one( { "guild_id": str(guildId), "user_id": str(userId) } )
+            if result:
+                self.connection.messages.update_one({ "guild_id": str(guildId), "user_id": str(userId) }, { "$push": { "messages": { "channel_id": str(channelId), "message_id": str(messageId), "timestamp": timestamp } } }, upsert=True)
+            else:
+                self.connection.messages.insert_one({ **payload, "messages": [{ "channel_id": str(channelId), "message_id": str(messageId), "timestamp": timestamp }] })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+
+    def is_first_message_today(self, guildId: int, userId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow().date()
+            ts_date = datetime.datetime.combine(date, datetime.time.min)
+            timestamp = utils.to_timestamp(ts_date)
+            result = self.connection.first_message.find_one( { "guild_id": str(guildId), "timestamp": timestamp } )
+            if result:
+                return False
+            return True
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()

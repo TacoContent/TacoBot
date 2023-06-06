@@ -122,5 +122,14 @@ class Database():
     def taco_tuesday_user_tracked(self, guildId: int, userId: int, messageId: int):
         pass
 
+    def track_first_message(self, guildId: int, userId: int, channelId: int, messageId: int):
+        pass
+
+    def track_message(self, guildId: int, userId: int, channelId: int, messageId: int):
+        pass
+
+    def is_first_message_today(self, guildId: int, userId: int):
+        pass
+
     def UPDATE_SCHEMA(self):
         pass
