@@ -113,6 +113,7 @@
 	"game_key_no_game_data_message": "I was unable to locate the key based on the offer",
 	"game_key_already_redeemed_message": "{{user}}, This offer has already been claimed, but there will be a new game available soon. No tacos have been removed.",
 	"game_key_claim_message": "Your game key for **{{game}}** is **{{game_key}}**.\n\nThis key is for {{platform}}.\n\nThank you for being an active part of the TACO Community. Please remember that this key is not to be used for a giveaway.{{help_link}}{{download_link}}",
+	"taco_tuesday_reason": "supporting Taco Tuesday",
 	"wdyctw_reason_default": "answering WDYCTW",
 	"wdyctw_out_message": "Say what you call the thing in the photo.\n\n{{taco_count}} {{taco_word}} 🌮 for answering.",
 	"wdyctw_out_title": "What Do You Call This?",
