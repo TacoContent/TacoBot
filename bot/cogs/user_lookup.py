@@ -40,7 +40,7 @@ class UserLookup(commands.Cog):
     async def on_member_join(self, member):
         try:
             self.log.debug(member.guild.id, "user_lookup.on_member_join", f"User {member.id} joined guild {member.guild.id}")
-            self.db.track_user(member.guild.id, member.id, member.name, member.discriminator, member.avatar.url, member.display_name)
+            self.db.track_user(member.guild.id, member.id, member.name, member.discriminator, member.avatar.url, member.display_name, member.created_at, member.bot, member.system)
         except Exception as e:
             self.log.error(member.guild.id, "user_lookup.on_member_join", f"{e}", traceback.format_exc())
 
@@ -48,24 +48,24 @@ class UserLookup(commands.Cog):
     async def on_member_update(self, before, after):
         try:
             self.log.debug(after.guild.id, "user_lookup.on_member_update", f"User {after.id} updated in guild {after.guild.id}")
-            self.db.track_user(after.guild.id, after.id, after.name, after.discriminator, after.avatar.url, after.display_name)
+            self.db.track_user(after.guild.id, after.id, after.name, after.discriminator, after.avatar.url, after.display_name, after.created_at, after.bot, after.system)
         except Exception as e:
             self.log.error(after.guild.id, "user_lookup.on_member_update", f"{e}", traceback.format_exc())
 
-    @commands.Cog.listener()
-    async def on_user_update(self, before, after):
-        try:
-            self.log.debug(0, "user_lookup.on_user_update", f"User {after.id} updated")
-            self.db.track_user(0, after.id, after.name, after.discriminator, after.avatar.url, after.display_name)
-        except Exception as e:
-            self.log.error(0, "user_lookup.on_user_update", f"{e}", traceback.format_exc())
+    # @commands.Cog.listener()
+    # async def on_user_update(self, before, after):
+    #     try:
+    #         self.log.debug(0, "user_lookup.on_user_update", f"User {after.id} updated")
+    #         self.db.track_user(after.guild.id, after.id, after.name, after.discriminator, after.avatar.url, after.display_name, after.display_name, after.mention, after.created_at, after.bot, False)
+    #     except Exception as e:
+    #         self.log.error(0, "user_lookup.on_user_update", f"{e}", traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_message(self, message):
         try:
             self.log.debug(message.guild.id, "user_lookup.on_message", f"Message {message.id} sent by user {message.author.id} in guild {message.guild.id}")
             member = message.author
-            self.db.track_user(message.guild.id, member.id, member.name, member.discriminator, member.avatar.url, member.display_name)
+            self.db.track_user(message.guild.id, member.id, member.name, member.discriminator, member.avatar.url, member.display_name, member.created_at, member.bot, member.system)
         except Exception as e:
             self.log.error(message.guild.id, "user_lookup.on_message", f"{e}", traceback.format_exc())
 

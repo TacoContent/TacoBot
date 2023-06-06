@@ -1,6 +1,7 @@
 
 from traceback import print_exc
 import typing
+import datetime
 
 class Database():
 
@@ -131,7 +132,7 @@ class Database():
     def is_first_message_today(self, guildId: int, userId: int):
         pass
 
-    def track_user(self, guildId: int, userId: int, username: str, discriminator: str, avatar: str, displayname: str):
+    def track_user(self, guildId: int, userId: int, username: str, discriminator: str, avatar: str, displayname: str, created: datetime.datetime = None, bot: bool = False, system: bool = False):
         pass
 
     def UPDATE_SCHEMA(self):

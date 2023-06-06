@@ -1736,13 +1736,13 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def track_user(self, guildId: int, userId: int, username: str, discriminator: str, avatar: str, displayname: str):
+    def track_user(self, guildId: int, userId: int, username: str, discriminator: str, avatar: str, displayname: str, created: datetime.datetime = None, bot: bool = False, system: bool = False):
         try:
             if self.connection is None:
                 self.open()
             date = datetime.datetime.utcnow()
             timestamp = utils.to_timestamp(date)
-
+            created_timestamp = utils.to_timestamp(created) if created else None
             payload = {
                 "guild_id": str(guildId),
                 "user_id": str(userId),
@@ -1750,6 +1750,9 @@ class MongoDatabase(database.Database):
                 "discriminator": discriminator,
                 "avatar": avatar,
                 "displayname": displayname,
+                "created": created_timestamp,
+                "bot": bot,
+                "system": system,
                 "timestamp": timestamp
             }
 
