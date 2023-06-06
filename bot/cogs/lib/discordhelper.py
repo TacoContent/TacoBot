@@ -694,7 +694,7 @@ class DiscordHelper:
             title,
             message,
             delete_after=timeout,
-            footer=self.settings.get_string(ctx.guild.id, "footer_XX_seconds", timeout=timeout),
+            footer=self.settings.get_string(ctx.guild.id, "footer_XX_seconds", seconds=timeout),
             view=view,
         )
 

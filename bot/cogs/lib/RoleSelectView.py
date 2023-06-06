@@ -39,6 +39,7 @@ class RoleSelectView(discord.ui.View):
         await interaction.response.defer()
         if self.select_callback is not None:
             await self.select_callback(self.role_select, interaction)
+            self.stop()
 
     async def on_timeout(self, interaction: discord.Interaction):
         self.clear_items()

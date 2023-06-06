@@ -49,11 +49,14 @@ class ChannelSelectView(discord.ui.View):
         self.add_item(self.channel_select)
 
     async def on_select(self, interaction: discord.Interaction):
-            await interaction.response.defer()
-            if self.select_callback is not None:
-                await self.select_callback(self.channel_select, interaction)
+        self.log.debug(self.ctx.guild.id, "ChannelSelectView.on_select", "Item Selected")
+        await interaction.response.defer()
+        if self.select_callback is not None:
+            await self.select_callback(self.channel_select, interaction)
+            self.stop()
 
     async def on_timeout(self):
+        self.log.debug(self.ctx.guild.id, "ChannelSelectView.on_timeout", "Timed out")
         self.clear_items()
         if self.timeout_callback is not None:
             await self.timeout_callback()

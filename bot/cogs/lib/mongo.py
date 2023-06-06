@@ -1726,7 +1726,7 @@ class MongoDatabase(database.Database):
             date = datetime.datetime.utcnow().date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
-            result = self.connection.first_message.find_one( { "guild_id": str(guildId), "user_id": userId, "timestamp": timestamp } )
+            result = self.connection.first_message.find_one( { "guild_id": str(guildId), "user_id": str(userId), "timestamp": timestamp } )
             if result:
                 return False
             return True

@@ -50,6 +50,7 @@ class GameRewardView(discord.ui.View):
         await interaction.response.defer()
         if self.claim_button_callback is not None:
             await self.claim_button_callback(interaction)
+            self.stop()
 
     async def on_timeout(self):
         if self.timeout_callback is not None:

@@ -49,6 +49,7 @@ class YesOrNoView(discord.ui.View):
         await interaction.delete_original_response()
         if self.button_answer_callback is not None:
             await self.button_answer_callback(self, interaction)
+            self.stop()
 
     async def on_timeout(self, interaction: discord.Interaction):
         self.clear_items()
