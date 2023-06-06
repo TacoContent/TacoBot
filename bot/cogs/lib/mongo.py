@@ -1686,7 +1686,7 @@ class MongoDatabase(database.Database):
             }
 
             # if self.is_first_message_today(guildId=guildId, userId=userId):
-            self.connection.first_message.update_one({ "guild_id": str(guildId), "timestamp": timestamp }, { "$set": payload }, upsert=True)
+            self.connection.first_message.update_one({ "guild_id": str(guildId), "user_id": str(userId), "timestamp": timestamp }, { "$set": payload }, upsert=True)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
