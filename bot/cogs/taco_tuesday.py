@@ -3,6 +3,7 @@ from discord.ext import commands
 import asyncio
 import json
 import traceback
+import datetime
 import sys
 import os
 import glob
@@ -46,12 +47,11 @@ class TacoTuesday(commands.Cog):
     @tuesday.command()
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-
     async def give(self, ctx, member: discord.Member):
         try:
             await ctx.message.delete()
 
-            await self.give_user_tacotuesday_tacos(ctx.guild.id, member.id, ctx.channel.id, None)
+            await self.give_user_tacotuesday_tacos(ctx.guild.id, member.id, ctx.channel.id)
 
         except Exception as e:
             self.log.error(ctx.guild.id, "taco_tuesday.give", str(e), traceback.format_exc())
@@ -170,14 +170,15 @@ class TacoTuesday(commands.Cog):
         self.db.save_taco_tuesday (
             guildId=guild_id,
             message=text or "",
-            image=image_url,
+            image=image_url or "",
             author=message_author.id,
             channel_id=channel_id,
             message_id=message_id,
         )
 
 
-    async def give_user_tacotuesday_tacos(self, guild_id, user_id, channel_id, message_id):
+    async def give_user_tacotuesday_tacos(self, guild_id, user_id, channel_id):
+        ctx = None
         try:
             # create context
             # self, bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
@@ -195,9 +196,6 @@ class TacoTuesday(commands.Cog):
                 self.log.warn(guild_id, "tacotuesday.give_user_tacotuesday_tacos", f"No output channel found for guild {guild_id}")
                 return
             message = None
-            # get message
-            if message_id and channel:
-                message = await channel.fetch_message(message_id)
 
             # get bot
             bot = self.bot
@@ -231,8 +229,9 @@ class TacoTuesday(commands.Cog):
 
 
         except Exception as e:
-            self.log.error(ctx.guild.id, "tacotuesday.give_user_tacotuesday_tacos", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            self.log.error(guild_id, "tacotuesday.give_user_tacotuesday_tacos", str(e), traceback.format_exc())
+            if ctx:
+                await self.discord_helper.notify_of_error(ctx)
 
     def get_tacos_settings(self, guildId: int = 0):
         cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
@@ -241,6 +240,6 @@ class TacoTuesday(commands.Cog):
             # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
-    
+
 async def setup(bot):
     await bot.add_cog(TacoTuesday(bot))
