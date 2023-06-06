@@ -1461,7 +1461,6 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-
     def track_mentalmondays_answer(self, guild_id: int, user_id: int, message_id: int):
         try:
             if self.connection is None:
@@ -1560,6 +1559,108 @@ class MongoDatabase(database.Database):
                     return False
                 else:
                     raise Exception(f"No mentalmondays found for guild {guildId} for {datetime.datetime.utcnow().date()}")
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            raise ex
+        finally:
+            if self.connection:
+                self.close()
+
+    def save_taco_tuesday(self, guildId: int, message: str, image: str, author: int, channel_id: int = None, message_id: int = None):
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow().date()
+            ts_date = datetime.datetime.combine(date, datetime.time.min)
+            timestamp = utils.to_timestamp(ts_date)
+            payload = {
+                "guild_id": str(guildId),
+                "message": message,
+                "image": image,
+                "author": str(author),
+                "answered": [],
+                "timestamp": timestamp,
+                "channel_id": str(channel_id),
+                "message_id": str(message_id)
+            }
+            self.connection.taco_tuesday.update_one({ "guild_id": str(guildId), "timestamp": timestamp }, { "$set": payload }, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def track_taco_tuesday(self, guild_id: int, user_id: int):
+        try:
+            if self.connection is None:
+                self.open()
+
+            now_date = datetime.datetime.utcnow().date()
+            ts_date = datetime.datetime.combine(now_date, datetime.time.min)
+            timestamp = utils.to_timestamp(ts_date)
+            ts_track = utils.to_timestamp(datetime.datetime.utcnow())
+
+            result = self.connection.taco_tuesday.find_one(
+                {"guild_id": str(guild_id), "timestamp": timestamp}
+            )
+
+            if result:
+                self.connection.taco_tuesday.update_one({ "guild_id": str(guild_id), "timestamp": timestamp }, { "$push": { "answered": { "user_id": str(user_id), "timestamp": ts_track } } }, upsert=True)
+            else:
+                now_date = datetime.datetime.utcnow().date()
+                back_date = now_date - datetime.timedelta(days=7)
+                ts_now_date = datetime.datetime.combine(now_date, datetime.time.max)
+                ts_back_date = datetime.datetime.combine(back_date, datetime.time.min)
+                # timestamp = utils.to_timestamp(ts_date)
+                result = self.connection.taco_tuesday.find_one(
+                    {"guild_id": str(guild_id), "timestamp": {
+                        "$gte": utils.to_timestamp(ts_back_date),
+                        "$lte": utils.to_timestamp(ts_now_date)
+                    }}
+                )
+                if result:
+                    self.connection.taco_tuesday.update_one({ "guild_id": str(guild_id), "timestamp": result['timestamp'] }, { "$push": { "answered": { "user_id": str(user_id), "timestamp": ts_track } } }, upsert=True)
+                else:
+                    raise Exception(f"No taco tuesday found for guild {guild_id} for the last 7 days")
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def taco_tuesday_user_tracked(self, guildId: int, userId: int, messageId: int):
+        # was this message, for this user, already used to answer the WDYCTW?
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow().date()
+            ts_date = datetime.datetime.combine(date, datetime.time.min)
+            timestamp = utils.to_timestamp(ts_date)
+            result = self.connection.taco_tuesday.find_one(
+                {"guild_id": str(guildId), "timestamp": timestamp}
+            )
+            if result:
+                for answer in result["answered"]:
+                    if answer["user_id"] == str(userId):
+                        return True
+                return False
+            else:
+                date = date - datetime.timedelta(days=1)
+                ts_date = datetime.datetime.combine(date, datetime.time.min)
+                timestamp = utils.to_timestamp(ts_date)
+                result = self.connection.taco_tuesday.find_one(
+                    {"guild_id": str(guildId), "timestamp": timestamp}
+                )
+                if result:
+                    for answer in result["answered"]:
+                        if answer["user_id"] == str(userId):
+                            return True
+                    return False
+                else:
+                    raise Exception(f"No Taco Tuesday found for guild {guildId} for {datetime.datetime.utcnow().date()}")
         except Exception as ex:
             print(ex)
             traceback.print_exc()

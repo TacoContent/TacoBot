@@ -114,5 +114,13 @@ class Database():
         pass
     def mentalmondays_user_message_tracked(self, guildId: int, userId: int, messageId: int):
         pass
+
+    def save_taco_tuesday(self, guildId: int, message: str, image: str, author: int):
+        pass
+    def track_taco_tuesday(self, guildId: int, userId: int):
+        pass
+    def taco_tuesday_user_tracked(self, guildId: int, userId: int, messageId: int):
+        pass
+
     def UPDATE_SCHEMA(self):
         pass
