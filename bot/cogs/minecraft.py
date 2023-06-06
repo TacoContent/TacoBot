@@ -206,6 +206,7 @@ class Minecraft(commands.Cog):
                 return
             data = resp.json()
             if data['status'] != "success":
+                self.log.error(guild_id, "minecraft.start_server", f"Failed to start the server: {data['message']}")
                 await self.discord_helper.sendEmbed(output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
                     message=self.settings.get_string(guild_id, "minecraft_control_failure", error=data['message'], action="start"),
@@ -267,6 +268,7 @@ class Minecraft(commands.Cog):
                 return
             data = resp.json()
             if data['status'] != "success":
+                self.log.error(guild_id, "minecraft.start_server", f"Failed to stop the server: {data['message']}")
                 await self.discord_helper.sendEmbed(output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
                     message=self.settings.get_string(guild_id, "minecraft_control_failure", error=data['message'], action="stop"),
