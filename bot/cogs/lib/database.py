@@ -131,5 +131,8 @@ class Database():
     def is_first_message_today(self, guildId: int, userId: int):
         pass
 
+    def track_user(self, guildId: int, userId: int, username: str, discriminator: str, avatar: str, displayname: str):
+        pass
+
     def UPDATE_SCHEMA(self):
         pass

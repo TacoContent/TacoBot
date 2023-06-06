@@ -1718,7 +1718,6 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-
     def is_first_message_today(self, guildId: int, userId: int):
         try:
             if self.connection is None:
@@ -1730,6 +1729,31 @@ class MongoDatabase(database.Database):
             if result:
                 return False
             return True
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def track_user(self, guildId: int, userId: int, username: str, discriminator: str, avatar: str, displayname: str):
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow()
+            timestamp = utils.to_timestamp(date)
+
+            payload = {
+                "guild_id": str(guildId),
+                "user_id": str(userId),
+                "username": username,
+                "discriminator": discriminator,
+                "avatar": avatar,
+                "displayname": displayname,
+                "timestamp": timestamp
+            }
+
+            self.connection.users.update_one({ "guild_id": str(guildId), "user_id": str(userId) }, { "$set": payload }, upsert=True)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
