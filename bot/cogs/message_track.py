@@ -61,8 +61,15 @@ class MessageTracker(commands.Cog):
                 return
             guild_id = message.guild.id
 
+            # if message is a bot command, ignore
+            # loop all command prefixes
+            for prefix in await self.bot.command_prefix(message):
+                if message.content.startswith(prefix):
+                    return
+
             if self.db.is_first_message_today(guild_id, message.author.id):
                 await self.give_user_first_message_tacos(guild_id, message.author.id, message.channel.id, message.id)
+
 
 
             # track the message in the database
