@@ -41,7 +41,6 @@ class UserLookup(commands.Cog):
         try:
             if member is None or member.guild is None:
                 return
-
             self.log.debug(member.guild.id, "user_lookup.on_member_join", f"User {member.id} joined guild {member.guild.id}")
             self.db.track_user(member.guild.id, member.id, member.name, member.discriminator, member.avatar.url, member.display_name, member.created_at, member.bot, member.system)
         except Exception as e:
@@ -52,19 +51,10 @@ class UserLookup(commands.Cog):
         try:
             if after is None or after.guild is None:
                 return
-
             self.log.debug(after.guild.id, "user_lookup.on_member_update", f"User {after.id} updated in guild {after.guild.id}")
             self.db.track_user(after.guild.id, after.id, after.name, after.discriminator, after.avatar.url, after.display_name, after.created_at, after.bot, after.system)
         except Exception as e:
             self.log.error(after.guild.id, "user_lookup.on_member_update", f"{e}", traceback.format_exc())
-
-    # @commands.Cog.listener()
-    # async def on_user_update(self, before, after):
-    #     try:
-    #         self.log.debug(0, "user_lookup.on_user_update", f"User {after.id} updated")
-    #         self.db.track_user(after.guild.id, after.id, after.name, after.discriminator, after.avatar.url, after.display_name, after.display_name, after.mention, after.created_at, after.bot, False)
-    #     except Exception as e:
-    #         self.log.error(0, "user_lookup.on_user_update", f"{e}", traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_message(self, message):
