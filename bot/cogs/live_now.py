@@ -94,6 +94,8 @@ class LiveNow(commands.Cog):
                     await self.add_remove_roles(user=after, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
                 return
 
+            self.log.debug(guild_id, "live_now.on_member_update", f"got streaming activities for {before.display_name}")
+
             # loop after activities and see if they are in the before activities
             # if they are not, then we have a new streaming activity
             for asa in after_streaming_activities:
@@ -102,6 +104,7 @@ class LiveNow(commands.Cog):
                     if asa.url == bsa.url:
                         found = True
                         break
+                self.log.debug(guild_id, "live_now.on_member_update", f"found streaming activity for {after.display_name} on {asa.platform}")
                 # check if the user activity was already tracked
                 is_tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform) != None
                 if not found or not is_tracked:
