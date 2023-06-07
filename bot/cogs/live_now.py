@@ -101,13 +101,15 @@ class LiveNow(commands.Cog):
             for asa in after_streaming_activities:
                 found = False
                 for bsa in before_streaming_activities:
-                    if asa.url == bsa.url:
+                    if asa.url == bsa.url and asa.platform == bsa.platform:
                         found = True
                         break
-                self.log.debug(guild_id, "live_now.on_member_update", f"found streaming activity for {after.display_name} on {asa.platform}")
+                self.log.debug(guild_id, "live_now.on_member_update", f"found ({found}) streaming activity for {after.display_name} on {asa.platform}")
                 # check if the user activity was already tracked
                 is_tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform) != None
-                if not found or not is_tracked:
+                self.log.debug(guild_id, "live_now.on_member_update", f"Is {after.display_name} already tracked? {is_tracked}")
+
+                if not is_tracked:
                     self.log.info(guild_id, "live_now.on_member_update", f"Found new streaming activity for {after.display_name}.")
                     tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform)
                     if tracked.count() == 0:
