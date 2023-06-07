@@ -112,10 +112,9 @@ class LiveNow(commands.Cog):
                 is_tracked = tracked != None and tracked.count() > 0
                 self.log.debug(guild_id, "live_now.on_member_update", f"Is {after.display_name} already tracked? {is_tracked}")
 
-                if not is_tracked:
+                if not found or not is_tracked:
                     self.log.info(guild_id, "live_now.on_member_update", f"Found new streaming activity for {after.display_name}.")
-                    tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform)
-                    if tracked.count() == 0:
+                    if is_tracked:
                         self.log.info(guild_id, "live_now.on_member_update", f"{before.display_name} started streaming on {asa.platform}")
 
                         # get the tacos settings
