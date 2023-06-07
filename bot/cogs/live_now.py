@@ -152,6 +152,7 @@ class LiveNow(commands.Cog):
                     else:
                         self.log.debug(guild_id, "live_now.on_member_update", f"{before.display_name} started streaming on {asa.platform} but was already tracked")
 
+
             # loop all the before activities and see if they are in the after activities
             # if they are not, then we need to remove them from the database
             for bsa in before_streaming_activities:
