@@ -120,6 +120,25 @@ class TacoTuesday(commands.Cog):
 
         self._import_taco_tuesday(message)
 
+    async def _on_raw_reaction_add_archive(self, payload):
+        _method = inspect.stack()[0][3]
+        guild_id = payload.guild_id
+
+        # check if the user that reacted is in the admin role
+        if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+            self.log.debug(guild_id, _method, f"User {payload.user_id} is not an admin")
+            return
+
+        channel = self.bot.get_channel(payload.channel_id)
+        message = await channel.fetch_message(payload.message_id)
+
+        reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
+        if reaction.count > 1:
+            self.log.debug(guild_id, _method, f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
+            return
+
+        await self._archive_taco_tuesday(message)
+
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         _method = inspect.stack()[0][3]
@@ -148,6 +167,9 @@ class TacoTuesday(commands.Cog):
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             # await self.discord_helper.notify_of_error(ctx)
+
+    async def _archive_taco_tuesday(self, message: discord.Message):
+        pass
 
     def _import_taco_tuesday(self, message: discord.Message):
         guild_id = message.guild.id

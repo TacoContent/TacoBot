@@ -84,13 +84,13 @@ class LiveNow(commands.Cog):
             # check if the user is in any of the "add" roles, but has no streaming activity
             # remove them from those roles
             if len(before_streaming_activities) == 0 and len(after_streaming_activities) == 0:
-                # self.log.info(guild_id, "live_now.on_member_update", f"no streaming activity found for {before.display_name}, checking if they are in any of the add roles")
+                self.log.debug(guild_id, "live_now.on_member_update", f"no streaming activity found for {before.display_name}, checking if they are in any of the add roles")
                 watch_groups = cog_settings.get("watch", [])
                 for wg in watch_groups:
                     watch_roles = wg.get("roles", [])
                     add_roles = wg.get("remove_roles", [])
                     remove_roles = wg.get("add_roles", [])
-                    # self.log.info(guild_id, "live_now.on_member_update", f"updating roles for {before.display_name}")
+                    self.log.info(guild_id, "live_now.on_member_update", f"updating roles for {before.display_name}")
                     await self.add_remove_roles(user=after, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
                 return
 
