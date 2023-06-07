@@ -63,6 +63,8 @@ class UserLookup(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         try:
+            if message is None or message.guild is None:
+                return
             member = message.author
             self.db.track_user(message.guild.id, member.id, member.name, member.discriminator, member.avatar.url, member.display_name, member.created_at, member.bot, member.system)
         except Exception as e:
