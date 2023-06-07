@@ -106,7 +106,8 @@ class LiveNow(commands.Cog):
                         break
                 self.log.debug(guild_id, "live_now.on_member_update", f"found ({found}) streaming activity for {after.display_name} on {asa.platform}")
                 # check if the user activity was already tracked
-                is_tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform) != None
+                tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform)
+                is_tracked = tracked != None and tracked.count() > 0
                 self.log.debug(guild_id, "live_now.on_member_update", f"Is {after.display_name} already tracked? {is_tracked}")
 
                 if not is_tracked:
