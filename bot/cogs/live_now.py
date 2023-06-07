@@ -274,7 +274,7 @@ class LiveNow(commands.Cog):
 
                 fields.append({ "name": self.settings.get_string(guild_id, "platform"), "value": f"{emoji}{activity.platform}", "inline": True },)
 
-            profile_icon = profile_icon if profile_icon else user.avatar_url
+            profile_icon = profile_icon if profile_icon else user.avatar.url
 
             if activity.assets:
                 image_url = activity.assets.get("large_image", None)
