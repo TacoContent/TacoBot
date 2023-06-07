@@ -213,12 +213,12 @@ class Tacos(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        _method = inspect.stack()[0][3]
+        member = message.author
         try:
-            _method = inspect.stack()[0][3]
             # if we are in a guild
             if message.guild:
                 guild_id = message.guild.id
-                member = message.author
 
                 if member.bot:
                     return
@@ -256,6 +256,7 @@ class Tacos(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
+        _method = inspect.stack()[0][3]
         # remove all tacos from the user
         try:
             if member.bot:
@@ -308,7 +309,7 @@ class Tacos(commands.Cog):
                 has_reacted = self.db.get_taco_reaction(guild_id, user.id, channel.id, message.id)
                 if has_reacted:
                     # log that the user has already reacted
-                    self.log.debug(guild_id, _method, f"{user} has already reacted to {message.id} so no tacos given.")
+                    # self.log.debug(guild_id, _method, f"{user} has already reacted to {message.id} so no tacos given.")
                     return
 
 
@@ -321,10 +322,10 @@ class Tacos(commands.Cog):
                 # get the total number of tacos the user has gifted in the last 24 hours
                 total_gifted = self.db.get_total_gifted_tacos(guild_id, user.id, max_gift_taco_timespan)
                 # log the total number of tacos the user has gifted
-                self.log.debug(guild_id, _method, f"{user} has gifted {total_gifted} tacos in the last {max_gift_taco_timespan} seconds.")
+                # self.log.debug(guild_id, _method, f"{user} has gifted {total_gifted} tacos in the last {max_gift_taco_timespan} seconds.")
                 remaining_gifts = max_gift_tacos - total_gifted
 
-                self.log.debug(guild_id, _method, f"🌮 adding taco to user {message.author.name}")
+                # self.log.debug(guild_id, _method, f"🌮 adding taco to user {message.author.name}")
                 # track the user's taco reaction
                 self.db.add_taco_reaction(guild_id, user.id, channel.id, message.id)
                 # # give the user the reaction reward tacos
@@ -333,18 +334,16 @@ class Tacos(commands.Cog):
                     tacotypes.TacoTypes.REACT_REWARD )
 
                 if reaction_count <= remaining_gifts:
-                    self.log.debug(guild_id, _method, f"🌮 adding taco to user {user.name}")
+                    # self.log.debug(guild_id, _method, f"🌮 adding taco to user {user.name}")
                     # track that the user has gifted tacos via reactions
                     self.db.add_taco_gift(guild_id, user.id, reaction_count)
                     # give taco giver tacos too
                     await self.discord_helper.taco_give_user(guild_id, self.bot.user, user,
                         self.settings.get_string(guild_id, "taco_reason_react", user=message.author.name),
                         tacotypes.TacoTypes.REACTION )
-                else:
-                    # log that the user cannot gift anymore tacos via reactions
-                    self.log.debug(guild_id, _method, f"{user} cannot gift anymore tacos. remaining gifts: {remaining_gifts}")
-            else:
-                self.log.debug(guild_id, _method, f"{payload.emoji} not a taco")
+                # else:
+                #     # log that the user cannot gift anymore tacos via reactions
+                #     self.log.debug(guild_id, _method, f"{user} cannot gift anymore tacos. remaining gifts: {remaining_gifts}")
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
 

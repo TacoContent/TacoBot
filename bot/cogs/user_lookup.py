@@ -63,7 +63,6 @@ class UserLookup(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         try:
-            self.log.debug(message.guild.id, "user_lookup.on_message", f"Message {message.id} sent by user {message.author.id} in guild {message.guild.id}")
             member = message.author
             self.db.track_user(message.guild.id, member.id, member.name, member.discriminator, member.avatar.url, member.display_name, member.created_at, member.bot, member.system)
         except Exception as e:

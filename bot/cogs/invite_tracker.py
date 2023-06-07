@@ -50,7 +50,6 @@ class InviteTracker(commands.Cog):
             self.invites[guild_id] = await guild.invites()
 
             for invite in self.invites[guild_id]:
-                self.log.debug(guild_id, "invite_tracker.on_ready", f"adding invite: {invite.code}")
                 invite_payload = self.get_payload_for_invite(invite)
                 self.db.track_invite_code(guild_id, invite.code, invite_payload, None)
 

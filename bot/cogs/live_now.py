@@ -56,7 +56,7 @@ class LiveNow(commands.Cog):
             guild_id = after.guild.id
 
         try:
-
+            self.log.debug(guild_id, "live_now.on_member_update", f"Checking if live_now is enabled for guild {guild_id}")
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings:
                 self.log.warn(guild_id, "live_now.on_member_update", f"No live_now settings found for guild {guild_id}")
@@ -351,5 +351,6 @@ class LiveNow(commands.Cog):
                 self.log.debug(0, "live_now.get_user_profile_image", f"Failed to get profile image for {twitch_user}")
                 self.log.info(0, "live_now.get_user_profile_image", f"{result.text}")
         return None
+    
 async def setup(bot):
     await bot.add_cog(LiveNow(bot))

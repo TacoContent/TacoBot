@@ -167,7 +167,7 @@ class TacoQuestionOfTheDay(commands.Cog):
             reaction_emojis = taco_settings.get("tqotd_reaction_emoji", ["🇹"])
             # check if the reaction is in the list of ones we are looking for
             if str(payload.emoji.name) not in reaction_emojis:
-                self.log.debug(guild_id, "tqotd.on_raw_reaction_add", f"Reaction {payload.emoji.name} is not in the list of ones we are looking for {reaction_emojis}")
+                # self.log.debug(guild_id, "tqotd.on_raw_reaction_add", f"Reaction {payload.emoji.name} is not in the list of ones we are looking for {reaction_emojis}")
                 return
 
             # check if the user that reacted is in the admin role
@@ -185,7 +185,7 @@ class TacoQuestionOfTheDay(commands.Cog):
             # check if this reaction is the first one of this type on the message
             reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
             if reaction.count > 1:
-                self.log.debug(guild_id, _method, f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
+                # self.log.debug(guild_id, _method, f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
                 return
 
             already_tracked = self.db.tqotd_user_message_tracked(guild_id, message_author.id, message.id)
