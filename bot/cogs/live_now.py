@@ -104,6 +104,8 @@ class LiveNow(commands.Cog):
                     if asa.url == bsa.url and asa.platform == bsa.platform:
                         found = True
                         break
+
+                    
                 self.log.debug(guild_id, "live_now.on_member_update", f"found ({found}) streaming activity for {after.display_name} on {asa.platform}")
                 # check if the user activity was already tracked
                 tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform)
