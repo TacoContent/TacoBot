@@ -105,14 +105,14 @@ class LiveNow(commands.Cog):
                         found = True
                         break
 
-                    
+
                 self.log.debug(guild_id, "live_now.on_member_update", f"found ({found}) streaming activity for {after.display_name} on {asa.platform}")
                 # check if the user activity was already tracked
                 tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform)
                 is_tracked = tracked != None and tracked.count() > 0
                 self.log.debug(guild_id, "live_now.on_member_update", f"Is {after.display_name} already tracked? {is_tracked}")
 
-                if not is_tracked and found:
+                if not is_tracked:
                     self.log.info(guild_id, "live_now.on_member_update", f"Found new streaming activity for {after.display_name}.")
                     tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform)
                     if tracked.count() == 0:
@@ -168,7 +168,7 @@ class LiveNow(commands.Cog):
                 tracked = self.db.get_tracked_live(guild_id, after.id, bsa.platform)
                 is_tracked = tracked != None and tracked.count() > 0
                 self.log.debug(guild_id, "live_now.on_member_update", f"Is {after.display_name} tracked? {is_tracked}")
-                if found and is_tracked:
+                if not found and is_tracked:
                     self.log.info(guild_id, "live_now.on_member_update", f"{before.display_name} stopped streaming on {bsa.platform}")
                     if is_tracked and tracked:
                         self.log.info(guild_id, "live_now.on_member_update", f"{before.display_name} stopped streaming")
