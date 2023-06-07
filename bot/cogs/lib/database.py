@@ -81,6 +81,10 @@ class Database():
         pass
     def untrack_live(self, guildId: int, userId: int, platform: str):
         pass
+    def get_tracked_live_by_url(self, guildId: int, url: str):
+        pass
+    def get_tracked_live_by_user(self, guildId: int, userId: int):
+        pass
 
     def birthday_was_checked_today(self, guildId: int):
         pass

@@ -2,6 +2,9 @@
 - update to 2.x version of discord.py
 - rework the integrations to use discord.py
 - updated preview to include the image in an embed and any files that may have been attached
+- added user info tracker to be used to be able to look up a user's display name
+- added message tracking. Tracks the message id for messages that users send.
+- added "first message of the day". Gives users tacos for sending their first message of the day.
 
 **v1.0.108**
 - change live now to track for multiple live platforms

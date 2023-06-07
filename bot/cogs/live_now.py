@@ -102,7 +102,9 @@ class LiveNow(commands.Cog):
                     if asa.url == bsa.url:
                         found = True
                         break
-                if not found:
+                # check if the user activity was already tracked
+                is_tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform) != None
+                if not found or not is_tracked:
                     self.log.info(guild_id, "live_now.on_member_update", f"Found new streaming activity for {after.display_name}.")
                     tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform)
                     if tracked.count() == 0:
@@ -152,7 +154,8 @@ class LiveNow(commands.Cog):
                     if bsa.url == asa.url:
                         found = True
                         break
-                if not found:
+                is_tracked = self.db.get_tracked_live(guild_id, after.id, bsa.platform) != None
+                if not found and is_tracked:
                     self.log.info(guild_id, "live_now.on_member_update", f"{before.display_name} stopped streaming on {bsa.platform}")
                     tracked = self.db.get_tracked_live(guild_id, before.id, bsa.platform)
                     if tracked.count() > 0:
@@ -351,6 +354,6 @@ class LiveNow(commands.Cog):
                 self.log.debug(0, "live_now.get_user_profile_image", f"Failed to get profile image for {twitch_user}")
                 self.log.info(0, "live_now.get_user_profile_image", f"{result.text}")
         return None
-    
+
 async def setup(bot):
     await bot.add_cog(LiveNow(bot))

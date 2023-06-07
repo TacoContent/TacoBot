@@ -822,6 +822,30 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
+    def get_tracked_live_by_url(self, guildId: int, url: str):
+        try:
+            if self.connection is None:
+                self.open()
+            return self.connection.live_tracked.find({ "guild_id": str(guildId), "url": url })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def get_tracked_live_by_user(self, guildId: int, userId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            return self.connection.live_tracked.find({ "guild_id": str(guildId), "user_id": str(userId) })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
     def untrack_live(self, guildId: int, userId: int, platform: str):
         try:
             if self.connection is None:
