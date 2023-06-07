@@ -39,6 +39,9 @@ class UserLookup(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member):
         try:
+            if member is None or member.guild is None:
+                return
+
             self.log.debug(member.guild.id, "user_lookup.on_member_join", f"User {member.id} joined guild {member.guild.id}")
             self.db.track_user(member.guild.id, member.id, member.name, member.discriminator, member.avatar.url, member.display_name, member.created_at, member.bot, member.system)
         except Exception as e:
@@ -47,6 +50,9 @@ class UserLookup(commands.Cog):
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         try:
+            if after is None or after.guild is None:
+                return
+
             self.log.debug(after.guild.id, "user_lookup.on_member_update", f"User {after.id} updated in guild {after.guild.id}")
             self.db.track_user(after.guild.id, after.id, after.name, after.discriminator, after.avatar.url, after.display_name, after.created_at, after.bot, after.system)
         except Exception as e:
