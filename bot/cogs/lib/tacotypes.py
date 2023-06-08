@@ -1,7 +1,6 @@
 ### NOTE: UPDATE THIS FILE WHEN CHANGING TACO TYPES ###
 ### UPDATE TacoBotTwitch/cogs/lib/tacotypes.py WHEN CHANGING TACO TYPES ###
 
-
 from enum import Enum
 class TacoTypes(Enum):
     JOIN = 1
@@ -22,7 +21,7 @@ class TacoTypes(Enum):
     MENTAL_MONDAY = 16
     FIRST_MESSAGE = 17
 
-    TWITCH = 9998
+    TWITCH_CUSTOM = 9998
     CUSTOM = 9999
 
     @staticmethod
@@ -62,7 +61,7 @@ class TacoTypes(Enum):
         elif taco_type_string == "first_message_count":
             return TacoTypes.FIRST_MESSAGE
         elif taco_type_string == "twitch_custom":
-            return TacoTypes.TWITCH
+            return TacoTypes.TWITCH_CUSTOM
         else:
             return TacoTypes.CUSTOM
 
@@ -102,8 +101,8 @@ class TacoTypes(Enum):
             return "MENTAL_MONDAY"
         elif taco_type == TacoTypes.FIRST_MESSAGE:
             return "FIRST_MESSAGE"
-        elif taco_type == TacoTypes.TWITCH:
-            return "TWITCH"
+        elif taco_type == TacoTypes.TWITCH_CUSTOM:
+            return "TWITCH_CUSTOM"
         else:
             return "CUSTOM"
 
@@ -143,7 +142,7 @@ class TacoTypes(Enum):
             return "mental_monday_count"
         elif taco_type == TacoTypes.FIRST_MESSAGE:
             return "first_message_count"
-        elif taco_type == TacoTypes.TWITCH:
+        elif taco_type == TacoTypes.TWITCH_CUSTOM:
             return "twitch_custom"
         else:
             return "custom"
