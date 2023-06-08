@@ -234,7 +234,7 @@ class TacoQuestionOfTheDay(commands.Cog):
                 self.log.warn(guild_id, "tqotd.give_user_tqotd_tacos", f"No tacos settings found for guild {guild_id}")
                 return
 
-            amount = tacos_settings.get("tqotd_amount", 5)
+            amount = tacos_settings.get("tqotd_count", 5)
 
             tacos_word = self.settings.get_string(guild_id, "taco_singular")
             if amount > 1:
