@@ -104,6 +104,10 @@ class FoodPhoto(commands.Cog):
                 taco_amount=amount,
             )
 
+            # track the message in the database
+            image_url = message.attachments[0].url if message.attachments else matches.group(0)
+            self.db.track_food_post(guildId=guild_id, userId=message.author.id, messageId=message.id, channelId=message.channel.id, message=message.content, image=image_url)
+
             pass
         except Exception as e:
             self.log.error(0, "food_photo.on_message", str(e), traceback.format_exc())

@@ -139,5 +139,8 @@ class Database():
     def track_user(self, guildId: int, userId: int, username: str, discriminator: str, avatar: str, displayname: str, created: datetime.datetime = None, bot: bool = False, system: bool = False):
         pass
 
+    def track_food_post(self, guildId: int, userId: int, channelId: int, messageId: int, message: str, image: str):
+        pass
+
     def UPDATE_SCHEMA(self):
         pass

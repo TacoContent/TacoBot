@@ -95,7 +95,7 @@ class MongoDatabase(database.Database):
             if self.connection is None:
                 self.open()
             payload = {
-                "guild_id": guildId,
+                "guild_id": str(guildId),
                 "timestamp": utils.get_timestamp(),
                 "level": level.name,
                 "method": method,
@@ -1781,6 +1781,30 @@ class MongoDatabase(database.Database):
             }
 
             self.connection.users.update_one({ "guild_id": str(guildId), "user_id": str(userId) }, { "$set": payload }, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def track_food_post(self, guildId: int, userId: int, channelId: int, messageId: int, message: str, image: str):
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow()
+            timestamp = utils.to_timestamp(date)
+            payload = {
+                "guild_id": str(guildId),
+                "user_id": str(userId),
+                "channel_id": str(channelId),
+                "message_id": str(messageId),
+                "message": message,
+                "image": image,
+                "timestamp": timestamp
+            }
+
+            self.connection.food_posts.insert_one(payload)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
