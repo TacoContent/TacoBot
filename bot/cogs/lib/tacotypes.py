@@ -22,6 +22,7 @@ class TacoTypes(Enum):
     MENTAL_MONDAY = 16
     FIRST_MESSAGE = 17
 
+    TWITCH = 9998
     CUSTOM = 9999
 
     @staticmethod
@@ -60,6 +61,8 @@ class TacoTypes(Enum):
             return TacoTypes.MENTAL_MONDAY
         elif taco_type_string == "first_message_count":
             return TacoTypes.FIRST_MESSAGE
+        elif taco_type_string == "twitch_custom":
+            return TacoTypes.TWITCH
         else:
             return TacoTypes.CUSTOM
 
@@ -99,6 +102,8 @@ class TacoTypes(Enum):
             return "MENTAL_MONDAY"
         elif taco_type == TacoTypes.FIRST_MESSAGE:
             return "FIRST_MESSAGE"
+        elif taco_type == TacoTypes.TWITCH:
+            return "TWITCH"
         else:
             return "CUSTOM"
 
@@ -138,6 +143,7 @@ class TacoTypes(Enum):
             return "mental_monday_count"
         elif taco_type == TacoTypes.FIRST_MESSAGE:
             return "first_message_count"
-        
+        elif taco_type == TacoTypes.TWITCH:
+            return "twitch_custom"
         else:
             return "custom"
