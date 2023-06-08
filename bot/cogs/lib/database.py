@@ -142,5 +142,8 @@ class Database():
     def track_food_post(self, guildId: int, userId: int, channelId: int, messageId: int, message: str, image: str):
         pass
 
+    def track_user_join_leave(self, guildId: int, userId: int, join: bool):
+        pass
+
     def UPDATE_SCHEMA(self):
         pass

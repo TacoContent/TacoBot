@@ -1811,3 +1811,25 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
+
+    def track_user_join_leave(self, guildId: int, userId: int, join: bool):
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow()
+            timestamp = utils.to_timestamp(date)
+            payload = {
+                "guild_id": str(guildId),
+                "user_id": str(userId),
+                "action": "JOIN" if join else "LEAVE",
+                "timestamp": timestamp
+            }
+
+            self.connection.user_join_leave.insert_one(payload)
+
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
