@@ -46,6 +46,33 @@ class TacoTypes(Enum):
             return TacoTypes.CUSTOM
 
     @staticmethod
+    def get_db_type_from_taco_type(taco_type):
+        if taco_type == TacoTypes.JOIN:
+            return "JOIN"
+        elif taco_type == TacoTypes.BOOST:
+            return "BOOST"
+        elif taco_type == TacoTypes.REACT_REWARD:
+            return "REACT_REWARD"
+        elif taco_type == TacoTypes.SUGGEST:
+            return "SUGGEST"
+        elif taco_type == TacoTypes.INVITE:
+            return "INVITE"
+        elif taco_type == TacoTypes.REACTION:
+            return "REACTION"
+        elif taco_type == TacoTypes.REPLY:
+            return "REPLY"
+        elif taco_type == TacoTypes.TQOTD:
+            return "TQOTD"
+        elif taco_type == TacoTypes.BIRTHDAY:
+            return "BIRTHDAY"
+        elif taco_type == TacoTypes.TWITCH:
+            return "TWITCH"
+        elif taco_type == TacoTypes.STREAM:
+            return "STREAM"
+        else:
+            return "CUSTOM"
+
+    @staticmethod
     def get_string_from_taco_type(taco_type):
         if taco_type == TacoTypes.JOIN:
             return "join_count"

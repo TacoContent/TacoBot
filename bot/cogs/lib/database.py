@@ -145,5 +145,8 @@ class Database():
     def track_user_join_leave(self, guildId: int, userId: int, join: bool):
         pass
 
+    def track_tacos_log(self, guildId: int, fromUserId: int, toUserId: int, count: int, type: str, reason: str):
+        pass
+
     def UPDATE_SCHEMA(self):
         pass

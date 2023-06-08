@@ -10,15 +10,9 @@ import glob
 import typing
 import collections
 
-from .ChannelSelect import (
-    ChannelSelect,
-    ChannelSelectView
-)
+from .ChannelSelect import ChannelSelect, ChannelSelectView
 
-from .RoleSelectView import (
-    RoleSelectView,
-    RoleSelect
-)
+from .RoleSelectView import RoleSelectView, RoleSelect
 
 from discord.ext.commands.cooldowns import BucketType
 from discord import (
@@ -26,11 +20,7 @@ from discord import (
     ActionRow,
     SelectMenu,
 )
-from discord.ui import (
-    Button,
-    Select,
-    TextInput
-)
+from discord.ui import Button, Select, TextInput
 
 # from interactions import ComponentContext
 # from interactions import (
@@ -378,7 +368,16 @@ class DiscordHelper:
                 fromMember=fromUser,
                 count=taco_count,
                 total_tacos=total_taco_count,
-                reason=reason_msg
+                reason=reason_msg,
+            )
+
+            self.db.track_tacos_log(
+                guildId=guildId,
+                toUserId=toUser.id,
+                fromUserId=fromUser.id,
+                count=taco_count,
+                reason=reason_msg,
+                type=tacotypes.TacoTypes.get_db_type_from_taco_type(give_type),
             )
             return total_taco_count
         except Exception as e:
@@ -536,7 +535,7 @@ class DiscordHelper:
         question: str,
         title: str = "Yes or No?",
         timeout: int = 60,
-        fields = None,
+        fields=None,
         thumbnail: str = None,
         image: str = None,
         content: str = None,
@@ -557,7 +556,9 @@ class DiscordHelper:
             if result_callback:
                 await result_callback(False)
 
-        yes_no_view = YesOrNoView(ctx, answer_callback=answer_callback, timeout=timeout, timeout_callback=timeout_callback)
+        yes_no_view = YesOrNoView(
+            ctx, answer_callback=answer_callback, timeout=timeout, timeout_callback=timeout_callback
+        )
         await self.sendEmbed(
             channel,
             title,
@@ -629,6 +630,7 @@ class DiscordHelper:
         channels = [c for c in ctx.guild.channels if c.type == discord.ChannelType.text]
         channels.sort(key=lambda c: c.position)
         sub_message = ""
+
         async def select_callback(select: discord.ui.Select, interaction: discord.Interaction):
             # if not the user that triggered the interaction, ignore
             if interaction.user.id != ctx.author.id:
@@ -682,12 +684,19 @@ class DiscordHelper:
                     await callback(None)
                 return
 
-
         async def select_timeout():
             await self.sendEmbed(
                 ctx.channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
             )
-        view = ChannelSelectView(ctx=ctx, placeholder=title, channels=channels, allow_none=allow_none, select_callback=select_callback, timeout_callback=select_timeout)
+
+        view = ChannelSelectView(
+            ctx=ctx,
+            placeholder=title,
+            channels=channels,
+            allow_none=allow_none,
+            select_callback=select_callback,
+            timeout_callback=select_timeout,
+        )
         # action_row = ActionRow(select)
         await self.sendEmbed(
             ctx.channel,
@@ -697,8 +706,6 @@ class DiscordHelper:
             footer=self.settings.get_string(ctx.guild.id, "footer_XX_seconds", seconds=timeout),
             view=view,
         )
-
-
 
     async def ask_number(
         self,
@@ -809,14 +816,15 @@ class DiscordHelper:
             await text_ask.delete()
         return textResp.content
 
-    async def ask_for_image_or_text(self,
+    async def ask_for_image_or_text(
+        self,
         ctx,
         targetChannel,
         title: str = "Enter Text Response",
         message: str = "Please enter your response.",
         timeout: int = 60,
-        color=None,):
-
+        color=None,
+    ):
         def check_user(m):
             same = m.author.id == ctx.author.id
             return same
@@ -878,7 +886,9 @@ class DiscordHelper:
                         role_id = select.values[0]
 
                     if role_id == 0:
-                        await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, ENTER ROLE NAME", delete_after=5)
+                        await self.sendEmbed(
+                            ctx.channel, title, f"{ctx.author.mention}, ENTER ROLE NAME", delete_after=5
+                        )
                         # need to ask for role name
                         await select_callback(None)
                         return
@@ -887,7 +897,9 @@ class DiscordHelper:
                     selected_role: discord.Role = discord.utils.get(ctx.guild.roles, id=str(select.values[0]))
 
                     if selected_role:
-                        self.log.debug(guild_id, _method, f"{ctx.author.mention} selected the role '{selected_role.name}'")
+                        self.log.debug(
+                            guild_id, _method, f"{ctx.author.mention} selected the role '{selected_role.name}'"
+                        )
                         await select_callback(selected_role)
                         return
                     else:
@@ -909,8 +921,8 @@ class DiscordHelper:
             exclude_roles=exclude_roles,
             select_callback=role_select_callback,
             timeout_callback=timeout_callback,
-            timeout=timeout)
-
+            timeout=timeout,
+        )
 
         await self.sendEmbed(
             ctx.channel,
@@ -920,7 +932,6 @@ class DiscordHelper:
             footer=self.settings.get_string(ctx.guild.id, "footer_XX_seconds", seconds=timeout),
             view=role_view,
         )
-
 
     async def is_admin(self, guildId: int, userId: int):
         member = await self.get_or_fetch_member(guildId, userId)

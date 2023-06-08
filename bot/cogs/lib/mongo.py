@@ -1833,3 +1833,27 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
+
+    def track_tacos_log(self, guildId: int, fromUserId: int, toUserId: int, count: int, type: str, reason: str):
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow()
+            timestamp = utils.to_timestamp(date)
+            payload = {
+                "guild_id": str(guildId),
+                "from_user_id": str(fromUserId),
+                "to_user_id": str(toUserId),
+                "count": count,
+                "type": type,
+                "reason": reason,
+                "timestamp": timestamp
+            }
+
+            self.connection.tacos_log.insert_one(payload)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
