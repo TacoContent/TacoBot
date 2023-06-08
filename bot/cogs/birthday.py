@@ -29,6 +29,7 @@ from .lib import mongo
 from .lib import dbprovider
 from .lib import tacotypes
 
+
 class Birthday(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -46,7 +47,7 @@ class Birthday(commands.Cog):
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, "birthday.__init__", "Initialized")
 
-    @commands.group(name='birthday', aliases=['bday'])
+    @commands.group(name="birthday", aliases=["bday"])
     @commands.guild_only()
     async def birthday(self, ctx):
         if ctx.invoked_subcommand is not None:
@@ -62,28 +63,48 @@ class Birthday(commands.Cog):
             _ctx = ctx
             out_channel = ctx.author
             try:
-                _ctx = self.discord_helper.create_context(self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild)
-                month = await self.discord_helper.ask_number(_ctx,
+                _ctx = self.discord_helper.create_context(
+                    self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
+                )
+                month = await self.discord_helper.ask_number(
+                    _ctx,
                     self.settings.get_string(guild_id, "birthday_set_title"),
                     self.settings.get_string(guild_id, "birthday_set_month_question"),
-                    1, 12, timeout=60)
-                _ctx = self.discord_helper.create_context(self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild)
-                day = await self.discord_helper.ask_number(_ctx,
+                    1,
+                    12,
+                    timeout=60,
+                )
+                _ctx = self.discord_helper.create_context(
+                    self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
+                )
+                day = await self.discord_helper.ask_number(
+                    _ctx,
                     self.settings.get_string(guild_id, "birthday_set_title"),
                     self.settings.get_string(guild_id, "birthday_set_day_question"),
-                    1, 31, timeout=60)
+                    1,
+                    31,
+                    timeout=60,
+                )
             except discord.Forbidden:
                 self.log.info(guild_id, "birthday.birthday", "Forbidden", traceback.format_exc())
                 _ctx = ctx
                 out_channel = ctx.channel
-                month = await self.discord_helper.ask_number(_ctx,
+                month = await self.discord_helper.ask_number(
+                    _ctx,
                     self.settings.get_string(guild_id, "birthday_set_title"),
                     self.settings.get_string(guild_id, "birthday_set_month_question"),
-                    1, 12, timeout=60)
-                day = await self.discord_helper.ask_number(_ctx,
+                    1,
+                    12,
+                    timeout=60,
+                )
+                day = await self.discord_helper.ask_number(
+                    _ctx,
                     self.settings.get_string(guild_id, "birthday_set_title"),
                     self.settings.get_string(guild_id, "birthday_set_day_question"),
-                    1, 31, timeout=60)
+                    1,
+                    31,
+                    timeout=60,
+                )
 
             user_bday_set = self.db.get_user_birthday(guild_id, ctx.author.id)
             self.db.add_user_birthday(guild_id, ctx.author.id, month, day)
@@ -92,22 +113,32 @@ class Birthday(commands.Cog):
                 taco_settings = self.get_tacos_settings(guild_id)
                 taco_amount = taco_settings.get("birthday_count", 25)
                 reason_msg = self.settings.get_string(guild_id, "taco_reason_birthday")
-                await self.discord_helper.taco_give_user(guild_id, self.bot.user, ctx.author, reason_msg, tacotypes.TacoTypes.BIRTHDAY, taco_amount=taco_amount )
+                await self.discord_helper.taco_give_user(
+                    guild_id,
+                    self.bot.user,
+                    ctx.author,
+                    reason_msg,
+                    tacotypes.TacoTypes.BIRTHDAY,
+                    taco_amount=taco_amount,
+                )
 
             fields = [
-                { 'name': self.settings.get_string(guild_id, "month"), 'value': str(month), 'inline': True },
-                { 'name': self.settings.get_string(guild_id, "day"), 'value': str(day), 'inline': True }
+                {"name": self.settings.get_string(guild_id, "month"), "value": str(month), "inline": True},
+                {"name": self.settings.get_string(guild_id, "day"), "value": str(day), "inline": True},
             ]
-            await self.discord_helper.sendEmbed(out_channel,
+            await self.discord_helper.sendEmbed(
+                out_channel,
                 self.settings.get_string(guild_id, "birthday_set_title"),
                 self.settings.get_string(guild_id, "birthday_set_confirm", user=ctx.author.mention),
-                fields=fields, delete_after=10)
+                fields=fields,
+                delete_after=10,
+            )
             pass
         except Exception as e:
             self.log.error(guild_id, "birthday.birthday", str(e), traceback.format_exc())
             self.discord_helper.notify_of_error(ctx)
 
-    @birthday.command(name='check')
+    @birthday.command(name="check")
     @commands.guild_only()
     async def check_birthday(self, ctx):
         try:
@@ -123,11 +154,13 @@ class Birthday(commands.Cog):
             birthdays = self.get_todays_birthdays(guild_id)
             # wish the users a happy birthday
             if birthdays.count() > 0:
-                self.log.debug(guild_id, "birthday.check_birthday", f"Sending birthday wishes from check_birthday for {guild_id}")
+                self.log.debug(
+                    guild_id, "birthday.check_birthday", f"Sending birthday wishes from check_birthday for {guild_id}"
+                )
                 await self.send_birthday_message(ctx, birthdays)
             # track the check
             self.db.track_birthday_check(guild_id)
-            await asyncio.sleep(.5)
+            await asyncio.sleep(0.5)
         except Exception as e:
             self.log.error(guild_id, "birthday.check_birthday", str(e), traceback.format_exc())
             self.discord_helper.notify_of_error(ctx)
@@ -178,14 +211,13 @@ class Birthday(commands.Cog):
                 self.log.debug(guild_id, "birthday.on_member_update", f"birthday is disabled for guild {guild_id}")
                 return
 
-
             if birthdays.count() == 0:
                 return
 
             # get all the users
             users = []
             for birthday in birthdays:
-                user = ctx.guild.get_member(int(birthday['user_id'])).mention
+                user = ctx.guild.get_member(int(birthday["user_id"])).mention
 
                 if user:
                     users.append(user)
@@ -206,15 +238,23 @@ class Birthday(commands.Cog):
                 month_name = date.strftime("%B")
                 month_day = date.strftime("%d")
                 fields = [
-                    { 'name': self.settings.get_string(guild_id, "month"), 'value': month_name, 'inline': True },
-                    { 'name': self.settings.get_string(guild_id, "day"), 'value': month_day, 'inline': True }
+                    {"name": self.settings.get_string(guild_id, "month"), "value": month_name, "inline": True},
+                    {"name": self.settings.get_string(guild_id, "day"), "value": month_day, "inline": True},
                 ]
-                await self.discord_helper.sendEmbed(output_channel,
+                await self.discord_helper.sendEmbed(
+                    output_channel,
                     self.settings.get_string(guild_id, "birthday_wishes_title"),
-                    self.settings.get_string(guild_id, "birthday_wishes_message", message=message, users=' '.join(users)),
-                    image=image, color=None, fields=fields)
+                    self.settings.get_string(
+                        guild_id, "birthday_wishes_message", message=message, users=" ".join(users)
+                    ),
+                    image=image,
+                    color=None,
+                    fields=fields,
+                )
             else:
-                self.log.debug(guild_id, "birthday.send_birthday_message", f"Could not find channel {output_channel_id}")
+                self.log.debug(
+                    guild_id, "birthday.send_birthday_message", f"Could not find channel {output_channel_id}"
+                )
 
         except Exception as e:
             self.log.error(guild_id, "birthday.send_birthday_message", str(e), traceback.format_exc())
@@ -234,11 +274,13 @@ class Birthday(commands.Cog):
             birthdays = self.get_todays_birthdays(guild_id)
             # wish the users a happy birthday
             if birthdays.count() > 0:
-                self.log.debug(guild_id, "birthday.on_message", f"Sending birthday wishes from on_message for {guild_id}")
+                self.log.debug(
+                    guild_id, "birthday.on_message", f"Sending birthday wishes from on_message for {guild_id}"
+                )
                 await self.send_birthday_message(message, birthdays)
             # track the check
             self.db.track_birthday_check(guild_id)
-            await asyncio.sleep(.5)
+            await asyncio.sleep(0.5)
         except Exception as e:
             self.log.error(guild_id, "birthday.on_message", str(e), traceback.format_exc())
 
@@ -257,11 +299,15 @@ class Birthday(commands.Cog):
             birthdays = self.get_todays_birthdays(guild_id)
             # wish the users a happy birthday
             if birthdays.count() > 0:
-                self.log.debug(guild_id, "birthday.on_member_update", f"Sending birthday wishes from on_member_update for {guild_id}")
+                self.log.debug(
+                    guild_id,
+                    "birthday.on_member_update",
+                    f"Sending birthday wishes from on_member_update for {guild_id}",
+                )
                 await self.send_birthday_message(after, birthdays)
             # track the check
             self.db.track_birthday_check(guild_id)
-            await asyncio.sleep(.5)
+            await asyncio.sleep(0.5)
         except Exception as e:
             self.log.error(guild_id, "birthday.on_member_update", str(e), traceback.format_exc())
 
@@ -280,11 +326,13 @@ class Birthday(commands.Cog):
             birthdays = self.get_todays_birthdays(guild_id)
             # wish the users a happy birthday
             if birthdays.count() > 0:
-                self.log.debug(guild_id, "birthday.on_member_join", f"Sending birthday wishes from on_member_join for {guild_id}")
+                self.log.debug(
+                    guild_id, "birthday.on_member_join", f"Sending birthday wishes from on_member_join for {guild_id}"
+                )
                 await self.send_birthday_message(member, birthdays)
             # track the check
             self.db.track_birthday_check(guild_id)
-            await asyncio.sleep(.5)
+            await asyncio.sleep(0.5)
         except Exception as e:
             self.log.error(guild_id, "birthday.on_member_join", str(e), traceback.format_exc())
 
@@ -305,14 +353,17 @@ class Birthday(commands.Cog):
                 birthdays = self.get_todays_birthdays(guild_id)
                 # wish the users a happy birthday
                 if birthdays.count() > 0:
-                    self.log.debug(guild_id, "birthday.on_ready", f"Sending birthday wishes from on_ready for {guild_id}")
+                    self.log.debug(
+                        guild_id, "birthday.on_ready", f"Sending birthday wishes from on_ready for {guild_id}"
+                    )
                     ctx = self.discord_helper.create_context(bot=self.bot, guild=guild)
                     await self.send_birthday_message(ctx, birthdays)
                 # track the check
                 self.db.track_birthday_check(guild_id)
-                await asyncio.sleep(.5)
+                await asyncio.sleep(0.5)
         except Exception as e:
             self.log.error(guild_id, "birthday.on_member_join", str(e), traceback.format_exc())
+
     def get_tacos_settings(self, guildId: int = 0):
         cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
         if not cog_settings:
@@ -320,5 +371,7 @@ class Birthday(commands.Cog):
             # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
+
+
 async def setup(bot):
     await bot.add_cog(Birthday(bot))

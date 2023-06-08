@@ -57,7 +57,6 @@ class TacoTuesday(commands.Cog):
             self.log.error(ctx.guild.id, "taco_tuesday.give", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
-
     # async def give(self, ctx: Context, member: discord.Member):
     #     guild_id = ctx.guild.id
     #     try:
@@ -104,7 +103,6 @@ class TacoTuesday(commands.Cog):
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
 
-
         # check if the user that reacted is in the admin role
         if not await self.discord_helper.is_admin(guild_id, payload.user_id):
             self.log.debug(guild_id, _method, f"User {payload.user_id} is not an admin")
@@ -115,7 +113,11 @@ class TacoTuesday(commands.Cog):
 
         reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
         if reaction.count > 1:
-            self.log.debug(guild_id, _method, f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
+            self.log.debug(
+                guild_id,
+                _method,
+                f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}",
+            )
             return
 
         self._import_taco_tuesday(message)
@@ -135,7 +137,9 @@ class TacoTuesday(commands.Cog):
         cog_settings = self.get_cog_settings(guild_id)
         if not cog_settings:
             # raise exception if there are no cog settings
-            self.log.error(guild_id, "tacotuesday.on_raw_reaction_add", f"No tacotuesday cog settings found for guild {guild_id}")
+            self.log.error(
+                guild_id, "tacotuesday.on_raw_reaction_add", f"No tacotuesday cog settings found for guild {guild_id}"
+            )
             return
 
         # check if message has the import emoji
@@ -150,7 +154,11 @@ class TacoTuesday(commands.Cog):
 
         reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
         if reaction.count > 1:
-            self.log.debug(guild_id, _method, f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
+            self.log.debug(
+                guild_id,
+                _method,
+                f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}",
+            )
             return
 
         await self._archive_taco_tuesday(message, cog_settings)
@@ -160,9 +168,8 @@ class TacoTuesday(commands.Cog):
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
         try:
-            if payload.event_type != 'REACTION_ADD':
+            if payload.event_type != "REACTION_ADD":
                 return
-
 
             ###
             # archive_enabled: true,
@@ -175,7 +182,11 @@ class TacoTuesday(commands.Cog):
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings:
                 # raise exception if there are no cog settings
-                self.log.error(guild_id, "tacotuesday.on_raw_reaction_add", f"No tacotuesday cog settings found for guild {guild_id}")
+                self.log.error(
+                    guild_id,
+                    "tacotuesday.on_raw_reaction_add",
+                    f"No tacotuesday cog settings found for guild {guild_id}",
+                )
                 return
 
             if not cog_settings.get("enable", False):
@@ -188,7 +199,7 @@ class TacoTuesday(commands.Cog):
                     await self._on_raw_reaction_add_archive(payload)
 
             today = datetime.datetime.now()
-            if today.weekday() != 1: # 1 = Tuesday
+            if today.weekday() != 1:  # 1 = Tuesday
                 return
 
             reaction_import_emojis = cog_settings.get("tacotuesday_reaction_import_emoji", ["🇮"])
@@ -207,26 +218,31 @@ class TacoTuesday(commands.Cog):
 
             archive_channel_id = cog_settings.get("archive_channel_id", None)
             if not archive_channel_id:
-                self.log.error(guild_id, "tacotuesday._archive_taco_tuesday", f"No archive_channel_id found for guild {guild_id}")
+                self.log.error(
+                    guild_id, "tacotuesday._archive_taco_tuesday", f"No archive_channel_id found for guild {guild_id}"
+                )
                 return
 
             archive_channel = self.bot.get_channel(archive_channel_id)
             if not archive_channel:
-                self.log.error(guild_id, "tacotuesday._archive_taco_tuesday", f"Could not find archive channel {archive_channel_id} for guild {guild_id}")
+                self.log.error(
+                    guild_id,
+                    "tacotuesday._archive_taco_tuesday",
+                    f"Could not find archive channel {archive_channel_id} for guild {guild_id}",
+                )
                 return
 
-
             await self.discord_helper.move_message(
-                message=message,
-                targetChannel=archive_channel,
-                who=self.bot.user,
-                reason="TACO Tuesday archive")
+                message=message, targetChannel=archive_channel, who=self.bot.user, reason="TACO Tuesday archive"
+            )
 
             await self.discord_helper.sendEmbed(
-                message.channel, title="TACO Tuesday",
+                message.channel,
+                title="TACO Tuesday",
                 message=f"Message archived to {archive_channel.mention}",
                 color=discord.Color.green().value,
-                delete_after=10)
+                delete_after=10,
+            )
 
         except Exception as ex:
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
@@ -249,8 +265,12 @@ class TacoTuesday(commands.Cog):
         if message_content is not None and message_content != "":
             text = message_content
 
-        self.log.debug(guild_id, "taco_tuesday._import_taco_tuesday", f"Importing TACO Tuesday message {message_id} from channel {channel_id} in guild {guild_id} for user {message_author.id} with text {text} and image {image_url}")
-        self.db.save_taco_tuesday (
+        self.log.debug(
+            guild_id,
+            "taco_tuesday._import_taco_tuesday",
+            f"Importing TACO Tuesday message {message_id} from channel {channel_id} in guild {guild_id} for user {message_author.id} with text {text} and image {image_url}",
+        )
+        self.db.save_taco_tuesday(
             guildId=guild_id,
             message=text or "",
             image=image_url or "",
@@ -258,7 +278,6 @@ class TacoTuesday(commands.Cog):
             channel_id=channel_id,
             message_id=message_id,
         )
-
 
     async def give_user_tacotuesday_tacos(self, guild_id, user_id, channel_id):
         ctx = None
@@ -276,20 +295,26 @@ class TacoTuesday(commands.Cog):
             else:
                 channel = guild.system_channel
             if not channel:
-                self.log.warn(guild_id, "tacotuesday.give_user_tacotuesday_tacos", f"No output channel found for guild {guild_id}")
+                self.log.warn(
+                    guild_id, "tacotuesday.give_user_tacotuesday_tacos", f"No output channel found for guild {guild_id}"
+                )
                 return
             message = None
 
             # get bot
             bot = self.bot
-            ctx = self.discord_helper.create_context(bot=bot, guild=guild, author=member, channel=channel, message=message)
+            ctx = self.discord_helper.create_context(
+                bot=bot, guild=guild, author=member, channel=channel, message=message
+            )
 
             # track that the user answered the question.
             self.db.track_taco_tuesday(guild_id, member.id)
 
             tacos_settings = self.get_tacos_settings(guild_id)
             if not tacos_settings:
-                self.log.warn(guild_id, "tacotuesday.give_user_tacotuesday_tacos", f"No tacos settings found for guild {guild_id}")
+                self.log.warn(
+                    guild_id, "tacotuesday.give_user_tacotuesday_tacos", f"No tacos settings found for guild {guild_id}"
+                )
                 return
 
             amount = tacos_settings.get("taco_tuesday_count", 250)
@@ -304,12 +329,22 @@ class TacoTuesday(commands.Cog):
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_give_title"),
                 # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",
-                message=self.settings.get_string(guild_id, "taco_gift_success", user=self.bot.user, touser=member.mention, amount=amount, taco_word=tacos_word, reason=reason_msg),
+                message=self.settings.get_string(
+                    guild_id,
+                    "taco_gift_success",
+                    user=self.bot.user,
+                    touser=member.mention,
+                    amount=amount,
+                    taco_word=tacos_word,
+                    reason=reason_msg,
+                ),
                 footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT),
-                delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                delete_after=self.SELF_DESTRUCT_TIMEOUT,
+            )
 
-            await self.discord_helper.taco_give_user(guild_id, self.bot.user, member, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount )
-
+            await self.discord_helper.taco_give_user(
+                guild_id, self.bot.user, member, reason_msg, tacotypes.TacoTypes.TACO_TUESDAY, taco_amount=amount
+            )
 
         except Exception as e:
             self.log.error(guild_id, "tacotuesday.give_user_tacotuesday_tacos", str(e), traceback.format_exc())
@@ -331,6 +366,7 @@ class TacoTuesday(commands.Cog):
             # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
+
 
 async def setup(bot):
     await bot.add_cog(TacoTuesday(bot))

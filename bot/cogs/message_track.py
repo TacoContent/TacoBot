@@ -70,8 +70,6 @@ class MessageTracker(commands.Cog):
             if self.db.is_first_message_today(guild_id, message.author.id):
                 await self.give_user_first_message_tacos(guild_id, message.author.id, message.channel.id, message.id)
 
-
-
             # track the message in the database
             self.db.track_message(guild_id, message.author.id, message.channel.id, message.id)
         except Exception as e:
@@ -91,22 +89,29 @@ class MessageTracker(commands.Cog):
 
             # get bot
             bot = self.bot
-            ctx = self.discord_helper.create_context(bot=bot, guild=guild, author=member, channel=channel, message=message)
+            ctx = self.discord_helper.create_context(
+                bot=bot, guild=guild, author=member, channel=channel, message=message
+            )
 
             # track that the user answered the question.
             self.db.track_first_message(guild_id, member.id, channel_id, message_id)
 
             tacos_settings = self.get_tacos_settings(guild_id)
             if not tacos_settings:
-                self.log.warn(guild_id, "message_track.give_user_first_message_tacos", f"No tacos settings found for guild {guild_id}")
+                self.log.warn(
+                    guild_id,
+                    "message_track.give_user_first_message_tacos",
+                    f"No tacos settings found for guild {guild_id}",
+                )
                 return
 
             amount = tacos_settings.get("first_message_count", 5)
 
             reason_msg = self.settings.get_string(guild_id, "first_message_reason")
 
-            await self.discord_helper.taco_give_user(guild_id, self.bot.user, member, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount )
-
+            await self.discord_helper.taco_give_user(
+                guild_id, self.bot.user, member, reason_msg, tacotypes.TacoTypes.FIRST_MESSAGE, taco_amount=amount
+            )
 
         except Exception as e:
             self.log.error(guild_id, "message_track.give_user_first_message_tacos", str(e), traceback.format_exc())
@@ -118,6 +123,7 @@ class MessageTracker(commands.Cog):
             # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No message_track settings found for guild {guildId}")
         return cog_settings
+
     def get_tacos_settings(self, guildId: int = 0):
         cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
         if not cog_settings:
@@ -125,6 +131,7 @@ class MessageTracker(commands.Cog):
             # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
+
 
 async def setup(bot):
     await bot.add_cog(MessageTracker(bot))
