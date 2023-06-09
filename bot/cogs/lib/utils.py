@@ -72,6 +72,7 @@ def get_random_name(noun_count = 1, adjective_count = 1):
                 return "New Voice Channel"
 
 def to_timestamp(date, tz: datetime.timezone = None):
+    date = date.replace(tzinfo=tz)
     return (date - datetime.datetime(1970,1,1, tzinfo=tz)).total_seconds()
 def from_timestamp(timestamp):
     return datetime.datetime.fromtimestamp(timestamp)

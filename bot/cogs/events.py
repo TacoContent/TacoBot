@@ -24,7 +24,6 @@ class Events(commands.Cog):
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, "events.__init__", "Initialized")
 
-
     @commands.Cog.listener()
     async def on_ready(self):
         self.log.debug(0, "events.on_ready", f"Logged in as {self.bot.user.name}:{self.bot.user.id}")
@@ -45,5 +44,5 @@ class Events(commands.Cog):
         self.log.error(0, "events.on_error", f"{str(event)}", traceback.format_exc())
 
 
-def setup(bot):
-    bot.add_cog(Events(bot))
+async def setup(bot):
+    await bot.add_cog(Events(bot))

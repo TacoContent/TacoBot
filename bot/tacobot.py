@@ -1,4 +1,6 @@
 import discord
+import discordhealthcheck
+from discord import app_commands
 import math
 import asyncio
 import aiohttp
@@ -17,31 +19,29 @@ import inspect
 from .cogs.lib import utils
 from .cogs.lib import settings
 
-# from .cogs.lib import sqlite
 from .cogs.lib import mongo
 from .cogs.lib import logger
 from .cogs.lib import loglevel
 from .cogs.lib import dbprovider
-from discord_slash import SlashCommand
-
-from . import TacoBotClient
-
-import discordhealthcheck
 
 
-class TacoBot:
-    DISCORD_TOKEN = os.environ["DISCORD_TOKEN"]
+class TacoBot(commands.Bot):
 
-    def __init__(self):
+    def __init__(self, *, intents: discord.Intents):
         self.settings = settings.Settings()
+        super().__init__(command_prefix=self.get_prefix, intents=intents)
+        self.remove_command("help")
+        # self.command_prefix=self.get_prefix
+        # A CommandTree is a special type that holds all the application command
+        # state required to make it work. This is a separate class because it
+        # allows all the extra state to be opt-in.
+        # Whenever you want to work with application commands, your tree is used
+        # to store and work with them.
+        # Note: When using commands.Bot instead of discord.Client, the bot will
+        # maintain its own tree instead.
+        # self.tree = app_commands.CommandTree(self)
         print(f"APP VERSION: {self.settings.APP_VERSION}")
-        # self.client = discord.Client()
-        self.client = TacoBotClient.TacoBotClient()
-
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
         self.initDB()
 
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
@@ -52,9 +52,11 @@ class TacoBot:
         self.log.debug(0, "tacobot.__init__", f"DB Provider {self.settings.db_provider.name}")
         self.log.debug(0, "tacobot.__init__", f"Logger initialized with level {log_level.name}")
 
-        self.bot = commands.Bot(command_prefix=self.get_prefix, case_insensitive=True, intents=discord.Intents.all())
-        self.bot.remove_command("help")
-
+    # In this basic example, we just synchronize the app commands to one guild.
+    # Instead of specifying a guild to every command, we copy over our global commands instead.
+    # By doing so, we don't have to wait up to an hour until they are shown to the end-user.
+    async def setup_hook(self):
+        self.log.debug(0, "cog_loader.setup_hook", "Setup hook called")
         # cogs that dont start with an underscore are loaded
         cogs = [
             f"bot.cogs.{os.path.splitext(f)[0]}"
@@ -64,24 +66,33 @@ class TacoBot:
 
         for extension in cogs:
             try:
-                self.bot.load_extension(extension)
+                await self.load_extension(extension)
             except Exception as e:
                 print(f"Failed to load extension {extension}.", file=sys.stderr)
                 traceback.print_exc()
 
-        slash = SlashCommand(self.bot, override_type=True, sync_commands=True)
+        self.log.debug(0, "TacoBotClient.setup_hook", "Setting up bot")
+        self.log.debug(0, "TacoBotClient.setup_hook", "Starting Healthcheck Server")
+        self.healthcheck_server = await discordhealthcheck.start(self)
 
-        self.bot.run(self.DISCORD_TOKEN)
+
+        # This copies the global commands over to your guild.
+        # self.tree.copy_global_to(guild=MY_GUILD)
+        # await self.tree.sync(guild=MY_GUILD)
+
+
+
+
 
     def initDB(self):
         pass
 
-    def get_prefix(self, client, message):
+    async def get_prefix(self, message):
+        _method: str = inspect.stack()[0][3]
+        # default prefixes
+        # sets the prefixes, you can keep it as an array of only 1 item if you need only one prefix
+        prefixes: typing.List[str] = [".taco ", "?taco ", "!taco "]
         try:
-            _method = inspect.stack()[0][3]
-            # default prefixes
-            # sets the prefixes, you can keep it as an array of only 1 item if you need only one prefix
-            prefixes = [".taco ", "?taco ", "!taco "]
             # get the prefix for the guild.
             if message.guild:
                 guild_id = message.guild.id
@@ -90,8 +101,6 @@ class TacoBot:
                 if not settings:
                     raise Exception("No bot settings found")
                 prefixes = settings["command_prefixes"]
-                # # log the prefixes that we are launching with for this guild
-                # self.log.debug(0, _method, f"Prefixes for guild {message.guild.name} are {prefixes}")
 
             elif not message.guild:
                 # get the prefix for the DM using 0 for the guild_id
@@ -99,12 +108,9 @@ class TacoBot:
                 if not settings:
                     raise Exception("No bot settings found")
                 prefixes = settings["command_prefixes"]
-                # # log the prefixes that we are launching with for DMs
-                # self.log.debug(0, _method, f"Prefixes for DM are {prefixes}")
-
             # Allow users to @mention the bot instead of using a prefix when using a command. Also optional
             # Do `return prefixes` if you don't want to allow mentions instead of prefix.
-            return commands.when_mentioned_or(*prefixes)(client, message)
+            return commands.when_mentioned_or(*prefixes)(self, message)
         except Exception as e:
             self.log.error(0, _method, f"Failed to get prefixes: {e}")
-            return commands.when_mentioned_or(*prefixes)(client, message)
+            return commands.when_mentioned_or(*prefixes)(self, message)

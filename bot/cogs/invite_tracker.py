@@ -11,9 +11,6 @@ import math
 import datetime
 
 from discord.ext.commands.cooldowns import BucketType
-from discord_slash import ComponentContext
-from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
-from discord_slash.model import ButtonStyle
 from discord.ext.commands import has_permissions, CheckFailure
 import inspect
 
@@ -53,7 +50,6 @@ class InviteTracker(commands.Cog):
             self.invites[guild_id] = await guild.invites()
 
             for invite in self.invites[guild_id]:
-                self.log.debug(guild_id, "invite_tracker.on_ready", f"adding invite: {invite.code}")
                 invite_payload = self.get_payload_for_invite(invite)
                 self.db.track_invite_code(guild_id, invite.code, invite_payload, None)
 
@@ -68,7 +64,6 @@ class InviteTracker(commands.Cog):
             self.log.debug(guild_id, "invite_tracker.on_ready", f"adding invite: {invite.code}")
             invite_payload = self.get_payload_for_invite(invite)
             self.db.track_invite_code(guild_id, invite.code, invite_payload, None)
-
 
     @commands.Cog.listener()
     async def on_invite_delete(self, invite):
@@ -95,15 +90,16 @@ class InviteTracker(commands.Cog):
                         # track the invite. add the invite to the database if it doesn't exist. add the new user to the invite
                         invite_payload = self.get_payload_for_invite(invite)
 
-                        invite_use_payload = {
-                            "user_id": str(member.id),
-                            "timestamp": timestamp
-                        }
+                        invite_use_payload = {"user_id": str(member.id), "timestamp": timestamp}
 
                         self.db.track_invite_code(guild_id, invite.code, invite_payload, invite_use_payload)
-                        await self.discord_helper.taco_give_user(guild_id, self.bot.user, inviter,
+                        await self.discord_helper.taco_give_user(
+                            guild_id,
+                            self.bot.user,
+                            inviter,
                             self.settings.get_string(guild_id, "taco_reason_invite", user=member.name),
-                            tacotypes.TacoTypes.INVITE )
+                            tacotypes.TacoTypes.INVITE,
+                        )
                     return
         except Exception as e:
             self.log.error(guild_id, _method, str(e), traceback.format_exc())
@@ -120,7 +116,7 @@ class InviteTracker(commands.Cog):
             "created_at": invite.created_at,
             "revoked": invite.revoked,
             "channel_id": str(invite.channel.id),
-            "url": invite.url
+            "url": invite.url,
         }
 
     def find_invite_by_code(self, inviteList, code):
@@ -128,5 +124,7 @@ class InviteTracker(commands.Cog):
             if invite.code == code:
                 return invite
         return None
-def setup(bot):
-    bot.add_cog(InviteTracker(bot))
+
+
+async def setup(bot):
+    await bot.add_cog(InviteTracker(bot))

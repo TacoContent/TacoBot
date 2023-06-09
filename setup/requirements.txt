@@ -1,9 +1,9 @@
-discord.py==1.7.3
+discord.py==2.1.0
 validators==0.20.0
 pymongo==3.12.0
 python-dotenv==1.0.0
 requests
-discord-py-slash-command~=3.0.3
+# discord-py-interactions==4.3.4
 pytz
-aiohttp~=3.7.4
+aiohttp~=3.8.4
 discordhealthcheck~=0.1.1

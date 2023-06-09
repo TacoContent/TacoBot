@@ -44,6 +44,9 @@ class Settings:
         if not self.db_provider:
             self.db_provider = dbprovider.DatabaseProvider.DEFAULT
 
+    def get(self, name, default_value=None):
+        return utils.dict_get(self.__dict__, name, default_value)
+
     def get_settings(self, db, guildId: int, name:str):
         return db.get_settings(guildId, name)
 
