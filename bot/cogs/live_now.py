@@ -86,7 +86,8 @@ class LiveNow(commands.Cog):
             for bsa in before_streaming_activities:
                 for asa in after_streaming_activities:
                     if asa.url == bsa.url and asa.platform == bsa.platform:
-                        after_streaming_activities.remove(asa)
+                        # dont remove the after items so we always check for the "went live" event
+                        # after_streaming_activities.remove(asa)
                         before_streaming_activities.remove(bsa)
                         break
 
