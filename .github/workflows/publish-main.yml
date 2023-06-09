@@ -84,13 +84,19 @@ jobs:
         from_branch: develop
         target_branch: main
         github_token: ${{ github.token }}
-    # https://github.com/marketplace/actions/create-tag
-    - name: Create Tag
-      uses: negz/create-tag@v1
+    # https://github.com/rickstaa/action-create-tag
+    - uses: rickstaa/action-create-tag@v1
       with:
-        version: ${{ needs.version.outputs.tag }}
+        tag: ${{ needs.version.outputs.tag }}
+        tag_exists_error: false
         message: ''
-        token: ${{ github.token }}
+    # # https://github.com/marketplace/actions/create-tag
+    # - name: Create Tag
+    #   uses: negz/create-tag@v1
+    #   with:
+    #     version: ${{ needs.version.outputs.tag }}
+    #     message: ''
+    #     token: ${{ github.token }}
     # - name: Create Release
     #   uses: softprops/action-gh-release@v1
     #   if: startsWith(github.ref, 'refs/tags/')
