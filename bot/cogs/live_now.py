@@ -81,12 +81,12 @@ class LiveNow(commands.Cog):
                     after_streaming_activities = [ after.activity ]
 
             # remove items that exist in both lists
-            for bsa in before_streaming_activities:
-                for asa in after_streaming_activities:
-                    if asa.url == bsa.url and asa.platform == bsa.platform:
-                        # dont remove the after items so we always check for the "went live" event
-                        # after_streaming_activities.remove(asa)
-                        before_streaming_activities.remove(bsa)
+            # for bsa in before_streaming_activities:
+            #     for asa in after_streaming_activities:
+            #         if asa.url == bsa.url and asa.platform == bsa.platform:
+            #             # dont remove the after items so we always check for the "went live" event
+            #             # after_streaming_activities.remove(asa)
+            #             before_streaming_activities.remove(bsa)
 
             # check if the user is in any of the "add" roles, but has no streaming activity
             # remove them from those roles
@@ -108,6 +108,12 @@ class LiveNow(commands.Cog):
             for asa in after_streaming_activities:
                 tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform)
                 is_tracked = tracked != None and tracked.count() > 0
+
+                # check if asa is in before_streaming_activities
+                found_asa = len([b for b in before_streaming_activities if b.url == asa.url and b.platform == asa.platform]) > 0
+                if found_asa and is_tracked:
+                    # this activity exists in both lists, so it is not a new live
+                    continue
                 # if it is already tracked, then we don't need to do anything
                 if is_tracked:
                     self.log.debug(guild_id, "live_now.on_member_update", f"{after.display_name} is already tracked for {asa.platform}")
@@ -166,6 +172,12 @@ class LiveNow(commands.Cog):
 
             # ENDED STREAM
             for bsa in before_streaming_activities:
+                # check if bsa is in after_streaming_activities
+                found_bsa = len([a for a in after_streaming_activities if a.url == bsa.url and a.platform == bsa.platform]) > 0
+                if found_bsa:
+                    # this activity exists in both lists, so it is still live
+                    continue
+
                 tracked = self.db.get_tracked_live(guild_id, before.id, bsa.platform)
                 is_tracked = tracked != None and tracked.count() > 0
                 # if it is not tracked, then we don't need to do anything
