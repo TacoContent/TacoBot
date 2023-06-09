@@ -353,12 +353,6 @@ class DiscordHelper:
             else:
                 taco_count = taco_settings[tacotypes.TacoTypes.get_string_from_taco_type(give_type)]
 
-            # there are more reasons to have a negative taco count than just custom tacos now. commented out for now and remove if not needed
-            # # only reject <= 0 tacos if it is not custom type
-            # if taco_count <= 0 and give_type != tacotypes.TacoTypes.CUSTOM:
-            #     self.log.warn(guildId, "tacos.on_message", f"Invalid taco count {taco_count}")
-            #     return
-
             reason_msg = reason if reason else self.settings.get_string(guildId, "no_reason")
 
             total_taco_count = self.db.add_tacos(guildId, toUser.id, taco_count)
