@@ -43,7 +43,9 @@ class UserLookup(commands.Cog):
             self.log.debug(guild.id, "user_lookup.on_guild_available", f"Guild {guild.id} is available")
             for member in guild.members:
                 self.log.debug(guild.id, "user_lookup.on_guild_available", f"Tracking user {member.id} in guild {guild.id}")
-                self.db.track_user(guild.id, member.id, member.name, member.discriminator, member.avatar.url, member.display_name, member.created_at, member.bot, member.system)
+                avatar_url = member.avatar.url if member.avatar is not None else None
+
+                self.db.track_user(guild.id, member.id, member.name, member.discriminator, avatar_url, member.display_name, member.created_at, member.bot, member.system)
         except Exception as e:
             self.log.error(guild.id, "user_lookup.on_guild_available", f"{e}", traceback.format_exc())
 
