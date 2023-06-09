@@ -5,6 +5,7 @@ import json
 import typing
 import datetime
 import pytz
+import discord
 
 import uuid
 
@@ -1859,6 +1860,31 @@ class MongoDatabase(database.Database):
             }
 
             self.connection.tacos_log.insert_one(payload)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def track_guild(self, guild: discord.Guild) -> None:
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow()
+            timestamp = utils.to_timestamp(date)
+            payload = {
+                "guild_id": str(guild.id),
+                "name": guild.name,
+                "owner_id": str(guild.owner_id),
+                "created_at": utils.to_timestamp(guild.created_at),
+                "vanity_url": guild.vanity_url or None,
+                "vanity_url_code": guild.vanity_url_code or None,
+                "icon": guild.icon,
+                "timestamp": timestamp
+            }
+
+            self.connection.guilds.update_one({ "guild_id": str(guild.id) }, { "$set": payload }, upsert=True)
         except Exception as ex:
             print(ex)
             traceback.print_exc()

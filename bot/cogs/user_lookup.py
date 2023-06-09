@@ -27,6 +27,7 @@ class UserLookup(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.SETTINGS_SECTION = "user_lookup"
         self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -35,19 +36,29 @@ class UserLookup(commands.Cog):
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, "user_lookup.__init__", "Initialized")
 
-    # @commands.Cog.listener()
-    # async def on_guild_available(self, guild):
-    #     try:
-    #         if guild is None:
-    #             return
-    #         self.log.debug(guild.id, "user_lookup.on_guild_available", f"Guild {guild.id} is available")
-    #         for member in guild.members:
-    #             self.log.debug(guild.id, "user_lookup.on_guild_available", f"Tracking user {member.id} in guild {guild.id}")
-    #             avatar_url: typing.Union[str,None] = member.avatar.url if member.avatar is not None else None
+    @commands.Cog.listener()
+    async def on_guild_available(self, guild):
+        try:
+            if guild is None:
+                return
+            # pull this from the settings and see if we should do the import of all users
 
-    #             self.db.track_user(guild.id, member.id, member.name, member.discriminator, avatar_url, member.display_name, member.created_at, member.bot, member.system)
-    #     except Exception as e:
-    #         self.log.error(guild.id, "user_lookup.on_guild_available", f"{e}", traceback.format_exc())
+            enabled = False
+            cog_settings = self.get_cog_settings(guild.id)
+            if cog_settings is not None:
+                enabled = cog_settings.get("full_import_enabled", False)
+
+            if not enabled:
+                return
+
+            self.log.debug(guild.id, "user_lookup.on_guild_available", f"Guild {guild.id} is available")
+            for member in guild.members:
+                self.log.debug(guild.id, "user_lookup.on_guild_available", f"Tracking user {member.name} in guild {guild.name}")
+                avatar_url: typing.Union[str,None] = member.avatar.url if member.avatar is not None else None
+
+                self.db.track_user(guild.id, member.id, member.name, member.discriminator, avatar_url, member.display_name, member.created_at, member.bot, member.system)
+        except Exception as e:
+            self.log.error(guild.id, "user_lookup.on_guild_available", f"{e}", traceback.format_exc())
 
     # on events, get the user id and username and store it in the database
     @commands.Cog.listener()
@@ -79,6 +90,15 @@ class UserLookup(commands.Cog):
             self.db.track_user(message.guild.id, member.id, member.name, member.discriminator, member.avatar.url, member.display_name, member.created_at, member.bot, member.system)
         except Exception as e:
             self.log.error(message.guild.id, "user_lookup.on_message", f"{e}", traceback.format_exc())
+
+
+    def get_cog_settings(self, guildId: int = 0):
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        if not cog_settings:
+            # raise exception if there are no leave_survey settings
+            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
+            raise Exception(f"No wdyctw settings found for guild {guildId}")
+        return cog_settings
 
 async def setup(bot):
     await bot.add_cog(UserLookup(bot))
