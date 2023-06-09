@@ -13,7 +13,7 @@ class TacoTypes(Enum):
     REPLY = 7
     TQOTD = 8
     BIRTHDAY = 9
-    TWITCH = 10
+    TWITCH_LINK = 10
     STREAM = 11
     FOOD_PHOTO = 12
     WDYCTW = 13
@@ -29,6 +29,11 @@ class TacoTypes(Enum):
     GAME_REDEEM = 23
     TRIVIA_CORRECT = 24
     TRIVIA_INCORRECT = 25
+    TWITCH_BOT_INVITE = 26 # Invite @OurTacoBot to your Twitch channel
+    TWITCH_RAID = 27
+    TWITCH_SUB = 28
+    TWITCH_BITS = 29
+
 
     PURGE = 9996
     LEAVE_SERVER = 9997
@@ -57,7 +62,7 @@ class TacoTypes(Enum):
         elif taco_type_string == "birthday_count":
             return TacoTypes.BIRTHDAY
         elif taco_type_string == "twitch_count":
-            return TacoTypes.TWITCH
+            return TacoTypes.TWITCH_LINK
         elif taco_type_string == "stream_count":
             return TacoTypes.STREAM
         elif taco_type_string == "food_photo_count":
@@ -92,6 +97,14 @@ class TacoTypes(Enum):
             return TacoTypes.TRIVIA_CORRECT
         elif taco_type_string == "trivia_incorrect_count":
             return TacoTypes.TRIVIA_INCORRECT
+        elif taco_type_string == "twitch_bot_invite":
+            return TacoTypes.TWITCH_BOT_INVITE
+        elif taco_type_string == "twitch_raid_count":
+            return TacoTypes.TWITCH_RAID
+        elif taco_type_string == "twitch_sub_count":
+            return TacoTypes.TWITCH_SUB
+        elif taco_type_string == "twitch_bits_count":
+            return TacoTypes.TWITCH_BITS
         elif taco_type_string == "twitch_custom":
             return TacoTypes.TWITCH_CUSTOM
         else:
@@ -117,8 +130,8 @@ class TacoTypes(Enum):
             return "TQOTD"
         elif taco_type == TacoTypes.BIRTHDAY:
             return "BIRTHDAY"
-        elif taco_type == TacoTypes.TWITCH:
-            return "TWITCH"
+        elif taco_type == TacoTypes.TWITCH_LINK:
+            return "TWITCH_LINK"
         elif taco_type == TacoTypes.STREAM:
             return "STREAM"
         elif taco_type == TacoTypes.FOOD_PHOTO:
@@ -153,6 +166,14 @@ class TacoTypes(Enum):
             return "TRIVIA_CORRECT"
         elif taco_type == TacoTypes.TRIVIA_INCORRECT:
             return "TRIVIA_INCORRECT"
+        elif taco_type == TacoTypes.TWITCH_BOT_INVITE:
+            return "TWITCH_BOT_INVITE"
+        elif taco_type == TacoTypes.TWITCH_RAID:
+            return "TWITCH_RAID"
+        elif taco_type == TacoTypes.TWITCH_SUB:
+            return "TWITCH_SUB"
+        elif taco_type == TacoTypes.TWITCH_BITS:
+            return "TWITCH_BITS"
         elif taco_type == TacoTypes.TWITCH_CUSTOM:
             return "TWITCH_CUSTOM"
         else:
@@ -178,7 +199,7 @@ class TacoTypes(Enum):
             return "tqotd_count"
         elif taco_type == TacoTypes.BIRTHDAY:
             return "birthday_count"
-        elif taco_type == TacoTypes.TWITCH:
+        elif taco_type == TacoTypes.TWITCH_LINK:
             return "twitch_count"
         elif taco_type == TacoTypes.STREAM:
             return "stream_count"
@@ -214,6 +235,14 @@ class TacoTypes(Enum):
             return "trivia_correct_count"
         elif taco_type == TacoTypes.TRIVIA_INCORRECT:
             return "trivia_incorrect_count"
+        elif taco_type == TacoTypes.TWITCH_BOT_INVITE:
+            return "twitch_bot_invite_count"
+        elif taco_type == TacoTypes.TWITCH_RAID:
+            return "twitch_raid_count"
+        elif taco_type == TacoTypes.TWITCH_SUB:
+            return "twitch_sub_count"
+        elif taco_type == TacoTypes.TWITCH_BITS:
+            return "twitch_bits_count"
         elif taco_type == TacoTypes.TWITCH_CUSTOM:
             return "twitch_custom"
         else:
