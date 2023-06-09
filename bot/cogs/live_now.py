@@ -375,22 +375,21 @@ class LiveNow(commands.Cog):
 
         cog_settings = self.get_cog_settings(guild_id)
 
+        logging_channel_id = cog_settings.get("logging_channel", None)
+        logging_channel = self.bot.get_channel(int(logging_channel_id))
         for tracked in all_tracked_for_user:
-            logging_channel_id = cog_settings.get("logging_channel", None)
-            logging_channel = self.bot.get_channel(int(logging_channel_id))
             if logging_channel:
-                for tracked_item in tracked:
-                    message_id = tracked_item.get("message_id", None)
-                    if message_id:
-                        try:
-                            message = await logging_channel.fetch_message(int(message_id))
-                            if message:
-                                await message.delete()
-                        except discord.errors.NotFound:
-                            self.log.warn(guild_id, "live_now.on_member_update", f"Message {message_id} not found in channel {logging_channel}")
+                message_id = tracked.get("message_id", None)
+                if message_id:
+                    try:
+                        message = await logging_channel.fetch_message(int(message_id))
+                        if message:
+                            await message.delete()
+                    except discord.errors.NotFound:
+                        self.log.warn(guild_id, "live_now.on_member_update", f"Message {message_id} not found in channel {logging_channel}")
 
-                # remove all tracked items for this live platform (should only be one)
-                self.db.untrack_live(guild_id, tracked['user_id'], tracked['platform'])
+            # remove all tracked items for this live platform (should only be one)
+            self.db.untrack_live(guild_id, tracked.get('user_id'), tracked.get('platform'))
 
     def find_platform_emoji(self, guild: discord.Guild, platform: str) -> typing.Union[discord.Emoji, None]:
         if guild is None:
