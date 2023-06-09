@@ -99,7 +99,7 @@ class LiveNow(commands.Cog):
                     remove_roles = wg.get("add_roles", [])
                     await self.add_remove_roles(user=after, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
 
-                self.clean_up_live(guild_id, after.id)
+                await self.clean_up_live(guild_id, after.id)
                 return
 
             # any item left in after_streaming_activities is a new streaming activity
