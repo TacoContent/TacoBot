@@ -35,6 +35,18 @@ class UserLookup(commands.Cog):
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, "user_lookup.__init__", "Initialized")
 
+    @commands.Cog.listener()
+    async def on_guild_available(self, guild):
+        try:
+            if guild is None:
+                return
+            self.log.debug(guild.id, "user_lookup.on_guild_available", f"Guild {guild.id} is available")
+            for member in guild.members:
+                self.log.debug(guild.id, "user_lookup.on_guild_available", f"Tracking user {member.id} in guild {guild.id}")
+                self.db.track_user(guild.id, member.id, member.name, member.discriminator, member.avatar.url, member.display_name, member.created_at, member.bot, member.system)
+        except Exception as e:
+            self.log.error(guild.id, "user_lookup.on_guild_available", f"{e}", traceback.format_exc())
+
     # on events, get the user id and username and store it in the database
     @commands.Cog.listener()
     async def on_member_join(self, member):
