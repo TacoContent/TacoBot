@@ -70,6 +70,7 @@
 			"enabled": true
 		},
 		"birthday": {
+			"title": "Birthday",
 			"description": "Sets your birthday",
 			"usage": "{{prefix}}birthday",
 			"examples": [
@@ -100,6 +101,7 @@
 			"admin": false
 		},
 		"gif": {
+			"title": "Random Gif",
 			"description": "Gets a random gif from the given tag",
 			"usage": "{{prefix}}gif [search_term]",
 			"enabled": true,

@@ -1,7 +1,6 @@
 ### NOTE: UPDATE THIS FILE WHEN CHANGING TACO TYPES ###
 ### UPDATE TacoBotTwitch/cogs/lib/tacotypes.py WHEN CHANGING TACO TYPES ###
 
-
 from enum import Enum
 class TacoTypes(Enum):
     JOIN = 1
@@ -15,7 +14,19 @@ class TacoTypes(Enum):
     BIRTHDAY = 9
     TWITCH = 10
     STREAM = 11
+    FOOD_PHOTO = 12
+    WDYCTW = 13
+    TECH_THURSDAY = 14
+    TACO_TUESDAY = 15
+    MENTAL_MONDAY = 16
+    FIRST_MESSAGE = 17
+    EVENT_CREATE = 18
+    EVENT_JOIN = 19
+    EVENT_LEAVE = 20
+    EVENT_CANCEL = 21
+    EVENT_COMPLETE = 22
 
+    TWITCH_CUSTOM = 9998
     CUSTOM = 9999
 
     @staticmethod
@@ -42,8 +53,83 @@ class TacoTypes(Enum):
             return TacoTypes.TWITCH
         elif taco_type_string == "stream_count":
             return TacoTypes.STREAM
+        elif taco_type_string == "food_photo_count":
+            return TacoTypes.FOOD_PHOTO
+        elif taco_type_string == "wdyctw_count":
+            return TacoTypes.WDYCTW
+        elif taco_type_string == "tech_thursday_count":
+            return TacoTypes.TECH_THURSDAY
+        elif taco_type_string == "taco_tuesday_count":
+            return TacoTypes.TACO_TUESDAY
+        elif taco_type_string == "mental_monday_count":
+            return TacoTypes.MENTAL_MONDAY
+        elif taco_type_string == "first_message_count":
+            return TacoTypes.FIRST_MESSAGE
+        elif taco_type_string == "event_create_count":
+            return TacoTypes.EVENT_CREATE
+        elif taco_type_string == "event_join_count":
+            return TacoTypes.EVENT_JOIN
+        elif taco_type_string == "event_leave_count":
+            return TacoTypes.EVENT_LEAVE
+        elif taco_type_string == "event_cancel_count":
+            return TacoTypes.EVENT_CANCEL
+        elif taco_type_string == "event_complete_count":
+            return TacoTypes.EVENT_COMPLETE
+        elif taco_type_string == "twitch_custom":
+            return TacoTypes.TWITCH_CUSTOM
         else:
             return TacoTypes.CUSTOM
+
+    @staticmethod
+    def get_db_type_from_taco_type(taco_type):
+        if taco_type == TacoTypes.JOIN:
+            return "JOIN"
+        elif taco_type == TacoTypes.BOOST:
+            return "BOOST"
+        elif taco_type == TacoTypes.REACT_REWARD:
+            return "REACT_REWARD"
+        elif taco_type == TacoTypes.SUGGEST:
+            return "SUGGEST"
+        elif taco_type == TacoTypes.INVITE:
+            return "INVITE"
+        elif taco_type == TacoTypes.REACTION:
+            return "REACTION"
+        elif taco_type == TacoTypes.REPLY:
+            return "REPLY"
+        elif taco_type == TacoTypes.TQOTD:
+            return "TQOTD"
+        elif taco_type == TacoTypes.BIRTHDAY:
+            return "BIRTHDAY"
+        elif taco_type == TacoTypes.TWITCH:
+            return "TWITCH"
+        elif taco_type == TacoTypes.STREAM:
+            return "STREAM"
+        elif taco_type == TacoTypes.FOOD_PHOTO:
+            return "FOOD_PHOTO"
+        elif taco_type == TacoTypes.WDYCTW:
+            return "WDYCTW"
+        elif taco_type == TacoTypes.TECH_THURSDAY:
+            return "TECH_THURSDAY"
+        elif taco_type == TacoTypes.TACO_TUESDAY:
+            return "TACO_TUESDAY"
+        elif taco_type == TacoTypes.MENTAL_MONDAY:
+            return "MENTAL_MONDAY"
+        elif taco_type == TacoTypes.FIRST_MESSAGE:
+            return "FIRST_MESSAGE"
+        elif taco_type == TacoTypes.EVENT_CREATE:
+            return "EVENT_CREATE"
+        elif taco_type == TacoTypes.EVENT_JOIN:
+            return "EVENT_JOIN"
+        elif taco_type == TacoTypes.EVENT_LEAVE:
+            return "EVENT_LEAVE"
+        elif taco_type == TacoTypes.EVENT_CANCEL:
+            return "EVENT_CANCEL"
+        elif taco_type == TacoTypes.EVENT_COMPLETE:
+            return "EVENT_COMPLETE"
+        elif taco_type == TacoTypes.TWITCH_CUSTOM:
+            return "TWITCH_CUSTOM"
+        else:
+            return "CUSTOM"
 
     @staticmethod
     def get_string_from_taco_type(taco_type):
@@ -69,5 +155,29 @@ class TacoTypes(Enum):
             return "twitch_count"
         elif taco_type == TacoTypes.STREAM:
             return "stream_count"
+        elif taco_type == TacoTypes.FOOD_PHOTO:
+            return "food_photo_count"
+        elif taco_type == TacoTypes.WDYCTW:
+            return "wdyctw_count"
+        elif taco_type == TacoTypes.TECH_THURSDAY:
+            return "tech_thursday_count"
+        elif taco_type == TacoTypes.TACO_TUESDAY:
+            return "taco_tuesday_count"
+        elif taco_type == TacoTypes.MENTAL_MONDAY:
+            return "mental_monday_count"
+        elif taco_type == TacoTypes.FIRST_MESSAGE:
+            return "first_message_count"
+        elif taco_type == TacoTypes.EVENT_CREATE:
+            return "event_create_count"
+        elif taco_type == TacoTypes.EVENT_JOIN:
+            return "event_join_count"
+        elif taco_type == TacoTypes.EVENT_LEAVE:
+            return "event_leave_count"
+        elif taco_type == TacoTypes.EVENT_CANCEL:
+            return "event_cancel_count"
+        elif taco_type == TacoTypes.EVENT_COMPLETE:
+            return "event_complete_count"
+        elif taco_type == TacoTypes.TWITCH_CUSTOM:
+            return "twitch_custom"
         else:
             return "custom"

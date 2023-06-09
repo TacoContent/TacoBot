@@ -10,10 +10,7 @@ import typing
 import datetime
 
 from discord.ext.commands.cooldowns import BucketType
-from discord_slash import ComponentContext
-from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
-from discord_slash.model import ButtonStyle
-from discord.ext.commands import has_permissions, CheckFailure
+from discord.ext.commands import has_permissions, CheckFailure, Context
 
 from .lib import settings
 from .lib import discordhelper
@@ -48,7 +45,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
     @commands.group(name="wdyctw", invoke_without_command=True)
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def wdyctw(self, ctx: ComponentContext):
+    async def wdyctw(self, ctx: Context):
         if ctx.invoked_subcommand is not None:
             return
         guild_id = 0
@@ -91,12 +88,12 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
             amount = tacos_settings.get("wdyctw_amount", 5)
 
-            role_tag = None
+            role_tag = ""
             role = ctx.guild.get_role(int(cog_settings.get("tag_role", 0)))
             if role:
                 role_tag = f"{role.mention}"
 
-            message_content = None
+            message_content = ""
             if twa.text is not None and twa.text != "":
                 if role_tag is not None:
                     message_content = f"{role_tag}\n\n{twa.text}"
@@ -353,7 +350,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
                 footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT),
                 delete_after=self.SELF_DESTRUCT_TIMEOUT)
 
-            await self.discord_helper.taco_give_user(guild_id, self.bot.user, member, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount )
+            await self.discord_helper.taco_give_user(guild_id, self.bot.user, member, reason_msg, tacotypes.TacoTypes.WDYCTW, taco_amount=amount )
 
 
         except Exception as e:
@@ -375,5 +372,5 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
-def setup(bot):
-    bot.add_cog(WhatDoYouCallThisWednesday(bot))
+async def setup(bot):
+    await bot.add_cog(WhatDoYouCallThisWednesday(bot))

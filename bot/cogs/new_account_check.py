@@ -79,5 +79,5 @@ class NewAccountCheck(commands.Cog):
         except Exception as e:
             self.log.error(guild_id, _method, str(e), traceback.format_exc())
 
-def setup(bot):
-    bot.add_cog(NewAccountCheck(bot))
+async def setup(bot):
+    await bot.add_cog(NewAccountCheck(bot))

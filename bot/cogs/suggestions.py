@@ -13,12 +13,8 @@ import uuid
 import datetime
 
 from discord.ext.commands.cooldowns import BucketType
-from discord_slash import ComponentContext
-from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
-from discord_slash.model import ButtonStyle
 from discord.ext.commands import has_permissions, CheckFailure
 
-from discord_slash import cog_ext, SlashContext
 
 from .lib import settings
 from .lib import discordhelper
@@ -49,42 +45,6 @@ class Suggestions(commands.Cog):
 
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, "suggestions.__init__", "Initialized")
-
-    # async def start_constant_ask(self):
-        # # get all the guilds that the bot is in
-        # guilds = self.bot.guilds
-
-        # for g in guilds:
-        #     guild_id = g.id
-        #     self.log.debug(guild_id, "suggestions.on_ready", f"guild ready {g.name}:{g.id}")
-        #     # get suggestion settings for the guild
-
-        #     ss = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
-        #     if not ss:
-        #         # raise exception if there are no suggestion settings
-        #         self.log.debug(guild_id, "suggestions.on_ready", f"No suggestion settings found for guild {guild_id}")
-        #         continue
-
-            # # get all the suggestion channels
-            # while True:
-            #     for c in [ c['id'] for c in ss['channels'] ]:
-            #         channel = await self.bot.fetch_channel(int(c))
-            #         if not channel:
-            #             self.log.debug(guild_id, "suggestions.on_ready", f"Channel {c} not found")
-            #             continue
-
-            #         # build ctx to pass to the ask_text function
-            #         ctx = self.discord_helper.create_context(bot=self.bot, author=None, guild=g, channel=channel, message=None)
-            #         # build ctx to pass to the ask_text function
-            #         await self.discord_helper.wait_for_user_invoke_cleanup(ctx)
-
-            #         create_context = await self.discord_helper.wait_for_user_invoke(ctx, channel, "Do you want to create a new suggestion?", "Click the `New Suggestion` button below. I will message you and ask you some questions about your suggestion.", button_label = "New Suggestion", button_id = "CREATE_SUGGESTION")
-
-            #         if create_context:
-            #             self.log.debug(guild_id, "suggestions.on_ready", f"create_suggestion invoked: {create_context.author}")
-            #             await self.create_suggestion(ctx=create_context, suggestion_settings=ss)
-            #         else:
-            #             self.log.debug(guild_id, "suggestions.on_ready", f"create_suggestion not invoked")
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -619,5 +579,5 @@ class Suggestions(commands.Cog):
             self.log.debug(0, "get_color_for_state", f"The state matches {states.CLOSED}")
             return None
 
-def setup(bot):
-    bot.add_cog(Suggestions(bot))
+async def setup(bot):
+    await bot.add_cog(Suggestions(bot))

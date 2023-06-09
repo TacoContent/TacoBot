@@ -5,14 +5,13 @@ import json
 import traceback
 import sys
 import os
+import io
 import glob
 import typing
+import aiohttp
 
 from discord.ext.commands.cooldowns import BucketType
-from discord_slash import ComponentContext
-from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
-from discord_slash.model import ButtonStyle
-from discord.ext.commands import has_permissions, CheckFailure
+from discord.ext.commands import has_permissions, CheckFailure, Context
 
 from .lib import settings
 from .lib import discordhelper
@@ -47,7 +46,7 @@ class TacoQuestionOfTheDay(commands.Cog):
     @commands.group(name="tqotd", invoke_without_command=True)
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def tqotd(self, ctx: ComponentContext):
+    async def tqotd(self, ctx: Context):
         if ctx.invoked_subcommand is not None:
             return
         guild_id = 0
@@ -60,19 +59,19 @@ class TacoQuestionOfTheDay(commands.Cog):
 
             try:
                 _ctx = self.discord_helper.create_context(self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild)
-                qotd = await self.discord_helper.ask_text(_ctx, ctx.author,
+                qotd = await self.discord_helper.ask_for_image_or_text(_ctx, ctx.author,
                     self.settings.get_string(guild_id, "tqotd_ask_title"),
                     self.settings.get_string(guild_id, "tqotd_ask_message"),
                     timeout=60 * 5)
             except discord.Forbidden:
                 _ctx = ctx
-                qotd = await self.discord_helper.ask_text(_ctx, ctx.author,
+                qotd = await self.discord_helper.ask_for_image_or_text(_ctx, ctx.author,
                     self.settings.get_string(guild_id, "tqotd_ask_title"),
                     self.settings.get_string(guild_id, "tqotd_ask_message"),
                     timeout=60 * 5)
 
             # ask the user for the TQOTD in DM
-            if qotd is None or qotd.lower() == "cancel":
+            if qotd is None or qotd.text.lower() == "cancel":
                 return
 
             cog_settings = self.get_cog_settings(guild_id)
@@ -90,7 +89,7 @@ class TacoQuestionOfTheDay(commands.Cog):
 
             amount = tacos_settings.get("tqotd_amount", 5)
 
-            role_tag = None
+            role_tag = ""
             role = ctx.guild.get_role(int(cog_settings.get("tag_role", 0)))
             if role:
                 role_tag = f"{role.mention}"
@@ -103,15 +102,35 @@ class TacoQuestionOfTheDay(commands.Cog):
             taco_word = self.settings.get_string(guild_id, "taco_singular")
             if amount != 1:
                 taco_word = self.settings.get_string(guild_id, "taco_plural")
-            out_message = self.settings.get_string(guild_id, "tqotd_out_message", question=qotd, taco_count=amount, taco_word=taco_word)
+            out_message = self.settings.get_string(guild_id, "tqotd_out_message", question=qotd.text, taco_count=amount, taco_word=taco_word)
+            if qotd.attachments and len(qotd.attachments) > 0:
+                urls = ""
+                for attachment in qotd.attachments:
+                    urls += f"{attachment.url}\n"
+                save_message = f"{out_message}\n\n{urls}"
+            else:
+                save_message = out_message
+            files = []
+            if qotd.attachments and len(qotd.attachments) > 0:
+                for attachment in qotd.attachments:
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(attachment.url) as resp:
+                            if resp.status != 200:
+                                self.log.warn(guild_id, "tqotd.tqotd", f"Unable to download attachment {attachment.url}")
+                                continue
+                            data = io.BytesIO(await resp.read())
+                            files.append(discord.File(data, filename=attachment.filename))
+
             await self.discord_helper.sendEmbed(
                 channel=out_channel,
                 title=self.settings.get_string(guild_id, "tqotd_out_title"),
-                message=out_message,
-                content=role_tag,
-                color=0x00ff00)
+                 message=out_message,
+                 content=role_tag,
+                 files=files,
+                 color=0x00ff00)
+
             # save the TQOTD
-            self.db.save_tqotd(guild_id, qotd, ctx.author.id)
+            self.db.save_tqotd(guild_id, qotd.text, ctx.author.id)
 
         except Exception as e:
             self.log.error(guild_id, "tqotd.tqotd", str(e), traceback.format_exc())
@@ -148,7 +167,7 @@ class TacoQuestionOfTheDay(commands.Cog):
             reaction_emojis = taco_settings.get("tqotd_reaction_emoji", ["🇹"])
             # check if the reaction is in the list of ones we are looking for
             if str(payload.emoji.name) not in reaction_emojis:
-                self.log.debug(guild_id, "tqotd.on_raw_reaction_add", f"Reaction {payload.emoji.name} is not in the list of ones we are looking for {reaction_emojis}")
+                # self.log.debug(guild_id, "tqotd.on_raw_reaction_add", f"Reaction {payload.emoji.name} is not in the list of ones we are looking for {reaction_emojis}")
                 return
 
             # check if the user that reacted is in the admin role
@@ -166,7 +185,7 @@ class TacoQuestionOfTheDay(commands.Cog):
             # check if this reaction is the first one of this type on the message
             reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
             if reaction.count > 1:
-                self.log.debug(guild_id, _method, f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
+                # self.log.debug(guild_id, _method, f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
                 return
 
             already_tracked = self.db.tqotd_user_message_tracked(guild_id, message_author.id, message.id)
@@ -215,7 +234,7 @@ class TacoQuestionOfTheDay(commands.Cog):
                 self.log.warn(guild_id, "tqotd.give_user_tqotd_tacos", f"No tacos settings found for guild {guild_id}")
                 return
 
-            amount = tacos_settings.get("tqotd_amount", 5)
+            amount = tacos_settings.get("tqotd_count", 5)
 
             tacos_word = self.settings.get_string(guild_id, "taco_singular")
             if amount > 1:
@@ -231,7 +250,7 @@ class TacoQuestionOfTheDay(commands.Cog):
                 footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT),
                 delete_after=self.SELF_DESTRUCT_TIMEOUT)
 
-            await self.discord_helper.taco_give_user(guild_id, self.bot.user, member, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount )
+            await self.discord_helper.taco_give_user(guild_id, self.bot.user, member, reason_msg, tacotypes.TacoTypes.TQOTD, taco_amount=amount )
 
 
         except Exception as e:
@@ -252,5 +271,5 @@ class TacoQuestionOfTheDay(commands.Cog):
             # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
-def setup(bot):
-    bot.add_cog(TacoQuestionOfTheDay(bot))
+async def setup(bot):
+    await bot.add_cog(TacoQuestionOfTheDay(bot))
