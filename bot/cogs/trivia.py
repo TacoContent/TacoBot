@@ -74,7 +74,7 @@ class Trivia(commands.Cog):
                     if ctx.message:
                         await ctx.message.delete()
                 else:
-                    self.log.warning(guild_id, "trivia", "Cannot run trivia command in DM")
+                    self.log.warn(guild_id, "trivia", "Cannot run trivia command in DM")
                     return
 
                 channel_id = ctx.channel.id
@@ -176,12 +176,12 @@ class Trivia(commands.Cog):
                             reason_msg = self.settings.get_string(guild_id, "taco_reason_trivia_correct")
                             for u in correct_users:
                                 if not u.bot:
-                                    await self.discord_helper.taco_give_user(guild_id, self.bot.user, u, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=reward )
+                                    await self.discord_helper.taco_give_user(guild_id, self.bot.user, u, reason_msg, tacotypes.TacoTypes.TRIVIA_CORRECT, taco_amount=reward )
 
                             reason_msg = self.settings.get_string(guild_id, "taco_reason_trivia_incorrect")
                             for u in incorrect_users:
                                 if not u.bot:
-                                    await self.discord_helper.taco_give_user(guild_id, self.bot.user, u, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=punishment )
+                                    await self.discord_helper.taco_give_user(guild_id, self.bot.user, u, reason_msg, tacotypes.TacoTypes.TRIVIA_INCORRECT, taco_amount=punishment )
 
                             await self.discord_helper.sendEmbed(ctx.channel,
                                 self.settings.get_string(guild_id, "trivia_results_title"),

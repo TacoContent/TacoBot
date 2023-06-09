@@ -240,7 +240,7 @@ class TwitchInfo(commands.Cog):
                         self.bot.user,
                         ctx.author,
                         reason_msg,
-                        tacotypes.TacoTypes.TWITCH,
+                        tacotypes.TacoTypes.TWITCH_LINK,
                         taco_amount=taco_amount,
                     )
 

@@ -22,6 +22,7 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import dbprovider
+from .lib import tacotypes
 from .lib.GameRewardView import GameRewardView
 
 class GameKeys(commands.Cog):
@@ -376,6 +377,16 @@ class GameKeys(commands.Cog):
             self.db.claim_game_key_offer(game_id, ctx.author.id)
             # remove the tacos from the user
             self.db.remove_tacos(guild_id, ctx.author.id, cost)
+
+            self.db.track_tacos_log(
+                guildId=guild_id,
+                fromUserId=ctx.author.id,
+                toUserId=self.bot.user.id,
+                count=cost * -1,
+                reason="Claim game key",
+                type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.GAME_REDEEM)
+            )
+            
             # log that the offer was claimed
             if log_channel:
                 await log_channel.send(
