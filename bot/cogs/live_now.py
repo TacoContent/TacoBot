@@ -65,10 +65,16 @@ class LiveNow(commands.Cog):
                 self.log.debug(guild_id, "live_now.on_member_update", f"live_now is disabled for guild {guild_id}")
                 return
 
+            # get the tacos settings
+            taco_settings = self.settings.get_settings(self.db, guild_id, "tacos")
+            if not taco_settings:
+                self.log.error(guild_id, "live_now.on_member_update", f"No tacos settings found for guild {guild_id}")
+                return
+
+
             before_streaming_activities = [ a for a in before.activities if a.type == discord.ActivityType.streaming ]
             after_streaming_activities = [ a for a in after.activities if a.type == discord.ActivityType.streaming ]
 
-            # if the streaming activity isn't found in the collection, but it is in the singular activity, then use that.
             if len(before_streaming_activities) == 0:
                 if before.activity and before.activity.type == discord.ActivityType.streaming:
                     before_streaming_activities = [ before.activity ]
@@ -76,10 +82,13 @@ class LiveNow(commands.Cog):
                 if after.activity and after.activity.type == discord.ActivityType.streaming:
                     after_streaming_activities = [ after.activity ]
 
-            # before_has_streaming_activity = len(before_streaming_activities) > 0
-            # after_has_streaming_activity = len(after_streaming_activities) > 0
-            # has_after_diff_streaming_activity =  len(after_streaming_activities) > len(before_streaming_activities)
-            # has_before_diff_streaming_activity = len(before_streaming_activities) > len(after_streaming_activities)
+            # remove items that exist in both lists
+            for bsa in before_streaming_activities:
+                for asa in after_streaming_activities:
+                    if asa.url == bsa.url and asa.platform == bsa.platform:
+                        after_streaming_activities.remove(asa)
+                        before_streaming_activities.remove(bsa)
+                        break
 
             # check if the user is in any of the "add" roles, but has no streaming activity
             # remove them from those roles
@@ -94,126 +103,134 @@ class LiveNow(commands.Cog):
                     await self.add_remove_roles(user=after, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
                 return
 
-            self.log.debug(guild_id, "live_now.on_member_update", f"got streaming activities for {before.display_name}")
+            # any item left in after_streaming_activities is a new streaming activity
+            # any item left in before_streaming_activities is a streaming activity that has ended
 
-            # loop after activities and see if they are in the before activities
-            # if they are not, then we have a new streaming activity
+            # WENT LIVE
             for asa in after_streaming_activities:
-                found = False
-                for bsa in before_streaming_activities:
-                    if asa.url == bsa.url and asa.platform == bsa.platform:
-                        found = True
-                        break
-
-
-                self.log.debug(guild_id, "live_now.on_member_update", f"found ({found}) streaming activity for {after.display_name} on {asa.platform}")
-                # check if the user activity was already tracked
                 tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform)
                 is_tracked = tracked != None and tracked.count() > 0
-                self.log.debug(guild_id, "live_now.on_member_update", f"Is {after.display_name} already tracked? {is_tracked}")
+                # if it is already tracked, then we don't need to do anything
+                if is_tracked:
+                    self.log.debug(guild_id, "live_now.on_member_update", f"{after.display_name} is already tracked for {asa.platform}")
+                    continue
 
-                if not found or not is_tracked:
-                    self.log.info(guild_id, "live_now.on_member_update", f"Found new streaming activity for {after.display_name}.")
-                    if is_tracked:
-                        self.log.info(guild_id, "live_now.on_member_update", f"{before.display_name} started streaming on {asa.platform}")
+                # if we get here, then we need to track the user live activity
+                self.db.track_live(
+                    guildId=guild_id,
+                    userId=after.id,
+                    platform=asa.platform,
+                    url=asa.url
+                )
+                self.db.track_live_activity(
+                    guildId=guild_id,
+                    userId=after.id,
+                    live=True,
+                    platform=asa.platform,
+                    url=asa.url
+                )
 
-                        # get the tacos settings
-                        taco_settings = self.settings.get_settings(self.db, guild_id, "tacos")
-                        if not taco_settings:
-                            self.log.error(guild_id, "live_now.on_member_update", f"No tacos settings found for guild {guild_id}")
-                            return
+                self.log.info(guild_id, "live_now.on_member_update", f"{after.display_name} started streaming on {asa.platform}")
 
-                        # give the user tacos for going live
-                        taco_amount = taco_settings.get("stream_count", 5)
-                        reason_msg = self.settings.get_string(guild_id, "taco_reason_stream")
-                        await self.discord_helper.taco_give_user(guild_id, self.bot.user, before, reason_msg, tacotypes.TacoTypes.STREAM, taco_amount=taco_amount )
+                twitch_name: typing.Union[str, None] = None
+                if asa.platform.lower() == "twitch":
+                    twitch_name = self.handle_twitch_live(after, after_streaming_activities)
+                elif asa.platform.lower() == "youtube":
+                    self.handle_youtube_live(after, after_streaming_activities)
+                else:
+                    self.handle_other_live(after, after_streaming_activities)
 
-                        self.db.track_live_activity(guild_id, after.id, True, asa.platform, asa.url)
-                        twitch_name = None
-                        if asa.platform.lower() == "twitch":
-                            twitch_name = self.handle_twitch_live(after, after_streaming_activities)
-                        elif asa.platform.lower() == "youtube":
-                            self.handle_youtube_live(after, after_streaming_activities)
-                        else:
-                            self.log.warn(guild_id, "live_now.on_member_update", f"{before.display_name} started streaming, but platform {asa.platform} is not supported")
+                # get the watch groups
+                watch_groups = cog_settings.get("watch", [])
+                for wg in watch_groups:
+                    watch_roles = wg.get("roles", [])
+                    add_roles = wg.get("add_roles", [])
+                    remove_roles = wg.get("remove_roles", [])
+                    # add / remove roles defined in the watch groups
+                    await self.add_remove_roles(user=after, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
 
-                        # get the watch groups
-                        watch_groups = cog_settings.get("watch", [])
-                        for wg in watch_groups:
-                            watch_roles = wg.get("roles", [])
-                            add_roles = wg.get("add_roles", [])
-                            remove_roles = wg.get("remove_roles", [])
-                            await self.add_remove_roles(user=after, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
+                logging_channel_id = cog_settings.get("logging_channel", None)
+                if logging_channel_id:
+                    await self.log_live_post(int(logging_channel_id), asa, after, twitch_name)
 
-                        logging_channel_id = cog_settings.get("logging_channel", None)
-                        if logging_channel_id:
-                            await self.log_live_post(int(logging_channel_id), asa, after, twitch_name)
-                        else:
-                            self.db.track_live(guild_id, after.id, asa.platform, url=asa.url)
-                    else:
-                        self.log.debug(guild_id, "live_now.on_member_update", f"{before.display_name} started streaming on {asa.platform} but was already tracked")
+                # give the user tacos for going live
+                # technically this doesnt need to be sent to the db, but it is for consistency
+                taco_amount = taco_settings.get("stream_count", 5)
+                reason_msg = self.settings.get_string(guild_id, "taco_reason_stream")
+                await self.discord_helper.taco_give_user(
+                    guildId=guild_id,
+                    fromUser=self.bot.user,
+                    toUser=before,
+                    reason=reason_msg,
+                    give_type=tacotypes.TacoTypes.STREAM,
+                    taco_amount=taco_amount )
 
 
-            # loop all the before activities and see if they are in the after activities
-            # if they are not, then we need to remove them from the database
+            # ENDED STREAM
             for bsa in before_streaming_activities:
-                found = False
-                for asa in after_streaming_activities:
-                    if bsa.url == asa.url and bsa.platform == asa.platform:
-                        found = True
-                        break
-
-                self.log.debug(guild_id, "live_now.on_member_update", f"found ({found}) streaming activity for {after.display_name} on {asa.platform}")
-                tracked = self.db.get_tracked_live(guild_id, after.id, bsa.platform)
+                tracked = self.db.get_tracked_live(guild_id, before.id, bsa.platform)
                 is_tracked = tracked != None and tracked.count() > 0
-                self.log.debug(guild_id, "live_now.on_member_update", f"Is {after.display_name} tracked? {is_tracked}")
-                if not found and is_tracked:
-                    self.log.info(guild_id, "live_now.on_member_update", f"{before.display_name} stopped streaming on {bsa.platform}")
-                    if is_tracked and tracked:
-                        self.log.info(guild_id, "live_now.on_member_update", f"{before.display_name} stopped streaming")
-                        self.db.track_live_activity(guild_id, before.id, False, bsa.platform, url=bsa.url)
+                # if it is not tracked, then we don't need to do anything
+                if not is_tracked:
+                    self.log.debug(guild_id, "live_now.on_member_update", f"{after.display_name} is already tracked for {bsa.platform}")
+                    continue
 
-                        logging_channel_id = cog_settings.get("logging_channel", None)
-                        logging_channel = self.bot.get_channel(int(logging_channel_id))
-                        for track in tracked:
-                            if logging_channel:
-                                message_id = track.get("message_id", None)
-                                if message_id:
-                                    try:
-                                        message = await logging_channel.fetch_message(int(message_id))
-                                        if message:
-                                            try:
-                                                await message.delete()
-                                            except discord.errors.NotFound:
-                                                self.log.warn(guild_id, "live_now.on_member_update", f"Message {message_id} not found in channel {logging_channel}")
-                                    except discord.errors.NotFound:
-                                        self.log.warn(guild_id, "live_now.on_member_update", f"Message {message_id} not found in channel {logging_channel}")
-                                    self.db.untrack_live(guild_id, after.id, bsa.platform)
-                    watch_groups = cog_settings.get("watch", [])
-                    for wg in watch_groups:
-                        watch_roles = wg.get("roles", [])
-                        # do opposite here, to put back to original roles
-                        add_roles = wg.get("remove_roles", [])
-                        remove_roles = wg.get("add_roles", [])
-                        await self.add_remove_roles(user=before, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
+                # if we get here, then we need to untrack the user live activity
+                self.log.info(guild_id, "live_now.on_member_update", f"{before.display_name} stopped streaming on {bsa.platform}")
+                # track the END activity
+                self.db.track_live_activity(guild_id, before.id, False, bsa.platform, url=bsa.url)
 
+                logging_channel_id = cog_settings.get("logging_channel", None)
+                logging_channel = self.bot.get_channel(int(logging_channel_id))
+                if logging_channel:
+                    for tracked_item in tracked:
+                        message_id = tracked_item.get("message_id", None)
+                        if message_id:
+                            try:
+                                message = await logging_channel.fetch_message(int(message_id))
+                                if message:
+                                    await message.delete()
+                            except discord.errors.NotFound:
+                                self.log.warn(guild_id, "live_now.on_member_update", f"Message {message_id} not found in channel {logging_channel}")
+
+                # remove all tracked items for this live platform (should only be one)
+                self.db.untrack_live(guild_id, before.id, bsa.platform)
+
+                watch_groups = cog_settings.get("watch", [])
+                for wg in watch_groups:
+                    watch_roles = wg.get("roles", [])
+                    # do opposite here, to put back to original roles
+                    # we add the "remove_roles" and remove the "add_roles"
+                    add_roles = wg.get("remove_roles", [])
+                    remove_roles = wg.get("add_roles", [])
+                    await self.add_remove_roles(user=before, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
         except Exception as e:
-            self.log.error(guild_id, "live_now.on_member_update", str(e), traceback.format_exc())
+            self.log.error(guild_id, _method, str(e), traceback.format_exc())
+            return
 
-    def handle_youtube_live(self, user: discord.Member, activities: typing.List[discord.Streaming]):
+    def handle_other_live(self, user: discord.Member, activities: typing.List[discord.Streaming]) -> typing.Union[str, None]:
         guild_id = user.guild.id
         if len(activities) > 1:
-            self.log.error(guild_id, "live_now.on_member_update", f"{user.display_name} has more than one streaming activity")
+            self.log.warn(guild_id, "live_now.handle_other_live", f"{user.display_name} has more than one streaming activity")
+        activity = activities[0]
+        self.log.info(guild_id, "live_now.handle_other_live", f"{user.display_name} started streaming on an {activity.platform} platform")
+        return None
+
+    def handle_youtube_live(self, user: discord.Member, activities: typing.List[discord.Streaming]) -> typing.Union[str, None]:
+        guild_id = user.guild.id
+        if len(activities) > 1:
+            self.log.warn(guild_id, "live_now.handle_other_live", f"{user.display_name} has more than one streaming activity")
 
         self.log.info(guild_id, "live_now.handle_youtube_live", f"{user.display_name} started streaming on youtube")
+        return None
 
-    def handle_twitch_live(self, user: discord.Member, activities: typing.List[discord.Streaming]):
+    def handle_twitch_live(self, user: discord.Member, activities: typing.List[discord.Streaming]) -> typing.Union[str, None]:
         guild_id = user.guild.id
 
-        twitch_name = None
+        twitch_name: str = None
         twitch_info = self.db.get_user_twitch_info(user.id)
         if len(activities) > 1:
-            self.log.error(guild_id, "live_now.on_member_update", f"{user.display_name} has more than one streaming activity")
+            self.log.warn(guild_id, "live_now.handle_other_live", f"{user.display_name} has more than one streaming activity")
         # Only add the twitch name if we don't have it already
         # and only if we can get the twitch name from the url or activity
         # or if we have a different twitch name in the database
@@ -249,19 +266,19 @@ class LiveNow(commands.Cog):
             raise Exception(f"No live_now settings found for guild {guildId}")
         return cog_settings
 
-    async def log_live_post(self, channel_id: int, activity: discord.Streaming, user: discord.Member, twitch_name: str):
+    async def log_live_post(self, channel_id: int, activity: discord.Streaming, user: discord.Member, twitch_name: typing.Union[str, None]) -> None:
         guild_id = user.guild.id
         # get the logging channel
         logging_channel = None
         if channel_id:
             logging_channel = self.bot.get_channel(channel_id)
+        # if we are logging this to a channel...
         if logging_channel:
-            # if we are logging this to a channel...
+
+            profile_icon: typing.Union[str, None] = None
 
             if twitch_name:
                 profile_icon = self.get_user_profile_image(twitch_name)
-            else:
-                profile_icon = None
 
             description = f"{activity.name}\n\n<{activity.url}>"
 
@@ -292,9 +309,10 @@ class LiveNow(commands.Cog):
                 fields, thumbnail=profile_icon,
                 author=user, color=0x6a0dad)
 
+            # this should update the existing entry with the channel and message id
             self.db.track_live(guild_id, user.id, activity.platform, logging_channel.id, message.id, url=activity.url)
 
-    async def add_remove_roles(self, user: discord.Member, check_list: list, add_list: list, remove_list: list):
+    async def add_remove_roles(self, user: discord.Member, check_list: list, add_list: list, remove_list: list) -> None:
         if user is None or user.guild is None:
             self.log.warn(0, "live_now.add_remove_roles", "User or guild is None")
             return
@@ -348,14 +366,14 @@ class LiveNow(commands.Cog):
             #     self.log.debug(guild_id, "live_now.add_remove_roles", f"User {user.display_name} is not in any of the watch roles")
 
 
-    def find_platform_emoji(self, guild: discord.Guild, platform: str):
+    def find_platform_emoji(self, guild: discord.Guild, platform: str) -> typing.Union[discord.Emoji, None]:
         if guild is None:
             return None
 
         platform_emoji = discord.utils.find(lambda m: m.name.lower() == platform.lower(), guild.emojis)
         return platform_emoji
 
-    def get_user_profile_image(self, twitch_user: str):
+    def get_user_profile_image(self, twitch_user: str) -> typing.Union[str, None]:
         if twitch_user:
             result = requests.get(f"http://decapi.me/twitch/avatar/{twitch_user}")
             if result.status_code == 200:
