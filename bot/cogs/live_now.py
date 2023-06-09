@@ -87,7 +87,6 @@ class LiveNow(commands.Cog):
                         # dont remove the after items so we always check for the "went live" event
                         # after_streaming_activities.remove(asa)
                         before_streaming_activities.remove(bsa)
-                        break
 
             # check if the user is in any of the "add" roles, but has no streaming activity
             # remove them from those roles
@@ -386,7 +385,7 @@ class LiveNow(commands.Cog):
                         if message:
                             await message.delete()
                     except discord.errors.NotFound:
-                        self.log.warn(guild_id, "live_now.on_member_update", f"Message {message_id} not found in channel {logging_channel}")
+                        self.log.debug(guild_id, "live_now.on_member_update", f"Message {message_id} not found in channel {logging_channel}")
 
             # remove all tracked items for this live platform (should only be one)
             self.db.untrack_live(guild_id, tracked.get('user_id'), tracked.get('platform'))
