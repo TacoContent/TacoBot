@@ -787,11 +787,19 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-
-    def track_live(self, guildId: int, userId: int, platform: str, channelId: int = None, messageId: int = None, url: str = None):
+    def track_live(self, guildId: int, userId: int, platform: typing.Union[str, None], channelId: typing.Union[int, None] = None, messageId: typing.Union[int, None] = None, url: typing.Union[str, None] = None):
         try:
             if self.connection is None:
                 self.open()
+
+            if platform is None:
+                raise ValueError("platform cannot be None")
+            if userId is None:
+                raise ValueError("userId cannot be None")
+            if guildId is None:
+                raise ValueError("guildId cannot be None")
+
+
             timestamp = utils.to_timestamp(datetime.datetime.utcnow())
             payload = {
                 "guild_id": str(guildId),
@@ -850,7 +858,7 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            self.connection.live_tracked.delete_one({ "guild_id": str(guildId),  "user_id": str(userId), "platform": platform.upper().strip() })
+            self.connection.live_tracked.delete_many({ "guild_id": str(guildId),  "user_id": str(userId), "platform": platform.upper().strip() })
         except Exception as ex:
             print(ex)
             traceback.print_exc()

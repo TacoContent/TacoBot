@@ -346,18 +346,18 @@ class DiscordHelper:
                 return
             taco_count = taco_amount
 
-            if give_type != tacotypes.TacoTypes.CUSTOM:
-                taco_count = taco_settings[tacotypes.TacoTypes.get_string_from_taco_type(give_type)]
-            elif give_type == tacotypes.TacoTypes.CUSTOM:
-                taco_count = taco_amount
+            taco_type_key = tacotypes.TacoTypes.get_string_from_taco_type(give_type)
+            if taco_type_key not in taco_settings:
+                self.log.debug(guildId, _method, f"Key {taco_type_key} not found in taco settings. Using taco_amount ({taco_amount}) as taco count")
+                taco_count = taco_count
             else:
-                self.log.warn(guildId, "tacos.on_message", f"Invalid taco type {give_type}")
-                return
+                taco_count = taco_settings[tacotypes.TacoTypes.get_string_from_taco_type(give_type)]
 
-            # only reject <= 0 tacos if it is not custom type
-            if taco_count <= 0 and give_type != tacotypes.TacoTypes.CUSTOM:
-                self.log.warn(guildId, "tacos.on_message", f"Invalid taco count {taco_count}")
-                return
+            # there are more reasons to have a negative taco count than just custom tacos now. commented out for now and remove if not needed
+            # # only reject <= 0 tacos if it is not custom type
+            # if taco_count <= 0 and give_type != tacotypes.TacoTypes.CUSTOM:
+            #     self.log.warn(guildId, "tacos.on_message", f"Invalid taco count {taco_count}")
+            #     return
 
             reason_msg = reason if reason else self.settings.get_string(guildId, "no_reason")
 
@@ -408,6 +408,14 @@ class DiscordHelper:
                         guild_id, "tacos_purged_log", touser=toMember.name, fromuser=fromMember.name, reason=reason
                     )
                 )
+            self.db.track_tacos_log(
+                guildId=guild_id,
+                toUserId=toMember.id,
+                fromUserId=fromMember.id,
+                count=0,
+                reason=reason,
+                type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.PURGE)
+            )
         except Exception as e:
             self.log.error(guild_id, _method, str(e), traceback.format_exc())
 

@@ -1,9 +1,10 @@
 ### NOTE: UPDATE THIS FILE WHEN CHANGING TACO TYPES ###
+### UPDATE TacoBot/cogs/lib/tacotypes.py WHEN CHANGING TACO TYPES ###
 ### UPDATE TacoBotTwitch/cogs/lib/tacotypes.py WHEN CHANGING TACO TYPES ###
 
 from enum import Enum
 class TacoTypes(Enum):
-    JOIN = 1
+    JOIN_SERVER = 1
     BOOST = 2
     REACT_REWARD = 3
     SUGGEST = 4
@@ -12,7 +13,7 @@ class TacoTypes(Enum):
     REPLY = 7
     TQOTD = 8
     BIRTHDAY = 9
-    TWITCH = 10
+    TWITCH_LINK = 10
     STREAM = 11
     FOOD_PHOTO = 12
     WDYCTW = 13
@@ -25,6 +26,17 @@ class TacoTypes(Enum):
     EVENT_LEAVE = 20
     EVENT_CANCEL = 21
     EVENT_COMPLETE = 22
+    GAME_REDEEM = 23
+    TRIVIA_CORRECT = 24
+    TRIVIA_INCORRECT = 25
+    TWITCH_BOT_INVITE = 26 # Invite @OurTacoBot to your Twitch channel
+    TWITCH_RAID = 27
+    TWITCH_SUB = 28
+    TWITCH_BITS = 29
+    TWITCH_FIRST_MESSAGE = 30
+
+    PURGE = 9996
+    LEAVE_SERVER = 9997
 
     TWITCH_CUSTOM = 9998
     CUSTOM = 9999
@@ -32,7 +44,7 @@ class TacoTypes(Enum):
     @staticmethod
     def get_from_string(taco_type_string):
         if taco_type_string == "join_count":
-            return TacoTypes.JOIN
+            return TacoTypes.JOIN_SERVER
         elif taco_type_string == "boost_count":
             return TacoTypes.BOOST
         elif taco_type_string == "reaction_reward_count":
@@ -50,7 +62,7 @@ class TacoTypes(Enum):
         elif taco_type_string == "birthday_count":
             return TacoTypes.BIRTHDAY
         elif taco_type_string == "twitch_count":
-            return TacoTypes.TWITCH
+            return TacoTypes.TWITCH_LINK
         elif taco_type_string == "stream_count":
             return TacoTypes.STREAM
         elif taco_type_string == "food_photo_count":
@@ -75,6 +87,26 @@ class TacoTypes(Enum):
             return TacoTypes.EVENT_CANCEL
         elif taco_type_string == "event_complete_count":
             return TacoTypes.EVENT_COMPLETE
+        elif taco_type_string == "purge_custom":
+            return TacoTypes.PURGE
+        elif taco_type_string == "leave_server_custom":
+            return TacoTypes.LEAVE_SERVER
+        elif taco_type_string == "game_key_cost":
+            return TacoTypes.GAME_REDEEM
+        elif taco_type_string == "trivia_correct_count":
+            return TacoTypes.TRIVIA_CORRECT
+        elif taco_type_string == "trivia_incorrect_count":
+            return TacoTypes.TRIVIA_INCORRECT
+        elif taco_type_string == "twitch_bot_invite":
+            return TacoTypes.TWITCH_BOT_INVITE
+        elif taco_type_string == "twitch_raid_count":
+            return TacoTypes.TWITCH_RAID
+        elif taco_type_string == "twitch_sub_count":
+            return TacoTypes.TWITCH_SUB
+        elif taco_type_string == "twitch_bits_count":
+            return TacoTypes.TWITCH_BITS
+        elif taco_type_string == "twitch_first_message_count":
+            return TacoTypes.TWITCH_FIRST_MESSAGE
         elif taco_type_string == "twitch_custom":
             return TacoTypes.TWITCH_CUSTOM
         else:
@@ -82,8 +114,8 @@ class TacoTypes(Enum):
 
     @staticmethod
     def get_db_type_from_taco_type(taco_type):
-        if taco_type == TacoTypes.JOIN:
-            return "JOIN"
+        if taco_type == TacoTypes.JOIN_SERVER:
+            return "JOIN_SERVER"
         elif taco_type == TacoTypes.BOOST:
             return "BOOST"
         elif taco_type == TacoTypes.REACT_REWARD:
@@ -100,8 +132,8 @@ class TacoTypes(Enum):
             return "TQOTD"
         elif taco_type == TacoTypes.BIRTHDAY:
             return "BIRTHDAY"
-        elif taco_type == TacoTypes.TWITCH:
-            return "TWITCH"
+        elif taco_type == TacoTypes.TWITCH_LINK:
+            return "TWITCH_LINK"
         elif taco_type == TacoTypes.STREAM:
             return "STREAM"
         elif taco_type == TacoTypes.FOOD_PHOTO:
@@ -126,6 +158,26 @@ class TacoTypes(Enum):
             return "EVENT_CANCEL"
         elif taco_type == TacoTypes.EVENT_COMPLETE:
             return "EVENT_COMPLETE"
+        elif taco_type == TacoTypes.PURGE:
+            return "PURGE"
+        elif taco_type == TacoTypes.LEAVE_SERVER:
+            return "LEAVE_SERVER"
+        elif taco_type == TacoTypes.GAME_REDEEM:
+            return "GAME_REDEEM"
+        elif taco_type == TacoTypes.TRIVIA_CORRECT:
+            return "TRIVIA_CORRECT"
+        elif taco_type == TacoTypes.TRIVIA_INCORRECT:
+            return "TRIVIA_INCORRECT"
+        elif taco_type == TacoTypes.TWITCH_BOT_INVITE:
+            return "TWITCH_BOT_INVITE"
+        elif taco_type == TacoTypes.TWITCH_RAID:
+            return "TWITCH_RAID"
+        elif taco_type == TacoTypes.TWITCH_SUB:
+            return "TWITCH_SUB"
+        elif taco_type == TacoTypes.TWITCH_BITS:
+            return "TWITCH_BITS"
+        elif taco_type == TacoTypes.TWITCH_FIRST_MESSAGE:
+            return "TWITCH_FIRST_MESSAGE"
         elif taco_type == TacoTypes.TWITCH_CUSTOM:
             return "TWITCH_CUSTOM"
         else:
@@ -133,7 +185,7 @@ class TacoTypes(Enum):
 
     @staticmethod
     def get_string_from_taco_type(taco_type):
-        if taco_type == TacoTypes.JOIN:
+        if taco_type == TacoTypes.JOIN_SERVER:
             return "join_count"
         elif taco_type == TacoTypes.BOOST:
             return "boost_count"
@@ -151,7 +203,7 @@ class TacoTypes(Enum):
             return "tqotd_count"
         elif taco_type == TacoTypes.BIRTHDAY:
             return "birthday_count"
-        elif taco_type == TacoTypes.TWITCH:
+        elif taco_type == TacoTypes.TWITCH_LINK:
             return "twitch_count"
         elif taco_type == TacoTypes.STREAM:
             return "stream_count"
@@ -177,6 +229,26 @@ class TacoTypes(Enum):
             return "event_cancel_count"
         elif taco_type == TacoTypes.EVENT_COMPLETE:
             return "event_complete_count"
+        elif taco_type == TacoTypes.PURGE:
+            return "purge_custom"
+        elif taco_type == TacoTypes.LEAVE_SERVER:
+            return "leave_server_custom"
+        elif taco_type == TacoTypes.GAME_REDEEM:
+            return "game_key_cost"
+        elif taco_type == TacoTypes.TRIVIA_CORRECT:
+            return "trivia_correct_count"
+        elif taco_type == TacoTypes.TRIVIA_INCORRECT:
+            return "trivia_incorrect_count"
+        elif taco_type == TacoTypes.TWITCH_BOT_INVITE:
+            return "twitch_bot_invite_count"
+        elif taco_type == TacoTypes.TWITCH_RAID:
+            return "twitch_raid_count"
+        elif taco_type == TacoTypes.TWITCH_SUB:
+            return "twitch_sub_count"
+        elif taco_type == TacoTypes.TWITCH_BITS:
+            return "twitch_bits_count"
+        elif taco_type == TacoTypes.TWITCH_FIRST_MESSAGE:
+            return "twitch_first_message_count"
         elif taco_type == TacoTypes.TWITCH_CUSTOM:
             return "twitch_custom"
         else:
