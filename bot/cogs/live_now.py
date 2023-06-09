@@ -109,14 +109,15 @@ class LiveNow(commands.Cog):
                 tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform)
                 is_tracked = tracked != None and tracked.count() > 0
 
-                # check if asa is in before_streaming_activities
-                found_asa = len([b for b in before_streaming_activities if b.url == asa.url and b.platform == asa.platform]) > 0
-                if found_asa and is_tracked:
-                    # this activity exists in both lists, so it is not a new live
-                    continue
                 # if it is already tracked, then we don't need to do anything
                 if is_tracked:
                     self.log.debug(guild_id, "live_now.on_member_update", f"{after.display_name} is already tracked for {asa.platform}")
+                    continue
+
+                # check if asa is in before_streaming_activities
+                found_asa = len([b for b in before_streaming_activities if b.url == asa.url and b.platform == asa.platform]) > 0
+                # this activity exists in both lists, so it is not a new live
+                if found_asa:
                     continue
 
                 self.log.info(guild_id, "live_now.on_member_update", f"{after.display_name} started streaming on {asa.platform}")
