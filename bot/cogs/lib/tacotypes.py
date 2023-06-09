@@ -33,7 +33,7 @@ class TacoTypes(Enum):
     TWITCH_RAID = 27
     TWITCH_SUB = 28
     TWITCH_BITS = 29
-
+    TWITCH_FIRST_MESSAGE = 30
 
     PURGE = 9996
     LEAVE_SERVER = 9997
@@ -105,6 +105,8 @@ class TacoTypes(Enum):
             return TacoTypes.TWITCH_SUB
         elif taco_type_string == "twitch_bits_count":
             return TacoTypes.TWITCH_BITS
+        elif taco_type_string == "twitch_first_message_count":
+            return TacoTypes.TWITCH_FIRST_MESSAGE
         elif taco_type_string == "twitch_custom":
             return TacoTypes.TWITCH_CUSTOM
         else:
@@ -174,6 +176,8 @@ class TacoTypes(Enum):
             return "TWITCH_SUB"
         elif taco_type == TacoTypes.TWITCH_BITS:
             return "TWITCH_BITS"
+        elif taco_type == TacoTypes.TWITCH_FIRST_MESSAGE:
+            return "TWITCH_FIRST_MESSAGE"
         elif taco_type == TacoTypes.TWITCH_CUSTOM:
             return "TWITCH_CUSTOM"
         else:
@@ -243,6 +247,8 @@ class TacoTypes(Enum):
             return "twitch_sub_count"
         elif taco_type == TacoTypes.TWITCH_BITS:
             return "twitch_bits_count"
+        elif taco_type == TacoTypes.TWITCH_FIRST_MESSAGE:
+            return "twitch_first_message_count"
         elif taco_type == TacoTypes.TWITCH_CUSTOM:
             return "twitch_custom"
         else:
