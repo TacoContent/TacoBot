@@ -109,6 +109,8 @@ class LiveNow(commands.Cog):
                 tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform)
                 is_tracked = tracked != None and tracked.count() > 0
 
+                await self.add_live_roles(after, cog_settings)
+
                 # if it is already tracked, then we don't need to do anything
                 if is_tracked:
                     self.log.debug(guild_id, "live_now.on_member_update", f"{after.display_name} is already tracked for {asa.platform}")
@@ -145,15 +147,6 @@ class LiveNow(commands.Cog):
                 else:
                     self.handle_other_live(after, after_streaming_activities)
 
-                # get the watch groups
-                watch_groups = cog_settings.get("watch", [])
-                for wg in watch_groups:
-                    watch_roles = wg.get("roles", [])
-                    add_roles = wg.get("add_roles", [])
-                    remove_roles = wg.get("remove_roles", [])
-                    # add / remove roles defined in the watch groups
-                    await self.add_remove_roles(user=after, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
-
                 logging_channel_id = cog_settings.get("logging_channel", None)
                 if logging_channel_id:
                     await self.log_live_post(int(logging_channel_id), asa, after, twitch_name)
@@ -173,17 +166,20 @@ class LiveNow(commands.Cog):
 
             # ENDED STREAM
             for bsa in before_streaming_activities:
+
                 # check if bsa is in after_streaming_activities
                 found_bsa = len([a for a in after_streaming_activities if a.url == bsa.url and a.platform == bsa.platform]) > 0
                 if found_bsa:
                     # this activity exists in both lists, so it is still live
                     continue
 
+                await self.remove_live_roles(before, cog_settings)
+
                 tracked = self.db.get_tracked_live(guild_id, before.id, bsa.platform)
                 is_tracked = tracked != None and tracked.count() > 0
                 # if it is not tracked, then we don't need to do anything
                 if not is_tracked:
-                    self.log.debug(guild_id, "live_now.on_member_update", f"{after.display_name} is already tracked for {bsa.platform}")
+                    self.log.debug(guild_id, "live_now.on_member_update", f"{after.display_name} is not tracked for {bsa.platform}")
                     continue
 
                 # if we get here, then we need to untrack the user live activity
@@ -207,18 +203,29 @@ class LiveNow(commands.Cog):
                 # remove all tracked items for this live platform (should only be one)
                 self.db.untrack_live(guild_id, before.id, bsa.platform)
 
-                watch_groups = cog_settings.get("watch", [])
-                for wg in watch_groups:
-                    watch_roles = wg.get("roles", [])
-                    # do opposite here, to put back to original roles
-                    # we add the "remove_roles" and remove the "add_roles"
-                    add_roles = wg.get("remove_roles", [])
-                    remove_roles = wg.get("add_roles", [])
-                    await self.add_remove_roles(user=before, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
-
         except Exception as e:
             self.log.error(guild_id, _method, str(e), traceback.format_exc())
             return
+
+    async def remove_live_roles(self, user: discord.Member, cog_settings: dict):
+        watch_groups = cog_settings.get("watch", [])
+        for wg in watch_groups:
+            watch_roles = wg.get("roles", [])
+            # do opposite here, to put back to original roles
+            # we add the "remove_roles" and remove the "add_roles"
+            add_roles = wg.get("remove_roles", [])
+            remove_roles = wg.get("add_roles", [])
+            await self.add_remove_roles(user=user, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
+
+    async def add_live_roles(self, user: discord.Member, cog_settings: dict):
+        # get the watch groups
+        watch_groups = cog_settings.get("watch", [])
+        for wg in watch_groups:
+            watch_roles = wg.get("roles", [])
+            add_roles = wg.get("add_roles", [])
+            remove_roles = wg.get("remove_roles", [])
+            # add / remove roles defined in the watch groups
+            await self.add_remove_roles(user=user, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
 
     def handle_other_live(self, user: discord.Member, activities: typing.List[discord.Streaming]) -> typing.Union[str, None]:
         guild_id = user.guild.id
