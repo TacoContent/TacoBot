@@ -98,6 +98,8 @@ class LiveNow(commands.Cog):
                     add_roles = wg.get("remove_roles", [])
                     remove_roles = wg.get("add_roles", [])
                     await self.add_remove_roles(user=after, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
+
+                self.clean_up_live(guild_id, after.id)
                 return
 
             # any item left in after_streaming_activities is a new streaming activity
@@ -201,7 +203,7 @@ class LiveNow(commands.Cog):
                     add_roles = wg.get("remove_roles", [])
                     remove_roles = wg.get("add_roles", [])
                     await self.add_remove_roles(user=before, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
-                    
+
         except Exception as e:
             self.log.error(guild_id, _method, str(e), traceback.format_exc())
             return
@@ -363,6 +365,32 @@ class LiveNow(commands.Cog):
             # else:
             #     self.log.debug(guild_id, "live_now.add_remove_roles", f"User {user.display_name} is not in any of the watch roles")
 
+    async def clean_up_live(self, guild_id: int, user_id: int) -> None:
+        if guild_id is None or user_id is None:
+            return
+
+        all_tracked_for_user = self.db.get_tracked_live_by_user(guildId=guild_id, userId=user_id)
+        if all_tracked_for_user is None or all_tracked_for_user.count() == 0:
+            return
+
+        cog_settings = self.get_cog_settings(guild_id)
+
+        for tracked in all_tracked_for_user:
+            logging_channel_id = cog_settings.get("logging_channel", None)
+            logging_channel = self.bot.get_channel(int(logging_channel_id))
+            if logging_channel:
+                for tracked_item in tracked:
+                    message_id = tracked_item.get("message_id", None)
+                    if message_id:
+                        try:
+                            message = await logging_channel.fetch_message(int(message_id))
+                            if message:
+                                await message.delete()
+                        except discord.errors.NotFound:
+                            self.log.warn(guild_id, "live_now.on_member_update", f"Message {message_id} not found in channel {logging_channel}")
+
+                # remove all tracked items for this live platform (should only be one)
+                self.db.untrack_live(guild_id, tracked['user_id'], tracked['platform'])
 
     def find_platform_emoji(self, guild: discord.Guild, platform: str) -> typing.Union[discord.Emoji, None]:
         if guild is None:
