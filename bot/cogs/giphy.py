@@ -14,9 +14,6 @@ import re
 import uuid
 
 from discord.ext.commands.cooldowns import BucketType
-from discord_slash import ComponentContext
-from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
-from discord_slash.model import ButtonStyle
 from discord.ext.commands import has_permissions, CheckFailure
 import inspect
 
@@ -71,13 +68,20 @@ class Giphy(commands.Cog):
                 image_url = data['data'][random_index]['images']['original']['url']
                 url = data['data'][random_index]['url']
 
-                await self.discord_helper.sendEmbed(ctx.channel, title, "", image=image_url, url=url, fields=None, color=0x00ff00, author=ctx.author, footer="Powered by Giphy")
+                await self.discord_helper.sendEmbed(
+                    channel=ctx.channel,
+                    title=title,
+                    image=image_url,
+                    url=url,
+                    color=0x00ff00,
+                    author=ctx.author,
+                    footer="Powered by Giphy")
                 # embed = discord.Embed(title=data['data'][random_index]['title'], url=data['data'][random_index]['url'], color=0x00ff00)
                 # embed.set_image(url=data['data'][random_index]['images']['original']['url'])
                 # await ctx.send(embed=embed)
         except Exception as e:
             self.log.error(guild_id, "giphy.giphy", str(e), traceback.format_exc())
-            self.discord_helper.notify_of_error(ctx)
+            await self.discord_helper.notify_of_error(ctx)
 
-def setup(bot):
-    bot.add_cog(Giphy(bot))
+async def setup(bot):
+    await bot.add_cog(Giphy(bot))

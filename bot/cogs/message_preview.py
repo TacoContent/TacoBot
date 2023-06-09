@@ -12,9 +12,6 @@ import math
 import re
 
 from discord.ext.commands.cooldowns import BucketType
-from discord_slash import ComponentContext
-from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
-from discord_slash.model import ButtonStyle
 from discord.ext.commands import has_permissions, CheckFailure
 
 from .lib import settings
@@ -74,6 +71,7 @@ class MessagePreview(commands.Cog):
                     ref_message = await channel.fetch_message(message_id)
                     if ref_message:
                         await self.create_message_preview(message, ref_message)
+                        await message.delete()
                     else:
                         self.log.debug(0, "message_preview.on_message", f"Could not find message ({message_id}) in channel ({channel_id})")
                 else:
@@ -96,19 +94,29 @@ class MessagePreview(commands.Cog):
             embed_thumbnail = None
             embed_color = None
             fields = []
+            file_attachments = []
+            embed_image = None
             if message.embeds:
                 e = message.embeds[0]
-                if e.description != discord.Embed.Empty:
+                if e.description != "" and e.description is not None:
                     embed_content = e.description
-                if e.title != discord.Embed.Empty:
+                if e.title != "" and e.title is not None:
                     embed_title = e.title
-                if e.color != discord.Embed.Empty:
+                if e.color is not None:
                     embed_color = e.color
+
+
+                if message.attachments:
+                    for a in message.attachments:
+                        self.log.debug(guild_id, "message_preview.create_message_preview", f"Found attachment: {a.url}")
+                        file_attachments.append(discord.File(a.url))
 
                 for f in e.fields:
                     fields.append({ "name": f.name, "value": f.value, "inline": f.inline })
                 if e.thumbnail:
                     embed_thumbnail = e.thumbnail.url
+                if e.image:
+                    embed_image = e.image.url
 
             # create the message preview
             embed = await self.discord_helper.sendEmbed(target_channel,
@@ -119,8 +127,10 @@ class MessagePreview(commands.Cog):
                 url=message_url,
                 author=author,
                 color=embed_color,
+                image=embed_image,
+                files=file_attachments,
                 footer=self.settings.get_string(guild_id, "message_preview_footer", created=created.strftime('%Y-%m-%d %H:%M:%S')))
         except Exception as e:
             self.log.error(ctx.guild.id, "message_preview.create_message_preview", f"{e}", traceback.format_exc())
-def setup(bot):
-    bot.add_cog(MessagePreview(bot))
+async def setup(bot):
+    await bot.add_cog(MessagePreview(bot))

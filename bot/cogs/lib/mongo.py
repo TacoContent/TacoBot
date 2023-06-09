@@ -95,7 +95,7 @@ class MongoDatabase(database.Database):
             if self.connection is None:
                 self.open()
             payload = {
-                "guild_id": guildId,
+                "guild_id": str(guildId),
                 "timestamp": utils.get_timestamp(),
                 "level": level.name,
                 "method": method,
@@ -822,6 +822,30 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
+    def get_tracked_live_by_url(self, guildId: int, url: str):
+        try:
+            if self.connection is None:
+                self.open()
+            return self.connection.live_tracked.find({ "guild_id": str(guildId), "url": url })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def get_tracked_live_by_user(self, guildId: int, userId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            return self.connection.live_tracked.find({ "guild_id": str(guildId), "user_id": str(userId) })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
     def untrack_live(self, guildId: int, userId: int, platform: str):
         try:
             if self.connection is None:
@@ -1461,7 +1485,6 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-
     def track_mentalmondays_answer(self, guild_id: int, user_id: int, message_id: int):
         try:
             if self.connection is None:
@@ -1564,6 +1587,273 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
             raise ex
+        finally:
+            if self.connection:
+                self.close()
+
+    def save_taco_tuesday(self, guildId: int, message: str, image: str, author: int, channel_id: int = None, message_id: int = None):
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow().date()
+            ts_date = datetime.datetime.combine(date, datetime.time.min)
+            timestamp = utils.to_timestamp(ts_date)
+            payload = {
+                "guild_id": str(guildId),
+                "message": message,
+                "image": image,
+                "author": str(author),
+                "answered": [],
+                "timestamp": timestamp,
+                "channel_id": str(channel_id),
+                "message_id": str(message_id)
+            }
+            self.connection.taco_tuesday.update_one({ "guild_id": str(guildId), "timestamp": timestamp }, { "$set": payload }, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def track_taco_tuesday(self, guild_id: int, user_id: int):
+        try:
+            if self.connection is None:
+                self.open()
+
+            now_date = datetime.datetime.utcnow().date()
+            ts_date = datetime.datetime.combine(now_date, datetime.time.min)
+            timestamp = utils.to_timestamp(ts_date)
+            ts_track = utils.to_timestamp(datetime.datetime.utcnow())
+
+            result = self.connection.taco_tuesday.find_one(
+                {"guild_id": str(guild_id), "timestamp": timestamp}
+            )
+
+            if result:
+                self.connection.taco_tuesday.update_one({ "guild_id": str(guild_id), "timestamp": timestamp }, { "$push": { "answered": { "user_id": str(user_id), "timestamp": ts_track } } }, upsert=True)
+            else:
+                now_date = datetime.datetime.utcnow().date()
+                back_date = now_date - datetime.timedelta(days=7)
+                ts_now_date = datetime.datetime.combine(now_date, datetime.time.max)
+                ts_back_date = datetime.datetime.combine(back_date, datetime.time.min)
+                # timestamp = utils.to_timestamp(ts_date)
+                result = self.connection.taco_tuesday.find_one(
+                    {"guild_id": str(guild_id), "timestamp": {
+                        "$gte": utils.to_timestamp(ts_back_date),
+                        "$lte": utils.to_timestamp(ts_now_date)
+                    }}
+                )
+                if result:
+                    self.connection.taco_tuesday.update_one({ "guild_id": str(guild_id), "timestamp": result['timestamp'] }, { "$push": { "answered": { "user_id": str(user_id), "timestamp": ts_track } } }, upsert=True)
+                else:
+                    raise Exception(f"No taco tuesday found for guild {guild_id} for the last 7 days")
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def taco_tuesday_user_tracked(self, guildId: int, userId: int, messageId: int):
+        # was this message, for this user, already used to answer the WDYCTW?
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow().date()
+            ts_date = datetime.datetime.combine(date, datetime.time.min)
+            timestamp = utils.to_timestamp(ts_date)
+            result = self.connection.taco_tuesday.find_one(
+                {"guild_id": str(guildId), "timestamp": timestamp}
+            )
+            if result:
+                for answer in result["answered"]:
+                    if answer["user_id"] == str(userId):
+                        return True
+                return False
+            else:
+                date = date - datetime.timedelta(days=1)
+                ts_date = datetime.datetime.combine(date, datetime.time.min)
+                timestamp = utils.to_timestamp(ts_date)
+                result = self.connection.taco_tuesday.find_one(
+                    {"guild_id": str(guildId), "timestamp": timestamp}
+                )
+                if result:
+                    for answer in result["answered"]:
+                        if answer["user_id"] == str(userId):
+                            return True
+                    return False
+                else:
+                    raise Exception(f"No Taco Tuesday found for guild {guildId} for {datetime.datetime.utcnow().date()}")
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            raise ex
+        finally:
+            if self.connection:
+                self.close()
+
+    def track_first_message(self, guildId: int, userId: int, channelId: int, messageId: int):
+        try:
+
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow().date()
+            ts_date = datetime.datetime.combine(date, datetime.time.min)
+            timestamp = utils.to_timestamp(ts_date)
+            payload = {
+                "guild_id": str(guildId),
+                "channel_id": str(channelId),
+                "message_id": str(messageId),
+                "user_id": str(userId),
+                "timestamp": timestamp
+            }
+
+            # if self.is_first_message_today(guildId=guildId, userId=userId):
+            self.connection.first_message.update_one({ "guild_id": str(guildId), "user_id": str(userId), "timestamp": timestamp }, { "$set": payload }, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def track_message(self, guildId: int, userId: int, channelId: int, messageId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow()
+            timestamp = utils.to_timestamp(date)
+
+            payload = {
+                "guild_id": str(guildId),
+                "user_id": str(userId)
+            }
+
+            result = self.connection.messages.find_one( { "guild_id": str(guildId), "user_id": str(userId) } )
+            if result:
+                self.connection.messages.update_one({ "guild_id": str(guildId), "user_id": str(userId) }, { "$push": { "messages": { "channel_id": str(channelId), "message_id": str(messageId), "timestamp": timestamp } } }, upsert=True)
+            else:
+                self.connection.messages.insert_one({ **payload, "messages": [{ "channel_id": str(channelId), "message_id": str(messageId), "timestamp": timestamp }] })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def is_first_message_today(self, guildId: int, userId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow().date()
+            ts_date = datetime.datetime.combine(date, datetime.time.min)
+            timestamp = utils.to_timestamp(ts_date)
+            result = self.connection.first_message.find_one( { "guild_id": str(guildId), "user_id": str(userId), "timestamp": timestamp } )
+            if result:
+                return False
+            return True
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def track_user(self, guildId: int, userId: int, username: str, discriminator: str, avatar: str, displayname: str, created: datetime.datetime = None, bot: bool = False, system: bool = False):
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow()
+            timestamp = utils.to_timestamp(date)
+            created_timestamp = utils.to_timestamp(created) if created else None
+            payload = {
+                "guild_id": str(guildId),
+                "user_id": str(userId),
+                "username": username,
+                "discriminator": discriminator,
+                "avatar": avatar,
+                "displayname": displayname,
+                "created": created_timestamp,
+                "bot": bot,
+                "system": system,
+                "timestamp": timestamp
+            }
+
+            self.connection.users.update_one({ "guild_id": str(guildId), "user_id": str(userId) }, { "$set": payload }, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def track_food_post(self, guildId: int, userId: int, channelId: int, messageId: int, message: str, image: str):
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow()
+            timestamp = utils.to_timestamp(date)
+            payload = {
+                "guild_id": str(guildId),
+                "user_id": str(userId),
+                "channel_id": str(channelId),
+                "message_id": str(messageId),
+                "message": message,
+                "image": image,
+                "timestamp": timestamp
+            }
+
+            self.connection.food_posts.insert_one(payload)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def track_user_join_leave(self, guildId: int, userId: int, join: bool):
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow()
+            timestamp = utils.to_timestamp(date)
+            payload = {
+                "guild_id": str(guildId),
+                "user_id": str(userId),
+                "action": "JOIN" if join else "LEAVE",
+                "timestamp": timestamp
+            }
+
+            self.connection.user_join_leave.insert_one(payload)
+
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def track_tacos_log(self, guildId: int, fromUserId: int, toUserId: int, count: int, type: str, reason: str):
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow()
+            timestamp = utils.to_timestamp(date)
+            payload = {
+                "guild_id": str(guildId),
+                "from_user_id": str(fromUserId),
+                "to_user_id": str(toUserId),
+                "count": count,
+                "type": type,
+                "reason": reason,
+                "timestamp": timestamp
+            }
+
+            self.connection.tacos_log.insert_one(payload)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
         finally:
             if self.connection:
                 self.close()

@@ -14,9 +14,6 @@ import uuid
 import requests
 
 from discord.ext.commands.cooldowns import BucketType
-from discord_slash import ComponentContext
-from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
-from discord_slash.model import ButtonStyle
 from discord.ext.commands import has_permissions, CheckFailure
 import inspect
 
@@ -59,7 +56,7 @@ class LiveNow(commands.Cog):
             guild_id = after.guild.id
 
         try:
-
+            self.log.debug(guild_id, "live_now.on_member_update", f"Checking if live_now is enabled for guild {guild_id}")
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings:
                 self.log.warn(guild_id, "live_now.on_member_update", f"No live_now settings found for guild {guild_id}")
@@ -87,28 +84,37 @@ class LiveNow(commands.Cog):
             # check if the user is in any of the "add" roles, but has no streaming activity
             # remove them from those roles
             if len(before_streaming_activities) == 0 and len(after_streaming_activities) == 0:
-                # self.log.info(guild_id, "live_now.on_member_update", f"no streaming activity found for {before.display_name}, checking if they are in any of the add roles")
+                self.log.debug(guild_id, "live_now.on_member_update", f"no streaming activity found for {before.display_name}, checking if they are in any of the add roles")
                 watch_groups = cog_settings.get("watch", [])
                 for wg in watch_groups:
                     watch_roles = wg.get("roles", [])
                     add_roles = wg.get("remove_roles", [])
                     remove_roles = wg.get("add_roles", [])
-                    # self.log.info(guild_id, "live_now.on_member_update", f"updating roles for {before.display_name}")
+                    self.log.info(guild_id, "live_now.on_member_update", f"updating roles for {before.display_name}")
                     await self.add_remove_roles(user=after, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
                 return
+
+            self.log.debug(guild_id, "live_now.on_member_update", f"got streaming activities for {before.display_name}")
 
             # loop after activities and see if they are in the before activities
             # if they are not, then we have a new streaming activity
             for asa in after_streaming_activities:
                 found = False
                 for bsa in before_streaming_activities:
-                    if asa.url == bsa.url:
+                    if asa.url == bsa.url and asa.platform == bsa.platform:
                         found = True
                         break
-                if not found:
+
+
+                self.log.debug(guild_id, "live_now.on_member_update", f"found ({found}) streaming activity for {after.display_name} on {asa.platform}")
+                # check if the user activity was already tracked
+                tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform)
+                is_tracked = tracked != None and tracked.count() > 0
+                self.log.debug(guild_id, "live_now.on_member_update", f"Is {after.display_name} already tracked? {is_tracked}")
+
+                if not found or not is_tracked:
                     self.log.info(guild_id, "live_now.on_member_update", f"Found new streaming activity for {after.display_name}.")
-                    tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform)
-                    if tracked.count() == 0:
+                    if is_tracked:
                         self.log.info(guild_id, "live_now.on_member_update", f"{before.display_name} started streaming on {asa.platform}")
 
                         # get the tacos settings
@@ -147,18 +153,23 @@ class LiveNow(commands.Cog):
                     else:
                         self.log.debug(guild_id, "live_now.on_member_update", f"{before.display_name} started streaming on {asa.platform} but was already tracked")
 
+
             # loop all the before activities and see if they are in the after activities
             # if they are not, then we need to remove them from the database
             for bsa in before_streaming_activities:
                 found = False
                 for asa in after_streaming_activities:
-                    if bsa.url == asa.url:
+                    if bsa.url == asa.url and bsa.platform == asa.platform:
                         found = True
                         break
-                if not found:
+
+                self.log.debug(guild_id, "live_now.on_member_update", f"found ({found}) streaming activity for {after.display_name} on {asa.platform}")
+                tracked = self.db.get_tracked_live(guild_id, after.id, bsa.platform)
+                is_tracked = tracked != None and tracked.count() > 0
+                self.log.debug(guild_id, "live_now.on_member_update", f"Is {after.display_name} tracked? {is_tracked}")
+                if not found and is_tracked:
                     self.log.info(guild_id, "live_now.on_member_update", f"{before.display_name} stopped streaming on {bsa.platform}")
-                    tracked = self.db.get_tracked_live(guild_id, before.id, bsa.platform)
-                    if tracked.count() > 0:
+                    if is_tracked and tracked:
                         self.log.info(guild_id, "live_now.on_member_update", f"{before.display_name} stopped streaming")
                         self.db.track_live_activity(guild_id, before.id, False, bsa.platform, url=bsa.url)
 
@@ -265,7 +276,7 @@ class LiveNow(commands.Cog):
 
                 fields.append({ "name": self.settings.get_string(guild_id, "platform"), "value": f"{emoji}{activity.platform}", "inline": True },)
 
-            profile_icon = profile_icon if profile_icon else user.avatar_url
+            profile_icon = profile_icon if profile_icon else user.avatar.url
 
             if activity.assets:
                 image_url = activity.assets.get("large_image", None)
@@ -354,5 +365,6 @@ class LiveNow(commands.Cog):
                 self.log.debug(0, "live_now.get_user_profile_image", f"Failed to get profile image for {twitch_user}")
                 self.log.info(0, "live_now.get_user_profile_image", f"{result.text}")
         return None
-def setup(bot):
-    bot.add_cog(LiveNow(bot))
+
+async def setup(bot):
+    await bot.add_cog(LiveNow(bot))

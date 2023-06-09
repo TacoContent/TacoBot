@@ -14,16 +14,7 @@ import typing
 import requests
 
 from discord.ext.commands.cooldowns import BucketType
-from discord_slash import ComponentContext
-from discord_slash.utils.manage_components import (
-    create_button,
-    create_actionrow,
-    create_select,
-    create_select_option,
-    wait_for_component,
-)
-from discord_slash.model import ButtonStyle
-from discord.ext.commands import has_permissions, CheckFailure
+from discord.ext.commands import has_permissions, CheckFailure, Context
 
 from .lib import settings
 from .lib import discordhelper
@@ -71,7 +62,7 @@ class Minecraft(commands.Cog):
 
 
     @commands.group(name="minecraft", invoke_without_command=True)
-    async def minecraft(self, ctx: ComponentContext):
+    async def minecraft(self, ctx: Context):
         if ctx.invoked_subcommand is not None:
             return
         guild_id = 0
@@ -215,6 +206,7 @@ class Minecraft(commands.Cog):
                 return
             data = resp.json()
             if data['status'] != "success":
+                self.log.error(guild_id, "minecraft.start_server", f"Failed to start the server: {data['message']}")
                 await self.discord_helper.sendEmbed(output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
                     message=self.settings.get_string(guild_id, "minecraft_control_failure", error=data['message'], action="start"),
@@ -276,6 +268,7 @@ class Minecraft(commands.Cog):
                 return
             data = resp.json()
             if data['status'] != "success":
+                self.log.error(guild_id, "minecraft.start_server", f"Failed to stop the server: {data['message']}")
                 await self.discord_helper.sendEmbed(output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
                     message=self.settings.get_string(guild_id, "minecraft_control_failure", error=data['message'], action="stop"),
@@ -294,7 +287,7 @@ class Minecraft(commands.Cog):
             await self.discord_helper.notify_of_error(ctx)
     @minecraft.command()
     @commands.guild_only()
-    async def whitelist(self, ctx: ComponentContext):
+    async def whitelist(self, ctx: Context):
         guild_id = 0
         try:
             if ctx.guild:
@@ -398,24 +391,37 @@ class Minecraft(commands.Cog):
             for n in data["data"]["player"]["name_history"]:
                 fields.append({"name": "Name", "value": n["name"]})
 
-            response = await self.discord_helper.ask_yes_no(
+            async def yes_no_callback(response: bool):
+                if not response:
+                    await self.discord_helper.sendEmbed(
+                        _ctx.channel,
+                        self.settings.get_string(guild_id, "minecraft_whitelist_title"),
+                        self.settings.get_string(guild_id, "minecraft_whitelist_run_again"),
+                        color=0xFF0000,
+                        delete_after=20,
+                    )
+                else:
+                    # if correct, add to whitelist
+                    # check if user is in the whitelist
+                    # minecraft_user = self.db.get_minecraft_user(ctx.author.id)
+                    self.db.whitelist_minecraft_user(ctx.author.id, mc_username, mc_uuid, True)
+                    await self.discord_helper.sendEmbed(
+                        _ctx.channel,
+                        self.settings.get_string(guild_id, "minecraft_whitelist_title"),
+                        self.settings.get_string(guild_id, "minecraft_whitelist_message", username=mc_username, uuid=mc_uuid, server="mc.fuku.io", modpack="All The Mods 7 v0.4.0"),
+                        color=0x00FF00,
+                        delete_after=30,
+                    )
+
+            await self.discord_helper.ask_yes_no(
                 _ctx,
                 _ctx.channel,
                 title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
-                message=self.settings.get_string(guild_id, "minecraft_whitelist_account_verify"),
+                message=self.settings.get_string(guild_id, "minecraft_whitelist_account_verify",mc_username=mc_username),
                 fields=fields,
                 image=avatar_url,
+                result_callback=yes_no_callback,
             )
-            if not response:
-                # if not, tell them to try again
-                await self.discord_helper.sendEmbed(
-                    _ctx.channel,
-                    title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
-                    message=self.settings.get_string(guild_id, "minecraft_whitelist_run_again"),
-                    color=0xFF0000,
-                    delete_after=30,
-                )
-                return
 
             # if correct, add to whitelist
             # check if user is in the whitelist
@@ -450,7 +456,8 @@ class Minecraft(commands.Cog):
         if not cog_settings:
             # raise exception if there are no leave_survey settings
             # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
-            raise Exception(f"No minecraft settings found for guild {guildId}")
+            # raise Exception(f"No live_now settings found for guild {guildId}")
+            return None
         return cog_settings
 
     def get_minecraft_status(self, guild_id: int = 0):
@@ -465,5 +472,6 @@ class Minecraft(commands.Cog):
         if not data["success"]:
             self.log.warn(guild_id, "minecraft.status", f"Failed to get minecraft status")
         return data
-def setup(bot):
-    bot.add_cog(Minecraft(bot))
+
+async def setup(bot):
+    await bot.add_cog(Minecraft(bot))

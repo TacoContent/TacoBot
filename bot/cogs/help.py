@@ -11,9 +11,6 @@ import math
 import re
 
 from discord.ext.commands.cooldowns import BucketType
-from discord_slash import ComponentContext
-from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
-from discord_slash.model import ButtonStyle
 from discord.ext.commands import has_permissions, CheckFailure
 import inspect
 
@@ -138,7 +135,7 @@ class Help(commands.Cog):
             shield = '🛡️' if is_admin else ''
             fields.append({"name": f"{shield}{cmd['title']}", "value": cmd['description']})
             fields.append({"name": 'help', "value": f"`{self._prefix(cmd['usage'])}`"})
-            fields.append({"name": 'more', "value": self.prefix(f'`{{{{prefix}}}} help {command.lower()}`')})
+            fields.append({"name": 'more', "value": self._prefix(f'`{{{{prefix}}}} help {command.lower()}`')})
             if 'examples' in cmd:
                 example_list = [ f"`{self._prefix(e)}`" for e in cmd['examples'] ]
                 if example_list and len(example_list) > 0:
@@ -167,8 +164,8 @@ class Help(commands.Cog):
                         is_admin = scmd['admin']
                     shield = '🛡️' if is_admin else ''
                     fields.append({"name": f"{shield}{scmd['title']}", "value": scmd['description']})
-                    fields.append({"name": 'help', "value": f"`{self.prefix(scmd['usage'])}`"})
-                    fields.append({"name": 'more', "value": self.prefix(f'`{{{{prefix}}}} help {command.lower()} {k.lower()}`')})
+                    fields.append({"name": 'help', "value": f"`{self._prefix(scmd['usage'])}`"})
+                    fields.append({"name": 'more', "value": self._prefix(f'`{{{{prefix}}}} help {command.lower()} {k.lower()}`')})
                     if 'examples' in scmd:
                         example_list = [ f"`{self._prefix(e)}`" for e in scmd['examples'] ]
                         if example_list and len(example_list) > 0:
@@ -210,7 +207,7 @@ class Help(commands.Cog):
                     shield = '🛡️' if is_admin else ''
                     fields.append({"name": f"{shield}{cmd['title']}", "value": cmd['description']})
                     fields.append({"name": 'help', "value": f"`{self._prefix(cmd['usage'])}`"})
-                    fields.append({"name": 'more', "value": self.prefix(f'`{{{{prefix}}}} help {k.lower()}`')})
+                    fields.append({"name": 'more', "value": self._prefix(f'`{{{{prefix}}}} help {k.lower()}`')})
                     if 'examples' in cmd:
                         example_list = [ f"`{self._prefix(e)}`" for e in cmd['examples'] ]
                         if example_list and len(example_list) > 0:
@@ -227,11 +224,11 @@ class Help(commands.Cog):
         return command.replace("_", " ").lower()
 
     def _prefix(self, s):
-        return utils.str_replace(s, prefix=self.settings.get("prefixes", [".taco "]))
+        return utils.str_replace(s, prefix=self.settings.get("prefixes", [".taco "])[0])
 
     @help.command(name="")
     async def help_command(self, ctx):
         pass
 
-def setup(bot):
-    bot.add_cog(Help(bot))
+async def setup(bot):
+    await bot.add_cog(Help(bot))

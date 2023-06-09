@@ -10,16 +10,33 @@ import glob
 import typing
 import collections
 
+from .ChannelSelect import ChannelSelect, ChannelSelectView
+
+from .RoleSelectView import RoleSelectView, RoleSelect
+
 from discord.ext.commands.cooldowns import BucketType
-from discord_slash import ComponentContext
-from discord_slash.utils.manage_components import (
-    create_button,
-    create_actionrow,
-    create_select,
-    create_select_option,
-    wait_for_component,
+from discord import (
+    SelectOption,
+    ActionRow,
+    SelectMenu,
 )
-from discord_slash.model import ButtonStyle
+from discord.ui import Button, Select, TextInput
+
+# from interactions import ComponentContext
+# from interactions import (
+#     Button,
+#     SelectMenu,
+#     SelectOption,
+#     ActionRow
+# )
+# from discord_slash.utils.manage_components import (
+#     create_button,
+#     create_actionrow,
+#     create_select,
+#     create_select_option,
+#     wait_for_component,
+# )
+# from discord_slash.model import ButtonStyle
 from discord.ext.commands import has_permissions, CheckFailure
 
 from . import utils
@@ -30,6 +47,7 @@ from . import mongo
 from . import dbprovider
 from . import tacotypes
 from .models import TextWithAttachments
+from .YesOrNoView import YesOrNoView
 
 
 import inspect
@@ -75,32 +93,39 @@ class DiscordHelper:
         color: int = None,
     ):
         if not message:
+            self.log.debug(0, "discordhelper.move_message", "No message to move")
             return
         if not targetChannel:
+            self.log.debug(0, "discordhelper.move_message", "No target channel to move message to")
             return
         if not author:
             author = message.author
 
         if not message.guild:
+            self.log.debug(0, "discordhelper.move_message", "Message is not from a guild")
             return
         guild_id = message.guild.id
 
         try:
             if len(message.embeds) == 0:
+                self.log.debug(0, "discordhelper.move_message", "Message has no embeds")
+                self.log.debug(0, "discordhelper.move_message", f"Message: {message}")
+                self.log.debug(0, "discordhelper.move_message", f"Message content: {message.content}")
                 description = f"{message.content}"
                 title = ""
                 embed_fields = []
                 image = None
             else:
+                self.log.debug(0, "discordhelper.move_message", "Message has embeds")
                 embed = message.embeds[0]
                 title = embed.title
-                if embed.description is None or embed.description == discord.Embed.Empty:
+                if embed.description is None or embed.description == "":
                     description = ""
                 else:
                     description = f"{embed.description}"
                 # lib3ration 500 bits: oh look a Darth Fajitas
                 embed_fields = embed.fields
-                if embed.image is not None and embed.image != discord.Embed.Empty:
+                if embed.image is not None and embed.image != "":
                     image = embed.image.url
                 else:
                     image = None
@@ -115,7 +140,7 @@ class DiscordHelper:
                 color = 0x7289DA
 
             target_embed = discord.Embed(title=title, description=description, color=color)
-            target_embed.set_author(name=author.name, icon_url=author.avatar_url)
+            target_embed.set_author(name=author.name, icon_url=author.avatar.url)
             if footer:
                 target_embed.set_footer(text=footer)
             else:
@@ -145,7 +170,7 @@ class DiscordHelper:
 
             files = [await a.to_file() for a in message.attachments]
 
-            if len(files) > 0 or target_embed != discord.Embed.Empty:
+            if len(files) > 0 or target_embed is not None:
                 await targetChannel.send(files=files, embed=target_embed)
         except Exception as ex:
             self.log.error(0, "discordhelper.move_message", str(ex), traceback.format_exc())
@@ -158,13 +183,14 @@ class DiscordHelper:
         fields=None,
         delete_after: float = None,
         footer=None,
-        components=None,
+        view=None,
         color=0x7289DA,
         author: typing.Union[discord.User, discord.Member] = None,
         thumbnail: str = None,
         image: str = None,
         url: str = "",
         content: str = None,
+        files: list = None,
     ):
         if color is None:
             color = 0x7289DA
@@ -175,7 +201,7 @@ class DiscordHelper:
 
         embed = discord.Embed(title=title, description=message, color=color, url=url)
         if author:
-            embed.set_author(name=f"{author.name}#{author.discriminator}", icon_url=author.avatar_url)
+            embed.set_author(name=f"{author.name}#{author.discriminator}", icon_url=author.avatar.url)
         if embed.fields is not None:
             for f in embed.fields:
                 embed.add_field(name=f["name"], value=f["value"], inline=f["inline"] if "inline" in f else False)
@@ -199,19 +225,19 @@ class DiscordHelper:
             embed.set_thumbnail(url=thumbnail)
         if image is not None:
             embed.set_image(url=image)
-        return await channel.send(content=content, embed=embed, delete_after=delete_after, components=components)
+        return await channel.send(content=content, embed=embed, delete_after=delete_after, view=view, files=files)
 
     async def updateEmbed(
         self,
-        message,
-        title=None,
-        description=None,
+        message: discord.Message = None,
+        title: str = None,
+        description: str = None,
         description_append: bool = True,
-        fields=None,
-        footer=None,
-        components=None,
-        color=0x7289DA,
-        author=None,
+        fields: list = None,
+        footer: str = None,
+        view: discord.ui.View = None,
+        color: int = 0x7289DA,
+        author: typing.Union[discord.User, discord.Member] = None,
     ):
         if not message or len(message.embeds) == 0:
             return
@@ -222,22 +248,22 @@ class DiscordHelper:
             guild_id = message.guild.id
         embed = message.embeds[0]
         if title is None:
-            title = embed.title
+            title = embed.title if embed.title is not None else ""
         if description is not None:
             if description_append:
                 edescription = ""
-                if embed.description is not None and embed.description != discord.Embed.Empty:
+                if embed.description is not None and embed.description != "":
                     edescription = embed.description
 
                 description = edescription + "\n\n" + description
             else:
                 description = description
         else:
-            if embed.description is not None and embed.description != discord.Embed.Empty:
+            if embed.description is not None and embed.description != "":
                 description = embed.description
             else:
                 description = ""
-        updated_embed = discord.Embed(color=color, title=embed.title, description=f"{description}", footer=embed.footer)
+        updated_embed = discord.Embed(color=color, title=embed.title, description=f"{description}", view=view)
         for f in embed.fields:
             updated_embed.add_field(name=f.name, value=f.value, inline=f.inline)
         if fields is not None:
@@ -259,7 +285,7 @@ class DiscordHelper:
             updated_embed.set_footer(text=footer)
 
         if author:
-            updated_embed.set_author(name=f"{author.name}#{author.discriminator}", icon_url=author.avatar_url)
+            updated_embed.set_author(name=f"{author.name}#{author.discriminator}", icon_url=author.avatar.url)
 
         await message.edit(embed=updated_embed)
 
@@ -310,8 +336,8 @@ class DiscordHelper:
         give_type: tacotypes.TacoTypes = tacotypes.TacoTypes.CUSTOM,
         taco_amount: int = 1,
     ):
+        _method = inspect.stack()[0][3]
         try:
-            _method = inspect.stack()[0][3]
             # get taco settings
             taco_settings = self.settings.get_settings(self.db, guildId, "tacos")
             if not taco_settings:
@@ -336,7 +362,23 @@ class DiscordHelper:
             reason_msg = reason if reason else self.settings.get_string(guildId, "no_reason")
 
             total_taco_count = self.db.add_tacos(guildId, toUser.id, taco_count)
-            await self.tacos_log(guildId, toUser, fromUser, taco_count, total_taco_count, reason_msg)
+            await self.tacos_log(
+                guild_id=guildId,
+                toMember=toUser,
+                fromMember=fromUser,
+                count=taco_count,
+                total_tacos=total_taco_count,
+                reason=reason_msg,
+            )
+
+            self.db.track_tacos_log(
+                guildId=guildId,
+                toUserId=toUser.id,
+                fromUserId=fromUser.id,
+                count=taco_count,
+                reason=reason_msg,
+                type=tacotypes.TacoTypes.get_db_type_from_taco_type(give_type),
+            )
             return total_taco_count
         except Exception as e:
             self.log.error(guildId, _method, str(e), traceback.format_exc())
@@ -372,8 +414,8 @@ class DiscordHelper:
     async def tacos_log(
         self,
         guild_id: int,
-        toMember: discord.Member,
-        fromMember: discord.Member,
+        toMember: typing.Union[discord.User, discord.Member],
+        fromMember: typing.Union[discord.User, discord.Member],
         count: int,
         total_tacos: int,
         reason: str,
@@ -421,7 +463,7 @@ class DiscordHelper:
         except Exception as e:
             self.log.error(guild_id, _method, str(e), traceback.format_exc())
 
-    async def get_or_fetch_user(self, userId: int):
+    async def get_or_fetch_user(self, userId: int) -> typing.Union[discord.User, None]:
         _method = inspect.stack()[1][3]
         try:
             if userId:
@@ -437,7 +479,7 @@ class DiscordHelper:
             self.log.error(0, _method, str(ex), traceback.format_exc())
             return None
 
-    async def get_or_fetch_member(self, guildId: int, userId: int):
+    async def get_or_fetch_member(self, guildId: int, userId: int) -> typing.Union[discord.Member, None]:
         _method = inspect.stack()[1][3]
         try:
             if not guildId:
@@ -461,7 +503,7 @@ class DiscordHelper:
             self.log.error(0, _method, str(ex), traceback.format_exc())
             return None
 
-    async def get_or_fetch_channel(self, channelId: int):
+    async def get_or_fetch_channel(self, channelId: int) -> typing.Union[discord.TextChannel, None]:
         _method = inspect.stack()[1][3]
         try:
             if channelId:
@@ -493,30 +535,35 @@ class DiscordHelper:
         question: str,
         title: str = "Yes or No?",
         timeout: int = 60,
-        fields = None,
+        fields=None,
         thumbnail: str = None,
         image: str = None,
         content: str = None,
-    ) -> bool:
-        def check_user(m):
-            same = m.author.id == ctx.author.id
-            return same
-
+        result_callback: typing.Callable = None,
+    ):
         channel = targetChannel if targetChannel else ctx.channel if ctx.channel else ctx.author
-        buttons = [
-            create_button(
-                style=ButtonStyle.green, label=self.settings.get_string(ctx.guild.id, "yes"), custom_id="YES"
-            ),
-            create_button(style=ButtonStyle.red, label=self.settings.get_string(ctx.guild.id, "no"), custom_id="NO"),
-        ]
-        yes_no = False
-        action_row = create_actionrow(*buttons)
-        timeout = timeout if timeout else 60
-        yes_no_req = await self.sendEmbed(
+
+        async def answer_callback(caller: YesOrNoView, interaction: discord.Interaction):
+            result_id = interaction.data["custom_id"]
+            result = utils.str2bool(result_id)
+            if result_callback:
+                await result_callback(result)
+
+        async def timeout_callback(caller: YesOrNoView, interaction: discord.Interaction):
+            await self.sendEmbed(
+                channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
+            )
+            if result_callback:
+                await result_callback(False)
+
+        yes_no_view = YesOrNoView(
+            ctx, answer_callback=answer_callback, timeout=timeout, timeout_callback=timeout_callback
+        )
+        await self.sendEmbed(
             channel,
             title,
             question,
-            components=[action_row],
+            view=yes_no_view,
             delete_after=timeout,
             thumbnail=thumbnail,
             image=image,
@@ -524,81 +571,7 @@ class DiscordHelper:
             content=content,
             footer=self.settings.get_string(ctx.guild.id, "footer_XX_seconds", seconds=timeout),
         )
-        try:
-            button_ctx: ComponentContext = await wait_for_component(
-                self.bot, check=check_user, components=action_row, timeout=timeout
-            )
-        except asyncio.TimeoutError:
-            await self.sendEmbed(
-                channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
-            )
-        else:
-            yes_no = utils.str2bool(button_ctx.custom_id)
-            try:
-                await yes_no_req.delete()
-            except Exception as e:
-                pass
-
-        return yes_no
-
-    async def wait_for_user_invoke_cleanup(self, ctx):
-        try:
-            guild_id = ctx.guild.id
-            channel = ctx.channel
-
-            waiting_invokes = self.db.get_wait_invokes(guildId=guild_id, channelId=channel.id)
-            if waiting_invokes:
-                for w in waiting_invokes:
-                    wi_message_id = int(w["message_id"])
-                    if wi_message_id:
-                        self.log.debug(guild_id, "suggestions.on_ready", f"Found waiting invoke {w['message_id']}")
-                        try:
-                            wi_message = await channel.fetch_message(wi_message_id)
-                            if wi_message:
-                                await wi_message.delete()
-                                self.log.debug(
-                                    guild_id, "suggestions.on_ready", f"Deleted waiting invoke {w['message_id']}"
-                                )
-                        except discord.errors.NotFound as nf:
-                            self.log.warn(guild_id, "suggestions.on_ready", str(nf))
-
-                        self.db.untrack_wait_invoke(guildId=guild_id, channelId=channel.id, messageId=wi_message_id)
-        except Exception as e:
-            self.log.error(guild_id, "suggestions.on_ready", str(e), traceback.format_exc())
-
-    async def wait_for_user_invoke(
-        self, ctx, targetChannel, title: str, description: str, button_label: str = "Yes", button_id: str = "YES"
-    ):
-        def check(m):
-            return True
-
-        channel = targetChannel if targetChannel else ctx.channel if ctx.channel else ctx.author
-
-        if ctx.guild:
-            guild_id = ctx.guild.id
-        else:
-            guild_id = 0
-        buttons = [
-            create_button(
-                style=ButtonStyle.green,
-                label=button_label or self.settings.get_string(ctx.guild.id, "yes"),
-                custom_id=button_id or "YES",
-            ),
-        ]
-        action_row = create_actionrow(*buttons)
-        invoke_req = await self.sendEmbed(channel, title, description, components=[action_row])
-        self.db.track_wait_invoke(guild_id, channel.id, invoke_req.id)
-        try:
-            button_ctx: ComponentContext = await wait_for_component(self.bot, check=check, components=action_row)
-        except asyncio.TimeoutError:
-            # this should never happen because there is no timeout
-            await self.sendEmbed(
-                channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
-            )
-        else:
-            await invoke_req.delete()
-            self.db.untrack_wait_invoke(guild_id, channel.id, invoke_req.id)
-        return button_ctx
+        return
 
     async def ask_channel_by_name_or_id(
         self, ctx, title: str = "TacoBot", description: str = "Enter the name of the channel", timeout: int = 60
@@ -648,10 +621,8 @@ class DiscordHelper:
         message: str = "Please choose a channel.",
         allow_none: bool = False,
         timeout: int = 60,
+        callback=None,
     ):
-        def check_user(m):
-            same = m.author.id == ctx.author.id
-            return same
 
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
@@ -659,50 +630,14 @@ class DiscordHelper:
         channels = [c for c in ctx.guild.channels if c.type == discord.ChannelType.text]
         channels.sort(key=lambda c: c.position)
         sub_message = ""
-        max_items = 24 if not allow_none else 23
-        if len(channels) >= max_items:
-            self.log.warn(
-                ctx.guild.id, _method, f"Guild has more than 24 channels. Total Channels: {str(len(channels))}"
-            )
-            options.append(
-                create_select_option(label=self.settings.get_string(ctx.guild.id, "other"), value="0", emoji="⏭")
-            )
-            # sub_message = self.get_string(guild_id, 'ask_admin_role_submessage')
-        if allow_none:
-            options.append(
-                create_select_option(label=self.settings.get_string(ctx.guild.id, "none"), value="-1", emoji="⛔")
-            )
 
-        for c in channels[:max_items]:
-            options.append(create_select_option(label=c.name, value=str(c.id), emoji="🏷"))
+        async def select_callback(select: discord.ui.Select, interaction: discord.Interaction):
+            # if not the user that triggered the interaction, ignore
+            if interaction.user.id != ctx.author.id:
+                return
+            chan_id = int(select.values[0])
+            await interaction.message.delete()
 
-        select = create_select(
-            options=options,
-            placeholder="Channel",
-            min_values=1,  # the minimum number of options a user must select
-            max_values=1,  # the maximum number of options a user can select
-        )
-
-        action_row = create_actionrow(select)
-        ask_context = await self.sendEmbed(
-            ctx.channel,
-            title,
-            message,
-            delete_after=timeout,
-            footer=self.settings.get_string(ctx.guild.id, "footer_XX_seconds", timeout=timeout),
-            components=[action_row],
-        )
-        try:
-            button_ctx: ComponentContext = await wait_for_component(
-                self.bot, check=check_user, components=action_row, timeout=60.0
-            )
-        except asyncio.TimeoutError:
-            await self.sendEmbed(
-                ctx.channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
-            )
-        else:
-            chan_id = int(button_ctx.selected_options[0])
-            await ask_context.delete()
             if chan_id == 0:
                 asked_channel = await self.ask_channel_by_name_or_id(
                     ctx, title, self.settings.get_string(guild_id, "ask_name_of_channel"), timeout=timeout
@@ -717,11 +652,10 @@ class DiscordHelper:
                     self.settings.get_string(guild_id, "unknown_channel", user=ctx.author.mention, channel_id=chan_id),
                     delete_after=5,
                 )
-                return None
-
+                return
             if chan_id == -1:
                 # user selected none
-                return None
+                return
 
             selected_channel = discord.utils.get(ctx.guild.channels, id=chan_id)
             if selected_channel:
@@ -736,7 +670,9 @@ class DiscordHelper:
                     ),
                     delete_after=5,
                 )
-                return selected_channel
+                if callback:
+                    await callback(selected_channel)
+                return
             else:
                 await self.sendEmbed(
                     ctx.channel,
@@ -744,7 +680,32 @@ class DiscordHelper:
                     self.settings.get_string(guild_id, "unknown_channel", user=ctx.author.mention, channel_id=chan_id),
                     delete_after=5,
                 )
-                return None
+                if callback:
+                    await callback(None)
+                return
+
+        async def select_timeout():
+            await self.sendEmbed(
+                ctx.channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
+            )
+
+        view = ChannelSelectView(
+            ctx=ctx,
+            placeholder=title,
+            channels=channels,
+            allow_none=allow_none,
+            select_callback=select_callback,
+            timeout_callback=select_timeout,
+        )
+        # action_row = ActionRow(select)
+        await self.sendEmbed(
+            ctx.channel,
+            title,
+            message,
+            delete_after=timeout,
+            footer=self.settings.get_string(ctx.guild.id, "footer_XX_seconds", seconds=timeout),
+            view=view,
+        )
 
     async def ask_number(
         self,
@@ -855,14 +816,15 @@ class DiscordHelper:
             await text_ask.delete()
         return textResp.content
 
-    async def ask_for_image_or_text(self,
+    async def ask_for_image_or_text(
+        self,
         ctx,
         targetChannel,
         title: str = "Enter Text Response",
         message: str = "Please enter your response.",
         timeout: int = 60,
-        color=None,):
-
+        color=None,
+    ):
         def check_user(m):
             same = m.author.id == ctx.author.id
             return same
@@ -907,88 +869,69 @@ class DiscordHelper:
         title: str = "Choose Role",
         message: str = "Please choose a role.",
         allow_none: bool = False,
-        min_select: int = 1,
-        max_select: int = 1,
         exclude_roles: list = None,
         timeout: int = 60,
+        select_callback: typing.Callable = None,
+        # timeout_callback: typing.Callable = None,
     ):
-        def check_user(m):
-            same = m.author.id == ctx.author.id
-            return same
-
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
-        options = []
-        roles = [r for r in ctx.guild.roles if exclude_roles is None or r.id not in [x.id for x in exclude_roles]]
-        print(f"{len(roles)} roles")
-        roles.sort(key=lambda r: r.position)
-        sub_message = ""
-        if len(roles) == 0:
-            self.log.warn(
-                ctx.guild.id, _method, f"Forcing 'other' option for role list as there are no roles to select."
-            )
-            options.append(
-                create_select_option(label=self.settings.get_string(ctx.guild.id, "other"), value="0", emoji="⏭")
-            )
-        if len(roles) >= 24:
-            self.log.warn(ctx.guild.id, _method, f"Guild has more than 24 roles. Total roles: {str(len(roles))}")
-            options.append(
-                create_select_option(label=self.settings.get_string(ctx.guild.id, "other"), value="0", emoji="⏭")
-            )
-            # sub_message = self.get_string(guild_id, 'ask_admin_role_submessage')
-        if allow_none:
-            options.append(
-                create_select_option(label=self.settings.get_string(ctx.guild.id, "none"), value="-1", emoji="⛔")
+
+        async def role_select_callback(select: RoleSelect, interaction: discord.Interaction):
+            await interaction.delete_original_response()
+            if select_callback:
+                if select.values:
+                    role_id = 0
+                    if len(select.values) > 1:
+                        role_id = select.values[0]
+
+                    if role_id == 0:
+                        await self.sendEmbed(
+                            ctx.channel, title, f"{ctx.author.mention}, ENTER ROLE NAME", delete_after=5
+                        )
+                        # need to ask for role name
+                        await select_callback(None)
+                        return
+                        # chan_id = await self.ask_channel_by_name_or_id(ctx, title)
+
+                    selected_role: discord.Role = discord.utils.get(ctx.guild.roles, id=str(select.values[0]))
+
+                    if selected_role:
+                        self.log.debug(
+                            guild_id, _method, f"{ctx.author.mention} selected the role '{selected_role.name}'"
+                        )
+                        await select_callback(selected_role)
+                        return
+                    else:
+                        await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, Unknown Role.", delete_after=5)
+                        await select_callback(None)
+                        return
+                else:
+                    await select_callback(None)
+
+        async def timeout_callback(select: RoleSelect, interaction: discord.Interaction):
+            await interaction.delete_original_response()
+            await self.sendEmbed(
+                ctx.channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
             )
 
-        for r in roles[:24]:
-            options.append(create_select_option(label=r.name, value=str(r.id), emoji="🏷"))
-
-        select = create_select(
-            options=options,
+        role_view = RoleSelectView(
+            ctx=ctx,
             placeholder=title,
-            min_values=1,  # the minimum number of options a user must select
-            max_values=1,  # the maximum number of options a user can select
+            exclude_roles=exclude_roles,
+            select_callback=role_select_callback,
+            timeout_callback=timeout_callback,
+            timeout=timeout,
         )
 
-        action_row = create_actionrow(select)
-        ask_context = await self.sendEmbed(
+        await self.sendEmbed(
             ctx.channel,
             title,
             message,
             delete_after=timeout,
             footer=self.settings.get_string(ctx.guild.id, "footer_XX_seconds", seconds=timeout),
-            components=[action_row],
+            view=role_view,
         )
-        try:
-            button_ctx: ComponentContext = await wait_for_component(
-                self.bot, check=check_user, components=action_row, timeout=timeout
-            )
-        except asyncio.TimeoutError:
-            await self.sendEmbed(
-                ctx.channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
-            )
-        else:
-            role_id = int(button_ctx.selected_options[0])
-            if role_id == 0:
-                await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, ENTER ROLE NAME", delete_after=5)
-                return
-                # chan_id = await self.ask_channel_by_name_or_id(ctx, title)
-
-            await ask_context.delete()
-            selected_role = discord.utils.get(ctx.guild.roles, id=role_id)
-            if selected_role:
-                self.log.debug(guild_id, _method, f"{ctx.author.mention} selected the role '{selected_role.name}'")
-                await self.sendEmbed(
-                    ctx.channel,
-                    title,
-                    f"{ctx.author.mention}, You have selected channel '{selected_role.name}'",
-                    delete_after=5,
-                )
-                return selected_role
-            else:
-                await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, Unknown Role.", delete_after=5)
-                return None
 
     async def is_admin(self, guildId: int, userId: int):
         member = await self.get_or_fetch_member(guildId, userId)

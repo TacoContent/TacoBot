@@ -1,6 +1,7 @@
 
 from traceback import print_exc
 import typing
+import datetime
 
 class Database():
 
@@ -80,6 +81,10 @@ class Database():
         pass
     def untrack_live(self, guildId: int, userId: int, platform: str):
         pass
+    def get_tracked_live_by_url(self, guildId: int, url: str):
+        pass
+    def get_tracked_live_by_user(self, guildId: int, userId: int):
+        pass
 
     def birthday_was_checked_today(self, guildId: int):
         pass
@@ -114,5 +119,34 @@ class Database():
         pass
     def mentalmondays_user_message_tracked(self, guildId: int, userId: int, messageId: int):
         pass
+
+    def save_taco_tuesday(self, guildId: int, message: str, image: str, author: int):
+        pass
+    def track_taco_tuesday(self, guildId: int, userId: int):
+        pass
+    def taco_tuesday_user_tracked(self, guildId: int, userId: int, messageId: int):
+        pass
+
+    def track_first_message(self, guildId: int, userId: int, channelId: int, messageId: int):
+        pass
+
+    def track_message(self, guildId: int, userId: int, channelId: int, messageId: int):
+        pass
+
+    def is_first_message_today(self, guildId: int, userId: int):
+        pass
+
+    def track_user(self, guildId: int, userId: int, username: str, discriminator: str, avatar: str, displayname: str, created: datetime.datetime = None, bot: bool = False, system: bool = False):
+        pass
+
+    def track_food_post(self, guildId: int, userId: int, channelId: int, messageId: int, message: str, image: str):
+        pass
+
+    def track_user_join_leave(self, guildId: int, userId: int, join: bool):
+        pass
+
+    def track_tacos_log(self, guildId: int, fromUserId: int, toUserId: int, count: int, type: str, reason: str):
+        pass
+
     def UPDATE_SCHEMA(self):
         pass

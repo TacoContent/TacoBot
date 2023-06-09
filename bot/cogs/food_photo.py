@@ -72,7 +72,6 @@ class FoodPhoto(commands.Cog):
                 self.log.debug(guild_id, "food_photo.on_message", f"Message {message.id} does not contain a photo")
                 return
 
-
             # # check if the user posted a photo in the channel within the last 5 minutes
             # # if so, ignore
             # now = datetime.datetime.utcnow()
@@ -92,7 +91,7 @@ class FoodPhoto(commands.Cog):
 
             reason_msg = f"Food photo in #{message.channel.name}"
 
-            for r in food_channel['reactions']:
+            for r in food_channel["reactions"]:
                 await message.add_reaction(r)
 
             # if the message is a photo, add tacos to the user
@@ -101,8 +100,19 @@ class FoodPhoto(commands.Cog):
                 fromUser=self.bot.user,
                 toUser=message.author,
                 reason=reason_msg,
-                give_type=tacotypes.TacoTypes.CUSTOM,
+                give_type=tacotypes.TacoTypes.FOOD_PHOTO,
                 taco_amount=amount,
+            )
+
+            # track the message in the database
+            image_url = message.attachments[0].url if message.attachments else matches.group(0)
+            self.db.track_food_post(
+                guildId=guild_id,
+                userId=message.author.id,
+                messageId=message.id,
+                channelId=message.channel.id,
+                message=message.content,
+                image=image_url,
             )
 
             pass
@@ -111,5 +121,5 @@ class FoodPhoto(commands.Cog):
             traceback.print_exc()
 
 
-def setup(bot):
-    bot.add_cog(FoodPhoto(bot))
+async def setup(bot):
+    await bot.add_cog(FoodPhoto(bot))
