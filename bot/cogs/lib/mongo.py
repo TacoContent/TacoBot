@@ -1880,7 +1880,7 @@ class MongoDatabase(database.Database):
                 "created_at": utils.to_timestamp(guild.created_at),
                 "vanity_url": guild.vanity_url or None,
                 "vanity_url_code": guild.vanity_url_code or None,
-                "icon": guild.icon,
+                "icon": guild.icon.url if guild.icon else None,
                 "timestamp": timestamp
             }
 
