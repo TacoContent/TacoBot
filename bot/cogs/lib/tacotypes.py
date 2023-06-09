@@ -8,7 +8,7 @@ class TacoTypes(Enum):
     BOOST = 2
     REACT_REWARD = 3
     SUGGEST = 4
-    INVITE = 5
+    USER_INVITE = 5
     REACTION = 6
     REPLY = 7
     TQOTD = 8
@@ -52,7 +52,7 @@ class TacoTypes(Enum):
         elif taco_type_string == "suggest_count":
             return TacoTypes.SUGGEST
         elif taco_type_string == "invite_count":
-            return TacoTypes.INVITE
+            return TacoTypes.USER_INVITE
         elif taco_type_string == "reaction_count":
             return TacoTypes.REACTION
         elif taco_type_string == "reply_count":
@@ -122,8 +122,8 @@ class TacoTypes(Enum):
             return "REACT_REWARD"
         elif taco_type == TacoTypes.SUGGEST:
             return "SUGGEST"
-        elif taco_type == TacoTypes.INVITE:
-            return "INVITE"
+        elif taco_type == TacoTypes.USER_INVITE:
+            return "USER_INVITE"
         elif taco_type == TacoTypes.REACTION:
             return "REACTION"
         elif taco_type == TacoTypes.REPLY:
@@ -193,7 +193,7 @@ class TacoTypes(Enum):
             return "reaction_reward_count"
         elif taco_type == TacoTypes.SUGGEST:
             return "suggest_count"
-        elif taco_type == TacoTypes.INVITE:
+        elif taco_type == TacoTypes.USER_INVITE:
             return "invite_count"
         elif taco_type == TacoTypes.REACTION:
             return "reaction_count"

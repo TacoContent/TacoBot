@@ -255,43 +255,6 @@ class Tacos(commands.Cog):
             self.log.error(member.guild.id, _method, str(ex), traceback.format_exc())
 
     @commands.Cog.listener()
-    async def on_member_remove(self, member: discord.Member):
-        _method = inspect.stack()[0][3]
-        # remove all tacos from the user
-        guild_id = member.guild.id
-        try:
-            if member.bot:
-                return
-
-            _method = inspect.stack()[0][3]
-            self.log.debug(guild_id, _method, f"{member} left the server")
-            self.db.remove_all_tacos(guild_id, member.id)
-            self.db.track_tacos_log(
-                guildId=guild_id,
-                toUserId=member.id,
-                fromUserId=self.bot.user.id,
-                count=0,
-                reason="leaving the server",
-                type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.LEAVE_SERVER)
-            )
-        except Exception as ex:
-            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
-
-    @commands.Cog.listener()
-    async def on_member_join(self, member):
-        _method = inspect.stack()[0][3]
-        guild_id = member.guild.id
-        try:
-            if member.bot:
-                return
-
-            await self.discord_helper.taco_give_user(guild_id, self.bot.user, member,
-                self.settings.get_string(guild_id, "taco_reason_join"),
-                tacotypes.TacoTypes.JOIN_SERVER )
-        except Exception as ex:
-            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
-
-    @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id

@@ -98,7 +98,7 @@ class InviteTracker(commands.Cog):
                             self.bot.user,
                             inviter,
                             self.settings.get_string(guild_id, "taco_reason_invite", user=member.name),
-                            tacotypes.TacoTypes.INVITE,
+                            tacotypes.TacoTypes.USER_INVITE,
                         )
                     return
         except Exception as e:
