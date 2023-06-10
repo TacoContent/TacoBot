@@ -84,11 +84,11 @@ class LiveNow(commands.Cog):
 
             for bsa in before_streaming_activities_temp:
                 # if item is not in the list, add it
-                if len([a for a in before_streaming_activities if a.url == bsa.url]) == 0:
+                if len([a for a in before_streaming_activities if a.platform == bsa.platform]) == 0:
                     before_streaming_activities.append(bsa)
 
             for asa in after_streaming_activities_temp:
-                if len([a for a in after_streaming_activities if a.url == asa.url]) == 0:
+                if len([a for a in after_streaming_activities if a.platform == asa.platform]) == 0:
                     after_streaming_activities.append(asa)
 
             # remove items that exist in both lists
@@ -161,6 +161,8 @@ class LiveNow(commands.Cog):
 
                 logging_channel_id = cog_settings.get("logging_channel", None)
                 if logging_channel_id:
+                    self.log.debug(guild_id, "live_now.on_member_update", f"Logging live post {after.display_name} ({asa.platform}) to channel {logging_channel_id}")
+                    # this is double posting. need to figure out why
                     await self.log_live_post(int(logging_channel_id), asa, after, twitch_name)
 
                 # give the user tacos for going live
