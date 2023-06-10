@@ -69,16 +69,27 @@ class LiveNow(commands.Cog):
                 self.log.error(guild_id, "live_now.on_member_update", f"No tacos settings found for guild {guild_id}")
                 return
 
+            before_streaming_activities = []
+            after_streaming_activities = []
 
-            before_streaming_activities = [ a for a in before.activities if a.type == discord.ActivityType.streaming ]
-            after_streaming_activities = [ a for a in after.activities if a.type == discord.ActivityType.streaming ]
+            before_streaming_activities_temp = [ a for a in before.activities if a.type == discord.ActivityType.streaming ]
+            after_streaming_activities_temp = [ a for a in after.activities if a.type == discord.ActivityType.streaming ]
 
-            if len(before_streaming_activities) == 0:
+            if len(before_streaming_activities_temp) == 0:
                 if before.activity and before.activity.type == discord.ActivityType.streaming:
                     before_streaming_activities = [ before.activity ]
-            if len(after_streaming_activities) == 0:
+            if len(after_streaming_activities_temp) == 0:
                 if after.activity and after.activity.type == discord.ActivityType.streaming:
                     after_streaming_activities = [ after.activity ]
+
+            for bsa in before_streaming_activities_temp:
+                # if item is not in the list, add it
+                if len([a for a in before_streaming_activities if a.url == bsa.url]) == 0:
+                    before_streaming_activities.append(bsa)
+
+            for asa in after_streaming_activities_temp:
+                if len([a for a in after_streaming_activities if a.url == asa.url]) == 0:
+                    after_streaming_activities.append(asa)
 
             # remove items that exist in both lists
             # for bsa in before_streaming_activities:
