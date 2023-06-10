@@ -117,10 +117,11 @@ class LiveNow(commands.Cog):
                     continue
 
                 # check if asa is in before_streaming_activities
-                found_asa = len([b for b in before_streaming_activities if b.url == asa.url and b.platform == asa.platform]) > 0
-                # this activity exists in both lists, so it is not a new live
-                if found_asa:
-                    continue
+                # found_asa = len([b for b in before_streaming_activities if b.url == asa.url and b.platform == asa.platform]) > 0
+                # # this activity exists in both lists, so it is not a new live
+                # if found_asa :
+                #     # self.log.debug(guild_id, "live_now.on_member_update", f"{after.display_name} is already tracked for {asa.platform}")
+                #     continue
 
                 self.log.info(guild_id, "live_now.on_member_update", f"{after.display_name} started streaming on {asa.platform}")
 
