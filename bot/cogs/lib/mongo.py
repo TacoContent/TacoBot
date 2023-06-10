@@ -1903,6 +1903,7 @@ class MongoDatabase(database.Database):
                 "channel_id": str(triviaQuestion.channel_id),
                 "message_id": str(triviaQuestion.message_id),
                 "question_id": triviaQuestion.question_id,
+                "starter_id": str(triviaQuestion.starter_id),
                 "question": triviaQuestion.question,
                 "correct_answer": triviaQuestion.correct_answer,
                 "incorrect_answers": triviaQuestion.incorrect_answers,

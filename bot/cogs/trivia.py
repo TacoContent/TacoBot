@@ -214,6 +214,7 @@ class Trivia(commands.Cog):
                                 "guild_id": guild_id,
                                 "channel_id": ctx.channel.id,
                                 "message_id": result.id,
+                                "starter_id": ctx.author.id,
                                 "question": html.unescape(question.question),
                                 "correct_answer": html.unescape(question.correct_answer),
                                 "incorrect_answers": [html.unescape(ia) for ia in question.incorrect_answers],
