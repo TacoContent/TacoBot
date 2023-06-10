@@ -25,6 +25,7 @@ from .lib import settings
 from .lib import mongo
 from .lib import dbprovider
 from .lib import tacotypes
+from .lib.models import TriviaQuestion
 class Trivia(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -32,10 +33,7 @@ class Trivia(commands.Cog):
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
 
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -136,6 +134,9 @@ class Trivia(commands.Cog):
                         trivia_timeout=trivia_timeout,
                         reward=reward,
                         taco_word=taco_word)
+
+
+
                     qm = await self.discord_helper.sendEmbed(ctx.channel,
                         self.settings.get_string(guild_id, "trivia_question_title",
                             category=html.unescape(question.category),
@@ -144,6 +145,7 @@ class Trivia(commands.Cog):
                         question_message,
                         fields=[],
                         content=notify_role_mention if notify_role_mention else None,)
+
                     for ritem in choice_emojis[0:len(answers)]:
                         # add reaction to the message from the bot
                         await qm.add_reaction(ritem)
@@ -176,14 +178,26 @@ class Trivia(commands.Cog):
                             reason_msg = self.settings.get_string(guild_id, "taco_reason_trivia_correct")
                             for u in correct_users:
                                 if not u.bot:
-                                    await self.discord_helper.taco_give_user(guild_id, self.bot.user, u, reason_msg, tacotypes.TacoTypes.TRIVIA_CORRECT, taco_amount=reward )
+                                    await self.discord_helper.taco_give_user(
+                                        guildId=guild_id,
+                                        fromUser=self.bot.user,
+                                        toUser=u,
+                                        reason=reason_msg,
+                                        give_type=tacotypes.TacoTypes.TRIVIA_CORRECT,
+                                        taco_amount=reward )
 
                             reason_msg = self.settings.get_string(guild_id, "taco_reason_trivia_incorrect")
                             for u in incorrect_users:
                                 if not u.bot:
-                                    await self.discord_helper.taco_give_user(guild_id, self.bot.user, u, reason_msg, tacotypes.TacoTypes.TRIVIA_INCORRECT, taco_amount=punishment )
+                                    await self.discord_helper.taco_give_user(
+                                        guildId=guild_id,
+                                        fromUser=self.bot.user,
+                                        toUser=u,
+                                        reason=reason_msg,
+                                        give_type=tacotypes.TacoTypes.TRIVIA_INCORRECT,
+                                        taco_amount=punishment )
 
-                            await self.discord_helper.sendEmbed(ctx.channel,
+                            result = await self.discord_helper.sendEmbed(ctx.channel,
                                 self.settings.get_string(guild_id, "trivia_results_title"),
                                 self.settings.get_string(guild_id, "trivia_results_message",
                                     question=html.unescape(question.question),
@@ -193,6 +207,26 @@ class Trivia(commands.Cog):
                                     taco_word=taco_word),
                                 fields=fields)
                             await qm.delete()
+
+
+                            # now that we have the question message, we can track the trivia item in the database
+                            trivia_item = {
+                                "guild_id": guild_id,
+                                "channel_id": ctx.channel.id,
+                                "message_id": result.id,
+                                "question": html.unescape(question.question),
+                                "correct_answer": html.unescape(question.correct_answer),
+                                "incorrect_answers": [html.unescape(ia) for ia in question.incorrect_answers],
+                                "category": html.unescape(question.category),
+                                "difficulty": question.difficulty,
+                                "reward": reward,
+                                "punishment": punishment,
+                                "correct_users": [u.id for u in correct_users],
+                                "incorrect_users": [u.id for u in incorrect_users],
+                            }
+
+                            trivia_question = TriviaQuestion(**trivia_item)
+                            self.db.track_trivia_question(trivia_question)
                             break
                 else:
                     self.log.error(guild_id, "trivia.trivia", "Error retrieving the trivia question")

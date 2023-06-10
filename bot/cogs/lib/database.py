@@ -3,6 +3,8 @@ from traceback import print_exc
 import typing
 import datetime
 
+from . import models
+
 class Database():
 
     def __init__(self):
@@ -146,6 +148,9 @@ class Database():
         pass
 
     def track_tacos_log(self, guildId: int, fromUserId: int, toUserId: int, count: int, type: str, reason: str):
+        pass
+
+    def track_trivia_question(self, triviaQuestion: models.TriviaQuestion) -> None:
         pass
 
     def UPDATE_SCHEMA(self):

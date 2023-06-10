@@ -1891,3 +1891,34 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
+
+    def track_trivia_question(self, triviaQuestion: models.TriviaQuestion):
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow()
+            timestamp = utils.to_timestamp(date)
+            payload = {
+                "guild_id": str(triviaQuestion.guild_id),
+                "channel_id": str(triviaQuestion.channel_id),
+                "message_id": str(triviaQuestion.message_id),
+                "question_id": triviaQuestion.question_id,
+                "question": triviaQuestion.question,
+                "correct_answer": triviaQuestion.correct_answer,
+                "incorrect_answers": triviaQuestion.incorrect_answers,
+                "category": triviaQuestion.category,
+                "difficulty": triviaQuestion.difficulty,
+                "reward": triviaQuestion.reward,
+                "punishment": triviaQuestion.punishment,
+                "correct_users": [str(u) for u in triviaQuestion.correct_users],
+                "incorrect_users": [str(u) for u in triviaQuestion.incorrect_users],
+                "timestamp": timestamp
+            }
+
+            self.connection.trivia_questions.insert_one(payload)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
