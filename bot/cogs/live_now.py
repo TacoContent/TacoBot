@@ -121,12 +121,12 @@ class LiveNow(commands.Cog):
             for asa in after_streaming_activities:
                 tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform)
                 is_tracked = tracked != None and tracked.count() > 0
-
-                await self.add_live_roles(after, cog_settings)
-
                 # if it is already tracked, then we don't need to do anything
                 if is_tracked:
                     self.log.debug(guild_id, "live_now.on_member_update", f"{after.display_name} is already tracked for {asa.platform}")
+
+                    await self.add_live_roles(after, cog_settings)
+
                     continue
 
                 # check if asa is in before_streaming_activities
@@ -152,6 +152,9 @@ class LiveNow(commands.Cog):
                     platform=asa.platform,
                     url=asa.url
                 )
+
+                await self.add_live_roles(after, cog_settings)
+
 
                 twitch_name: typing.Union[str, None] = None
                 if asa.platform.lower() == "twitch":
@@ -189,13 +192,15 @@ class LiveNow(commands.Cog):
                     # this activity exists in both lists, so it is still live
                     continue
 
-                await self.remove_live_roles(before, cog_settings)
-
                 tracked = self.db.get_tracked_live(guild_id, before.id, bsa.platform)
                 is_tracked = tracked != None and tracked.count() > 0
                 # if it is not tracked, then we don't need to do anything
                 if not is_tracked:
                     self.log.debug(guild_id, "live_now.on_member_update", f"{after.display_name} is not tracked for {bsa.platform}")
+
+
+                    await self.remove_live_roles(before, cog_settings)
+
                     continue
 
                 # if we get here, then we need to untrack the user live activity
@@ -218,6 +223,9 @@ class LiveNow(commands.Cog):
 
                 # remove all tracked items for this live platform (should only be one)
                 self.db.untrack_live(guild_id, before.id, bsa.platform)
+
+                await self.remove_live_roles(before, cog_settings)
+
 
         except Exception as e:
             self.log.error(guild_id, _method, str(e), traceback.format_exc())
