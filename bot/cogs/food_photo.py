@@ -44,6 +44,8 @@ class FoodPhoto(commands.Cog):
         try:
             if message.guild is not None:
                 guild_id = message.guild.id
+            if guild_id == 0:
+                return
             # if the message is from a bot, ignore
             if message.author.bot:
                 return

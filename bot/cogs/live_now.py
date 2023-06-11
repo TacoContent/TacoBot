@@ -83,17 +83,6 @@ class LiveNow(commands.Cog):
                     after_streaming_activities.append(asa)
             self.log.debug(guild_id, "live_now.on_member_update", f"after_streaming_activities: {after_streaming_activities}")
 
-            # remove items that exist in both lists
-            # for bsa in before_streaming_activities:
-            #     for asa in after_streaming_activities:
-            #         if asa.url == bsa.url and asa.platform == bsa.platform:
-            #             # dont remove the after items so we always check for the "went live" event
-            #             # after_streaming_activities.remove(asa)
-            #             before_streaming_activities.remove(bsa)
-
-            # any item left in after_streaming_activities is a new streaming activity
-            # any item left in before_streaming_activities is a streaming activity that has ended
-
             # WENT LIVE
             for asa in after_streaming_activities:
                 tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform)
@@ -154,7 +143,6 @@ class LiveNow(commands.Cog):
 
 
             # ENDED STREAM
-            removed_streaming_activities = []
             for bsa in before_streaming_activities:
 
                 # check if bsa is in after_streaming_activities
