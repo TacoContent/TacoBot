@@ -102,7 +102,7 @@ class InviteTracker(commands.Cog):
                         )
                     return
         except Exception as e:
-            self.log.error(guild_id, _method, str(e), traceback.format_exc())
+            self.log.error(guild_id, f"invite_tracker.{_method}", str(e), traceback.format_exc())
 
     def get_payload_for_invite(self, invite):
         return {

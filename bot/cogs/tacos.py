@@ -270,7 +270,7 @@ class Tacos(commands.Cog):
 
             reaction_emoji = taco_settings.get("reaction_emoji", "🌮")
 
-            self.log.debug(guild_id, _method, f"{payload.emoji.name} added to {payload.message_id}")
+            self.log.debug(guild_id, f"tacos.{_method}", f"{payload.emoji.name} added to {payload.message_id}")
             if str(payload.emoji) == reaction_emoji:
                 user = await self.discord_helper.get_or_fetch_user(payload.user_id)
                 channel = await self.bot.fetch_channel(payload.channel_id)

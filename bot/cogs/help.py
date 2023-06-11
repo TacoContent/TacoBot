@@ -88,7 +88,7 @@ class Help(commands.Cog):
                     "", footer=self.settings.get_string(guild_id, "version_footer", version=self.settings.version), fields=fields)
                 page += 1
         except Exception as ex:
-            self.log.error(ctx.guild.id, _method, str(ex), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"help.{_method}", str(ex), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
 

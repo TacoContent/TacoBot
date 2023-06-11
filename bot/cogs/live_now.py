@@ -228,7 +228,7 @@ class LiveNow(commands.Cog):
 
 
         except Exception as e:
-            self.log.error(guild_id, _method, str(e), traceback.format_exc())
+            self.log.error(guild_id, f"live_now.{_method}", str(e), traceback.format_exc())
             return
 
     async def remove_live_roles(self, user: discord.Member, cog_settings: dict):

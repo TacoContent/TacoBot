@@ -46,7 +46,7 @@ class JoinLeaveTracker(commands.Cog):
                 return
 
             _method = inspect.stack()[0][3]
-            self.log.debug(guild_id, _method, f"{member} left the server")
+            self.log.debug(guild_id, f"join_leave.{_method}", f"{member} left the server")
             self.db.remove_all_tacos(guild_id, member.id)
             self.db.track_tacos_log(
                 guildId=guild_id,
@@ -58,7 +58,7 @@ class JoinLeaveTracker(commands.Cog):
             )
             self.db.track_user_join_leave(guildId=guild_id, userId=member.id, join=False)
         except Exception as ex:
-            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"join_leave.{_method}", str(ex), traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -73,7 +73,7 @@ class JoinLeaveTracker(commands.Cog):
                 tacotypes.TacoTypes.JOIN_SERVER )
             self.db.track_user_join_leave(guildId=guild_id, userId=member.id, join=True)
         except Exception as ex:
-            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"join_leave.{_method}", str(ex), traceback.format_exc())
 
 async def setup(bot):
     await bot.add_cog(JoinLeaveTracker(bot))

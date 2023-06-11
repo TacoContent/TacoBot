@@ -217,7 +217,7 @@ class MentalMondays(commands.Cog):
 
         # check if the user that reacted is in the admin role
         if not await self.discord_helper.is_admin(guild_id, payload.user_id):
-            self.log.debug(guild_id, _method, f"User {payload.user_id} is not an admin")
+            self.log.debug(guild_id, f"mental_monday.{_method}", f"User {payload.user_id} is not an admin")
             return
         # in future, check if the user is in a defined role that can grant tacos (e.g. moderator)
 
@@ -232,7 +232,7 @@ class MentalMondays(commands.Cog):
         if reaction.count > 1:
             self.log.debug(
                 guild_id,
-                _method,
+                f"mental_moday.{_method}",
                 f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}",
             )
             return
@@ -242,7 +242,7 @@ class MentalMondays(commands.Cog):
             # log that we are giving tacos for this reaction
             self.log.info(
                 guild_id,
-                _method,
+                f"mental_moday.{_method}",
                 f"User {payload.user_id} reacted with {payload.emoji.name} to message {payload.message_id}",
             )
             await self.give_user_mentalmondays_tacos(
@@ -250,7 +250,7 @@ class MentalMondays(commands.Cog):
             )
         else:
             self.log.debug(
-                guild_id, _method, f"Message {payload.message_id} has already been tracked for mentalmondays. Skipping."
+                guild_id, f"mental_monday.{_method}", f"Message {payload.message_id} has already been tracked for mentalmondays. Skipping."
             )
 
     async def _on_raw_reaction_add_import(self, payload):
@@ -259,7 +259,7 @@ class MentalMondays(commands.Cog):
 
         # check if the user that reacted is in the admin role
         if not await self.discord_helper.is_admin(guild_id, payload.user_id):
-            self.log.debug(guild_id, _method, f"User {payload.user_id} is not an admin")
+            self.log.debug(guild_id, f"mental_monday.{_method}", f"User {payload.user_id} is not an admin")
             return
 
         channel = self.bot.get_channel(payload.channel_id)
@@ -269,7 +269,7 @@ class MentalMondays(commands.Cog):
         if reaction.count > 1:
             self.log.debug(
                 guild_id,
-                _method,
+                f"mental_monday.{_method}",
                 f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}",
             )
             return
@@ -292,7 +292,7 @@ class MentalMondays(commands.Cog):
             taco_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
             if not taco_settings:
                 # raise exception if there are no tacos settings
-                self.log.error(guild_id, "tacos.on_raw_reaction_add", f"No tacos settings found for guild {guild_id}")
+                self.log.error(guild_id, "mentalmondays.on_raw_reaction_add", f"No tacos settings found for guild {guild_id}")
                 return
 
             reaction_emojis = taco_settings.get("mentalmondays_reaction_emoji", ["🇲"])
@@ -307,7 +307,7 @@ class MentalMondays(commands.Cog):
                 return
 
         except Exception as ex:
-            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"mental_monday.{_method}", str(ex), traceback.format_exc())
             # await self.discord_helper.notify_of_error(ctx)
 
     def _import_mentalmondays(self, message: discord.Message):

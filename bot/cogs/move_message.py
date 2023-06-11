@@ -59,7 +59,7 @@ class MoveMessage(commands.Cog):
                 return
             if payload.event_type != 'REACTION_ADD':
                 return
-            
+
             if str(payload.emoji) != '⏭️':
                 return
 
@@ -71,7 +71,7 @@ class MoveMessage(commands.Cog):
 
             react_member = await self.discord_helper.get_or_fetch_member(guild_id, user.id)
             if react_member.guild_permissions.manage_messages:
-                # self.log.debug(guild_id, _method, f"{user.name} reacted to message {message.id} with {str(payload.emoji)}")
+                # self.log.debug(guild_id, f"move_message.{_method}", f"{user.name} reacted to message {message.id} with {str(payload.emoji)}")
                 if str(payload.emoji) == '⏭️':
                     ctx = self.discord_helper.create_context(bot=self.bot, message=message, channel=channel, author=user, guild=message.guild)
 
@@ -109,7 +109,7 @@ class MoveMessage(commands.Cog):
                 return
             await ctx.message.delete()
             guild_id = ctx.guild.id
-            # self.log.debug(guild_id, _method, f"{ctx.author.name} called move message {messageId}")
+            # self.log.debug(guild_id, f"move_message.{_method}", f"{ctx.author.name} called move message {messageId}")
             channel = ctx.channel
 
             message = await ctx.channel.fetch_message(messageId)
