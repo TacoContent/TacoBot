@@ -59,6 +59,10 @@ class MoveMessage(commands.Cog):
                 return
             if payload.event_type != 'REACTION_ADD':
                 return
+            
+            if str(payload.emoji) != '⏭️':
+                return
+
             channel = await self.bot.fetch_channel(payload.channel_id)
             message = await channel.fetch_message(payload.message_id)
             user = await self.discord_helper.get_or_fetch_user(payload.user_id)
