@@ -107,20 +107,20 @@ class StreamTeam(commands.Cog):
                 return
 
             # get the streamteam settings from settings
-            streamteam_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
-            if not streamteam_settings:
-                # raise exception if there are no streamteam settings
-                self.log.error(guild_id, "streamteam.on_message", f"No streamteam settings found for guild {guild_id}")
-                await self.discord_helper.notify_bot_not_initialized(message, "streamteam")
-                return
+            cog_settings = self.get_cog_settings(guild_id)
 
             # get the reaction emoji
-            emoji = streamteam_settings["emoji"]
-            team_name = streamteam_settings["name"]
+            emoji = cog_settings.get("emoji", [])
+            team_name = cog_settings.get("name", "")
+
+            if len(emoji) == 0 or team_name == "":
+                return
+
             # get the message ids to check
-            watch_message_ids = streamteam_settings["message_ids"]
+            watch_message_ids = cog_settings.get("message_ids", [])
             # get the log channel id
-            log_channel_id = streamteam_settings["log_channel"]
+            log_channel_id = cog_settings.get("log_channel", None)
+            log_channel = None
             if log_channel_id:
                 log_channel = await self.discord_helper.get_or_fetch_channel(log_channel_id)
 
