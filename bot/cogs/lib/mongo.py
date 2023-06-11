@@ -1651,6 +1651,75 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
+    def taco_tuesday_set_user(self, guildId: int, userId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow().date()
+            ts_date = datetime.datetime.combine(date, datetime.time.min)
+            timestamp = utils.to_timestamp(ts_date)
+            # find the most recent taco tuesday
+            result = self.connection.taco_tuesday.find_one(
+                {"guild_id": str(guildId), "timestamp": timestamp}
+            )
+            if result:
+                self.connection.taco_tuesday.update_one({ "guild_id": str(guildId), "timestamp": timestamp }, { "$set": { "user_id": str(userId) } }, upsert=True)
+            else:
+                now_date = datetime.datetime.utcnow().date()
+                back_date = now_date - datetime.timedelta(days=7)
+                ts_now_date = datetime.datetime.combine(now_date, datetime.time.max)
+                ts_back_date = datetime.datetime.combine(back_date, datetime.time.min)
+                result = self.connection.taco_tuesday.find_one(
+                    {"guild_id": str(guildId), "timestamp": {
+                        "$gte": utils.to_timestamp(ts_back_date),
+                        "$lte": utils.to_timestamp(ts_now_date)
+                    }}
+                )
+                if result:
+                    self.connection.taco_tuesday.update_one({ "guild_id": str(guildId), "timestamp": result['timestamp'] }, { "$set": { "user_id": str(userId) } }, upsert=True)
+                else:
+                    raise Exception(f"No Taco Tuesday found for guild {guildId} for {datetime.datetime.utcnow().date()}")
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            raise ex
+        finally:
+            if self.connection:
+                self.close()
+
+    def taco_tuesday_get_by_message(self, guildId: int, channelId: int, messageId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            result = self.connection.taco_tuesday.find_one(
+                {"guild_id": str(guildId), "channel_id": str(channelId), "message_id": str(messageId)}
+            )
+            return result
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            raise ex
+        finally:
+            if self.connection:
+                self.close()
+
+    def taco_tuesday_update_message(self, guildId: int, channelId: int, messageId: int, newChannelId: int, newMessageId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            result = self.connection.taco_tuesday.update_one(
+                {"guild_id": str(guildId), "channel_id": str(channelId), "message_id": str(messageId)},
+                {"$set": {"channel_id": str(newChannelId), "message_id": str(newMessageId)}}
+            )
+            return result
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            raise ex
+        finally:
+            if self.connection:
+                self.close()
+
     def track_first_message(self, guildId: int, userId: int, channelId: int, messageId: int):
         try:
 

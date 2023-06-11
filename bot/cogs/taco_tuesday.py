@@ -47,6 +47,37 @@ class TacoTuesday(commands.Cog):
     @tuesday.command()
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
+    async def set(self, ctx, member: discord.Member):
+        """Sets the user associated with the taco tuesday"""
+        guild_id = ctx.guild.id
+        try:
+            await ctx.message.delete()
+
+            cog_settings = self.get_cog_settings(ctx.guild.id)
+            self.db.taco_tuesday_set_user(ctx.guild.id, member.id)
+
+            # get focus role id
+            focus_role_id = cog_settings.get("focus_role", None)
+            if not focus_role_id:
+                self.log.debug(guild_id, "taco_tuesday.set", f"Focus role not set")
+                return
+
+            self.log.debug(guild_id, "taco_tuesday.set", f"Adding user {member.id} to focus role {focus_role_id}")
+            # add user to focus_role
+            await self.discord_helper.add_remove_roles(
+                user=member,
+                check_list=[],
+                add_list=[focus_role_id],
+                remove_list=[],
+                allow_everyone=True
+            )
+
+        except Exception as e:
+            self.log.error(ctx.guild.id, "taco_tuesday.set", str(e), traceback.format_exc())
+            await self.discord_helper.notify_of_error(ctx)
+    @tuesday.command()
+    @commands.has_permissions(administrator=True)
+    @commands.guild_only()
     async def give(self, ctx, member: discord.Member):
         try:
             await ctx.message.delete()
@@ -93,17 +124,11 @@ class TacoTuesday(commands.Cog):
         message = await channel.fetch_message(payload.message_id)
 
         cog_settings = self.get_cog_settings(guild_id)
-        if not cog_settings:
-            # raise exception if there are no cog settings
-            self.log.error(
-                guild_id, "tacotuesday.on_raw_reaction_add", f"No tacotuesday cog settings found for guild {guild_id}"
-            )
-            return
 
         # check if message has the import emoji
         was_imported = False
         for m in message.reactions:
-            if str(m.emoji) in cog_settings.get("import_emoji", []):
+            if str(m.emoji) in cog_settings.get("import_emoji", ["🇮"]):
                 was_imported = True
                 break
         if not was_imported:
@@ -138,28 +163,24 @@ class TacoTuesday(commands.Cog):
             ###
 
             cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings:
-                # raise exception if there are no cog settings
-                self.log.error(
-                    guild_id,
-                    "tacotuesday.on_raw_reaction_add",
-                    f"No cog settings found for guild {guild_id}",
-                )
-                return
 
-            if not cog_settings.get("enable", False):
+            if not cog_settings.get("enabled", False):
+                self.log.debug(guild_id, _method, f"Taco Tuesday not enabled")
                 return
 
             # check if reaction is to archive the message
-            reaction_archive_emojis = cog_settings.get("tacotuesday_reaction_archive_emoji", ["🔒"])
-            reaction_import_emojis = cog_settings.get("tacotuesday_reaction_import_emoji", ["🇮"])
+            reaction_archive_emojis = cog_settings.get("archive_emoji", ["🔒"])
+            reaction_import_emojis = cog_settings.get("import_emoji", ["🇮"])
             check_list = reaction_archive_emojis + reaction_import_emojis
             if str(payload.emoji.name) not in check_list:
+                self.log.debug(guild_id, _method, f"Reaction {payload.emoji.name} not in check list")
                 return
 
             if str(payload.emoji.name) in reaction_archive_emojis:
-                if cog_settings.get("tacotuesday_archive_enabled", False):
+                if cog_settings.get("archive_enabled", False):
+                    self.log.debug(guild_id, _method, f"Archive is enabled. Archiving message")
                     await self._on_raw_reaction_add_archive(payload)
+                    return
 
             today = datetime.datetime.now()
             if today.weekday() != 1:  # 1 = Tuesday
@@ -177,7 +198,6 @@ class TacoTuesday(commands.Cog):
         _method = inspect.stack()[0][3]
         guild_id = message.guild.id
         try:
-
             archive_channel_id = cog_settings.get("archive_channel_id", None)
             if not archive_channel_id:
                 self.log.error(
@@ -185,7 +205,7 @@ class TacoTuesday(commands.Cog):
                 )
                 return
 
-            archive_channel = self.bot.get_channel(archive_channel_id)
+            archive_channel = await self.discord_helper.get_or_fetch_channel(int(archive_channel_id))
             if not archive_channel:
                 self.log.error(
                     guild_id,
@@ -194,9 +214,42 @@ class TacoTuesday(commands.Cog):
                 )
                 return
 
-            await self.discord_helper.move_message(
+            # get taco tuesday info
+            taco_tuesday_info = self.db.taco_tuesday_get_by_message(guildId=guild_id, channelId=message.channel.id, messageId=message.id)
+            if taco_tuesday_info:
+                # get the user id
+                user_id = taco_tuesday_info.get("user_id", None)
+                if user_id:
+                    # get the member
+                    user = await self.discord_helper.get_or_fetch_member(guildId=guild_id, userId=int(user_id))
+                    if user:
+                        cog_settings = self.get_cog_settings(guild_id)
+                        focus_role_id = cog_settings.get("focus_role", None)
+                        if focus_role_id:
+                            remove_role_list = [focus_role_id]
+                            # remove the user from the taco tuesday role
+                            await self.discord_helper.add_remove_roles(
+                                user=user,
+                                check_list=[],
+                                remove_list=remove_role_list,
+                                add_list=[],
+                                allow_everyone=True
+                            )
+
+            moved_message = await self.discord_helper.move_message(
                 message=message, targetChannel=archive_channel, who=self.bot.user, reason="TACO Tuesday archive"
             )
+
+            # Should Update the entry to the new channel and message id
+            self.db.taco_tuesday_update_message(
+                guildId=guild_id,
+                channelId=message.channel.id,
+                messageId=message.id,
+                newChannelId=moved_message.channel.id,
+                newMessageId=moved_message.id
+            )
+
+            await message.delete()
 
             await self.discord_helper.sendEmbed(
                 message.channel,

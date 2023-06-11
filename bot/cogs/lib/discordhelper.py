@@ -91,7 +91,7 @@ class DiscordHelper:
         fields=None,
         remove_fields=None,
         color: int = None,
-    ):
+    ) -> typing.Union[discord.Message, None]:
         if not message:
             self.log.debug(0, "discordhelper.move_message", "No message to move")
             return
@@ -171,7 +171,11 @@ class DiscordHelper:
             files = [await a.to_file() for a in message.attachments]
 
             if len(files) > 0 or target_embed is not None:
-                await targetChannel.send(files=files, embed=target_embed)
+                # await message.delete()
+                return await targetChannel.send(files=files, embed=target_embed)
+            else:
+                return None
+
         except Exception as ex:
             self.log.error(0, "discordhelper.move_message", str(ex), traceback.format_exc())
 
@@ -941,3 +945,43 @@ class DiscordHelper:
             return False
         # does the user have admin permissions?
         return member.guild_permissions.administrator
+
+    async def add_remove_roles(self, user: discord.Member, check_list: list, add_list: list, remove_list: list, allow_everyone: bool = False) -> None:
+        if user is None or user.guild is None:
+            self.log.warn(0, "discord_helper.add_remove_roles", "User or guild is None")
+            return
+
+        guild_id = user.guild.id
+        if user.roles:
+            # check if the user has any of the watch roles
+            user_is_in_watch_role =  any([ str(r.id) for r in user.roles if str(r.id) in check_list ])
+
+            if user_is_in_watch_role or allow_everyone:
+                # remove the roles from the user
+                if remove_list:
+                    role_list = []
+                    for role_id in remove_list:
+                        role = user.guild.get_role(int(role_id))
+                        if role and role in user.roles:
+                            role_list.append(role)
+                            self.log.info(guild_id, "discord_helper.add_remove_roles", f"Removed role {role.name} from user {user.display_name}")
+
+                    if role_list and len(role_list) > 0:
+                        try:
+                            await user.remove_roles(*role_list)
+                        except Exception as e:
+                            self.log.warn(guild_id, "discord_helper.add_remove_roles", str(e), traceback.format_exc())
+                # add the existing roles back to the user
+                if add_list:
+                    role_list = []
+                    for role_id in add_list:
+                        role = user.guild.get_role(int(role_id))
+                        if role and role not in user.roles:
+                            role_list.append(role)
+                            self.log.info(guild_id, "discord_helper.add_remove_roles", f"Added role {role.name} to user {user.display_name}")
+
+                    if role_list and len(role_list) > 0:
+                        try:
+                            await user.add_roles(*role_list)
+                        except Exception as e:
+                            self.log.warn(guild_id, "discord_helper.add_remove_roles", str(e), traceback.format_exc())

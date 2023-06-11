@@ -200,7 +200,7 @@ class LiveNow(commands.Cog):
             # we add the "remove_roles" and remove the "add_roles"
             add_roles = wg.get("remove_roles", [])
             remove_roles = wg.get("add_roles", [])
-            await self.add_remove_roles(user=user, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
+            await self.discord_helper.add_remove_roles(user=user, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
 
     async def add_live_roles(self, user: discord.Member, cog_settings: dict):
         # get the watch groups
@@ -210,7 +210,7 @@ class LiveNow(commands.Cog):
             add_roles = wg.get("add_roles", [])
             remove_roles = wg.get("remove_roles", [])
             # add / remove roles defined in the watch groups
-            await self.add_remove_roles(user=user, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
+            await self.discord_helper.add_remove_roles(user=user, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
 
     def handle_other_live(self, user: discord.Member, activities: typing.List[discord.Streaming]) -> typing.Union[str, None]:
         guild_id = user.guild.id
@@ -309,58 +309,7 @@ class LiveNow(commands.Cog):
             # this should update the existing entry with the channel and message id
             self.db.track_live(guild_id, user.id, activity.platform, logging_channel.id, message.id, url=activity.url)
 
-    async def add_remove_roles(self, user: discord.Member, check_list: list, add_list: list, remove_list: list) -> None:
-        if user is None or user.guild is None:
-            self.log.warn(0, "live_now.add_remove_roles", "User or guild is None")
-            return
 
-        guild_id = user.guild.id
-        if user.roles:
-            # check if the user has any of the watch roles
-            user_is_in_watch_role =  any([ str(r.id) for r in user.roles if str(r.id) in check_list ])
-            # for watch_role_id in [ str(r.id) for r in user.roles if str(r.id) in check_list ]:
-
-            if user_is_in_watch_role:
-                # remove the roles from the user
-                if remove_list:
-                    role_list = []
-                    for role_id in remove_list:
-                        role = user.guild.get_role(int(role_id))
-                        if role and role in user.roles:
-                            role_list.append(role)
-                            self.log.info(guild_id, "live_now.add_remove_roles", f"Removed role {role.name} from user {user.display_name}")
-                        # else:
-                        #     self.log.error(guild_id, "live_now.add_remove_roles", f"Role {role_id} not found")
-
-                    if role_list and len(role_list) > 0:
-                        try:
-                            await user.remove_roles(*role_list)
-                        except Exception as e:
-                            self.log.warn(guild_id, "live_now.add_remove_roles", str(e), traceback.format_exc())
-                # else:
-                #     self.log.info(guild_id, "live_now.add_remove_roles", f"No roles to remove from user {user.display_name}")
-
-                # add the existing roles back to the user
-                if add_list:
-                    role_list = []
-                    for role_id in add_list:
-                        role = user.guild.get_role(int(role_id))
-                        if role and role not in user.roles:
-                            role_list.append(role)
-                            self.log.info(guild_id, "live_now.add_remove_roles", f"Added role {role.name} to user {user.display_name}")
-                        # else:
-                        #     self.log.error(guild_id, "live_now.add_remove_roles", f"Role {role_id} not found")
-
-                    if role_list and len(role_list) > 0:
-                        try:
-                            await user.add_roles(*role_list)
-                        except Exception as e:
-                            self.log.warn(guild_id, "live_now.add_remove_roles", str(e), traceback.format_exc())
-
-                # else:
-                #     self.log.info(guild_id, "live_now.add_remove_roles", f"No roles to add to user {user.display_name}")
-            # else:
-            #     self.log.debug(guild_id, "live_now.add_remove_roles", f"User {user.display_name} is not in any of the watch roles")
 
     async def clean_up_live(self, guild_id: int, user_id: int) -> None:
         if guild_id is None or user_id is None:

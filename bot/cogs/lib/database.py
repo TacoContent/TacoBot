@@ -129,6 +129,15 @@ class Database():
     def taco_tuesday_user_tracked(self, guildId: int, userId: int, messageId: int):
         pass
 
+    def taco_tuesday_set_user(self, guildId: int, userId: int):
+        pass
+
+    def taco_tuesday_get_by_message(self, guildId: int, channelId: int, messageId: int):
+        pass
+
+    def taco_tuesday_update_message(self, guildId: int, channelId: int, messageId: int, newChannelId: int, newMessageId: int):
+        pass
+
     def track_first_message(self, guildId: int, userId: int, channelId: int, messageId: int):
         pass
 
