@@ -31,11 +31,7 @@ class Restricted(commands.Cog):
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.SETTINGS_SECTION = "restricted"
-
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -47,6 +43,7 @@ class Restricted(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         _method = inspect.stack()[0][3]
+        guild_id = 0
         try:
             # if in a DM, ignore
             if message.guild is None:
@@ -68,40 +65,26 @@ class Restricted(commands.Cog):
             # }
 
             # get the suggestion settings from settings
-            restricted_settings = self.settings.get_settings(self.db, message.guild.id, self.SETTINGS_SECTION)
-            if not restricted_settings:
-                # raise exception if there are no suggestion settings
-                self.log.debug(guild_id, "restricted.on_message", f"No suggestion settings found for guild {guild_id}")
-                await self.discord_helper.notify_bot_not_initialized(message, "restricted")
-                return
+            cog_settings = self.get_cog_settings(guild_id)
 
             # get the suggestion channel ids from settings
-            restricted_channel = [c for c in restricted_settings["channels"] if str(c['id']) == str(message.channel.id)]
-            if restricted_channel:
-                restricted_channel = restricted_channel[0]
+            restricted_channels: typing.List[dict] = [c for c in cog_settings.get("channels", []) if str(c['id']) == str(message.channel.id)]
+            restricted_channel: typing.Union[dict,None] = None
+            if restricted_channels:
+                restricted_channel = restricted_channels[0]
             # if channel.id is not in restricted_channel_ids[] return
             if not restricted_channel:
                 return
 
-            silent = True
-            if 'silent' in restricted_channel:
-                silent = restricted_channel['silent']
-
+            silent = restricted_channel.get('silent', True)
             # get allowed commands from settings
-            if "allowed" in restricted_channel:
-                allowed = restricted_channel["allowed"]
-            else:
-                allowed = []
+            allowed = restricted_channel.get("allowed", [])
             # get denied commands from settings
-            if "denied" in restricted_channel:
-                denied = restricted_channel["denied"]
-            else:
-                denied = []
+            denied = restricted_channel.get("denied", [])
             # get the deny message from settings
+            deny_message = self.settings.get_string(guild_id, "restricted_deny_message")
             if "deny_message" in restricted_channel:
-                deny_message = restricted_channel["deny_message"]
-            else:
-                deny_message = self.settings.get_string(guild_id, "restricted_deny_message")
+                deny_message = restricted_channel.get("deny_message")
 
             # if message matches the allowed[] regular expressions then continue
             if not any(re.search(r, message.content) for r in allowed) or any(re.search(r, message.content) for r in denied):
@@ -117,5 +100,19 @@ class Restricted(commands.Cog):
             self.log.info(guild_id, "restricted.on_message", f"Message not found: {nf}")
         except Exception as e:
             self.log.error(guild_id, "restricted.on_message", f"{e}", traceback.format_exc())
+
+
+    def get_cog_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        if not cog_settings:
+            raise Exception(f"No cog settings found for guild {guildId}")
+        return cog_settings
+
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not cog_settings:
+            raise Exception(f"No tacos settings found for guild {guildId}")
+        return cog_settings
+
 async def setup(bot):
     await bot.add_cog(Restricted(bot))
