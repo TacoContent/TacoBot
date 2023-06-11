@@ -108,7 +108,7 @@ class GameKeys(commands.Cog):
                 self.log.warn(guild_id, "game_keys._create_offer", f"No log channel found for guild {guild_id}")
                 return
 
-            game_data = self.db.get_random_game_key_data()
+            game_data = self.db.get_random_game_key_data(guild_id=guild_id)
             if not game_data:
                 await ctx.send(self.settings.get_string(guild_id, "game_key_no_keys_found_message"), delete_after=10)
                 return
@@ -386,7 +386,7 @@ class GameKeys(commands.Cog):
                 reason="Claim game key",
                 type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.GAME_REDEEM)
             )
-            
+
             # log that the offer was claimed
             if log_channel:
                 await log_channel.send(

@@ -153,5 +153,17 @@ class Database():
     def track_trivia_question(self, triviaQuestion: models.TriviaQuestion) -> None:
         pass
 
-    def UPDATE_SCHEMA(self):
+    def get_random_game_key_data(self, guild_id: int):
+        pass
+    def get_game_key_data(self, game_key_id: str):
+        pass
+    def claim_game_key_offer(self, game_key_id: str, user_id: int):
+        pass
+    def close_game_key_offer(self, guild_id: int, game_key_id: str):
+        pass
+    def close_game_key_offer_by_message(self, guild_id: int, message_id: int):
+        pass
+    def open_game_key_offer(self, game_key_id: str, guild_id: int, message_id:int, channel_id: int):
+        pass
+    def find_open_game_key_offer(self, guild_id: int, channel_id: int):
         pass

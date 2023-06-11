@@ -8,9 +8,16 @@ import sys
 import os
 import glob
 import typing
+
 from .lib import settings
+from .lib import discordhelper
 from .lib import logger
 from .lib import loglevel
+from .lib import utils
+from .lib import settings
+from .lib import mongo
+from .lib import dbprovider
+from .lib import tacotypes
 
 class Events(commands.Cog):
     def __init__(self, bot):
@@ -18,6 +25,7 @@ class Events(commands.Cog):
         self.settings = settings.Settings()
         self.SETTINGS_SECTION = "tacobot"
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        self.db = mongo.MongoDatabase()
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
 
@@ -30,6 +38,9 @@ class Events(commands.Cog):
         # TODO: load this from the database
         self.log.debug(0, "events.on_ready", f"Setting Bot Presence '🌮 Taco; Not Just For Tuesday's 🌮'")
         await self.bot.change_presence(activity=discord.Game(name="🌮 Taco; Not Just For Tuesday's 🌮"))
+
+        self.db.migrate_game_keys()
+        self.db.migrate_minecraft_whitelist()
 
     @commands.Cog.listener()
     async def on_disconnect(self):

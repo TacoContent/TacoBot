@@ -26,58 +26,6 @@ class MongoDatabase(database.Database):
         self.connection = None
         pass
 
-    def RESET_MIGRATION(self):
-        pass
-        # try:
-        #     if not self.connection:
-        #         self.open()
-        #     print("RESET MIGRATION STATUS")
-            # self.connection.create_channels.delete_many({})
-            # self.connection.category_settings.delete_many({})
-            # self.connection.user_settings.delete_many({})
-            # self.connection.text_channels.delete_many({})
-            # self.connection.voice_channels.delete_many({})
-            # self.connection.migration.delete_many({})
-        #     print("ALL DATA PURGED")
-        # except Exception as ex:
-        #     print(ex)
-        #     traceback.print_exc()
-        # finally:
-        #     if self.connection:
-        #         self.close()
-
-    def UPDATE_SCHEMA(self, newDBVersion: int):
-        pass
-        # print(f"[mongo.UPDATE_SCHEMA] INITIALIZE MONGO")
-        # try:
-        #     # check if migrated
-        #     # if not, open sqlitedb and migate the data
-        #     if not self.connection:
-        #         self.open()
-
-        #     migrator = migration.MongoMigration(newDBVersion)
-        #     migrator.run()
-
-        #     # setup missing guild category settings...
-        #     guild_channels = self.connection.create_channels.find({}, { "guildID": 1, "voiceChannelID": 1, "voiceCategoryID": 1 })
-        #     for g in guild_channels:
-        #         gcs = self.get_guild_category_settings(guildId=g['guildID'], categoryId=g['voiceCategoryID'])
-        #         if not gcs:
-        #             print(f"[UPDATE_SCHEMA] Inserting Default Category Settings for guild: {g['guildID']} category: {g['voiceCategoryID']}")
-        #             guild_setting = self.get_guild_settings(g['guildID'])
-        #             if guild_setting:
-        #                 self.set_guild_category_settings(guildId=g['guildID'], categoryId=g['voiceCategoryID'], channelLimit=0, channelLocked=False, bitrate=64, defaultRole=guild_setting.default_role)
-        #             else:
-        #                 self.set_guild_category_settings(guildId=g['guildID'], categoryId=g['voiceCategoryID'], channelLimit=0, channelLocked=False, bitrate=64, defaultRole="@everyone")
-
-        # except Exception as ex:
-        #     print(ex)
-        #     traceback.print_exc()
-        # finally:
-        #     if self.connection:
-        #         self.close()
-
-
     def open(self):
         if not self.settings.db_url:
             raise ValueError("MONGODB_URL is not set")
@@ -1114,11 +1062,11 @@ class MongoDatabase(database.Database):
         finally:
             self.close()
 
-    def get_minecraft_user(self, userId: int):
+    def get_minecraft_user(self, guildId: int, userId: int):
         try:
             if self.connection is None:
                 self.open()
-            result = self.connection.minecraft_users.find_one({ "user_id": str(userId) })
+            result = self.connection.minecraft_users.find_one({ "user_id": str(userId), "guild_id": str(guildId) })
             if result:
                 return result
             return None
@@ -1129,17 +1077,18 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def whitelist_minecraft_user(self, userId: int, username: str, uuid: str, whitelist: bool = True):
+    def whitelist_minecraft_user(self, guildId: int, userId: int, username: str, uuid: str, whitelist: bool = True):
         try:
             if self.connection is None:
                 self.open()
             payload = {
                 "user_id": str(userId),
+                "guild_id": str(guildId),
                 "username": username,
                 "uuid": uuid,
                 "whitelist": whitelist
             }
-            self.connection.minecraft_users.update_one( { "user_id": str(userId) }, { "$set": payload }, upsert=True )
+            self.connection.minecraft_users.update_one( { "user_id": str(userId), "guild_id": str(guildId) }, { "$set": payload }, upsert=True )
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -1258,12 +1207,12 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-    def get_random_game_key_data(self):
+    def get_random_game_key_data(self, guild_id: int):
         try:
             if self.connection is None:
                 self.open()
             result = self.connection.game_keys.aggregate([
-                { "$match": { "redeemed_by": None } },
+                { "$match": { "redeemed_by": None, "guild_id": str(guild_id) } },
                 { "$sample": { "size": 1 } }
             ])
             records = list(result)
@@ -1917,6 +1866,33 @@ class MongoDatabase(database.Database):
             }
 
             self.connection.trivia_questions.insert_one(payload)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+
+    def migrate_game_keys(self):
+        guild_id = "935294040386183228"
+        try:
+            if self.connection is None:
+                self.open()
+            self.connection.game_keys.update_many({ "guild_id": { "$exists": False } }, { "$set": { "guild_id": guild_id } })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def migrate_minecraft_whitelist(self):
+        guild_id = "935294040386183228"
+        try:
+            if self.connection is None:
+                self.open()
+            self.connection.minecraft_users.update_many({ "guild_id": { "$exists": False } }, { "$set": { "guild_id": guild_id } })
         except Exception as ex:
             print(ex)
             traceback.print_exc()

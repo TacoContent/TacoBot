@@ -36,10 +36,7 @@ class Birthday(commands.Cog):
         self.settings = settings.Settings()
         self.SETTINGS_SECTION = "birthday"
         self.discord_helper = discordhelper.DiscordHelper(bot)
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG

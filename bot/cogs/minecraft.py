@@ -48,14 +48,21 @@ class Minecraft(commands.Cog):
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         try:
+            guild_id = member.guild.id
+
             if not self.is_user_whitelisted(member.id):
                 return
-            mc_user = self.db.get_minecraft_user(member.id)
+            mc_user = self.db.get_minecraft_user(guild_id, member.id)
             if not mc_user:
                 return
 
             self.log.debug(member.guild.id, "minecraft.on_member_remove", f"Member {member.name} has left the server")
-            self.db.whitelist_minecraft_user(member.id, mc_user['username'], mc_user['uuid'], False)
+            self.db.whitelist_minecraft_user(
+                guildId=guild_id,
+                userId=member.id,
+                username=mc_user['username'],
+                uuid=mc_user['uuid'],
+                whitelist=False)
 
         except Exception as e:
             self.log.error(member.guild.id, "minecraft.on_member_remove", str(e), traceback.format_exc())
@@ -404,7 +411,12 @@ class Minecraft(commands.Cog):
                     # if correct, add to whitelist
                     # check if user is in the whitelist
                     # minecraft_user = self.db.get_minecraft_user(ctx.author.id)
-                    self.db.whitelist_minecraft_user(ctx.author.id, mc_username, mc_uuid, True)
+                    self.db.whitelist_minecraft_user(
+                        guildId=guild_id,
+                        userId=ctx.author.id,
+                        username=mc_username,
+                        uuid=mc_uuid,
+                        whitelist=True)
                     await self.discord_helper.sendEmbed(
                         _ctx.channel,
                         self.settings.get_string(guild_id, "minecraft_whitelist_title"),
@@ -426,7 +438,12 @@ class Minecraft(commands.Cog):
             # if correct, add to whitelist
             # check if user is in the whitelist
             # minecraft_user = self.db.get_minecraft_user(ctx.author.id)
-            self.db.whitelist_minecraft_user(ctx.author.id, mc_username, mc_uuid, True)
+            self.db.whitelist_minecraft_user(
+                guildId=guild_id,
+                userId=ctx.author.id,
+                username=mc_username,
+                uuid=mc_uuid,
+                whitelist=True)
             await self.discord_helper.sendEmbed(
                 _ctx.channel,
                 title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
