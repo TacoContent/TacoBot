@@ -47,30 +47,67 @@ class TacoTuesday(commands.Cog):
     @tuesday.command()
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
+    async def new(self, ctx, member: discord.Member, tweet: str):
+        guild_id = ctx.guild.id
+        try:
+            await ctx.message.delete()
+
+            cog_settings = self.get_cog_settings(guild_id)
+            tacos_settings = self.get_tacos_settings(guild_id)
+
+            message_template = cog_settings.get("message_template", None)
+            if not message_template:
+                self.log.debug(guild_id, "taco_tuesday.new", f"Message template not set")
+                return
+
+            tag_role_id = cog_settings.get("tag_role", None)
+            tag_role_mention = ""
+            if tag_role_id:
+                tag_role_mention = f"<@&{tag_role_id}>"
+
+            output_channel_id = cog_settings.get("output_channel_id", None)
+            if not output_channel_id:
+                self.log.debug(guild_id, "taco_tuesday.new", f"Output channel not set")
+                return
+
+            output_channel = await self.discord_helper.get_or_fetch_channel(int(output_channel_id))
+            if not output_channel:
+                self.log.debug(guild_id, "taco_tuesday.new", f"Output channel not found")
+                return
+
+            message = utils.str_replace(
+                message_template,
+                tweet=tweet,
+                role=tag_role_mention,
+                tacos=tacos_settings.get(tacotypes.TacoTypes.get_string_from_taco_type(tacotypes.TacoTypes.TACO_TUESDAY), 250),
+            )
+
+
+            result_message = await output_channel.send(content=message)
+            # add import_emoji to message so we can archive it later
+            import_emoji = cog_settings.get("import_emoji", ["🇮"])
+            if len(import_emoji) > 0:
+                await result_message.add_reaction(import_emoji[0])
+
+            self._import_taco_tuesday(result_message)
+
+            await self._set_taco_tuesday_user(ctx=ctx, member=member)
+
+        except Exception as e:
+            self.log.error(guild_id, "taco_tuesday.new", str(e), traceback.format_exc())
+            await self.discord_helper.notify_of_error(ctx)
+
+
+    @tuesday.command()
+    @commands.has_permissions(administrator=True)
+    @commands.guild_only()
     async def set(self, ctx, member: discord.Member):
         """Sets the user associated with the taco tuesday"""
         guild_id = ctx.guild.id
         try:
             await ctx.message.delete()
 
-            cog_settings = self.get_cog_settings(ctx.guild.id)
-            self.db.taco_tuesday_set_user(ctx.guild.id, member.id)
-
-            # get focus role id
-            focus_role_id = cog_settings.get("focus_role", None)
-            if not focus_role_id:
-                self.log.debug(guild_id, "taco_tuesday.set", f"Focus role not set")
-                return
-
-            self.log.debug(guild_id, "taco_tuesday.set", f"Adding user {member.id} to focus role {focus_role_id}")
-            # add user to focus_role
-            await self.discord_helper.add_remove_roles(
-                user=member,
-                check_list=[],
-                add_list=[focus_role_id],
-                remove_list=[],
-                allow_everyone=True
-            )
+            await self._set_taco_tuesday_user(ctx=ctx, member=member)
 
         except Exception as e:
             self.log.error(ctx.guild.id, "taco_tuesday.set", str(e), traceback.format_exc())
@@ -236,8 +273,30 @@ class TacoTuesday(commands.Cog):
                                 allow_everyone=True
                             )
 
+            # build field info:
+            fields = [
+                { "name": "Reactions", "value": f"-----", "inline": False }
+            ]
+            for r in message.reactions:
+                if str(r.emoji) in cog_settings.get("import_emoji", ["🇮"]):
+                    continue
+                if str(r.emoji) in cog_settings.get("archive_emoji", ["🔒"]):
+                    continue
+                fields.append(
+                    {
+                        "name": str(r.emoji),
+                        "value": f"{r.count}",
+                        "inline": True,
+                    }
+                )
+
+
             moved_message = await self.discord_helper.move_message(
-                message=message, targetChannel=archive_channel, who=self.bot.user, reason="TACO Tuesday archive"
+                message=message,
+                targetChannel=archive_channel,
+                who=self.bot.user,
+                fields=fields,
+                reason="TACO Tuesday archive"
             )
 
             # Should Update the entry to the new channel and message id
@@ -263,6 +322,29 @@ class TacoTuesday(commands.Cog):
             self.log.error(guild_id, _method, str(ex), traceback.format_exc())
             # await self.discord_helper.notify_of_error(ctx)
 
+    async def _set_taco_tuesday_user(self, ctx: commands.Context, member: discord.Member):
+        if ctx.guild is None:
+            raise Exception("This command can only be used in a guild")
+
+        guild_id = ctx.guild.id
+        cog_settings = self.get_cog_settings(guild_id)
+        self.db.taco_tuesday_set_user(guild_id, member.id)
+
+        # get focus role id
+        focus_role_id = cog_settings.get("focus_role", None)
+        if not focus_role_id:
+            self.log.debug(guild_id, "taco_tuesday.set", f"Focus role not set")
+            return
+
+        self.log.debug(guild_id, "taco_tuesday.set", f"Adding user {member.id} to focus role {focus_role_id}")
+        # add user to focus_role
+        await self.discord_helper.add_remove_roles(
+            user=member,
+            check_list=[],
+            add_list=[focus_role_id],
+            remove_list=[],
+            allow_everyone=True
+        )
     def _import_taco_tuesday(self, message: discord.Message):
         guild_id = message.guild.id
         channel_id = message.channel.id
@@ -366,19 +448,15 @@ class TacoTuesday(commands.Cog):
             if ctx:
                 await self.discord_helper.notify_of_error(ctx)
 
-    def get_cog_settings(self, guildId: int = 0):
+    def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
         if not cog_settings:
-            # raise exception if there are no leave_survey settings
-            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
-            raise Exception(f"No wdyctw settings found for guild {guildId}")
+            raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
-    def get_tacos_settings(self, guildId: int = 0):
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
         if not cog_settings:
-            # raise exception if there are no leave_survey settings
-            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
 

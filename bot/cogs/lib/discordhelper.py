@@ -107,6 +107,7 @@ class DiscordHelper:
         guild_id = message.guild.id
 
         try:
+            content = ""
             if len(message.embeds) == 0:
                 self.log.debug(0, "discordhelper.move_message", "Message has no embeds")
                 self.log.debug(0, "discordhelper.move_message", f"Message: {message}")
@@ -123,6 +124,7 @@ class DiscordHelper:
                     description = ""
                 else:
                     description = f"{embed.description}"
+                content = message.content
                 # lib3ration 500 bits: oh look a Darth Fajitas
                 embed_fields = embed.fields
                 if embed.image is not None and embed.image != "":
@@ -172,7 +174,7 @@ class DiscordHelper:
 
             if len(files) > 0 or target_embed is not None:
                 # await message.delete()
-                return await targetChannel.send(files=files, embed=target_embed)
+                return await targetChannel.send(content=content, files=files, embed=target_embed)
             else:
                 return None
 
