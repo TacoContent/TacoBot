@@ -111,7 +111,8 @@ class LiveNow(commands.Cog):
                     remove_roles = wg.get("add_roles", [])
                     await self.add_remove_roles(user=after, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
 
-                await self.clean_up_live(guild_id, after.id)
+                # this is cleaning up before the "END LIVE" so it isn't untracked
+                # await self.clean_up_live(guild_id, after.id)
                 return
 
             # any item left in after_streaming_activities is a new streaming activity
@@ -128,13 +129,6 @@ class LiveNow(commands.Cog):
                     await self.add_live_roles(after, cog_settings)
 
                     continue
-
-                # check if asa is in before_streaming_activities
-                # found_asa = len([b for b in before_streaming_activities if b.url == asa.url and b.platform == asa.platform]) > 0
-                # # this activity exists in both lists, so it is not a new live
-                # if found_asa :
-                #     # self.log.debug(guild_id, "live_now.on_member_update", f"{after.display_name} is already tracked for {asa.platform}")
-                #     continue
 
                 self.log.info(guild_id, "live_now.on_member_update", f"{after.display_name} started streaming on {asa.platform}")
 

@@ -34,10 +34,7 @@ class LeaveSurvey(commands.Cog):
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.SETTINGS_SECTION = "leave_survey"
 
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -129,5 +126,22 @@ class LeaveSurvey(commands.Cog):
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         await self.ask_survey(member)
+
+    def get_cog_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        if not cog_settings:
+            # raise exception if there are no leave_survey settings
+            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
+            raise Exception(f"No cog settings found for guild {guildId}")
+        return cog_settings
+
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not cog_settings:
+            # raise exception if there are no leave_survey settings
+            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
+            raise Exception(f"No tacos settings found for guild {guildId}")
+        return cog_settings
+
 async def setup(bot):
     await bot.add_cog(LeaveSurvey(bot))

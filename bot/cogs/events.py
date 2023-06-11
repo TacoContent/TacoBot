@@ -53,7 +53,18 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_error(self, event, *args, **kwargs):
         self.log.error(0, "events.on_error", f"{str(event)}", traceback.format_exc())
+        
+    def get_cog_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        if not cog_settings:
+            raise Exception(f"No cog settings found for guild {guildId}")
+        return cog_settings
 
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not cog_settings:
+            raise Exception(f"No tacos settings found for guild {guildId}")
+        return cog_settings
 
 async def setup(bot):
     await bot.add_cog(Events(bot))

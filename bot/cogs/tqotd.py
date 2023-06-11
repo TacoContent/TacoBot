@@ -158,13 +158,13 @@ class TacoQuestionOfTheDay(commands.Cog):
             if payload.event_type != 'REACTION_ADD':
                 return
 
-            taco_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
-            if not taco_settings:
+            cog_settings = self.get_cog_settings(guild_id)
+            if not cog_settings:
                 # raise exception if there are no tacos settings
-                self.log.error(guild_id, "tacos.on_raw_reaction_add", f"No tacos settings found for guild {guild_id}")
+                self.log.error(guild_id, "tqotd.on_raw_reaction_add", f"No cog settings found for guild {guild_id}")
                 return
 
-            reaction_emojis = taco_settings.get("tqotd_reaction_emoji", ["🇹"])
+            reaction_emojis = cog_settings.get("tqotd_reaction_emoji", ["🇹"])
             # check if the reaction is in the list of ones we are looking for
             if str(payload.emoji.name) not in reaction_emojis:
                 # self.log.debug(guild_id, "tqotd.on_raw_reaction_add", f"Reaction {payload.emoji.name} is not in the list of ones we are looking for {reaction_emojis}")

@@ -96,5 +96,23 @@ class AmazonLink(commands.Cog):
         except Exception as e:
             self.log.error(guild_id, "amazon_links.on_message", f"{e}", traceback.format_exc())
 
+
+    def get_cog_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        if not cog_settings:
+            # raise exception if there are no leave_survey settings
+            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
+            raise Exception(f"No cog settings found for guild {guildId}")
+        return cog_settings
+
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not cog_settings:
+            # raise exception if there are no leave_survey settings
+            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
+            raise Exception(f"No tacos settings found for guild {guildId}")
+        return cog_settings
+
+
 def setup(bot):
     bot.add_cog(AmazonLink(bot))

@@ -31,10 +31,8 @@ class GameKeys(commands.Cog):
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.SETTINGS_SECTION = "game_keys"
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
+
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -80,13 +78,11 @@ class GameKeys(commands.Cog):
             await self._close_offer(ctx)
 
             cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings:
-                self.log.warn(guild_id, "game_keys._create_offer", f"No game_keys settings found for guild {guild_id}")
-                return
             if not cog_settings.get("enabled", False):
                 self.log.debug(guild_id, "game_keys._create_offer", f"game_keys is disabled for guild {guild_id}")
                 return
 
+            # Should we pull this from `tacos` settings?
             cost = cog_settings.get("cost", 500)
             if cost <= 0:
                 self.log.warn(guild_id, "game_keys._create_offer", f"Cost is 0 or less for guild {guild_id}")
@@ -403,12 +399,16 @@ class GameKeys(commands.Cog):
         except Exception as e:
             raise e
 
-    def get_cog_settings(self, guildId: int = 0):
+    def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
         if not cog_settings:
-            # raise exception if there are no leave_survey settings
-            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
-            raise Exception(f"No game_key settings found for guild {guildId}")
+            raise Exception(f"No cog settings found for guild {guildId}")
+        return cog_settings
+
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not cog_settings:
+            raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
 
 

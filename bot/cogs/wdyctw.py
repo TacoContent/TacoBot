@@ -249,20 +249,24 @@ class WhatDoYouCallThisWednesday(commands.Cog):
                 return
 
 
-
-            taco_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
-            if not taco_settings:
+            cog_settings = self.get_cog_settings(guild_id)
+            if not cog_settings:
                 # raise exception if there are no tacos settings
-                self.log.error(guild_id, "tacos.on_raw_reaction_add", f"No tacos settings found for guild {guild_id}")
+                self.log.error(guild_id, "wdyctw.on_raw_reaction_add", f"No cog settings found for guild {guild_id}")
                 return
 
+            # check if the reaction is one of the ones we care about
+            reaction_emojis = cog_settings.get("wdyctw_reaction_emoji", ["🇼"])
+            reaction_import_emojis = cog_settings.get("wdyctw_reaction_import_emoji", ["🇮"])
 
-            reaction_emojis = taco_settings.get("wdyctw_reaction_emoji", ["🇼"])
+            check_list = reaction_emojis + reaction_import_emojis
+            if str(payload.emoji.name) not in check_list:
+                return
+
             if str(payload.emoji.name) in reaction_emojis:
                 await self._on_raw_reaction_add_give(payload)
                 return
 
-            reaction_import_emojis = taco_settings.get("wdyctw_reaction_import_emoji", ["🇮"])
             if str(payload.emoji.name) in reaction_import_emojis:
                 await self._on_raw_reaction_add_import(payload)
                 return

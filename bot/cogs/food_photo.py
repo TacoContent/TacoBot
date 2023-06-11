@@ -52,16 +52,12 @@ class FoodPhoto(commands.Cog):
             media_regex = r"(https:\/\/)((?:cdn|media)\.discordapp\.(?:net|com))\/attachments\/\d+\/\d+\/\w+\.(png|jpe?g|gif|webp)"
 
             # get the settings from settings
-            food_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
-            if not food_settings:
-                # raise exception if there are no settings
-                self.log.debug(guild_id, "food_photo.on_message", f"No settings found for guild {guild_id}")
-                # await self.discord_helper.notify_bot_not_initialized(message, "food_photo")
-                return
+            cog_settings = self.get_cog_settings(guild_id)
 
-            food_channel = [c for c in food_settings["channels"] if str(c["id"]) == str(message.channel.id)]
-            if food_channel:
-                food_channel = food_channel[0]
+            food_channel_list = [c for c in cog_settings.get("channels", []) if str(c["id"]) == str(message.channel.id)]
+            food_channel = None
+            if food_channel_list:
+                food_channel = food_channel_list[0]
 
             if not food_channel:
                 return
@@ -86,6 +82,7 @@ class FoodPhoto(commands.Cog):
             #                 self.log.debug(guild_id, "food_photo.on_message", f"Bot already reacted to message {m.id}")
             #                 return
 
+            # this SHOULD get the amount from the `tacos` settings, but it doesn't
             amount = int(food_channel["tacos"] if "tacos" in food_channel else 5)
             amount = amount if amount > 0 else 5
 
@@ -120,6 +117,16 @@ class FoodPhoto(commands.Cog):
             self.log.error(0, "food_photo.on_message", str(e), traceback.format_exc())
             traceback.print_exc()
 
+    def get_cog_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        if not cog_settings:
+            raise Exception(f"No cog settings found for guild {guildId}")
+        return cog_settings
 
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not cog_settings:
+            raise Exception(f"No tacos settings found for guild {guildId}")
+        return cog_settings
 async def setup(bot):
     await bot.add_cog(FoodPhoto(bot))

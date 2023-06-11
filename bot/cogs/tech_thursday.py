@@ -10,10 +10,6 @@ import typing
 import datetime
 
 from discord.ext.commands.cooldowns import BucketType
-
-# from discord_slash import ComponentContext
-# from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
-# from discord_slash.model import ButtonStyle
 from discord.ext.commands import has_permissions, CheckFailure
 
 from .lib import settings
@@ -279,18 +275,22 @@ class TechThursdays(commands.Cog):
             if payload.event_type != "REACTION_ADD":
                 return
 
-            taco_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
-            if not taco_settings:
+            cog_settings = self.get_cog_settings(guild_id)
+            if not cog_settings:
                 # raise exception if there are no tacos settings
-                self.log.error(guild_id, "tacos.on_raw_reaction_add", f"No tacos settings found for guild {guild_id}")
+                self.log.error(guild_id, "techthurs.on_raw_reaction_add", f"No cog settings found for guild {guild_id}")
                 return
 
-            reaction_emojis = taco_settings.get("techthurs_reaction_emoji", ["💻"])
+            reaction_emojis = cog_settings.get("techthurs_reaction_emoji", ["💻"])
+            reaction_import_emojis = cog_settings.get("techthurs_reaction_import_emoji", ["🇮"])
+            check_list = reaction_emojis + reaction_import_emojis
+            if str(payload.emoji.name) not in check_list:
+                return
+
             if str(payload.emoji.name) in reaction_emojis:
                 await self._on_raw_reaction_add_give(payload)
                 return
 
-            reaction_import_emojis = taco_settings.get("techthurs_reaction_import_emoji", ["🇮"])
 
             if str(payload.emoji.name) in reaction_import_emojis:
                 await self._on_raw_reaction_add_import(payload)

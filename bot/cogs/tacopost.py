@@ -32,10 +32,7 @@ class TacoPost(commands.Cog):
         # pull from database instead of app.manifest
         self.SETTINGS_SECTION = 'tacopost'
 
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG

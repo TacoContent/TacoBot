@@ -57,48 +57,6 @@ class TacoTuesday(commands.Cog):
             self.log.error(ctx.guild.id, "taco_tuesday.give", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
-    # async def give(self, ctx: Context, member: discord.Member):
-    #     guild_id = ctx.guild.id
-    #     try:
-
-    #         await ctx.message.delete()
-    #         taco_settings = self.get_tacos_settings(guildId = guild_id)
-    #         if not taco_settings:
-    #             # raise exception if there are no tacos settings
-    #             self.log.error(guild_id, "tacos.on_raw_reaction_add", f"No tacos settings found for guild {guild_id}")
-    #             return
-
-    #         amount = taco_settings.get("taco_tuesday_count", 250)
-    #         reason = taco_settings.get("taco_tuesday_reason", "Taco Tuesday Tacos")
-
-    #         tacos_word = self.settings.get_string(guild_id, "taco_singular")
-    #         if amount > 1:
-    #             tacos_word = self.settings.get_string(guild_id, "taco_plural")
-
-    #         reason_msg = self.settings.get_string(guild_id, "taco_reason_default")
-    #         if reason:
-    #             reason_msg = f"{reason}"
-
-    #         await self.discord_helper.sendEmbed(ctx.channel,
-    #             self.settings.get_string(guild_id, "taco_give_title"),
-    #             # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",
-    #             self.settings.get_string(guild_id, "taco_gift_success", user=self.bot.user, touser=member.mention, amount=amount, taco_word=tacos_word, reason=reason_msg),
-    #             footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT),
-    #             delete_after=self.SELF_DESTRUCT_TIMEOUT)
-
-    #         await self.discord_helper.taco_give_user(
-    #             guildId=guild_id,
-    #             fromUser=self.bot.user,
-    #             toUser=member,
-    #             reason=reason_msg,
-    #             give_type=tacotypes.TacoTypes.CUSTOM,
-    #             taco_amount=amount
-    #         )
-
-    #     except Exception as e:
-    #         self.log.error(ctx.guild.id, "taco_tuesday.give", str(e), traceback.format_exc())
-    #         await self.discord_helper.notify_of_error(ctx)
-
     async def _on_raw_reaction_add_import(self, payload):
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
@@ -185,7 +143,7 @@ class TacoTuesday(commands.Cog):
                 self.log.error(
                     guild_id,
                     "tacotuesday.on_raw_reaction_add",
-                    f"No tacotuesday cog settings found for guild {guild_id}",
+                    f"No cog settings found for guild {guild_id}",
                 )
                 return
 
@@ -194,6 +152,11 @@ class TacoTuesday(commands.Cog):
 
             # check if reaction is to archive the message
             reaction_archive_emojis = cog_settings.get("tacotuesday_reaction_archive_emoji", ["🔒"])
+            reaction_import_emojis = cog_settings.get("tacotuesday_reaction_import_emoji", ["🇮"])
+            check_list = reaction_archive_emojis + reaction_import_emojis
+            if str(payload.emoji.name) not in check_list:
+                return
+
             if str(payload.emoji.name) in reaction_archive_emojis:
                 if cog_settings.get("tacotuesday_archive_enabled", False):
                     await self._on_raw_reaction_add_archive(payload)
@@ -202,7 +165,6 @@ class TacoTuesday(commands.Cog):
             if today.weekday() != 1:  # 1 = Tuesday
                 return
 
-            reaction_import_emojis = cog_settings.get("tacotuesday_reaction_import_emoji", ["🇮"])
             if str(payload.emoji.name) in reaction_import_emojis:
                 await self._on_raw_reaction_add_import(payload)
                 return
