@@ -346,10 +346,10 @@ class LiveNow(commands.Cog):
                         profile_icon = self.get_user_profile_image(twitch_name)
 
                     # self.log.debug(guild_id, "live_now.log_live_post", f"Found large image {image_url}")
-
-            self.log.debug(guild_id, "live_now.log_live_post", f"Logging live post for {user.display_name} in {logging_channel.name}")
+            user_display_name = utils.get_user_display_name(user)
+            self.log.debug(guild_id, "live_now.log_live_post", f"Logging live post for {user_display_name} in {logging_channel.name}")
             message = await self.discord_helper.sendEmbed(logging_channel,
-                f"🔴 {user.display_name}", description,
+                f"🔴 {user_display_name}", description,
                 fields, thumbnail=profile_icon,
                 author=user, color=0x6a0dad)
 
