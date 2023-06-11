@@ -326,7 +326,7 @@ class LiveNow(commands.Cog):
 
                 fields.append({ "name": self.settings.get_string(guild_id, "platform"), "value": f"{emoji}{activity.platform}", "inline": True },)
 
-            profile_icon = profile_icon if profile_icon else user.avatar.url
+            profile_icon: typing.Union[str,None] = profile_icon if profile_icon else user.avatar.url if user.avatar else user.default_avatar.url
 
             if activity.assets:
                 image_url = activity.assets.get("large_image", None)
@@ -337,6 +337,7 @@ class LiveNow(commands.Cog):
 
                     # self.log.debug(guild_id, "live_now.log_live_post", f"Found large image {image_url}")
 
+            self.log.debug(guild_id, "live_now.log_live_post", f"Logging live post for {user.display_name} in {logging_channel.name}")
             message = await self.discord_helper.sendEmbed(logging_channel,
                 f"🔴 {user.display_name}", description,
                 fields, thumbnail=profile_icon,
@@ -431,7 +432,7 @@ class LiveNow(commands.Cog):
         platform_emoji = discord.utils.find(lambda m: m.name.lower() == platform.lower(), guild.emojis)
         return platform_emoji
 
-    def get_user_profile_image(self, twitch_user: str) -> typing.Union[str, None]:
+    def get_user_profile_image(self, twitch_user: typing.Union[str, None]) -> typing.Union[str, None]:
         if twitch_user:
             result = requests.get(f"http://decapi.me/twitch/avatar/{twitch_user}")
             if result.status_code == 200:
