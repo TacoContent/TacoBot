@@ -58,10 +58,17 @@ class GuildTrack(commands.Cog):
         except Exception as e:
             self.log.error(before.id, "guild_track.on_guild_update", f"{e}", traceback.format_exc())
 
-    def get_cog_settings(self, guildId: int = 0):
+
+    def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
         if not cog_settings:
-            raise Exception(f"No cog settings {self.SETTINGS_SECTION} found for guild {guildId}")
+            raise Exception(f"No cog settings found for guild {guildId}")
+        return cog_settings
+
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not cog_settings:
+            raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
 
 

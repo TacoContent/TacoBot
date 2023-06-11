@@ -29,10 +29,7 @@ class Help(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -94,7 +91,7 @@ class Help(commands.Cog):
 
 
     @commands.group(name="help", aliases=["h"], invoke_without_command=True)
-    async def help(self, ctx, command: str = None, subcommand: str = None):
+    async def help(self, ctx, command: str = "", subcommand: str = ""):
         _method = inspect.stack()[1][3]
         if ctx.guild:
             guild_id = ctx.guild.id
@@ -107,7 +104,7 @@ class Help(commands.Cog):
         else:
             await self.subcommand_help(ctx, command, subcommand)
 
-    async def subcommand_help(self, ctx, command: str = None, subcommand: str = None):
+    async def subcommand_help(self, ctx, command: str = "", subcommand: str = ""):
         _method = inspect.stack()[1][3]
         if ctx.guild:
             guild_id = ctx.guild.id
@@ -115,13 +112,13 @@ class Help(commands.Cog):
             guild_id = 0
 
         try:
-            command = command.lower() if command else None
-            subcommand = subcommand.lower() if subcommand else None
+            command = command.lower() if command else ""
+            subcommand = subcommand.lower() if subcommand else ""
 
-            command_list = self.settings.commands
+            command_list: dict = self.settings.get('commands', {})
             if command not in command_list.keys():
                 await self.discord_helper.sendEmbed(ctx.channel,
-                    self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
+                    self.settings.get_string(guild_id, "help_title", bot_name=self.settings.get("name", "TacoBot")),
                     self.settings.get_string(guild_id, "help_no_command", command=command),
                     color=0xFF0000, delete_after=20)
                 return

@@ -29,6 +29,7 @@ class NewAccountCheck(commands.Cog):
         self.SETTINGS_SECTION = "account_age_check"
         self.MINIMUM_ACCOUNT_AGE = 30 # days
         self.ACCOUNT_WHITE_LIST = []
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -78,6 +79,20 @@ class NewAccountCheck(commands.Cog):
             return
         except Exception as e:
             self.log.error(guild_id, _method, str(e), traceback.format_exc())
+
+    def get_cog_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        if not cog_settings:
+            raise Exception(f"No cog settings found for guild {guildId}")
+        return cog_settings
+
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not cog_settings:
+            raise Exception(f"No tacos settings found for guild {guildId}")
+        return cog_settings
+
+
 
 async def setup(bot):
     await bot.add_cog(NewAccountCheck(bot))

@@ -32,13 +32,8 @@ class LiveNow(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
-
         self.SETTINGS_SECTION = "live_now"
-
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -57,17 +52,12 @@ class LiveNow(commands.Cog):
 
         try:
             cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings:
-                self.log.warn(guild_id, "live_now.on_member_update", f"No live_now settings found for guild {guild_id}")
-                return
+
             if not cog_settings.get("enabled", False):
                 return
 
             # get the tacos settings
-            taco_settings = self.settings.get_settings(self.db, guild_id, "tacos")
-            if not taco_settings:
-                self.log.error(guild_id, "live_now.on_member_update", f"No tacos settings found for guild {guild_id}")
-                return
+            taco_settings = self.get_tacos_settings(guild_id)
 
             before_streaming_activities = []
             after_streaming_activities = []
@@ -295,14 +285,6 @@ class LiveNow(commands.Cog):
 
         return twitch_name
 
-    def get_cog_settings(self, guildId: int = 0):
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
-        if not cog_settings:
-            # raise exception if there are no leave_survey settings
-            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
-            raise Exception(f"No live_now settings found for guild {guildId}")
-        return cog_settings
-
     async def log_live_post(self, channel_id: int, activity: discord.Streaming, user: discord.Member, twitch_name: typing.Union[str, None]) -> None:
         guild_id = user.guild.id
         # get the logging channel
@@ -446,6 +428,20 @@ class LiveNow(commands.Cog):
                 self.log.debug(0, "live_now.get_user_profile_image", f"Failed to get profile image for {twitch_user}")
                 self.log.info(0, "live_now.get_user_profile_image", f"{result.text}")
         return None
+
+
+    def get_cog_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        if not cog_settings:
+            raise Exception(f"No cog settings found for guild {guildId}")
+        return cog_settings
+
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not cog_settings:
+            raise Exception(f"No tacos settings found for guild {guildId}")
+        return cog_settings
+
 
 async def setup(bot):
     await bot.add_cog(LiveNow(bot))

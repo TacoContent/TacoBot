@@ -38,10 +38,7 @@ class MoveMessage(commands.Cog):
 
         self.SETTINGS_SECTION = "move_message"
 
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -147,18 +144,18 @@ class MoveMessage(commands.Cog):
             self.log.error(ctx.guild.id, "move.move", str(e), traceback.format_exc())
             return
 
-    # @move.command()
-    # @commands.has_permissions(administrator=True)
-    # async def help(self, ctx):
-    #     guild_id = 0
-    #     if ctx.guild:
-    #         guild_id = ctx.guild.id
-    #         await ctx.message.delete()
-    #     await self.discord_helper.sendEmbed(ctx.channel,
-    #         self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
-    #         self.settings.get_string(guild_id, "help_module_message", bot_name=self.settings.name, command="move"),
-    #         footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
-    #         color=0xff0000, delete_after=30)
-    #     pass
+
+    def get_cog_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        if not cog_settings:
+            raise Exception(f"No cog settings found for guild {guildId}")
+        return cog_settings
+
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not cog_settings:
+            raise Exception(f"No tacos settings found for guild {guildId}")
+        return cog_settings
+
 async def setup(bot):
     await bot.add_cog(MoveMessage(bot))
