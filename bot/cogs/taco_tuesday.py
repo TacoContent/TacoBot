@@ -274,21 +274,21 @@ class TacoTuesday(commands.Cog):
                             )
 
             # build field info:
-            fields = [
-                { "name": "Reactions", "value": f"-----", "inline": False }
-            ]
-            for r in message.reactions:
-                if str(r.emoji) in cog_settings.get("import_emoji", ["🇮"]):
-                    continue
-                if str(r.emoji) in cog_settings.get("archive_emoji", ["🔒"]):
-                    continue
-                fields.append(
-                    {
-                        "name": str(r.emoji),
-                        "value": f"{r.count}",
-                        "inline": True,
-                    }
-                )
+            temp_reactions = [a for a in message.reactions if str(a.emoji) not in cog_settings.get("import_emoji", ["🇮"]) and str(a.emoji) not in cog_settings.get("archive_emoji", ["🔒"])]
+
+            fields = []
+            if len(temp_reactions) > 0:
+                fields = [
+                    { "name": "Reactions", "value": f"-----", "inline": False }
+                ]
+                for r in message.reactions:
+                    fields.append(
+                        {
+                            "name": str(r.emoji),
+                            "value": f"{r.count}",
+                            "inline": True,
+                        }
+                    )
 
 
             moved_message = await self.discord_helper.move_message(
