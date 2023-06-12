@@ -51,6 +51,7 @@ class TestCog(commands.Cog):
             channel,
             "Test",
             "This is a test message",
+            author=ctx.author,
             fields=[
                 {
                     "name": "Field 1",

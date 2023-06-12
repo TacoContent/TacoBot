@@ -209,7 +209,7 @@ class DiscordHelper:
 
         embed = discord.Embed(title=title, description=message, color=color, url=url)
         if author:
-            embed.set_author(name=f"{author.name}#{author.discriminator}", icon_url=author.avatar.url if author.avatar else None)
+            embed.set_author(name=f"{utils.get_user_display_name(author)}", icon_url=author.avatar.url if author.avatar else None)
         if embed.fields is not None:
             for f in embed.fields:
                 embed.add_field(name=f.name, value=f.value, inline=f.inline)
