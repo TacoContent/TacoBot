@@ -34,7 +34,7 @@ class Trivia(commands.Cog):
         self.discord_helper = discordhelper.DiscordHelper(bot)
 
         self.CATEGORY_POINTS_DEFAULTS = { "hard": 15, "medium": 10, "easy": 5 }
-        self.CHOICE_EMOTES_DEFAULTS = ['🇦','🇧','🇨','🇩']
+        self.CHOICE_EMOJIS_DEFAULTS = ['🇦','🇧','🇨','🇩']
         self.TRIVIA_TIMEOUT_DEFAULT = 60
 
         self.db = mongo.MongoDatabase()
@@ -276,7 +276,7 @@ class Trivia(commands.Cog):
             url = cog_settings.get('api_url', "").format("", "", "")
             if not url:
                 raise Exception("No trivia api url found")
-            
+
             response = requests.get(url)
             data = response.json()
             if data["response_code"] == 0:
