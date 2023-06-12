@@ -26,7 +26,11 @@ from .lib import tacotypes
 
 class AccountLink(commands.Cog):
     def __init__(self, bot):
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
+        self.SETTINGS_SECTION = "account_link"
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.db = mongo.MongoDatabase()
@@ -38,11 +42,12 @@ class AccountLink(commands.Cog):
         self.invites = {}
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "account_link.__init__", "Initialized")
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     @commands.command()
     @commands.guild_only()
-    async def link(self, ctx, *, code: str = None):
+    async def link(self, ctx, *, code: typing.Union[str,None] = None):
+        _method = inspect.stack()[0][3]
         guild_id = 0
         if ctx.guild:
             guild_id = ctx.guild.id
@@ -72,7 +77,7 @@ class AccountLink(commands.Cog):
                 except discord.Forbidden:
                     await ctx.channel.send(f"{ctx.author.mention}, {ve}", delete_after=10)
             except Exception as e:
-                self.log.error(guild_id, "account_link.link", str(e), traceback.format_exc())
+                self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
                 await self.discord_helper.notify_of_error(ctx)
         else:
             try:
@@ -97,9 +102,20 @@ class AccountLink(commands.Cog):
                 except discord.Forbidden:
                     await ctx.channel.send(f"{ctx.author.mention}, {ve}", delete_after=10)
             except Exception as e:
-                self.log.error(guild_id, "account_link.link", str(e), traceback.format_exc())
+                self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
                 await self.discord_helper.notify_of_error(ctx)
 
+    def get_cog_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        if not cog_settings:
+            raise Exception(f"No cog settings found for guild {guildId}")
+        return cog_settings
+
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not cog_settings:
+            raise Exception(f"No tacos settings found for guild {guildId}")
+        return cog_settings
 
 async def setup(bot):
     await bot.add_cog(AccountLink(bot))

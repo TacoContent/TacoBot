@@ -71,6 +71,16 @@ def get_random_name(noun_count = 1, adjective_count = 1):
                 traceback.print_exc()
                 return "New Voice Channel"
 
+def get_user_display_name(user: typing.Union[discord.User, discord.Member]):
+    """
+    Gets the display name for the user.
+    If the user has a discriminator of 0, then it will return the display name (new format).
+    Otherwise it will return the display name and discriminator (old format)."""
+    if user.discriminator == "0":
+        return user.display_name
+    else:
+        return f"{user.display_name}#{user.discriminator}"
+
 def to_timestamp(date, tz: datetime.timezone = None):
     date = date.replace(tzinfo=tz)
     return (date - datetime.datetime(1970,1,1, tzinfo=tz)).total_seconds()

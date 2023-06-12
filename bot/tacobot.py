@@ -112,5 +112,5 @@ class TacoBot(commands.Bot):
             # Do `return prefixes` if you don't want to allow mentions instead of prefix.
             return commands.when_mentioned_or(*prefixes)(self, message)
         except Exception as e:
-            self.log.error(0, _method, f"Failed to get prefixes: {e}")
+            self.log.error(0, f"tacobot.{_method}", f"Failed to get prefixes: {e}")
             return commands.when_mentioned_or(*prefixes)(self, message)

@@ -53,24 +53,22 @@ class Settings:
     def get_string(self, guildId: int, key: str, *args, **kwargs):
         _method = inspect.stack()[1][3]
         if not key:
-            # self.log.debug(guildId, _method, f"KEY WAS EMPTY")
+            # self.log.debug(guildId, f"settings.{_method}", f"KEY WAS EMPTY")
             return ''
         if str(guildId) in self.strings:
             if key in self.strings[str(guildId)]:
                 return utils.str_replace(self.strings[str(guildId)][key], *args, **kwargs)
             elif key in self.strings[self.language]:
-                # self.log.debug(guildId, _method, f"Unable to find key in defined language. Falling back to {self.language}")
+                # self.log.debug(guildId, f"settings.{_method}", f"Unable to find key in defined language. Falling back to {self.language}")
                 return utils.str_replace(self.strings[self.language][key], *args, **kwargs)
             else:
-                # self.log.warn(guildId, _method, f"UNKNOWN STRING KEY: {key}")
-                print(f"UNKNOWN KEY: LANG: {self.language} - {key}", file=sys.stderr)
+                # self.log.warn(guildId, f"settings.{_method}", f"UNKNOWN STRING KEY: {key}")
                 return utils.str_replace(f"{key}", *args, **kwargs)
         else:
             if key in self.strings[self.language]:
                 return utils.str_replace(self.strings[self.language][key], *args, **kwargs)
             else:
-                # self.log.warn(guildId, _method, f"UNKNOWN STRING KEY: {key}")
-                print(f"UNKNOWN KEY: LANG: {self.language} - {key}", file=sys.stderr)
+                # self.log.warn(guildId, f"settings.{_method}", f"UNKNOWN STRING KEY: {key}")
                 return utils.str_replace(f"{key}", *args, **kwargs)
 
     def set_guild_strings(self, guildId: int, lang: str = None):
@@ -81,7 +79,7 @@ class Settings:
         # if guild_settings:
         #     lang = guild_settings.language
         self.strings[str(guildId)] = self.strings[lang]
-        # self.log.debug(guildId, _method, f"Guild Language Set: {lang}")
+        # self.log.debug(guildId, f"settings.{_method}", f"Guild Language Set: {lang}")
 
     def get_language(self, guildId: int):
         # guild_setting = self.db.get_guild_settings(guildId)

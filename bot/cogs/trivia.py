@@ -25,6 +25,7 @@ from .lib import settings
 from .lib import mongo
 from .lib import dbprovider
 from .lib import tacotypes
+from .lib.models import TriviaQuestion
 class Trivia(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -32,10 +33,11 @@ class Trivia(commands.Cog):
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
 
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.CATEGORY_POINTS_DEFAULTS = { "hard": 15, "medium": 10, "easy": 5 }
+        self.CHOICE_EMOJIS_DEFAULTS = ['🇦','🇧','🇨','🇩']
+        self.TRIVIA_TIMEOUT_DEFAULT = 60
+
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -66,9 +68,9 @@ class Trivia(commands.Cog):
     @commands.group(name="trivia", invoke_without_command=True)
     @commands.guild_only()
     async def trivia(self, ctx):
+        guild_id = 0
         try:
             if ctx.invoked_subcommand is None:
-                guild_id = 0
                 if ctx.guild:
                     guild_id = ctx.guild.id
                     if ctx.message:
@@ -79,14 +81,14 @@ class Trivia(commands.Cog):
 
                 channel_id = ctx.channel.id
 
-                trivia_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
-                if not trivia_settings:
+                cog_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+                if not cog_settings:
                     # log error if there are no tacos settings
                     self.log.error(guild_id, "trivia.trivia", "No trivia settings found")
                     await self.discord_helper.notify_bot_not_initialized(ctx, "trivia")
                     return
 
-                allowed_channels = trivia_settings["allowed_channels"]
+                allowed_channels = cog_settings.get("allowed_channels", None)
                 if allowed_channels and str(channel_id) not in allowed_channels:
                     # log that the user tried to use the command in a channel that is not allowed
                     self.log.debug(guild_id, "trivia.trivia", f"User {ctx.author.name}#{ctx.author.discriminator} tried to use the trivia command in channel {channel_id}")
@@ -97,7 +99,8 @@ class Trivia(commands.Cog):
                 question = self.get_question(ctx)
                 if question:
 
-                    choice_emojis = trivia_settings["choices"]
+                    choice_emojis = cog_settings.get("choices", self.CHOICE_EMOJIS_DEFAULTS)
+
                     # get incorrect answers unescaped and add them to the list
                     answers = [ html.unescape(ia) for ia in question.incorrect_answers ]
                     # get correct answer unescaped and add it to the list
@@ -118,12 +121,16 @@ class Trivia(commands.Cog):
                         choices.append(f"{choice_emojis[index]} **{answer}**")
                     choice_message = '\n'.join(choices)
 
-                    reward = trivia_settings['category_points'][question.difficulty] or 1
-                    punishment = reward * -1
-                    taco_word = self.settings.get_string(guild_id, "taco_singular") if reward == 1 else self.settings.get_string(guild_id, "taco_plural")
-                    trivia_timeout = trivia_settings.get('timeout', 60)
 
-                    notify_role_id = trivia_settings.get('notify_role', None)
+                    # get the reward and punishment
+                    reward = cog_settings.get('category_points', self.CATEGORY_POINTS_DEFAULTS).get(question.difficulty, 5)
+                    punishment = reward * -1
+
+
+                    taco_word = self.settings.get_string(guild_id, "taco_singular") if reward == 1 else self.settings.get_string(guild_id, "taco_plural")
+                    trivia_timeout = cog_settings.get('timeout', self.TRIVIA_TIMEOUT_DEFAULT)
+
+                    notify_role_id = cog_settings.get('notify_role', None)
                     notify_role_mention = None
                     if notify_role_id:
                         notify_role = ctx.guild.get_role(int(notify_role_id))
@@ -136,6 +143,9 @@ class Trivia(commands.Cog):
                         trivia_timeout=trivia_timeout,
                         reward=reward,
                         taco_word=taco_word)
+
+
+
                     qm = await self.discord_helper.sendEmbed(ctx.channel,
                         self.settings.get_string(guild_id, "trivia_question_title",
                             category=html.unescape(question.category),
@@ -144,6 +154,7 @@ class Trivia(commands.Cog):
                         question_message,
                         fields=[],
                         content=notify_role_mention if notify_role_mention else None,)
+
                     for ritem in choice_emojis[0:len(answers)]:
                         # add reaction to the message from the bot
                         await qm.add_reaction(ritem)
@@ -176,14 +187,26 @@ class Trivia(commands.Cog):
                             reason_msg = self.settings.get_string(guild_id, "taco_reason_trivia_correct")
                             for u in correct_users:
                                 if not u.bot:
-                                    await self.discord_helper.taco_give_user(guild_id, self.bot.user, u, reason_msg, tacotypes.TacoTypes.TRIVIA_CORRECT, taco_amount=reward )
+                                    await self.discord_helper.taco_give_user(
+                                        guildId=guild_id,
+                                        fromUser=self.bot.user,
+                                        toUser=u,
+                                        reason=reason_msg,
+                                        give_type=tacotypes.TacoTypes.TRIVIA_CORRECT,
+                                        taco_amount=reward )
 
                             reason_msg = self.settings.get_string(guild_id, "taco_reason_trivia_incorrect")
                             for u in incorrect_users:
                                 if not u.bot:
-                                    await self.discord_helper.taco_give_user(guild_id, self.bot.user, u, reason_msg, tacotypes.TacoTypes.TRIVIA_INCORRECT, taco_amount=punishment )
+                                    await self.discord_helper.taco_give_user(
+                                        guildId=guild_id,
+                                        fromUser=self.bot.user,
+                                        toUser=u,
+                                        reason=reason_msg,
+                                        give_type=tacotypes.TacoTypes.TRIVIA_INCORRECT,
+                                        taco_amount=punishment )
 
-                            await self.discord_helper.sendEmbed(ctx.channel,
+                            result = await self.discord_helper.sendEmbed(ctx.channel,
                                 self.settings.get_string(guild_id, "trivia_results_title"),
                                 self.settings.get_string(guild_id, "trivia_results_message",
                                     question=html.unescape(question.question),
@@ -193,6 +216,27 @@ class Trivia(commands.Cog):
                                     taco_word=taco_word),
                                 fields=fields)
                             await qm.delete()
+
+
+                            # now that we have the question message, we can track the trivia item in the database
+                            trivia_item = {
+                                "guild_id": guild_id,
+                                "channel_id": ctx.channel.id,
+                                "message_id": result.id,
+                                "starter_id": ctx.author.id,
+                                "question": html.unescape(question.question),
+                                "correct_answer": html.unescape(question.correct_answer),
+                                "incorrect_answers": [html.unescape(ia) for ia in question.incorrect_answers],
+                                "category": html.unescape(question.category),
+                                "difficulty": question.difficulty,
+                                "reward": reward,
+                                "punishment": punishment,
+                                "correct_users": [u.id for u in correct_users],
+                                "incorrect_users": [u.id for u in incorrect_users],
+                            }
+
+                            trivia_question = TriviaQuestion(**trivia_item)
+                            self.db.track_trivia_question(trivia_question)
                             break
                 else:
                     self.log.error(guild_id, "trivia.trivia", "Error retrieving the trivia question")
@@ -217,19 +261,22 @@ class Trivia(commands.Cog):
         pass
 
     def get_question(self, ctx: Context):
+        guild_id = 0
         try:
-            guild_id = 0
             if ctx.guild:
                 guild_id = ctx.guild.id
             else:
                 return None
 
-            trivia_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
-            if not trivia_settings:
+            cog_settings = self.get_cog_settings(guild_id)
+            if not cog_settings:
                 # raise exception if there are no tacos settings
                 raise Exception("No trivia settings found")
 
-            url = trivia_settings['api_url'].format("", "", "")
+            url = cog_settings.get('api_url', "").format("", "", "")
+            if not url:
+                raise Exception("No trivia api url found")
+
             response = requests.get(url)
             data = response.json()
             if data["response_code"] == 0:
@@ -253,6 +300,22 @@ class Trivia(commands.Cog):
         except Exception as e:
             self.log.error(guild_id, "trivia", str(e), traceback.format_exc())
             return None
+
+    def get_cog_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        if not cog_settings:
+            # raise exception if there are no leave_survey settings
+            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
+            raise Exception(f"No cog settings found for guild {guildId}")
+        return cog_settings
+
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not cog_settings:
+            # raise exception if there are no leave_survey settings
+            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
+            raise Exception(f"No tacos settings found for guild {guildId}")
+        return cog_settings
 
 async def setup(bot):
     await bot.add_cog(Trivia(bot))

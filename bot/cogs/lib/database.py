@@ -3,6 +3,8 @@ from traceback import print_exc
 import typing
 import datetime
 
+from . import models
+
 class Database():
 
     def __init__(self):
@@ -35,9 +37,9 @@ class Database():
         pass
     def remove_tacos(self, guildId: int, userId: int, count: int):
         pass
-    def get_tacos_count(self, guildId: int, userId: int):
+    def get_tacos_count(self, guildId: int, userId: int) -> typing.Union[int,None]:
         pass
-    def get_total_gifted_tacos(self, guildId: int, userId: int, timespan_seconds: int = 86400):
+    def get_total_gifted_tacos(self, guildId: int, userId: int, timespan_seconds: int = 86400) -> typing.Union[int,None]:
         pass
     def add_taco_gift(self, guildId: int, userId: int, count: int):
         pass
@@ -61,13 +63,6 @@ class Database():
     def add_suggestion_create_message(self, guildId: int, channelId: int, messageId: int):
         pass
     def remove_suggestion_create_message(self, guildId: int, channelId: int, messageId: int):
-        pass
-
-    def track_wait_invoke(self, guildId: int, channelId: int, messageId: int):
-        pass
-    def untrack_wait_invoke(self, guildId: int, channelId: int, messageId: int):
-        pass
-    def get_wait_invokes(self, guildId: int, channelId: int):
         pass
 
     def track_invite_code(self, guildId: int, inviteCode: str, inviteInfo: dict):
@@ -127,6 +122,15 @@ class Database():
     def taco_tuesday_user_tracked(self, guildId: int, userId: int, messageId: int):
         pass
 
+    def taco_tuesday_set_user(self, guildId: int, userId: int):
+        pass
+
+    def taco_tuesday_get_by_message(self, guildId: int, channelId: int, messageId: int):
+        pass
+
+    def taco_tuesday_update_message(self, guildId: int, channelId: int, messageId: int, newChannelId: int, newMessageId: int):
+        pass
+
     def track_first_message(self, guildId: int, userId: int, channelId: int, messageId: int):
         pass
 
@@ -148,5 +152,20 @@ class Database():
     def track_tacos_log(self, guildId: int, fromUserId: int, toUserId: int, count: int, type: str, reason: str):
         pass
 
-    def UPDATE_SCHEMA(self):
+    def track_trivia_question(self, triviaQuestion: models.TriviaQuestion) -> None:
+        pass
+
+    def get_random_game_key_data(self, guild_id: int):
+        pass
+    def get_game_key_data(self, game_key_id: str):
+        pass
+    def claim_game_key_offer(self, game_key_id: str, user_id: int):
+        pass
+    def close_game_key_offer(self, guild_id: int, game_key_id: str):
+        pass
+    def close_game_key_offer_by_message(self, guild_id: int, message_id: int):
+        pass
+    def open_game_key_offer(self, game_key_id: str, guild_id: int, message_id:int, channel_id: int):
+        pass
+    def find_open_game_key_offer(self, guild_id: int, channel_id: int):
         pass

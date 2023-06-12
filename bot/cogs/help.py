@@ -26,19 +26,19 @@ from .lib import dbprovider
 
 class Help(commands.Cog):
     def __init__(self, bot):
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "help.__init__", "Initialized")
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     @commands.command(name='changelog', aliases=['changes', "cl"])
     async def changelog(self, ctx):
@@ -88,14 +88,13 @@ class Help(commands.Cog):
                     "", footer=self.settings.get_string(guild_id, "version_footer", version=self.settings.version), fields=fields)
                 page += 1
         except Exception as ex:
-            self.log.error(ctx.guild.id, _method, str(ex), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
 
 
     @commands.group(name="help", aliases=["h"], invoke_without_command=True)
-    async def help(self, ctx, command: str = None, subcommand: str = None):
-        _method = inspect.stack()[1][3]
+    async def help(self, ctx, command: str = "", subcommand: str = ""):
         if ctx.guild:
             guild_id = ctx.guild.id
         else:
@@ -107,7 +106,7 @@ class Help(commands.Cog):
         else:
             await self.subcommand_help(ctx, command, subcommand)
 
-    async def subcommand_help(self, ctx, command: str = None, subcommand: str = None):
+    async def subcommand_help(self, ctx, command: str = "", subcommand: str = ""):
         _method = inspect.stack()[1][3]
         if ctx.guild:
             guild_id = ctx.guild.id
@@ -115,13 +114,13 @@ class Help(commands.Cog):
             guild_id = 0
 
         try:
-            command = command.lower() if command else None
-            subcommand = subcommand.lower() if subcommand else None
+            command = command.lower() if command else ""
+            subcommand = subcommand.lower() if subcommand else ""
 
-            command_list = self.settings.commands
+            command_list: dict = self.settings.get('commands', {})
             if command not in command_list.keys():
                 await self.discord_helper.sendEmbed(ctx.channel,
-                    self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
+                    self.settings.get_string(guild_id, "help_title", bot_name=self.settings.get("name", "TacoBot")),
                     self.settings.get_string(guild_id, "help_no_command", command=command),
                     color=0xFF0000, delete_after=20)
                 return
@@ -179,7 +178,7 @@ class Help(commands.Cog):
 
 
         except Exception as ex:
-            self.log.error(guild_id, _method , str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}" , str(ex), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     async def root_help(self, ctx):
@@ -217,7 +216,7 @@ class Help(commands.Cog):
                     footer=self.settings.get_string(guild_id, "version_footer", version=self.settings.version), fields=fields)
                 page += 1
         except Exception as ex:
-            self.log.error(guild_id, _method , str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}" , str(ex), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     def clean_command_name(self, command):

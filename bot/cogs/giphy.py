@@ -28,24 +28,27 @@ from .lib import dbprovider
 
 class Giphy(commands.Cog):
     def __init__(self, bot):
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
+        self.SETTINGS_SECTION = "giphy"
         self.discord_helper = discordhelper.DiscordHelper(bot)
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "giphy.__init__", "Initialized")
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     @commands.command(name='giphy', aliases=['gif'])
+    @commands.guild_only()
     async def giphy(self, ctx, *, query: str = "tacos"):
+        _method = inspect.stack()[0][3]
+        guild_id = 0
         try:
-            guild_id = 0
             if ctx.guild:
                 guild_id = ctx.guild.id
                 await ctx.message.delete()
@@ -80,8 +83,21 @@ class Giphy(commands.Cog):
                 # embed.set_image(url=data['data'][random_index]['images']['original']['url'])
                 # await ctx.send(embed=embed)
         except Exception as e:
-            self.log.error(guild_id, "giphy.giphy", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
+
+
+    def get_cog_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        if not cog_settings:
+            raise Exception(f"No cog settings found for guild {guildId}")
+        return cog_settings
+
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not cog_settings:
+            raise Exception(f"No tacos settings found for guild {guildId}")
+        return cog_settings
 
 async def setup(bot):
     await bot.add_cog(Giphy(bot))
