@@ -354,7 +354,7 @@ class DiscordHelper:
 
             taco_type_key = tacotypes.TacoTypes.get_string_from_taco_type(give_type)
             if taco_type_key not in taco_settings:
-                self.log.debug(guildId, _method, f"Key {taco_type_key} not found in taco settings. Using taco_amount ({taco_amount}) as taco count")
+                self.log.debug(guildId, f"discordhelper.{_method}", f"Key {taco_type_key} not found in taco settings. Using taco_amount ({taco_amount}) as taco count")
                 taco_count = taco_count
             else:
                 taco_count = taco_settings[tacotypes.TacoTypes.get_string_from_taco_type(give_type)]
@@ -381,7 +381,7 @@ class DiscordHelper:
             )
             return total_taco_count
         except Exception as e:
-            self.log.error(guildId, _method, str(e), traceback.format_exc())
+            self.log.error(guildId, f"discordhelper.{_method}", str(e), traceback.format_exc())
 
     async def taco_purge_log(
         self,
@@ -401,7 +401,7 @@ class DiscordHelper:
             taco_log_channel_id = taco_settings["taco_log_channel_id"]
             log_channel = await self.get_or_fetch_channel(int(taco_log_channel_id))
 
-            self.log.debug(guild_id, _method, f"{fromMember.name} purged all tacos from {toMember.name} for {reason}")
+            self.log.debug(guild_id, f"discordhelper.{_method}", f"{fromMember.name} purged all tacos from {toMember.name} for {reason}")
             if log_channel:
                 await log_channel.send(
                     self.settings.get_string(
@@ -417,7 +417,7 @@ class DiscordHelper:
                 type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.PURGE)
             )
         except Exception as e:
-            self.log.error(guild_id, _method, str(e), traceback.format_exc())
+            self.log.error(guild_id, f"discordhelper.{_method}", str(e), traceback.format_exc())
 
     async def tacos_log(
         self,
@@ -454,7 +454,7 @@ class DiscordHelper:
 
             self.log.debug(
                 guild_id,
-                _method,
+                f"discordhelper.{_method}",
                 f"{toMember.name}#{toMember.discriminator} {action} {positive_count} {taco_word} from {fromMember.name}#{fromMember.discriminator} for {reason}",
             )
             if log_channel:
@@ -469,7 +469,7 @@ class DiscordHelper:
 
                 await self.sendEmbed(channel=log_channel, title="", message="", fields=fields, author=fromMember)
         except Exception as e:
-            self.log.error(guild_id, _method, str(e), traceback.format_exc())
+            self.log.error(guild_id, f"discordhelper.{_method}", str(e), traceback.format_exc())
 
     async def get_or_fetch_user(self, userId: int) -> typing.Union[discord.User, None]:
         _method = inspect.stack()[1][3]
@@ -481,10 +481,10 @@ class DiscordHelper:
                 return user
             return None
         except discord.errors.NotFound as nf:
-            self.log.warn(0, _method, str(nf), traceback.format_exc())
+            self.log.warn(0, f"discordhelper.{_method}", str(nf), traceback.format_exc())
             return None
         except Exception as ex:
-            self.log.error(0, _method, str(ex), traceback.format_exc())
+            self.log.error(0, f"discordhelper.{_method}", str(ex), traceback.format_exc())
             return None
 
     async def get_or_fetch_member(self, guildId: int, userId: int) -> typing.Union[discord.Member, None]:
@@ -505,10 +505,10 @@ class DiscordHelper:
                 return user
             return None
         except discord.errors.NotFound as nf:
-            self.log.warn(0, _method, str(nf), traceback.format_exc())
+            self.log.warn(0, f"discordhelper.{_method}", str(nf), traceback.format_exc())
             return None
         except Exception as ex:
-            self.log.error(0, _method, str(ex), traceback.format_exc())
+            self.log.error(0, f"discordhelper.{_method}", str(ex), traceback.format_exc())
             return None
 
     async def get_or_fetch_channel(self, channelId: int) -> typing.Union[discord.TextChannel, None]:
@@ -522,10 +522,10 @@ class DiscordHelper:
             else:
                 return None
         except discord.errors.NotFound as nf:
-            self.log.warn(0, _method, str(nf), traceback.format_exc())
+            self.log.warn(0, f"discordhelper.{_method}", str(nf), traceback.format_exc())
             return None
         except Exception as ex:
-            self.log.error(0, _method, str(ex), traceback.format_exc())
+            self.log.error(0, f"discordhelper.{_method}", str(ex), traceback.format_exc())
             return None
 
     def get_by_name_or_id(self, iterable, nameOrId: typing.Union[int, str]):
@@ -619,7 +619,7 @@ class DiscordHelper:
                 await channel_ask.delete()
                 return selected_channel
         except Exception as ex:
-            self.log.error(ctx.guild.id, _method, str(ex), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"discordhelper.{_method}", str(ex), traceback.format_exc())
             return None
 
     async def ask_channel(
@@ -668,7 +668,7 @@ class DiscordHelper:
             selected_channel = discord.utils.get(ctx.guild.channels, id=chan_id)
             if selected_channel:
                 self.log.debug(
-                    guild_id, _method, f"{ctx.author.mention} selected the channel '{selected_channel.name}'"
+                    guild_id, f"discordhelper.{_method}", f"{ctx.author.mention} selected the channel '{selected_channel.name}'"
                 )
                 await self.sendEmbed(
                     ctx.channel,
@@ -906,7 +906,7 @@ class DiscordHelper:
 
                     if selected_role:
                         self.log.debug(
-                            guild_id, _method, f"{ctx.author.mention} selected the role '{selected_role.name}'"
+                            guild_id, f"discordhelper.{_method}", f"{ctx.author.mention} selected the role '{selected_role.name}'"
                         )
                         await select_callback(selected_role)
                         return

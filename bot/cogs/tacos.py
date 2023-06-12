@@ -237,7 +237,7 @@ class Tacos(commands.Cog):
                             if ref is None:
                                 return
                             if ref.author == message.author or ref.author == self.bot.user:
-                                self.log.debug(guild_id, _method, f"Ignoring message reference from {ref.author}")
+                                self.log.debug(guild_id, f"tacos.{_method}", f"Ignoring message reference from {ref.author}")
                                 return
                             # it is a reply to another user
                             await self.discord_helper.taco_give_user(guild_id, self.bot.user, member,
@@ -245,14 +245,14 @@ class Tacos(commands.Cog):
                                 tacotypes.TacoTypes.REPLY )
 
                     except Exception as e:
-                        self.log.error(guild_id, _method, str(e), traceback.format_exc())
+                        self.log.error(guild_id, f"tacos.{_method}", str(e), traceback.format_exc())
                         return
 
             # if we are in a DM
             else:
                 return
         except Exception as ex:
-            self.log.error(member.guild.id, _method, str(ex), traceback.format_exc())
+            self.log.error(member.guild.id, f"tacos.{_method}", str(ex), traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -282,7 +282,7 @@ class Tacos(commands.Cog):
                 has_reacted = self.db.get_taco_reaction(guild_id, user.id, channel.id, message.id)
                 if has_reacted:
                     # log that the user has already reacted
-                    # self.log.debug(guild_id, _method, f"{user} has already reacted to {message.id} so no tacos given.")
+                    # self.log.debug(guild_id, f"tacos.{_method}", f"{user} has already reacted to {message.id} so no tacos given.")
                     return
 
 
@@ -295,10 +295,10 @@ class Tacos(commands.Cog):
                 # get the total number of tacos the user has gifted in the last 24 hours
                 total_gifted = self.db.get_total_gifted_tacos(guild_id, user.id, max_gift_taco_timespan)
                 # log the total number of tacos the user has gifted
-                # self.log.debug(guild_id, _method, f"{user} has gifted {total_gifted} tacos in the last {max_gift_taco_timespan} seconds.")
+                # self.log.debug(guild_id, f"tacos.{_method}", f"{user} has gifted {total_gifted} tacos in the last {max_gift_taco_timespan} seconds.")
                 remaining_gifts = max_gift_tacos - total_gifted
 
-                # self.log.debug(guild_id, _method, f"🌮 adding taco to user {message.author.name}")
+                # self.log.debug(guild_id, f"tacos.{_method}", f"🌮 adding taco to user {message.author.name}")
                 # track the user's taco reaction
                 self.db.add_taco_reaction(guild_id, user.id, channel.id, message.id)
                 # # give the user the reaction reward tacos
@@ -307,7 +307,7 @@ class Tacos(commands.Cog):
                     tacotypes.TacoTypes.REACT_REWARD )
 
                 if reaction_count <= remaining_gifts:
-                    # self.log.debug(guild_id, _method, f"🌮 adding taco to user {user.name}")
+                    # self.log.debug(guild_id, f"tacos.{_method}", f"🌮 adding taco to user {user.name}")
                     # track that the user has gifted tacos via reactions
                     self.db.add_taco_gift(guild_id, user.id, reaction_count)
                     # give taco giver tacos too
@@ -316,9 +316,9 @@ class Tacos(commands.Cog):
                         tacotypes.TacoTypes.REACTION )
                 # else:
                 #     # log that the user cannot gift anymore tacos via reactions
-                #     self.log.debug(guild_id, _method, f"{user} cannot gift anymore tacos. remaining gifts: {remaining_gifts}")
+                #     self.log.debug(guild_id, f"tacos.{_method}", f"{user} cannot gift anymore tacos. remaining gifts: {remaining_gifts}")
         except Exception as ex:
-            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"tacos.{_method}", str(ex), traceback.format_exc())
 
 async def setup(bot):
     await bot.add_cog(Tacos(bot))

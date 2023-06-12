@@ -172,7 +172,7 @@ class TacoQuestionOfTheDay(commands.Cog):
 
             # check if the user that reacted is in the admin role
             if not await self.discord_helper.is_admin(guild_id, payload.user_id):
-                self.log.debug(guild_id, _method, f"User {payload.user_id} is not an admin")
+                self.log.debug(guild_id, f"tqotd.{_method}", f"User {payload.user_id} is not an admin")
                 return
             # in the future, check if the user is in a defined role that can grant tacos (e.g. moderator)
 
@@ -185,20 +185,20 @@ class TacoQuestionOfTheDay(commands.Cog):
             # check if this reaction is the first one of this type on the message
             reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
             if reaction.count > 1:
-                # self.log.debug(guild_id, _method, f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
+                # self.log.debug(guild_id, f"tqotd.{_method}", f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
                 return
 
             already_tracked = self.db.tqotd_user_message_tracked(guild_id, message_author.id, message.id)
 
             if not already_tracked:
                 # log that we are giving tacos for this reaction
-                self.log.info(guild_id, _method, f"User {payload.user_id} reacted with {payload.emoji.name} to message {payload.message_id}")
+                self.log.info(guild_id, f"tqotd.{_method}", f"User {payload.user_id} reacted with {payload.emoji.name} to message {payload.message_id}")
                 await self.give_user_tqotd_tacos(guild_id, message_author.id, payload.channel_id, payload.message_id)
             else:
-                self.log.debug(guild_id, _method, f"Message {payload.message_id} has already been tracked for TQOTD. Skipping.")
+                self.log.debug(guild_id, f"tqotd.{_method}", f"Message {payload.message_id} has already been tracked for TQOTD. Skipping.")
 
         except Exception as ex:
-            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"tqotd.{_method}", str(ex), traceback.format_exc())
 
     async def give_user_tqotd_tacos(self, guild_id, user_id, channel_id, message_id):
         ctx = None

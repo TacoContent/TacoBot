@@ -88,7 +88,7 @@ class StreamTeam(commands.Cog):
                             twitch_name=twitch_name), color=0xff0000)
 
         except Exception as ex:
-            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"streamteam.{_method}", str(ex), traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -143,7 +143,7 @@ class StreamTeam(commands.Cog):
                         if twitch_name:
                             twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
 
-                            self.log.debug(0, _method, f"{user} requested to set twitch name {twitch_user}")
+                            self.log.debug(guild_id, f"streamteam.{_method}", f"{user} requested to set twitch name {twitch_user}")
                             self.db.set_user_twitch_info(user.id, None, twitch_name)
                             await self.discord_helper.sendEmbed(user,
                                 self.settings.get_string(guild_id, "success"),
@@ -168,7 +168,7 @@ class StreamTeam(commands.Cog):
                             user=user, team_name=team_name, twitch_name=twitch_name),
                         color=0x00ff00)
         except Exception as ex:
-            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"streamteam.{_method}", str(ex), traceback.format_exc())
 
 
     @commands.Cog.listener()

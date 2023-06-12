@@ -131,7 +131,7 @@ class TacoTuesday(commands.Cog):
 
         # check if the user that reacted is in the admin role
         if not await self.discord_helper.is_admin(guild_id, payload.user_id):
-            self.log.debug(guild_id, _method, f"User {payload.user_id} is not an admin")
+            self.log.debug(guild_id, f"taco_tuesday.{_method}", f"User {payload.user_id} is not an admin")
             return
 
         channel = self.bot.get_channel(payload.channel_id)
@@ -141,7 +141,7 @@ class TacoTuesday(commands.Cog):
         if reaction.count > 1:
             self.log.debug(
                 guild_id,
-                _method,
+                f"taco_tuesday.{_method}",
                 f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}",
             )
             return
@@ -154,7 +154,7 @@ class TacoTuesday(commands.Cog):
 
         # check if the user that reacted is in the admin role
         if not await self.discord_helper.is_admin(guild_id, payload.user_id):
-            self.log.debug(guild_id, _method, f"User {payload.user_id} is not an admin")
+            self.log.debug(guild_id, f"taco_tuesday.{_method}", f"User {payload.user_id} is not an admin")
             return
 
         channel = self.bot.get_channel(payload.channel_id)
@@ -169,14 +169,14 @@ class TacoTuesday(commands.Cog):
                 was_imported = True
                 break
         if not was_imported:
-            self.log.debug(guild_id, _method, f"Message {payload.message_id} was not imported. No need to archive.")
+            self.log.debug(guild_id, f"taco_tuesday.{_method}", f"Message {payload.message_id} was not imported. No need to archive.")
             return
 
         reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
         if reaction.count > 1:
             self.log.debug(
                 guild_id,
-                _method,
+                f"taco_tuesday.{_method}",
                 f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}",
             )
             return
@@ -202,7 +202,7 @@ class TacoTuesday(commands.Cog):
             cog_settings = self.get_cog_settings(guild_id)
 
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, _method, f"Taco Tuesday not enabled")
+                self.log.debug(guild_id, f"taco_tuesday.{_method}", f"Taco Tuesday not enabled")
                 return
 
             # check if reaction is to archive the message
@@ -210,12 +210,12 @@ class TacoTuesday(commands.Cog):
             reaction_import_emojis = cog_settings.get("import_emoji", ["🇮"])
             check_list = reaction_archive_emojis + reaction_import_emojis
             if str(payload.emoji.name) not in check_list:
-                self.log.debug(guild_id, _method, f"Reaction {payload.emoji.name} not in check list")
+                self.log.debug(guild_id, f"taco_tuesday.{_method}", f"Reaction {payload.emoji.name} not in check list")
                 return
 
             if str(payload.emoji.name) in reaction_archive_emojis:
                 if cog_settings.get("archive_enabled", False):
-                    self.log.debug(guild_id, _method, f"Archive is enabled. Archiving message")
+                    self.log.debug(guild_id, f"taco_tuesday.{_method}", f"Archive is enabled. Archiving message")
                     await self._on_raw_reaction_add_archive(payload)
                     return
 
@@ -228,7 +228,7 @@ class TacoTuesday(commands.Cog):
                 return
 
         except Exception as ex:
-            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"taco_tuesday.{_method}", str(ex), traceback.format_exc())
             # await self.discord_helper.notify_of_error(ctx)
 
     async def _archive_taco_tuesday(self, message: discord.Message, cog_settings: dict = None):
@@ -319,7 +319,7 @@ class TacoTuesday(commands.Cog):
             )
 
         except Exception as ex:
-            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"taco_tuesday.{_method}", str(ex), traceback.format_exc())
             # await self.discord_helper.notify_of_error(ctx)
 
     async def _set_taco_tuesday_user(self, ctx: commands.Context, member: discord.Member):

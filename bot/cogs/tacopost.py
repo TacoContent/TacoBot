@@ -75,11 +75,11 @@ class TacoPost(commands.Cog):
             # check if the user is in the role set in channel_settings['exempt'][]
             exempt_list = channel_settings.get('exempt', [])
             if str(user.id) in exempt_list:
-                self.log.debug(guild_id, _method, f"User {user.name} is exempt from having to pay tacos in channel {channel.name}")
+                self.log.debug(guild_id, f"tacopost.{_method}", f"User {user.name} is exempt from having to pay tacos in channel {channel.name}")
                 return
             for role in user.roles:
                 if str(role.id) in exempt_list:
-                    self.log.debug(guild_id, _method, f"User {user.name} is exempt from having to pay tacos in channel {channel.name}")
+                    self.log.debug(guild_id, f"tacopost.{_method}", f"User {user.name} is exempt from having to pay tacos in channel {channel.name}")
                     return
 
             prefix = await self.bot.get_prefix(message)
@@ -112,7 +112,7 @@ class TacoPost(commands.Cog):
                     title="Use tacos to post?",
                     result_callback=response_callback)
         except Exception as ex:
-            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"tacopost.{_method}", str(ex), traceback.format_exc())
 
 async def setup(bot):
     await bot.add_cog(TacoPost(bot))
