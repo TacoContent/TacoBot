@@ -24,7 +24,6 @@ from .lib import utils
 from .lib import models
 from .lib import settings
 from .lib import mongo
-from .lib import dbprovider
 from .lib import tacotypes
 class Suggestions(commands.Cog):
 
@@ -35,10 +34,7 @@ class Suggestions(commands.Cog):
 
         self.SETTINGS_SECTION = "suggestions"
 
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -553,7 +549,13 @@ class Suggestions(commands.Cog):
 
         # get the date and time now formatted MM/dd/yyyy HH:mm:ss
         now = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
-        fields = [ {"name": f"{state} @ {now}", "value": f"{user.mention}: {reason}", "inline": False }]
+        fields = [
+            {
+                "name": f"{state} @ {now}",
+                "value": f"{user.mention}: {reason}",
+                "inline": False
+            }
+        ]
         await self.discord_helper.updateEmbed(message, fields=fields, color=color, author=author)
 
     def get_color_for_state(self, state: str):

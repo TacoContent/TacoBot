@@ -28,7 +28,6 @@ from .lib import utils
 from .lib import models
 from .lib import settings
 from .lib import mongo
-from .lib import dbprovider
 
 class MoveMessage(commands.Cog):
     def __init__(self, bot):

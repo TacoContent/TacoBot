@@ -5,6 +5,7 @@ import glob
 import typing
 import json
 
+
 class SuggestionStates():
     def __init__(self):
         self.ACTIVE = "ACTIVE"

@@ -26,9 +26,7 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
-from .lib import dbprovider
 from .lib import tacotypes
-
 
 class Birthday(commands.Cog):
     def __init__(self, bot):
@@ -123,9 +121,10 @@ class Birthday(commands.Cog):
                     taco_amount=taco_amount,
                 )
 
+
             fields = [
-                {"name": self.settings.get_string(guild_id, "month"), "value": str(month), "inline": True},
-                {"name": self.settings.get_string(guild_id, "day"), "value": str(day), "inline": True},
+                { "name": self.settings.get_string(guild_id, "month"), "value": str(month), "inline": True },
+                { "name": self.settings.get_string(guild_id, "day"), "value": str(day), "inline": True },
             ]
             await self.discord_helper.sendEmbed(
                 out_channel,
@@ -234,8 +233,8 @@ class Birthday(commands.Cog):
                 month_name = date.strftime("%B")
                 month_day = date.strftime("%d")
                 fields = [
-                    {"name": self.settings.get_string(guild_id, "month"), "value": month_name, "inline": True},
-                    {"name": self.settings.get_string(guild_id, "day"), "value": month_day, "inline": True},
+                    { "name": self.settings.get_string(guild_id, "month"), "value": month_name, "inline": True },
+                    { "name": self.settings.get_string(guild_id, "day"), "value": month_day, "inline": True },
                 ]
                 await self.discord_helper.sendEmbed(
                     output_channel,

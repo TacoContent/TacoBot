@@ -19,7 +19,6 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
-from .lib import dbprovider
 from .lib import tacotypes
 
 import inspect
@@ -286,7 +285,7 @@ class TacoTuesday(commands.Cog):
             fields = []
             if len(temp_reactions) > 0:
                 fields = [
-                    { "name": "Reactions", "value": f"-----", "inline": False }
+                    { "name": "Reactions", "value": f="------------------", "inline": False }
                 ]
                 for r in message.reactions:
                     fields.append(

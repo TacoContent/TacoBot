@@ -19,7 +19,6 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
-from .lib import dbprovider
 from .lib import tacotypes
 
 import inspect
@@ -35,10 +34,7 @@ class TechThursdays(commands.Cog):
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.SETTINGS_SECTION = "techthurs"
         self.SELF_DESTRUCT_TIMEOUT = 30
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG

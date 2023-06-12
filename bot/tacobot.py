@@ -22,7 +22,6 @@ from .cogs.lib import settings
 from .cogs.lib import mongo
 from .cogs.lib import logger
 from .cogs.lib import loglevel
-from .cogs.lib import dbprovider
 
 
 class TacoBot(commands.Bot):
@@ -49,7 +48,6 @@ class TacoBot(commands.Bot):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "tacobot.__init__", f"DB Provider {self.settings.db_provider.name}")
         self.log.debug(0, "tacobot.__init__", f"Logger initialized with level {log_level.name}")
 
     # In this basic example, we just synchronize the app commands to one guild.

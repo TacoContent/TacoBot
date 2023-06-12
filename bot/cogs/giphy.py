@@ -24,7 +24,6 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
-from .lib import dbprovider
 
 class Giphy(commands.Cog):
     def __init__(self, bot):

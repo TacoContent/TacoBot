@@ -21,7 +21,6 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
-from .lib import dbprovider
 from .lib import tacotypes
 from .lib.GameRewardView import GameRewardView
 
@@ -118,6 +117,7 @@ class GameKeys(commands.Cog):
             offered_by = await self.bot.fetch_user(int(game_data["offered_by"]))
             expires = datetime.datetime.now() + datetime.timedelta(days=1)
             fields = [
+
                 {"name": self.settings.get_string(guild_id, "game"), "value": game_data.get("title", "UNKNOWN")},
                 {"name": self.settings.get_string(guild_id, "platform"), "value": game_data.get("platform", "UNKNOWN")},
                 {"name": self.settings.get_string(guild_id, "cost"), "value": f"{cost} {tacos_word}🌮"},

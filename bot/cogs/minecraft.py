@@ -23,9 +23,7 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
-from .lib import dbprovider
 from .lib import tacotypes
-
 import inspect
 
 
@@ -134,13 +132,14 @@ class Minecraft(commands.Cog):
                 },
                 {
                     "name": self.settings.get_string(guild_id, "minecraft_status_mods"),
-                    "value": f"------",
+                    "value": f"------------------",
                     "inline": False
                 },
             ]
 
             if status['online'] == False:
                 # add field to tell user how to start the server
+
                 fields.append({
                     "name": self.settings.get_string(guild_id, "minecraft_status_server_status"),
                     "value": f"Server is offline. Run `.taco minecraft start` to start the server.",
@@ -148,7 +147,7 @@ class Minecraft(commands.Cog):
                 })
 
             for m in cog_settings["mods"]:
-                fields.append({ "name": f"{m['name']}", "value": f"{m['version']}", "inline": True })
+               fields.append({ "name": f"{m['name']}", "value": f"{m['version']}", "inline": True })
 
             await self.discord_helper.sendEmbed(output_channel,
                 title=self.settings.get_string(guild_id, "minecraft_status_server_status"),

@@ -5,7 +5,6 @@ import glob
 import typing
 from . import utils
 import json
-from . import dbprovider
 # from . import logger
 # from . import loglevel
 import inspect
@@ -37,12 +36,6 @@ class Settings:
 
         self.load_language_manifest()
         self.load_strings()
-
-
-        dbp = utils.dict_get(os.environ, 'DB_PROVIDER', default_value = 'DEFAULT').upper()
-        self.db_provider = dbprovider.DatabaseProvider[dbp]
-        if not self.db_provider:
-            self.db_provider = dbprovider.DatabaseProvider.DEFAULT
 
     def get(self, name, default_value=None):
         return utils.dict_get(self.__dict__, name, default_value)

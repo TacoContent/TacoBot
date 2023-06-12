@@ -23,9 +23,9 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
-from .lib import dbprovider
 from .lib import tacotypes
 from .lib.models import TriviaQuestion
+
 class Trivia(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -179,9 +179,21 @@ class Trivia(commands.Cog):
                             correct_list = '\n'.join([ u.mention for u in correct_users ])
                             incorrect_list = '\n'.join([ u.mention for u in incorrect_users ])
                             no_one = self.settings.get_string(guild_id, "no_one")
+                            # fields = [
+                            #     { "name": self.settings.get_string(guild_id, "correct"), "value": f"{correct_list or no_one}", "inline": True },
+                            #     { "name": self.settings.get_string(guild_id, "incorrect"), "value": f"{incorrect_list or no_one}", "inline": True },
+                            # ]
                             fields = [
-                                { "name": self.settings.get_string(guild_id, "correct"), "value": f"{correct_list or no_one}", "inline": True },
-                                { "name": self.settings.get_string(guild_id, "incorrect"), "value": f"{incorrect_list or no_one}", "inline": True },
+                                {
+                                    "name": self.settings.get_string(guild_id, "correct"),
+                                    "value": f"{correct_list or no_one}",
+                                    "inline": True
+                                },
+                                {
+                                    "name": self.settings.get_string(guild_id, "incorrect"),
+                                    "value": f"{incorrect_list or no_one}",
+                                    "inline": True
+                                },
                             ]
                             # add tacos to the correct users
                             reason_msg = self.settings.get_string(guild_id, "taco_reason_trivia_correct")

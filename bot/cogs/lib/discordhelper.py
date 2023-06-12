@@ -11,7 +11,6 @@ import typing
 import collections
 
 from .ChannelSelect import ChannelSelect, ChannelSelectView
-
 from .RoleSelectView import RoleSelectView, RoleSelect
 
 from discord.ext.commands.cooldowns import BucketType
@@ -44,7 +43,6 @@ from . import logger
 from . import loglevel
 from . import settings
 from . import mongo
-from . import dbprovider
 from . import tacotypes
 from .models import TextWithAttachments
 from .YesOrNoView import YesOrNoView
@@ -54,17 +52,18 @@ import inspect
 
 
 class DiscordHelper:
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.settings = settings.Settings()
         self.bot = bot
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
         self.log = logger.Log(minimumLogLevel=log_level)
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     def create_context(
         self, bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
@@ -91,33 +90,32 @@ class DiscordHelper:
         fields=None,
         remove_fields=None,
         color: int = None,
+        delete_original: bool = False,
     ) -> typing.Union[discord.Message, None]:
+        _method = inspect.stack()[0][3]
         if not message:
-            self.log.debug(0, "discordhelper.move_message", "No message to move")
+            self.log.debug(0, f"{self._module}.{_method}", "No message to move")
             return
         if not targetChannel:
-            self.log.debug(0, "discordhelper.move_message", "No target channel to move message to")
+            self.log.debug(0, f"{self._module}.{_method}", "No target channel to move message to")
             return
         if not author:
             author = message.author
 
         if not message.guild:
-            self.log.debug(0, "discordhelper.move_message", "Message is not from a guild")
+            self.log.debug(0, f"{self._module}.{_method}", "Message is not from a guild")
             return
         guild_id = message.guild.id
 
         try:
             content = ""
             if len(message.embeds) == 0:
-                self.log.debug(0, "discordhelper.move_message", "Message has no embeds")
-                self.log.debug(0, "discordhelper.move_message", f"Message: {message}")
-                self.log.debug(0, "discordhelper.move_message", f"Message content: {message.content}")
                 description = f"{message.content}"
                 title = ""
                 embed_fields = []
                 image = None
             else:
-                self.log.debug(0, "discordhelper.move_message", "Message has embeds")
+                self.log.debug(0, f"{self._module}.{_method}", "Message has embeds")
                 embed = message.embeds[0]
                 title = embed.title
                 if embed.description is None or embed.description == "":
@@ -135,14 +133,15 @@ class DiscordHelper:
                 if color is None and embed.color is not None:
                     color = embed.color
 
+            footer = None
             if who:
-                footer = f"{self.settings.get_string(guild_id, 'moved_by', user=f'{who.name}#{who.discriminator}')} - {reason or self.settings.get_string(guild_id, 'no_reason')}"
+                footer = f"{self.settings.get_string(guildId=guild_id,key='moved_by',user=f'{who.name}#{who.discriminator}')} - {reason or self.settings.get_string(guildId=guild_id, key='no_reason')}"
 
             if color is None:
                 color = 0x7289DA
 
             target_embed = discord.Embed(title=title, description=description, color=color)
-            target_embed.set_author(name=author.name, icon_url=author.avatar.url)
+            target_embed.set_author(name=author.name, icon_url=author.avatar.url if author.avatar else None)
             if footer:
                 target_embed.set_footer(text=footer)
             else:
@@ -150,9 +149,9 @@ class DiscordHelper:
                     text=self.settings.get_string(
                         guild_id,
                         "developed_by",
-                        user=self.settings.author,
-                        bot_name=self.settings.name,
-                        version=self.settings.version,
+                        user=self.settings.get('author', "Unknown"),
+                        bot_name=self.settings.get('name', "Unknown"),
+                        version=self.settings.get('version', "Unknown"),
                     )
                 )
             if remove_fields is None:
@@ -173,31 +172,34 @@ class DiscordHelper:
             files = [await a.to_file() for a in message.attachments]
 
             if len(files) > 0 or target_embed is not None:
-                # await message.delete()
-                return await targetChannel.send(content=content, files=files, embed=target_embed)
+                moved_message = await targetChannel.send(content=content, files=files, embed=target_embed)
+                # delete the original message because we are moving the content to a new channel
+                if delete_original:
+                    await message.delete()
+                return moved_message
             else:
                 return None
 
         except Exception as ex:
-            self.log.error(0, "discordhelper.move_message", str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
 
     async def sendEmbed(
         self,
-        channel,
-        title: str = None,
-        message: str = None,
-        fields=None,
-        delete_after: float = None,
-        footer=None,
-        view=None,
-        color=0x7289DA,
-        author: typing.Union[discord.User, discord.Member] = None,
-        thumbnail: str = None,
-        image: str = None,
-        url: str = "",
-        content: str = None,
-        files: list = None,
-    ):
+        channel: typing.Union[discord.TextChannel, discord.DMChannel, discord.GroupChannel],
+        title: typing.Optional[str] = None,
+        message: typing.Optional[str] = None,
+        fields: typing.Optional[list[dict[str, typing.Any]]] = None,
+        delete_after: typing.Optional[float] = None,
+        footer: typing.Optional[typing.Any] = None,
+        view: typing.Optional[typing.Any] = None,
+        color: typing.Optional[int] = 0x7289DA,
+        author: typing.Optional[typing.Union[discord.User, discord.Member]] = None,
+        thumbnail: typing.Optional[str] = None,
+        image: typing.Optional[str] = None,
+        url: typing.Optional[str] = "",
+        content: typing.Optional[str] = None,
+        files: typing.Optional[list] = None,
+    ) -> discord.Message:
         if color is None:
             color = 0x7289DA
         guild_id = 0
@@ -207,10 +209,10 @@ class DiscordHelper:
 
         embed = discord.Embed(title=title, description=message, color=color, url=url)
         if author:
-            embed.set_author(name=f"{author.name}#{author.discriminator}", icon_url=author.avatar.url)
+            embed.set_author(name=f"{author.name}#{author.discriminator}", icon_url=author.avatar.url if author.avatar else None)
         if embed.fields is not None:
             for f in embed.fields:
-                embed.add_field(name=f["name"], value=f["value"], inline=f["inline"] if "inline" in f else False)
+                embed.add_field(name=f.name, value=f.value, inline=f.inline)
         if fields is not None:
             for f in fields:
                 embed.add_field(name=f["name"], value=f["value"], inline=f["inline"] if "inline" in f else False)
@@ -219,9 +221,9 @@ class DiscordHelper:
                 text=self.settings.get_string(
                     guild_id,
                     "developed_by",
-                    user=self.settings.author,
-                    bot_name=self.settings.name,
-                    version=self.settings.version,
+                    user=self.settings.get("author", "Unknown"),
+                    bot_name=self.settings.get("name", "Unknown"),
+                    version=self.settings.get("version", "Unknown"),
                 )
             )
         else:
@@ -231,7 +233,13 @@ class DiscordHelper:
             embed.set_thumbnail(url=thumbnail)
         if image is not None:
             embed.set_image(url=image)
-        return await channel.send(content=content, embed=embed, delete_after=delete_after, view=view, files=files)
+        return await channel.send(
+            content=content,
+            embed=embed,
+            delete_after=delete_after,
+            view=view,
+            files=files
+        )
 
     async def updateEmbed(
         self,
@@ -282,9 +290,9 @@ class DiscordHelper:
                 text=self.settings.get_string(
                     guild_id,
                     "developed_by",
-                    user=self.settings.author,
-                    bot_name=self.settings.name,
-                    version=self.settings.version,
+                    user=self.settings.get("author", "Unknown"),
+                    bot_name=self.settings.get("name", "Unknown"),
+                    version=self.settings.get("version", "Unknown"),
                 )
             )
         else:
