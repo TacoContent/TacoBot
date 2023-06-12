@@ -23,7 +23,10 @@ from .lib import mongo
 
 
 class StreamTeam(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
@@ -34,13 +37,13 @@ class StreamTeam(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "streamteam.__init__", "Initialized")
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     @commands.Cog.listener()
-    async def on_raw_reaction_remove(self, payload):
+    async def on_raw_reaction_remove(self, payload) -> None:
         _method = inspect.stack()[0][3]
+        guild_id = payload.guild_id or 0
         try:
-            guild_id = payload.guild_id
             if guild_id is None or guild_id == 0:
                 return
             if payload.event_type != 'REACTION_REMOVE':
@@ -55,7 +58,7 @@ class StreamTeam(commands.Cog):
             streamteam_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
             if not streamteam_settings:
                 # raise exception if there are no streamteam settings
-                self.log.error(guild_id, "streamteam.on_message", f"No streamteam settings found for guild {guild_id}")
+                self.log.error(guild_id, f"{self._module}.{_method}", f"No streamteam settings found for guild {guild_id}")
                 await self.discord_helper.notify_bot_not_initialized(message, "streamteam")
                 return
 
@@ -87,13 +90,14 @@ class StreamTeam(commands.Cog):
                             twitch_name=twitch_name), color=0xff0000)
 
         except Exception as ex:
-            self.log.error(guild_id, f"streamteam.{_method}", str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
 
     @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload):
+    @commands.guild_only()
+    async def on_raw_reaction_add(self, payload) -> None:
         _method = inspect.stack()[0][3]
+        guild_id = payload.guild_id or 0
         try:
-            guild_id = payload.guild_id
             # ignore if not in a guild
             if guild_id is None or guild_id == 0:
                 return
@@ -102,7 +106,7 @@ class StreamTeam(commands.Cog):
             channel = await self.bot.fetch_channel(payload.channel_id)
             message = await channel.fetch_message(payload.message_id)
             user = await self.discord_helper.get_or_fetch_user(payload.user_id)
-            if user.bot:
+            if user is None or user.system or user.bot:
                 return
 
             # get the streamteam settings from settings
@@ -126,7 +130,7 @@ class StreamTeam(commands.Cog):
             # check if the message that is reacted to is in the list of message ids and the emoji is one that is configured.
             if str(message.id) in watch_message_ids and str(payload.emoji) in emoji:
                 # add user to the stream team requests
-                self.db.add_stream_team_request(guild_id, f"{user.name}#{user.discriminator}", user.id)
+                self.db.add_stream_team_request(guild_id, utils.get_user_display_name(user), user.id)
                 unknown = self.settings.get_string(guild_id, "unknown")
                 # send a message to the user and ask them their twitch name if it is not yet set
                 twitch_name = unknown
@@ -142,7 +146,7 @@ class StreamTeam(commands.Cog):
                         if twitch_name:
                             twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
 
-                            self.log.debug(guild_id, f"streamteam.{_method}", f"{user} requested to set twitch name {twitch_user}")
+                            self.log.debug(guild_id, f"{self._module}.{_method}", f"{utils.get_user_display_name(user)} requested to set twitch name {twitch_user}")
                             self.db.set_user_twitch_info(user.id, None, twitch_name)
                             await self.discord_helper.send_embed(user,
                                 self.settings.get_string(guild_id, "success"),
@@ -167,20 +171,21 @@ class StreamTeam(commands.Cog):
                             user=user, team_name=team_name, twitch_name=twitch_name),
                         color=0x00ff00)
         except Exception as ex:
-            self.log.error(guild_id, f"streamteam.{_method}", str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
 
 
     @commands.Cog.listener()
-    async def on_disconnect(self):
+    async def on_disconnect(self) -> None:
         pass
 
     @commands.Cog.listener()
-    async def on_resumed(self):
+    async def on_resumed(self) -> None:
         pass
 
     @commands.Cog.listener()
-    async def on_error(self, event, *args, **kwargs):
-        self.log.error(0, "streamteam.on_error", f"{str(event)}", traceback.format_exc())
+    async def on_error(self, event, *args, **kwargs) -> None:
+        _method = inspect.stack()[0][3]
+        self.log.error(0, f"{self._module}.{_method}", f"{str(event)}", traceback.format_exc())
 
     @commands.group()
     @commands.guild_only()
@@ -189,9 +194,10 @@ class StreamTeam(commands.Cog):
 
     @team.command()
     @commands.guild_only()
-    async def invite(self, ctx, twitchName: str = None):
+    async def invite(self, ctx, twitchName: str = None) -> None:
+        _method = inspect.stack()[0][3]
+        guild_id = ctx.guild.id
         try:
-            guild_id = ctx.guild.id
 
             if twitchName is None:
                 twitchName = self.db.get_user_twitch_info(ctx.author.id)['twitch_name']
@@ -214,23 +220,24 @@ class StreamTeam(commands.Cog):
             await self._invite_user(ctx, ctx.author, twitchName)
 
         except Exception as ex:
-            self.log.error(guild_id, "streamteam.invite", str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     @team.command(aliases=["invite-user"])
     @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
-    async def invite_user(self, ctx, user: discord.User, twitchName: str):
+    async def invite_user(self, ctx, user: discord.User, twitchName: str) -> None:
         await self._invite_user(ctx, user, twitchName)
 
-    async def _invite_user(self, ctx, user: discord.User, twitchName: str):
+    async def _invite_user(self, ctx, user: discord.User, twitchName: str) -> None:
+        _method = inspect.stack()[0][3]
+        guild_id = ctx.guild.id
         try:
-            guild_id = ctx.guild.id
             # get the streamteam settings from settings
             streamteam_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
             if not streamteam_settings:
                 # raise exception if there are no streamteam settings
-                self.log.error(guild_id, "streamteam.on_message", f"No streamteam settings found for guild {guild_id}")
+                self.log.error(guild_id, f"{self._module}.{_method}", f"No streamteam settings found for guild {guild_id}")
                 await self.discord_helper.notify_bot_not_initialized(ctx, "streamteam")
                 return
             unknown = self.settings.get_string(guild_id, "unknown")
@@ -256,7 +263,7 @@ class StreamTeam(commands.Cog):
                     color=0x00ff00)
 
         except Exception as ex:
-            self.log.error(ctx.guild.id, "streamteam.invite", str(ex), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:

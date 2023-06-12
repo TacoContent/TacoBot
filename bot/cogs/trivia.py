@@ -27,7 +27,10 @@ from .lib import tacotypes
 from .lib.models import TriviaQuestion
 
 class Trivia(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.SETTINGS_SECTION = "trivia"
         self.settings = settings.Settings()
@@ -43,7 +46,7 @@ class Trivia(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "trivia.__init__", "Initialized")
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
         # self.bot.loop.create_task(self.trivia_init())
     # async def trivia_init(self):
@@ -58,16 +61,18 @@ class Trivia(commands.Cog):
     #         await asyncio.sleep(time)
 
     @commands.Cog.listener()
-    async def on_ready(self):
+    async def on_ready(self) -> None:
+        _method = inspect.stack()[0][3]
         try:
-            self.log.debug(0, "trivia.on_ready", "trivia cog is ready")
+            self.log.debug(0, f"{self._module}.{_method}", "trivia cog is ready")
         except Exception as e:
-            self.log.error(0, "trivia.on_ready", str(e), traceback.format_exc())
+            self.log.error(0, f"{self._module}.{_method}", str(e), traceback.format_exc())
 
 
     @commands.group(name="trivia", invoke_without_command=True)
     @commands.guild_only()
-    async def trivia(self, ctx):
+    async def trivia(self, ctx) -> None:
+        _method = inspect.stack()[0][3]
         guild_id = 0
         try:
             if ctx.invoked_subcommand is None:
@@ -76,22 +81,17 @@ class Trivia(commands.Cog):
                     if ctx.message:
                         await ctx.message.delete()
                 else:
-                    self.log.warn(guild_id, "trivia", "Cannot run trivia command in DM")
+                    self.log.warn(guild_id, f"{self._module}.{_method}", "Cannot run trivia command in DM")
                     return
 
                 channel_id = ctx.channel.id
 
-                cog_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
-                if not cog_settings:
-                    # log error if there are no tacos settings
-                    self.log.error(guild_id, "trivia.trivia", "No trivia settings found")
-                    await self.discord_helper.notify_bot_not_initialized(ctx, "trivia")
-                    return
+                cog_settings = self.get_cog_settings(guild_id)
 
                 allowed_channels = cog_settings.get("allowed_channels", None)
                 if allowed_channels and str(channel_id) not in allowed_channels:
                     # log that the user tried to use the command in a channel that is not allowed
-                    self.log.debug(guild_id, "trivia.trivia", f"User {ctx.author.name}#{ctx.author.discriminator} tried to use the trivia command in channel {channel_id}")
+                    self.log.debug(guild_id, f"{self._module}.{_method}", f"User {utils.get_user_display_name(ctx.author)} tried to use the trivia command in channel {channel_id}")
                     return
 
 
@@ -251,16 +251,16 @@ class Trivia(commands.Cog):
                             self.db.track_trivia_question(trivia_question)
                             break
                 else:
-                    self.log.error(guild_id, "trivia.trivia", "Error retrieving the trivia question")
+                    self.log.error(guild_id, f"{self._module}.{_method}", "Error retrieving the trivia question")
             else:
                 pass
         except Exception as e:
-            self.log.error(guild_id, "trivia", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     @trivia.command()
     @commands.guild_only()
-    async def help(self, ctx):
+    async def help(self, ctx) -> None:
         guild_id = 0
         if ctx.guild:
             guild_id = ctx.guild.id
@@ -272,7 +272,8 @@ class Trivia(commands.Cog):
             color=0xff0000, delete_after=30)
         pass
 
-    def get_question(self, ctx: Context):
+    def get_question(self, ctx: Context) -> typing.Any:
+        _method = inspect.stack()[0][3]
         guild_id = 0
         try:
             if ctx.guild:
@@ -316,16 +317,12 @@ class Trivia(commands.Cog):
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
         if not cog_settings:
-            # raise exception if there are no leave_survey settings
-            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
         if not cog_settings:
-            # raise exception if there are no leave_survey settings
-            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
 

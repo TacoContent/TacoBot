@@ -74,9 +74,6 @@ class WhatDoYouCallThisWednesday(commands.Cog):
                 return
 
             cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, f"{self._module}.{_method}", f"wdyctw is disabled for guild {guild_id}")
-                return
 
             tacos_settings = self.get_tacos_settings(guild_id)
 
@@ -141,9 +138,6 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             await ctx.message.delete()
 
             cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, f"{self._module}.{_method}", f"wdyctw is disabled for guild {guild_id}")
-                return
 
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:

@@ -83,17 +83,11 @@ class TechThursdays(commands.Cog):
                 return
 
             cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings:
-                self.log.warn(guild_id, f"{self._module}.{_method}", f"No techthurs settings found for guild {guild_id}")
-                return
             if not cog_settings.get("enabled", False):
                 self.log.debug(guild_id, f"{self._module}.{_method}", f"techthurs is disabled for guild {guild_id}")
                 return
 
             tacos_settings = self.get_tacos_settings(guild_id)
-            if not tacos_settings:
-                self.log.warn(guild_id, f"{self._module}.{_method}", f"No tacos settings found for guild {guild_id}")
-                return
 
             amount = tacos_settings.get("techthurs_amount", 5)
 

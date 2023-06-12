@@ -285,7 +285,7 @@ class TacoTuesday(commands.Cog):
             fields = []
             if len(temp_reactions) > 0:
                 fields = [
-                    { "name": "Reactions", "value": f="------------------", "inline": False }
+                    { "name": "Reactions", "value": f"------------------", "inline": False },
                 ]
                 for r in message.reactions:
                     fields.append(

@@ -23,7 +23,10 @@ from .lib import tacotypes
 import inspect
 
 class Tacos(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
@@ -35,15 +38,15 @@ class Tacos(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "tacos.__init__", "Initialized")
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     @commands.group()
-    async def tacos(self, ctx):
+    async def tacos(self, ctx) -> None:
         pass
 
     @tacos.command()
     @commands.guild_only()
-    async def help(self, ctx):
+    async def help(self, ctx) -> None:
         guild_id = 0
         if ctx.guild:
             guild_id = ctx.guild.id
@@ -57,7 +60,8 @@ class Tacos(commands.Cog):
     # create command called remove_all_tacos that asks for the user
     @tacos.command(aliases=['purge'])
     @commands.has_permissions(administrator=True)
-    async def remove_all_tacos(self, ctx, user: discord.Member, *, reason: str = None):
+    async def remove_all_tacos(self, ctx, user: discord.Member, *, reason: typing.Union[str,None] = None) -> None:
+        _method = inspect.stack()[0][3]
         try:
             guild_id = ctx.guild.id
             await ctx.message.delete()
@@ -67,15 +71,17 @@ class Tacos(commands.Cog):
             await self.discord_helper.taco_purge_log(ctx.guild.id, user, ctx.author, reason_msg)
 
         except Exception as e:
-            await self.discord_helper.notify_of_error(ctx, e)
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            await self.discord_helper.notify_of_error(ctx)
             await ctx.message.delete()
 
     @tacos.command()
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def give(self, ctx, member: discord.Member, amount: int, *, reason: str = None):
+    async def give(self, ctx, member: discord.Member, amount: int, *, reason: typing.Optional[str] = None) -> None:
+        _method = inspect.stack()[0][3]
+        guild_id = ctx.guild.id
         try:
-            guild_id = ctx.guild.id
 
             await ctx.message.delete()
             # if the user that ran the command is the same as member, then exit the function
@@ -106,13 +112,14 @@ class Tacos(commands.Cog):
 
 
         except Exception as e:
-            self.log.error(ctx.guild.id, "tacos.give", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     @tacos.command()
-    async def count(self, ctx):
+    async def count(self, ctx) -> None:
+        _method = inspect.stack()[0][3]
+        guild_id = 0
         try:
-            guild_id = 0
             if ctx.guild:
                 guild_id = ctx.guild.id
                 await ctx.message.delete()
@@ -130,22 +137,20 @@ class Tacos(commands.Cog):
                 delete_after=self.SELF_DESTRUCT_TIMEOUT)
         except Exception as e:
             await ctx.message.delete()
-            self.log.error(ctx.guild.id, "tacos.count", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     @tacos.command()
     @commands.guild_only()
-    async def gift(self, ctx, member: discord.Member, amount: int, *, reason: str = None):
+    async def gift(self, ctx, member: discord.Member, amount: int, *, reason: typing.Optional[str] = None) -> None:
+        _method = inspect.stack()[0][3]
+        guild_id = ctx.guild.id
         try:
-            guild_id = ctx.guild.id
             # get taco count for message author
             await ctx.message.delete()
-            taco_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
-            if not taco_settings:
-                # raise exception if there are no tacos settings
-                self.log.error(guild_id, "tacos.on_message", f"No tacos settings found for guild {guild_id}")
-                await self.discord_helper.notify_bot_not_initialized(ctx, "tacos")
-                return
+            taco_settings = self.get_tacos_settings(guild_id)
+
+
 
             # if the user that ran the command is the same as member, then exit the function
             if ctx.author.id == member.id:
@@ -194,7 +199,7 @@ class Tacos(commands.Cog):
             await self.discord_helper.taco_give_user(guild_id, ctx.author, member, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount )
 
         except Exception as e:
-            self.log.error(ctx.guild.id, "tacos.gift", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
 
@@ -208,7 +213,7 @@ class Tacos(commands.Cog):
     #         await self.discord_helper.notify_of_error(ctx)
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message) -> None:
         _method = inspect.stack()[0][3]
         member = message.author
         try:
@@ -216,7 +221,7 @@ class Tacos(commands.Cog):
             if message.guild:
                 guild_id = message.guild.id
 
-                if member.bot:
+                if not member or member.bot or member.system:
                     return
 
                 if message.type == discord.MessageType.premium_guild_subscription:
@@ -233,7 +238,7 @@ class Tacos(commands.Cog):
                             if ref is None:
                                 return
                             if ref.author == message.author or ref.author == self.bot.user:
-                                self.log.debug(guild_id, f"tacos.{_method}", f"Ignoring message reference from {ref.author}")
+                                self.log.debug(guild_id, f"{self._module}.{_method}", f"Ignoring message reference from {ref.author}")
                                 return
                             # it is a reply to another user
                             await self.discord_helper.taco_give_user(guild_id, self.bot.user, member,
@@ -241,34 +246,33 @@ class Tacos(commands.Cog):
                                 tacotypes.TacoTypes.REPLY )
 
                     except Exception as e:
-                        self.log.error(guild_id, f"tacos.{_method}", str(e), traceback.format_exc())
+                        self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
                         return
 
             # if we are in a DM
             else:
                 return
         except Exception as ex:
-            self.log.error(member.guild.id, f"tacos.{_method}", str(ex), traceback.format_exc())
+            self.log.error(member.guild.id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
 
     @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload):
+    async def on_raw_reaction_add(self, payload) -> None:
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
         try:
             if payload.event_type != 'REACTION_ADD':
                 return
 
-            taco_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
-            if not taco_settings:
-                # raise exception if there are no tacos settings
-                self.log.error(guild_id, "tacos.on_raw_reaction_add", f"No tacos settings found for guild {guild_id}")
-                return
+            taco_settings = self.get_taco_settings(guild_id)
 
             reaction_emoji = taco_settings.get("reaction_emoji", "🌮")
 
-            self.log.debug(guild_id, f"tacos.{_method}", f"{payload.emoji.name} added to {payload.message_id}")
+            self.log.debug(guild_id, f"{self._module}.{_method}", f"{payload.emoji.name} added to {payload.message_id}")
             if str(payload.emoji) == reaction_emoji:
                 user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+                # ignore if the user is a bot or system
+                if not user or user.bot or user.system:
+                    return
                 channel = await self.bot.fetch_channel(payload.channel_id)
                 message = await channel.fetch_message(payload.message_id)
                 # if the message is from a bot, or reacted by the author, ignore it
@@ -294,7 +298,7 @@ class Tacos(commands.Cog):
                 # self.log.debug(guild_id, f"tacos.{_method}", f"{user} has gifted {total_gifted} tacos in the last {max_gift_taco_timespan} seconds.")
                 remaining_gifts = max_gift_tacos - total_gifted
 
-                # self.log.debug(guild_id, f"tacos.{_method}", f"🌮 adding taco to user {message.author.name}")
+                # self.log.debug(guild_id, f"{self._module}.{_method}", f"🌮 adding taco to user {message.author.name}")
                 # track the user's taco reaction
                 self.db.add_taco_reaction(guild_id, user.id, channel.id, message.id)
                 # # give the user the reaction reward tacos
@@ -303,7 +307,7 @@ class Tacos(commands.Cog):
                     tacotypes.TacoTypes.REACT_REWARD )
 
                 if reaction_count <= remaining_gifts:
-                    # self.log.debug(guild_id, f"tacos.{_method}", f"🌮 adding taco to user {user.name}")
+                    # self.log.debug(guild_id, f"{self._module}.{_method}", f"🌮 adding taco to user {user.name}")
                     # track that the user has gifted tacos via reactions
                     self.db.add_taco_gift(guild_id, user.id, reaction_count)
                     # give taco giver tacos too
@@ -312,9 +316,23 @@ class Tacos(commands.Cog):
                         tacotypes.TacoTypes.REACTION )
                 # else:
                 #     # log that the user cannot gift anymore tacos via reactions
-                #     self.log.debug(guild_id, f"tacos.{_method}", f"{user} cannot gift anymore tacos. remaining gifts: {remaining_gifts}")
+                #     self.log.debug(guild_id, f"{self._module}.{_method}", f"{user} cannot gift anymore tacos. remaining gifts: {remaining_gifts}")
         except Exception as ex:
-            self.log.error(guild_id, f"tacos.{_method}", str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
+
+
+
+    def get_cog_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        if not cog_settings:
+            raise Exception(f"No cog settings found for guild {guildId}")
+        return cog_settings
+
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not cog_settings:
+            raise Exception(f"No tacos settings found for guild {guildId}")
+        return cog_settings
 
 async def setup(bot):
     await bot.add_cog(Tacos(bot))

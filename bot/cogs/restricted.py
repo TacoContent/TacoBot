@@ -25,7 +25,10 @@ from .lib import mongo
 import inspect
 
 class Restricted(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
@@ -36,11 +39,11 @@ class Restricted(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "restricted.__init__", "Initialized")
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message) -> None:
         _method = inspect.stack()[0][3]
         guild_id = 0
         try:
@@ -96,9 +99,9 @@ class Restricted(commands.Cog):
                         self.settings.get_string(guild_id, "restricted_deny_message", user=message.author.mention, reason=deny_message),
                         delete_after=20, color=0xFF0000)
         except discord.NotFound as nf:
-            self.log.info(guild_id, "restricted.on_message", f"Message not found: {nf}")
+            self.log.info(guild_id, f"{self._module}.{_method}", f"Message not found: {nf}")
         except Exception as e:
-            self.log.error(guild_id, "restricted.on_message", f"{e}", traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
 
 
     def get_cog_settings(self, guildId: int = 0) -> dict:

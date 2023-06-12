@@ -185,7 +185,7 @@ class DiscordHelper:
 
     async def send_embed(
         self,
-        channel: typing.Union[discord.TextChannel, discord.DMChannel, discord.GroupChannel],
+        channel: typing.Union[discord.TextChannel, discord.DMChannel, discord.GroupChannel, discord.Thread, discord.User, discord.Member],
         title: typing.Optional[str] = None,
         message: typing.Optional[str] = None,
         fields: typing.Optional[list[dict[str, typing.Any]]] = None,
@@ -519,7 +519,20 @@ class DiscordHelper:
             self.log.error(0, f"discordhelper.{_method}", str(ex), traceback.format_exc())
             return None
 
-    async def get_or_fetch_channel(self, channelId: int) -> typing.Union[discord.TextChannel, None]:
+    async def get_or_fetch_role(self, roleId: int) -> typing.Union[discord.Role, None]:
+        _method = inspect.stack()[1][3]
+        try:
+            if roleId:
+                role = self.bot.get_role(roleId)
+                if not role:
+                    role = await self.bot.fetch_role(roleId)
+                return role
+            return None
+        except discord.errors.NotFound as nf:
+            self.log.warn(0, f"{self._module}.{_method}", str(nf), traceback.format_exc())
+            return None
+
+    async def get_or_fetch_channel(self, channelId: int) -> typing.Union[discord.TextChannel, discord.DMChannel, discord.Thread, None]:
         _method = inspect.stack()[1][3]
         try:
             if channelId:
@@ -530,10 +543,10 @@ class DiscordHelper:
             else:
                 return None
         except discord.errors.NotFound as nf:
-            self.log.warn(0, f"discordhelper.{_method}", str(nf), traceback.format_exc())
+            self.log.warn(0, f"{self._module}.{_method}", str(nf), traceback.format_exc())
             return None
         except Exception as ex:
-            self.log.error(0, f"discordhelper.{_method}", str(ex), traceback.format_exc())
+            self.log.error(0, f"{self._module}.{_method}", str(ex), traceback.format_exc())
             return None
 
     def get_by_name_or_id(self, iterable, nameOrId: typing.Union[int, str]):

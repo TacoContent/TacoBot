@@ -31,7 +31,11 @@ import inspect
 
 
 class TwitchInfo(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
+
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
@@ -43,19 +47,20 @@ class TwitchInfo(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "twitchinfo.__init__", "Initialized")
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message) -> None:
         pass
 
     @commands.group()
-    async def twitch(self, ctx):
+    async def twitch(self, ctx) -> None:
         pass
 
     @twitch.command()
     @commands.guild_only()
-    async def help(self, ctx):
+    async def help(self, ctx) -> None:
+
         guild_id = 0
         if ctx.guild:
             guild_id = ctx.guild.id
@@ -72,7 +77,7 @@ class TwitchInfo(commands.Cog):
     @twitch.command(aliases=["invite-bot"])
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
-    async def invite_bot(self, ctx, *, user: typing.Union[discord.Member, discord.User] = None):
+    async def invite_bot(self, ctx, *, user: typing.Union[discord.Member, discord.User, None] = None) -> None:
         guild_id = 0
         if ctx.guild:
             guild_id = ctx.guild.id
@@ -93,6 +98,7 @@ class TwitchInfo(commands.Cog):
         if twitch_name:
             # add the twitch name to the twitch_channels collection
             # send http request to nodered tacobot api to add the channel to the bot
+            # TODO: store this url in the settings database
             url = f"https://nodered.bit13.local/tacobot/guild/{guild_id}/invite/{twitch_name}"
             result = requests.post(url, headers={"X-AUTH-TOKEN": str(self.bot.id)})
             if result.status_code == 200:
@@ -106,17 +112,19 @@ class TwitchInfo(commands.Cog):
                 )
 
     @twitch.command()
-    async def get(self, ctx, member: typing.Union[discord.Member, discord.User] = None):
+    async def get(self, ctx, member: typing.Optional[typing.Union[discord.Member, discord.User]] = None) -> None:
+        if member is None or member.bot or member.system:
+            return
+
         check_member = member
 
         if check_member is None:
             member = ctx.author
             who = "you"
         else:
-            who = f"{member.name}#{member.discriminator}"
+            who = utils.get_user_display_name(member)
 
-        if member.bot:
-            return
+
         guild_id = 0
         channel = ctx.author
         if ctx.guild:
@@ -154,10 +162,10 @@ class TwitchInfo(commands.Cog):
     @twitch.command(aliases=["set-user"])
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def set_user(self, ctx, user: discord.Member, twitch_name: str = None):
+    async def set_user(self, ctx, user: discord.Member, twitch_name: typing.Optional[str] = None) -> None:
+        guild_id = 0
+        _method = inspect.stack()[0][3]
         try:
-            _method = inspect.stack()[0][3]
-            guild_id = 0
             channel = ctx.author
             if ctx.guild:
                 guild_id = ctx.guild.id
@@ -187,14 +195,14 @@ class TwitchInfo(commands.Cog):
                 )
             return twitch_name
         except Exception as e:
-            self.log.error(guild_id, f"tqotd.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     @twitch.command()
-    async def set(self, ctx, twitch_name: str = None):
+    async def set(self, ctx, twitch_name: typing.Optional[str] = None) -> None:
+        _method = inspect.stack()[0][3]
+        guild_id = 0
         try:
-            _method = inspect.stack()[0][3]
-            guild_id = 0
             resp_channel = ctx.author
             if ctx.guild:
                 guild_id = ctx.guild.id
@@ -252,14 +260,12 @@ class TwitchInfo(commands.Cog):
                     delete_after=30,
                 )
         except Exception as ex:
-            self.log.error(guild_id, f"tqotd.{_method}", str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
-    def get_tacos_settings(self, guildId: int = 0):
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
         if not cog_settings:
-            # raise exception if there are no leave_survey settings
-            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
 
