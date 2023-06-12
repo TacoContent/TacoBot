@@ -185,8 +185,11 @@ class LiveNow(commands.Cog):
             # check if the user is in any of the "add" roles, but has no streaming activity
             # remove them from those roles
             if len(before_streaming_activities) == 0 and len(after_streaming_activities) == 0:
-                await self.remove_live_roles(before, cog_settings)
-                await self.clean_up_live(guild_id, after.id)
+                try:
+                    await self.remove_live_roles(before, cog_settings)
+                    await self.clean_up_live(guild_id, after.id)
+                except Exception as e:
+                    self.log.error(guild_id, "live_now.on_member_update", str(e), traceback.format_exc())
 
         except Exception as e:
             self.log.error(guild_id, f"live_now.{_method}", str(e), traceback.format_exc())
@@ -322,20 +325,21 @@ class LiveNow(commands.Cog):
         cog_settings = self.get_cog_settings(guild_id)
 
         logging_channel_id = cog_settings.get("logging_channel", None)
-        logging_channel = self.bot.get_channel(int(logging_channel_id))
-        for tracked in all_tracked_for_user:
-            if logging_channel:
-                message_id = tracked.get("message_id", None)
-                if message_id:
-                    try:
-                        message = await logging_channel.fetch_message(int(message_id))
-                        if message:
-                            await message.delete()
-                    except discord.errors.NotFound:
-                        self.log.debug(guild_id, "live_now.on_member_update", f"Message {message_id} not found in channel {logging_channel}")
+        if logging_channel_id:
+            logging_channel = self.discord_helper.get_or_fetch_channel(int(logging_channel_id))
+            for tracked in all_tracked_for_user:
+                if logging_channel:
+                    message_id = tracked.get("message_id", None)
+                    if message_id:
+                        try:
+                            message = await logging_channel.fetch_message(int(message_id))
+                            if message:
+                                await message.delete()
+                        except discord.errors.NotFound:
+                            self.log.debug(guild_id, "live_now.on_member_update", f"Message {message_id} not found in channel {logging_channel}")
 
-            # remove all tracked items for this live platform (should only be one)
-            self.db.untrack_live(guild_id, tracked.get('user_id'), tracked.get('platform'))
+                # remove all tracked items for this live platform (should only be one)
+                self.db.untrack_live(guild_id, tracked.get('user_id'), tracked.get('platform'))
 
     def find_platform_emoji(self, guild: discord.Guild, platform: str) -> typing.Union[discord.Emoji, None]:
         if guild is None:
