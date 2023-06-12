@@ -10,10 +10,6 @@ import typing
 import datetime
 
 from discord.ext.commands.cooldowns import BucketType
-
-# from discord_slash import ComponentContext
-# from discord_slash.utils.manage_components import create_button, create_actionrow, create_select, create_select_option,  wait_for_component
-# from discord_slash.model import ButtonStyle
 from discord.ext.commands import has_permissions, CheckFailure
 
 from .lib import settings
@@ -30,27 +26,28 @@ import inspect
 
 
 class MentalMondays(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.SETTINGS_SECTION = "mentalmondays"
         self.SELF_DESTRUCT_TIMEOUT = 30
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "mentalmondays.__init__", "Initialized")
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     @commands.group(name="mentalmondays", invoke_without_command=True)
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def mentalmondays(self, ctx):
+    async def mentalmondays(self, ctx) -> None:
+        _method = inspect.stack()[0][3]
         if ctx.invoked_subcommand is not None:
             return
         guild_id = 0
@@ -87,22 +84,14 @@ class MentalMondays(commands.Cog):
                 return
 
             cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings:
-                self.log.warn(
-                    guild_id, "mentalmondays.mentalmondays", f"No mentalmondays settings found for guild {guild_id}"
-                )
-                return
+
             if not cog_settings.get("enabled", False):
                 self.log.debug(
-                    guild_id, "mentalmondays.mentalmondays", f"mentalmondays is disabled for guild {guild_id}"
+                    guild_id, f"{self._module}.{_method}", f"mentalmondays is disabled for guild {guild_id}"
                 )
                 return
 
             tacos_settings = self.get_tacos_settings(guild_id)
-            if not tacos_settings:
-                self.log.warn(guild_id, "mentalmondays.mentalmondays", f"No tacos settings found for guild {guild_id}")
-                return
-
             amount = tacos_settings.get("mentalmondays_amount", 5)
 
             role_tag = None
@@ -122,7 +111,7 @@ class MentalMondays(commands.Cog):
 
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
-                self.log.warn(guild_id, "mentalmondays.mentalmondays", f"No output channel found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"No output channel found for guild {guild_id}")
 
             # get role
             taco_word = self.settings.get_string(guild_id, "taco_singular")
@@ -156,14 +145,15 @@ class MentalMondays(commands.Cog):
             )
 
         except Exception as e:
-            self.log.error(guild_id, "mentalmondays.mentalmondays", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     @mentalmondays.command(name="import")
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def import_mentalmondays(self, ctx, message_id: int):
+    async def import_mentalmondays(self, ctx, message_id: int) -> None:
         """Import mentalmondays from an existing post"""
+        _method = inspect.stack()[0][3]
         guild_id = 0
         if ctx.guild:
             guild_id = ctx.guild.id
@@ -172,20 +162,15 @@ class MentalMondays(commands.Cog):
             await ctx.message.delete()
 
             cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings:
-                self.log.warn(
-                    guild_id, "mentalmondays.mentalmondays", f"No mentalmondays settings found for guild {guild_id}"
-                )
-                return
             if not cog_settings.get("enabled", False):
                 self.log.debug(
-                    guild_id, "mentalmondays.mentalmondays", f"mentalmondays is disabled for guild {guild_id}"
+                    guild_id, f"{self._module}.{_method}", f"mentalmondays is disabled for guild {guild_id}"
                 )
                 return
 
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
-                self.log.warn(guild_id, "mentalmondays.mentalmondays", f"No output channel found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"No output channel found for guild {guild_id}")
 
             # get the message from the id
             message = await out_channel.fetch_message(message_id)
@@ -195,20 +180,20 @@ class MentalMondays(commands.Cog):
             self._import_mentalmondays(message)
 
         except Exception as e:
-            self.log.error(ctx.guild.id, "mentalmondays.import_mentalmondays", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     @mentalmondays.command(name="give")
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def give(self, ctx, member: discord.Member):
+    async def give(self, ctx, member: discord.Member) -> None:
         try:
             await ctx.message.delete()
 
             await self.give_user_mentalmondays_tacos(ctx.guild.id, member.id, ctx.channel.id, None)
 
         except Exception as e:
-            self.log.error(ctx.guild.id, "mentalmondays.give", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     async def _on_raw_reaction_add_give(self, payload):
@@ -217,7 +202,7 @@ class MentalMondays(commands.Cog):
 
         # check if the user that reacted is in the admin role
         if not await self.discord_helper.is_admin(guild_id, payload.user_id):
-            self.log.debug(guild_id, _method, f"User {payload.user_id} is not an admin")
+            self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
             return
         # in future, check if the user is in a defined role that can grant tacos (e.g. moderator)
 
@@ -232,7 +217,7 @@ class MentalMondays(commands.Cog):
         if reaction.count > 1:
             self.log.debug(
                 guild_id,
-                _method,
+                f"{self._module}.{_method}",
                 f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}",
             )
             return
@@ -242,7 +227,7 @@ class MentalMondays(commands.Cog):
             # log that we are giving tacos for this reaction
             self.log.info(
                 guild_id,
-                _method,
+                f"{self._module}.{_method}",
                 f"User {payload.user_id} reacted with {payload.emoji.name} to message {payload.message_id}",
             )
             await self.give_user_mentalmondays_tacos(
@@ -250,16 +235,16 @@ class MentalMondays(commands.Cog):
             )
         else:
             self.log.debug(
-                guild_id, _method, f"Message {payload.message_id} has already been tracked for mentalmondays. Skipping."
+                guild_id, f"{self._module}.{_method}", f"Message {payload.message_id} has already been tracked for mentalmondays. Skipping."
             )
 
-    async def _on_raw_reaction_add_import(self, payload):
+    async def _on_raw_reaction_add_import(self, payload) -> None:
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
 
         # check if the user that reacted is in the admin role
         if not await self.discord_helper.is_admin(guild_id, payload.user_id):
-            self.log.debug(guild_id, _method, f"User {payload.user_id} is not an admin")
+            self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
             return
 
         channel = self.bot.get_channel(payload.channel_id)
@@ -269,7 +254,7 @@ class MentalMondays(commands.Cog):
         if reaction.count > 1:
             self.log.debug(
                 guild_id,
-                _method,
+                f"{self._module}.{_method}",
                 f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}",
             )
             return
@@ -277,7 +262,7 @@ class MentalMondays(commands.Cog):
         self._import_mentalmondays(message)
 
     @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload):
+    async def on_raw_reaction_add(self, payload) -> None:
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
         try:
@@ -289,25 +274,28 @@ class MentalMondays(commands.Cog):
             if payload.event_type != "REACTION_ADD":
                 return
 
-            taco_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
-            if not taco_settings:
-                # raise exception if there are no tacos settings
-                self.log.error(guild_id, "tacos.on_raw_reaction_add", f"No tacos settings found for guild {guild_id}")
+            cog_settings = self.get_cog_settings(guild_id)
+            if not cog_settings.get("enabled", False):
                 return
 
-            reaction_emojis = taco_settings.get("mentalmondays_reaction_emoji", ["🇲"])
+            reaction_emojis = cog_settings.get("reaction_emoji", ["🇲"])
+            reaction_import_emojis = cog_settings.get("import_emoji", ["🇮"])
+            check_list = reaction_emojis + reaction_import_emojis
+            if str(payload.emoji.name) not in check_list:
+                return
+
+
             if str(payload.emoji.name) in reaction_emojis:
                 await self._on_raw_reaction_add_give(payload)
                 return
 
-            reaction_import_emojis = taco_settings.get("mentalmondays_reaction_import_emoji", ["🇮"])
 
             if str(payload.emoji.name) in reaction_import_emojis:
                 await self._on_raw_reaction_add_import(payload)
                 return
 
         except Exception as ex:
-            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
             # await self.discord_helper.notify_of_error(ctx)
 
     def _import_mentalmondays(self, message: discord.Message):
@@ -341,7 +329,8 @@ class MentalMondays(commands.Cog):
             message_id=message_id,
         )
 
-    async def give_user_mentalmondays_tacos(self, guild_id, user_id, channel_id, message_id):
+    async def give_user_mentalmondays_tacos(self, guild_id, user_id, channel_id, message_id) -> None:
+        _method = inspect.stack()[0][3]
         try:
             # create context
             # self, bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
@@ -358,7 +347,7 @@ class MentalMondays(commands.Cog):
             if not channel:
                 self.log.warn(
                     guild_id,
-                    "mentalmondays.give_user_mentalmondays_tacos",
+                    f"{self._module}.{_method}",
                     f"No output channel found for guild {guild_id}",
                 )
                 return
@@ -378,7 +367,7 @@ class MentalMondays(commands.Cog):
 
             tacos_settings = self.get_tacos_settings(guild_id)
             if not tacos_settings:
-                self.log.warn(guild_id, "mentalmondays.mentalmondays", f"No tacos settings found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"No tacos settings found for guild {guild_id}")
                 return
 
             amount = tacos_settings.get("mentalmondays_count", 5)
@@ -411,22 +400,18 @@ class MentalMondays(commands.Cog):
             )
 
         except Exception as e:
-            self.log.error(ctx.guild.id, "mentalmondays.give", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
-    def get_cog_settings(self, guildId: int = 0):
+    def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
         if not cog_settings:
-            # raise exception if there are no leave_survey settings
-            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
-            raise Exception(f"No mentalmondays settings found for guild {guildId}")
+            raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
-    def get_tacos_settings(self, guildId: int = 0):
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
         if not cog_settings:
-            # raise exception if there are no leave_survey settings
-            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
 

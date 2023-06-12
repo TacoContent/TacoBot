@@ -191,7 +191,7 @@ class TwitchInfo(commands.Cog):
                 )
             return twitch_name
         except Exception as e:
-            self.log.error(guild_id, _method, str(e), traceback.format_exc())
+            self.log.error(guild_id, f"tqotd.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     @twitch.command()
@@ -226,7 +226,7 @@ class TwitchInfo(commands.Cog):
                         timeout=60,
                     )
 
-            self.log.debug(0, _method, f"{ctx.author} requested to set twitch name {twitch_name}")
+            self.log.debug(0, f"tqotd.{_method}", f"{ctx.author} requested to set twitch name {twitch_name}")
             if twitch_name is not None:
                 twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
                 found_twitch = self.db.get_user_twitch_info(ctx.author.id)
@@ -256,7 +256,7 @@ class TwitchInfo(commands.Cog):
                     delete_after=30,
                 )
         except Exception as ex:
-            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"tqotd.{_method}", str(ex), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     def get_tacos_settings(self, guildId: int = 0):

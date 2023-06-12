@@ -29,10 +29,7 @@ class StreamTeam(commands.Cog):
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.SETTINGS_SECTION = "streamteam"
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -91,7 +88,7 @@ class StreamTeam(commands.Cog):
                             twitch_name=twitch_name), color=0xff0000)
 
         except Exception as ex:
-            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"streamteam.{_method}", str(ex), traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -110,20 +107,20 @@ class StreamTeam(commands.Cog):
                 return
 
             # get the streamteam settings from settings
-            streamteam_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
-            if not streamteam_settings:
-                # raise exception if there are no streamteam settings
-                self.log.error(guild_id, "streamteam.on_message", f"No streamteam settings found for guild {guild_id}")
-                await self.discord_helper.notify_bot_not_initialized(message, "streamteam")
-                return
+            cog_settings = self.get_cog_settings(guild_id)
 
             # get the reaction emoji
-            emoji = streamteam_settings["emoji"]
-            team_name = streamteam_settings["name"]
+            emoji = cog_settings.get("emoji", [])
+            team_name = cog_settings.get("name", "")
+
+            if len(emoji) == 0 or team_name == "":
+                return
+
             # get the message ids to check
-            watch_message_ids = streamteam_settings["message_ids"]
+            watch_message_ids = cog_settings.get("message_ids", [])
             # get the log channel id
-            log_channel_id = streamteam_settings["log_channel"]
+            log_channel_id = cog_settings.get("log_channel", None)
+            log_channel = None
             if log_channel_id:
                 log_channel = await self.discord_helper.get_or_fetch_channel(log_channel_id)
 
@@ -146,7 +143,7 @@ class StreamTeam(commands.Cog):
                         if twitch_name:
                             twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
 
-                            self.log.debug(0, _method, f"{user} requested to set twitch name {twitch_user}")
+                            self.log.debug(guild_id, f"streamteam.{_method}", f"{user} requested to set twitch name {twitch_user}")
                             self.db.set_user_twitch_info(user.id, None, twitch_name)
                             await self.discord_helper.sendEmbed(user,
                                 self.settings.get_string(guild_id, "success"),
@@ -171,7 +168,7 @@ class StreamTeam(commands.Cog):
                             user=user, team_name=team_name, twitch_name=twitch_name),
                         color=0x00ff00)
         except Exception as ex:
-            self.log.error(guild_id, _method, str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"streamteam.{_method}", str(ex), traceback.format_exc())
 
 
     @commands.Cog.listener()
@@ -263,19 +260,17 @@ class StreamTeam(commands.Cog):
             self.log.error(ctx.guild.id, "streamteam.invite", str(ex), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
-    @team.command()
-    @commands.guild_only()
-    async def help(self, ctx):
-        guild_id = 0
-        if ctx.guild:
-            guild_id = ctx.guild.id
-            await ctx.message.delete()
-        await self.discord_helper.sendEmbed(ctx.channel,
-            self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
-            self.settings.get_string(guild_id, "help_module_message", bot_name=self.settings.name, command="team"),
-            footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
-            color=0xff0000, delete_after=30)
-        pass
+    def get_cog_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        if not cog_settings:
+            raise Exception(f"No cog settings found for guild {guildId}")
+        return cog_settings
+
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not cog_settings:
+            raise Exception(f"No tacos settings found for guild {guildId}")
+        return cog_settings
 
 async def setup(bot):
     await bot.add_cog(StreamTeam(bot))

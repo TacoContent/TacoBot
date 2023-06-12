@@ -15,10 +15,8 @@ from .lib import settings
 from .lib import discordhelper
 from .lib import logger
 from .lib import loglevel
-from .lib import utils
 from .lib import settings
 from .lib import mongo
-from .lib import dbprovider
 from .lib import tacotypes
 
 
@@ -52,7 +50,7 @@ class ServerEvent(commands.Cog):
                 taco_amount=5,
             )
         except Exception as e:
-            self.log.error(guild_id, _method, str(e), traceback.format_exc())
+            self.log.error(guild_id, f"server_event.{_method}", str(e), traceback.format_exc())
             return
 
     async def on_scheduled_event_delete(self, event: discord.ScheduledEvent):
@@ -79,7 +77,7 @@ class ServerEvent(commands.Cog):
                 taco_amount=-5,
             )
         except Exception as e:
-            self.log.error(guild_id, _method, str(e), traceback.format_exc())
+            self.log.error(guild_id, f"server_event.{_method}", str(e), traceback.format_exc())
             return
 
     @commands.Cog.listener()
@@ -115,7 +113,7 @@ class ServerEvent(commands.Cog):
                     taco_amount=5,
                 )
         except Exception as e:
-            self.log.error(guild_id, _method, str(e), traceback.format_exc())
+            self.log.error(guild_id, f"server_event.{_method}", str(e), traceback.format_exc())
             return
 
     @commands.Cog.listener()
@@ -135,7 +133,7 @@ class ServerEvent(commands.Cog):
                 taco_amount=5,
             )
         except Exception as e:
-            self.log.error(guild_id, _method, str(e), traceback.format_exc())
+            self.log.error(guild_id, f"server_event.{_method}", str(e), traceback.format_exc())
             return
 
     @commands.Cog.listener()
@@ -155,7 +153,7 @@ class ServerEvent(commands.Cog):
                 taco_amount=-5,
             )
         except Exception as e:
-            self.log.error(guild_id, _method, str(e), traceback.format_exc())
+            self.log.error(guild_id, f"server_event.{_method}", str(e), traceback.format_exc())
             return
 
 

@@ -25,6 +25,9 @@ from .lib import tacotypes
 
 class FoodPhoto(commands.Cog):
     def __init__(self, bot):
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
@@ -35,7 +38,7 @@ class FoodPhoto(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "food_photo.__init__", "Initialized")
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -44,6 +47,8 @@ class FoodPhoto(commands.Cog):
         try:
             if message.guild is not None:
                 guild_id = message.guild.id
+            if guild_id == 0:
+                return
             # if the message is from a bot, ignore
             if message.author.bot:
                 return
@@ -52,16 +57,12 @@ class FoodPhoto(commands.Cog):
             media_regex = r"(https:\/\/)((?:cdn|media)\.discordapp\.(?:net|com))\/attachments\/\d+\/\d+\/\w+\.(png|jpe?g|gif|webp)"
 
             # get the settings from settings
-            food_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
-            if not food_settings:
-                # raise exception if there are no settings
-                self.log.debug(guild_id, "food_photo.on_message", f"No settings found for guild {guild_id}")
-                # await self.discord_helper.notify_bot_not_initialized(message, "food_photo")
-                return
+            cog_settings = self.get_cog_settings(guild_id)
 
-            food_channel = [c for c in food_settings["channels"] if str(c["id"]) == str(message.channel.id)]
-            if food_channel:
-                food_channel = food_channel[0]
+            food_channel_list = [c for c in cog_settings.get("channels", []) if str(c["id"]) == str(message.channel.id)]
+            food_channel = None
+            if food_channel_list:
+                food_channel = food_channel_list[0]
 
             if not food_channel:
                 return
@@ -69,7 +70,7 @@ class FoodPhoto(commands.Cog):
             # if the message is not a photo, ignore
             matches = re.search(media_regex, message.content, re.MULTILINE | re.DOTALL | re.UNICODE | re.IGNORECASE)
             if not message.attachments and matches is None:
-                self.log.debug(guild_id, "food_photo.on_message", f"Message {message.id} does not contain a photo")
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"Message {message.id} does not contain a photo")
                 return
 
             # # check if the user posted a photo in the channel within the last 5 minutes
@@ -82,10 +83,11 @@ class FoodPhoto(commands.Cog):
             #         # if so, ignore
             #         for r in food_channel['reactions']:
             #             if r in [r.emoji for r in m.reactions]:
-            #                 self.log.debug(guild_id, "food_photo.on_message", f"User {message.author} already posted a photo in the last 5 minutes")
-            #                 self.log.debug(guild_id, "food_photo.on_message", f"Bot already reacted to message {m.id}")
+            #                 self.log.debug(guild_id, f"{self._module}.{_method}"", f"User {message.author} already posted a photo in the last 5 minutes")
+            #                 self.log.debug(guild_id, f"{self._module}.{_method}", f"Bot already reacted to message {m.id}")
             #                 return
 
+            # this SHOULD get the amount from the `tacos` settings, but it doesn't
             amount = int(food_channel["tacos"] if "tacos" in food_channel else 5)
             amount = amount if amount > 0 else 5
 
@@ -105,7 +107,7 @@ class FoodPhoto(commands.Cog):
             )
 
             # track the message in the database
-            image_url = message.attachments[0].url if message.attachments else matches.group(0)
+            image_url = message.attachments[0].url if message.attachments else matches.group(0) if matches else None
             self.db.track_food_post(
                 guildId=guild_id,
                 userId=message.author.id,
@@ -117,9 +119,19 @@ class FoodPhoto(commands.Cog):
 
             pass
         except Exception as e:
-            self.log.error(0, "food_photo.on_message", str(e), traceback.format_exc())
+            self.log.error(0, f"{self._module}.{_method}", str(e), traceback.format_exc())
             traceback.print_exc()
 
+    def get_cog_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        if not cog_settings:
+            raise Exception(f"No cog settings found for guild {guildId}")
+        return cog_settings
 
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not cog_settings:
+            raise Exception(f"No tacos settings found for guild {guildId}")
+        return cog_settings
 async def setup(bot):
     await bot.add_cog(FoodPhoto(bot))
