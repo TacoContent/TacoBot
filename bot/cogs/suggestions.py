@@ -310,7 +310,7 @@ class Suggestions(commands.Cog):
                 else:
                     vote = 1
 
-                has_user_voted = self.db.has_user_voted(suggestion['id'], user.id)
+                has_user_voted = self.db.has_user_voted_on_suggestion(suggestion['id'], user.id)
                 if has_user_voted:
                     self.log.debug(guild_id, f"{self._module}.{_method}", f"{user.name} has already voted on suggestion {suggestion['id']}")
                     await message.remove_reaction(payload.emoji, user)
@@ -457,7 +457,7 @@ class Suggestions(commands.Cog):
             if str(payload.emoji) in vote_emoji:
                 # remove vote
                 self.log.debug(guild_id, f"{self._module}.{_method}", f"{user.name} removed vote from suggestion {suggestion['id']}")
-                has_user_voted = self.db.has_user_voted(suggestion['id'], user.id)
+                has_user_voted = self.db.has_user_voted_on_suggestion(suggestion['id'], user.id)
                 if not has_user_voted:
                     return
                 else:

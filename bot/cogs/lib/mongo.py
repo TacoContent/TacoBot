@@ -22,7 +22,7 @@ from . import loglevel
 # from .mongodb import migration
 
 class MongoDatabase(database.Database):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
@@ -32,12 +32,13 @@ class MongoDatabase(database.Database):
         self.connection = None
         pass
 
-    def open(self):
+    def open(self) -> None:
         if not self.settings.db_url:
             raise ValueError("MONGODB_URL is not set")
         self.client = MongoClient(self.settings.db_url)
         self.connection = self.client.tacobot
-    def close(self):
+
+    def close(self) -> None:
         try:
             if self.client:
                 self.client.close()
@@ -45,7 +46,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
 
-    def insert_log(self, guildId: int, level: loglevel.LogLevel, method: str, message: str, stack: typing.Optional[str] = None):
+    def insert_log(self, guildId: int, level: loglevel.LogLevel, method: str, message: str, stack: typing.Optional[str] = None) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -61,7 +62,12 @@ class MongoDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-    def clear_log(self, guildId):
+        finally:
+            if self.connection:
+                self.close()
+            self.close()
+
+    def clear_log(self, guildId: int) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -70,7 +76,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
 
-    def add_twitchbot_to_channel(self, guildId: int, twitch_channel: str):
+    def add_twitchbot_to_channel(self, guildId: int, twitch_channel: str) -> bool:
         try:
             if self.connection is None:
                 self.open()
@@ -84,7 +90,7 @@ class MongoDatabase(database.Database):
                 "channel": twitch_channel,
                 "timestamp": timestamp,
             }
-            self.connection.twitch_channels.update_one({"guild_id": self.settings.discord_guild_id, "channel": twitch_channel}, {"$set": payload}, upsert=True)
+            self.connection.twitch_channels.update_one({"guild_id": self.settings.get("discord_guild_id"), "channel": twitch_channel}, {"$set": payload}, upsert=True)
             return True
         except Exception as ex:
             print(ex)
@@ -93,7 +99,7 @@ class MongoDatabase(database.Database):
         finally:
             self.close()
 
-    def add_stream_team_request(self, guildId: int, userName: str, userId: int, twitchName: str = None) -> None:
+    def add_stream_team_request(self, guildId: int, userName: str, userId: int, twitchName: typing.Optional[str] = None) -> None:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
@@ -103,7 +109,7 @@ class MongoDatabase(database.Database):
                 "guild_id": str(guildId),
                 "user_id": str(userId),
                 "user_name": userName,
-                "twitch_name": twitchName,
+                "twitch_name": twitchName if twitchName else "",
                 "timestamp": timestamp
             }
             # if not in table, insert
@@ -117,11 +123,12 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-    def remove_stream_team_request(self, guildId: int, userId: int):
+
+    def remove_stream_team_request(self, guildId: int, userId: int) -> None:
         try:
             if self.connection is None:
                 self.open()
-            self.connection.stream_team_requests.delete_many({ "guild_id": str(guildId), "user_id": userId })
+            self.connection.stream_team_requests.delete_many({ "guild_id": str(guildId), "user_id": str(userId) })
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -129,10 +136,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def get_stream_team_requests(self, guildId: int):
-        pass
-
-    def set_user_twitch_info(self, userId: int, twitchId: str, twitchName: str):
+    def set_user_twitch_info(self, userId: int, twitchId: str, twitchName: str) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -150,7 +154,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def get_user_twitch_info(self, userId: int):
+    def get_user_twitch_info(self, userId: int) -> typing.Optional[dict]:
         try:
             if self.connection is None:
                 self.open()
@@ -232,6 +236,7 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
+
     def get_tacos_count(self, guildId: int, userId: int) -> typing.Union[int,None]:
         _method = inspect.stack()[0][3]
         try:
@@ -249,6 +254,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
         pass
+
     def get_total_gifted_tacos(self, guildId: int, userId: int, timespan_seconds: int = 86400) -> typing.Union[int,None]:
         try:
             if self.connection is None:
@@ -268,7 +274,8 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-    def add_taco_gift(self, guildId: int, userId: int, count: int):
+
+    def add_taco_gift(self, guildId: int, userId: int, count: int) -> bool:
         try:
             if self.connection is None:
                 self.open()
@@ -293,7 +300,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def add_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int):
+    def add_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int) -> None:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
@@ -315,7 +322,7 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-    def get_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int):
+    def get_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int) -> typing.Union[dict,None]:
         try:
             if self.connection is None:
                 self.open()
@@ -330,7 +337,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def add_suggestion_create_message(self, guildId: int, channelId: int, messageId: int):
+    def add_suggestion_create_message(self, guildId: int, channelId: int, messageId: int) -> None:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
@@ -352,7 +359,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def remove_suggestion_create_message(self, guildId: int, channelId: int, messageId: int):
+    def remove_suggestion_create_message(self, guildId: int, channelId: int, messageId: int) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -364,7 +371,7 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-    def add_settings(self, guildId: int, name:str, settings: dict):
+    def add_settings(self, guildId: int, name:str, settings: dict) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -384,7 +391,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def get_settings(self, guildId: int, name:str):
+    def get_settings(self, guildId: int, name:str) -> typing.Union[dict,None]:
         try:
             if self.connection is None:
                 self.open()
@@ -401,7 +408,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def get_suggestion(self, guildId: int, messageId: int):
+    def get_suggestion(self, guildId: int, messageId: int) -> typing.Union[dict,None]:
         try:
             if self.connection is None:
                 self.open()
@@ -418,7 +425,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def get_suggestion_by_id(self, guildId: int, suggestionId: str):
+    def get_suggestion_by_id(self, guildId: int, suggestionId: str) -> typing.Union[dict,None]:
         try:
             if self.connection is None:
                 self.open()
@@ -435,7 +442,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def set_state_suggestion_by_id(self, guildId: int, suggestionId: str, state: str, userId: int, reason: str):
+    def set_state_suggestion_by_id(self, guildId: int, suggestionId: str, state: str, userId: int, reason: str) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -461,7 +468,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def set_state_suggestion(self, guildId: int, messageId: int, state: str, userId: int, reason: str):
+    def set_state_suggestion(self, guildId: int, messageId: int, state: str, userId: int, reason: str) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -486,7 +493,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def has_user_voted(self, suggestionId: str, userId: int):
+    def has_user_voted_on_suggestion(self, suggestionId: str, userId: int) -> bool:
         try:
             if self.connection is None:
                 self.open()
@@ -501,10 +508,12 @@ class MongoDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            return False
         finally:
             if self.connection:
+
                 self.close()
-    def unvote_suggestion_by_id(self, guildId: int, suggestionId: str, userId: int):
+    def unvote_suggestion_by_id(self, guildId: int, suggestionId: str, userId: int) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -522,7 +531,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def unvote_suggestion(self, guildId: int, messageId: int, userId: int ):
+    def unvote_suggestion(self, guildId: int, messageId: int, userId: int ) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -540,7 +549,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def get_suggestion_votes_by_id(self, suggestionId: str):
+    def get_suggestion_votes_by_id(self, suggestionId: str) -> typing.Union[dict,None]:
         try:
             if self.connection is None:
                 self.open()
@@ -555,7 +564,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def vote_suggestion(self, guildId: int, messageId: int, userId: int, vote: int):
+    def vote_suggestion(self, guildId: int, messageId: int, userId: int, vote: int) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -574,7 +583,7 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-    def vote_suggestion_by_id(self, suggestionId: str, userId: int, vote: int):
+    def vote_suggestion_by_id(self, suggestionId: str, userId: int, vote: int) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -594,7 +603,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def add_suggestion(self, guildId: int, messageId: int, suggestion: dict):
+    def add_suggestion(self, guildId: int, messageId: int, suggestion: dict) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -620,7 +629,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def delete_suggestion_by_id(self, guildId: int, suggestionId: str, userId: int, reason: str):
+    def delete_suggestion_by_id(self, guildId: int, suggestionId: str, userId: int, reason: str) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -646,7 +655,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def track_invite_code(self, guildId: int, inviteCode: str, inviteInfo: dict, userInvite: dict):
+    def track_invite_code(self, guildId: int, inviteCode: str, inviteInfo: dict, userInvite: dict) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -667,7 +676,8 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-    def get_invite_code(self, guildId: int, inviteCode: str):
+
+    def get_invite_code(self, guildId: int, inviteCode: str) -> typing.Any:
         try:
             if self.connection is None:
                 self.open()
@@ -679,7 +689,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def track_live_activity(self, guildId: int, userId: int, live: bool, platform: str, url: str):
+    def track_live_activity(self, guildId: int, userId: int, live: bool, platform: str, url: str) -> None:
         try:
             if self.connection is None:
                 self.open()
