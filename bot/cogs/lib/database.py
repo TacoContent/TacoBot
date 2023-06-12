@@ -37,9 +37,9 @@ class Database():
         pass
     def remove_tacos(self, guildId: int, userId: int, count: int):
         pass
-    def get_tacos_count(self, guildId: int, userId: int):
+    def get_tacos_count(self, guildId: int, userId: int) -> typing.Union[int,None]:
         pass
-    def get_total_gifted_tacos(self, guildId: int, userId: int, timespan_seconds: int = 86400):
+    def get_total_gifted_tacos(self, guildId: int, userId: int, timespan_seconds: int = 86400) -> typing.Union[int,None]:
         pass
     def add_taco_gift(self, guildId: int, userId: int, count: int):
         pass
@@ -63,13 +63,6 @@ class Database():
     def add_suggestion_create_message(self, guildId: int, channelId: int, messageId: int):
         pass
     def remove_suggestion_create_message(self, guildId: int, channelId: int, messageId: int):
-        pass
-
-    def track_wait_invoke(self, guildId: int, channelId: int, messageId: int):
-        pass
-    def untrack_wait_invoke(self, guildId: int, channelId: int, messageId: int):
-        pass
-    def get_wait_invokes(self, guildId: int, channelId: int):
         pass
 
     def track_invite_code(self, guildId: int, inviteCode: str, inviteInfo: dict):

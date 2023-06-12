@@ -27,6 +27,9 @@ from .lib.GameRewardView import GameRewardView
 
 class GameKeys(commands.Cog):
     def __init__(self, bot):
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
@@ -38,7 +41,7 @@ class GameKeys(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "game_keys.__init__", "Initialized")
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     @commands.group(name="game-keys")
     @commands.guild_only()
@@ -49,25 +52,28 @@ class GameKeys(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def open(self, ctx) -> None:
+        _method = inspect.stack()[0][3]
         try:
             await ctx.message.delete()
             await self._create_offer(ctx)
         except Exception as e:
-            self.log.error(ctx.guild.id, "game_keys.open", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     @game_keys.command(name="close")
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def close(self, ctx):
+        _method = inspect.stack()[0][3]
         try:
             await ctx.message.delete()
             await self._close_offer(ctx)
         except Exception as e:
-            self.log.error(ctx.guild.id, "game_keys.close", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     async def _create_offer(self, ctx) -> None:
+        _method = inspect.stack()[0][3]
         try:
             guild_id = 0
             if ctx.guild:
@@ -79,13 +85,13 @@ class GameKeys(commands.Cog):
 
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, "game_keys._create_offer", f"game_keys is disabled for guild {guild_id}")
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"game_keys is disabled for guild {guild_id}")
                 return
 
             # Should we pull this from `tacos` settings?
             cost = cog_settings.get("cost", 500)
             if cost <= 0:
-                self.log.warn(guild_id, "game_keys._create_offer", f"Cost is 0 or less for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"Cost is 0 or less for guild {guild_id}")
                 return
 
             if cost == 1:
@@ -98,10 +104,10 @@ class GameKeys(commands.Cog):
             log_channel_id = cog_settings.get("log_channel_id", "0")
             log_channel = await self.discord_helper.get_or_fetch_channel(int(log_channel_id))
             if not reward_channel:
-                self.log.warn(guild_id, "game_keys._create_offer", f"No reward channel found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"No reward channel found for guild {guild_id}")
                 return
             if not log_channel:
-                self.log.warn(guild_id, "game_keys._create_offer", f"No log channel found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"No log channel found for guild {guild_id}")
                 return
 
             game_data = self.db.get_random_game_key_data(guild_id=guild_id)
@@ -147,10 +153,11 @@ class GameKeys(commands.Cog):
             # record offer
             self.db.open_game_key_offer(game_data["id"], guild_id, offer_message.id, ctx.channel.id)
         except Exception as e:
-            self.log.error(ctx.guild.id, "game_keys._create_offer", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     async def _claim_offer_callback(self, interaction: discord.Interaction):
+        _method = inspect.stack()[0][3]
         await interaction.response.defer()
         # create context from interaction
         ctx = self.discord_helper.create_context(
@@ -160,7 +167,7 @@ class GameKeys(commands.Cog):
             message=interaction.message,
             guild=interaction.guild,
             custom_id=interaction.data["custom_id"])
-        self.log.debug(ctx.guild.id, "game_keys._claim_offer_callback", f"Claiming offer {interaction.data['custom_id']}")
+        self.log.debug(ctx.guild.id, f"{self._module}.{_method}", f"Claiming offer {interaction.data['custom_id']}")
         await self._claim_offer(ctx, interaction.data["custom_id"])
         await self._create_offer(ctx)
 
@@ -187,6 +194,7 @@ class GameKeys(commands.Cog):
     #     await asyncio.sleep((60 * 60 * 24) * 2)
 
     async def _close_offer(self, ctx) -> None:
+        _method = inspect.stack()[0][3]
         # get the current offer and close it
         try:
             guild_id = 0
@@ -195,17 +203,17 @@ class GameKeys(commands.Cog):
 
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings:
-                self.log.warn(guild_id, "game_keys._create_offer", f"No game_keys settings found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"No game_keys settings found for guild {guild_id}")
                 return
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, "game_keys._create_offer", f"game_keys is disabled for guild {guild_id}")
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"game_keys is disabled for guild {guild_id}")
                 return
 
             reward_channel_id = cog_settings.get("reward_channel_id", "0")
-            reward_channel: discord.TextChannel = await self.discord_helper.get_or_fetch_channel(int(reward_channel_id))
+            reward_channel: typing.Union[discord.TextChannel, None] = await self.discord_helper.get_or_fetch_channel(int(reward_channel_id))
 
             if not reward_channel:
-                self.log.warn(guild_id, "game_keys._create_offer", f"No reward channel found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"No reward channel found for guild {guild_id}")
                 return
 
             offer = self.db.find_open_game_key_offer(guild_id, reward_channel.id)
@@ -218,7 +226,7 @@ class GameKeys(commands.Cog):
                         except Exception as e:
                             pass
                 except discord.NotFound as nfe:
-                    self.log.debug(guild_id, "game_keys._create_offer", f"Offer message not found for guild {guild_id}")
+                    self.log.debug(guild_id, f"{self._module}.{_method}", f"Offer message not found for guild {guild_id}")
                     pass
 
                 self.db.close_game_key_offer_by_message(guild_id, int(offer["message_id"]))
@@ -226,14 +234,15 @@ class GameKeys(commands.Cog):
             else:
                 self.log.debug(
                     guild_id,
-                    "game_keys._close_offer",
+                    f"{self._module}.{_method}",
                     f"No open offer found for guild {guild_id} in channel {reward_channel.name}",
                 )
         except Exception as e:
-            self.log.error(ctx.guild.id, "game_keys._close_offer", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     async def _claim_offer(self, ctx, game_id: str) -> bool:
+        _method = inspect.stack()[0][3]
         try:
             # claim the offer
             guild_id = 0
@@ -242,14 +251,14 @@ class GameKeys(commands.Cog):
 
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings:
-                self.log.warn(guild_id, "game_keys._create_offer", f"No game_keys settings found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"No game_keys settings found for guild {guild_id}")
                 return False
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, "game_keys._create_offer", f"game_keys is disabled for guild {guild_id}")
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"game_keys is disabled for guild {guild_id}")
                 return False
 
             reward_channel_id = cog_settings.get("reward_channel_id", "0")
-            reward_channel: discord.TextChannel = await self.discord_helper.get_or_fetch_channel(int(reward_channel_id))
+            reward_channel: typing.Union[discord.TextChannel, None] = await self.discord_helper.get_or_fetch_channel(int(reward_channel_id))
             log_channel_id = cog_settings.get("log_channel_id", "0")
             log_channel = await self.discord_helper.get_or_fetch_channel(int(log_channel_id))
 
@@ -260,7 +269,7 @@ class GameKeys(commands.Cog):
                 tacos_word = self.settings.get_string(guild_id, "taco_plural")
 
             # does the user have enough tacos?
-            taco_count = self.db.get_tacos_count(guild_id, ctx.author.id)
+            taco_count: int = self.db.get_tacos_count(guild_id, ctx.author.id)
             if taco_count < cost:
                 await ctx.channel.send(
                     self.settings.get_string(
@@ -282,7 +291,7 @@ class GameKeys(commands.Cog):
                 if not game_data:
                     self.log.debug(
                         guild_id,
-                        "game_keys._claim_offer",
+                        f"{self._module}.{_method}",
                         f"No open offer found for game_key_id {offer['game_key_id']} in channel {reward_channel.name}",
                     )
                     return False
@@ -290,7 +299,7 @@ class GameKeys(commands.Cog):
                     # already redeemed
                     self.log.debug(
                         guild_id,
-                        "game_keys._claim_offer",
+                        f"{self._module}.{_method}",
                         f"Game key {game_data['id']} already redeemed by {game_data['redeemed_by']}",
                     )
                     await ctx.send(
@@ -300,21 +309,21 @@ class GameKeys(commands.Cog):
                 if str(game_id) != str(offer["game_key_id"]) or str(game_data["_id"]) != str(game_id):
                     self.log.warn(
                         guild_id,
-                        "game_keys._claim_offer",
+                        f"{self._module}.{_method}",
                         f"Requested game_id ('{str(game_id)}') with offer game_key_id ('{str(offer['game_key_id'])}') does not match offer game id '{str(game_data['_id'])}'",
                     )
                     return False
             else:
                 self.log.warn(
                     guild_id,
-                    "game_keys._claim_offer",
+                    f"{self._module}.{_method}",
                     f"No offer found for channel {reward_channel.name} in guild {guild_id}",
                 )
                 return False
             if not game_data:
                 self.log.warn(
                     guild_id,
-                    "game_keys._claim_offer",
+                    f"{self._module}.{_method}",
                     f"No game_key found while looking up id '{offer['game_key_id']}'",
                 )
                 await ctx.send(self.settings.get_string(guild_id, "game_key_no_game_data_message"), delete_after=10)
@@ -324,7 +333,7 @@ class GameKeys(commands.Cog):
             if not game_data["key"]:
                 self.log.warn(
                     guild_id,
-                    "game_keys._claim_offer",
+                    f"{self._module}.{_method}",
                     f"No game key found for game '{game_data['title']}' ({str(game_data['_id'])})",
                 )
                 await ctx.channel.send(
@@ -361,7 +370,7 @@ class GameKeys(commands.Cog):
             except discord.Forbidden as f:
                 self.log.warn(
                     guild_id,
-                    "game_keys._claim_offer",
+                    f"{self._module}.{_method}",
                     f"Unable to send game key for game '{game_data['title']}' ({game_id})",
                 )
                 await ctx.send(

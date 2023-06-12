@@ -8,6 +8,7 @@ import sys
 import os
 import glob
 import typing
+import inspect
 
 from .lib import settings
 from .lib import discordhelper
@@ -21,6 +22,9 @@ from .lib import tacotypes
 
 class Events(commands.Cog):
     def __init__(self, bot):
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
         self.SETTINGS_SECTION = "tacobot"
@@ -30,30 +34,38 @@ class Events(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "events.__init__", "Initialized")
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     @commands.Cog.listener()
     async def on_ready(self):
-        self.log.debug(0, "events.on_ready", f"Logged in as {self.bot.user.name}:{self.bot.user.id}")
+        _method = inspect.stack()[0][3]
+        self.log.debug(0, f"{self._module}.{_method}", f"Logged in as {self.bot.user.name}:{self.bot.user.id}")
         # TODO: load this from the database
-        self.log.debug(0, "events.on_ready", f"Setting Bot Presence '🌮 Taco; Not Just For Tuesday's 🌮'")
+        self.log.debug(0, f"{self._module}.{_method}", f"Setting Bot Presence '🌮 Taco; Not Just For Tuesday's 🌮'")
         await self.bot.change_presence(activity=discord.Game(name="🌮 Taco; Not Just For Tuesday's 🌮"))
 
         self.db.migrate_game_keys()
         self.db.migrate_minecraft_whitelist()
 
     @commands.Cog.listener()
+    async def on_guild_available(self, guild):
+        pass
+
+    @commands.Cog.listener()
     async def on_disconnect(self):
-        self.log.debug(0, "events.on_disconnect", f"Bot Disconnected")
+        _method = inspect.stack()[0][3]
+        self.log.debug(0, f"{self._module}.{_method}", f"Bot Disconnected")
 
     @commands.Cog.listener()
     async def on_resumed(self):
-        self.log.debug(0, "events.on_resumed", f"Bot Session Resumed")
+        _method = inspect.stack()[0][3]
+        self.log.debug(0, f"{self._module}.{_method}", f"Bot Session Resumed")
 
     @commands.Cog.listener()
     async def on_error(self, event, *args, **kwargs):
-        self.log.error(0, "events.on_error", f"{str(event)}", traceback.format_exc())
-        
+        _method = inspect.stack()[0][3]
+        self.log.error(0, f"{self._module}.{_method}", f"{str(event)}", traceback.format_exc())
+
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
         if not cog_settings:

@@ -29,6 +29,9 @@ from .lib import dbprovider
 
 class LeaveSurvey(commands.Cog):
     def __init__(self, bot):
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
@@ -40,7 +43,7 @@ class LeaveSurvey(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "leave_survey.__init__", "Initialized")
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     @commands.group()
     @commands.has_permissions(manage_guild=True)
@@ -54,6 +57,7 @@ class LeaveSurvey(commands.Cog):
         await self.ask_survey(ctx.author)
 
     async def ask_survey(self, member):
+        _method = inspect.stack()[0][3]
         try:
             guild_id = member.guild.id
             try:
@@ -71,7 +75,7 @@ class LeaveSurvey(commands.Cog):
             cog_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
             if not cog_settings:
                 # raise exception if there are no leave_survey settings
-                self.log.error(guild_id, "leave_survey.on_message", f"No leave_survey settings found for guild {guild_id}")
+                self.log.error(guild_id, f"{self._module}.{_method}", f"No leave_survey settings found for guild {guild_id}")
                 return
 
             log_channel_id = int(cog_settings["log_channel_id"])
@@ -89,12 +93,12 @@ class LeaveSurvey(commands.Cog):
                             reason = await self.discord_helper.ask_text(ctx, member, "Leave Survey", "Please tell us why you are leaving.", timeout=600)
                             await self.discord_helper.sendEmbed(member, "Thank You!", "Thank you for your feedback. We will review your feedback and take action accordingly.")
                         except discord.Forbidden as f:
-                            self.log.info(guild_id, "leave_survey.on_message", f"Failed to send message to {member.name}#{member.discriminator} ({member.id})")
+                            self.log.info(guild_id, f"{self._module}.{_method}", f"Failed to send message to {member.name}#{member.discriminator} ({member.id})")
                         except discord.NotFound as nf:
-                            self.log.info(guild_id, "leave_survey.on_message", f"Failed to send message to {member.name}#{member.discriminator} ({member.id})")
+                            self.log.info(guild_id, f"{self._module}.{_method}", f"Failed to send message to {member.name}#{member.discriminator} ({member.id})")
                         except Exception as e:
                             # an error occurred while asking the user if they want to take the surveys
-                            self.log.error(guild_id, "leave_survey.on_member_remove", f"Error in leave_survey.ask_survey: {e}", traceback.format_exc())
+                            self.log.error(guild_id, f"{self._module}.{_method}", f"Error in f"{self._module}.{_method}": {e}", traceback.format_exc())
 
                         if log_channel:
                             await self.discord_helper.sendEmbed(
@@ -113,15 +117,15 @@ class LeaveSurvey(commands.Cog):
                     result_callback=response_callback)
 
             except discord.Forbidden as f:
-                self.log.info(guild_id, "leave_survey.on_message", f"Failed to send message to {member.name}#{member.discriminator} ({member.id})")
+                self.log.info(guild_id, f"{self._module}.{_method}", f"Failed to send message to {member.name}#{member.discriminator} ({member.id})")
             except discord.NotFound as nf:
-                self.log.info(guild_id, "leave_survey.on_message", f"Failed to send message to {member.name}#{member.discriminator} ({member.id})")
+                self.log.info(guild_id, f"{self._module}.{_method}", f"Failed to send message to {member.name}#{member.discriminator} ({member.id})")
             except Exception as e:
                 # an error occurred while asking the user if they want to take the surveys
-                self.log.error(guild_id, "leave_survey.on_member_remove", f"Error in leave_survey.ask_survey: {e}", traceback.format_exc())
+                self.log.error(guild_id, f"{self._module}.{_method}", f"Error in f"{self._module}.{_method}": {e}", traceback.format_exc())
 
         except Exception as e:
-            self.log.error(guild_id, "leave_survey.on_member_remove", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
@@ -130,16 +134,12 @@ class LeaveSurvey(commands.Cog):
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
         if not cog_settings:
-            # raise exception if there are no leave_survey settings
-            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
         if not cog_settings:
-            # raise exception if there are no leave_survey settings
-            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
 

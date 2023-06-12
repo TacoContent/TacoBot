@@ -6,6 +6,8 @@ import typing
 import datetime
 import pytz
 import discord
+import os
+import inspect
 
 import uuid
 
@@ -21,6 +23,9 @@ from . import models
 class MongoDatabase(database.Database):
     def __init__(self):
         super().__init__()
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
+
         self.settings = settings.Settings()
         self.client = None
         self.connection = None
@@ -87,7 +92,8 @@ class MongoDatabase(database.Database):
         finally:
             self.close()
 
-    def add_stream_team_request(self, guildId: int, userName: str, userId: int, twitchName: str = None):
+    def add_stream_team_request(self, guildId: int, userName: str, userId: int, twitchName: str = None) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -103,7 +109,7 @@ class MongoDatabase(database.Database):
             if not self.connection.stream_team_requests.find_one(payload):
                 self.connection.stream_team_requests.insert_one(payload)
             else:
-                print(f"[DEBUG] [mongo.add_stream_team_request] [guild:0] User {userName}, already in table")
+                print(f"[DEBUG] [{self._module}.{_method}] [guild:0] User {userName}, already in table")
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -156,11 +162,12 @@ class MongoDatabase(database.Database):
                 self.close()
 
     # Tacos
-    def remove_all_tacos(self, guildId: int, userId: int):
+    def remove_all_tacos(self, guildId: int, userId: int) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
-            print(f"[DEBUG] [mongo.remove_all_tacos] [guild:0] Removing tacos for user {userId}")
+            print(f"[DEBUG] [{self._module}.{_method}] [guild:0] Removing tacos for user {userId}")
             self.connection.tacos.delete_many({ "guild_id": str(guildId), "user_id": str(userId) })
         except Exception as ex:
             print(ex)
@@ -169,21 +176,22 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def add_tacos(self, guildId: int, userId: int, count: int):
+    def add_tacos(self, guildId: int, userId: int, count: int) -> typing.Union[int,None]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
 
             user_tacos = self.get_tacos_count(guildId, userId)
             if user_tacos is None:
-                print(f"[DEBUG] [mongo.add_tacos] [guild:0] User {userId} not in table")
+                print(f"[DEBUG] [{self._module}.{_method}] [guild:0] User {userId} not in table")
                 user_tacos = 0
             else:
                 user_tacos = user_tacos or 0
-                print(f"[DEBUG] [mongo.add_tacos] [guild:0] User {userId} has {user_tacos} tacos")
+                print(f"[DEBUG] [{self._module}.{_method}] [guild:0] User {userId} has {user_tacos} tacos")
 
             user_tacos += count
-            print(f"[DEBUG] [mongo.add_tacos] [guild:0] User {userId} now has {user_tacos} tacos")
+            print(f"[DEBUG] [{self._module}.{_method}] [guild:0] User {userId} now has {user_tacos} tacos")
             self.connection.tacos.update_one({ "guild_id": str(guildId), "user_id": str(userId) }, { "$set": { "count": user_tacos } }, upsert=True)
             return user_tacos
         except Exception as ex:
@@ -194,26 +202,27 @@ class MongoDatabase(database.Database):
                 self.close()
 
     def remove_tacos(self, guildId: int, userId: int, count: int):
+        _method = inspect.stack()[0][3]
         try:
             if count < 0:
-                print(f"[DEBUG] [mongo.remove_tacos] [guild:0] Count is less than 0")
+                print(f"[DEBUG] [{self._module}.{_method}] [guild:0] Count is less than 0")
                 return 0
             if self.connection is None:
                 self.open()
 
             user_tacos = self.get_tacos_count(guildId, userId)
             if user_tacos is None:
-                print(f"[DEBUG] [mongo.remove_tacos] [guild:0] User {userId} not in table")
+                print(f"[DEBUG] [{self._module}.{_method}] [guild:0] User {userId} not in table")
                 user_tacos = 0
             else:
                 user_tacos = user_tacos or 0
-                print(f"[DEBUG] [mongo.remove_tacos] [guild:0] User {userId} has {user_tacos} tacos")
+                print(f"[DEBUG] [{self._module}.{_method}] [guild:0] User {userId} has {user_tacos} tacos")
 
             user_tacos -= count
             if user_tacos < 0:
                 user_tacos = 0
 
-            print(f"[DEBUG] [mongo.remove_tacos] [guild:0] User {userId} now has {user_tacos} tacos")
+            print(f"[DEBUG] [{self._module}.{_method}] [guild:0] User {userId} now has {user_tacos} tacos")
             self.connection.tacos.update_one({ "guild_id": str(guildId), "user_id": str(userId) }, { "$set": { "count": user_tacos } }, upsert=True)
             return user_tacos
         except Exception as ex:
@@ -222,13 +231,14 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-    def get_tacos_count(self, guildId: int, userId: int):
+    def get_tacos_count(self, guildId: int, userId: int) -> typing.Union[int,None]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
             data = self.connection.tacos.find_one({ "guild_id": str(guildId), "user_id": str(userId) })
             if data is None:
-                print(f"[DEBUG] [mongo.get_tacos_count] [guild:{guildId}] User {userId} not in table")
+                print(f"[DEBUG] [{self._module}.{_method}] [guild:{guildId}] User {userId} not in table")
                 return None
             return data['count']
         except Exception as ex:
@@ -238,7 +248,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
         pass
-    def get_total_gifted_tacos(self, guildId: int, userId: int, timespan_seconds: int = 86400):
+    def get_total_gifted_tacos(self, guildId: int, userId: int, timespan_seconds: int = 86400) -> typing.Union[int,None]:
         try:
             if self.connection is None:
                 self.open()
@@ -283,6 +293,7 @@ class MongoDatabase(database.Database):
                 self.close()
 
     def add_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int):
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -295,7 +306,7 @@ class MongoDatabase(database.Database):
                 "timestamp": timestamp
             }
             # log entry for the user
-            print(f"[DEBUG] [mongo.add_taco_reaction] [guild:0] Adding taco reaction for user {userId}")
+            print(f"[DEBUG] [{self._module}.{_method}] [guild:0] Adding taco reaction for user {userId}")
             self.connection.tacos_reactions.update_one({ "guild_id": str(guildId), "user_id": str(userId), "timestamp": timestamp }, { "$set": payload }, upsert=True)
         except Exception as ex:
             print(ex)
@@ -319,6 +330,7 @@ class MongoDatabase(database.Database):
                 self.close()
 
     def add_suggestion_create_message(self, guildId: int, channelId: int, messageId: int):
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -330,7 +342,7 @@ class MongoDatabase(database.Database):
                 "timestamp": timestamp
             }
             # log entry for the user
-            print(f"[DEBUG] [mongo.add_suggestion_create_message] [guild:0] Adding suggestion create message for guild {guildId}")
+            print(f"[DEBUG] [{self._module}.{_method}] [guild:0] Adding suggestion create message for guild {guildId}")
             self.connection.suggestion_create_messages.update_one({ "guild_id": str(guildId), "channel_id": str(channelId), "message_id": messageId }, { "$set": payload }, upsert=True)
         except Exception as ex:
             print(ex)
@@ -626,55 +638,6 @@ class MongoDatabase(database.Database):
             }
             # insert the suggestion into the database
             self.connection.suggestions.update_one({ "guild_id": str(guildId), "id": str(suggestionId) }, { "$set": { "state": state }, "$push": { "actions": action_payload } }, upsert=True)
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-        finally:
-            if self.connection:
-                self.close()
-
-    def track_wait_invoke(self, guildId: int, channelId: int, messageId: int):
-        try:
-            if self.connection is None:
-                self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
-            payload = {
-                "guild_id": str(guildId),
-                "channel_id": str(channelId),
-                "message_id": str(messageId),
-                "timestamp": timestamp
-            }
-            self.connection.wait_invokes.update_one({ "guild_id": str(guildId), "channel_id": str(channelId), "message_id": str(messageId) }, { "$set": payload }, upsert=True)
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-        finally:
-            if self.connection:
-                self.close()
-
-    def untrack_wait_invoke(self, guildId: int, channelId: int, messageId: int):
-        try:
-            if self.connection is None:
-                self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
-            payload = {
-                "guild_id": str(guildId),
-                "channel_id": str(channelId),
-                "message_id": str(messageId),
-                "timestamp": timestamp
-            }
-            self.connection.wait_invokes.delete_one({ "guild_id": str(guildId), "channel_id": str(channelId), "message_id": str(messageId) })
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-        finally:
-            if self.connection:
-                self.close()
-    def get_wait_invokes(self, guildId: int, channelId: int):
-        try:
-            if self.connection is None:
-                self.open()
-            return self.connection.wait_invokes.find({ "guild_id": str(guildId), "channel_id": str(channelId) })
         except Exception as ex:
             print(ex)
             traceback.print_exc()
