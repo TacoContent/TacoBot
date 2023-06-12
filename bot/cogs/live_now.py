@@ -169,7 +169,7 @@ class LiveNow(commands.Cog):
 
                 logging_channel_id = cog_settings.get("logging_channel", None)
                 if logging_channel_id:
-                    logging_channel = self.bot.get_channel(int(logging_channel_id))
+                    logging_channel = await self.discord_helper.get_or_fetch_channel(int(logging_channel_id))
                     if logging_channel:
                         for tracked_item in tracked:
                             message_id = tracked_item.get("message_id", None)
@@ -335,7 +335,7 @@ class LiveNow(commands.Cog):
 
         logging_channel_id = cog_settings.get("logging_channel", None)
         if logging_channel_id:
-            logging_channel = self.discord_helper.get_or_fetch_channel(int(logging_channel_id))
+            logging_channel = await self.discord_helper.get_or_fetch_channel(int(logging_channel_id))
             for tracked in all_tracked_for_user:
                 if logging_channel:
                     message_id = tracked.get("message_id", None)
