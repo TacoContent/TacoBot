@@ -63,7 +63,6 @@ class DiscordHelper:
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     def create_context(
         self, bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
@@ -84,12 +83,12 @@ class DiscordHelper:
         self,
         message,
         targetChannel,
-        author: discord.User = None,
-        who: discord.User = None,
-        reason: str = None,
-        fields=None,
-        remove_fields=None,
-        color: int = None,
+        author: typing.Optional[discord.User] = None,
+        who: typing.Optional[discord.User] = None,
+        reason: typing.Optional[str] = None,
+        fields: typing.Optional[list[dict[str,typing.Any]]] = None,
+        remove_fields: typing.Optional[list[dict[str,typing.Any]]] = None,
+        color: typing.Optional[int] = None,
         delete_original: bool = False,
     ) -> typing.Union[discord.Message, None]:
         _method = inspect.stack()[0][3]
@@ -99,8 +98,9 @@ class DiscordHelper:
         if not targetChannel:
             self.log.debug(0, f"{self._module}.{_method}", "No target channel to move message to")
             return
-        if not author:
-            author = message.author
+        target_author: typing.Optional[discord.User] = author
+        if not target_author:
+            target_author = message.author
 
         if not message.guild:
             self.log.debug(0, f"{self._module}.{_method}", "Message is not from a guild")
@@ -141,7 +141,8 @@ class DiscordHelper:
                 color = 0x7289DA
 
             target_embed = discord.Embed(title=title, description=description, color=color)
-            target_embed.set_author(name=author.name, icon_url=author.avatar.url if author.avatar else None)
+            if target_author:
+                target_embed.set_author(name=target_author.name, icon_url=target_author.avatar.url if target_author.avatar else None)
             if footer:
                 target_embed.set_footer(text=footer)
             else:
@@ -191,7 +192,7 @@ class DiscordHelper:
         fields: typing.Optional[list[dict[str, typing.Any]]] = None,
         delete_after: typing.Optional[float] = None,
         footer: typing.Optional[typing.Any] = None,
-        view: typing.Optional[typing.Any] = None,
+        view: typing.Optional[discord.ui.View] = None,
         color: typing.Optional[int] = 0x7289DA,
         author: typing.Optional[typing.Union[discord.User, discord.Member]] = None,
         thumbnail: typing.Optional[str] = None,
@@ -202,8 +203,8 @@ class DiscordHelper:
     ) -> discord.Message:
         if color is None:
             color = 0x7289DA
-        guild_id = 0
 
+        guild_id = 0
         if hasattr(channel, "guild") and channel.guild:
             guild_id = channel.guild.id
 
@@ -241,17 +242,18 @@ class DiscordHelper:
             files=files
         )
 
-    async def updateEmbed(
+    async def update_embed(
         self,
-        message: discord.Message = None,
-        title: str = None,
-        description: str = None,
-        description_append: bool = True,
-        fields: list = None,
-        footer: str = None,
-        view: discord.ui.View = None,
-        color: int = 0x7289DA,
-        author: typing.Union[discord.User, discord.Member] = None,
+        message: typing.Optional[discord.Message] = None,
+        title: typing.Optional[str] = None,
+        description: typing.Optional[str] = None,
+        description_append: typing.Optional[bool] = True,
+        fields: typing.Optional[list[dict[str, typing.Any]]] = None,
+        content: typing.Optional[str] = None,
+        footer: typing.Optional[typing.Any] = None,
+        view: typing.Optional[discord.ui.View] = None,
+        color: typing.Optional[int] = 0x7289DA,
+        author: typing.Optional[typing.Union[discord.User, discord.Member]] = None,
     ):
         if not message or len(message.embeds) == 0:
             return
@@ -298,10 +300,14 @@ class DiscordHelper:
         else:
             updated_embed.set_footer(text=footer)
 
-        if author:
-            updated_embed.set_author(name=f"{author.name}#{author.discriminator}", icon_url=author.avatar.url)
+        target_content = message.content
+        if content:
+            target_content = content
 
-        await message.edit(embed=updated_embed)
+        if author:
+            updated_embed.set_author(name=f"{utils.get_user_display_name(author)}", icon_url=author.avatar.url if author.avatar else None)
+
+        await message.edit(content=target_content, embed=updated_embed)
 
     async def notify_of_error(self, ctx):
         guild_id = 0
@@ -314,7 +320,7 @@ class DiscordHelper:
             delete_after=30,
         )
 
-    async def notify_bot_not_initialized(self, ctx, subcommand: str = None):
+    async def notify_bot_not_initialized(self, ctx, subcommand: typing.Optional[str] = None):
         channel = ctx.channel
         if not channel:
             channel = ctx.author

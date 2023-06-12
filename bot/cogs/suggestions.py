@@ -570,7 +570,7 @@ class Suggestions(commands.Cog):
                 "inline": False
             }
         ]
-        await self.discord_helper.updateEmbed(message, fields=fields, color=color, author=author)
+        await self.discord_helper.update_embed(message, fields=fields, color=color, author=author)
 
     def get_color_for_state(self, state: str) -> typing.Union[int,None]:
         _method = inspect.stack()[0][3]
