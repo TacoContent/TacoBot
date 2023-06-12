@@ -26,7 +26,10 @@ import inspect
 
 
 class MessagePreview(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
@@ -38,10 +41,10 @@ class MessagePreview(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "message_preview.__init__", "Initialized")
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message) -> None:
         guild_id = 0
         _method = inspect.stack()[0][3]
         try:
@@ -69,15 +72,16 @@ class MessagePreview(commands.Cog):
                         await self.create_message_preview(message, ref_message)
                         await message.delete()
                     else:
-                        self.log.debug(0, "message_preview.on_message", f"Could not find message ({message_id}) in channel ({channel_id})")
+                        self.log.debug(0, f"{self._module}.{_method}", f"Could not find message ({message_id}) in channel ({channel_id})")
                 else:
-                    self.log.debug(0, "message_preview.on_message", f"Could not find channel ({channel_id})")
+                    self.log.debug(0, f"{self._module}.{_method}", f"Could not find channel ({channel_id})")
             else:
-                self.log.debug(0, "message_preview.on_message", f"Guild ({ref_guild_id}) does not match this guild ({guild_id})")
+                self.log.debug(0, f"{self._module}.{_method}", f"Guild ({ref_guild_id}) does not match this guild ({guild_id})")
         except Exception as e:
-            self.log.error(guild_id, "message_preview.on_message", f"{e}", traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
 
-    async def create_message_preview(self, ctx, message):
+    async def create_message_preview(self, ctx, message) -> discord.Message:
+        _method = inspect.stack()[0][3]
         try:
             guild_id = message.guild.id
             target_channel = ctx.channel
@@ -104,7 +108,7 @@ class MessagePreview(commands.Cog):
 
                 if message.attachments:
                     for a in message.attachments:
-                        self.log.debug(guild_id, "message_preview.create_message_preview", f"Found attachment: {a.url}")
+                        self.log.debug(guild_id, f"{self._module}.{_method}", f"Found attachment: {a.url}")
                         file_attachments.append(discord.File(a.url))
 
                 for f in e.fields:
@@ -126,8 +130,10 @@ class MessagePreview(commands.Cog):
                 image=embed_image,
                 files=file_attachments,
                 footer=self.settings.get_string(guild_id, "message_preview_footer", created=created.strftime('%Y-%m-%d %H:%M:%S')))
+            return embed
         except Exception as e:
-            self.log.error(ctx.guild.id, "message_preview.create_message_preview", f"{e}", traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
+            raise e
 
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
