@@ -92,7 +92,7 @@ class Restricted(commands.Cog):
                 await message.delete()
 
                 if not silent:
-                    await self.discord_helper.sendEmbed(message.channel, self.settings.get_string(guild_id, "restricted"),
+                    await self.discord_helper.send_embed(message.channel, self.settings.get_string(guild_id, "restricted"),
                         self.settings.get_string(guild_id, "restricted_deny_message", user=message.author.mention, reason=deny_message),
                         delete_after=20, color=0xFF0000)
         except discord.NotFound as nf:

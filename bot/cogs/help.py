@@ -82,7 +82,7 @@ class Help(commands.Cog):
                                 s = section[:1023] + '…'
                             fields.append({"name": v, "value": s, "inline": False})
                 if len(fields) > 0:
-                    await self.discord_helper.sendEmbed(ctx.channel,
+                    await self.discord_helper.send_embed(ctx.channel,
                     self.settings.get_string(guild_id, "help_changelog_title", bot_name=self.settings.name, page=page, total_pages=pages),
                     "", footer=self.settings.get_string(guild_id, "version_footer", version=self.settings.version), fields=fields)
                 page += 1
@@ -118,7 +118,7 @@ class Help(commands.Cog):
 
             command_list: dict = self.settings.get('commands', {})
             if command not in command_list.keys():
-                await self.discord_helper.sendEmbed(ctx.channel,
+                await self.discord_helper.send_embed(ctx.channel,
                     self.settings.get_string(guild_id, "help_title", bot_name=self.settings.get("name", "TacoBot")),
                     self.settings.get_string(guild_id, "help_no_command", command=command),
                     color=0xFF0000, delete_after=20)
@@ -139,7 +139,7 @@ class Help(commands.Cog):
                 if example_list and len(example_list) > 0:
                     examples = '\n'.join(example_list)
                     fields.append({"name": 'examples', "value": examples})
-            await self.discord_helper.sendEmbed(ctx.channel,
+            await self.discord_helper.send_embed(ctx.channel,
                 self.settings.get_string(guild_id, "help_command_title", bot_name=self.settings.name, command=command), "",
                 footer=self.settings.get_string(guild_id, "version_footer", version=self.settings.version), fields=fields)
 
@@ -170,7 +170,7 @@ class Help(commands.Cog):
                             examples = '\n'.join(example_list)
                             fields.append({"name": 'examples', "value": examples})
 
-                await self.discord_helper.sendEmbed(ctx.channel,
+                await self.discord_helper.send_embed(ctx.channel,
                     self.settings.get_string(guild_id, "help_group_title", bot_name=self.settings.name, page=page, total_pages=pages), "",
                     footer=self.settings.get_string(guild_id, "version_footer", version=self.settings.version), fields=fields)
                 page += 1
@@ -211,7 +211,7 @@ class Help(commands.Cog):
                         if example_list and len(example_list) > 0:
                             examples = '\n'.join(example_list)
                             fields.append({"name": 'examples', "value": examples})
-                await self.discord_helper.sendEmbed(ctx.channel, f"{self.settings.name} Help ({page}/{pages})", "",
+                await self.discord_helper.send_embed(ctx.channel, f"{self.settings.name} Help ({page}/{pages})", "",
                     footer=self.settings.get_string(guild_id, "version_footer", version=self.settings.version), fields=fields)
                 page += 1
         except Exception as ex:

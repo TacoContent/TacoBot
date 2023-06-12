@@ -79,7 +79,7 @@ class StreamTeam(commands.Cog):
                     twitch_name = twitch_user['twitch_name']
 
                 if log_channel:
-                    await self.discord_helper.sendEmbed(log_channel,
+                    await self.discord_helper.send_embed(log_channel,
                         self.settings.get_string(guild_id, "streamteam_removal_tile"),
                         self.settings.get_string(guild_id, "streamteam_removal_message",
                             user=f"{user.name}#{user.discriminator}",
@@ -144,13 +144,13 @@ class StreamTeam(commands.Cog):
 
                             self.log.debug(guild_id, f"streamteam.{_method}", f"{user} requested to set twitch name {twitch_user}")
                             self.db.set_user_twitch_info(user.id, None, twitch_name)
-                            await self.discord_helper.sendEmbed(user,
+                            await self.discord_helper.send_embed(user,
                                 self.settings.get_string(guild_id, "success"),
                                 self.settings.get_string(guild_id, "streamteam_set_twitch_name_message", twitch_name=twitch_name),
                                 color=0x00ff00)
                     except discord.Forbidden as e:
                         # cant send them a message. Put it in the channel...
-                        await self.discord_helper.sendEmbed(channel,
+                        await self.discord_helper.send_embed(channel,
                             self.settings.get_string(guild_id, "error"),
                             self.settings.get_string(guild_id, "twitch_name_dm_error", user=user.mention),
                             footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
@@ -161,7 +161,7 @@ class StreamTeam(commands.Cog):
 
                 if log_channel:
                     twitch_name = unknown if twitch_name is None else twitch_name
-                    await self.discord_helper.sendEmbed(log_channel,
+                    await self.discord_helper.send_embed(log_channel,
                         self.settings.get_string(guild_id, "streamteam_join_title"),
                         self.settings.get_string(guild_id, "streamteam_join_message",
                             user=user, team_name=team_name, twitch_name=twitch_name),
@@ -197,14 +197,14 @@ class StreamTeam(commands.Cog):
                 twitchName = self.db.get_user_twitch_info(ctx.author.id)['twitch_name']
             if twitchName is None:
                 try:
-                    await self.discord_helper.sendEmbed(ctx.author,
+                    await self.discord_helper.send_embed(ctx.author,
                         self.settings.get_string(guild_id, "error"),
                         self.settings.get_string(guild_id, "streamteam_invite_no_twitch_name_message"),
                         color=0xff0000)
                     return
                 except discord.Forbidden:
                     # if we cant send to user, then we send to channel
-                    await self.discord_helper.sendEmbed(ctx.channel,
+                    await self.discord_helper.send_embed(ctx.channel,
                         self.settings.get_string(guild_id, "error"),
                         self.settings.get_string(guild_id, "streamteam_invite_no_twitch_name_message"),
                         footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
@@ -242,7 +242,7 @@ class StreamTeam(commands.Cog):
             self.db.set_user_twitch_info(user.id, None, twitchName)
             self.db.add_stream_team_request(ctx.guild.id, twitchName, user.id)
 
-            await self.discord_helper.sendEmbed(ctx.channel,
+            await self.discord_helper.send_embed(ctx.channel,
                 self.settings.get_string(guild_id, "success"),
                 self.settings.get_string(guild_id, "streamteam_invite_success_message", user=f"{user.name}#{user.discriminator}", team_name=team_name, twitch_name=twitchName),
                 footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
@@ -250,7 +250,7 @@ class StreamTeam(commands.Cog):
 
             if log_channel:
                 twitch_name = unknown if twitch_name is None else twitch_name
-                await self.discord_helper.sendEmbed(log_channel,
+                await self.discord_helper.send_embed(log_channel,
                     self.settings.get_string(guild_id, "streamteam_join_title"),
                     self.settings.get_string(guild_id, "streamteam_join_message", user=f"{user.name}#{user.discriminator}", team_name=team_name, twitch_name=twitchName),
                     color=0x00ff00)

@@ -316,7 +316,7 @@ class TacoTuesday(commands.Cog):
 
             await message.delete()
 
-            await self.discord_helper.sendEmbed(
+            await self.discord_helper.send_embed(
                 message.channel,
                 title="TACO Tuesday",
                 message=f"Message archived to {archive_channel.mention}",
@@ -425,7 +425,7 @@ class TacoTuesday(commands.Cog):
 
             reason_msg = self.settings.get_string(guild_id, "taco_tuesday_reason")
 
-            await self.discord_helper.sendEmbed(
+            await self.discord_helper.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_give_title"),
                 # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",

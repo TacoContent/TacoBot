@@ -60,7 +60,7 @@ class TwitchInfo(commands.Cog):
         if ctx.guild:
             guild_id = ctx.guild.id
             await ctx.message.delete()
-        await self.discord_helper.sendEmbed(
+        await self.discord_helper.send_embed(
             ctx.channel,
             self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
             self.settings.get_string(guild_id, "help_module_message", bot_name=self.settings.name, command="twitch"),
@@ -96,7 +96,7 @@ class TwitchInfo(commands.Cog):
             url = f"https://nodered.bit13.local/tacobot/guild/{guild_id}/invite/{twitch_name}"
             result = requests.post(url, headers={"X-AUTH-TOKEN": str(self.bot.id)})
             if result.status_code == 200:
-                await self.discord_helper.sendEmbed(
+                await self.discord_helper.send_embed(
                     channel,
                     "Invite Bot",
                     f"Invited @OurTacoBot to {twitch_name}",
@@ -144,7 +144,7 @@ class TwitchInfo(commands.Cog):
         else:
             twitch_name = twitch_info["twitch_name"]
         if not twitch_name is None:
-            await self.discord_helper.sendEmbed(
+            await self.discord_helper.send_embed(
                 ctx.author,
                 "Twitch Name",
                 f"The Twitch name for {who} has been set to `{twitch_name}`.\n\nhttps://twitch.tv/{twitch_name}\n\nIf your twitch name changes in the future, you can use `.taco twitch set` in a discord channel, or `.twitch set` in the DM with me to set it.",
@@ -178,7 +178,7 @@ class TwitchInfo(commands.Cog):
             if twitch_name is not None and user is not None:
                 twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
                 self.db.set_user_twitch_info(user.id, None, twitch_name)
-                await self.discord_helper.sendEmbed(
+                await self.discord_helper.send_embed(
                     channel,
                     "Success",
                     f"{ctx.author.mention}, The Twitch name has been set to {twitch_name} for {user.name}#{user.discriminator}.",
@@ -242,7 +242,7 @@ class TwitchInfo(commands.Cog):
 
                 self.db.set_user_twitch_info(ctx.author.id, None, twitch_name)
 
-                await self.discord_helper.sendEmbed(
+                await self.discord_helper.send_embed(
                     resp_channel,
                     self.settings.get_string(guild_id, "twitch_set_title"),
                     self.settings.get_string(

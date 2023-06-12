@@ -115,7 +115,7 @@ class MessagePreview(commands.Cog):
                     embed_image = e.image.url
 
             # create the message preview
-            embed = await self.discord_helper.sendEmbed(target_channel,
+            embed = await self.discord_helper.send_embed(target_channel,
                 embed_title,
                 message=f"{message_content}\n\n{embed_content}",
                 thumbnail=embed_thumbnail,

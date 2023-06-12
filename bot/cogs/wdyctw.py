@@ -106,7 +106,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             if amount != 1:
                 taco_word = self.settings.get_string(guild_id, "taco_plural")
             out_message = self.settings.get_string(guild_id, "wdyctw_out_message", taco_count=amount, taco_word=taco_word)
-            wdyctw_message = await self.discord_helper.sendEmbed(channel=out_channel,
+            wdyctw_message = await self.discord_helper.send_embed(channel=out_channel,
                 title=self.settings.get_string(guild_id, "wdyctw_out_title"),
                 message=out_message,
                 content=message_content, color=0x00ff00,
@@ -335,7 +335,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
             reason_msg = self.settings.get_string(guild_id, "wdyctw_reason_default")
 
-            await self.discord_helper.sendEmbed(
+            await self.discord_helper.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_give_title"),
                 # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",

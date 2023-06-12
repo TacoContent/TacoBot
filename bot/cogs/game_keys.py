@@ -141,7 +141,7 @@ class GameKeys(commands.Cog):
                 timeout=timeout
             )
 
-            offer_message = await self.discord_helper.sendEmbed(
+            offer_message = await self.discord_helper.send_embed(
                 reward_channel,
                 self.settings.get_string(guild_id, "game_key_offer_title"),
                 self.settings.get_string(guild_id, "game_key_offer_message", cost=cost, tacos_word=tacos_word),

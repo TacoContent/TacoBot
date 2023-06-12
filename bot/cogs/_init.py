@@ -133,7 +133,7 @@
 #                         if channel:
 #                             await self.restricted_add_action(ctx, channel, delete_message=False, complete_callback=ask_to_add)
 #                         else:
-#                             await self.discord_helper.sendEmbed(ctx.channel, "Restricted", "The channel selected was not found.", color=0xFF0000, delete_after=20)
+#                             await self.discord_helper.send_embed(ctx.channel, "Restricted", "The channel selected was not found.", color=0xFF0000, delete_after=20)
 #                     if result:
 #                         await self.discord_helper.ask_channel(
 #                             ctx=ctx,
@@ -195,7 +195,7 @@
 #                 { "name": "Allow Pattern", "value": allow_pattern, "inline": True },
 #                 { "name": "Deny Message", "value": deny_message, "inline": True },
 #             ]
-#             await self.discord_helper.sendEmbed(ctx.channel, "Restricted", "Restricted channel added.", fields=fields, color=0x00FF00, delete_after=20)
+#             await self.discord_helper.send_embed(ctx.channel, "Restricted", "Restricted channel added.", fields=fields, color=0x00FF00, delete_after=20)
 #             if complete_callback:
 #                 await complete_callback()
 #         except Exception as e:
@@ -241,7 +241,7 @@
 #                         if channel:
 #                             await self.paypost_add_action(ctx, channel, delete_message=False)
 #                         else:
-#                             await self.discord_helper.sendEmbed(ctx.channel, "Pay to Post", "The channel selected was not found.", color=0xFF0000, delete_after=20)
+#                             await self.discord_helper.send_embed(ctx.channel, "Pay to Post", "The channel selected was not found.", color=0xFF0000, delete_after=20)
 #                     if result:
 #                         await self.discord_helper.ask_channel(
 #                             ctx=ctx,
@@ -304,7 +304,7 @@
 #                         post_settings["channels"].append( { "id": str(channel.id), "cost": cost, "exempt": exempt_roles } )
 #                         self.db.add_settings(guild_id, "tacopost", post_settings)
 #                     else:
-#                         await self.discord_helper.sendEmbed(ctx.channel, "Pay to Post", "The role selected was not found.", color=0xFF0000, delete_after=20)
+#                         await self.discord_helper.send_embed(ctx.channel, "Pay to Post", "The role selected was not found.", color=0xFF0000, delete_after=20)
 #                 if result:
 #                     excluded_roles = [ r for r in ctx.guild.roles if r.name.startswith("@") or r.name.startswith("LFG-") ]
 #                     # exempt_role = await self.discord_helper.ask_role_list(ctx, "Select Roles", "Select roles to exempt from paying to post in this channel", allow_none=True, exclude_roles=excluded_roles)
@@ -382,9 +382,9 @@
 #                                 channel_settings['log_channel_id'] = None
 #                         suggestions_settings["channels"].append(channel_settings)
 #                         self.db.add_settings(guild_id, "suggestions", suggestions_settings)
-#                         await self.discord_helper.sendEmbed(ctx.channel, "Suggestions", "Channel added to suggestions.", color=0x00FF00, delete_after=20)
+#                         await self.discord_helper.send_embed(ctx.channel, "Suggestions", "Channel added to suggestions.", color=0x00FF00, delete_after=20)
 #                     else:
-#                         await self.discord_helper.sendEmbed(ctx.channel, "Suggestions", "The channel selected was not found.", color=0xFF0000, delete_after=20)
+#                         await self.discord_helper.send_embed(ctx.channel, "Suggestions", "The channel selected was not found.", color=0xFF0000, delete_after=20)
 
 #         except Exception as e:
 #             self.log.error(guild_id, "init.suggestions", str(e), traceback.format_exc())
@@ -432,7 +432,7 @@
 #         if ctx.guild:
 #             guild_id = ctx.guild.id
 #             await ctx.message.delete()
-#         await self.discord_helper.sendEmbed(ctx.channel,
+#         await self.discord_helper.send_embed(ctx.channel,
 #             self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
 #             self.settings.get_string(guild_id, "help_module_message", bot_name=self.settings.name, command="init"),
 #             footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),

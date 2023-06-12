@@ -146,7 +146,7 @@ class Trivia(commands.Cog):
 
 
 
-                    qm = await self.discord_helper.sendEmbed(ctx.channel,
+                    qm = await self.discord_helper.send_embed(ctx.channel,
                         self.settings.get_string(guild_id, "trivia_question_title",
                             category=html.unescape(question.category),
                             difficulty=question.difficulty.capitalize(),
@@ -218,7 +218,7 @@ class Trivia(commands.Cog):
                                         give_type=tacotypes.TacoTypes.TRIVIA_INCORRECT,
                                         taco_amount=punishment )
 
-                            result = await self.discord_helper.sendEmbed(ctx.channel,
+                            result = await self.discord_helper.send_embed(ctx.channel,
                                 self.settings.get_string(guild_id, "trivia_results_title"),
                                 self.settings.get_string(guild_id, "trivia_results_message",
                                     question=html.unescape(question.question),
@@ -265,7 +265,7 @@ class Trivia(commands.Cog):
         if ctx.guild:
             guild_id = ctx.guild.id
             await ctx.message.delete()
-        await self.discord_helper.sendEmbed(ctx.channel,
+        await self.discord_helper.send_embed(ctx.channel,
             self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
             self.settings.get_string(guild_id, "help_module_message", bot_name=self.settings.name, command="trivia"),
             footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),

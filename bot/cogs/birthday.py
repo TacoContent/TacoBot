@@ -126,7 +126,7 @@ class Birthday(commands.Cog):
                 { "name": self.settings.get_string(guild_id, "month"), "value": str(month), "inline": True },
                 { "name": self.settings.get_string(guild_id, "day"), "value": str(day), "inline": True },
             ]
-            await self.discord_helper.sendEmbed(
+            await self.discord_helper.send_embed(
                 out_channel,
                 self.settings.get_string(guild_id, "birthday_set_title"),
                 self.settings.get_string(guild_id, "birthday_set_confirm", user=ctx.author.mention),
@@ -236,7 +236,7 @@ class Birthday(commands.Cog):
                     { "name": self.settings.get_string(guild_id, "month"), "value": month_name, "inline": True },
                     { "name": self.settings.get_string(guild_id, "day"), "value": month_day, "inline": True },
                 ]
-                await self.discord_helper.sendEmbed(
+                await self.discord_helper.send_embed(
                     output_channel,
                     self.settings.get_string(guild_id, "birthday_wishes_title"),
                     self.settings.get_string(

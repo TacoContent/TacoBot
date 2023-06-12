@@ -183,7 +183,7 @@ class DiscordHelper:
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
 
-    async def sendEmbed(
+    async def send_embed(
         self,
         channel: typing.Union[discord.TextChannel, discord.DMChannel, discord.GroupChannel],
         title: typing.Optional[str] = None,
@@ -307,7 +307,7 @@ class DiscordHelper:
         guild_id = 0
         if ctx.guild:
             guild_id = ctx.guild.id
-        await self.sendEmbed(
+        await self.send_embed(
             ctx.channel,
             self.settings.get_string(guild_id, "error"),
             self.settings.get_string(guild_id, "error_ocurred", user=ctx.author.mention),
@@ -323,7 +323,7 @@ class DiscordHelper:
             guild_id = ctx.guild.id
 
         if not ctx.author.guild_permissions.administrator:
-            await self.sendEmbed(
+            await self.send_embed(
                 ctx.channel,
                 self.settings.get_string(guild_id, "error"),
                 self.settings.get_string(guild_id, "not_initialized_user", user=ctx.author.mention),
@@ -332,7 +332,7 @@ class DiscordHelper:
         else:
             # get the bot's prefix
             prefix = await self.bot.get_prefix(ctx.message)[0]
-            await self.sendEmbed(
+            await self.send_embed(
                 ctx.channel,
                 self.settings.get_string(guild_id, "error"),
                 self.settings.get_string(
@@ -475,7 +475,7 @@ class DiscordHelper:
                     {"name": "ℹ REASON", "value": reason},
                 ]
 
-                await self.sendEmbed(channel=log_channel, title="", message="", fields=fields, author=fromMember)
+                await self.send_embed(channel=log_channel, title="", message="", fields=fields, author=fromMember)
         except Exception as e:
             self.log.error(guild_id, f"discordhelper.{_method}", str(e), traceback.format_exc())
 
@@ -566,7 +566,7 @@ class DiscordHelper:
                 await result_callback(result)
 
         async def timeout_callback(caller: YesOrNoView, interaction: discord.Interaction):
-            await self.sendEmbed(
+            await self.send_embed(
                 channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
             )
             if result_callback:
@@ -575,7 +575,7 @@ class DiscordHelper:
         yes_no_view = YesOrNoView(
             ctx, answer_callback=answer_callback, timeout=timeout, timeout_callback=timeout_callback
         )
-        await self.sendEmbed(
+        await self.send_embed(
             channel,
             title,
             question,
@@ -607,7 +607,7 @@ class DiscordHelper:
 
             target_channel = ctx.channel if ctx.channel else ctx.author
 
-            channel_ask = await self.sendEmbed(
+            channel_ask = await self.send_embed(
                 target_channel,
                 title,
                 f"{description}",
@@ -617,7 +617,7 @@ class DiscordHelper:
             try:
                 channelResp = await self.bot.wait_for("message", check=check_channel, timeout=timeout)
             except asyncio.TimeoutError:
-                await self.sendEmbed(
+                await self.send_embed(
                     target_channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
                 )
                 return None
@@ -662,7 +662,7 @@ class DiscordHelper:
 
             if chan_id is None:
                 # manual entered channel not found
-                await self.sendEmbed(
+                await self.send_embed(
                     ctx.channel,
                     title,
                     self.settings.get_string(guild_id, "unknown_channel", user=ctx.author.mention, channel_id=chan_id),
@@ -678,7 +678,7 @@ class DiscordHelper:
                 self.log.debug(
                     guild_id, f"discordhelper.{_method}", f"{ctx.author.mention} selected the channel '{selected_channel.name}'"
                 )
-                await self.sendEmbed(
+                await self.send_embed(
                     ctx.channel,
                     title,
                     self.settings.get_string(
@@ -690,7 +690,7 @@ class DiscordHelper:
                     await callback(selected_channel)
                 return
             else:
-                await self.sendEmbed(
+                await self.send_embed(
                     ctx.channel,
                     title,
                     self.settings.get_string(guild_id, "unknown_channel", user=ctx.author.mention, channel_id=chan_id),
@@ -701,7 +701,7 @@ class DiscordHelper:
                 return
 
         async def select_timeout():
-            await self.sendEmbed(
+            await self.send_embed(
                 ctx.channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
             )
 
@@ -714,7 +714,7 @@ class DiscordHelper:
             timeout_callback=select_timeout,
         )
         # action_row = ActionRow(select)
-        await self.sendEmbed(
+        await self.send_embed(
             ctx.channel,
             title,
             message,
@@ -749,7 +749,7 @@ class DiscordHelper:
 
         channel = ctx.channel if ctx.channel else ctx.author
 
-        number_ask = await self.sendEmbed(
+        number_ask = await self.send_embed(
             ctx.channel,
             title,
             f"{message}",
@@ -759,7 +759,7 @@ class DiscordHelper:
         try:
             numberResp = await self.bot.wait_for("message", check=check_range, timeout=timeout)
         except asyncio.TimeoutError:
-            await self.sendEmbed(
+            await self.send_embed(
                 ctx.channel, title, self.settings.get_string(guild_id, "took_too_long"), delete_after=5
             )
             return None
@@ -810,7 +810,7 @@ class DiscordHelper:
             channel = ctx.author
             delete_user_message = False
 
-        text_ask = await self.sendEmbed(
+        text_ask = await self.send_embed(
             channel,
             title,
             f"{message}",
@@ -821,7 +821,7 @@ class DiscordHelper:
         try:
             textResp = await self.bot.wait_for("message", check=check_user, timeout=timeout)
         except asyncio.TimeoutError:
-            await self.sendEmbed(channel, title, self.settings.get_string(guild_id, "took_too_long"), delete_after=5)
+            await self.send_embed(channel, title, self.settings.get_string(guild_id, "took_too_long"), delete_after=5)
             return None
         else:
             if delete_user_message:
@@ -855,7 +855,7 @@ class DiscordHelper:
             channel = ctx.author
             delete_user_message = False
 
-        ask_image_or_text = await self.sendEmbed(
+        ask_image_or_text = await self.send_embed(
             channel,
             title,
             f"{message}",
@@ -866,7 +866,7 @@ class DiscordHelper:
         try:
             textResp = await self.bot.wait_for("message", check=check_user, timeout=timeout)
         except asyncio.TimeoutError:
-            await self.sendEmbed(channel, title, self.settings.get_string(guild_id, "took_too_long"), delete_after=5)
+            await self.send_embed(channel, title, self.settings.get_string(guild_id, "took_too_long"), delete_after=5)
             return None
         else:
             if delete_user_message:
@@ -902,7 +902,7 @@ class DiscordHelper:
                         role_id = select.values[0]
 
                     if role_id == 0:
-                        await self.sendEmbed(
+                        await self.send_embed(
                             ctx.channel, title, f"{ctx.author.mention}, ENTER ROLE NAME", delete_after=5
                         )
                         # need to ask for role name
@@ -919,7 +919,7 @@ class DiscordHelper:
                         await select_callback(selected_role)
                         return
                     else:
-                        await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, Unknown Role.", delete_after=5)
+                        await self.send_embed(ctx.channel, title, f"{ctx.author.mention}, Unknown Role.", delete_after=5)
                         await select_callback(None)
                         return
                 else:
@@ -927,7 +927,7 @@ class DiscordHelper:
 
         async def timeout_callback(select: RoleSelect, interaction: discord.Interaction):
             await interaction.delete_original_response()
-            await self.sendEmbed(
+            await self.send_embed(
                 ctx.channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
             )
 
@@ -940,7 +940,7 @@ class DiscordHelper:
             timeout=timeout,
         )
 
-        await self.sendEmbed(
+        await self.send_embed(
             ctx.channel,
             title,
             message,

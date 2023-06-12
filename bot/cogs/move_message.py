@@ -110,7 +110,7 @@ class MoveMessage(commands.Cog):
 
             message = await ctx.channel.fetch_message(messageId)
             if message is None:
-                await self.discord_helper.sendEmbed(
+                await self.discord_helper.send_embed(
                     channel=channel,
                     title="Move Message",
                     message=self.settings.get_string(guild_id, "move_message_not_found_message", who=ctx.author.mention, message_id=messageId),

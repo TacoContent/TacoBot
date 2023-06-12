@@ -311,7 +311,7 @@ class LiveNow(commands.Cog):
                     # self.log.debug(guild_id, "live_now.log_live_post", f"Found large image {image_url}")
             user_display_name = utils.get_user_display_name(user)
             self.log.debug(guild_id, f"{self._module}.{_method}", f"Logging live post for {user_display_name} in {logging_channel.name}")
-            message = await self.discord_helper.sendEmbed(logging_channel,
+            message = await self.discord_helper.send_embed(logging_channel,
                 f"🔴 {user_display_name}", description,
                 fields, thumbnail=profile_icon,
                 author=user, color=0x6a0dad)

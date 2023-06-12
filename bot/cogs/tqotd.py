@@ -117,7 +117,7 @@ class TacoQuestionOfTheDay(commands.Cog):
                             data = io.BytesIO(await resp.read())
                             files.append(discord.File(data, filename=attachment.filename))
 
-            await self.discord_helper.sendEmbed(
+            await self.discord_helper.send_embed(
                 channel=out_channel,
                 title=self.settings.get_string(guild_id, "tqotd_out_title"),
                  message=out_message,
@@ -238,7 +238,7 @@ class TacoQuestionOfTheDay(commands.Cog):
 
             reason_msg = self.settings.get_string(guild_id, "tqotd_reason_default")
 
-            await self.discord_helper.sendEmbed(
+            await self.discord_helper.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_give_title"),
                 # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",

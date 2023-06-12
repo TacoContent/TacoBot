@@ -123,7 +123,7 @@ class TechThursdays(commands.Cog):
             out_message = self.settings.get_string(
                 guild_id, "techthurs_out_message", taco_count=amount, taco_word=taco_word
             )
-            techthurs_message = await self.discord_helper.sendEmbed(
+            techthurs_message = await self.discord_helper.send_embed(
                 channel=out_channel,
                 title=self.settings.get_string(guild_id, "techthurs_out_title"),
                 message=out_message,
@@ -373,7 +373,7 @@ class TechThursdays(commands.Cog):
 
             reason_msg = self.settings.get_string(guild_id, "techthurs_reason_default")
 
-            await self.discord_helper.sendEmbed(
+            await self.discord_helper.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_give_title"),
                 # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",

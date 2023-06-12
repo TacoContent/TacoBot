@@ -86,7 +86,7 @@ class AmazonLink(commands.Cog):
             await message.delete()
 
             # create an embed with the original message and the new url
-            embed = await self.discord_helper.sendEmbed(message.channel,
+            embed = await self.discord_helper.send_embed(message.channel,
                 "Amazon Link",
                 message=f"{message_content}",
                 author=message.author,

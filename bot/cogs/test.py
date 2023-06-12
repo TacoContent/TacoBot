@@ -47,7 +47,7 @@ class TestCog(commands.Cog):
         channel = ctx.channel
         await ctx.message.delete()
 
-        await self.discord_helper.sendEmbed(
+        await self.discord_helper.send_embed(
             channel,
             "Test",
             "This is a test message",

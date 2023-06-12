@@ -113,7 +113,7 @@ class Suggestions(commands.Cog):
             ac_list = "\n".join(allowed_channels)
             self.log.debug(guild_id, "suggestions.on_message", f"No suggestion settings found for channel {ctx.channel.id}")
             # notify user that the channel they are in is not configured for suggestions
-            await self.discord_helper.sendEmbed(ctx.channel, "Suggestions", f"This channel is not configured for suggestions. Please run the `.taco suggest` in a channel that is configured for suggestions.\n\n{ac_list}", delete_after=20, color=0xFF0000)
+            await self.discord_helper.send_embed(ctx.channel, "Suggestions", f"This channel is not configured for suggestions. Please run the `.taco suggest` in a channel that is configured for suggestions.\n\n{ac_list}", delete_after=20, color=0xFF0000)
             return
         else:
             channel_settings = channel_settings[0]
@@ -134,7 +134,7 @@ class Suggestions(commands.Cog):
         # get suggestion title
         suggestion_title = await self.discord_helper.ask_text(ctx, ctx.channel, "Create Suggestion", f"{ctx.author.mention}, {title_ask}\n\n**Note:**\nYou can respond with `cancel` to cancel your suggestion request.", timeout=60)
         if suggestion_title is None or suggestion_title.lower().strip() == "cancel":
-            await self.discord_helper.sendEmbed(ctx.channel, "Suggestion Cancelled", f"{ctx.author.mention}, Your suggestion request has been cancelled.", color=0x00ff00, delete_after=20)
+            await self.discord_helper.send_embed(ctx.channel, "Suggestion Cancelled", f"{ctx.author.mention}, Your suggestion request has been cancelled.", color=0x00ff00, delete_after=20)
             return
 
         if suggestion_title is None:
@@ -143,7 +143,7 @@ class Suggestions(commands.Cog):
         # get suggestion message
         suggestion_message = await self.discord_helper.ask_text(ctx, ctx.channel, "Create Suggestion", f"{ctx.author.mention}, {message_ask}\n\n**Note:**\nYou can respond with `cancel` to cancel your suggestion request.", color=0x00ff00, timeout=300)
         if suggestion_message is None or suggestion_message.lower().strip() == "cancel":
-            await self.discord_helper.sendEmbed(ctx.channel, "Suggestion Cancelled", f"{ctx.author.mention}, Your suggestion request has been cancelled.", color=0x00ff00, delete_after=20)
+            await self.discord_helper.send_embed(ctx.channel, "Suggestion Cancelled", f"{ctx.author.mention}, Your suggestion request has been cancelled.", color=0x00ff00, delete_after=20)
             return
 
         legend = [
@@ -151,7 +151,7 @@ class Suggestions(commands.Cog):
             { "name": "🛡 Actions", "value": f"{channel_settings['admin_approve_emoji']} Approved\n{channel_settings['admin_consider_emoji']} Considered\n{channel_settings['admin_implemented_emoji']} Implemented\n{channel_settings['admin_reject_emoji']} Rejected\n{channel_settings['admin_close_emoji']} Closed\n{channel_settings['admin_delete_emoji']} Deleted", "inline": True },
         ]
 
-        s_message = await self.discord_helper.sendEmbed(response_channel, f"{suggestion_title}", message=f"{suggestion_message}", author=ctx.author, fields=legend)
+        s_message = await self.discord_helper.send_embed(response_channel, f"{suggestion_title}", message=f"{suggestion_message}", author=ctx.author, fields=legend)
 
         vote_emoji = [
             channel_settings["vote_up_emoji"],
@@ -227,7 +227,7 @@ class Suggestions(commands.Cog):
         if ctx.guild:
             guild_id = ctx.guild.id
             await ctx.message.delete()
-        await self.discord_helper.sendEmbed(ctx.channel,
+        await self.discord_helper.send_embed(ctx.channel,
             self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
             self.settings.get_string(guild_id, "help_module_message", bot_name=self.settings.name, command="suggest"),
             footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
@@ -306,7 +306,7 @@ class Suggestions(commands.Cog):
                 if has_user_voted:
                     self.log.debug(guild_id, "suggestions.on_raw_reaction_add", f"{user.name} has already voted on suggestion {suggestion['id']}")
                     await message.remove_reaction(payload.emoji, user)
-                    await self.discord_helper.sendEmbed(user, "Can only vote once", f"You have already voted on this suggestion.", color=0xff0000, delete_after=30)
+                    await self.discord_helper.send_embed(user, "Can only vote once", f"You have already voted on this suggestion.", color=0xff0000, delete_after=30)
                     return
                 else:
                     self.db.vote_suggestion_by_id(suggestion['id'], user.id, vote)
