@@ -353,19 +353,16 @@ class DiscordHelper:
         _method = inspect.stack()[0][3]
         try:
             # get taco settings
-            taco_settings = self.settings.get_settings(self.db, guildId, "tacos")
-            if not taco_settings:
-                # raise exception if there are no tacos settings
-                self.log.error(guildId, "tacos.on_message", f"No tacos settings found for guild {guildId}")
-                return
+            taco_settings = self._get_tacos_settings(guildId=guildId)
+
             taco_count = taco_amount
 
             taco_type_key = tacotypes.TacoTypes.get_string_from_taco_type(give_type)
             if taco_type_key not in taco_settings:
-                self.log.debug(guildId, f"discordhelper.{_method}", f"Key {taco_type_key} not found in taco settings. Using taco_amount ({taco_amount}) as taco count")
+                self.log.debug(guildId, f"{self._module}.{_method}", f"Key {taco_type_key} not found in taco settings. Using taco_amount ({taco_amount}) as taco count")
                 taco_count = taco_count
             else:
-                taco_count = taco_settings[tacotypes.TacoTypes.get_string_from_taco_type(give_type)]
+                taco_count = taco_settings.get(taco_type_key, taco_amount)
 
             reason_msg = reason if reason else self.settings.get_string(guildId, "no_reason")
 
@@ -389,7 +386,7 @@ class DiscordHelper:
             )
             return total_taco_count
         except Exception as e:
-            self.log.error(guildId, f"discordhelper.{_method}", str(e), traceback.format_exc())
+            self.log.error(guildId, f"{self._module}.{_method}", str(e), traceback.format_exc())
 
     async def taco_purge_log(
         self,
@@ -409,7 +406,7 @@ class DiscordHelper:
             taco_log_channel_id = taco_settings["taco_log_channel_id"]
             log_channel = await self.get_or_fetch_channel(int(taco_log_channel_id))
 
-            self.log.debug(guild_id, f"discordhelper.{_method}", f"{fromMember.name} purged all tacos from {toMember.name} for {reason}")
+            self.log.debug(guild_id, f"{self._module}.{_method}", f"{fromMember.name} purged all tacos from {toMember.name} for {reason}")
             if log_channel:
                 await log_channel.send(
                     self.settings.get_string(
@@ -425,7 +422,7 @@ class DiscordHelper:
                 type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.PURGE)
             )
         except Exception as e:
-            self.log.error(guild_id, f"discordhelper.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
 
     async def tacos_log(
         self,
@@ -462,8 +459,8 @@ class DiscordHelper:
 
             self.log.debug(
                 guild_id,
-                f"discordhelper.{_method}",
-                f"{toMember.name}#{toMember.discriminator} {action} {positive_count} {taco_word} from {fromMember.name}#{fromMember.discriminator} for {reason}",
+                f"{self._module}.{_method}",
+                f"{utils.get_user_display_name(toMember)} {action} {positive_count} {taco_word} from {utils.get_user_display_name(fromMember)} for {reason}",
             )
             if log_channel:
 
@@ -477,7 +474,7 @@ class DiscordHelper:
 
                 await self.send_embed(channel=log_channel, title="", message="", fields=fields, author=fromMember)
         except Exception as e:
-            self.log.error(guild_id, f"discordhelper.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
 
     async def get_or_fetch_user(self, userId: int) -> typing.Union[discord.User, None]:
         _method = inspect.stack()[1][3]
@@ -489,10 +486,10 @@ class DiscordHelper:
                 return user
             return None
         except discord.errors.NotFound as nf:
-            self.log.warn(0, f"discordhelper.{_method}", str(nf), traceback.format_exc())
+            self.log.warn(0, f"{self._module}.{_method}", str(nf), traceback.format_exc())
             return None
         except Exception as ex:
-            self.log.error(0, f"discordhelper.{_method}", str(ex), traceback.format_exc())
+            self.log.error(0, f"{self._module}.{_method}", str(ex), traceback.format_exc())
             return None
 
     async def get_or_fetch_member(self, guildId: int, userId: int) -> typing.Union[discord.Member, None]:
@@ -513,10 +510,10 @@ class DiscordHelper:
                 return user
             return None
         except discord.errors.NotFound as nf:
-            self.log.warn(0, f"discordhelper.{_method}", str(nf), traceback.format_exc())
+            self.log.warn(0, f"{self._module}.{_method}", str(nf), traceback.format_exc())
             return None
         except Exception as ex:
-            self.log.error(0, f"discordhelper.{_method}", str(ex), traceback.format_exc())
+            self.log.error(0, f"{self._module}.{_method}", str(ex), traceback.format_exc())
             return None
 
     async def get_or_fetch_role(self, roleId: int) -> typing.Union[discord.Role, None]:
@@ -640,7 +637,7 @@ class DiscordHelper:
                 await channel_ask.delete()
                 return selected_channel
         except Exception as ex:
-            self.log.error(ctx.guild.id, f"discordhelper.{_method}", str(ex), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
             return None
 
     async def ask_channel(
@@ -689,7 +686,7 @@ class DiscordHelper:
             selected_channel = discord.utils.get(ctx.guild.channels, id=chan_id)
             if selected_channel:
                 self.log.debug(
-                    guild_id, f"discordhelper.{_method}", f"{ctx.author.mention} selected the channel '{selected_channel.name}'"
+                    guild_id, f"{self._module}.{_method}", f"{utils.get_user_display_name(ctx.author)} selected the channel '{selected_channel.name}'"
                 )
                 await self.send_embed(
                     ctx.channel,
@@ -744,7 +741,8 @@ class DiscordHelper:
         min_value: int = 0,
         max_value: int = 100,
         timeout: int = 60,
-    ):
+    ) -> int:
+        _method = inspect.stack()[1][3]
         def check_user(m):
             same = m.author.id == ctx.author.id
             return same
@@ -781,21 +779,21 @@ class DiscordHelper:
             try:
                 await numberResp.delete()
             except discord.NotFound as e:
-                self.log.debug(guild_id, "ask_number", f"Tried to clean up, but the messages were not found.")
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"Tried to clean up, but the messages were not found.")
             except discord.Forbidden as f:
                 self.log.debug(
                     guild_id,
-                    "ask_number",
+                    f"{self._module}.{_method}",
                     f"Tried to clean up, but the bot does not have permissions to delete messages.",
                 )
             try:
                 await number_ask.delete()
             except discord.NotFound as e:
-                self.log.debug(guild_id, "ask_number", f"Tried to clean up, but the messages were not found.")
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"Tried to clean up, but the messages were not found.")
             except discord.Forbidden as f:
                 self.log.debug(
                     guild_id,
-                    "ask_number",
+                    f"{self._module}.{_method}",
                     f"Tried to clean up, but the bot does not have permissions to delete messages.",
                 )
         return numberValue
@@ -808,7 +806,8 @@ class DiscordHelper:
         message: str = "Please enter your response.",
         timeout: int = 60,
         color=None,
-    ):
+    ) -> typing.Union[str,None]:
+        _method = inspect.stack()[1][3]
         def check_user(m):
             same = m.author.id == ctx.author.id
             return same
@@ -853,7 +852,8 @@ class DiscordHelper:
         message: str = "Please enter your response.",
         timeout: int = 60,
         color=None,
-    ):
+    ) -> typing.Union[TextWithAttachments,None]:
+        _method = inspect.stack()[1][3]
         def check_user(m):
             same = m.author.id == ctx.author.id
             return same
@@ -902,7 +902,7 @@ class DiscordHelper:
         timeout: int = 60,
         select_callback: typing.Callable = None,
         # timeout_callback: typing.Callable = None,
-    ):
+    ) -> typing.Union[discord.Role, None]:
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
 
@@ -927,7 +927,7 @@ class DiscordHelper:
 
                     if selected_role:
                         self.log.debug(
-                            guild_id, f"discordhelper.{_method}", f"{ctx.author.mention} selected the role '{selected_role.name}'"
+                            guild_id, f"{self._module}.{_method}", f"{ctx.author.mention} selected the role '{selected_role.name}'"
                         )
                         await select_callback(selected_role)
                         return
@@ -969,9 +969,16 @@ class DiscordHelper:
         # does the user have admin permissions?
         return member.guild_permissions.administrator
 
+    def _get_tacos_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not cog_settings:
+            raise Exception(f"No tacos settings found for guild {guildId}")
+        return cog_settings
+
     async def add_remove_roles(self, user: discord.Member, check_list: list, add_list: list, remove_list: list, allow_everyone: bool = False) -> None:
+        _method = inspect.stack()[1][3]
         if user is None or user.guild is None:
-            self.log.warn(0, "discord_helper.add_remove_roles", "User or guild is None")
+            self.log.warn(0, f"{self._module}.{_method}", "User or guild is None")
             return
 
         guild_id = user.guild.id
@@ -987,13 +994,13 @@ class DiscordHelper:
                         role = user.guild.get_role(int(role_id))
                         if role and role in user.roles:
                             role_list.append(role)
-                            self.log.info(guild_id, "discord_helper.add_remove_roles", f"Removed role {role.name} from user {user.display_name}")
+                            self.log.info(guild_id, f"{self._module}.{_method}", f"Removed role {role.name} from user {user.display_name}")
 
                     if role_list and len(role_list) > 0:
                         try:
                             await user.remove_roles(*role_list)
                         except Exception as e:
-                            self.log.warn(guild_id, "discord_helper.add_remove_roles", str(e), traceback.format_exc())
+                            self.log.warn(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
                 # add the existing roles back to the user
                 if add_list:
                     role_list = []
@@ -1001,10 +1008,10 @@ class DiscordHelper:
                         role = user.guild.get_role(int(role_id))
                         if role and role not in user.roles:
                             role_list.append(role)
-                            self.log.info(guild_id, "discord_helper.add_remove_roles", f"Added role {role.name} to user {user.display_name}")
+                            self.log.info(guild_id, f"{self._module}.{_method}", f"Added role {role.name} to user {user.display_name}")
 
                     if role_list and len(role_list) > 0:
                         try:
                             await user.add_roles(*role_list)
                         except Exception as e:
-                            self.log.warn(guild_id, "discord_helper.add_remove_roles", str(e), traceback.format_exc())
+                            self.log.warn(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())

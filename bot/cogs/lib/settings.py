@@ -11,9 +11,11 @@ import inspect
 
 class Settings:
     APP_VERSION = "1.0.0-snapshot"
-    BITRATE_DEFAULT = 64
+    def __init__(self) -> None:
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
 
-    def __init__(self):
         try:
             with open('app.manifest', encoding="UTF-8") as json_file:
                 self.__dict__.update(json.load(json_file))
@@ -37,13 +39,13 @@ class Settings:
         self.load_language_manifest()
         self.load_strings()
 
-    def get(self, name, default_value=None):
+    def get(self, name, default_value=None) -> typing.Any:
         return utils.dict_get(self.__dict__, name, default_value)
 
-    def get_settings(self, db, guildId: int, name:str):
+    def get_settings(self, db, guildId: int, name:str) -> typing.Any:
         return db.get_settings(guildId, name)
 
-    def get_string(self, guildId: int, key: str, *args, **kwargs):
+    def get_string(self, guildId: int, key: str, *args, **kwargs) -> str:
         _method = inspect.stack()[1][3]
         if not key:
             # self.log.debug(guildId, f"settings.{_method}", f"KEY WAS EMPTY")
@@ -64,7 +66,7 @@ class Settings:
                 # self.log.warn(guildId, f"settings.{_method}", f"UNKNOWN STRING KEY: {key}")
                 return utils.str_replace(f"{key}", *args, **kwargs)
 
-    def set_guild_strings(self, guildId: int, lang: str = None):
+    def set_guild_strings(self, guildId: int, lang: typing.Optional[str] = None) -> None:
         _method = inspect.stack()[1][3]
         # guild_settings = self.db.get_guild_settings(guildId)
         if not lang:
@@ -74,13 +76,13 @@ class Settings:
         self.strings[str(guildId)] = self.strings[lang]
         # self.log.debug(guildId, f"settings.{_method}", f"Guild Language Set: {lang}")
 
-    def get_language(self, guildId: int):
+    def get_language(self, guildId: int) -> str:
         # guild_setting = self.db.get_guild_settings(guildId)
         # if not guild_setting:
         return self.language
         # return guild_setting.language or self.settings.language
 
-    def load_strings(self):
+    def load_strings(self) -> None:
         _method = inspect.stack()[1][3]
         self.strings = {}
 
@@ -103,7 +105,7 @@ class Settings:
                 # self.log.error(0, "settings.load_strings", str(e), traceback.format_exc())
 
 
-    def load_language_manifest(self):
+    def load_language_manifest(self) -> None:
         lang_manifest = os.path.join(os.path.dirname(__file__), "../../../languages/manifest.json")
         self.languages = {}
         if os.path.exists(lang_manifest):

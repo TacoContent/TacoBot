@@ -13,13 +13,13 @@ import datetime
 import inspect
 import string
 
-def dict_get(dictionary, key, default_value = None):
+def dict_get(dictionary, key, default_value = None) -> typing.Any:
     if key in dictionary.keys():
         return dictionary[key] or default_value
     else:
         return default_value
 
-def get_scalar_result(conn, sql, default_value = None, *args):
+def get_scalar_result(conn, sql, default_value = None, *args) -> typing.Any:
     cursor = conn.cursor()
     try:
         cursor.execute(sql, args)
@@ -29,10 +29,10 @@ def get_scalar_result(conn, sql, default_value = None, *args):
         traceback.print_exc()
         return default_value
 
-def clean_channel_name(channel: str):
+def clean_channel_name(channel: str) -> str:
     return channel.lower().strip().replace("#", "").replace("@", "")
 
-def str2bool(v):
+def str2bool(v) -> bool:
     return v.lower() in ("yes", "true", "yup", "1", "t", "y", "on")
 
 def chunk_list(lst, size):
@@ -40,11 +40,11 @@ def chunk_list(lst, size):
     for i in range(0, len(lst), size):
         yield lst[i:i + size]
 
-def get_random_string(length: int = 10):
+def get_random_string(length: int = 10) -> str:
     return "".join(random.choice(string.ascii_letters + string.digits) for _ in range(length))
 
 
-def get_random_name(noun_count = 1, adjective_count = 1):
+def get_random_name(noun_count = 1, adjective_count = 1) -> str:
     try:
         adjectives = load_from_gist("adjectives", adjective_count)
         nouns = load_from_gist("nouns", noun_count)
@@ -71,7 +71,7 @@ def get_random_name(noun_count = 1, adjective_count = 1):
                 traceback.print_exc()
                 return "New Voice Channel"
 
-def get_user_display_name(user: typing.Union[discord.User, discord.Member]):
+def get_user_display_name(user: typing.Union[discord.User, discord.Member]) -> str:
     """
     Gets the display name for the user.
     If the user has a discriminator of 0, then it will return the display name (new format).
@@ -81,16 +81,16 @@ def get_user_display_name(user: typing.Union[discord.User, discord.Member]):
     else:
         return f"{user.display_name}#{user.discriminator}"
 
-def to_timestamp(date, tz: datetime.timezone = None):
+def to_timestamp(date, tz: typing.Optional[datetime.timezone] = None) -> float:
     date = date.replace(tzinfo=tz)
     return (date - datetime.datetime(1970,1,1, tzinfo=tz)).total_seconds()
-def from_timestamp(timestamp):
+def from_timestamp(timestamp: float) -> datetime.datetime:
     return datetime.datetime.fromtimestamp(timestamp)
 
-def get_timestamp():
+def get_timestamp() -> float:
     return to_timestamp(datetime.datetime.utcnow())
 
-def load_from_gist(type, count):
+def load_from_gist(type, count) -> typing.List[str]:
     types = [ "adjectives", "nouns", "verbs" ]
     if type not in types:
         type = "nouns"
@@ -103,18 +103,18 @@ def load_from_gist(type, count):
     jdata = json.loads(data)
     return random.sample(jdata, count)
 
-def get_args_dict(func, args, kwargs):
+def get_args_dict(func, args, kwargs) -> dict:
     args_names = func.__code__.co_varnames[:func.__code__.co_argcount]
     return {**dict(zip(args_names, args)), **kwargs}
 
-def str_replace(input_string: str, *args, **kwargs):
+def str_replace(input_string: str, *args, **kwargs) -> str:
     xargs = get_args_dict(str_replace, args, kwargs)
     result = input_string
     for a in xargs:
         result = result.replace(f"{{{{{a}}}}}", str(kwargs[a]))
     return result
 
-def isAdmin(ctx, settings):
+def isAdmin(ctx, settings) -> bool:
     _method = inspect.stack()[1][3]
     # self.db.open()
     # guild_settings = self.db.get_guild_settings(ctx.guild.id)
@@ -128,7 +128,7 @@ def isAdmin(ctx, settings):
     return is_bot_owner or has_admin
 
 
-def get_by_name_or_id(iterable, nameOrId: typing.Union[int, str]):
+def get_by_name_or_id(iterable, nameOrId: typing.Union[int, str]) -> typing.Optional[typing.Any]:
     if isinstance(nameOrId, str):
         return discord.utils.get(iterable, name=str(nameOrId))
     elif isinstance(nameOrId, int):
@@ -136,7 +136,7 @@ def get_by_name_or_id(iterable, nameOrId: typing.Union[int, str]):
     else:
         return None
 
-def get_last_section_in_url(name):
+def get_last_section_in_url(name) -> str:
     if "/" in name:
         # if the name has a slash in it, then it is a url. Remove everything before and including the slash
         name_split = name.rsplit("/", 1)

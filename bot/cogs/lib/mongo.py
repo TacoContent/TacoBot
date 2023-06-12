@@ -17,6 +17,7 @@ from . import database
 from . import settings
 from . import utils
 from . import models
+from . import loglevel
 
 # from .mongodb import migration
 
@@ -44,7 +45,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
 
-    def insert_log(self, guildId: int, level: str, method: str, message: str, stackTrace: str = None):
+    def insert_log(self, guildId: int, level: loglevel.LogLevel, method: str, message: str, stack: typing.Optional[str] = None):
         try:
             if self.connection is None:
                 self.open()
@@ -54,7 +55,7 @@ class MongoDatabase(database.Database):
                 "level": level.name,
                 "method": method,
                 "message": message,
-                "stack_trace": stackTrace
+                "stack_trace": stack if stack else ""
             }
             self.connection.logs.insert_one(payload)
         except Exception as ex:

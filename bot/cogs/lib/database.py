@@ -4,6 +4,7 @@ import typing
 import datetime
 
 from . import models
+from . import loglevel
 
 class Database():
 
@@ -14,7 +15,7 @@ class Database():
     def close(self):
         pass
 
-    def insert_log(self, guildId: int, level: str, method: str, message: str, stack: str = None):
+    def insert_log(self, guildId: int, level: loglevel.LogLevel, method: str, message: str, stack: typing.Optional[str] = None):
         pass
     def clear_log(self, guildId: int):
         pass

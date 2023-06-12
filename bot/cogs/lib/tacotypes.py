@@ -42,7 +42,7 @@ class TacoTypes(Enum):
     CUSTOM = 9999
 
     @staticmethod
-    def get_from_string(taco_type_string):
+    def get_from_string(taco_type_string) -> "TacoTypes":
         if taco_type_string == "join_count":
             return TacoTypes.JOIN_SERVER
         elif taco_type_string == "boost_count":
@@ -113,7 +113,7 @@ class TacoTypes(Enum):
             return TacoTypes.CUSTOM
 
     @staticmethod
-    def get_db_type_from_taco_type(taco_type):
+    def get_db_type_from_taco_type(taco_type) -> str:
         if taco_type == TacoTypes.JOIN_SERVER:
             return "JOIN_SERVER"
         elif taco_type == TacoTypes.BOOST:
@@ -184,7 +184,7 @@ class TacoTypes(Enum):
             return "CUSTOM"
 
     @staticmethod
-    def get_string_from_taco_type(taco_type):
+    def get_string_from_taco_type(taco_type) -> str:
         if taco_type == TacoTypes.JOIN_SERVER:
             return "join_count"
         elif taco_type == TacoTypes.BOOST:
