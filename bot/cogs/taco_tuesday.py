@@ -26,7 +26,10 @@ import inspect
 
 
 class TacoTuesday(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
@@ -38,16 +41,17 @@ class TacoTuesday(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "taco_tuesday.__init__", "Initialized")
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     @commands.group()
-    async def tuesday(self, ctx):
+    async def tuesday(self, ctx) -> None:
         pass
 
     @tuesday.command()
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def new(self, ctx, member: discord.Member, tweet: str):
+    async def new(self, ctx, member: discord.Member, tweet: str) -> None:
+        _method = inspect.stack()[0][3]
         guild_id = ctx.guild.id
         try:
             await ctx.message.delete()
@@ -57,7 +61,7 @@ class TacoTuesday(commands.Cog):
 
             message_template = cog_settings.get("message_template", None)
             if not message_template:
-                self.log.debug(guild_id, "taco_tuesday.new", f"Message template not set")
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"Message template not set")
                 return
 
             tag_role_id = cog_settings.get("tag_role", None)
@@ -67,12 +71,12 @@ class TacoTuesday(commands.Cog):
 
             output_channel_id = cog_settings.get("output_channel_id", None)
             if not output_channel_id:
-                self.log.debug(guild_id, "taco_tuesday.new", f"Output channel not set")
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"Output channel not set")
                 return
 
             output_channel = await self.discord_helper.get_or_fetch_channel(int(output_channel_id))
             if not output_channel:
-                self.log.debug(guild_id, "taco_tuesday.new", f"Output channel not found")
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"Output channel not found")
                 return
 
             message = utils.str_replace(
@@ -94,15 +98,16 @@ class TacoTuesday(commands.Cog):
             await self._set_taco_tuesday_user(ctx=ctx, member=member)
 
         except Exception as e:
-            self.log.error(guild_id, "taco_tuesday.new", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
 
     @tuesday.command()
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def set(self, ctx, member: discord.Member):
+    async def set(self, ctx, member: discord.Member) -> None:
         """Sets the user associated with the taco tuesday"""
+        _method = inspect.stack()[0][3]
         guild_id = ctx.guild.id
         try:
             await ctx.message.delete()
@@ -110,28 +115,30 @@ class TacoTuesday(commands.Cog):
             await self._set_taco_tuesday_user(ctx=ctx, member=member)
 
         except Exception as e:
-            self.log.error(ctx.guild.id, "taco_tuesday.set", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
     @tuesday.command()
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def give(self, ctx, member: discord.Member):
+    async def give(self, ctx, member: discord.Member) -> None:
+        """Gives the user tacos"""
+        _method = inspect.stack()[0][3]
         try:
             await ctx.message.delete()
 
             await self.give_user_tacotuesday_tacos(ctx.guild.id, member.id, ctx.channel.id)
 
         except Exception as e:
-            self.log.error(ctx.guild.id, "taco_tuesday.give", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
-    async def _on_raw_reaction_add_import(self, payload):
+    async def _on_raw_reaction_add_import(self, payload) -> None:
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
 
         # check if the user that reacted is in the admin role
         if not await self.discord_helper.is_admin(guild_id, payload.user_id):
-            self.log.debug(guild_id, f"taco_tuesday.{_method}", f"User {payload.user_id} is not an admin")
+            self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
             return
 
         channel = self.bot.get_channel(payload.channel_id)
@@ -141,20 +148,20 @@ class TacoTuesday(commands.Cog):
         if reaction.count > 1:
             self.log.debug(
                 guild_id,
-                f"taco_tuesday.{_method}",
+                f"{self._module}.{_method}",
                 f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}",
             )
             return
 
         self._import_taco_tuesday(message)
 
-    async def _on_raw_reaction_add_archive(self, payload):
+    async def _on_raw_reaction_add_archive(self, payload) -> None:
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
 
         # check if the user that reacted is in the admin role
         if not await self.discord_helper.is_admin(guild_id, payload.user_id):
-            self.log.debug(guild_id, f"taco_tuesday.{_method}", f"User {payload.user_id} is not an admin")
+            self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
             return
 
         channel = self.bot.get_channel(payload.channel_id)
@@ -169,14 +176,14 @@ class TacoTuesday(commands.Cog):
                 was_imported = True
                 break
         if not was_imported:
-            self.log.debug(guild_id, f"taco_tuesday.{_method}", f"Message {payload.message_id} was not imported. No need to archive.")
+            self.log.debug(guild_id, f"{self._module}.{_method}", f"Message {payload.message_id} was not imported. No need to archive.")
             return
 
         reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
         if reaction.count > 1:
             self.log.debug(
                 guild_id,
-                f"taco_tuesday.{_method}",
+                f"{self._module}.{_method}",
                 f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}",
             )
             return
@@ -184,7 +191,7 @@ class TacoTuesday(commands.Cog):
         await self._archive_taco_tuesday(message, cog_settings)
 
     @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload):
+    async def on_raw_reaction_add(self, payload) -> None:
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
         try:
@@ -202,7 +209,7 @@ class TacoTuesday(commands.Cog):
             cog_settings = self.get_cog_settings(guild_id)
 
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, f"taco_tuesday.{_method}", f"Taco Tuesday not enabled")
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"Taco Tuesday not enabled")
                 return
 
             # check if reaction is to archive the message
@@ -210,12 +217,12 @@ class TacoTuesday(commands.Cog):
             reaction_import_emojis = cog_settings.get("import_emoji", ["🇮"])
             check_list = reaction_archive_emojis + reaction_import_emojis
             if str(payload.emoji.name) not in check_list:
-                self.log.debug(guild_id, f"taco_tuesday.{_method}", f"Reaction {payload.emoji.name} not in check list")
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"Reaction {payload.emoji.name} not in check list")
                 return
 
             if str(payload.emoji.name) in reaction_archive_emojis:
                 if cog_settings.get("archive_enabled", False):
-                    self.log.debug(guild_id, f"taco_tuesday.{_method}", f"Archive is enabled. Archiving message")
+                    self.log.debug(guild_id, f"{self._module}.{_method}", f"Archive is enabled. Archiving message")
                     await self._on_raw_reaction_add_archive(payload)
                     return
 
@@ -228,17 +235,17 @@ class TacoTuesday(commands.Cog):
                 return
 
         except Exception as ex:
-            self.log.error(guild_id, f"taco_tuesday.{_method}", str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
             # await self.discord_helper.notify_of_error(ctx)
 
-    async def _archive_taco_tuesday(self, message: discord.Message, cog_settings: dict = None):
+    async def _archive_taco_tuesday(self, message: discord.Message, cog_settings: dict = None) -> None:
         _method = inspect.stack()[0][3]
         guild_id = message.guild.id
         try:
             archive_channel_id = cog_settings.get("archive_channel_id", None)
             if not archive_channel_id:
                 self.log.error(
-                    guild_id, "tacotuesday._archive_taco_tuesday", f"No archive_channel_id found for guild {guild_id}"
+                    guild_id, f"{self._module}.{_method}", f"No archive_channel_id found for guild {guild_id}"
                 )
                 return
 
@@ -246,7 +253,7 @@ class TacoTuesday(commands.Cog):
             if not archive_channel:
                 self.log.error(
                     guild_id,
-                    "tacotuesday._archive_taco_tuesday",
+                    f"{self._module}.{_method}",
                     f"Could not find archive channel {archive_channel_id} for guild {guild_id}",
                 )
                 return
@@ -319,10 +326,11 @@ class TacoTuesday(commands.Cog):
             )
 
         except Exception as ex:
-            self.log.error(guild_id, f"taco_tuesday.{_method}", str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
             # await self.discord_helper.notify_of_error(ctx)
 
-    async def _set_taco_tuesday_user(self, ctx: commands.Context, member: discord.Member):
+    async def _set_taco_tuesday_user(self, ctx: commands.Context, member: discord.Member) -> None:
+        _method = inspect.stack()[0][3]
         if ctx.guild is None:
             raise Exception("This command can only be used in a guild")
 
@@ -333,10 +341,10 @@ class TacoTuesday(commands.Cog):
         # get focus role id
         focus_role_id = cog_settings.get("focus_role", None)
         if not focus_role_id:
-            self.log.debug(guild_id, "taco_tuesday.set", f"Focus role not set")
+            self.log.debug(guild_id, f"{self._module}.{_method}", f"Focus role not set")
             return
 
-        self.log.debug(guild_id, "taco_tuesday.set", f"Adding user {member.id} to focus role {focus_role_id}")
+        self.log.debug(guild_id, f"{self._module}.{_method}", f"Adding user {member.id} to focus role {focus_role_id}")
         # add user to focus_role
         await self.discord_helper.add_remove_roles(
             user=member,
@@ -345,7 +353,8 @@ class TacoTuesday(commands.Cog):
             remove_list=[],
             allow_everyone=True
         )
-    def _import_taco_tuesday(self, message: discord.Message):
+    def _import_taco_tuesday(self, message: discord.Message) -> None:
+        _method = inspect.stack()[0][3]
         guild_id = message.guild.id
         channel_id = message.channel.id
         message_id = message.id
@@ -364,7 +373,7 @@ class TacoTuesday(commands.Cog):
 
         self.log.debug(
             guild_id,
-            "taco_tuesday._import_taco_tuesday",
+            f"{self._module}.{_method}",
             f"Importing TACO Tuesday message {message_id} from channel {channel_id} in guild {guild_id} for user {message_author.id} with text {text} and image {image_url}",
         )
         self.db.save_taco_tuesday(
@@ -376,7 +385,8 @@ class TacoTuesday(commands.Cog):
             message_id=message_id,
         )
 
-    async def give_user_tacotuesday_tacos(self, guild_id, user_id, channel_id):
+    async def give_user_tacotuesday_tacos(self, guild_id, user_id, channel_id) -> None:
+        _method = inspect.stack()[0][3]
         ctx = None
         try:
             # create context
@@ -393,7 +403,7 @@ class TacoTuesday(commands.Cog):
                 channel = guild.system_channel
             if not channel:
                 self.log.warn(
-                    guild_id, "tacotuesday.give_user_tacotuesday_tacos", f"No output channel found for guild {guild_id}"
+                    guild_id, f"{self._module}.{_method}", f"No output channel found for guild {guild_id}"
                 )
                 return
             message = None
@@ -408,12 +418,6 @@ class TacoTuesday(commands.Cog):
             self.db.track_taco_tuesday(guild_id, member.id)
 
             tacos_settings = self.get_tacos_settings(guild_id)
-            if not tacos_settings:
-                self.log.warn(
-                    guild_id, "tacotuesday.give_user_tacotuesday_tacos", f"No tacos settings found for guild {guild_id}"
-                )
-                return
-
             amount = tacos_settings.get("taco_tuesday_count", 250)
 
             tacos_word = self.settings.get_string(guild_id, "taco_singular")
@@ -444,7 +448,7 @@ class TacoTuesday(commands.Cog):
             )
 
         except Exception as e:
-            self.log.error(guild_id, "tacotuesday.give_user_tacotuesday_tacos", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             if ctx:
                 await self.discord_helper.notify_of_error(ctx)
 

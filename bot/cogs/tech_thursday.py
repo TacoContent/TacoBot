@@ -26,7 +26,10 @@ import inspect
 
 
 class TechThursdays(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
@@ -41,12 +44,13 @@ class TechThursdays(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "techthurs.__init__", "Initialized")
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     @commands.group(name="techthurs", invoke_without_command=True)
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def techthurs(self, ctx):
+    async def techthurs(self, ctx) -> None:
+        _method = inspect.stack()[0][3]
         if ctx.invoked_subcommand is not None:
             return
         guild_id = 0
@@ -84,15 +88,15 @@ class TechThursdays(commands.Cog):
 
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings:
-                self.log.warn(guild_id, "techthurs.techthurs", f"No techthurs settings found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"No techthurs settings found for guild {guild_id}")
                 return
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, "techthurs.techthurs", f"techthurs is disabled for guild {guild_id}")
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"techthurs is disabled for guild {guild_id}")
                 return
 
             tacos_settings = self.get_tacos_settings(guild_id)
             if not tacos_settings:
-                self.log.warn(guild_id, "techthurs.techthurs", f"No tacos settings found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"No tacos settings found for guild {guild_id}")
                 return
 
             amount = tacos_settings.get("techthurs_amount", 5)
@@ -114,7 +118,7 @@ class TechThursdays(commands.Cog):
 
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
-                self.log.warn(guild_id, "techthurs.techthurs", f"No output channel found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"No output channel found for guild {guild_id}")
 
             # get role
             taco_word = self.settings.get_string(guild_id, "taco_singular")
@@ -148,14 +152,15 @@ class TechThursdays(commands.Cog):
             )
 
         except Exception as e:
-            self.log.error(guild_id, "techthurs.techthurs", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     @techthurs.command(name="import")
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def import_techthurs(self, ctx, message_id: int):
+    async def import_techthurs(self, ctx, message_id: int) -> None:
         """Import techthurs from an existing post"""
+        _method = inspect.stack()[0][3]
         guild_id = 0
         if ctx.guild:
             guild_id = ctx.guild.id
@@ -165,15 +170,15 @@ class TechThursdays(commands.Cog):
 
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings:
-                self.log.warn(guild_id, "techthurs.techthurs", f"No techthurs settings found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"No techthurs settings found for guild {guild_id}")
                 return
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, "techthurs.techthurs", f"techthurs is disabled for guild {guild_id}")
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"techthurs is disabled for guild {guild_id}")
                 return
 
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
-                self.log.warn(guild_id, "techthurs.techthurs", f"No output channel found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"No output channel found for guild {guild_id}")
 
             # get the message from the id
             message = await out_channel.fetch_message(message_id)
@@ -183,13 +188,13 @@ class TechThursdays(commands.Cog):
             self._import_techthurs(message)
 
         except Exception as e:
-            self.log.error(ctx.guild.id, "techthurs.import_techthurs", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     @techthurs.command(name="give")
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def give(self, ctx, member: discord.Member):
+    async def give(self, ctx, member: discord.Member) -> None:
         _method = inspect.stack()[0][3]
         try:
             await ctx.message.delete()
@@ -197,7 +202,7 @@ class TechThursdays(commands.Cog):
             await self.give_user_techthurs_tacos(ctx.guild.id, member.id, ctx.channel.id, None)
 
         except Exception as e:
-            self.log.error(ctx.guild.id, f"techthurs.{_method}", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     async def _on_raw_reaction_add_give(self, payload):
@@ -206,7 +211,7 @@ class TechThursdays(commands.Cog):
 
         # check if the user that reacted is in the admin role
         if not await self.discord_helper.is_admin(guild_id, payload.user_id):
-            self.log.debug(guild_id, f"techthurs.{_method}", f"User {payload.user_id} is not an admin")
+            self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
             return
         # in future, check if the user is in a defined role that can grant tacos (e.g. moderator)
 
@@ -221,7 +226,7 @@ class TechThursdays(commands.Cog):
         if reaction.count > 1:
             self.log.debug(
                 guild_id,
-                f"techthurs.{_method}",
+                f"{self._module}.{_method}",
                 f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}",
             )
             return
@@ -231,22 +236,22 @@ class TechThursdays(commands.Cog):
             # log that we are giving tacos for this reaction
             self.log.info(
                 guild_id,
-                f"techthurs.{_method}",
+                f"{self._module}.{_method}",
                 f"User {payload.user_id} reacted with {payload.emoji.name} to message {payload.message_id}",
             )
             await self.give_user_techthurs_tacos(guild_id, message_author.id, payload.channel_id, payload.message_id)
         else:
             self.log.debug(
-                guild_id, f"techthurs.{_method}", f"Message {payload.message_id} has already been tracked for techthurs. Skipping."
+                guild_id, f"{self._module}.{_method}", f"Message {payload.message_id} has already been tracked for techthurs. Skipping."
             )
 
-    async def _on_raw_reaction_add_import(self, payload):
+    async def _on_raw_reaction_add_import(self, payload) -> None:
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
 
         # check if the user that reacted is in the admin role
         if not await self.discord_helper.is_admin(guild_id, payload.user_id):
-            self.log.debug(guild_id, f"techthurs.{_method}", f"User {payload.user_id} is not an admin")
+            self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
             return
 
         channel = self.bot.get_channel(payload.channel_id)
@@ -256,7 +261,7 @@ class TechThursdays(commands.Cog):
         if reaction.count > 1:
             self.log.debug(
                 guild_id,
-                f"techthurs.{_method}",
+                f"{self._module}.{_method}",
                 f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}",
             )
             return
@@ -277,13 +282,9 @@ class TechThursdays(commands.Cog):
                 return
 
             cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings:
-                # raise exception if there are no tacos settings
-                self.log.error(guild_id, "techthurs.on_raw_reaction_add", f"No cog settings found for guild {guild_id}")
-                return
 
-            reaction_emojis = cog_settings.get("techthurs_reaction_emoji", ["💻"])
-            reaction_import_emojis = cog_settings.get("techthurs_reaction_import_emoji", ["🇮"])
+            reaction_emojis = cog_settings.get("reaction_emoji", ["💻"])
+            reaction_import_emojis = cog_settings.get("import_emoji", ["🇮"])
             check_list = reaction_emojis + reaction_import_emojis
             if str(payload.emoji.name) not in check_list:
                 return
@@ -298,10 +299,11 @@ class TechThursdays(commands.Cog):
                 return
 
         except Exception as ex:
-            self.log.error(guild_id, f"techthurs.{_method}", str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
             # await self.discord_helper.notify_of_error(ctx)
 
-    def _import_techthurs(self, message: discord.Message):
+    def _import_techthurs(self, message: discord.Message) -> None:
+        _method = inspect.stack()[0][3]
         guild_id = message.guild.id
         channel_id = message.channel.id
         message_id = message.id
@@ -320,7 +322,7 @@ class TechThursdays(commands.Cog):
 
         self.log.debug(
             guild_id,
-            "techthurs._import_techthurs",
+            f"{self._module}.{_method}",
             f"Importing techthurs message {message_id} from channel {channel_id} in guild {guild_id} for user {message_author.id} with text {text} and image {image_url}",
         )
         self.db.save_techthurs(
@@ -332,7 +334,8 @@ class TechThursdays(commands.Cog):
             message_id=message_id,
         )
 
-    async def give_user_techthurs_tacos(self, guild_id, user_id, channel_id, message_id):
+    async def give_user_techthurs_tacos(self, guild_id, user_id, channel_id, message_id) -> None:
+        _method = inspect.stack()[0][3]
         try:
             # create context
             # self, bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
@@ -348,7 +351,7 @@ class TechThursdays(commands.Cog):
                 channel = guild.system_channel
             if not channel:
                 self.log.warn(
-                    guild_id, "techthurs.give_user_techthurs_tacos", f"No output channel found for guild {guild_id}"
+                    guild_id, f"{self._module}.{_method}", f"No output channel found for guild {guild_id}"
                 )
                 return
             message = None
@@ -366,10 +369,6 @@ class TechThursdays(commands.Cog):
             self.db.track_techthurs_answer(guild_id, member.id, message_id)
 
             tacos_settings = self.get_tacos_settings(guild_id)
-            if not tacos_settings:
-                self.log.warn(guild_id, "techthurs.techthurs", f"No tacos settings found for guild {guild_id}")
-                return
-
             amount = tacos_settings.get("tech_thursday_count", 5)
 
             tacos_word = self.settings.get_string(guild_id, "taco_singular")
@@ -400,22 +399,18 @@ class TechThursdays(commands.Cog):
             )
 
         except Exception as e:
-            self.log.error(ctx.guild.id, "techthurs.give", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
-    def get_cog_settings(self, guildId: int = 0):
+    def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
         if not cog_settings:
-            # raise exception if there are no leave_survey settings
-            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No techthurs settings found for guild {guildId}")
         return cog_settings
 
-    def get_tacos_settings(self, guildId: int = 0):
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
         if not cog_settings:
-            # raise exception if there are no leave_survey settings
-            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
 

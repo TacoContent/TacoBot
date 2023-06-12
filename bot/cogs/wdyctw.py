@@ -25,7 +25,10 @@ from .lib import tacotypes
 import inspect
 
 class WhatDoYouCallThisWednesday(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
@@ -40,12 +43,13 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "wdyctw.__init__", "Initialized")
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     @commands.group(name="wdyctw", invoke_without_command=True)
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def wdyctw(self, ctx: Context):
+    async def wdyctw(self, ctx: Context) -> None:
+        _method = inspect.stack()[0][3]
         if ctx.invoked_subcommand is not None:
             return
         guild_id = 0
@@ -74,17 +78,11 @@ class WhatDoYouCallThisWednesday(commands.Cog):
                 return
 
             cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings:
-                self.log.warn(guild_id, "wdyctw.wdyctw", f"No wdyctw settings found for guild {guild_id}")
-                return
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, "wdyctw.wdyctw", f"wdyctw is disabled for guild {guild_id}")
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"wdyctw is disabled for guild {guild_id}")
                 return
 
             tacos_settings = self.get_tacos_settings(guild_id)
-            if not tacos_settings:
-                self.log.warn(guild_id, "wdyctw.wdyctw", f"No tacos settings found for guild {guild_id}")
-                return
 
             amount = tacos_settings.get("wdyctw_amount", 5)
 
@@ -105,7 +103,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
-                self.log.warn(guild_id, "wdyctw.wdyctw", f"No output channel found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"No output channel found for guild {guild_id}")
 
             # get role
             taco_word = self.settings.get_string(guild_id, "taco_singular")
@@ -130,14 +128,15 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             )
 
         except Exception as e:
-            self.log.error(guild_id, "wdyctw.wdyctw", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     @wdyctw.command(name="import")
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def import_wdyctw(self, ctx, message_id: int):
+    async def import_wdyctw(self, ctx, message_id: int) -> None:
         """Import WDYCTW from an existing post"""
+        _method = inspect.stack()[0][3]
         guild_id = 0
         if ctx.guild:
             guild_id = ctx.guild.id
@@ -146,16 +145,13 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             await ctx.message.delete()
 
             cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings:
-                self.log.warn(guild_id, "wdyctw.wdyctw", f"No wdyctw settings found for guild {guild_id}")
-                return
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, "wdyctw.wdyctw", f"wdyctw is disabled for guild {guild_id}")
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"wdyctw is disabled for guild {guild_id}")
                 return
 
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
-                self.log.warn(guild_id, "wdyctw.wdyctw", f"No output channel found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"No output channel found for guild {guild_id}")
 
 
             # get the message from the id
@@ -166,32 +162,34 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             self._import_wdyctw(message)
 
         except Exception as e:
-            self.log.error(ctx.guild.id, "wdyctw.import_wdyctw", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
 
     @wdyctw.command(name="give")
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def give(self, ctx, member: discord.Member):
+    async def give(self, ctx, member: discord.Member) -> None:
+        """Give a user tacos for their WDYCTW"""
+        _method = inspect.stack()[0][3]
         try:
             await ctx.message.delete()
 
             await self.give_user_wdyctw_tacos(ctx.guild.id, member.id, ctx.channel.id, None)
 
         except Exception as e:
-            self.log.error(ctx.guild.id, "wdyctw.give", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
 
-    async def _on_raw_reaction_add_give(self, payload):
+    async def _on_raw_reaction_add_give(self, payload) -> None:
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
 
 
         # check if the user that reacted is in the admin role
         if not await self.discord_helper.is_admin(guild_id, payload.user_id):
-            self.log.debug(guild_id, f"wdyctw.{_method}", f"User {payload.user_id} is not an admin")
+            self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
             return
         # in future, check if the user is in a defined role that can grant tacos (e.g. moderator)
 
@@ -204,25 +202,25 @@ class WhatDoYouCallThisWednesday(commands.Cog):
         # check if this reaction is the first one of this type on the message
         reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
         if reaction.count > 1:
-            self.log.debug(guild_id, f"wdyctw.{_method}", f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
+            self.log.debug(guild_id, f"{self._module}.{_method}", f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
             return
 
         already_tracked = self.db.wdyctw_user_message_tracked(guild_id, message_author.id, message.id)
         if not already_tracked:
             # log that we are giving tacos for this reaction
-            self.log.info(guild_id, f"wdyctw.{_method}", f"User {payload.user_id} reacted with {payload.emoji.name} to message {payload.message_id}")
+            self.log.info(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} reacted with {payload.emoji.name} to message {payload.message_id}")
             await self.give_user_wdyctw_tacos(guild_id, message_author.id, payload.channel_id, payload.message_id)
         else:
-            self.log.debug(guild_id, f"wdyctw.{_method}", f"Message {payload.message_id} has already been tracked for WDYCTW. Skipping.")
+            self.log.debug(guild_id, f"{self._module}.{_method}", f"Message {payload.message_id} has already been tracked for WDYCTW. Skipping.")
 
-    async def _on_raw_reaction_add_import(self, payload):
+    async def _on_raw_reaction_add_import(self, payload) -> None:
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
 
 
         # check if the user that reacted is in the admin role
         if not await self.discord_helper.is_admin(guild_id, payload.user_id):
-            self.log.debug(guild_id, f"wdyctw.{_method}", f"User {payload.user_id} is not an admin")
+            self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
             return
 
         channel = self.bot.get_channel(payload.channel_id)
@@ -230,14 +228,14 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
         reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
         if reaction.count > 1:
-            self.log.debug(guild_id, f"wdyctw.{_method}", f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
+            self.log.debug(guild_id, f"{self._module}.{_method}", f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
             return
 
         self._import_wdyctw(message)
 
 
     @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload):
+    async def on_raw_reaction_add(self, payload) -> None:
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
         try:
@@ -250,14 +248,10 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
 
             cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings:
-                # raise exception if there are no tacos settings
-                self.log.error(guild_id, "wdyctw.on_raw_reaction_add", f"No cog settings found for guild {guild_id}")
-                return
 
             # check if the reaction is one of the ones we care about
-            reaction_emojis = cog_settings.get("wdyctw_reaction_emoji", ["🇼"])
-            reaction_import_emojis = cog_settings.get("wdyctw_reaction_import_emoji", ["🇮"])
+            reaction_emojis = cog_settings.get("reaction_emoji", ["🇼"])
+            reaction_import_emojis = cog_settings.get("import_emoji", ["🇮"])
 
             check_list = reaction_emojis + reaction_import_emojis
             if str(payload.emoji.name) not in check_list:
@@ -272,10 +266,11 @@ class WhatDoYouCallThisWednesday(commands.Cog):
                 return
 
         except Exception as ex:
-            self.log.error(guild_id, f"wdyctw.{_method}", str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
             # await self.discord_helper.notify_of_error(ctx)
 
-    def _import_wdyctw(self, message: discord.Message):
+    def _import_wdyctw(self, message: discord.Message) -> None:
+        _method = inspect.stack()[0][3]
         guild_id = message.guild.id
         channel_id = message.channel.id
         message_id = message.id
@@ -294,7 +289,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
         if message_content is not None and message_content != "":
             text = message_content
 
-        self.log.debug(guild_id, "wdyctw._import_wdyctw", f"Importing WDYCTW message {message_id} from channel {channel_id} in guild {guild_id} for user {message_author.id} with text {text} and image {image_url}")
+        self.log.debug(guild_id, f"{self._module}.{_method}", f"Importing WDYCTW message {message_id} from channel {channel_id} in guild {guild_id} for user {message_author.id} with text {text} and image {image_url}")
         self.db.save_wdyctw (
             guildId=guild_id,
             message=text or "",
@@ -304,7 +299,8 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             message_id=message_id,
         )
 
-    async def give_user_wdyctw_tacos(self, guild_id, user_id, channel_id, message_id):
+    async def give_user_wdyctw_tacos(self, guild_id, user_id, channel_id, message_id) -> None:
+        _method = inspect.stack()[0][3]
         try:
             # create context
             # self, bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
@@ -319,7 +315,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             else:
                 channel = guild.system_channel
             if not channel:
-                self.log.warn(guild_id, "wdyctw.give_user_wdyctw_tacos", f"No output channel found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"No output channel found for guild {guild_id}")
                 return
             message = None
             # get message
@@ -334,9 +330,6 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             self.db.track_wdyctw_answer(guild_id, member.id, message_id)
 
             tacos_settings = self.get_tacos_settings(guild_id)
-            if not tacos_settings:
-                self.log.warn(guild_id, "wdyctw.wdyctw", f"No tacos settings found for guild {guild_id}")
-                return
 
             amount = tacos_settings.get("wdyctw_count", 5)
 
@@ -358,22 +351,18 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
 
         except Exception as e:
-            self.log.error(ctx.guild.id, "wdyctw.give", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
 
-    def get_cog_settings(self, guildId: int = 0):
+    def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
         if not cog_settings:
-            # raise exception if there are no leave_survey settings
-            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No wdyctw settings found for guild {guildId}")
         return cog_settings
-    def get_tacos_settings(self, guildId: int = 0):
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
         if not cog_settings:
-            # raise exception if there are no leave_survey settings
-            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
 async def setup(bot):

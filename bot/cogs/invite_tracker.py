@@ -27,6 +27,9 @@ from .lib import tacotypes
 
 class InviteTracker(commands.Cog):
     def __init__(self, bot):
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
@@ -38,10 +41,11 @@ class InviteTracker(commands.Cog):
         self.invites = {}
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "invite_tracker.__init__", "Initialized")
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     @commands.Cog.listener()
-    async def on_ready(self):
+    async def on_ready(self) -> None:
+        _method = inspect.stack()[0][3]
         for guild in self.bot.guilds:
             guild_id = guild.id
             self.invites[guild_id] = await guild.invites()
@@ -50,24 +54,25 @@ class InviteTracker(commands.Cog):
                 invite_payload = self.get_payload_for_invite(invite)
                 self.db.track_invite_code(guild_id, invite.code, invite_payload, None)
 
-        self.log.debug(0, "invite_tracker.on_ready", "InviteTracker ready")
+        self.log.debug(0, f"{self._module}.{_method}", "InviteTracker ready")
 
     @commands.Cog.listener()
-    async def on_invite_create(self, invite):
+    async def on_invite_create(self, invite) -> None:
+        _method = inspect.stack()[0][3]
         guild_id = invite.guild.id
         self.invites[invite.guild.id] = await invite.guild.invites()
 
         for invite in self.invites[guild_id]:
-            self.log.debug(guild_id, "invite_tracker.on_ready", f"adding invite: {invite.code}")
+            self.log.debug(guild_id, f"{self._module}.{_method}", f"adding invite: {invite.code}")
             invite_payload = self.get_payload_for_invite(invite)
             self.db.track_invite_code(guild_id, invite.code, invite_payload, None)
 
     @commands.Cog.listener()
-    async def on_invite_delete(self, invite):
+    async def on_invite_delete(self, invite) -> None:
         self.invites[invite.guild.id] = await invite.guild.invites()
 
     @commands.Cog.listener()
-    async def on_member_join(self, member):
+    async def on_member_join(self, member) -> None:
         guild_id = member.guild.id
         _method = inspect.stack()[0][3]
         try:
@@ -77,7 +82,7 @@ class InviteTracker(commands.Cog):
             for invite in invites_before_join:
                 found_code = self.find_invite_by_code(invites_after_join, invite.code)
                 if found_code is not None and invite.uses < found_code.uses:
-                    self.log.debug(0, "invite_tracker.on_member_join", "Invite used: " + invite.code)
+                    self.log.debug(0, f"{self._module}.{_method}", "Invite used: " + invite.code)
                     self.invites[member.guild.id] = invites_after_join
 
                     inviter = invite.inviter
@@ -99,9 +104,9 @@ class InviteTracker(commands.Cog):
                         )
                     return
         except Exception as e:
-            self.log.error(guild_id, f"invite_tracker.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
 
-    def get_payload_for_invite(self, invite):
+    def get_payload_for_invite(self, invite) -> dict:
         return {
             "id": invite.id,
             "code": invite.code,
@@ -116,12 +121,12 @@ class InviteTracker(commands.Cog):
             "url": invite.url,
         }
 
-    def find_invite_by_code(self, inviteList, code):
+    def find_invite_by_code(self, inviteList, code) -> typing.Optional[dict]:
         for invite in inviteList:
             if invite.code == code:
                 return invite
         return None
 
 
-async def setup(bot):
+async def setup(bot) -> None:
     await bot.add_cog(InviteTracker(bot))

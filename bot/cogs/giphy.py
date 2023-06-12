@@ -28,6 +28,9 @@ from .lib import dbprovider
 
 class Giphy(commands.Cog):
     def __init__(self, bot):
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
         self.SETTINGS_SECTION = "giphy"
@@ -38,11 +41,12 @@ class Giphy(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "giphy.__init__", "Initialized")
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     @commands.command(name='giphy', aliases=['gif'])
     @commands.guild_only()
     async def giphy(self, ctx, *, query: str = "tacos"):
+        _method = inspect.stack()[0][3]
         guild_id = 0
         try:
             if ctx.guild:
@@ -79,7 +83,7 @@ class Giphy(commands.Cog):
                 # embed.set_image(url=data['data'][random_index]['images']['original']['url'])
                 # await ctx.send(embed=embed)
         except Exception as e:
-            self.log.error(guild_id, "giphy.giphy", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
 
