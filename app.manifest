@@ -264,6 +264,55 @@
 				}
 			}
 		},
+		"tuesday": {
+			"title": "Taco Tuesday",
+			"description": "Taco Tuesday related commands.",
+			"usage": "{{prefix}}tuesday [command]",
+			"admin": true,
+			"arguments": {},
+			"fields": [],
+			"subcommands": {
+				"give": {
+					"title": "Give Tuesday Tacos",
+					"description": "Gives Tuesday tacos to the user who answered the question.",
+					"usage": "{{prefix}}tuesday give <@user>",
+					"examples": [
+						"{{prefix}}tuesday give @DarthMinos#1161"
+					],
+					"arguments": {
+						"user": {
+							"type": "user",
+							"description": "The user to give tacos to",
+							"required": true
+						}
+					},
+					"fields": [],
+					"admin": true
+				},
+				"new": {
+					"title": "New Tuesday Question",
+					"description": "Adds a new Tuesday post.",
+					"usage": "{{prefix}}tuesday new <@user> <tweet>",
+					"examples": [
+						"{{prefix}}tuesday new What is your favorite taco?"
+					],
+					"arguments": {
+						"user": {
+							"type": "user",
+							"description": "The user that is featured for taco tuesday.",
+							"required": true
+						},
+						"tweet": {
+							"type": "string",
+							"description": "The url to the tweet.",
+							"required": true
+						}
+					},
+					"fields": [],
+					"admin": true
+				}
+			}
+		},
 		"tqotd": {
 			"title": "Taco Quote of the Day",
 			"description": "Adds a question of the day",

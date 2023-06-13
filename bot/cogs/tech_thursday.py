@@ -211,6 +211,9 @@ class TechThursdays(commands.Cog):
         message_author = message.author
         react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
 
+        if not react_user or react_user.bot or react_user.system:
+            return
+
         # check if this reaction is the first one of this type on the message
         reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
         if reaction.count > 1:
@@ -269,6 +272,16 @@ class TechThursdays(commands.Cog):
                 return
 
             if payload.event_type != "REACTION_ADD":
+                return
+
+            # check if the user that reacted is in the admin role
+            if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
+                return
+
+
+            react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+            if not react_user or react_user.bot or react_user.system:
                 return
 
             cog_settings = self.get_cog_settings(guild_id)

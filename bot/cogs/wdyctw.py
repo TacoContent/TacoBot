@@ -236,6 +236,15 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             if today.weekday() != 2: # 2 = Wednesday
                 return
 
+            # check if the user that reacted is in the admin role
+            if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
+                return
+
+
+            react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+            if not react_user or react_user.bot or react_user.system:
+                return
 
             cog_settings = self.get_cog_settings(guild_id)
 
