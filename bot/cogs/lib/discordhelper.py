@@ -522,13 +522,13 @@ class DiscordHelper:
             self.log.error(0, f"{self._module}.{_method}", str(ex), traceback.format_exc())
             return None
 
-    async def get_or_fetch_role(self, roleId: int) -> typing.Union[discord.Role, None]:
+    async def get_or_fetch_role(self, guild: discord.Guild, roleId: int) -> typing.Union[discord.Role, None]:
         _method = inspect.stack()[1][3]
         try:
             if roleId:
-                role = self.bot.guild.get_role(roleId)
+                role = guild.get_role(roleId)
                 if not role:
-                    role = await self.bot.guild.fetch_role(roleId)
+                    role = await guild.fetch_role(roleId)
                 return role
             return None
         except discord.errors.NotFound as nf:

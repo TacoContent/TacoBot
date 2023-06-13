@@ -85,7 +85,7 @@ class TacoQuestionOfTheDay(commands.Cog):
             amount = tacos_settings.get("tqotd_amount", 5)
 
             role_tag = ""
-            role = await self.discord_helper.get_or_fetch_role(int(cog_settings.get("tag_role", 0)))
+            role = await self.discord_helper.get_or_fetch_role(ctx.guild, int(cog_settings.get("tag_role", 0)))
             if role:
                 role_tag = f"{role.mention}"
 
