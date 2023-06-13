@@ -34,6 +34,8 @@ class TacoTypes(Enum):
     TWITCH_SUB = 28
     TWITCH_BITS = 29
     TWITCH_FIRST_MESSAGE = 30
+    TWITCH_PROMOTE = 31
+    TWITCH_GIVE_TACOS = 32
 
     PURGE = 9996
     LEAVE_SERVER = 9997
@@ -42,7 +44,7 @@ class TacoTypes(Enum):
     CUSTOM = 9999
 
     @staticmethod
-    def get_from_string(taco_type_string) -> "TacoTypes":
+    def get_from_string(taco_type_string):
         if taco_type_string == "join_count":
             return TacoTypes.JOIN_SERVER
         elif taco_type_string == "boost_count":
@@ -107,13 +109,17 @@ class TacoTypes(Enum):
             return TacoTypes.TWITCH_BITS
         elif taco_type_string == "twitch_first_message_count":
             return TacoTypes.TWITCH_FIRST_MESSAGE
+        elif taco_type_string == "twitch_promote_count":
+            return TacoTypes.TWITCH_PROMOTE
+        elif taco_type_string == "twitch_give_tacos":  # this property is not saved in settings, as it should be the amount they give
+            return TacoTypes.TWITCH_GIVE_TACOS
         elif taco_type_string == "twitch_custom":
             return TacoTypes.TWITCH_CUSTOM
         else:
             return TacoTypes.CUSTOM
 
     @staticmethod
-    def get_db_type_from_taco_type(taco_type) -> str:
+    def get_db_type_from_taco_type(taco_type):
         if taco_type == TacoTypes.JOIN_SERVER:
             return "JOIN_SERVER"
         elif taco_type == TacoTypes.BOOST:
@@ -178,13 +184,17 @@ class TacoTypes(Enum):
             return "TWITCH_BITS"
         elif taco_type == TacoTypes.TWITCH_FIRST_MESSAGE:
             return "TWITCH_FIRST_MESSAGE"
+        elif taco_type == TacoTypes.TWITCH_PROMOTE:
+            return "TWITCH_PROMOTE"
+        elif taco_type == TacoTypes.TWITCH_GIVE_TACOS:
+            return "TWITCH_GIVE_TACOS"
         elif taco_type == TacoTypes.TWITCH_CUSTOM:
             return "TWITCH_CUSTOM"
         else:
             return "CUSTOM"
 
     @staticmethod
-    def get_string_from_taco_type(taco_type) -> str:
+    def get_string_from_taco_type(taco_type):
         if taco_type == TacoTypes.JOIN_SERVER:
             return "join_count"
         elif taco_type == TacoTypes.BOOST:
@@ -249,6 +259,10 @@ class TacoTypes(Enum):
             return "twitch_bits_count"
         elif taco_type == TacoTypes.TWITCH_FIRST_MESSAGE:
             return "twitch_first_message_count"
+        elif taco_type == TacoTypes.TWITCH_PROMOTE:
+            return "twitch_promote_count"
+        elif taco_type == TacoTypes.TWITCH_GIVE_TACOS:
+            return "twitch_give_tacos" # this property is not saved in settings, as it should be the amount they give
         elif taco_type == TacoTypes.TWITCH_CUSTOM:
             return "twitch_custom"
         else:
