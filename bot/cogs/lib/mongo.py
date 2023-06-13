@@ -1943,3 +1943,23 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
+
+    def migrate_taco_tuesday(self):
+        guild_id = "935294040386183228"
+        author = "262031734260891648"
+
+        cog_settings = self.settings.get_settings(self, int(guild_id), "taco_tuesday")
+        tt = [
+            {   # gerg
+                "guild_id": guild_id,
+                "timestamp": 1680717574,
+                "answered": [],
+                "author": author,
+                "user_id": "191373201060790273",
+                "channel_id": "",
+                "message_id": "",
+                "image": "",
+                "message": utils.str_replace(cog_settings.get("message_template", ""), role="TACOS", tacos=250, tweet="https://twitter.com/OurTACO/status/1511338671970082826")
+            },
+        ]
+        pass
