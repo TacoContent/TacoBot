@@ -398,7 +398,7 @@ class GameKeys(commands.Cog):
                     self.settings.get_string(
                         guild_id,
                         "game_key_claim_log_message",
-                        user=f"{ctx.author.display_name}#{ctx.author.discriminator}",
+                        user=f"{utils.get_user_display_name(ctx.author)}",
                         game=game_data["title"],
                         tacos=cost,
                         tacos_word=tacos_word,

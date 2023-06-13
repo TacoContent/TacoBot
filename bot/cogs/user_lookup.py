@@ -54,12 +54,13 @@ class UserLookup(commands.Cog):
             if not enabled:
                 return
 
-            self.log.debug(guild.id, f"{self._module}.{_method}", f"Guild {guild.id} is available")
+            self.log.debug(guild.id, f"{self._module}.{_method}", f"Performing full user import for guild {guild.id}")
             for member in guild.members:
                 self.log.debug(guild.id, f"{self._module}.{_method}", f"Tracking user {member.name} in guild {guild.name}")
                 avatar_url: typing.Union[str,None] = member.avatar.url if member.avatar is not None else member.default_avatar.url
-
                 self.db.track_user(guild.id, member.id, member.name, member.discriminator, avatar_url, member.display_name, member.created_at, member.bot, member.system)
+
+
         except Exception as e:
             self.log.error(guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
 
@@ -101,7 +102,7 @@ class UserLookup(commands.Cog):
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
         if not cog_settings:
-            raise Exception(f"No wdyctw settings found for guild {guildId}")
+            raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
 async def setup(bot):

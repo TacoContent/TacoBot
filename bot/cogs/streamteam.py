@@ -51,7 +51,7 @@ class StreamTeam(commands.Cog):
             channel = await self.bot.fetch_channel(payload.channel_id)
             message = await channel.fetch_message(payload.message_id)
             user = await self.discord_helper.get_or_fetch_user(payload.user_id)
-            if user.bot:
+            if not user or user.bot or user.system:
                 return
 
             # get the streamteam settings from settings
@@ -85,7 +85,7 @@ class StreamTeam(commands.Cog):
                     await self.discord_helper.send_embed(log_channel,
                         self.settings.get_string(guild_id, "streamteam_removal_tile"),
                         self.settings.get_string(guild_id, "streamteam_removal_message",
-                            user=f"{user.name}#{user.discriminator}",
+                            user=f"{utils.get_user_display_name(user)}",
                             team_name=team_name,
                             twitch_name=twitch_name), color=0xff0000)
 
@@ -251,7 +251,7 @@ class StreamTeam(commands.Cog):
 
             await self.discord_helper.send_embed(ctx.channel,
                 self.settings.get_string(guild_id, "success"),
-                self.settings.get_string(guild_id, "streamteam_invite_success_message", user=f"{user.name}#{user.discriminator}", team_name=team_name, twitch_name=twitchName),
+                self.settings.get_string(guild_id, "streamteam_invite_success_message", user=f"{utils.get_user_display_name(user)}", team_name=team_name, twitch_name=twitchName),
                 footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
                 color=0x00ff00, delete_after=30)
 
@@ -259,7 +259,7 @@ class StreamTeam(commands.Cog):
                 twitch_name = unknown if twitch_name is None else twitch_name
                 await self.discord_helper.send_embed(log_channel,
                     self.settings.get_string(guild_id, "streamteam_join_title"),
-                    self.settings.get_string(guild_id, "streamteam_join_message", user=f"{user.name}#{user.discriminator}", team_name=team_name, twitch_name=twitchName),
+                    self.settings.get_string(guild_id, "streamteam_join_message", user=f"{utils.get_user_display_name(user)}", team_name=team_name, twitch_name=twitchName),
                     color=0x00ff00)
 
         except Exception as ex:

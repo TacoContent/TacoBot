@@ -135,7 +135,7 @@ class DiscordHelper:
 
             footer = None
             if who:
-                footer = f"{self.settings.get_string(guildId=guild_id,key='moved_by',user=f'{who.name}#{who.discriminator}')} - {reason or self.settings.get_string(guildId=guild_id, key='no_reason')}"
+                footer = f"{self.settings.get_string(guildId=guild_id,key='moved_by',user=f'{utils.get_user_display_name(who)}')} - {reason or self.settings.get_string(guildId=guild_id, key='no_reason')}"
 
             if color is None:
                 color = 0x7289DA

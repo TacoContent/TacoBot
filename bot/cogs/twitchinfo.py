@@ -189,7 +189,7 @@ class TwitchInfo(commands.Cog):
                 await self.discord_helper.send_embed(
                     channel,
                     "Success",
-                    f"{ctx.author.mention}, The Twitch name has been set to {twitch_name} for {user.name}#{user.discriminator}.",
+                    f"{ctx.author.mention}, The Twitch name has been set to {twitch_name} for {utils.get_user_display_name(user)}.",
                     color=0x00FF00,
                     delete_after=30,
                 )
