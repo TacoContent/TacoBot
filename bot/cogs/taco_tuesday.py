@@ -218,7 +218,7 @@ class TacoTuesday(commands.Cog):
                 return
 
             # get the reaction user
-            user = self.discord_helper.get_or_fetch_member(guild_id, payload.user_id)
+            user = await self.discord_helper.get_or_fetch_member(guild_id, payload.user_id)
             if not user or user.bot or user.system:
                 return
 
