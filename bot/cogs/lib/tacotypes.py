@@ -36,6 +36,7 @@ class TacoTypes(Enum):
     TWITCH_FIRST_MESSAGE = 30
     TWITCH_PROMOTE = 31
     TWITCH_GIVE_TACOS = 32
+    TWITCH_RECEIVE_TACOS = 33
 
     PURGE = 9996
     LEAVE_SERVER = 9997
@@ -113,6 +114,8 @@ class TacoTypes(Enum):
             return TacoTypes.TWITCH_PROMOTE
         elif taco_type_string == "twitch_give_tacos":  # this property is not saved in settings, as it should be the amount they give
             return TacoTypes.TWITCH_GIVE_TACOS
+        elif taco_type_string == "twitch_receive_tacos":  # this property is not saved in settings, as it should be the amount they receive
+            return TacoTypes.TWITCH_RECEIVE_TACOS
         elif taco_type_string == "twitch_custom":
             return TacoTypes.TWITCH_CUSTOM
         else:
@@ -188,6 +191,8 @@ class TacoTypes(Enum):
             return "TWITCH_PROMOTE"
         elif taco_type == TacoTypes.TWITCH_GIVE_TACOS:
             return "TWITCH_GIVE_TACOS"
+        elif taco_type == TacoTypes.TWITCH_RECEIVE_TACOS:
+            return "TWITCH_RECEIVE_TACOS"
         elif taco_type == TacoTypes.TWITCH_CUSTOM:
             return "TWITCH_CUSTOM"
         else:
@@ -263,6 +268,8 @@ class TacoTypes(Enum):
             return "twitch_promote_count"
         elif taco_type == TacoTypes.TWITCH_GIVE_TACOS:
             return "twitch_give_tacos" # this property is not saved in settings, as it should be the amount they give
+        elif taco_type == TacoTypes.TWITCH_RECEIVE_TACOS:
+            return "twitch_receive_tacos" # this property is not saved in settings, as it should be the amount they give
         elif taco_type == TacoTypes.TWITCH_CUSTOM:
             return "twitch_custom"
         else:
