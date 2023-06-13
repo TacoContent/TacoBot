@@ -46,8 +46,17 @@ class Events(commands.Cog):
         self.db.migrate_game_keys()
         self.db.migrate_minecraft_whitelist()
 
+
     @commands.Cog.listener()
     async def on_guild_available(self, guild):
+
+        for user in guild.members:
+            if user.bot or user.system:
+                continue
+
+
+            self.db.migrate_user_join(guildId=guild.id, userId=user.id)
+
         pass
 
     @commands.Cog.listener()

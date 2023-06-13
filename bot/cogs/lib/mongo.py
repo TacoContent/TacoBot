@@ -1835,6 +1835,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
+
     def track_tacos_log(self, guildId: int, fromUserId: int, toUserId: int, count: int, type: str, reason: str):
         try:
             if self.connection is None:
@@ -1936,6 +1937,30 @@ class MongoDatabase(database.Database):
             if self.connection is None:
                 self.open()
             self.connection.minecraft_users.update_many({ "guild_id": { "$exists": False } }, { "$set": { "guild_id": guild_id } })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def migrate_user_join(self, guildId: int, userId: int):
+        try:
+            if self.connection is None:
+                self.open()
+            date = datetime.datetime.utcnow()
+            timestamp = utils.to_timestamp(date)
+            payload = {
+                "guild_id": str(guildId),
+                "user_id": str(userId),
+                "action": "JOIN",
+                "timestamp": timestamp
+            }
+
+            # add the entry ONLY if it doesn't already exists
+            # do not update the timestamp if it does
+            self.connection.user_join_leave.update_one({ "guild_id": str(guildId), "user_id": str(userId) }, { "$setOnInsert": payload }, upsert=True)
+
         except Exception as ex:
             print(ex)
             traceback.print_exc()
