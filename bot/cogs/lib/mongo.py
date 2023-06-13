@@ -1959,7 +1959,7 @@ class MongoDatabase(database.Database):
                 "channel_id": "",
                 "message_id": "",
                 "image": "",
-                "message": utils.str_replace(cog_settings.get("message_template", ""), role="TACOS", tacos=250, tweet="https://twitter.com/OurTACO/status/1511338671970082826")
+                "message": utils.str_replace(cog_settings.get("message_template", ""), role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1511338671970082826")
             },
         ]
         pass
