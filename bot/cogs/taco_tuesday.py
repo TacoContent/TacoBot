@@ -229,6 +229,8 @@ class TacoTuesday(commands.Cog):
             if str(payload.emoji.name) in reaction_archive_emojis:
                 if cog_settings.get("archive_enabled", False):
                     self.log.debug(guild_id, f"{self._module}.{_method}", f"Archive is enabled. Archiving message")
+                    if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+                        return
                     await self._on_raw_reaction_add_archive(payload)
                     return
 
