@@ -198,6 +198,10 @@ class TacoTuesday(commands.Cog):
             if payload.event_type != "REACTION_ADD":
                 return
 
+            # check if the user that reacted is in the admin role
+            # we really only do anything here if they are an admin
+            if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+                return
 
             ###
             # archive_enabled: true,
@@ -229,8 +233,6 @@ class TacoTuesday(commands.Cog):
             if str(payload.emoji.name) in reaction_archive_emojis:
                 if cog_settings.get("archive_enabled", False):
                     self.log.debug(guild_id, f"{self._module}.{_method}", f"Archive is enabled. Archiving message")
-                    if not await self.discord_helper.is_admin(guild_id, payload.user_id):
-                        return
                     await self._on_raw_reaction_add_archive(payload)
                     return
 
@@ -240,8 +242,7 @@ class TacoTuesday(commands.Cog):
 
             if str(payload.emoji.name) in reaction_import_emojis:
                 # check if user is in the admin role
-                if not await self.discord_helper.is_admin(guild_id, payload.user_id):
-                    return
+
                 await self._on_raw_reaction_add_import(payload)
                 return
 
