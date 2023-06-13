@@ -50,12 +50,10 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_available(self, guild):
 
-        for user in guild.members:
-            if user.bot or user.system:
-                continue
-
-
-            self.db.migrate_user_join(guildId=guild.id, userId=user.id)
+        # for user in guild.members:
+        #     if user.bot or user.system:
+        #         continue
+        #     self.db.migrate_user_join(guildId=guild.id, userId=user.id)
 
         pass
 
