@@ -1761,7 +1761,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def track_user(self, guildId: int, userId: int, username: str, discriminator: str, avatar: str, displayname: str, created: datetime.datetime = None, bot: bool = False, system: bool = False):
+    def track_user(self, guildId: int, userId: int, username: str, discriminator: str, avatar: typing.Optional[str], displayname: str, created: typing.Optional[datetime.datetime] = None, bot: bool = False, system: bool = False):
         try:
             if self.connection is None:
                 self.open()
