@@ -263,7 +263,7 @@ class Tacos(commands.Cog):
             if payload.event_type != 'REACTION_ADD':
                 return
 
-            taco_settings = self.get_taco_settings(guild_id)
+            taco_settings = self.get_tacos_settings(guild_id)
 
             reaction_emoji = taco_settings.get("reaction_emoji", "🌮")
 
