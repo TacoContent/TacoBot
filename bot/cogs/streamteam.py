@@ -134,34 +134,34 @@ class StreamTeam(commands.Cog):
                 unknown = self.settings.get_string(guild_id, "unknown")
                 # send a message to the user and ask them their twitch name if it is not yet set
                 twitch_name = unknown
-                twitch_user = self.db.get_user_twitch_info(user.id)
-                if not twitch_user:
-                    try:
-                        ctx_dict = {"bot": self.bot, "author": user, "guild": None, "channel": None}
-                        ctx = collections.namedtuple("Context", ctx_dict.keys())(*ctx_dict.values())
-                        twitch_name = await self.discord_helper.ask_text(ctx, user,
-                            self.settings.get_string(guild_id, "twitch_name_title"),
-                            self.settings.get_string(guild_id, "twitch_name_question", team_name=team_name),
-                            timeout=60)
-                        if twitch_name:
-                            twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
+                # twitch_user = self.db.get_user_twitch_info(user.id)
+                # if not twitch_user:
+                #     try:
+                #         ctx_dict = {"bot": self.bot, "author": user, "guild": None, "channel": None}
+                #         ctx = collections.namedtuple("Context", ctx_dict.keys())(*ctx_dict.values())
+                #         twitch_name = await self.discord_helper.ask_text(ctx, user,
+                #             self.settings.get_string(guild_id, "twitch_name_title"),
+                #             self.settings.get_string(guild_id, "twitch_name_question", team_name=team_name),
+                #             timeout=60)
+                #         if twitch_name:
+                #             twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
 
-                            self.log.debug(guild_id, f"{self._module}.{_method}", f"{utils.get_user_display_name(user)} requested to set twitch name {twitch_user}")
-                            self.db.set_user_twitch_info(user.id, twitch_name)
-                            await self.discord_helper.send_embed(user,
-                                self.settings.get_string(guild_id, "success"),
-                                self.settings.get_string(guild_id, "streamteam_set_twitch_name_message", twitch_name=twitch_name),
-                                color=0x00ff00)
-                    except discord.Forbidden as e:
-                        # cant send them a message. Put it in the channel...
-                        await self.discord_helper.send_embed(channel,
-                            self.settings.get_string(guild_id, "error"),
-                            self.settings.get_string(guild_id, "twitch_name_dm_error", user=user.mention),
-                            footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
-                            color=0xff0000, delete_after=30)
+                #             self.log.debug(guild_id, f"{self._module}.{_method}", f"{utils.get_user_display_name(user)} requested to set twitch name {twitch_user}")
+                #             self.db.set_user_twitch_info(user.id, twitch_name)
+                #             await self.discord_helper.send_embed(user,
+                #                 self.settings.get_string(guild_id, "success"),
+                #                 self.settings.get_string(guild_id, "streamteam_set_twitch_name_message", twitch_name=twitch_name),
+                #                 color=0x00ff00)
+                #     except discord.Forbidden as e:
+                #         # cant send them a message. Put it in the channel...
+                #         await self.discord_helper.send_embed(channel,
+                #             self.settings.get_string(guild_id, "error"),
+                #             self.settings.get_string(guild_id, "twitch_name_dm_error", user=user.mention),
+                #             footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
+                #             color=0xff0000, delete_after=30)
 
-                else:
-                    twitch_name = twitch_user['twitch_name']
+                # else:
+                #     twitch_name = twitch_user['twitch_name']
 
                 if log_channel:
                     twitch_name = unknown if twitch_name is None else twitch_name

@@ -78,12 +78,12 @@ class LiveNow(commands.Cog):
                 # if item is not in the list, add it
                 if len([a for a in before_streaming_activities if a.platform == bsa.platform]) == 0:
                     before_streaming_activities.append(bsa)
-            self.log.debug(guild_id, f"{self._module}.{_method}", f"before_streaming_activities: {before_streaming_activities}")
+            # self.log.debug(guild_id, f"{self._module}.{_method}", f"before_streaming_activities: {before_streaming_activities}")
 
             for asa in after_streaming_activities_temp:
                 if len([a for a in after_streaming_activities if a.platform == asa.platform]) == 0:
                     after_streaming_activities.append(asa)
-            self.log.debug(guild_id, f"{self._module}.{_method}", f"after_streaming_activities: {after_streaming_activities}")
+            # self.log.debug(guild_id, f"{self._module}.{_method}", f"after_streaming_activities: {after_streaming_activities}")
 
             # WENT LIVE
             for asa in after_streaming_activities:

@@ -2545,6 +2545,78 @@ class MongoDatabase(database.Database):
                     "tweet": "https://twitter.com/OurTACO/status/1582425834630938624",
                     "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1582425834630938624")
                 },
+                {   # tacorobb
+                    "guild_id": guild_id,
+                    "timestamp": 1650410346,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "621174510946877462",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1516408446081503242",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1516408446081503242")
+                },
+                {   # Hymndi
+                    "guild_id": guild_id,
+                    "timestamp": 1652829546,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "238841201707581440",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1526558994529132545",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1526558994529132545")
+                },
+                {   # Artifice
+                    "guild_id": guild_id,
+                    "timestamp": 1671581946,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "104349488751054848",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1605284577802702855",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1605284577802702855")
+                },
+                {   # RevRoach
+                    "guild_id": guild_id,
+                    "timestamp": 1673396346,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "252933512728936449",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1612939227762950151",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1612939227762950151")
+                },
+                {   # mzflexx
+                    "guild_id": guild_id,
+                    "timestamp": 1674001146,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "765005113521078302",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1615515727481524224",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1615515727481524224")
+                },
+                {   # airborne
+                    "guild_id": guild_id,
+                    "timestamp": 1677025146,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "763407444193574964",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1628080341708681224",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1628080341708681224")
+                },
             ]
 
             # insert all the items in the list
