@@ -213,6 +213,11 @@ class TacoTuesday(commands.Cog):
                 self.log.debug(guild_id, f"{self._module}.{_method}", f"Taco Tuesday not enabled")
                 return
 
+            # get the reaction user
+            user = self.discord_helper.get_or_fetch_member(guild_id, payload.user_id)
+            if not user or user.bot or user.system:
+                return
+
             # check if reaction is to archive the message
             reaction_archive_emojis = cog_settings.get("archive_emoji", ["🔒"])
             reaction_import_emojis = cog_settings.get("import_emoji", ["🇮"])
