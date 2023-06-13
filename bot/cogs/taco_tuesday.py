@@ -198,6 +198,7 @@ class TacoTuesday(commands.Cog):
             if payload.event_type != "REACTION_ADD":
                 return
 
+
             ###
             # archive_enabled: true,
             # archive_emoji: [
@@ -353,7 +354,7 @@ class TacoTuesday(commands.Cog):
             remove_list=[],
             allow_everyone=True
         )
-    def _import_taco_tuesday(self, message: discord.Message, tweet: typing.Optional[str]) -> None:
+    def _import_taco_tuesday(self, message: discord.Message, tweet: typing.Optional[str] = None) -> None:
         _method = inspect.stack()[0][3]
         guild_id = message.guild.id
         channel_id = message.channel.id
