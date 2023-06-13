@@ -39,6 +39,15 @@ class TestCog(commands.Cog):
     async def test(self, ctx):
         pass
 
+    # @test.command()
+    # @commands.guild_only()
+    # @commands.has_permissions(administrator=True)
+    # async def tti(self, ctx):
+    #     await ctx.message.delete()
+    #     await ctx.channel.send("Migrating Taco Tuesday data...", delete_after=5)
+    #     self.db.import_taco_tuesday()
+    #     await ctx.channel.send("Done", delete_after=5)
+
     @test.command()
     @commands.guild_only()
     @commands.has_permissions(administrator=True)

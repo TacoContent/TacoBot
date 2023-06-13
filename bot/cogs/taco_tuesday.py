@@ -8,6 +8,7 @@ import sys
 import os
 import glob
 import typing
+import re
 
 from discord.ext.commands.cooldowns import BucketType
 from discord.ext.commands import has_permissions, CheckFailure, Context
@@ -92,7 +93,7 @@ class TacoTuesday(commands.Cog):
             if len(import_emoji) > 0:
                 await result_message.add_reaction(import_emoji[0])
 
-            self._import_taco_tuesday(result_message)
+            self._import_taco_tuesday(result_message, tweet)
 
             await self._set_taco_tuesday_user(ctx=ctx, member=member)
 
@@ -352,7 +353,7 @@ class TacoTuesday(commands.Cog):
             remove_list=[],
             allow_everyone=True
         )
-    def _import_taco_tuesday(self, message: discord.Message) -> None:
+    def _import_taco_tuesday(self, message: discord.Message, tweet: typing.Optional[str]) -> None:
         _method = inspect.stack()[0][3]
         guild_id = message.guild.id
         channel_id = message.channel.id
@@ -370,6 +371,14 @@ class TacoTuesday(commands.Cog):
         if message_content is not None and message_content != "":
             text = message_content
 
+        # get the tweet if not passed in from the text of the message
+
+        if tweet is None:
+            tweet_regex = re.compile(r"(https://twitter.com/\w+/status/\d+)", re.IGNORECASE | re.MULTILINE | re.DOTALL)
+            tweet_match = tweet_regex.search(message_content)
+            if tweet_match:
+                tweet = tweet_match.group(1)
+
         self.log.debug(
             guild_id,
             f"{self._module}.{_method}",
@@ -382,6 +391,7 @@ class TacoTuesday(commands.Cog):
             author=message_author.id,
             channel_id=channel_id,
             message_id=message_id,
+            tweet=tweet or "",
         )
 
     async def give_user_tacotuesday_tacos(self, guild_id, user_id, channel_id) -> None:
