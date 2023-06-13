@@ -526,9 +526,9 @@ class DiscordHelper:
         _method = inspect.stack()[1][3]
         try:
             if roleId:
-                role = self.bot.get_role(roleId)
+                role = self.bot.guild.get_role(roleId)
                 if not role:
-                    role = await self.bot.fetch_role(roleId)
+                    role = await self.bot.guild.fetch_role(roleId)
                 return role
             return None
         except discord.errors.NotFound as nf:
