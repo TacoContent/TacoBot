@@ -99,7 +99,7 @@ class MongoDatabase(database.Database):
         finally:
             self.close()
 
-    def add_stream_team_request(self, guildId: int, userName: str, userId: int, twitchName: typing.Optional[str] = None) -> None:
+    def add_stream_team_request(self, guildId: int, userId: int, twitchName: typing.Optional[str] = None) -> None:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
@@ -108,7 +108,6 @@ class MongoDatabase(database.Database):
             payload = {
                 "guild_id": str(guildId),
                 "user_id": str(userId),
-                "user_name": userName,
                 "twitch_name": twitchName if twitchName else "",
                 "timestamp": timestamp
             }
@@ -136,13 +135,13 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def set_user_twitch_info(self, userId: int, twitchId: str, twitchName: str) -> None:
+    # twitchId: typing.Optional[str] = None,
+    def set_user_twitch_info(self, userId: int, twitchName: typing.Optional[str] = None) -> None:
         try:
             if self.connection is None:
                 self.open()
             payload = {
                 "user_id": str(userId),
-                "twitch_id": twitchId,
                 "twitch_name": twitchName
             }
             # insert or update user twitch info

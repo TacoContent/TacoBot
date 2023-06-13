@@ -21,7 +21,7 @@ class Database():
         pass
 
     # add StreamTeamMember to database
-    def add_stream_team_request(self, guildId: int, userName: str, userId: int):
+    def add_stream_team_request(self, guildId: int, userName: str, userId: int, twitchName: typing.Optional[str] = None) -> None:
         pass
     def remove_stream_team_request(self, guildId: int, userId: int):
         pass
@@ -29,7 +29,7 @@ class Database():
     def get_stream_team_requests(self, guildId: int):
         pass
 
-    def set_user_twitch_info(self, userId: int, twitchId: str, twitchName: str):
+    def set_user_twitch_info(self, userId: int, twitchName: typing.Optional[str] = None):
         pass
     def get_user_twitch_info(self, userId: int):
         pass

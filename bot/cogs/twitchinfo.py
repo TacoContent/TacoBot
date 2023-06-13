@@ -148,7 +148,7 @@ class TwitchInfo(commands.Cog):
                     60,
                 )
                 if not twitch_name is None:
-                    self.db.set_user_twitch_info(ctx.author.id, None, twitch_name.lower().strip())
+                    self.db.set_user_twitch_info(ctx.author.id, twitch_name.lower().strip())
         else:
             twitch_name = twitch_info["twitch_name"]
         if not twitch_name is None:
@@ -185,7 +185,7 @@ class TwitchInfo(commands.Cog):
 
             if twitch_name is not None and user is not None:
                 twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
-                self.db.set_user_twitch_info(user.id, None, twitch_name)
+                self.db.set_user_twitch_info(user.id, twitch_name)
                 await self.discord_helper.send_embed(
                     channel,
                     "Success",
@@ -248,7 +248,7 @@ class TwitchInfo(commands.Cog):
                         taco_amount=taco_amount,
                     )
 
-                self.db.set_user_twitch_info(ctx.author.id, None, twitch_name)
+                self.db.set_user_twitch_info(ctx.author.id, twitch_name)
 
                 await self.discord_helper.send_embed(
                     resp_channel,

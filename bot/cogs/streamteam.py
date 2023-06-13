@@ -147,7 +147,7 @@ class StreamTeam(commands.Cog):
                             twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
 
                             self.log.debug(guild_id, f"{self._module}.{_method}", f"{utils.get_user_display_name(user)} requested to set twitch name {twitch_user}")
-                            self.db.set_user_twitch_info(user.id, None, twitch_name)
+                            self.db.set_user_twitch_info(user.id, twitch_name)
                             await self.discord_helper.send_embed(user,
                                 self.settings.get_string(guild_id, "success"),
                                 self.settings.get_string(guild_id, "streamteam_set_twitch_name_message", twitch_name=twitch_name),
@@ -229,7 +229,7 @@ class StreamTeam(commands.Cog):
     async def invite_user(self, ctx, user: discord.User, twitchName: str) -> None:
         await self._invite_user(ctx, user, twitchName)
 
-    async def _invite_user(self, ctx, user: discord.User, twitchName: str) -> None:
+    async def _invite_user(self, ctx, user: discord.User, twitchName: typing.Optional[str] = None) -> None:
         _method = inspect.stack()[0][3]
         guild_id = ctx.guild.id
         try:
@@ -241,13 +241,16 @@ class StreamTeam(commands.Cog):
                 await self.discord_helper.notify_bot_not_initialized(ctx, "streamteam")
                 return
             unknown = self.settings.get_string(guild_id, "unknown")
+            twitch_name = twitchName.lower().strip()
+
             log_channel_id = streamteam_settings["log_channel"]
+            log_channel = None
             if log_channel_id:
                 log_channel = await self.discord_helper.get_or_fetch_channel(log_channel_id)
             team_name = streamteam_settings["name"]
 
-            self.db.set_user_twitch_info(user.id, None, twitchName)
-            self.db.add_stream_team_request(ctx.guild.id, twitchName, user.id)
+            self.db.set_user_twitch_info(user.id, twitchName)
+            self.db.add_stream_team_request(guildId=ctx.guild.id, twitchName=twitchName, userId=user.id)
 
             await self.discord_helper.send_embed(ctx.channel,
                 self.settings.get_string(guild_id, "success"),
