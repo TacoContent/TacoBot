@@ -237,6 +237,9 @@ class TacoTuesday(commands.Cog):
                 return
 
             if str(payload.emoji.name) in reaction_import_emojis:
+                # check if user is in the admin role
+                if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+                    return
                 await self._on_raw_reaction_add_import(payload)
                 return
 
