@@ -5,6 +5,7 @@ import datetime
 
 from . import models
 from . import loglevel
+from .system_actions import SystemActions
 
 class Database():
 
@@ -169,4 +170,16 @@ class Database():
     def open_game_key_offer(self, game_key_id: str, guild_id: int, message_id:int, channel_id: int):
         pass
     def find_open_game_key_offer(self, guild_id: int, channel_id: int):
+        pass
+
+    def add_user_to_join_whitelist(self, guild_id: int, user_id: int, added_by: int) -> None:
+        pass
+
+    def get_user_join_whitelist(self, guild_id: int) -> list:
+        return []
+
+    def remove_user_from_join_whitelist(self, guild_id: int, user_id: int) -> None:
+        pass
+
+    def track_system_action(self, guild_id: int, action: typing.Union[SystemActions, str], data: typing.Optional[dict] = None) -> None:
         pass

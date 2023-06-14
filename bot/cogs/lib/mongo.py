@@ -18,6 +18,7 @@ from . import settings
 from . import utils
 from . import models
 from . import loglevel
+from .system_actions import SystemActions
 
 # from .mongodb import migration
 
@@ -2623,6 +2624,69 @@ class MongoDatabase(database.Database):
             for item in tt:
                 print(f"importing item: {item['tweet']}")
                 self.connection.taco_tuesday.update_one({"guild_id": item["guild_id"], "timestamp": item["timestamp"]}, {"$set": item}, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def add_user_to_join_whitelist(self, guild_id: int, user_id: int, added_by: int) -> None:
+        """Add a user to the join whitelist for a guild."""
+        try:
+            date = datetime.datetime.utcnow()
+            timestamp = utils.to_timestamp(date)
+
+            payload = {
+                "guild_id": str(guild_id),
+                "user_id": str(user_id),
+                "added_by": str(added_by),
+                "timestamp": timestamp
+            }
+            self.connection.join_whitelist.update_one({"guild_id": str(guild_id), "user_id": str(user_id)}, { "$set": payload }, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def get_user_join_whitelist(self, guild_id: int) -> list:
+        """Get the join whitelist for a guild."""
+        try:
+            return list(self.connection.join_whitelist.find({"guild_id": str(guild_id)}))
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return []
+        finally:
+            if self.connection:
+                self.close()
+
+    def remove_user_from_join_whitelist(self, guild_id: int, user_id: int) -> None:
+        """Remove a user from the join whitelist for a guild."""
+        try:
+            self.connection.join_whitelist.delete_one({"guild_id": str(guild_id), "user_id": str(user_id)})
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def track_system_action(self, guild_id: int, action: typing.Union[SystemActions, str], data: typing.Optional[dict] = None) -> None:
+        """Track a system action."""
+        try:
+            date = datetime.datetime.utcnow()
+            timestamp = utils.to_timestamp(date)
+
+            payload = {
+                "guild_id": str(guild_id),
+                "action": str(action),
+                "timestamp": timestamp,
+                "data": data
+            }
+            self.connection.system_actions.insert_one(payload)
         except Exception as ex:
             print(ex)
             traceback.print_exc()

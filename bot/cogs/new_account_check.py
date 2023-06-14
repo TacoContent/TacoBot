@@ -20,6 +20,7 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
+from .lib.system_actions import SystemActions
 
 class NewAccountCheck(commands.Cog):
     def __init__(self, bot) -> None:
@@ -28,9 +29,9 @@ class NewAccountCheck(commands.Cog):
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
+        self.discord_helper = discordhelper.DiscordHelper(self.bot)
         self.SETTINGS_SECTION = "account_age_check"
         self.MINIMUM_ACCOUNT_AGE = 30 # days
-        self.ACCOUNT_WHITE_LIST = []
         self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -38,6 +39,70 @@ class NewAccountCheck(commands.Cog):
 
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+
+    @commands.group(name="new-account-check")
+    @commands.has_permissions(administrator=True)
+    @commands.guild_only()
+    async def new_account_check(self, ctx, *args) -> None:
+        pass
+
+    @new_account_check.command(name="whitelist-add")
+    @commands.has_permissions(administrator=True)
+    @commands.guild_only()
+    async def whitelist_add(self, ctx, user_id: int) -> None:
+        """Add a user to the whitelist to allow them to join if their account is newer than the minimum account age"""
+        _method = inspect.stack()[0][3]
+        guild_id = ctx.guild.id
+        try:
+            await ctx.message.delete()
+
+            self.db.add_user_to_join_whitelist(guild_id=guild_id, user_id=user_id, added_by=ctx.author.id)
+            self.db.track_system_action(
+                guild_id=guild_id,
+                action=SystemActions.JOIN_WHITELIST_ADD,
+                data={
+                    "user_id": str(user_id),
+                    "added_by": str(ctx.author.id)
+                }
+            )
+            await self.discord_helper.send_embed(
+                channel=ctx.channel,
+                title="User added to join whitelist",
+                message=f"User ID: {user_id}\nAdded by: {ctx.author.mention}",
+                delete_after=15
+            )
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{_method}", f"{str(e)}", traceback.format_exc())
+
+
+
+    @new_account_check.command(name="whitelist-remove")
+    @commands.has_permissions(administrator=True)
+    @commands.guild_only()
+    async def whitelist_remove(self, ctx, user_id: int) -> None:
+        """Remove a user from the join whitelist"""
+        _method = inspect.stack()[0][3]
+        guild_id = ctx.guild.id
+        try:
+            await ctx.message.delete()
+
+            self.db.remove_user_from_join_whitelist(guild_id=guild_id, user_id=user_id)
+            self.db.track_system_action(
+                guild_id=guild_id,
+                action=SystemActions.JOIN_WHITELIST_REMOVE,
+                data={
+                    "user_id": str(user_id),
+                    "removed_by": str(ctx.author.id)
+                }
+            )
+            await self.discord_helper.send_embed(
+                channel=ctx.channel,
+                title="User removed from join whitelist",
+                message=f"User ID: {user_id}\nRemoved by: {ctx.author.mention}",
+                delete_after=15
+            )
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{_method}", f"{str(e)}", traceback.format_exc())
 
 
     @commands.Cog.listener()
@@ -64,7 +129,10 @@ class NewAccountCheck(commands.Cog):
         _method = inspect.stack()[0][3]
         try:
             # check if the member is in the white list
-            if member.id in self.ACCOUNT_WHITE_LIST:
+            whitelist = self.db.get_user_join_whitelist(guild_id=guild_id)
+
+            # if they are in the whitelist, let them in
+            if member.id in [x["user_id"] for x in whitelist]:
                 return
 
             self.log.debug(guild_id, f"{self._module}.{_method}", f"Member {utils.get_user_display_name(member)} joined {member.guild.name}")
@@ -75,8 +143,10 @@ class NewAccountCheck(commands.Cog):
             age_days = math.floor(age / 86400)
             if age_days < self.MINIMUM_ACCOUNT_AGE:
                 self.log.warn(guild_id, f"{self._module}.{_method}", f"Member {utils.get_user_display_name(member)} (ID: {member.id}) account age ({age_days} days) is less than {self.MINIMUM_ACCOUNT_AGE} days.")
+                message = f"New Account: account age ({age_days} days) is less than required minimum of {self.MINIMUM_ACCOUNT_AGE} days."
+                self.db.track_system_action(guild_id=guild_id, action=SystemActions.NEW_ACCOUNT_KICK, data={ "user_id": str(member.id), "reason": message, "account_age": age_days})
                 # kick the member
-                await member.kick(reason=f"New Account: account age ({age_days} days) is less than required minimum of {self.MINIMUM_ACCOUNT_AGE} days.")
+                await member.kick(reason=message)
             return
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
