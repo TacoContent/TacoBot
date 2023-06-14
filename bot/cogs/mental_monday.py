@@ -186,6 +186,7 @@ class MentalMondays(commands.Cog):
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
     async def give(self, ctx, member: discord.Member) -> None:
+        _method = inspect.stack()[0][3]
         try:
             await ctx.message.delete()
 

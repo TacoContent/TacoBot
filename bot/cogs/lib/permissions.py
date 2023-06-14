@@ -19,3 +19,6 @@ class Permissions:
 
     def has_role(self, user: discord.Member, role: discord.Role):
         return role in user.roles
+
+    def is_admin(self, user: discord.Member):
+        return self.has_permission(user, discord.Permissions(administrator=True))
