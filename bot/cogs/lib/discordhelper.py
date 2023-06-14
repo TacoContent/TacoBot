@@ -525,17 +525,23 @@ class DiscordHelper:
     async def get_or_fetch_role(self, guild: discord.Guild, roleId: int) -> typing.Union[discord.Role, None]:
         _method = inspect.stack()[1][3]
         try:
+            if not guild:
+                return None
             if roleId:
                 role = guild.get_role(roleId)
                 if not role:
-                    role = await guild.fetch_role(roleId)
+                    roles = [r for r in await guild.fetch_roles() if r.id == roleId]
+                    if roles and len(roles) > 0:
+                        role = roles[0]
+                    else:
+                        role = None
                 return role
             return None
         except discord.errors.NotFound as nf:
             self.log.warn(0, f"{self._module}.{_method}", str(nf), traceback.format_exc())
             return None
 
-    async def get_or_fetch_channel(self, channelId: int) -> typing.Union[discord.TextChannel, discord.DMChannel, discord.Thread, None]:
+    async def get_or_fetch_channel(self, channelId: int) -> typing.Optional[typing.Union[discord.TextChannel, discord.DMChannel, discord.Thread]]:
         _method = inspect.stack()[1][3]
         try:
             if channelId:
