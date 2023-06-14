@@ -309,6 +309,8 @@ class MentalMondays(commands.Cog):
             # await self.discord_helper.notify_of_error(ctx)
 
     def _import_mentalmondays(self, message: discord.Message):
+        if message is None or message.guild is None:
+            return
         guild_id = message.guild.id
         channel_id = message.channel.id
         message_id = message.id
@@ -339,19 +341,28 @@ class MentalMondays(commands.Cog):
             message_id=message_id,
         )
 
-    async def give_user_mentalmondays_tacos(self, guild_id, user_id, channel_id, message_id) -> None:
+    async def give_user_mentalmondays_tacos(self, guild_id: int, user_id: int, channel_id: int, message_id: int) -> None:
         _method = inspect.stack()[0][3]
+        ctx = None
         try:
+
             # create context
             # self, bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
             # get guild from id
             guild = self.bot.get_guild(guild_id)
             # fetch member from id
-            member = guild.get_member(user_id)
+            member = await self.discord_helper.get_or_fetch_member(guild_id, user_id)
+            if not member:
+                self.log.warn(
+                    guild_id,
+                    f"{self._module}.{_method}",
+                    f"No member found for guild {guild_id} and user {user_id}",
+                )
+                return
             # get channel
             channel = None
             if channel_id:
-                channel = self.bot.get_channel(channel_id)
+                channel = await self.discord_helper.get_or_fetch_channel(channel_id)
             else:
                 channel = guild.system_channel
             if not channel:
@@ -410,8 +421,9 @@ class MentalMondays(commands.Cog):
             )
 
         except Exception as e:
-            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            if ctx:
+                await self.discord_helper.notify_of_error(ctx)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
