@@ -57,8 +57,8 @@ class UserLookup(commands.Cog):
             self.log.debug(guild.id, f"{self._module}.{_method}", f"Performing full user import for guild {guild.id}")
             for member in guild.members:
                 self.log.debug(guild.id, f"{self._module}.{_method}", f"Tracking user {member.name} in guild {guild.name}")
-                avatar_url: typing.Union[str,None] = member.avatar.url if member.avatar is not None else member.default_avatar.url
-                self.db.track_user(guild.id, member.id, member.name, member.discriminator, avatar_url, member.display_name, member.created_at, member.bot, member.system)
+                avatar: typing.Union[str,None] = member.avatar.url if member.avatar is not None else member.default_avatar.url
+                self.db.track_user(guild.id, member.id, member.name, member.discriminator, avatar, member.display_name, member.created_at, member.bot, member.system)
 
 
         except Exception as e:
@@ -71,8 +71,9 @@ class UserLookup(commands.Cog):
         try:
             if member is None or member.guild is None:
                 return
+            avatar: typing.Union[str,None] = member.avatar.url if member.avatar is not None else member.default_avatar.url
             self.log.debug(member.guild.id, f"{self._module}.{_method}", f"User {member.id} joined guild {member.guild.id}")
-            self.db.track_user(member.guild.id, member.id, member.name, member.discriminator, member.avatar.url, member.display_name, member.created_at, member.bot, member.system)
+            self.db.track_user(member.guild.id, member.id, member.name, member.discriminator, avatar, member.display_name, member.created_at, member.bot, member.system)
         except Exception as e:
             self.log.error(member.guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
 
@@ -82,8 +83,9 @@ class UserLookup(commands.Cog):
         try:
             if after is None or after.guild is None:
                 return
+            avatar: typing.Union[str,None] = after.avatar.url if after.avatar is not None else after.default_avatar.url
             self.log.debug(after.guild.id, f"{self._module}.{_method}", f"User {after.id} updated in guild {after.guild.id}")
-            self.db.track_user(after.guild.id, after.id, after.name, after.discriminator, after.avatar.url, after.display_name, after.created_at, after.bot, after.system)
+            self.db.track_user(after.guild.id, after.id, after.name, after.discriminator, avatar, after.display_name, after.created_at, after.bot, after.system)
         except Exception as e:
             self.log.error(after.guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
 
@@ -94,7 +96,8 @@ class UserLookup(commands.Cog):
             if message is None or message.guild is None:
                 return
             member = message.author
-            self.db.track_user(message.guild.id, member.id, member.name, member.discriminator, member.avatar.url, member.display_name, member.created_at, member.bot, member.system)
+            avatar: typing.Union[str,None] = member.avatar.url if member.avatar is not None else member.default_avatar.url
+            self.db.track_user(message.guild.id, member.id, member.name, member.discriminator, avatar, member.display_name, member.created_at, member.bot, member.system)
         except Exception as e:
             self.log.error(message.guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
 
