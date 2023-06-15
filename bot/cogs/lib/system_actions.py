@@ -6,3 +6,9 @@ class SystemActions(Enum):
     MINIMUM_ACCOUNT_AGE_SET = 4
 
     LINK_TWITCH_TO_DISCORD = 5
+
+    LEAVE_SERVER = 6
+    JOIN_SERVER = 7
+
+    ADD_ROLE = 8
+    REMOVE_ROLE = 9

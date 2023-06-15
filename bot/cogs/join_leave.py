@@ -19,7 +19,7 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
-
+from .lib.system_actions import SystemActions
 import inspect
 
 class JoinLeaveTracker(commands.Cog):
@@ -59,6 +59,11 @@ class JoinLeaveTracker(commands.Cog):
                 type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.LEAVE_SERVER)
             )
             self.db.track_user_join_leave(guildId=guild_id, userId=member.id, join=False)
+            self.db.track_system_action(
+                guild_id=guild_id,
+                action=SystemActions.LEAVE_SERVER,
+                data={"user_id": str(member.id)},
+            )
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
 
@@ -73,7 +78,13 @@ class JoinLeaveTracker(commands.Cog):
             await self.discord_helper.taco_give_user(guild_id, self.bot.user, member,
                 self.settings.get_string(guild_id, "taco_reason_join"),
                 tacotypes.TacoTypes.JOIN_SERVER )
+
             self.db.track_user_join_leave(guildId=guild_id, userId=member.id, join=True)
+            self.db.track_system_action(
+                guild_id=guild_id,
+                action=SystemActions.JOIN_SERVER,
+                data={"user_id": str(member.id)},
+            )
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
 
