@@ -22,7 +22,7 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
-
+from .lib.system_actions import SystemActions
 class AccountLink(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
@@ -55,6 +55,11 @@ class AccountLink(commands.Cog):
         if code:
             try:
                 result = self.db.link_twitch_to_discord_from_code(ctx.author.id, code)
+                self.db.track_system_action(
+                    guild_id=guild_id,
+                    action=SystemActions.LINK_TWITCH_TO_DISCORD,
+                    data={"user_id": str(ctx.author.id), "code": code},
+                )
                 if result:
                     # try DM, if that fails, use the channel that it originated in
                     try:

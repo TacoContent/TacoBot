@@ -91,7 +91,7 @@ class MongoDatabase(database.Database):
                 "channel": twitch_channel,
                 "timestamp": timestamp,
             }
-            self.connection.twitch_channels.update_one({"guild_id": self.settings.get("discord_guild_id"), "channel": twitch_channel}, {"$set": payload}, upsert=True)
+            self.connection.twitch_channels.update_one({"guild_id": str(guildId), "channel": twitch_channel}, {"$set": payload}, upsert=True)
             return True
         except Exception as ex:
             print(ex)
@@ -384,6 +384,28 @@ class MongoDatabase(database.Database):
             }
             # insert the settings for the guild in to the database with key name and timestamp
             self.connection.settings.update_one({ "guild_id": str(guildId), "name": name }, { "$set": payload }, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    # add or update a setting value in the settings collection, under the settings property
+    def set_setting(self, guildId: int, name:str, key: str, value: typing.Any) -> None:
+        try:
+            if self.connection is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            # get the settings object
+            settings = self.get_settings(guildId, name)
+            # if the settings object is None, create a new one
+            if settings is None:
+                settings = {}
+            # set the key to the value
+            settings[key] = value
+            # update the settings object in the database
+            self.add_settings(guildId, name, settings)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -1018,15 +1040,18 @@ class MongoDatabase(database.Database):
                 self.open()
             twitch_name = self._get_twitch_name(userId)
             if not twitch_name:
-                result = self.connection.twitch_user.find_one({ "link_code": code.strip() } )
-                if result:
+                # result = self.connection.twitch_user.find_one({ "link_code": code.strip() } )
+                # if result:
                     payload = {
                         "user_id": str(userId),
                     }
-                    self.connection.twitch_user.update_one( { "link_code": code.strip() }, { "$set": payload }, upsert=True )
-                    return True
-                else:
-                    raise ValueError(f"Unable to find an entry for a user with link code: {code}")
+                    result = self.connection.twitch_user.update_one( { "link_code": code.strip() }, { "$set": payload }, upsert=True )
+                    if result.modified_count == 1:
+                        return True
+                    else:
+                        raise ValueError(f"Unable to find an entry for a user with link code: {code}")
+                # else:
+                    # raise ValueError(f"Unable to find an entry for a user with link code: {code}")
             else:
                 raise ValueError(f"Twitch user {twitch_name} already linked")
         except Exception as ex:

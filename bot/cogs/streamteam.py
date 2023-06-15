@@ -20,6 +20,7 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
+from .lib.system_actions import SystemActions
 
 
 class StreamTeam(commands.Cog):
@@ -148,6 +149,11 @@ class StreamTeam(commands.Cog):
 
                 #             self.log.debug(guild_id, f"{self._module}.{_method}", f"{utils.get_user_display_name(user)} requested to set twitch name {twitch_user}")
                 #             self.db.set_user_twitch_info(user.id, twitch_name)
+                # self.db.track_system_action(
+                #     guild_id=guild_id,
+                #     action=SystemActions.LINK_TWITCH_TO_DISCORD,
+                #     data={"user_id": str(user.id), "twitch_name": twitch_name.lower()},
+                # )
                 #             await self.discord_helper.send_embed(user,
                 #                 self.settings.get_string(guild_id, "success"),
                 #                 self.settings.get_string(guild_id, "streamteam_set_twitch_name_message", twitch_name=twitch_name),
@@ -250,6 +256,11 @@ class StreamTeam(commands.Cog):
             team_name = streamteam_settings["name"]
 
             self.db.set_user_twitch_info(user.id, twitchName)
+            self.db.track_system_action(
+                guild_id=guild_id,
+                action=SystemActions.LINK_TWITCH_TO_DISCORD,
+                data={"user_id": str(user.id), "twitch_name": twitch_name.lower()},
+            )
             self.db.add_stream_team_request(guildId=ctx.guild.id, twitchName=twitchName, userId=user.id)
 
             await self.discord_helper.send_embed(ctx.channel,

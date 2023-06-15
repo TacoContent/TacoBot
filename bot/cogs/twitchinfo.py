@@ -26,7 +26,7 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
-
+from .lib.system_actions import SystemActions
 import inspect
 
 
@@ -149,6 +149,11 @@ class TwitchInfo(commands.Cog):
                 )
                 if not twitch_name is None:
                     self.db.set_user_twitch_info(ctx.author.id, twitch_name.lower().strip())
+                    self.db.track_system_action(
+                        guild_id=guild_id,
+                        action=SystemActions.LINK_TWITCH_TO_DISCORD,
+                        data={"user_id": str(ctx.author.id), "twitch_name": twitch_name.lower()},
+                    )
         else:
             twitch_name = twitch_info["twitch_name"]
         if not twitch_name is None:
@@ -186,6 +191,11 @@ class TwitchInfo(commands.Cog):
             if twitch_name is not None and user is not None:
                 twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
                 self.db.set_user_twitch_info(user.id, twitch_name)
+                self.db.track_system_action(
+                    guild_id=guild_id,
+                    action=SystemActions.LINK_TWITCH_TO_DISCORD,
+                    data={"user_id": str(user.id), "twitch_name": twitch_name.lower()},
+                )
                 await self.discord_helper.send_embed(
                     channel,
                     "Success",
@@ -249,6 +259,11 @@ class TwitchInfo(commands.Cog):
                     )
 
                 self.db.set_user_twitch_info(ctx.author.id, twitch_name)
+                self.db.track_system_action(
+                    guild_id=guild_id,
+                    action=SystemActions.LINK_TWITCH_TO_DISCORD,
+                    data={"user_id": str(ctx.author.id), "twitch_name": twitch_name.lower()},
+                )
 
                 await self.discord_helper.send_embed(
                     resp_channel,

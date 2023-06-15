@@ -25,6 +25,7 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
+from .lib.system_actions import SystemActions
 
 class LiveNow(commands.Cog):
     def __init__(self, bot):
@@ -257,6 +258,11 @@ class LiveNow(commands.Cog):
             if twitch_name:
                 # track the users twitch name
                 self.db.set_user_twitch_info(user.id, twitch_name.lower())
+                self.db.track_system_action(
+                    guild_id=guild_id,
+                    action=SystemActions.LINK_TWITCH_TO_DISCORD,
+                    data={"user_id": str(user.id), "twitch_name": twitch_name.lower()},
+                )
         if twitch_info:
             twitch_info_name = twitch_info.get("twitch_name", None)
         else:
@@ -264,6 +270,12 @@ class LiveNow(commands.Cog):
         if twitch_name and twitch_name != "" and twitch_name != twitch_info_name:
             self.log.info(guild_id, f"{self._module}.{_method}", f"{user.display_name} has a different twitch name: {twitch_name}")
             self.db.set_user_twitch_info(user.id, twitch_name)
+            self.db.track_system_action(
+                guild_id=guild_id,
+                action=SystemActions.LINK_TWITCH_TO_DISCORD,
+                data={"user_id": str(user.id), "twitch_name": twitch_name.lower()},
+            )
+
         elif not twitch_name and twitch_info_name:
             twitch_name = twitch_info_name
         if not twitch_name:

@@ -46,6 +46,34 @@ class NewAccountCheck(commands.Cog):
     async def new_account_check(self, ctx, *args) -> None:
         pass
 
+    @new_account_check.command(name="set-minimum-age", aliases=["set-min-age", "set-min", "sma"])
+    @commands.has_permissions(administrator=True)
+    @commands.guild_only()
+    async def set_minimum_account_age(self, ctx, minimum_age: int) -> None:
+        """Set the minimum account age in days"""
+        _method = inspect.stack()[0][3]
+        guild_id = ctx.guild.id
+        try:
+            await ctx.message.delete()
+
+            self.db.set_setting(guildId=guild_id, name=self.SETTINGS_SECTION, key="minimum_account_age", value=minimum_age)
+            self.db.track_system_action(
+                guild_id=guild_id,
+                action=SystemActions.MINIMUM_ACCOUNT_AGE_SET,
+                data={
+                    "minimum_age": str(minimum_age),
+                    "set_by": str(ctx.author.id)
+                }
+            )
+            await self.discord_helper.send_embed(
+                channel=ctx.channel,
+                title="Minimum account age set",
+                message=f"Minimum account age: {minimum_age} days\nSet by: {ctx.author.mention}",
+                delete_after=15
+            )
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{_method}", f"{str(e)}", traceback.format_exc())
+
     @new_account_check.command(name="whitelist-add")
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
@@ -141,9 +169,11 @@ class NewAccountCheck(commands.Cog):
             now = datetime.datetime.now().timestamp()
             age = now - member_created
             age_days = math.floor(age / 86400)
-            if age_days < self.MINIMUM_ACCOUNT_AGE:
-                self.log.warn(guild_id, f"{self._module}.{_method}", f"Member {utils.get_user_display_name(member)} (ID: {member.id}) account age ({age_days} days) is less than {self.MINIMUM_ACCOUNT_AGE} days.")
-                message = f"New Account: account age ({age_days} days) is less than required minimum of {self.MINIMUM_ACCOUNT_AGE} days."
+            cog_settings = self.get_cog_settings(guildId=guild_id)
+            minimum_account_age = cog_settings.get("minimum_account_age", self.MINIMUM_ACCOUNT_AGE)
+            if age_days < minimum_account_age:
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"Member {utils.get_user_display_name(member)} (ID: {member.id}) account age ({age_days} days) is less than {minimum_account_age} days.")
+                message = f"New Account: account age ({age_days} days) is less than required minimum of {minimum_account_age} days."
                 self.db.track_system_action(guild_id=guild_id, action=SystemActions.NEW_ACCOUNT_KICK, data={ "user_id": str(member.id), "reason": message, "account_age": age_days})
                 # kick the member
                 await member.kick(reason=message)
