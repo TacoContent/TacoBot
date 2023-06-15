@@ -74,7 +74,7 @@ class NewAccountCheck(commands.Cog):
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", f"{str(e)}", traceback.format_exc())
 
-    @new_account_check.command(name="whitelist-add")
+    @new_account_check.command(name="whitelist-add", aliases=["wl-add", "wla", "trust"])
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
     async def whitelist_add(self, ctx, user_id: int) -> None:
@@ -104,7 +104,7 @@ class NewAccountCheck(commands.Cog):
 
 
 
-    @new_account_check.command(name="whitelist-remove")
+    @new_account_check.command(name="whitelist-remove", aliases=["whitelist-delete", "wlr", "wl-remove", "wl-delete", "wld", "untrust"])
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
     async def whitelist_remove(self, ctx, user_id: int) -> None:

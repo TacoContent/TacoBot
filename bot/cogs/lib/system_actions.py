@@ -12,3 +12,10 @@ class SystemActions(Enum):
 
     ADD_ROLE = 8
     REMOVE_ROLE = 9
+
+
+    USER_BAN = 10
+    USER_UNBAN = 11
+    USER_KICK = 12
+
+    AUTOMOD_ACTION = 13

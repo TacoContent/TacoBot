@@ -2707,7 +2707,7 @@ class MongoDatabase(database.Database):
 
             payload = {
                 "guild_id": str(guild_id),
-                "action": str(action),
+                "action": str(action.name if isinstance(action, SystemActions) else action),
                 "timestamp": timestamp,
                 "data": data
             }
