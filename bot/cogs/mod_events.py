@@ -70,4 +70,4 @@ class ModEventsCog(commands.Cog):
         })
 
 async def setup(bot):
-    bot.add_cog(ModEventsCog(bot))
+    await bot.add_cog(ModEventsCog(bot))
