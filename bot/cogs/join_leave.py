@@ -44,7 +44,7 @@ class JoinLeaveTracker(commands.Cog):
         # remove all tacos from the user
         guild_id = member.guild.id
         try:
-            if member.bot:
+            if not member or member.bot or member.system:
                 return
 
             _method = inspect.stack()[0][3]
@@ -67,7 +67,7 @@ class JoinLeaveTracker(commands.Cog):
         _method = inspect.stack()[0][3]
         guild_id = member.guild.id
         try:
-            if member.bot:
+            if not member or member.bot or member.system:
                 return
 
             await self.discord_helper.taco_give_user(guild_id, self.bot.user, member,

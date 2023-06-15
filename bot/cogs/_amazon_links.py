@@ -56,7 +56,7 @@ class AmazonLink(commands.Cog):
             if message.guild is None:
                 return
             # if the message is from a bot, ignore
-            if message.author.bot:
+            if message.author.bot or message.author.system:
                 return
             guild_id = message.guild.id
 

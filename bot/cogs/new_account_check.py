@@ -40,7 +40,7 @@ class NewAccountCheck(commands.Cog):
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
-    @commands.group(name="new-account-check")
+    @commands.group(name="new-account")
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
     async def new_account_check(self, ctx, *args) -> None:
