@@ -61,7 +61,7 @@ class NewAccountCheck(commands.Cog):
                 guild_id=guild_id,
                 action=SystemActions.MINIMUM_ACCOUNT_AGE_SET,
                 data={
-                    "minimum_age": str(minimum_age),
+                    "minimum_account_age": str(minimum_age),
                     "set_by": str(ctx.author.id)
                 }
             )
