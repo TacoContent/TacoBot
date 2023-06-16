@@ -144,8 +144,9 @@ class TacoTuesday(commands.Cog):
         channel = self.bot.get_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)
 
-        reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
-        if reaction.count > 1:
+        # check if this reaction is the first one of this type on the message
+        reactions = [r for r in discord.utils.get(message.reactions, emoji=payload.emoji.name)]
+        if len(reactions) > 1:
             self.log.debug(
                 guild_id,
                 f"{self._module}.{_method}",
@@ -179,8 +180,9 @@ class TacoTuesday(commands.Cog):
             self.log.debug(guild_id, f"{self._module}.{_method}", f"Message {payload.message_id} was not imported. No need to archive.")
             return
 
-        reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
-        if reaction.count > 1:
+        # check if this reaction is the first one of this type on the message
+        reactions = [r for r in discord.utils.get(message.reactions, emoji=payload.emoji.name)]
+        if len(reactions) > 1:
             self.log.debug(
                 guild_id,
                 f"{self._module}.{_method}",

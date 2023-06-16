@@ -213,8 +213,8 @@ class MentalMondays(commands.Cog):
         react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
 
         # check if this reaction is the first one of this type on the message
-        reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
-        if reaction.count > 1:
+        reactions = [r for r in discord.utils.get(message.reactions, emoji=payload.emoji.name)]
+        if len(reactions) > 1:
             self.log.debug(
                 guild_id,
                 f"{self._module}.{_method}",
@@ -250,8 +250,9 @@ class MentalMondays(commands.Cog):
         channel = self.bot.get_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)
 
-        reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
-        if reaction.count > 1:
+        # check if this reaction is the first one of this type on the message
+        reactions = [r for r in discord.utils.get(message.reactions, emoji=payload.emoji.name)]
+        if len(reactions) > 1:
             self.log.debug(
                 guild_id,
                 f"{self._module}.{_method}",
