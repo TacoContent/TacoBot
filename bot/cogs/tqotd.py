@@ -175,8 +175,8 @@ class TacoQuestionOfTheDay(commands.Cog):
             react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
 
             # check if this reaction is the first one of this type on the message
-            reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
-            if reaction.count > 1:
+            reactions = [r for r in discord.utils.get(message.reactions, emoji=payload.emoji.name)]
+            if len(reactions) > 1:
                 # self.log.debug(guild_id, f"{self._module}.{_method}", f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
                 return
 
