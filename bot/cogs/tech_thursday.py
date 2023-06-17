@@ -215,9 +215,8 @@ class TechThursdays(commands.Cog):
             return
 
         # check if this reaction is the first one of this type on the message
-        # check if this reaction is the first one of this type on the message
-        reactions = [r for r in discord.utils.get(message.reactions, emoji=payload.emoji.name)]
-        if len(reactions) > 1:
+        reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)
+        if reactions and reactions.count > 1:
             self.log.debug(
                 guild_id,
                 f"{self._module}.{_method}",
@@ -252,8 +251,8 @@ class TechThursdays(commands.Cog):
         message = await channel.fetch_message(payload.message_id)
 
         # check if this reaction is the first one of this type on the message
-        reactions = [r for r in discord.utils.get(message.reactions, emoji=payload.emoji.name)]
-        if len(reactions) > 1:
+        reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)
+        if reactions and reactions.count > 1:
             self.log.debug(
                 guild_id,
                 f"{self._module}.{_method}",
