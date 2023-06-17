@@ -19,6 +19,7 @@ from . import utils
 from . import models
 from . import loglevel
 from .system_actions import SystemActions
+from .member_status import MemberStatus
 
 # from .mongodb import migration
 
@@ -1787,7 +1788,18 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def track_user(self, guildId: int, userId: int, username: str, discriminator: str, avatar: typing.Optional[str], displayname: str, created: typing.Optional[datetime.datetime] = None, bot: bool = False, system: bool = False):
+    def track_user(
+            self,
+            guildId: int,
+            userId: int,
+            username: str,
+            discriminator: str,
+            avatar: typing.Optional[str],
+            displayname: str,
+            created: typing.Optional[datetime.datetime] = None,
+            bot: bool = False,
+            system: bool = False,
+            status: typing.Optional[typing.Union[str, MemberStatus]] = None,):
         try:
             if self.connection is None:
                 self.open()
@@ -1804,6 +1816,7 @@ class MongoDatabase(database.Database):
                 "created": created_timestamp,
                 "bot": bot,
                 "system": system,
+                "status": str(status) if status else None,
                 "timestamp": timestamp
             }
 

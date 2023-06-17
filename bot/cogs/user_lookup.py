@@ -20,6 +20,7 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
+from .lib.member_status import MemberStatus
 
 class UserLookup(commands.Cog):
     def __init__(self, bot) -> None:
@@ -58,7 +59,18 @@ class UserLookup(commands.Cog):
             for member in guild.members:
                 self.log.debug(guild.id, f"{self._module}.{_method}", f"Tracking user {member.name} in guild {guild.name}")
                 avatar: typing.Union[str,None] = member.avatar.url if member.avatar is not None else member.default_avatar.url
-                self.db.track_user(guild.id, member.id, member.name, member.discriminator, avatar, member.display_name, member.created_at, member.bot, member.system)
+                self.db.track_user(
+                    guildId=guild.id,
+                    userId=member.id,
+                    username=member.name,
+                    discriminator=member.discriminator,
+                    avatar=avatar,
+                    displayname=member.display_name,
+                    created=member.created_at,
+                    bot=member.bot,
+                    system=member.system,
+                    status=MemberStatus.from_discord(member.status),
+                )
 
 
         except Exception as e:
@@ -73,7 +85,18 @@ class UserLookup(commands.Cog):
                 return
             avatar: typing.Union[str,None] = member.avatar.url if member.avatar is not None else member.default_avatar.url
             self.log.debug(member.guild.id, f"{self._module}.{_method}", f"User {member.id} joined guild {member.guild.id}")
-            self.db.track_user(member.guild.id, member.id, member.name, member.discriminator, avatar, member.display_name, member.created_at, member.bot, member.system)
+            self.db.track_user(
+                guildId=member.guild.id,
+                userId=member.id,
+                username=member.name,
+                discriminator=member.discriminator,
+                avatar=avatar,
+                displayname=member.display_name,
+                created=member.created_at,
+                bot=member.bot,
+                system=member.system,
+                status=MemberStatus.from_discord(member.status),
+            )
         except Exception as e:
             self.log.error(member.guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
 
@@ -85,7 +108,18 @@ class UserLookup(commands.Cog):
                 return
             avatar: typing.Union[str,None] = after.avatar.url if after.avatar is not None else after.default_avatar.url
             self.log.debug(after.guild.id, f"{self._module}.{_method}", f"User {after.id} updated in guild {after.guild.id}")
-            self.db.track_user(after.guild.id, after.id, after.name, after.discriminator, avatar, after.display_name, after.created_at, after.bot, after.system)
+            self.db.track_user(
+                guildId=after.guild.id,
+                userId=after.id,
+                username=after.name,
+                discriminator=after.discriminator,
+                avatar=avatar,
+                displayname=after.display_name,
+                created=after.created_at,
+                bot=after.bot,
+                system=after.system,
+                status=MemberStatus.from_discord(after.status),
+            )
         except Exception as e:
             self.log.error(after.guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
 
@@ -97,7 +131,18 @@ class UserLookup(commands.Cog):
                 return
             member = message.author
             avatar: typing.Union[str,None] = member.avatar.url if member.avatar is not None else member.default_avatar.url
-            self.db.track_user(message.guild.id, member.id, member.name, member.discriminator, avatar, member.display_name, member.created_at, member.bot, member.system)
+            self.db.track_user(
+                guildId=message.guild.id,
+                userId=member.id,
+                username=member.name,
+                discriminator=member.discriminator,
+                avatar=avatar,
+                displayname=member.display_name,
+                created=member.created_at,
+                bot=member.bot,
+                system=member.system,
+                status=MemberStatus.from_discord(member.status),
+            )
         except Exception as e:
             self.log.error(message.guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
 

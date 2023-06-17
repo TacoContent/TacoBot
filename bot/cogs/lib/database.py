@@ -6,6 +6,7 @@ import datetime
 from . import models
 from . import loglevel
 from .system_actions import SystemActions
+from .member_status import MemberStatus
 
 class Database():
 
@@ -142,7 +143,18 @@ class Database():
     def is_first_message_today(self, guildId: int, userId: int):
         pass
 
-    def track_user(self, guildId: int, userId: int, username: str, discriminator: str, avatar: str, displayname: str, created: datetime.datetime = None, bot: bool = False, system: bool = False):
+    def track_user(
+            self,
+            guildId: int,
+            userId: int,
+            username: str,
+            discriminator: str,
+            avatar: str,
+            displayname: str,
+            created: datetime.datetime = None,
+            bot: bool = False,
+            system: bool = False,
+            status: typing.Optional[typing.Union[str, MemberStatus]] = None,):
         pass
 
     def track_food_post(self, guildId: int, userId: int, channelId: int, messageId: int, message: str, image: str):
