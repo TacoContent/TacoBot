@@ -132,7 +132,10 @@ class UserLookup(commands.Cog):
             member = message.author
             avatar: typing.Union[str,None] = member.avatar.url if member.avatar is not None else member.default_avatar.url
             if isinstance(member, discord.User):
-                member = await self.discord_helper.get_or_fetch_member(message.guild.id, member.id)
+                try:
+                    member = await self.discord_helper.get_or_fetch_member(message.guild.id, member.id)
+                except Exception as e:
+                    return
 
             if not member:
                 return
