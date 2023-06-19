@@ -123,37 +123,37 @@ class UserLookup(commands.Cog):
         except Exception as e:
             self.log.error(after.guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
 
-    @commands.Cog.listener()
-    async def on_message(self, message) -> None:
-        _method = inspect.stack()[0][3]
-        try:
-            if message is None or message.guild is None:
-                return
-            member = message.author
-            avatar: typing.Union[str,None] = member.avatar.url if member.avatar is not None else member.default_avatar.url
-            if isinstance(member, discord.User):
-                try:
-                    member = await self.discord_helper.get_or_fetch_member(message.guild.id, member.id)
-                except Exception as e:
-                    return
+    # @commands.Cog.listener()
+    # async def on_message(self, message) -> None:
+    #     _method = inspect.stack()[0][3]
+    #     try:
+    #         if message is None or message.guild is None:
+    #             return
+    #         member = message.author
+    #         avatar: typing.Union[str,None] = member.avatar.url if member.avatar is not None else member.default_avatar.url
+    #         if isinstance(member, discord.User):
+    #             try:
+    #                 member = await self.discord_helper.get_or_fetch_member(message.guild.id, member.id)
+    #             except Exception as e:
+    #                 return
 
-            if not member:
-                return
+    #         if not member:
+    #             return
 
-            self.db.track_user(
-                guildId=message.guild.id,
-                userId=member.id,
-                username=member.name,
-                discriminator=member.discriminator,
-                avatar=avatar,
-                displayname=member.display_name,
-                created=member.created_at,
-                bot=member.bot,
-                system=member.system,
-                status=MemberStatus.from_discord(member.status),
-            )
-        except Exception as e:
-            self.log.error(message.guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
+    #         self.db.track_user(
+    #             guildId=message.guild.id,
+    #             userId=member.id,
+    #             username=member.name,
+    #             discriminator=member.discriminator,
+    #             avatar=avatar,
+    #             displayname=member.display_name,
+    #             created=member.created_at,
+    #             bot=member.bot,
+    #             system=member.system,
+    #             status=MemberStatus.from_discord(member.status),
+    #         )
+    #     except Exception as e:
+    #         self.log.error(message.guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
 
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
