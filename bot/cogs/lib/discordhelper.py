@@ -516,7 +516,6 @@ class DiscordHelper:
                 return user
             return None
         except discord.errors.NotFound as nf:
-            self.log.warn(0, f"{self._module}.{_method}", str(nf), traceback.format_exc())
             return None
         except Exception as ex:
             self.log.error(0, f"{self._module}.{_method}", str(ex), traceback.format_exc())
