@@ -19,15 +19,37 @@ class Permissions:
             return True
         return user.guild_permissions >= permissions
 
-    def has_role(self, user: discord.Member, role: discord.Role):
-        return role in user.roles
+    async def has_role(self, user: typing.Union[discord.Member, int], role: typing.Optional[typing.Union[discord.Role, int]] = None, guildId: typing.Optional[int] = None):
+        if isinstance(user, int):
+            if guildId is None:
+                raise ValueError("guildId must be specified if user is an int")
+            member = await self.discord_helper.get_or_fetch_member(guildId, user)
+        elif isinstance(user, discord.Member):
+            member = user
+        else:
+            raise ValueError("user must be an int or a discord.Member")
+        if member is None:
+            return False
+        role_id = None
+        if isinstance(role, int):
+            if role is None:
+                return False
+            role_id = role
+        elif isinstance(role, discord.Role):
+            role_id = role.id
+        else:
+            raise ValueError("role must be an int or a discord.Role")
+
+        return role_id in [r.id for r in member.roles if r.id == role_id]
 
     async def is_admin(self, user: typing.Union[discord.Member, int], guildId: typing.Optional[int] = None ):
         if isinstance(user, int):
             if guildId is None:
                 raise ValueError("guildId must be specified if user is an int")
             member = await self.discord_helper.get_or_fetch_member(guildId, user)
-        else:
+        elif isinstance(user, discord.Member):
             member = user
+        else:
+            raise ValueError("user must be an int or a discord.Member")
 
         return self.has_permission(member, discord.Permissions(administrator=True))

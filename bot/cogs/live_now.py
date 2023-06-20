@@ -147,6 +147,8 @@ class LiveNow(commands.Cog):
 
             # ENDED STREAM
             for bsa in before_streaming_activities:
+                # sleep for a bit to make sure the live role is removed before we clean up the db
+                await asyncio.sleep(1)
 
                 # check if bsa is in after_streaming_activities
                 found_bsa = len([a for a in after_streaming_activities if a.url == bsa.url and a.platform == bsa.platform]) > 0
@@ -177,6 +179,7 @@ class LiveNow(commands.Cog):
                                 try:
                                     message = await logging_channel.fetch_message(int(message_id))
                                     if message:
+                                        self.log.debug(guild_id, f"{self._module}.{_method}", f"Deleting LIVE 🔴 message ({message_id}) from channel {logging_channel}")
                                         await message.delete()
                                 except discord.errors.NotFound:
                                     self.log.warn(guild_id, f"{self._module}.{_method}", f"Message {message_id} not found in channel {logging_channel}")
