@@ -74,7 +74,6 @@ class WhatDoYouCallThisWednesday(commands.Cog):
                 return
 
             cog_settings = self.get_cog_settings(guild_id)
-
             tacos_settings = self.get_tacos_settings(guild_id)
 
             amount = tacos_settings.get("wdyctw_amount", 5)
@@ -257,6 +256,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             if str(payload.emoji.name) not in check_list:
                 return
 
+
             if str(payload.emoji.name) in reaction_emojis:
                 await self._on_raw_reaction_add_give(payload)
                 return
@@ -360,10 +360,12 @@ class WhatDoYouCallThisWednesday(commands.Cog):
         if not cog_settings:
             raise Exception(f"No wdyctw settings found for guild {guildId}")
         return cog_settings
+
     def get_tacos_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
+
 async def setup(bot):
     await bot.add_cog(WhatDoYouCallThisWednesday(bot))

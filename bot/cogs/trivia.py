@@ -25,7 +25,6 @@ from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
 from .lib.models import TriviaQuestion
-
 class Trivia(commands.Cog):
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]

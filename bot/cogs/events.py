@@ -49,7 +49,6 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_available(self, guild):
-
         pass
 
     @commands.Cog.listener()

@@ -76,6 +76,30 @@ class UserLookup(commands.Cog):
         except Exception as e:
             self.log.error(guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
 
+    @commands.Cog.listener()
+    async def on_guild_available(self, guild):
+        try:
+            if guild is None:
+                return
+            # pull this from the settings and see if we should do the import of all users
+
+            enabled = False
+            cog_settings = self.get_cog_settings(guild.id)
+            if cog_settings is not None:
+                enabled = cog_settings.get("full_import_enabled", False)
+
+            if not enabled:
+                return
+
+            self.log.debug(guild.id, "user_lookup.on_guild_available", f"Guild {guild.id} is available")
+            for member in guild.members:
+                self.log.debug(guild.id, "user_lookup.on_guild_available", f"Tracking user {member.name} in guild {guild.name}")
+                avatar_url: typing.Union[str,None] = member.avatar.url if member.avatar is not None else None
+
+                self.db.track_user(guild.id, member.id, member.name, member.discriminator, avatar_url, member.display_name, member.created_at, member.bot, member.system)
+        except Exception as e:
+            self.log.error(guild.id, "user_lookup.on_guild_available", f"{e}", traceback.format_exc())
+
     # on events, get the user id and username and store it in the database
     @commands.Cog.listener()
     async def on_member_join(self, member) -> None:
@@ -160,6 +184,15 @@ class UserLookup(commands.Cog):
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
+        return cog_settings
+
+
+    def get_cog_settings(self, guildId: int = 0):
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        if not cog_settings:
+            # raise exception if there are no leave_survey settings
+            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
+            raise Exception(f"No wdyctw settings found for guild {guildId}")
         return cog_settings
 
 async def setup(bot):
