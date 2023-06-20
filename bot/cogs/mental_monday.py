@@ -19,8 +19,8 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
-from .lib import dbprovider
 from .lib import tacotypes
+from .lib.permissions import Permissions
 
 import inspect
 
@@ -33,6 +33,7 @@ class MentalMondays(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.permissions = Permissions(bot)
         self.SETTINGS_SECTION = "mentalmondays"
         self.SELF_DESTRUCT_TIMEOUT = 30
         self.db = mongo.MongoDatabase()
@@ -120,7 +121,7 @@ class MentalMondays(commands.Cog):
             out_message = self.settings.get_string(
                 guild_id, "mentalmondays_out_message", taco_count=amount, taco_word=taco_word
             )
-            mentalmondays_message = await self.discord_helper.sendEmbed(
+            mentalmondays_message = await self.discord_helper.send_embed(
                 channel=out_channel,
                 title=self.settings.get_string(guild_id, "mentalmondays_out_title"),
                 message=out_message,
@@ -187,6 +188,7 @@ class MentalMondays(commands.Cog):
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
     async def give(self, ctx, member: discord.Member) -> None:
+        _method = inspect.stack()[0][3]
         try:
             await ctx.message.delete()
 
@@ -201,6 +203,7 @@ class MentalMondays(commands.Cog):
         guild_id = payload.guild_id
 
         # check if the user that reacted is in the admin role
+        # if not await self.permissions.is_admin(payload.user_id)
         if not await self.discord_helper.is_admin(guild_id, payload.user_id):
             self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
             return
@@ -213,8 +216,8 @@ class MentalMondays(commands.Cog):
         react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
 
         # check if this reaction is the first one of this type on the message
-        reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
-        if reaction.count > 1:
+        reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)
+        if reactions and reactions.count > 1:
             self.log.debug(
                 guild_id,
                 f"{self._module}.{_method}",
@@ -250,8 +253,9 @@ class MentalMondays(commands.Cog):
         channel = self.bot.get_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)
 
-        reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
-        if reaction.count > 1:
+        # check if this reaction is the first one of this type on the message
+        reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)
+        if reactions and reactions.count > 1:
             self.log.debug(
                 guild_id,
                 f"{self._module}.{_method}",
@@ -272,6 +276,16 @@ class MentalMondays(commands.Cog):
                 return
 
             if payload.event_type != "REACTION_ADD":
+                return
+
+            # check if the user that reacted is in the admin role
+            if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
+                return
+
+
+            react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+            if not react_user or react_user.bot or react_user.system:
                 return
 
             cog_settings = self.get_cog_settings(guild_id)
@@ -299,6 +313,8 @@ class MentalMondays(commands.Cog):
             # await self.discord_helper.notify_of_error(ctx)
 
     def _import_mentalmondays(self, message: discord.Message):
+        if message is None or message.guild is None:
+            return
         guild_id = message.guild.id
         channel_id = message.channel.id
         message_id = message.id
@@ -329,19 +345,28 @@ class MentalMondays(commands.Cog):
             message_id=message_id,
         )
 
-    async def give_user_mentalmondays_tacos(self, guild_id, user_id, channel_id, message_id) -> None:
+    async def give_user_mentalmondays_tacos(self, guild_id: int, user_id: int, channel_id: int, message_id: int) -> None:
         _method = inspect.stack()[0][3]
+        ctx = None
         try:
+
             # create context
             # self, bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
             # get guild from id
             guild = self.bot.get_guild(guild_id)
             # fetch member from id
-            member = guild.get_member(user_id)
+            member = await self.discord_helper.get_or_fetch_member(guild_id, user_id)
+            if not member:
+                self.log.warn(
+                    guild_id,
+                    f"{self._module}.{_method}",
+                    f"No member found for guild {guild_id} and user {user_id}",
+                )
+                return
             # get channel
             channel = None
             if channel_id:
-                channel = self.bot.get_channel(channel_id)
+                channel = await self.discord_helper.get_or_fetch_channel(channel_id)
             else:
                 channel = guild.system_channel
             if not channel:
@@ -378,7 +403,7 @@ class MentalMondays(commands.Cog):
 
             reason_msg = self.settings.get_string(guild_id, "mentalmondays_reason_default")
 
-            await self.discord_helper.sendEmbed(
+            await self.discord_helper.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_give_title"),
                 # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",
@@ -400,8 +425,9 @@ class MentalMondays(commands.Cog):
             )
 
         except Exception as e:
-            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            if ctx:
+                await self.discord_helper.notify_of_error(ctx)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)

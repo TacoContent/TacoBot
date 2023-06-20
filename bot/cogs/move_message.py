@@ -28,12 +28,16 @@ from .lib import utils
 from .lib import models
 from .lib import settings
 from .lib import mongo
-from .lib import dbprovider
+from .lib import permissions
 
 class MoveMessage(commands.Cog):
     def __init__(self, bot):
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
+        self.permissions = permissions.Permissions(bot)
         self.discord_helper = discordhelper.DiscordHelper(bot)
 
         self.SETTINGS_SECTION = "move_message"
@@ -44,7 +48,7 @@ class MoveMessage(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "move_message.__init__", "Initialized")
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -60,14 +64,20 @@ class MoveMessage(commands.Cog):
             if str(payload.emoji) != '⏭️':
                 return
 
-            channel = await self.bot.fetch_channel(payload.channel_id)
+            channel = await self.discord_helper.get_or_fetch_channel(payload.channel_id)
+            if channel is None:
+                return
             message = await channel.fetch_message(payload.message_id)
+            if message is None:
+                return
             user = await self.discord_helper.get_or_fetch_user(payload.user_id)
-            if user.bot:
+            if user is None or user.bot or user.system:
                 return
 
+
+
             react_member = await self.discord_helper.get_or_fetch_member(guild_id, user.id)
-            if react_member.guild_permissions.manage_messages:
+            if self.permissions.has_permission(react_member, discord.Permissions(manage_messages=True)):
                 # self.log.debug(guild_id, f"move_message.{_method}", f"{user.name} reacted to message {message.id} with {str(payload.emoji)}")
                 if str(payload.emoji) == '⏭️':
                     ctx = self.discord_helper.create_context(bot=self.bot, message=message, channel=channel, author=user, guild=message.guild)
@@ -90,13 +100,14 @@ class MoveMessage(commands.Cog):
                         callback=callback)
 
         except Exception as e:
-            self.log.error(guild_id, "move_message.on_raw_reaction_add", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             return
 
     @commands.group()
     @commands.guild_only()
     @commands.has_permissions(manage_messages=True)
-    async def move(self, ctx, messageId: int):
+    async def move(self, ctx, messageId: int) -> None:
+        _method = inspect.stack()[0][3]
         if ctx.invoked_subcommand is not None:
             return
 
@@ -111,10 +122,10 @@ class MoveMessage(commands.Cog):
 
             message = await ctx.channel.fetch_message(messageId)
             if message is None:
-                await self.discord_helper.sendEmbed(
+                await self.discord_helper.send_embed(
                     channel=channel,
                     title="Move Message",
-                    message=self.settings.get_string(guild_id, "move_message_not_found_message", who=ctx.author.mention, message_id=messageId),
+                    message=self.settings.get_string(guild_id, f"{self._module}.{_method}", who=ctx.author.mention, message_id=messageId),
                     color=0xff0000,
                     delete_after=20)
                 return
@@ -141,7 +152,7 @@ class MoveMessage(commands.Cog):
             )
             await message.delete()
         except Exception as e:
-            self.log.error(ctx.guild.id, "move.move", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             return
 
 

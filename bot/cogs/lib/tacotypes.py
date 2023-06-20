@@ -34,6 +34,10 @@ class TacoTypes(Enum):
     TWITCH_SUB = 28
     TWITCH_BITS = 29
     TWITCH_FIRST_MESSAGE = 30
+    TWITCH_PROMOTE = 31
+    TWITCH_GIVE_TACOS = 32
+    TWITCH_RECEIVE_TACOS = 33
+    TWITCH_FOLLOW = 34 # not yet implemented until i can figure out how to get the event from eventsub
 
     PURGE = 9996
     LEAVE_SERVER = 9997
@@ -107,6 +111,14 @@ class TacoTypes(Enum):
             return TacoTypes.TWITCH_BITS
         elif taco_type_string == "twitch_first_message_count":
             return TacoTypes.TWITCH_FIRST_MESSAGE
+        elif taco_type_string == "twitch_promote_count":
+            return TacoTypes.TWITCH_PROMOTE
+        elif taco_type_string == "twitch_give_tacos":  # this property is not saved in settings, as it should be the amount they give
+            return TacoTypes.TWITCH_GIVE_TACOS
+        elif taco_type_string == "twitch_receive_tacos":  # this property is not saved in settings, as it should be the amount they receive
+            return TacoTypes.TWITCH_RECEIVE_TACOS
+        elif taco_type_string == "twitch_follow_count":
+            return TacoTypes.TWITCH_FOLLOW
         elif taco_type_string == "twitch_custom":
             return TacoTypes.TWITCH_CUSTOM
         else:
@@ -178,6 +190,14 @@ class TacoTypes(Enum):
             return "TWITCH_BITS"
         elif taco_type == TacoTypes.TWITCH_FIRST_MESSAGE:
             return "TWITCH_FIRST_MESSAGE"
+        elif taco_type == TacoTypes.TWITCH_PROMOTE:
+            return "TWITCH_PROMOTE"
+        elif taco_type == TacoTypes.TWITCH_GIVE_TACOS:
+            return "TWITCH_GIVE_TACOS"
+        elif taco_type == TacoTypes.TWITCH_RECEIVE_TACOS:
+            return "TWITCH_RECEIVE_TACOS"
+        elif taco_type == TacoTypes.TWITCH_FOLLOW:
+            return "TWITCH_FOLLOW"
         elif taco_type == TacoTypes.TWITCH_CUSTOM:
             return "TWITCH_CUSTOM"
         else:
@@ -249,6 +269,14 @@ class TacoTypes(Enum):
             return "twitch_bits_count"
         elif taco_type == TacoTypes.TWITCH_FIRST_MESSAGE:
             return "twitch_first_message_count"
+        elif taco_type == TacoTypes.TWITCH_PROMOTE:
+            return "twitch_promote_count"
+        elif taco_type == TacoTypes.TWITCH_GIVE_TACOS:
+            return "twitch_give_tacos" # this property is not saved in settings, as it should be the amount they give
+        elif taco_type == TacoTypes.TWITCH_RECEIVE_TACOS:
+            return "twitch_receive_tacos" # this property is not saved in settings, as it should be the amount they give
+        elif taco_type == TacoTypes.TWITCH_FOLLOW:
+            return "twitch_follow_count"
         elif taco_type == TacoTypes.TWITCH_CUSTOM:
             return "twitch_custom"
         else:

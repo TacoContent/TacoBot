@@ -17,11 +17,14 @@ from . import database
 from . import settings
 from . import utils
 from . import models
+from . import loglevel
+from .system_actions import SystemActions
+from .member_status import MemberStatus
 
 # from .mongodb import migration
 
 class MongoDatabase(database.Database):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
@@ -31,12 +34,13 @@ class MongoDatabase(database.Database):
         self.connection = None
         pass
 
-    def open(self):
+    def open(self) -> None:
         if not self.settings.db_url:
             raise ValueError("MONGODB_URL is not set")
         self.client = MongoClient(self.settings.db_url)
         self.connection = self.client.tacobot
-    def close(self):
+
+    def close(self) -> None:
         try:
             if self.client:
                 self.client.close()
@@ -44,7 +48,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
 
-    def insert_log(self, guildId: int, level: str, method: str, message: str, stackTrace: str = None):
+    def insert_log(self, guildId: int, level: loglevel.LogLevel, method: str, message: str, stack: typing.Optional[str] = None) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -54,13 +58,18 @@ class MongoDatabase(database.Database):
                 "level": level.name,
                 "method": method,
                 "message": message,
-                "stack_trace": stackTrace
+                "stack_trace": stack if stack else ""
             }
             self.connection.logs.insert_one(payload)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-    def clear_log(self, guildId):
+        finally:
+            if self.connection:
+                self.close()
+            self.close()
+
+    def clear_log(self, guildId: int) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -69,7 +78,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
 
-    def add_twitchbot_to_channel(self, guildId: int, twitch_channel: str):
+    def add_twitchbot_to_channel(self, guildId: int, twitch_channel: str) -> bool:
         try:
             if self.connection is None:
                 self.open()
@@ -83,7 +92,7 @@ class MongoDatabase(database.Database):
                 "channel": twitch_channel,
                 "timestamp": timestamp,
             }
-            self.connection.twitch_channels.update_one({"guild_id": self.settings.discord_guild_id, "channel": twitch_channel}, {"$set": payload}, upsert=True)
+            self.connection.twitch_channels.update_one({"guild_id": str(guildId), "channel": twitch_channel}, {"$set": payload}, upsert=True)
             return True
         except Exception as ex:
             print(ex)
@@ -92,7 +101,7 @@ class MongoDatabase(database.Database):
         finally:
             self.close()
 
-    def add_stream_team_request(self, guildId: int, userName: str, userId: int, twitchName: str = None) -> None:
+    def add_stream_team_request(self, guildId: int, userId: int, twitchName: typing.Optional[str] = None) -> None:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
@@ -101,8 +110,7 @@ class MongoDatabase(database.Database):
             payload = {
                 "guild_id": str(guildId),
                 "user_id": str(userId),
-                "user_name": userName,
-                "twitch_name": twitchName,
+                "twitch_name": twitchName if twitchName else "",
                 "timestamp": timestamp
             }
             # if not in table, insert
@@ -116,11 +124,12 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-    def remove_stream_team_request(self, guildId: int, userId: int):
+
+    def remove_stream_team_request(self, guildId: int, userId: int) -> None:
         try:
             if self.connection is None:
                 self.open()
-            self.connection.stream_team_requests.delete_many({ "guild_id": str(guildId), "user_id": userId })
+            self.connection.stream_team_requests.delete_many({ "guild_id": str(guildId), "user_id": str(userId) })
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -128,16 +137,13 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def get_stream_team_requests(self, guildId: int):
-        pass
-
-    def set_user_twitch_info(self, userId: int, twitchId: str, twitchName: str):
+    # twitchId: typing.Optional[str] = None,
+    def set_user_twitch_info(self, userId: int, twitchName: typing.Optional[str] = None) -> None:
         try:
             if self.connection is None:
                 self.open()
             payload = {
                 "user_id": str(userId),
-                "twitch_id": twitchId,
                 "twitch_name": twitchName
             }
             # insert or update user twitch info
@@ -149,7 +155,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def get_user_twitch_info(self, userId: int):
+    def get_user_twitch_info(self, userId: int) -> typing.Optional[dict]:
         try:
             if self.connection is None:
                 self.open()
@@ -231,6 +237,7 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
+
     def get_tacos_count(self, guildId: int, userId: int) -> typing.Union[int,None]:
         _method = inspect.stack()[0][3]
         try:
@@ -248,6 +255,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
         pass
+
     def get_total_gifted_tacos(self, guildId: int, userId: int, timespan_seconds: int = 86400) -> typing.Union[int,None]:
         try:
             if self.connection is None:
@@ -267,7 +275,8 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-    def add_taco_gift(self, guildId: int, userId: int, count: int):
+
+    def add_taco_gift(self, guildId: int, userId: int, count: int) -> bool:
         try:
             if self.connection is None:
                 self.open()
@@ -292,7 +301,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def add_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int):
+    def add_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int) -> None:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
@@ -314,7 +323,7 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-    def get_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int):
+    def get_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int) -> typing.Union[dict,None]:
         try:
             if self.connection is None:
                 self.open()
@@ -329,7 +338,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def add_suggestion_create_message(self, guildId: int, channelId: int, messageId: int):
+    def add_suggestion_create_message(self, guildId: int, channelId: int, messageId: int) -> None:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
@@ -351,7 +360,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def remove_suggestion_create_message(self, guildId: int, channelId: int, messageId: int):
+    def remove_suggestion_create_message(self, guildId: int, channelId: int, messageId: int) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -363,7 +372,7 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-    def add_settings(self, guildId: int, name:str, settings: dict):
+    def add_settings(self, guildId: int, name:str, settings: dict) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -383,7 +392,29 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def get_settings(self, guildId: int, name:str):
+    # add or update a setting value in the settings collection, under the settings property
+    def set_setting(self, guildId: int, name:str, key: str, value: typing.Any) -> None:
+        try:
+            if self.connection is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            # get the settings object
+            settings = self.get_settings(guildId, name)
+            # if the settings object is None, create a new one
+            if settings is None:
+                settings = {}
+            # set the key to the value
+            settings[key] = value
+            # update the settings object in the database
+            self.add_settings(guildId, name, settings)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def get_settings(self, guildId: int, name:str) -> typing.Union[dict,None]:
         try:
             if self.connection is None:
                 self.open()
@@ -400,7 +431,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def get_suggestion(self, guildId: int, messageId: int):
+    def get_suggestion(self, guildId: int, messageId: int) -> typing.Union[dict,None]:
         try:
             if self.connection is None:
                 self.open()
@@ -417,7 +448,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def get_suggestion_by_id(self, guildId: int, suggestionId: str):
+    def get_suggestion_by_id(self, guildId: int, suggestionId: str) -> typing.Union[dict,None]:
         try:
             if self.connection is None:
                 self.open()
@@ -434,7 +465,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def set_state_suggestion_by_id(self, guildId: int, suggestionId: str, state: str, userId: int, reason: str):
+    def set_state_suggestion_by_id(self, guildId: int, suggestionId: str, state: str, userId: int, reason: str) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -460,7 +491,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def set_state_suggestion(self, guildId: int, messageId: int, state: str, userId: int, reason: str):
+    def set_state_suggestion(self, guildId: int, messageId: int, state: str, userId: int, reason: str) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -485,7 +516,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def has_user_voted(self, suggestionId: str, userId: int):
+    def has_user_voted_on_suggestion(self, suggestionId: str, userId: int) -> bool:
         try:
             if self.connection is None:
                 self.open()
@@ -500,10 +531,12 @@ class MongoDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+            return False
         finally:
             if self.connection:
+
                 self.close()
-    def unvote_suggestion_by_id(self, guildId: int, suggestionId: str, userId: int):
+    def unvote_suggestion_by_id(self, guildId: int, suggestionId: str, userId: int) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -521,7 +554,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def unvote_suggestion(self, guildId: int, messageId: int, userId: int ):
+    def unvote_suggestion(self, guildId: int, messageId: int, userId: int ) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -539,7 +572,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def get_suggestion_votes_by_id(self, suggestionId: str):
+    def get_suggestion_votes_by_id(self, suggestionId: str) -> typing.Union[dict,None]:
         try:
             if self.connection is None:
                 self.open()
@@ -554,7 +587,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def vote_suggestion(self, guildId: int, messageId: int, userId: int, vote: int):
+    def vote_suggestion(self, guildId: int, messageId: int, userId: int, vote: int) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -573,7 +606,7 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-    def vote_suggestion_by_id(self, suggestionId: str, userId: int, vote: int):
+    def vote_suggestion_by_id(self, suggestionId: str, userId: int, vote: int) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -593,7 +626,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def add_suggestion(self, guildId: int, messageId: int, suggestion: dict):
+    def add_suggestion(self, guildId: int, messageId: int, suggestion: dict) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -619,7 +652,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def delete_suggestion_by_id(self, guildId: int, suggestionId: str, userId: int, reason: str):
+    def delete_suggestion_by_id(self, guildId: int, suggestionId: str, userId: int, reason: str) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -645,7 +678,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def track_invite_code(self, guildId: int, inviteCode: str, inviteInfo: dict, userInvite: dict):
+    def track_invite_code(self, guildId: int, inviteCode: str, inviteInfo: dict, userInvite: dict) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -666,7 +699,8 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
-    def get_invite_code(self, guildId: int, inviteCode: str):
+
+    def get_invite_code(self, guildId: int, inviteCode: str) -> typing.Any:
         try:
             if self.connection is None:
                 self.open()
@@ -678,7 +712,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def track_live_activity(self, guildId: int, userId: int, live: bool, platform: str, url: str):
+    def track_live_activity(self, guildId: int, userId: int, live: bool, platform: str, url: str) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -1007,15 +1041,18 @@ class MongoDatabase(database.Database):
                 self.open()
             twitch_name = self._get_twitch_name(userId)
             if not twitch_name:
-                result = self.connection.twitch_user.find_one({ "link_code": code.strip() } )
-                if result:
+                # result = self.connection.twitch_user.find_one({ "link_code": code.strip() } )
+                # if result:
                     payload = {
                         "user_id": str(userId),
                     }
-                    self.connection.twitch_user.update_one( { "link_code": code.strip() }, { "$set": payload }, upsert=True )
-                    return True
-                else:
-                    raise ValueError(f"Unable to find an entry for a user with link code: {code}")
+                    result = self.connection.twitch_user.update_one( { "link_code": code.strip() }, { "$set": payload }, upsert=True )
+                    if result.modified_count == 1:
+                        return True
+                    else:
+                        raise ValueError(f"Unable to find an entry for a user with link code: {code}")
+                # else:
+                    # raise ValueError(f"Unable to find an entry for a user with link code: {code}")
             else:
                 raise ValueError(f"Twitch user {twitch_name} already linked")
         except Exception as ex:
@@ -1512,7 +1549,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def save_taco_tuesday(self, guildId: int, message: str, image: str, author: int, channel_id: int = None, message_id: int = None):
+    def save_taco_tuesday(self, guildId: int, message: str, image: str, author: int, channel_id: typing.Optional[int] = None, message_id: typing.Optional[int] = None, tweet: typing.Optional[str] = None):
         try:
             if self.connection is None:
                 self.open()
@@ -1525,6 +1562,7 @@ class MongoDatabase(database.Database):
                 "image": image,
                 "author": str(author),
                 "answered": [],
+                "tweet": tweet,
                 "timestamp": timestamp,
                 "channel_id": str(channel_id),
                 "message_id": str(message_id)
@@ -1750,7 +1788,18 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def track_user(self, guildId: int, userId: int, username: str, discriminator: str, avatar: str, displayname: str, created: datetime.datetime = None, bot: bool = False, system: bool = False):
+    def track_user(
+            self,
+            guildId: int,
+            userId: int,
+            username: str,
+            discriminator: str,
+            avatar: typing.Optional[str],
+            displayname: str,
+            created: typing.Optional[datetime.datetime] = None,
+            bot: bool = False,
+            system: bool = False,
+            status: typing.Optional[typing.Union[str, MemberStatus]] = None,):
         try:
             if self.connection is None:
                 self.open()
@@ -1767,6 +1816,7 @@ class MongoDatabase(database.Database):
                 "created": created_timestamp,
                 "bot": bot,
                 "system": system,
+                "status": str(status) if status else None,
                 "timestamp": timestamp
             }
 
@@ -1823,6 +1873,7 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
+
 
     def track_tacos_log(self, guildId: int, fromUserId: int, toUserId: int, count: int, type: str, reason: str):
         try:
@@ -1925,6 +1976,755 @@ class MongoDatabase(database.Database):
             if self.connection is None:
                 self.open()
             self.connection.minecraft_users.update_many({ "guild_id": { "$exists": False } }, { "$set": { "guild_id": guild_id } })
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def import_taco_tuesday(self):
+        try:
+            if self.connection is None:
+                self.open()
+            guild_id = "935294040386183228"
+            author = "262031734260891648"
+
+            cog_settings = self.get_settings(int(guild_id), "tacotuesday")
+            self.connection.taco_tuesday.delete_many({ "guild_id": guild_id, "message": { "$eq" : "" } })
+            template = cog_settings.get("message_template", "")
+            tt = [
+                {   # gerg
+                    "guild_id": guild_id,
+                    "timestamp": 1649182623,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "191373201060790273",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1511338671970082826",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1511338671970082826")
+                },
+                {   # dayspring
+                    "guild_id": guild_id,
+                    "timestamp": 1663093023,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "143072787592904704",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1569697502370189313",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1569697502370189313")
+                },
+                {   # stacheFonzi
+                    "guild_id": guild_id,
+                    "timestamp": 1681237023,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "125763016527446016",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1645835717505867778",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1645835717505867778")
+                },
+                {   # seejay
+                    "guild_id": guild_id,
+                    "timestamp": 1665512223,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "570095114144448522",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1579844538818232323",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1579844538818232323")
+                },
+                {   # gigisage
+                    "guild_id": guild_id,
+                    "timestamp": 1664302623,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "476973398438838282",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1574766123404386306",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1574766123404386306")
+                },
+                {   # JennaJuffuffles
+                    "guild_id": guild_id,
+                    "timestamp": 1667935023,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "180479701632942080",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1590010235363524608",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1590010235363524608")
+                },
+                {   # dub
+                    "guild_id": guild_id,
+                    "timestamp": 1679422623,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "163828999410155521",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1638276558338117651",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1638276558338117651")
+                },
+                {   # jaycual
+                    "guild_id": guild_id,
+                    "timestamp": 1679768223,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "202497939933888512",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1640709956931551234",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1640709956931551234")
+                },
+                {   # hyouoni
+                    "guild_id": guild_id,
+                    "timestamp": 1662488223,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "108673597664444416",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1567151621313814528",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1567151621313814528")
+                },
+                {   # deadcell
+                    "guild_id": guild_id,
+                    "timestamp": 1674587823,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "175349110155509770",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1617921445765742592",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1617921445765742592")
+                },
+                {   # danderci
+                    "guild_id": guild_id,
+                    "timestamp": 1680632223,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "189516135102808064",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1643322692009971713",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1643322692009971713")
+                },
+                {   # bombay
+                    "guild_id": guild_id,
+                    "timestamp": 1669749423,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "323455092084965387",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1597708831035129856",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1597708831035129856")
+                },
+                {   # hostilrobin
+                    "guild_id": guild_id,
+                    "timestamp": 1646162223,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "218571227244134401",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1498690954341101569",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1498690954341101569")
+                },
+                {   # rug
+                    "guild_id": guild_id,
+                    "timestamp": 1648577823,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "1046796569372004382",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1508800562896281618",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1508800562896281618")
+                },
+                {   # linger
+                    "guild_id": guild_id,
+                    "timestamp": 1647973023,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "301793886349819906",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1506303867738284039",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1506303867738284039")
+                },
+                {   # positive panda
+                    "guild_id": guild_id,
+                    "timestamp": 1683656223,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "586781642379624449",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1655966458944397314",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1655966458944397314")
+                },
+                {   # jedi
+                    "guild_id": guild_id,
+                    "timestamp": 1675797423,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "341401049971687426",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1623102284107243521",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1623102284107243521")
+                },
+
+                {   # e4mafiastreaming
+                    "guild_id": guild_id,
+                    "timestamp": 2,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "804316520481292318",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1658577423368069121",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1658577423368069121")
+                },
+                {   # ivy
+                    "guild_id": guild_id,
+                    "timestamp": 1682446623,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "339521214307500033",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1650863269530443783",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1650863269530443783")
+                },
+                {   # opie
+                    "guild_id": guild_id,
+                    "timestamp": 1677611823,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "263513533617012736",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1630654800374247426",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1630654800374247426")
+                },
+                {   # dr crank
+                    "guild_id": guild_id,
+                    "timestamp": 1670354223,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "476142772362149898",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1600173359676809217",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1600173359676809217")
+                },
+                {   # imag1ne
+                    "guild_id": guild_id,
+                    "timestamp": 1672168623,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "239055721256321024",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1607809446587015168",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1607809446587015168")
+                },
+                {   # patrock
+                    "guild_id": guild_id,
+                    "timestamp": 1675192623,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "150039225138544641",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1620484716754522112",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1620484716754522112")
+                },
+                {   # mike
+                    "guild_id": guild_id,
+                    "timestamp": 1672773423,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "270071773297508353",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1610464188660318210",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1610464188660318210")
+                },
+                {   # rango
+                    "guild_id": guild_id,
+                    "timestamp": 1678817823,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "421049910318727169",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1635647812938391552",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1635647812938391552")
+                },
+                {   # null
+                    "guild_id": guild_id,
+                    "timestamp": 1668539823,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "128069155579625472",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1592528604172529665",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1592528604172529665")
+                },
+
+                {   # teladia
+                    "guild_id": guild_id,
+                    "timestamp": 1669144623,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "246835228008644609",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1595109395087912961",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1595109395087912961")
+                },
+                {   # agent
+                    "guild_id": guild_id,
+                    "timestamp": 1667326623,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "277884518223052800",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1587469581890850816",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1587469581890850816")
+                },
+                {   # gnee3
+                    "guild_id": guild_id,
+                    "timestamp": 1664907423,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "461937553080057876",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1577326180188954624",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1577326180188954624")
+                },
+                {   # mrwillis
+                    "guild_id": guild_id,
+                    "timestamp": 1658859423,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "511709113927860228",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1551955209617899525",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1551955209617899525")
+                },
+                {   # padd-e
+                    "guild_id": guild_id,
+                    "timestamp": 1655317023,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "300564366724694016",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1537115107448303618",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1537115107448303618")
+                },
+                {   # zirc
+                    "guild_id": guild_id,
+                    "timestamp": 1657649823,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "184464191132925952",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1546850565908561920",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1546850565908561920")
+                },
+                {   # septic
+                    "guild_id": guild_id,
+                    "timestamp": 1683051423,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "125761345793556480",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1653461753160671233",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1653461753160671233")
+                },
+                {   # nalle
+                    "guild_id": guild_id,
+                    "timestamp": 1650997023,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "413773450449125417",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1519012567779315713",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1519012567779315713")
+                },
+                {   # painedoct3r
+                    "guild_id": guild_id,
+                    "timestamp": 1656440223,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "432343492682055690",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1541865409879629825",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1541865409879629825")
+                },
+                {   # carrilla
+                    "guild_id": guild_id,
+                    "timestamp": 1646767023,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "168807032546131970",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1501209835207069698",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1501209835207069698")
+                },
+                {   # ashu
+                    "guild_id": guild_id,
+                    "timestamp": 1660673823,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "184472841993977858",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1559566869392199680",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1559566869392199680")
+                },
+                {   # audiokat
+                    "guild_id": guild_id,
+                    "timestamp": 1659464223,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "215652253787357184",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1554528304786542597",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1554528304786542597")
+                },
+                {   # deadlinux
+                    "guild_id": guild_id,
+                    "timestamp": 1655835423,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "251919639372627969",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1539295379262406658",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1539295379262406658")
+                },
+                {   # dr fright
+                    "guild_id": guild_id,
+                    "timestamp": 1660069023,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "110578794636550144",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1557088610687516674",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1557088610687516674")
+                },
+                {   # lib
+                    "guild_id": guild_id,
+                    "timestamp": 1649787423,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "92522001180135424",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1513891910599024653",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1513891910599024653")
+                },
+                {   # archally
+                    "guild_id": guild_id,
+                    "timestamp": 1654021023,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "381985733390368768",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1531683666103095298",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1531683666103095298")
+                },
+                {   # jami
+                    "guild_id": guild_id,
+                    "timestamp": 1654625823,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "75692730549805056",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1534166482183196672",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1534166482183196672")
+                },
+                {   # lotus
+                    "guild_id": guild_id,
+                    "timestamp": 1653416223,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "188522379134238720",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1529147527907401728",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1529147527907401728")
+                },
+                {   # crash
+                    "guild_id": guild_id,
+                    "timestamp": 1652206623,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "361730899970228224",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1524075731495657473",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1524075731495657473")
+                },
+                {   # ronin
+                    "guild_id": guild_id,
+                    "timestamp": 1651601823,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "279078471936901120",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1521496074011226112",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1521496074011226112")
+                },
+                {   # exiled
+                    "guild_id": guild_id,
+                    "timestamp": 1658254623,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "430150126602813440",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1549412264524005377",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1549412264524005377")
+                },
+                {   # lobster
+                    "guild_id": guild_id,
+                    "timestamp": 1647368223,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1503730290883182595",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1503730290883182595")
+                },
+                {   # kruiser8
+                    "guild_id": guild_id,
+                    "timestamp": 1666117023,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "102946935689732096",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1582425834630938624",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1582425834630938624")
+                },
+                {   # tacorobb
+                    "guild_id": guild_id,
+                    "timestamp": 1650410346,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "621174510946877462",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1516408446081503242",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1516408446081503242")
+                },
+                {   # Hymndi
+                    "guild_id": guild_id,
+                    "timestamp": 1652829546,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "238841201707581440",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1526558994529132545",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1526558994529132545")
+                },
+                {   # Artifice
+                    "guild_id": guild_id,
+                    "timestamp": 1671581946,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "104349488751054848",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1605284577802702855",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1605284577802702855")
+                },
+                {   # RevRoach
+                    "guild_id": guild_id,
+                    "timestamp": 1673396346,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "252933512728936449",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1612939227762950151",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1612939227762950151")
+                },
+                {   # mzflexx
+                    "guild_id": guild_id,
+                    "timestamp": 1674001146,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "765005113521078302",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1615515727481524224",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1615515727481524224")
+                },
+                {   # airborne
+                    "guild_id": guild_id,
+                    "timestamp": 1677025146,
+                    "answered": [],
+                    "author": author,
+                    "user_id": "763407444193574964",
+                    "channel_id": "",
+                    "message_id": "",
+                    "image": "",
+                    "tweet": "https://twitter.com/OurTACO/status/1628080341708681224",
+                    "message": utils.str_replace(template, role="TACOS 🌮", tacos=250, tweet="https://twitter.com/OurTACO/status/1628080341708681224")
+                },
+            ]
+
+            # insert all the items in the list
+            for item in tt:
+                print(f"importing item: {item['tweet']}")
+                self.connection.taco_tuesday.update_one({"guild_id": item["guild_id"], "timestamp": item["timestamp"]}, {"$set": item}, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def add_user_to_join_whitelist(self, guild_id: int, user_id: int, added_by: int) -> None:
+        """Add a user to the join whitelist for a guild."""
+        try:
+            date = datetime.datetime.utcnow()
+            timestamp = utils.to_timestamp(date)
+
+            payload = {
+                "guild_id": str(guild_id),
+                "user_id": str(user_id),
+                "added_by": str(added_by),
+                "timestamp": timestamp
+            }
+            self.connection.join_whitelist.update_one({"guild_id": str(guild_id), "user_id": str(user_id)}, { "$set": payload }, upsert=True)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def get_user_join_whitelist(self, guild_id: int) -> list:
+        """Get the join whitelist for a guild."""
+        try:
+            return list(self.connection.join_whitelist.find({"guild_id": str(guild_id)}))
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return []
+        finally:
+            if self.connection:
+                self.close()
+
+    def remove_user_from_join_whitelist(self, guild_id: int, user_id: int) -> None:
+        """Remove a user from the join whitelist for a guild."""
+        try:
+            self.connection.join_whitelist.delete_one({"guild_id": str(guild_id), "user_id": str(user_id)})
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def track_system_action(self, guild_id: int, action: typing.Union[SystemActions, str], data: typing.Optional[dict] = None) -> None:
+        """Track a system action."""
+        try:
+            date = datetime.datetime.utcnow()
+            timestamp = utils.to_timestamp(date)
+
+            payload = {
+                "guild_id": str(guild_id),
+                "action": str(action.name if isinstance(action, SystemActions) else action),
+                "timestamp": timestamp,
+                "data": data
+            }
+            self.connection.system_actions.insert_one(payload)
         except Exception as ex:
             print(ex)
             traceback.print_exc()

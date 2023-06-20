@@ -1,4 +1,4 @@
-FROM python:3.8-alpine
+FROM python:3.11-alpine
 
 ARG BRANCH="develop"
 ARG BUILD_VERSION="1.0.0-snapshot"

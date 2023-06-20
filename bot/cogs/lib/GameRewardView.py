@@ -1,6 +1,9 @@
 import discord
 from discord.ext import commands
 import traceback
+import inspect
+import os
+
 from . import settings
 from . import logger
 from . import loglevel
@@ -12,12 +15,15 @@ class GameRewardView(discord.ui.View):
         self,
         ctx,
         game_id: str,
-        claim_callback: typing.Callable = None,
-        timeout_callback: typing.Callable = None,
+        claim_callback: typing.Optional[typing.Callable] = None,
+        timeout_callback: typing.Optional[typing.Callable] = None,
         cost: int = 500,
         timeout: int = 60 * 60 * 24,
     ):
         super().__init__(timeout=timeout)
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.settings = settings.Settings()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
 
@@ -43,7 +49,7 @@ class GameRewardView(discord.ui.View):
         self.add_item(self.claim_button)
         pass
 
-    async def claim_callback(self, interaction: discord.Interaction):
+    async def claim_callback(self, interaction: discord.Interaction) -> None:
         # check if the user who clicked the button is the same as the user who started the command
         if interaction.user.id != self.ctx.author.id:
             return
@@ -52,10 +58,11 @@ class GameRewardView(discord.ui.View):
             await self.claim_button_callback(interaction)
             self.stop()
 
-    async def on_timeout(self):
+    async def on_timeout(self) -> None:
         if self.timeout_callback is not None:
             await self.timeout_callback()
         pass
 
-    async def on_error(self, error, item, interaction):
-        self.log.error(self.ctx.guild.id, "GameRewardView.on_error", str(error), traceback.format_exc())
+    async def on_error(self, error, item, interaction) -> None:
+        _method = inspect.stack()[0][3]
+        self.log.error(self.ctx.guild.id, f"{self._module}.{_method}", str(error), traceback.format_exc())

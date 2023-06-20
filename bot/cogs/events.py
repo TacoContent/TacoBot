@@ -17,7 +17,6 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
-from .lib import dbprovider
 from .lib import tacotypes
 
 class Events(commands.Cog):
@@ -46,6 +45,7 @@ class Events(commands.Cog):
 
         self.db.migrate_game_keys()
         self.db.migrate_minecraft_whitelist()
+
 
     @commands.Cog.listener()
     async def on_guild_available(self, guild):

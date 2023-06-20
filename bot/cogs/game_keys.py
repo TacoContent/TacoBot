@@ -21,7 +21,6 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
-from .lib import dbprovider
 from .lib import tacotypes
 from .lib.GameRewardView import GameRewardView
 
@@ -118,6 +117,7 @@ class GameKeys(commands.Cog):
             offered_by = await self.bot.fetch_user(int(game_data["offered_by"]))
             expires = datetime.datetime.now() + datetime.timedelta(days=1)
             fields = [
+
                 {"name": self.settings.get_string(guild_id, "game"), "value": game_data.get("title", "UNKNOWN")},
                 {"name": self.settings.get_string(guild_id, "platform"), "value": game_data.get("platform", "UNKNOWN")},
                 {"name": self.settings.get_string(guild_id, "cost"), "value": f"{cost} {tacos_word}🌮"},
@@ -141,7 +141,7 @@ class GameKeys(commands.Cog):
                 timeout=timeout
             )
 
-            offer_message = await self.discord_helper.sendEmbed(
+            offer_message = await self.discord_helper.send_embed(
                 reward_channel,
                 self.settings.get_string(guild_id, "game_key_offer_title"),
                 self.settings.get_string(guild_id, "game_key_offer_message", cost=cost, tacos_word=tacos_word),
@@ -398,7 +398,7 @@ class GameKeys(commands.Cog):
                     self.settings.get_string(
                         guild_id,
                         "game_key_claim_log_message",
-                        user=f"{ctx.author.display_name}#{ctx.author.discriminator}",
+                        user=f"{utils.get_user_display_name(ctx.author)}",
                         game=game_data["title"],
                         tacos=cost,
                         tacos_word=tacos_word,

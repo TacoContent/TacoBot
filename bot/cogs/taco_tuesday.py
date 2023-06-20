@@ -8,6 +8,7 @@ import sys
 import os
 import glob
 import typing
+import re
 
 from discord.ext.commands.cooldowns import BucketType
 from discord.ext.commands import has_permissions, CheckFailure, Context
@@ -19,7 +20,6 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
-from .lib import dbprovider
 from .lib import tacotypes
 
 import inspect
@@ -93,7 +93,7 @@ class TacoTuesday(commands.Cog):
             if len(import_emoji) > 0:
                 await result_message.add_reaction(import_emoji[0])
 
-            self._import_taco_tuesday(result_message)
+            self._import_taco_tuesday(result_message, tweet)
 
             await self._set_taco_tuesday_user(ctx=ctx, member=member)
 
@@ -144,8 +144,9 @@ class TacoTuesday(commands.Cog):
         channel = self.bot.get_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)
 
-        reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
-        if reaction.count > 1:
+        # check if this reaction is the first one of this type on the message
+        reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)
+        if reactions and reactions.count > 1:
             self.log.debug(
                 guild_id,
                 f"{self._module}.{_method}",
@@ -179,8 +180,9 @@ class TacoTuesday(commands.Cog):
             self.log.debug(guild_id, f"{self._module}.{_method}", f"Message {payload.message_id} was not imported. No need to archive.")
             return
 
-        reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
-        if reaction.count > 1:
+        # check if this reaction is the first one of this type on the message
+        reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)
+        if reactions and reactions.count > 1:
             self.log.debug(
                 guild_id,
                 f"{self._module}.{_method}",
@@ -198,6 +200,11 @@ class TacoTuesday(commands.Cog):
             if payload.event_type != "REACTION_ADD":
                 return
 
+            # check if the user that reacted is in the admin role
+            # we really only do anything here if they are an admin
+            if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+                return
+
             ###
             # archive_enabled: true,
             # archive_emoji: [
@@ -210,6 +217,11 @@ class TacoTuesday(commands.Cog):
 
             if not cog_settings.get("enabled", False):
                 self.log.debug(guild_id, f"{self._module}.{_method}", f"Taco Tuesday not enabled")
+                return
+
+            # get the reaction user
+            user = await self.discord_helper.get_or_fetch_member(guild_id, payload.user_id)
+            if not user or user.bot or user.system:
                 return
 
             # check if reaction is to archive the message
@@ -231,6 +243,8 @@ class TacoTuesday(commands.Cog):
                 return
 
             if str(payload.emoji.name) in reaction_import_emojis:
+                # check if user is in the admin role
+
                 await self._on_raw_reaction_add_import(payload)
                 return
 
@@ -286,7 +300,7 @@ class TacoTuesday(commands.Cog):
             fields = []
             if len(temp_reactions) > 0:
                 fields = [
-                    { "name": "Reactions", "value": f"-----", "inline": False }
+                    { "name": "Reactions", "value": f"------------------", "inline": False },
                 ]
                 for r in message.reactions:
                     fields.append(
@@ -317,7 +331,7 @@ class TacoTuesday(commands.Cog):
 
             await message.delete()
 
-            await self.discord_helper.sendEmbed(
+            await self.discord_helper.send_embed(
                 message.channel,
                 title="TACO Tuesday",
                 message=f"Message archived to {archive_channel.mention}",
@@ -353,7 +367,7 @@ class TacoTuesday(commands.Cog):
             remove_list=[],
             allow_everyone=True
         )
-    def _import_taco_tuesday(self, message: discord.Message) -> None:
+    def _import_taco_tuesday(self, message: discord.Message, tweet: typing.Optional[str] = None) -> None:
         _method = inspect.stack()[0][3]
         guild_id = message.guild.id
         channel_id = message.channel.id
@@ -371,6 +385,14 @@ class TacoTuesday(commands.Cog):
         if message_content is not None and message_content != "":
             text = message_content
 
+        # get the tweet if not passed in from the text of the message
+
+        if tweet is None:
+            tweet_regex = re.compile(r"(https://twitter.com/\w+/status/\d+)", re.IGNORECASE | re.MULTILINE | re.DOTALL)
+            tweet_match = tweet_regex.search(message_content)
+            if tweet_match:
+                tweet = tweet_match.group(1)
+
         self.log.debug(
             guild_id,
             f"{self._module}.{_method}",
@@ -383,6 +405,7 @@ class TacoTuesday(commands.Cog):
             author=message_author.id,
             channel_id=channel_id,
             message_id=message_id,
+            tweet=tweet or "",
         )
 
     async def give_user_tacotuesday_tacos(self, guild_id, user_id, channel_id) -> None:
@@ -426,7 +449,7 @@ class TacoTuesday(commands.Cog):
 
             reason_msg = self.settings.get_string(guild_id, "taco_tuesday_reason")
 
-            await self.discord_helper.sendEmbed(
+            await self.discord_helper.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_give_title"),
                 # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",

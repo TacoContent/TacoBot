@@ -19,7 +19,6 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
-from .lib import dbprovider
 from .lib import tacotypes
 
 import inspect
@@ -34,10 +33,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.SETTINGS_SECTION = "wdyctw"
         self.SELF_DESTRUCT_TIMEOUT = 30
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -78,10 +74,6 @@ class WhatDoYouCallThisWednesday(commands.Cog):
                 return
 
             cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, f"{self._module}.{_method}", f"wdyctw is disabled for guild {guild_id}")
-                return
-
             tacos_settings = self.get_tacos_settings(guild_id)
 
             amount = tacos_settings.get("wdyctw_amount", 5)
@@ -110,7 +102,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             if amount != 1:
                 taco_word = self.settings.get_string(guild_id, "taco_plural")
             out_message = self.settings.get_string(guild_id, "wdyctw_out_message", taco_count=amount, taco_word=taco_word)
-            wdyctw_message = await self.discord_helper.sendEmbed(channel=out_channel,
+            wdyctw_message = await self.discord_helper.send_embed(channel=out_channel,
                 title=self.settings.get_string(guild_id, "wdyctw_out_title"),
                 message=out_message,
                 content=message_content, color=0x00ff00,
@@ -145,9 +137,6 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             await ctx.message.delete()
 
             cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, f"{self._module}.{_method}", f"wdyctw is disabled for guild {guild_id}")
-                return
 
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
@@ -200,8 +189,8 @@ class WhatDoYouCallThisWednesday(commands.Cog):
         react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
 
         # check if this reaction is the first one of this type on the message
-        reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
-        if reaction.count > 1:
+        reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)
+        if reactions and reactions.count > 1:
             self.log.debug(guild_id, f"{self._module}.{_method}", f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
             return
 
@@ -226,8 +215,9 @@ class WhatDoYouCallThisWednesday(commands.Cog):
         channel = self.bot.get_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)
 
-        reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
-        if reaction.count > 1:
+        # check if this reaction is the first one of this type on the message
+        reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)
+        if reactions and reactions.count > 1:
             self.log.debug(guild_id, f"{self._module}.{_method}", f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
             return
 
@@ -246,6 +236,15 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             if today.weekday() != 2: # 2 = Wednesday
                 return
 
+            # check if the user that reacted is in the admin role
+            if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
+                return
+
+
+            react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+            if not react_user or react_user.bot or react_user.system:
+                return
 
             cog_settings = self.get_cog_settings(guild_id)
 
@@ -256,6 +255,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             check_list = reaction_emojis + reaction_import_emojis
             if str(payload.emoji.name) not in check_list:
                 return
+
 
             if str(payload.emoji.name) in reaction_emojis:
                 await self._on_raw_reaction_add_give(payload)
@@ -339,7 +339,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
             reason_msg = self.settings.get_string(guild_id, "wdyctw_reason_default")
 
-            await self.discord_helper.sendEmbed(
+            await self.discord_helper.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_give_title"),
                 # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",
@@ -360,10 +360,12 @@ class WhatDoYouCallThisWednesday(commands.Cog):
         if not cog_settings:
             raise Exception(f"No wdyctw settings found for guild {guildId}")
         return cog_settings
+
     def get_tacos_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
+
 async def setup(bot):
     await bot.add_cog(WhatDoYouCallThisWednesday(bot))

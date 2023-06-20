@@ -24,7 +24,6 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
-from .lib import dbprovider
 
 import inspect
 
@@ -40,10 +39,7 @@ class AmazonLink(commands.Cog):
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.SETTINGS_SECTION = "amazon_links"
 
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -60,7 +56,7 @@ class AmazonLink(commands.Cog):
             if message.guild is None:
                 return
             # if the message is from a bot, ignore
-            if message.author.bot:
+            if message.author.bot or message.author.system:
                 return
             guild_id = message.guild.id
 
@@ -90,7 +86,7 @@ class AmazonLink(commands.Cog):
             await message.delete()
 
             # create an embed with the original message and the new url
-            embed = await self.discord_helper.sendEmbed(message.channel,
+            embed = await self.discord_helper.send_embed(message.channel,
                 "Amazon Link",
                 message=f"{message_content}",
                 author=message.author,
