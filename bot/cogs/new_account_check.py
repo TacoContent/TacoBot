@@ -175,11 +175,14 @@ class NewAccountCheck(commands.Cog):
                 self.log.warn(guild_id, f"{self._module}.{_method}", f"Member {utils.get_user_display_name(member)} (ID: {member.id}) account age ({age_days} days) is less than {minimum_account_age} days.")
                 message = f"New Account: account age ({age_days} days) is less than required minimum of {minimum_account_age} days."
                 self.db.track_system_action(guild_id=guild_id, action=SystemActions.NEW_ACCOUNT_KICK, data={ "user_id": str(member.id), "reason": message, "account_age": age_days})
-                # find messages by the user and delete them
-                system_channel = member.guild.system_channel
-                if system_channel:
-                    async for message in await system_channel.history(limit=100, check=lambda m: m.author.id == member.id):
-                        await message.delete()
+                if member.guild:
+                    # find messages by the user and delete them
+                    system_channel = member.guild.system_channel
+                    if system_channel:
+                        async for message in await system_channel.history(limit=100, check=lambda m: m.author.id == member.id):
+                            await message.delete()
+                else:
+                    self.log.warn(guild_id, f"{self._module}.{_method}", f"Member {utils.get_user_display_name(member)} (ID: {member.id}) has no guild.")
                 # kick the member
                 await member.kick(reason=message, delete_message_days=0)
 
