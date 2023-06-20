@@ -37,7 +37,7 @@ class MoveMessage(commands.Cog):
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
-        self.permissions = permissions.Permissions()
+        self.permissions = permissions.Permissions(bot)
         self.discord_helper = discordhelper.DiscordHelper(bot)
 
         self.SETTINGS_SECTION = "move_message"
