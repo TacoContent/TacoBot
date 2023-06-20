@@ -11,7 +11,6 @@ import typing
 import collections
 
 from .ChannelSelect import ChannelSelect, ChannelSelectView
-
 from .RoleSelectView import RoleSelectView, RoleSelect
 
 from discord.ext.commands.cooldowns import BucketType
@@ -44,7 +43,6 @@ from . import logger
 from . import loglevel
 from . import settings
 from . import mongo
-from . import dbprovider
 from . import tacotypes
 from .models import TextWithAttachments
 from .YesOrNoView import YesOrNoView
@@ -54,13 +52,13 @@ import inspect
 
 
 class DiscordHelper:
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.settings = settings.Settings()
         self.bot = bot
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -85,39 +83,39 @@ class DiscordHelper:
         self,
         message,
         targetChannel,
-        author: discord.User = None,
-        who: discord.User = None,
-        reason: str = None,
-        fields=None,
-        remove_fields=None,
-        color: int = None,
+        author: typing.Optional[discord.User] = None,
+        who: typing.Optional[discord.User] = None,
+        reason: typing.Optional[str] = None,
+        fields: typing.Optional[list[dict[str,typing.Any]]] = None,
+        remove_fields: typing.Optional[list[dict[str,typing.Any]]] = None,
+        color: typing.Optional[int] = None,
+        delete_original: bool = False,
     ) -> typing.Union[discord.Message, None]:
+        _method = inspect.stack()[0][3]
         if not message:
-            self.log.debug(0, "discordhelper.move_message", "No message to move")
+            self.log.debug(0, f"{self._module}.{_method}", "No message to move")
             return
         if not targetChannel:
-            self.log.debug(0, "discordhelper.move_message", "No target channel to move message to")
+            self.log.debug(0, f"{self._module}.{_method}", "No target channel to move message to")
             return
-        if not author:
-            author = message.author
+        target_author: typing.Optional[discord.User] = author
+        if not target_author:
+            target_author = message.author
 
         if not message.guild:
-            self.log.debug(0, "discordhelper.move_message", "Message is not from a guild")
+            self.log.debug(0, f"{self._module}.{_method}", "Message is not from a guild")
             return
         guild_id = message.guild.id
 
         try:
             content = ""
             if len(message.embeds) == 0:
-                self.log.debug(0, "discordhelper.move_message", "Message has no embeds")
-                self.log.debug(0, "discordhelper.move_message", f"Message: {message}")
-                self.log.debug(0, "discordhelper.move_message", f"Message content: {message.content}")
                 description = f"{message.content}"
                 title = ""
                 embed_fields = []
                 image = None
             else:
-                self.log.debug(0, "discordhelper.move_message", "Message has embeds")
+                self.log.debug(0, f"{self._module}.{_method}", "Message has embeds")
                 embed = message.embeds[0]
                 title = embed.title
                 if embed.description is None or embed.description == "":
@@ -135,14 +133,16 @@ class DiscordHelper:
                 if color is None and embed.color is not None:
                     color = embed.color
 
+            footer = None
             if who:
-                footer = f"{self.settings.get_string(guild_id, 'moved_by', user=f'{who.name}#{who.discriminator}')} - {reason or self.settings.get_string(guild_id, 'no_reason')}"
+                footer = f"{self.settings.get_string(guildId=guild_id,key='moved_by',user=f'{utils.get_user_display_name(who)}')} - {reason or self.settings.get_string(guildId=guild_id, key='no_reason')}"
 
             if color is None:
                 color = 0x7289DA
 
             target_embed = discord.Embed(title=title, description=description, color=color)
-            target_embed.set_author(name=author.name, icon_url=author.avatar.url)
+            if target_author:
+                target_embed.set_author(name=target_author.name, icon_url=target_author.avatar.url if target_author.avatar else None)
             if footer:
                 target_embed.set_footer(text=footer)
             else:
@@ -150,9 +150,9 @@ class DiscordHelper:
                     text=self.settings.get_string(
                         guild_id,
                         "developed_by",
-                        user=self.settings.author,
-                        bot_name=self.settings.name,
-                        version=self.settings.version,
+                        user=self.settings.get('author', "Unknown"),
+                        bot_name=self.settings.get('name', "Unknown"),
+                        version=self.settings.get('version', "Unknown"),
                     )
                 )
             if remove_fields is None:
@@ -173,44 +173,47 @@ class DiscordHelper:
             files = [await a.to_file() for a in message.attachments]
 
             if len(files) > 0 or target_embed is not None:
-                # await message.delete()
-                return await targetChannel.send(content=content, files=files, embed=target_embed)
+                moved_message = await targetChannel.send(content=content, files=files, embed=target_embed)
+                # delete the original message because we are moving the content to a new channel
+                if delete_original:
+                    await message.delete()
+                return moved_message
             else:
                 return None
 
         except Exception as ex:
-            self.log.error(0, "discordhelper.move_message", str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
 
-    async def sendEmbed(
+    async def send_embed(
         self,
-        channel,
-        title: str = None,
-        message: str = None,
-        fields=None,
-        delete_after: float = None,
-        footer=None,
-        view=None,
-        color=0x7289DA,
-        author: typing.Union[discord.User, discord.Member] = None,
-        thumbnail: str = None,
-        image: str = None,
-        url: str = "",
-        content: str = None,
-        files: list = None,
-    ):
+        channel: typing.Union[discord.TextChannel, discord.DMChannel, discord.GroupChannel, discord.Thread, discord.User, discord.Member],
+        title: typing.Optional[str] = None,
+        message: typing.Optional[str] = None,
+        fields: typing.Optional[list[dict[str, typing.Any]]] = None,
+        delete_after: typing.Optional[float] = None,
+        footer: typing.Optional[typing.Any] = None,
+        view: typing.Optional[discord.ui.View] = None,
+        color: typing.Optional[int] = 0x7289DA,
+        author: typing.Optional[typing.Union[discord.User, discord.Member]] = None,
+        thumbnail: typing.Optional[str] = None,
+        image: typing.Optional[str] = None,
+        url: typing.Optional[str] = "",
+        content: typing.Optional[str] = None,
+        files: typing.Optional[list] = None,
+    ) -> discord.Message:
         if color is None:
             color = 0x7289DA
-        guild_id = 0
 
+        guild_id = 0
         if hasattr(channel, "guild") and channel.guild:
             guild_id = channel.guild.id
 
         embed = discord.Embed(title=title, description=message, color=color, url=url)
         if author:
-            embed.set_author(name=f"{author.name}#{author.discriminator}", icon_url=author.avatar.url)
+            embed.set_author(name=f"{utils.get_user_display_name(author)}", icon_url=author.avatar.url if author.avatar else None)
         if embed.fields is not None:
             for f in embed.fields:
-                embed.add_field(name=f["name"], value=f["value"], inline=f["inline"] if "inline" in f else False)
+                embed.add_field(name=f.name, value=f.value, inline=f.inline)
         if fields is not None:
             for f in fields:
                 embed.add_field(name=f["name"], value=f["value"], inline=f["inline"] if "inline" in f else False)
@@ -219,9 +222,9 @@ class DiscordHelper:
                 text=self.settings.get_string(
                     guild_id,
                     "developed_by",
-                    user=self.settings.author,
-                    bot_name=self.settings.name,
-                    version=self.settings.version,
+                    user=self.settings.get("author", "Unknown"),
+                    bot_name=self.settings.get("name", "Unknown"),
+                    version=self.settings.get("version", "Unknown"),
                 )
             )
         else:
@@ -231,19 +234,26 @@ class DiscordHelper:
             embed.set_thumbnail(url=thumbnail)
         if image is not None:
             embed.set_image(url=image)
-        return await channel.send(content=content, embed=embed, delete_after=delete_after, view=view, files=files)
+        return await channel.send(
+            content=content,
+            embed=embed,
+            delete_after=delete_after,
+            view=view,
+            files=files
+        )
 
-    async def updateEmbed(
+    async def update_embed(
         self,
-        message: discord.Message = None,
-        title: str = None,
-        description: str = None,
-        description_append: bool = True,
-        fields: list = None,
-        footer: str = None,
-        view: discord.ui.View = None,
-        color: int = 0x7289DA,
-        author: typing.Union[discord.User, discord.Member] = None,
+        message: typing.Optional[discord.Message] = None,
+        title: typing.Optional[str] = None,
+        description: typing.Optional[str] = None,
+        description_append: typing.Optional[bool] = True,
+        fields: typing.Optional[list[dict[str, typing.Any]]] = None,
+        content: typing.Optional[str] = None,
+        footer: typing.Optional[typing.Any] = None,
+        view: typing.Optional[discord.ui.View] = None,
+        color: typing.Optional[int] = 0x7289DA,
+        author: typing.Optional[typing.Union[discord.User, discord.Member]] = None,
     ):
         if not message or len(message.embeds) == 0:
             return
@@ -282,31 +292,35 @@ class DiscordHelper:
                 text=self.settings.get_string(
                     guild_id,
                     "developed_by",
-                    user=self.settings.author,
-                    bot_name=self.settings.name,
-                    version=self.settings.version,
+                    user=self.settings.get("author", "Unknown"),
+                    bot_name=self.settings.get("name", "Unknown"),
+                    version=self.settings.get("version", "Unknown"),
                 )
             )
         else:
             updated_embed.set_footer(text=footer)
 
-        if author:
-            updated_embed.set_author(name=f"{author.name}#{author.discriminator}", icon_url=author.avatar.url)
+        target_content = message.content
+        if content:
+            target_content = content
 
-        await message.edit(embed=updated_embed)
+        if author:
+            updated_embed.set_author(name=f"{utils.get_user_display_name(author)}", icon_url=author.avatar.url if author.avatar else None)
+
+        await message.edit(content=target_content, embed=updated_embed)
 
     async def notify_of_error(self, ctx):
         guild_id = 0
         if ctx.guild:
             guild_id = ctx.guild.id
-        await self.sendEmbed(
+        await self.send_embed(
             ctx.channel,
             self.settings.get_string(guild_id, "error"),
             self.settings.get_string(guild_id, "error_ocurred", user=ctx.author.mention),
             delete_after=30,
         )
 
-    async def notify_bot_not_initialized(self, ctx, subcommand: str = None):
+    async def notify_bot_not_initialized(self, ctx, subcommand: typing.Optional[str] = None):
         channel = ctx.channel
         if not channel:
             channel = ctx.author
@@ -315,7 +329,7 @@ class DiscordHelper:
             guild_id = ctx.guild.id
 
         if not ctx.author.guild_permissions.administrator:
-            await self.sendEmbed(
+            await self.send_embed(
                 ctx.channel,
                 self.settings.get_string(guild_id, "error"),
                 self.settings.get_string(guild_id, "not_initialized_user", user=ctx.author.mention),
@@ -324,7 +338,7 @@ class DiscordHelper:
         else:
             # get the bot's prefix
             prefix = await self.bot.get_prefix(ctx.message)[0]
-            await self.sendEmbed(
+            await self.send_embed(
                 ctx.channel,
                 self.settings.get_string(guild_id, "error"),
                 self.settings.get_string(
@@ -345,19 +359,16 @@ class DiscordHelper:
         _method = inspect.stack()[0][3]
         try:
             # get taco settings
-            taco_settings = self.settings.get_settings(self.db, guildId, "tacos")
-            if not taco_settings:
-                # raise exception if there are no tacos settings
-                self.log.error(guildId, "tacos.on_message", f"No tacos settings found for guild {guildId}")
-                return
+            taco_settings = self._get_tacos_settings(guildId=guildId)
+
             taco_count = taco_amount
 
             taco_type_key = tacotypes.TacoTypes.get_string_from_taco_type(give_type)
             if taco_type_key not in taco_settings:
-                self.log.debug(guildId, f"discordhelper.{_method}", f"Key {taco_type_key} not found in taco settings. Using taco_amount ({taco_amount}) as taco count")
+                self.log.debug(guildId, f"{self._module}.{_method}", f"Key {taco_type_key} not found in taco settings. Using taco_amount ({taco_amount}) as taco count")
                 taco_count = taco_count
             else:
-                taco_count = taco_settings[tacotypes.TacoTypes.get_string_from_taco_type(give_type)]
+                taco_count = taco_settings.get(taco_type_key, taco_amount)
 
             reason_msg = reason if reason else self.settings.get_string(guildId, "no_reason")
 
@@ -381,7 +392,7 @@ class DiscordHelper:
             )
             return total_taco_count
         except Exception as e:
-            self.log.error(guildId, f"discordhelper.{_method}", str(e), traceback.format_exc())
+            self.log.error(guildId, f"{self._module}.{_method}", str(e), traceback.format_exc())
 
     async def taco_purge_log(
         self,
@@ -401,7 +412,7 @@ class DiscordHelper:
             taco_log_channel_id = taco_settings["taco_log_channel_id"]
             log_channel = await self.get_or_fetch_channel(int(taco_log_channel_id))
 
-            self.log.debug(guild_id, f"discordhelper.{_method}", f"{fromMember.name} purged all tacos from {toMember.name} for {reason}")
+            self.log.debug(guild_id, f"{self._module}.{_method}", f"{fromMember.name} purged all tacos from {toMember.name} for {reason}")
             if log_channel:
                 await log_channel.send(
                     self.settings.get_string(
@@ -417,7 +428,7 @@ class DiscordHelper:
                 type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.PURGE)
             )
         except Exception as e:
-            self.log.error(guild_id, f"discordhelper.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
 
     async def tacos_log(
         self,
@@ -454,8 +465,8 @@ class DiscordHelper:
 
             self.log.debug(
                 guild_id,
-                f"discordhelper.{_method}",
-                f"{toMember.name}#{toMember.discriminator} {action} {positive_count} {taco_word} from {fromMember.name}#{fromMember.discriminator} for {reason}",
+                f"{self._module}.{_method}",
+                f"{utils.get_user_display_name(toMember)} {action} {positive_count} {taco_word} from {utils.get_user_display_name(fromMember)} for {reason}",
             )
             if log_channel:
 
@@ -467,9 +478,9 @@ class DiscordHelper:
                     {"name": "ℹ REASON", "value": reason},
                 ]
 
-                await self.sendEmbed(channel=log_channel, title="", message="", fields=fields, author=fromMember)
+                await self.send_embed(channel=log_channel, title="", message="", fields=fields, author=fromMember)
         except Exception as e:
-            self.log.error(guild_id, f"discordhelper.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
 
     async def get_or_fetch_user(self, userId: int) -> typing.Union[discord.User, None]:
         _method = inspect.stack()[1][3]
@@ -481,10 +492,10 @@ class DiscordHelper:
                 return user
             return None
         except discord.errors.NotFound as nf:
-            self.log.warn(0, f"discordhelper.{_method}", str(nf), traceback.format_exc())
+            self.log.warn(0, f"{self._module}.{_method}", str(nf), traceback.format_exc())
             return None
         except Exception as ex:
-            self.log.error(0, f"discordhelper.{_method}", str(ex), traceback.format_exc())
+            self.log.error(0, f"{self._module}.{_method}", str(ex), traceback.format_exc())
             return None
 
     async def get_or_fetch_member(self, guildId: int, userId: int) -> typing.Union[discord.Member, None]:
@@ -505,13 +516,31 @@ class DiscordHelper:
                 return user
             return None
         except discord.errors.NotFound as nf:
-            self.log.warn(0, f"discordhelper.{_method}", str(nf), traceback.format_exc())
             return None
         except Exception as ex:
-            self.log.error(0, f"discordhelper.{_method}", str(ex), traceback.format_exc())
+            self.log.error(0, f"{self._module}.{_method}", str(ex), traceback.format_exc())
             return None
 
-    async def get_or_fetch_channel(self, channelId: int) -> typing.Union[discord.TextChannel, None]:
+    async def get_or_fetch_role(self, guild: discord.Guild, roleId: int) -> typing.Union[discord.Role, None]:
+        _method = inspect.stack()[1][3]
+        try:
+            if not guild:
+                return None
+            if roleId:
+                role = guild.get_role(roleId)
+                if not role:
+                    roles = [r for r in await guild.fetch_roles() if r.id == roleId]
+                    if roles and len(roles) > 0:
+                        role = roles[0]
+                    else:
+                        role = None
+                return role
+            return None
+        except discord.errors.NotFound as nf:
+            self.log.warn(0, f"{self._module}.{_method}", str(nf), traceback.format_exc())
+            return None
+
+    async def get_or_fetch_channel(self, channelId: int) -> typing.Optional[typing.Union[discord.TextChannel, discord.DMChannel, discord.Thread]]:
         _method = inspect.stack()[1][3]
         try:
             if channelId:
@@ -522,10 +551,10 @@ class DiscordHelper:
             else:
                 return None
         except discord.errors.NotFound as nf:
-            self.log.warn(0, f"discordhelper.{_method}", str(nf), traceback.format_exc())
+            self.log.warn(0, f"{self._module}.{_method}", str(nf), traceback.format_exc())
             return None
         except Exception as ex:
-            self.log.error(0, f"discordhelper.{_method}", str(ex), traceback.format_exc())
+            self.log.error(0, f"{self._module}.{_method}", str(ex), traceback.format_exc())
             return None
 
     def get_by_name_or_id(self, iterable, nameOrId: typing.Union[int, str]):
@@ -558,7 +587,7 @@ class DiscordHelper:
                 await result_callback(result)
 
         async def timeout_callback(caller: YesOrNoView, interaction: discord.Interaction):
-            await self.sendEmbed(
+            await self.send_embed(
                 channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
             )
             if result_callback:
@@ -567,7 +596,7 @@ class DiscordHelper:
         yes_no_view = YesOrNoView(
             ctx, answer_callback=answer_callback, timeout=timeout, timeout_callback=timeout_callback
         )
-        await self.sendEmbed(
+        await self.send_embed(
             channel,
             title,
             question,
@@ -599,7 +628,7 @@ class DiscordHelper:
 
             target_channel = ctx.channel if ctx.channel else ctx.author
 
-            channel_ask = await self.sendEmbed(
+            channel_ask = await self.send_embed(
                 target_channel,
                 title,
                 f"{description}",
@@ -609,7 +638,7 @@ class DiscordHelper:
             try:
                 channelResp = await self.bot.wait_for("message", check=check_channel, timeout=timeout)
             except asyncio.TimeoutError:
-                await self.sendEmbed(
+                await self.send_embed(
                     target_channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
                 )
                 return None
@@ -619,7 +648,7 @@ class DiscordHelper:
                 await channel_ask.delete()
                 return selected_channel
         except Exception as ex:
-            self.log.error(ctx.guild.id, f"discordhelper.{_method}", str(ex), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
             return None
 
     async def ask_channel(
@@ -654,7 +683,7 @@ class DiscordHelper:
 
             if chan_id is None:
                 # manual entered channel not found
-                await self.sendEmbed(
+                await self.send_embed(
                     ctx.channel,
                     title,
                     self.settings.get_string(guild_id, "unknown_channel", user=ctx.author.mention, channel_id=chan_id),
@@ -668,9 +697,9 @@ class DiscordHelper:
             selected_channel = discord.utils.get(ctx.guild.channels, id=chan_id)
             if selected_channel:
                 self.log.debug(
-                    guild_id, f"discordhelper.{_method}", f"{ctx.author.mention} selected the channel '{selected_channel.name}'"
+                    guild_id, f"{self._module}.{_method}", f"{utils.get_user_display_name(ctx.author)} selected the channel '{selected_channel.name}'"
                 )
-                await self.sendEmbed(
+                await self.send_embed(
                     ctx.channel,
                     title,
                     self.settings.get_string(
@@ -682,7 +711,7 @@ class DiscordHelper:
                     await callback(selected_channel)
                 return
             else:
-                await self.sendEmbed(
+                await self.send_embed(
                     ctx.channel,
                     title,
                     self.settings.get_string(guild_id, "unknown_channel", user=ctx.author.mention, channel_id=chan_id),
@@ -693,7 +722,7 @@ class DiscordHelper:
                 return
 
         async def select_timeout():
-            await self.sendEmbed(
+            await self.send_embed(
                 ctx.channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
             )
 
@@ -706,7 +735,7 @@ class DiscordHelper:
             timeout_callback=select_timeout,
         )
         # action_row = ActionRow(select)
-        await self.sendEmbed(
+        await self.send_embed(
             ctx.channel,
             title,
             message,
@@ -723,7 +752,8 @@ class DiscordHelper:
         min_value: int = 0,
         max_value: int = 100,
         timeout: int = 60,
-    ):
+    ) -> int:
+        _method = inspect.stack()[1][3]
         def check_user(m):
             same = m.author.id == ctx.author.id
             return same
@@ -741,7 +771,7 @@ class DiscordHelper:
 
         channel = ctx.channel if ctx.channel else ctx.author
 
-        number_ask = await self.sendEmbed(
+        number_ask = await self.send_embed(
             ctx.channel,
             title,
             f"{message}",
@@ -751,7 +781,7 @@ class DiscordHelper:
         try:
             numberResp = await self.bot.wait_for("message", check=check_range, timeout=timeout)
         except asyncio.TimeoutError:
-            await self.sendEmbed(
+            await self.send_embed(
                 ctx.channel, title, self.settings.get_string(guild_id, "took_too_long"), delete_after=5
             )
             return None
@@ -760,21 +790,21 @@ class DiscordHelper:
             try:
                 await numberResp.delete()
             except discord.NotFound as e:
-                self.log.debug(guild_id, "ask_number", f"Tried to clean up, but the messages were not found.")
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"Tried to clean up, but the messages were not found.")
             except discord.Forbidden as f:
                 self.log.debug(
                     guild_id,
-                    "ask_number",
+                    f"{self._module}.{_method}",
                     f"Tried to clean up, but the bot does not have permissions to delete messages.",
                 )
             try:
                 await number_ask.delete()
             except discord.NotFound as e:
-                self.log.debug(guild_id, "ask_number", f"Tried to clean up, but the messages were not found.")
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"Tried to clean up, but the messages were not found.")
             except discord.Forbidden as f:
                 self.log.debug(
                     guild_id,
-                    "ask_number",
+                    f"{self._module}.{_method}",
                     f"Tried to clean up, but the bot does not have permissions to delete messages.",
                 )
         return numberValue
@@ -787,7 +817,8 @@ class DiscordHelper:
         message: str = "Please enter your response.",
         timeout: int = 60,
         color=None,
-    ):
+    ) -> typing.Union[str,None]:
+        _method = inspect.stack()[1][3]
         def check_user(m):
             same = m.author.id == ctx.author.id
             return same
@@ -802,7 +833,7 @@ class DiscordHelper:
             channel = ctx.author
             delete_user_message = False
 
-        text_ask = await self.sendEmbed(
+        text_ask = await self.send_embed(
             channel,
             title,
             f"{message}",
@@ -813,7 +844,7 @@ class DiscordHelper:
         try:
             textResp = await self.bot.wait_for("message", check=check_user, timeout=timeout)
         except asyncio.TimeoutError:
-            await self.sendEmbed(channel, title, self.settings.get_string(guild_id, "took_too_long"), delete_after=5)
+            await self.send_embed(channel, title, self.settings.get_string(guild_id, "took_too_long"), delete_after=5)
             return None
         else:
             if delete_user_message:
@@ -832,7 +863,8 @@ class DiscordHelper:
         message: str = "Please enter your response.",
         timeout: int = 60,
         color=None,
-    ):
+    ) -> typing.Union[TextWithAttachments,None]:
+        _method = inspect.stack()[1][3]
         def check_user(m):
             same = m.author.id == ctx.author.id
             return same
@@ -847,7 +879,7 @@ class DiscordHelper:
             channel = ctx.author
             delete_user_message = False
 
-        ask_image_or_text = await self.sendEmbed(
+        ask_image_or_text = await self.send_embed(
             channel,
             title,
             f"{message}",
@@ -858,7 +890,7 @@ class DiscordHelper:
         try:
             textResp = await self.bot.wait_for("message", check=check_user, timeout=timeout)
         except asyncio.TimeoutError:
-            await self.sendEmbed(channel, title, self.settings.get_string(guild_id, "took_too_long"), delete_after=5)
+            await self.send_embed(channel, title, self.settings.get_string(guild_id, "took_too_long"), delete_after=5)
             return None
         else:
             if delete_user_message:
@@ -881,7 +913,7 @@ class DiscordHelper:
         timeout: int = 60,
         select_callback: typing.Callable = None,
         # timeout_callback: typing.Callable = None,
-    ):
+    ) -> typing.Union[discord.Role, None]:
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
 
@@ -894,7 +926,7 @@ class DiscordHelper:
                         role_id = select.values[0]
 
                     if role_id == 0:
-                        await self.sendEmbed(
+                        await self.send_embed(
                             ctx.channel, title, f"{ctx.author.mention}, ENTER ROLE NAME", delete_after=5
                         )
                         # need to ask for role name
@@ -906,12 +938,12 @@ class DiscordHelper:
 
                     if selected_role:
                         self.log.debug(
-                            guild_id, f"discordhelper.{_method}", f"{ctx.author.mention} selected the role '{selected_role.name}'"
+                            guild_id, f"{self._module}.{_method}", f"{ctx.author.mention} selected the role '{selected_role.name}'"
                         )
                         await select_callback(selected_role)
                         return
                     else:
-                        await self.sendEmbed(ctx.channel, title, f"{ctx.author.mention}, Unknown Role.", delete_after=5)
+                        await self.send_embed(ctx.channel, title, f"{ctx.author.mention}, Unknown Role.", delete_after=5)
                         await select_callback(None)
                         return
                 else:
@@ -919,7 +951,7 @@ class DiscordHelper:
 
         async def timeout_callback(select: RoleSelect, interaction: discord.Interaction):
             await interaction.delete_original_response()
-            await self.sendEmbed(
+            await self.send_embed(
                 ctx.channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
             )
 
@@ -932,7 +964,7 @@ class DiscordHelper:
             timeout=timeout,
         )
 
-        await self.sendEmbed(
+        await self.send_embed(
             ctx.channel,
             title,
             message,
@@ -948,9 +980,16 @@ class DiscordHelper:
         # does the user have admin permissions?
         return member.guild_permissions.administrator
 
+    def _get_tacos_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        if not cog_settings:
+            raise Exception(f"No tacos settings found for guild {guildId}")
+        return cog_settings
+
     async def add_remove_roles(self, user: discord.Member, check_list: list, add_list: list, remove_list: list, allow_everyone: bool = False) -> None:
+        _method = inspect.stack()[1][3]
         if user is None or user.guild is None:
-            self.log.warn(0, "discord_helper.add_remove_roles", "User or guild is None")
+            self.log.warn(0, f"{self._module}.{_method}", "User or guild is None")
             return
 
         guild_id = user.guild.id
@@ -966,13 +1005,13 @@ class DiscordHelper:
                         role = user.guild.get_role(int(role_id))
                         if role and role in user.roles:
                             role_list.append(role)
-                            self.log.info(guild_id, "discord_helper.add_remove_roles", f"Removed role {role.name} from user {user.display_name}")
+                            self.log.info(guild_id, f"{self._module}.{_method}", f"Removed role {role.name} from user {user.display_name}")
 
                     if role_list and len(role_list) > 0:
                         try:
                             await user.remove_roles(*role_list)
                         except Exception as e:
-                            self.log.warn(guild_id, "discord_helper.add_remove_roles", str(e), traceback.format_exc())
+                            self.log.warn(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
                 # add the existing roles back to the user
                 if add_list:
                     role_list = []
@@ -980,10 +1019,10 @@ class DiscordHelper:
                         role = user.guild.get_role(int(role_id))
                         if role and role not in user.roles:
                             role_list.append(role)
-                            self.log.info(guild_id, "discord_helper.add_remove_roles", f"Added role {role.name} to user {user.display_name}")
+                            self.log.info(guild_id, f"{self._module}.{_method}", f"Added role {role.name} to user {user.display_name}")
 
                     if role_list and len(role_list) > 0:
                         try:
                             await user.add_roles(*role_list)
                         except Exception as e:
-                            self.log.warn(guild_id, "discord_helper.add_remove_roles", str(e), traceback.format_exc())
+                            self.log.warn(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())

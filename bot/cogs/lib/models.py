@@ -5,8 +5,9 @@ import glob
 import typing
 import json
 
+
 class SuggestionStates():
-    def __init__(self):
+    def __init__(self) -> None:
         self.ACTIVE = "ACTIVE"
         self.APPROVED = "APPROVED"
         self.REJECTED = "REJECTED"
@@ -15,7 +16,7 @@ class SuggestionStates():
         self.CONSIDERED = "CONSIDERED"
         self.DELETED = "DELETED"
 class TextWithAttachments():
-    def __init__(self, text, attachments):
+    def __init__(self, text, attachments) -> None:
         self.text = text
         self.attachments = attachments
 
@@ -36,7 +37,7 @@ class TriviaQuestion():
             punishment: int = 0,
             correct_users: typing.List[int] = [],
             incorrect_users: typing.List[int] = [],
-            ):
+            ) -> None:
         self.guild_id = guild_id
         self.channel_id = channel_id
         self.message_id = message_id

@@ -22,12 +22,14 @@ from .cogs.lib import settings
 from .cogs.lib import mongo
 from .cogs.lib import logger
 from .cogs.lib import loglevel
-from .cogs.lib import dbprovider
 
 
 class TacoBot(commands.Bot):
 
-    def __init__(self, *, intents: discord.Intents):
+    def __init__(self, *, intents: discord.Intents) -> None:
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
         self.settings = settings.Settings()
         super().__init__(command_prefix=self.get_prefix, intents=intents)
         self.remove_command("help")
@@ -49,14 +51,14 @@ class TacoBot(commands.Bot):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "tacobot.__init__", f"DB Provider {self.settings.db_provider.name}")
-        self.log.debug(0, "tacobot.__init__", f"Logger initialized with level {log_level.name}")
+        self.log.debug(0, f"{self._module}.{_method}", f"Logger initialized with level {log_level.name}")
 
     # In this basic example, we just synchronize the app commands to one guild.
     # Instead of specifying a guild to every command, we copy over our global commands instead.
     # By doing so, we don't have to wait up to an hour until they are shown to the end-user.
-    async def setup_hook(self):
-        self.log.debug(0, "cog_loader.setup_hook", "Setup hook called")
+    async def setup_hook(self) -> None:
+        _method = inspect.stack()[0][3]
+        self.log.debug(0, f"{self._module}.{_method}", "Setup hook called")
         # cogs that dont start with an underscore are loaded
         cogs = [
             f"bot.cogs.{os.path.splitext(f)[0]}"
@@ -71,8 +73,8 @@ class TacoBot(commands.Bot):
                 print(f"Failed to load extension {extension}.", file=sys.stderr)
                 traceback.print_exc()
 
-        self.log.debug(0, "TacoBotClient.setup_hook", "Setting up bot")
-        self.log.debug(0, "TacoBotClient.setup_hook", "Starting Healthcheck Server")
+        self.log.debug(0, f"{self._module}.{_method}", "Setting up bot")
+        self.log.debug(0, f"{self._module}.{_method}", "Starting Healthcheck Server")
         self.healthcheck_server = await discordhealthcheck.start(self)
 
 
@@ -84,10 +86,10 @@ class TacoBot(commands.Bot):
 
 
 
-    def initDB(self):
+    def initDB(self) -> None:
         pass
 
-    async def get_prefix(self, message):
+    async def get_prefix(self, message) -> typing.List[str]:
         _method: str = inspect.stack()[0][3]
         # default prefixes
         # sets the prefixes, you can keep it as an array of only 1 item if you need only one prefix
@@ -112,5 +114,5 @@ class TacoBot(commands.Bot):
             # Do `return prefixes` if you don't want to allow mentions instead of prefix.
             return commands.when_mentioned_or(*prefixes)(self, message)
         except Exception as e:
-            self.log.error(0, f"tacobot.{_method}", f"Failed to get prefixes: {e}")
+            self.log.error(0, f"{self._module}.{_method}", f"Failed to get prefixes: {e}")
             return commands.when_mentioned_or(*prefixes)(self, message)

@@ -1,0 +1,21 @@
+from enum import Enum
+class SystemActions(Enum):
+    NEW_ACCOUNT_KICK = 1
+    JOIN_WHITELIST_ADD = 2
+    JOIN_WHITELIST_REMOVE = 3
+    MINIMUM_ACCOUNT_AGE_SET = 4
+
+    LINK_TWITCH_TO_DISCORD = 5
+
+    LEAVE_SERVER = 6
+    JOIN_SERVER = 7
+
+    ADD_ROLE = 8
+    REMOVE_ROLE = 9
+
+
+    USER_BAN = 10
+    USER_UNBAN = 11
+    USER_KICK = 12
+
+    AUTOMOD_ACTION = 13

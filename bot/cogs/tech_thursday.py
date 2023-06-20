@@ -19,7 +19,6 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
-from .lib import dbprovider
 from .lib import tacotypes
 
 import inspect
@@ -35,10 +34,7 @@ class TechThursdays(commands.Cog):
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.SETTINGS_SECTION = "techthurs"
         self.SELF_DESTRUCT_TIMEOUT = 30
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -87,17 +83,11 @@ class TechThursdays(commands.Cog):
                 return
 
             cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings:
-                self.log.warn(guild_id, f"{self._module}.{_method}", f"No techthurs settings found for guild {guild_id}")
-                return
             if not cog_settings.get("enabled", False):
                 self.log.debug(guild_id, f"{self._module}.{_method}", f"techthurs is disabled for guild {guild_id}")
                 return
 
             tacos_settings = self.get_tacos_settings(guild_id)
-            if not tacos_settings:
-                self.log.warn(guild_id, f"{self._module}.{_method}", f"No tacos settings found for guild {guild_id}")
-                return
 
             amount = tacos_settings.get("techthurs_amount", 5)
 
@@ -127,7 +117,7 @@ class TechThursdays(commands.Cog):
             out_message = self.settings.get_string(
                 guild_id, "techthurs_out_message", taco_count=amount, taco_word=taco_word
             )
-            techthurs_message = await self.discord_helper.sendEmbed(
+            techthurs_message = await self.discord_helper.send_embed(
                 channel=out_channel,
                 title=self.settings.get_string(guild_id, "techthurs_out_title"),
                 message=out_message,
@@ -221,9 +211,12 @@ class TechThursdays(commands.Cog):
         message_author = message.author
         react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
 
+        if not react_user or react_user.bot or react_user.system:
+            return
+
         # check if this reaction is the first one of this type on the message
-        reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
-        if reaction.count > 1:
+        reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)
+        if reactions and reactions.count > 1:
             self.log.debug(
                 guild_id,
                 f"{self._module}.{_method}",
@@ -257,8 +250,9 @@ class TechThursdays(commands.Cog):
         channel = self.bot.get_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)
 
-        reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
-        if reaction.count > 1:
+        # check if this reaction is the first one of this type on the message
+        reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)
+        if reactions and reactions.count > 1:
             self.log.debug(
                 guild_id,
                 f"{self._module}.{_method}",
@@ -279,6 +273,16 @@ class TechThursdays(commands.Cog):
                 return
 
             if payload.event_type != "REACTION_ADD":
+                return
+
+            # check if the user that reacted is in the admin role
+            if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
+                return
+
+
+            react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+            if not react_user or react_user.bot or react_user.system:
                 return
 
             cog_settings = self.get_cog_settings(guild_id)
@@ -377,7 +381,7 @@ class TechThursdays(commands.Cog):
 
             reason_msg = self.settings.get_string(guild_id, "techthurs_reason_default")
 
-            await self.discord_helper.sendEmbed(
+            await self.discord_helper.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_give_title"),
                 # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",

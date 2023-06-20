@@ -20,33 +20,34 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
-from .lib import dbprovider
 from .lib import tacotypes
 
 import inspect
 
 class TacoQuestionOfTheDay(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
+        _method = inspect.stack()[0][3]
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
+
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.SETTINGS_SECTION = "tqotd"
         self.SELF_DESTRUCT_TIMEOUT = 30
-        if self.settings.db_provider == dbprovider.DatabaseProvider.MONGODB:
-            self.db = mongo.MongoDatabase()
-        else:
-            self.db = mongo.MongoDatabase()
+        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, "tqotd.__init__", "Initialized")
+        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     @commands.group(name="tqotd", invoke_without_command=True)
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def tqotd(self, ctx: Context):
+    async def tqotd(self, ctx: Context) -> None:
+        _method = inspect.stack()[0][3]
         if ctx.invoked_subcommand is not None:
             return
         guild_id = 0
@@ -75,28 +76,22 @@ class TacoQuestionOfTheDay(commands.Cog):
                 return
 
             cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings:
-                self.log.warn(guild_id, "tqotd.tqotd", f"No tqotd settings found for guild {guild_id}")
-                return
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, "tqotd.tqotd", f"tqotd is disabled for guild {guild_id}")
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"tqotd is disabled for guild {guild_id}")
                 return
 
             tacos_settings = self.get_tacos_settings(guild_id)
-            if not tacos_settings:
-                self.log.warn(guild_id, "tqotd.tqotd", f"No tacos settings found for guild {guild_id}")
-                return
 
             amount = tacos_settings.get("tqotd_amount", 5)
 
             role_tag = ""
-            role = ctx.guild.get_role(int(cog_settings.get("tag_role", 0)))
+            role = await self.discord_helper.get_or_fetch_role(ctx.guild, int(cog_settings.get("tag_role", 0)))
             if role:
                 role_tag = f"{role.mention}"
 
-            out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
+            out_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
-                self.log.warn(guild_id, "tqotd.tqotd", f"No output channel found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"No output channel found for guild {guild_id}")
 
             # get role
             taco_word = self.settings.get_string(guild_id, "taco_singular")
@@ -116,12 +111,12 @@ class TacoQuestionOfTheDay(commands.Cog):
                     async with aiohttp.ClientSession() as session:
                         async with session.get(attachment.url) as resp:
                             if resp.status != 200:
-                                self.log.warn(guild_id, "tqotd.tqotd", f"Unable to download attachment {attachment.url}")
+                                self.log.warn(guild_id, f"{self._module}.{_method}", f"Unable to download attachment {attachment.url}")
                                 continue
                             data = io.BytesIO(await resp.read())
                             files.append(discord.File(data, filename=attachment.filename))
 
-            await self.discord_helper.sendEmbed(
+            await self.discord_helper.send_embed(
                 channel=out_channel,
                 title=self.settings.get_string(guild_id, "tqotd_out_title"),
                  message=out_message,
@@ -133,25 +128,26 @@ class TacoQuestionOfTheDay(commands.Cog):
             self.db.save_tqotd(guild_id, qotd.text, ctx.author.id)
 
         except Exception as e:
-            self.log.error(guild_id, "tqotd.tqotd", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
     @tqotd.command(name="give")
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def give(self, ctx, member: discord.Member):
+    async def give(self, ctx, member: discord.Member) -> None:
+        _method = inspect.stack()[0][3]
         try:
             await ctx.message.delete()
 
             await self.give_user_tqotd_tacos(ctx.guild.id, member.id, ctx.channel.id, None)
 
         except Exception as e:
-            self.log.error(ctx.guild.id, "tqotd.give", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.discord_helper.notify_of_error(ctx)
 
 
     @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload):
+    async def on_raw_reaction_add(self, payload) -> None:
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
         try:
@@ -159,10 +155,6 @@ class TacoQuestionOfTheDay(commands.Cog):
                 return
 
             cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings:
-                # raise exception if there are no tacos settings
-                self.log.error(guild_id, "tqotd.on_raw_reaction_add", f"No cog settings found for guild {guild_id}")
-                return
 
             reaction_emojis = cog_settings.get("tqotd_reaction_emoji", ["🇹"])
             # check if the reaction is in the list of ones we are looking for
@@ -183,24 +175,25 @@ class TacoQuestionOfTheDay(commands.Cog):
             react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
 
             # check if this reaction is the first one of this type on the message
-            reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
-            if reaction.count > 1:
-                # self.log.debug(guild_id, f"tqotd.{_method}", f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
+            reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)
+            if reactions and reactions.count > 1:
+                # self.log.debug(guild_id, f"{self._module}.{_method}", f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
                 return
 
             already_tracked = self.db.tqotd_user_message_tracked(guild_id, message_author.id, message.id)
 
             if not already_tracked:
                 # log that we are giving tacos for this reaction
-                self.log.info(guild_id, f"tqotd.{_method}", f"User {payload.user_id} reacted with {payload.emoji.name} to message {payload.message_id}")
+                self.log.info(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} reacted with {payload.emoji.name} to message {payload.message_id}")
                 await self.give_user_tqotd_tacos(guild_id, message_author.id, payload.channel_id, payload.message_id)
             else:
-                self.log.debug(guild_id, f"tqotd.{_method}", f"Message {payload.message_id} has already been tracked for TQOTD. Skipping.")
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"Message {payload.message_id} has already been tracked for TQOTD. Skipping.")
 
         except Exception as ex:
-            self.log.error(guild_id, f"tqotd.{_method}", str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
 
-    async def give_user_tqotd_tacos(self, guild_id, user_id, channel_id, message_id):
+    async def give_user_tqotd_tacos(self, guild_id, user_id, channel_id, message_id) -> None:
+        _method = inspect.stack()[0][3]
         ctx = None
         try:
             # create context
@@ -216,7 +209,7 @@ class TacoQuestionOfTheDay(commands.Cog):
             else:
                 channel = guild.system_channel
             if not channel:
-                self.log.warn(guild_id, "tqotd.give_user_tqotd_tacos", f"No output channel found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"No output channel found for guild {guild_id}")
                 return
             message = None
             # get message
@@ -230,9 +223,6 @@ class TacoQuestionOfTheDay(commands.Cog):
             self.db.track_tqotd_answer(guild_id, member.id, message_id)
 
             tacos_settings = self.get_tacos_settings(guild_id)
-            if not tacos_settings:
-                self.log.warn(guild_id, "tqotd.give_user_tqotd_tacos", f"No tacos settings found for guild {guild_id}")
-                return
 
             amount = tacos_settings.get("tqotd_count", 5)
 
@@ -242,7 +232,7 @@ class TacoQuestionOfTheDay(commands.Cog):
 
             reason_msg = self.settings.get_string(guild_id, "tqotd_reason_default")
 
-            await self.discord_helper.sendEmbed(
+            await self.discord_helper.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_give_title"),
                 # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",
@@ -254,21 +244,17 @@ class TacoQuestionOfTheDay(commands.Cog):
 
 
         except Exception as e:
-            self.log.error(guild_id, "tqotd.give_user_tqotd_tacos", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             raise e
 
-    def get_cog_settings(self, guildId: int = 0):
+    def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
         if not cog_settings:
-            # raise exception if there are no leave_survey settings
-            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No tqotd settings found for guild {guildId}")
         return cog_settings
-    def get_tacos_settings(self, guildId: int = 0):
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
         if not cog_settings:
-            # raise exception if there are no leave_survey settings
-            # self.log.error(guildId, "live_now.get_cog_settings", f"No live_now settings found for guild {guildId}")
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
 async def setup(bot):

@@ -24,7 +24,6 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
-from .lib import dbprovider
 
 
 class LeaveSurvey(commands.Cog):
@@ -91,20 +90,20 @@ class LeaveSurvey(commands.Cog):
                         reason = "No reason given."
                         try:
                             reason = await self.discord_helper.ask_text(ctx, member, "Leave Survey", "Please tell us why you are leaving.", timeout=600)
-                            await self.discord_helper.sendEmbed(member, "Thank You!", "Thank you for your feedback. We will review your feedback and take action accordingly.")
+                            await self.discord_helper.send_embed(member, "Thank You!", "Thank you for your feedback. We will review your feedback and take action accordingly.")
                         except discord.Forbidden as f:
-                            self.log.info(guild_id, f"{self._module}.{_method}", f"Failed to send message to {member.name}#{member.discriminator} ({member.id})")
+                            self.log.info(guild_id, f"{self._module}.{_method}", f"Failed to send message to {utils.get_user_display_name(member)} ({member.id})")
                         except discord.NotFound as nf:
-                            self.log.info(guild_id, f"{self._module}.{_method}", f"Failed to send message to {member.name}#{member.discriminator} ({member.id})")
+                            self.log.info(guild_id, f"{self._module}.{_method}", f"Failed to send message to {utils.get_user_display_name(member)} ({member.id})")
                         except Exception as e:
                             # an error occurred while asking the user if they want to take the surveys
                             self.log.error(guild_id, f"{self._module}.{_method}", f"Error in f"{self._module}.{_method}": {e}", traceback.format_exc())
 
                         if log_channel:
-                            await self.discord_helper.sendEmbed(
+                            await self.discord_helper.send_embed(
                                 log_channel,
                                 "Leave Survey",
-                                f"{member.name}#{member.discriminator} ({member.id}) has left the server. \n\n**Reason given:**\n\n{reason}",
+                                f"{utils.get_user_display_name(member)} ({member.id}) has left the server. \n\n**Reason given:**\n\n{reason}",
                                 author=member
                             )
 
@@ -117,9 +116,9 @@ class LeaveSurvey(commands.Cog):
                     result_callback=response_callback)
 
             except discord.Forbidden as f:
-                self.log.info(guild_id, f"{self._module}.{_method}", f"Failed to send message to {member.name}#{member.discriminator} ({member.id})")
+                self.log.info(guild_id, f"{self._module}.{_method}", f"Failed to send message to {utils.get_user_display_name(member)} ({member.id})")
             except discord.NotFound as nf:
-                self.log.info(guild_id, f"{self._module}.{_method}", f"Failed to send message to {member.name}#{member.discriminator} ({member.id})")
+                self.log.info(guild_id, f"{self._module}.{_method}", f"Failed to send message to {utils.get_user_display_name(member)} ({member.id})")
             except Exception as e:
                 # an error occurred while asking the user if they want to take the surveys
                 self.log.error(guild_id, f"{self._module}.{_method}", f"Error in f"{self._module}.{_method}": {e}", traceback.format_exc())

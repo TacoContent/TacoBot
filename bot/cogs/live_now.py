@@ -24,8 +24,8 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
-from .lib import dbprovider
 from .lib import tacotypes
+from .lib.system_actions import SystemActions
 
 class LiveNow(commands.Cog):
     def __init__(self, bot):
@@ -79,12 +79,10 @@ class LiveNow(commands.Cog):
                 # if item is not in the list, add it
                 if len([a for a in before_streaming_activities if a.platform == bsa.platform]) == 0:
                     before_streaming_activities.append(bsa)
-            self.log.debug(guild_id, f"{self._module}.{_method}", f"before_streaming_activities: {before_streaming_activities}")
 
             for asa in after_streaming_activities_temp:
                 if len([a for a in after_streaming_activities if a.platform == asa.platform]) == 0:
                     after_streaming_activities.append(asa)
-            self.log.debug(guild_id, f"{self._module}.{_method}", f"after_streaming_activities: {after_streaming_activities}")
 
             # WENT LIVE
             for asa in after_streaming_activities:
@@ -147,6 +145,8 @@ class LiveNow(commands.Cog):
 
             # ENDED STREAM
             for bsa in before_streaming_activities:
+                # sleep for a bit to make sure the live role is removed before we clean up the db
+                await asyncio.sleep(1)
 
                 # check if bsa is in after_streaming_activities
                 found_bsa = len([a for a in after_streaming_activities if a.url == bsa.url and a.platform == bsa.platform]) > 0
@@ -169,7 +169,7 @@ class LiveNow(commands.Cog):
 
                 logging_channel_id = cog_settings.get("logging_channel", None)
                 if logging_channel_id:
-                    logging_channel = self.bot.get_channel(int(logging_channel_id))
+                    logging_channel = await self.discord_helper.get_or_fetch_channel(int(logging_channel_id))
                     if logging_channel:
                         for tracked_item in tracked:
                             message_id = tracked_item.get("message_id", None)
@@ -177,6 +177,7 @@ class LiveNow(commands.Cog):
                                 try:
                                     message = await logging_channel.fetch_message(int(message_id))
                                     if message:
+                                        self.log.debug(guild_id, f"{self._module}.{_method}", f"Deleting LIVE 🔴 message ({message_id}) from channel {logging_channel}")
                                         await message.delete()
                                 except discord.errors.NotFound:
                                     self.log.warn(guild_id, f"{self._module}.{_method}", f"Message {message_id} not found in channel {logging_channel}")
@@ -257,14 +258,25 @@ class LiveNow(commands.Cog):
                 break
             if twitch_name:
                 # track the users twitch name
-                self.db.set_user_twitch_info(user.id, "", twitch_name.lower())
+                self.db.set_user_twitch_info(user.id, twitch_name.lower())
+                self.db.track_system_action(
+                    guild_id=guild_id,
+                    action=SystemActions.LINK_TWITCH_TO_DISCORD,
+                    data={"user_id": str(user.id), "twitch_name": twitch_name.lower()},
+                )
         if twitch_info:
             twitch_info_name = twitch_info.get("twitch_name", None)
         else:
             twitch_info_name = None
         if twitch_name and twitch_name != "" and twitch_name != twitch_info_name:
             self.log.info(guild_id, f"{self._module}.{_method}", f"{user.display_name} has a different twitch name: {twitch_name}")
-            self.db.set_user_twitch_info(user.id, "", twitch_name)
+            self.db.set_user_twitch_info(user.id, twitch_name)
+            self.db.track_system_action(
+                guild_id=guild_id,
+                action=SystemActions.LINK_TWITCH_TO_DISCORD,
+                data={"user_id": str(user.id), "twitch_name": twitch_name.lower()},
+            )
+
         elif not twitch_name and twitch_info_name:
             twitch_name = twitch_info_name
         if not twitch_name:
@@ -312,7 +324,7 @@ class LiveNow(commands.Cog):
                     # self.log.debug(guild_id, "live_now.log_live_post", f"Found large image {image_url}")
             user_display_name = utils.get_user_display_name(user)
             self.log.debug(guild_id, f"{self._module}.{_method}", f"Logging live post for {user_display_name} in {logging_channel.name}")
-            message = await self.discord_helper.sendEmbed(logging_channel,
+            message = await self.discord_helper.send_embed(logging_channel,
                 f"🔴 {user_display_name}", description,
                 fields, thumbnail=profile_icon,
                 author=user, color=0x6a0dad)
@@ -335,7 +347,7 @@ class LiveNow(commands.Cog):
 
         logging_channel_id = cog_settings.get("logging_channel", None)
         if logging_channel_id:
-            logging_channel = self.discord_helper.get_or_fetch_channel(int(logging_channel_id))
+            logging_channel = await self.discord_helper.get_or_fetch_channel(int(logging_channel_id))
             for tracked in all_tracked_for_user:
                 if logging_channel:
                     message_id = tracked.get("message_id", None)
