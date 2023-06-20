@@ -20,6 +20,7 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
+from .lib.permissions import Permissions
 
 import inspect
 
@@ -32,6 +33,7 @@ class MentalMondays(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.permissions = Permissions(bot)
         self.SETTINGS_SECTION = "mentalmondays"
         self.SELF_DESTRUCT_TIMEOUT = 30
         self.db = mongo.MongoDatabase()
@@ -201,6 +203,7 @@ class MentalMondays(commands.Cog):
         guild_id = payload.guild_id
 
         # check if the user that reacted is in the admin role
+        # if not await self.permissions.is_admin(payload.user_id)
         if not await self.discord_helper.is_admin(guild_id, payload.user_id):
             self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
             return
