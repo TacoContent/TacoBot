@@ -2672,6 +2672,8 @@ class MongoDatabase(database.Database):
     def add_user_to_join_whitelist(self, guild_id: int, user_id: int, added_by: int) -> None:
         """Add a user to the join whitelist for a guild."""
         try:
+            if not self.connection:
+                self.open()
             date = datetime.datetime.utcnow()
             timestamp = utils.to_timestamp(date)
 
@@ -2704,6 +2706,8 @@ class MongoDatabase(database.Database):
     def remove_user_from_join_whitelist(self, guild_id: int, user_id: int) -> None:
         """Remove a user from the join whitelist for a guild."""
         try:
+            if not self.connection:
+                self.open()
             self.connection.join_whitelist.delete_one({"guild_id": str(guild_id), "user_id": str(user_id)})
         except Exception as ex:
             print(ex)
@@ -2715,6 +2719,8 @@ class MongoDatabase(database.Database):
     def track_system_action(self, guild_id: int, action: typing.Union[SystemActions, str], data: typing.Optional[dict] = None) -> None:
         """Track a system action."""
         try:
+            if not self.connection:
+                self.open()
             date = datetime.datetime.utcnow()
             timestamp = utils.to_timestamp(date)
 
