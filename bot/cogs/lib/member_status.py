@@ -9,14 +9,14 @@ class MemberStatus(Enum):
 
     UNKNOWN = 9999
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.name
 
     @staticmethod
-    def from_discord (status: discord.Status):
+    def from_discord (status: discord.Status) -> "MemberStatus":
         if status == discord.Status.online:
             return MemberStatus.ONLINE
         elif status == discord.Status.offline:
@@ -29,7 +29,7 @@ class MemberStatus(Enum):
             return MemberStatus.UNKNOWN
 
     @staticmethod
-    def from_str (status: str):
+    def from_str (status: str) -> "MemberStatus" :
         if status.lower() == "online":
             return MemberStatus.ONLINE
         elif status.lower() == "offline":

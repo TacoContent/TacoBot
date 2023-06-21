@@ -20,22 +20,6 @@ from discord import (
     SelectMenu,
 )
 from discord.ui import Button, Select, TextInput
-
-# from interactions import ComponentContext
-# from interactions import (
-#     Button,
-#     SelectMenu,
-#     SelectOption,
-#     ActionRow
-# )
-# from discord_slash.utils.manage_components import (
-#     create_button,
-#     create_actionrow,
-#     create_select,
-#     create_select_option,
-#     wait_for_component,
-# )
-# from discord_slash.model import ButtonStyle
 from discord.ext.commands import has_permissions, CheckFailure
 
 from . import utils
@@ -972,13 +956,6 @@ class DiscordHelper:
             footer=self.settings.get_string(ctx.guild.id, "footer_XX_seconds", seconds=timeout),
             view=role_view,
         )
-
-    # async def is_admin(self, guildId: int, userId: int):
-    #     member = await self.get_or_fetch_member(guildId, userId)
-    #     if not member:
-    #         return False
-    #     # does the user have admin permissions?
-    #     return member.guild_permissions.administrator
 
     def _get_tacos_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
