@@ -203,8 +203,8 @@ class MentalMondays(commands.Cog):
         guild_id = payload.guild_id
 
         # check if the user that reacted is in the admin role
-        # if not await self.permissions.is_admin(payload.user_id)
-        if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+        # if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+        if not await self.permissions.is_admin(payload.user_id, guild_id):
             self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
             return
         # in future, check if the user is in a defined role that can grant tacos (e.g. moderator)
@@ -246,7 +246,8 @@ class MentalMondays(commands.Cog):
         guild_id = payload.guild_id
 
         # check if the user that reacted is in the admin role
-        if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+        # if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+        if not await self.permissions.is_admin(payload.user_id, guild_id):
             self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
             return
 
@@ -279,7 +280,8 @@ class MentalMondays(commands.Cog):
                 return
 
             # check if the user that reacted is in the admin role
-            if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+            # if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+            if not await self.permissions.is_admin(payload.user_id, guild_id):
                 self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
                 return
 

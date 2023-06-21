@@ -12,12 +12,22 @@ class Permissions:
         self.db = mongo.MongoDatabase()
         self.discord_helper = discordhelper.DiscordHelper(bot)
 
-    def has_permission(self, user: typing.Optional[discord.Member], permissions: typing.Optional[discord.Permissions] = None):
+    async def has_permission(self, user: typing.Optional[typing.Union[discord.Member,int]] = None, permissions: typing.Optional[discord.Permissions] = None, guildId: typing.Optional[int] = None):
         if user is None:
             return False
+        if isinstance(user, int):
+            if guildId is None:
+                raise ValueError("guildId must be specified if user is an int")
+            member = await self.discord_helper.get_or_fetch_member(guildId, user)
+        elif isinstance(user, discord.Member):
+            member = user
+
+        if member is None:
+            return False
+
         if permissions is None:
             return True
-        return user.guild_permissions >= permissions
+        return member.guild_permissions >= permissions
 
     async def has_role(self, user: typing.Union[discord.Member, int], role: typing.Optional[typing.Union[discord.Role, int]] = None, guildId: typing.Optional[int] = None):
         if isinstance(user, int):

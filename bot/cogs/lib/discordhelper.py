@@ -973,12 +973,12 @@ class DiscordHelper:
             view=role_view,
         )
 
-    async def is_admin(self, guildId: int, userId: int):
-        member = await self.get_or_fetch_member(guildId, userId)
-        if not member:
-            return False
-        # does the user have admin permissions?
-        return member.guild_permissions.administrator
+    # async def is_admin(self, guildId: int, userId: int):
+    #     member = await self.get_or_fetch_member(guildId, userId)
+    #     if not member:
+    #         return False
+    #     # does the user have admin permissions?
+    #     return member.guild_permissions.administrator
 
     def _get_tacos_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, "tacos")

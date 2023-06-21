@@ -25,6 +25,7 @@ from .lib import models
 from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
+from .lib.permissions import Permissions
 class Suggestions(commands.Cog):
 
     def __init__(self, bot) -> None:
@@ -34,7 +35,7 @@ class Suggestions(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
-
+        self.permissions = Permissions(bot)
         self.SETTINGS_SECTION = "suggestions"
 
         self.db = mongo.MongoDatabase()
@@ -320,7 +321,8 @@ class Suggestions(commands.Cog):
                     self.db.vote_suggestion_by_id(suggestion['id'], user.id, vote)
                 pass
             # if the user reacted with an admin emoji and they are an admin
-            elif str(payload.emoji) in admin_emoji and await self.discord_helper.is_admin(guild_id, user.id):
+            # elif str(payload.emoji) in admin_emoji and await self.discord_helper.is_admin(guild_id, user.id):
+            elif str(payload.emoji) in admin_emoji and await self.permissions.is_admin(user.id, guild_id):
                 states = models.SuggestionStates()
                 # change the state based on the emoji
                 if str(payload.emoji) == channel_settings["admin_approve_emoji"]:
@@ -462,7 +464,8 @@ class Suggestions(commands.Cog):
                     return
                 else:
                     self.db.unvote_suggestion_by_id(guild_id, suggestion['id'], user.id)
-            elif str(payload.emoji) in admin_emoji and await self.discord_helper.is_admin(guild_id, user.id):
+            # elif str(payload.emoji) in admin_emoji and await self.discord_helper.is_admin(guild_id, user.id):
+            elif str(payload.emoji) in admin_emoji and await self.permissions.is_admin(user.id, guild_id):
                 states = models.SuggestionStates()
 
                 # admin removed reaction. do we need to set the state back to Active?
