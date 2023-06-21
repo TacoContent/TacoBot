@@ -170,7 +170,7 @@ class DiscordHelper:
 
     async def send_embed(
         self,
-        channel: typing.Union[discord.TextChannel, discord.DMChannel, discord.GroupChannel, discord.Thread, discord.User, discord.Member],
+        channel: typing.Union[discord.TextChannel, discord.DMChannel, discord.GroupChannel, discord.Thread, discord.User, discord.Member, discord.abc.Messageable],
         title: typing.Optional[str] = None,
         message: typing.Optional[str] = None,
         fields: typing.Optional[list[dict[str, typing.Any]]] = None,

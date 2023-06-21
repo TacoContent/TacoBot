@@ -2737,3 +2737,17 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
+
+    def get_guild_ids(self) -> list:
+        """Get all guild IDs."""
+        try:
+            if not self.connection:
+                self.open()
+            return list(self.connection.guilds.distinct("guild_id"))
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return []
+        finally:
+            if self.connection:
+                self.close()

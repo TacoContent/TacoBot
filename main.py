@@ -13,5 +13,6 @@ intents.guilds = True
 intents.guild_messages = True
 intents.guild_reactions = True
 
+
 tacobot = bot.TacoBot(intents=intents)
 tacobot.run(DISCORD_TOKEN)

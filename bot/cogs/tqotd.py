@@ -26,6 +26,18 @@ from .lib.permissions import Permissions
 
 import inspect
 
+
+
+def is_admin_check(interaction: discord.Interaction) -> bool:
+    if interaction.guild is None:
+        return False
+    if interaction.user is None:
+        return False
+    if isinstance(interaction.user, discord.Member):
+        if interaction.user.guild_permissions:
+            return interaction.user.guild_permissions.administrator
+    return False
+
 class TacoQuestionOfTheDay(commands.Cog):
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
@@ -55,7 +67,8 @@ class TacoQuestionOfTheDay(commands.Cog):
             return
         guild_id = 0
         try:
-            await ctx.message.delete()
+            if ctx.message:
+                await ctx.message.delete()
             guild_id = 0
             if ctx.guild:
                 guild_id = ctx.guild.id

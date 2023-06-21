@@ -81,6 +81,7 @@ class TacoBot(commands.Bot):
         # This copies the global commands over to your guild.
         # self.tree.copy_global_to(guild=MY_GUILD)
         # await self.tree.sync(guild=MY_GUILD)
+        # sync is done in the commands cog `.taco command sync [guild_ids] [~,*,^]`
 
 
 

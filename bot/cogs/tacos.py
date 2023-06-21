@@ -10,6 +10,7 @@ import typing
 
 from discord.ext.commands.cooldowns import BucketType
 from discord.ext.commands import has_permissions, CheckFailure
+from discord import app_commands
 
 from .lib import settings
 from .lib import discordhelper
@@ -39,6 +40,23 @@ class Tacos(commands.Cog):
 
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+
+    # @app_commands.command(name="tacos", description="Taco related commands")
+    # @app_commands.guild_only()
+    # async def ac_tacos(self, interaction: discord.Interaction) -> None:
+    #     _method = inspect.stack()[0][3]
+    #     guild_id = interaction.guild.id if interaction.guild else 0
+
+    #     try:
+    #         pass
+    #     except Exception as e:
+    #         self.log.error(guild_id, f"{self._module}.{_method}", f"Exception: {e}", traceback.format_exc())
+
+    # @app_commands.command(name="count", description="Help for the tacos module")
+    # @app_commands
+    # @app_commands.guild_only()
+    # async def ac_tacos_count(self, interaction: discord.Interaction) -> None:
+    #     pass
 
     @commands.group()
     async def tacos(self, ctx) -> None:
