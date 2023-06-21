@@ -752,8 +752,8 @@ class MongoDatabase(database.Database):
                 "user_id": str(userId),
                 "platform": platform.upper().strip(),
                 "url": url,
-                "channel_id": str(channelId),
-                "message_id": str(messageId),
+                "channel_id": str(channelId) if channelId is not None else None,
+                "message_id": str(messageId) if messageId is not None else None,
                 "timestamp": timestamp
             }
             self.connection.live_tracked.update_one({ "guild_id": str(guildId), "user_id": str(userId), "platform": platform.upper().strip()}, { "$set": payload }, upsert=True)

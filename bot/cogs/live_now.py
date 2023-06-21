@@ -351,7 +351,7 @@ class LiveNow(commands.Cog):
             for tracked in all_tracked_for_user:
                 if logging_channel:
                     message_id = tracked.get("message_id", None)
-                    if message_id:
+                    if message_id is not None and message_id != "None" and message_id != "":
                         try:
                             message = await logging_channel.fetch_message(int(message_id))
                             if message:
