@@ -1828,7 +1828,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def track_food_post(self, guildId: int, userId: int, channelId: int, messageId: int, message: str, image: str):
+    def track_photo_post(self, guildId: int, userId: int, channelId: int, messageId: int, message: str, image: str, channelName: str):
         try:
             if self.connection is None:
                 self.open()
@@ -1838,13 +1838,14 @@ class MongoDatabase(database.Database):
                 "guild_id": str(guildId),
                 "user_id": str(userId),
                 "channel_id": str(channelId),
+                "channel_name": channelName,
                 "message_id": str(messageId),
                 "message": message,
                 "image": image,
                 "timestamp": timestamp
             }
 
-            self.connection.food_posts.insert_one(payload)
+            self.connection.photo_posts.insert_one(payload)
         except Exception as ex:
             print(ex)
             traceback.print_exc()

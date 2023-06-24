@@ -61,7 +61,6 @@ class CommandSyncCog(commands.Cog):
                 else:
                     synced = await self.bot.tree.sync()
 
-                print(synced)
                 await self.discord_helper.send_embed(
                     channel=ctx.channel,
                     title="Command Sync",
@@ -87,6 +86,6 @@ class CommandSyncCog(commands.Cog):
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", f"Exception: {e}")
             await self.discord_helper.notify_of_error(ctx)
-            
+
 async def setup(bot):
     await bot.add_cog(CommandSyncCog(bot))

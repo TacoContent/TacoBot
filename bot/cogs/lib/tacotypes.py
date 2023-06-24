@@ -15,7 +15,7 @@ class TacoTypes(Enum):
     BIRTHDAY = 9
     TWITCH_LINK = 10
     STREAM = 11
-    FOOD_PHOTO = 12
+    PHOTO_POST = 12
     WDYCTW = 13
     TECH_THURSDAY = 14
     TACO_TUESDAY = 15
@@ -69,8 +69,8 @@ class TacoTypes(Enum):
             return TacoTypes.TWITCH_LINK
         elif taco_type_string == "stream_count":
             return TacoTypes.STREAM
-        elif taco_type_string == "food_photo_count":
-            return TacoTypes.FOOD_PHOTO
+        elif taco_type_string == "photo_post_count":
+            return TacoTypes.PHOTO_POST
         elif taco_type_string == "wdyctw_count":
             return TacoTypes.WDYCTW
         elif taco_type_string == "tech_thursday_count":
@@ -148,8 +148,8 @@ class TacoTypes(Enum):
             return "TWITCH_LINK"
         elif taco_type == TacoTypes.STREAM:
             return "STREAM"
-        elif taco_type == TacoTypes.FOOD_PHOTO:
-            return "FOOD_PHOTO"
+        elif taco_type == TacoTypes.PHOTO_POST:
+            return "PHOTO_POST"
         elif taco_type == TacoTypes.WDYCTW:
             return "WDYCTW"
         elif taco_type == TacoTypes.TECH_THURSDAY:
@@ -227,8 +227,8 @@ class TacoTypes(Enum):
             return "twitch_count"
         elif taco_type == TacoTypes.STREAM:
             return "stream_count"
-        elif taco_type == TacoTypes.FOOD_PHOTO:
-            return "food_photo_count"
+        elif taco_type == TacoTypes.PHOTO_POST:
+            return "photo_post_count"
         elif taco_type == TacoTypes.WDYCTW:
             return "wdyctw_count"
         elif taco_type == TacoTypes.TECH_THURSDAY:
