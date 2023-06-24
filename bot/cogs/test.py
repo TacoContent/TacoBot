@@ -39,6 +39,15 @@ class TestCog(commands.Cog):
     async def test(self, ctx):
         pass
 
+    # @test.command(name="photo-posts", aliases=["pp"])
+    # @commands.guild_only()
+    # @commands.has_permissions(administrator=True)
+    # async def photo_posts(self, ctx):
+    #     await ctx.message.delete()
+    #     await ctx.channel.send("Migrating photo posts...", delete_after=5)
+    #     self.db.migrate_food_posts_to_photo_posts()
+    #     await ctx.channel.send("Done", delete_after=5)
+
     # @test.command()
     # @commands.guild_only()
     # @commands.has_permissions(administrator=True)
