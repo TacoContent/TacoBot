@@ -111,6 +111,7 @@ class InviteTracker(commands.Cog):
                                 "inviter_name": inviter.name,
                                 "invited_id": str(member.id),
                                 "invited_name": member.name,
+                                "invite_code": invite.code,
                             },
                         )
                     return
