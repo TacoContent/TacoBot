@@ -22,7 +22,7 @@ from .lib import mongo
 from .lib import tacotypes
 
 class VoiceChatCog(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
@@ -40,7 +40,7 @@ class VoiceChatCog(commands.Cog):
 
 
     @commands.Cog.listener()
-    async def on_voice_state_update(self, member, before, after):
+    async def on_voice_state_update(self, member, before, after) -> None:
         _method = inspect.stack()[0][3]
         if not member.guild:
             return

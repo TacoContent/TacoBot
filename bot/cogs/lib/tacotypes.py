@@ -31,6 +31,8 @@ class TacoTypes(Enum):
     TRIVIA_INCORRECT = 25
     FOLLOW_CHANNEL = 26
     CREATE_VOICE_CHANNEL = 27
+    POST_INTRODUCTION = 28
+    APPROVE_INTRODUCTION = 29
 
 
     TWITCH_BOT_INVITE = 1000 # Invite @OurTacoBot to your Twitch channel
@@ -109,6 +111,10 @@ class TacoTypes(Enum):
             return TacoTypes.FOLLOW_CHANNEL  # this can't be triggered by events
         elif taco_type_string == "create_voice_channel_count":
             return TacoTypes.CREATE_VOICE_CHANNEL
+        elif taco_type_string == "post_introduction_count":
+            return TacoTypes.POST_INTRODUCTION
+        elif taco_type_string == "approve_introduction_count":
+            return TacoTypes.APPROVE_INTRODUCTION
         elif taco_type_string == "twitch_bot_invite":
             return TacoTypes.TWITCH_BOT_INVITE
         elif taco_type_string == "twitch_raid_count":
@@ -192,6 +198,10 @@ class TacoTypes(Enum):
             return "FOLLOW_CHANNEL"
         elif taco_type == TacoTypes.CREATE_VOICE_CHANNEL:
             return "CREATE_VOICE_CHANNEL"
+        elif taco_type == TacoTypes.POST_INTRODUCTION:
+            return "POST_INTRODUCTION"
+        elif taco_type == TacoTypes.APPROVE_INTRODUCTION:
+            return "APPROVE_INTRODUCTION"
         elif taco_type == TacoTypes.TWITCH_BOT_INVITE:
             return "TWITCH_BOT_INVITE"
         elif taco_type == TacoTypes.TWITCH_RAID:
@@ -275,6 +285,10 @@ class TacoTypes(Enum):
             return "follow_channel_count"
         elif taco_type == TacoTypes.CREATE_VOICE_CHANNEL:
             return "create_voice_channel_count"
+        elif taco_type == TacoTypes.POST_INTRODUCTION:
+            return "post_introduction_count"
+        elif taco_type == TacoTypes.APPROVE_INTRODUCTION:
+            return "approve_introduction_count"
         elif taco_type == TacoTypes.TWITCH_BOT_INVITE:
             return "twitch_bot_invite_count"
         elif taco_type == TacoTypes.TWITCH_RAID:

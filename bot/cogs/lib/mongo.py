@@ -2765,3 +2765,53 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
+
+    def get_user_introductions(self, guild_id: int):
+        try:
+            if not self.connection:
+                self.open()
+            return self.connection.introductions.find({"guild_id": str(guild_id)})
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return []
+        finally:
+            if self.connection:
+                self.close()
+
+    def get_user_introduction(self, guild_id: int, user_id: int):
+        try:
+            if not self.connection:
+                self.open()
+            return self.connection.introductions.find_one({"guild_id": str(guild_id), "user_id": str(user_id)})
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return None
+        finally:
+            if self.connection:
+                self.close()
+
+    def track_user_introduction(self, guild_id: int, user_id: int, message_id: int, channel_id: int, approved: bool) -> None:
+        try:
+            if not self.connection:
+                self.open()
+            date = datetime.datetime.utcnow()
+            timestamp = utils.to_timestamp(date)
+
+            payload = {
+                "guild_id": str(guild_id),
+                "user_id": str(user_id),
+                "message_id": str(message_id),
+                "channel_id": str(channel_id),
+                "approved": approved,
+                "timestamp": timestamp
+            }
+            self.connection.introductions.update_one({"guild_id": str(guild_id), "user_id": str(user_id)}, { "$set": payload }, upsert=True)
+
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
