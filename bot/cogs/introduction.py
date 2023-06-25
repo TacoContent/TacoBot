@@ -94,12 +94,7 @@ class IntroductionCog(commands.Cog):
                                     has_approval_emoji = True
                                     break
 
-                    self.log.debug(guild_id, f"{self._module}.{_method}", f"Message: {message.content}")
-                    self.log.debug(guild_id, f"{self._module}.{_method}", f"Author: {message.author.name}")
-                    self.log.debug(guild_id, f"{self._module}.{_method}", f"Timestamp: {message.created_at}")
-                    self.log.debug(guild_id, f"{self._module}.{_method}", f"Has approval emoji: {has_approval_emoji}")
-
-                    reason_msg = f"Imported introduction from {channel.name} by {ctx.author.name}"
+                    reason_msg = f"Imported introduction from {channel.name} by {message.author.name}"
                     self.log.debug(guild_id, f"{self._module}.{_method}", reason_msg)
 
                     await self.discord_helper.taco_give_user(
@@ -112,7 +107,7 @@ class IntroductionCog(commands.Cog):
                     )
 
                     if has_approval_emoji:
-                        reason_msg = f"{ctx.author.name} approved introduction in {channel.name}"
+                        reason_msg = f"{message.author.name} approved introduction in {channel.name}"
                         self.log.debug(guild_id, f"{self._module}.{_method}", reason_msg)
                         await self.discord_helper.taco_give_user(
                             guildId=guild_id,
