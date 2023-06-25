@@ -29,15 +29,19 @@ class TacoTypes(Enum):
     GAME_REDEEM = 23
     TRIVIA_CORRECT = 24
     TRIVIA_INCORRECT = 25
-    TWITCH_BOT_INVITE = 26 # Invite @OurTacoBot to your Twitch channel
-    TWITCH_RAID = 27
-    TWITCH_SUB = 28
-    TWITCH_BITS = 29
-    TWITCH_FIRST_MESSAGE = 30
-    TWITCH_PROMOTE = 31
+    FOLLOW_CHANNEL = 26
+    CREATE_VOICE_CHANNEL = 27
+
+
+    TWITCH_BOT_INVITE = 1000 # Invite @OurTacoBot to your Twitch channel
+    TWITCH_RAID = 1001
+    TWITCH_SUB = 1002
+    TWITCH_BITS = 1003
+    TWITCH_FIRST_MESSAGE = 1004
+    TWITCH_PROMOTE = 1005
     TWITCH_GIVE_TACOS = 32
-    TWITCH_RECEIVE_TACOS = 33
-    TWITCH_FOLLOW = 34 # not yet implemented until i can figure out how to get the event from eventsub
+    TWITCH_RECEIVE_TACOS = 1006
+    TWITCH_FOLLOW = 1007 # not yet implemented until i can figure out how to get the event from eventsub
 
     PURGE = 9996
     LEAVE_SERVER = 9997
@@ -101,6 +105,10 @@ class TacoTypes(Enum):
             return TacoTypes.TRIVIA_CORRECT
         elif taco_type_string == "trivia_incorrect_count":
             return TacoTypes.TRIVIA_INCORRECT
+        elif taco_type_string == "follow_channel_count":
+            return TacoTypes.FOLLOW_CHANNEL  # this can't be triggered by events
+        elif taco_type_string == "create_voice_channel_count":
+            return TacoTypes.CREATE_VOICE_CHANNEL
         elif taco_type_string == "twitch_bot_invite":
             return TacoTypes.TWITCH_BOT_INVITE
         elif taco_type_string == "twitch_raid_count":
@@ -180,6 +188,10 @@ class TacoTypes(Enum):
             return "TRIVIA_CORRECT"
         elif taco_type == TacoTypes.TRIVIA_INCORRECT:
             return "TRIVIA_INCORRECT"
+        elif taco_type == TacoTypes.FOLLOW_CHANNEL:  # this can't be triggered by events
+            return "FOLLOW_CHANNEL"
+        elif taco_type == TacoTypes.CREATE_VOICE_CHANNEL:
+            return "CREATE_VOICE_CHANNEL"
         elif taco_type == TacoTypes.TWITCH_BOT_INVITE:
             return "TWITCH_BOT_INVITE"
         elif taco_type == TacoTypes.TWITCH_RAID:
@@ -259,6 +271,10 @@ class TacoTypes(Enum):
             return "trivia_correct_count"
         elif taco_type == TacoTypes.TRIVIA_INCORRECT:
             return "trivia_incorrect_count"
+        elif taco_type == TacoTypes.FOLLOW_CHANNEL: # this can't be triggered by events
+            return "follow_channel_count"
+        elif taco_type == TacoTypes.CREATE_VOICE_CHANNEL:
+            return "create_voice_channel_count"
         elif taco_type == TacoTypes.TWITCH_BOT_INVITE:
             return "twitch_bot_invite_count"
         elif taco_type == TacoTypes.TWITCH_RAID:

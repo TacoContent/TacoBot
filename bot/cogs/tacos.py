@@ -249,6 +249,15 @@ class Tacos(commands.Cog):
                         tacotypes.TacoTypes.BOOST )
                     return
 
+                # elif message.type == discord.MessageType.channel_follow_add:
+                #     # add tacos to user that followed the channel
+                #     await self.discord_helper.taco_give_user(
+                #         guild_id, self.bot.user, member,
+                #         self.settings.get_string(guild_id, "taco_reason_follow"),
+                #         tacotypes.TacoTypes.FOLLOW_CHANNEL )
+                #     return
+
+
                 if message.type == discord.MessageType.default:
                     try:
                         if message.reference is not None:
