@@ -1984,18 +1984,18 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def migrate_food_posts_to_photo_posts(self):
-        guild_id = "935294040386183228"
-        try:
-            if self.connection is None:
-                self.open()
-            self.connection.photo_posts.update_many({ "guild_id": str(guild_id) }, { "$set": { "channel_name": "🌭food" } })
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-        finally:
-            if self.connection:
-                self.close()
+    # def migrate_food_posts_to_photo_posts(self):
+    #     guild_id = "935294040386183228"
+    #     try:
+    #         if self.connection is None:
+    #             self.open()
+    #         self.connection.tacos_log.update_many({ "guild_id": guild_id, "type": "FOOD_PHOTO" }, { "$set": { "type": "PHOTO_POST" } })
+    #     except Exception as ex:
+    #         print(ex)
+    #         traceback.print_exc()
+    #     finally:
+    #         if self.connection:
+    #             self.close()
 
     def import_taco_tuesday(self):
         try:
