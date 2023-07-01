@@ -171,15 +171,15 @@ class GameKeys(commands.Cog):
         await self._claim_offer(ctx, interaction.data["custom_id"])
         await self._create_offer(ctx)
 
-
-    async def _claim_timeout_callback(self, interaction: discord.Interaction, error: Exception, item: discord.ui.Item):
+    # , interaction: discord.Interaction, error: Exception, item: discord.ui.Item
+    async def _claim_timeout_callback(self, ctx):
         # create context from interaction
         ctx = self.discord_helper.create_context(
             self.bot,
-            author=interaction.user,
-            channel=interaction.channel,
-            message=interaction.message,
-            guild=interaction.guild
+            author=ctx.author,
+            channel=ctx.channel,
+            message=ctx.message,
+            guild=ctx.guild,
         )
         await self._create_offer(ctx)
         pass

@@ -77,11 +77,11 @@ class LiveNow(commands.Cog):
 
             for bsa in before_streaming_activities_temp:
                 # if item is not in the list, add it
-                if len([a for a in before_streaming_activities if a.platform == bsa.platform]) == 0:
+                if len([a for a in before_streaming_activities if a.platform.lower() == bsa.platform.lower()]) == 0:
                     before_streaming_activities.append(bsa)
 
             for asa in after_streaming_activities_temp:
-                if len([a for a in after_streaming_activities if a.platform == asa.platform]) == 0:
+                if len([a for a in after_streaming_activities if a.platform.lower() == asa.platform.lower()]) == 0:
                     after_streaming_activities.append(asa)
 
             # WENT LIVE
@@ -91,9 +91,7 @@ class LiveNow(commands.Cog):
                 # if it is already tracked, then we don't need to do anything
                 if is_tracked:
                     self.log.debug(guild_id, f"{self._module}.{_method}", f"{after.display_name} is already tracked for {asa.platform}")
-
                     await self.add_live_roles(after, cog_settings)
-
                     continue
 
                 self.log.info(guild_id, f"{self._module}.{_method}", f"{after.display_name} started streaming on {asa.platform}")
@@ -154,10 +152,10 @@ class LiveNow(commands.Cog):
                     # this activity exists in both lists, so it is still live
                     continue
 
-                tracked = self.db.get_tracked_live(guild_id, before.id, bsa.platform)
+                tracked = self.db.get_tracked_live(guildId=guild_id, userId=before.id, platform=bsa.platform)
                 is_tracked = tracked != None and tracked.count() > 0
                 # if it is not tracked, then we don't need to do anything
-                if not is_tracked:
+                if not is_tracked or not tracked:
                     self.log.debug(guild_id, f"{self._module}.{_method}", f"{after.display_name} is not tracked for {bsa.platform}")
                     await self.remove_live_roles(before, cog_settings)
                     continue

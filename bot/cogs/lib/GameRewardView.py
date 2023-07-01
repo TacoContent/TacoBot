@@ -60,7 +60,7 @@ class GameRewardView(discord.ui.View):
 
     async def on_timeout(self) -> None:
         if self.timeout_callback is not None:
-            await self.timeout_callback()
+            await self.timeout_callback(self.ctx)
         pass
 
     async def on_error(self, error, item, interaction) -> None:
