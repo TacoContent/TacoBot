@@ -130,7 +130,9 @@ class GameKeys(commands.Cog):
                     "value": f"{expires.strftime('%Y-%m-%d %H:%M:%S')} UTC",
                 },
             ]
-            timeout = 60 * 60 * 24
+            # timeout = 60 * 60 * 24
+            # temporary for testing
+            timeout = 60
 
             claim_view = GameRewardView(
                 ctx,
