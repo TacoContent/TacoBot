@@ -26,6 +26,7 @@ from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
 from .lib.system_actions import SystemActions
+from .lib.messaging import Messaging
 
 class LiveNow(commands.Cog):
     def __init__(self, bot):
@@ -35,6 +36,7 @@ class LiveNow(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "live_now"
         self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
@@ -322,7 +324,7 @@ class LiveNow(commands.Cog):
                     # self.log.debug(guild_id, "live_now.log_live_post", f"Found large image {image_url}")
             user_display_name = utils.get_user_display_name(user)
             self.log.debug(guild_id, f"{self._module}.{_method}", f"Logging live post for {user_display_name} in {logging_channel.name}")
-            message = await self.discord_helper.send_embed(logging_channel,
+            message = await self.messaging.send_embed(logging_channel,
                 f"🔴 {user_display_name}", description,
                 fields, thumbnail=profile_icon,
                 author=user, color=0x6a0dad)

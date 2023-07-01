@@ -23,6 +23,7 @@ from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
 from .lib.GameRewardView import GameRewardView
+from .lib.messaging import Messaging
 
 class GameKeys(commands.Cog):
     def __init__(self, bot):
@@ -32,6 +33,7 @@ class GameKeys(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "game_keys"
         self.db = mongo.MongoDatabase()
 
@@ -57,7 +59,7 @@ class GameKeys(commands.Cog):
             await self._create_offer(ctx)
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
     @game_keys.command(name="close")
     @commands.guild_only()
@@ -69,7 +71,7 @@ class GameKeys(commands.Cog):
             await self._close_offer(ctx)
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
     async def _create_offer(self, ctx) -> None:
         _method = inspect.stack()[0][3]
@@ -141,7 +143,7 @@ class GameKeys(commands.Cog):
                 timeout=timeout
             )
 
-            offer_message = await self.discord_helper.send_embed(
+            offer_message = await self.messaging.send_embed(
                 reward_channel,
                 self.settings.get_string(guild_id, "game_key_offer_title"),
                 self.settings.get_string(guild_id, "game_key_offer_message", cost=cost, tacos_word=tacos_word),
@@ -154,7 +156,7 @@ class GameKeys(commands.Cog):
             self.db.open_game_key_offer(game_data["id"], guild_id, offer_message.id, ctx.channel.id)
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
     async def _claim_offer_callback(self, interaction: discord.Interaction):
         _method = inspect.stack()[0][3]
@@ -239,7 +241,7 @@ class GameKeys(commands.Cog):
                 )
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
     async def _claim_offer(self, ctx, game_id: str) -> bool:
         _method = inspect.stack()[0][3]

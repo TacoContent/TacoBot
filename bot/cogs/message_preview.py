@@ -21,6 +21,7 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
+from .lib.messaging import Messaging
 
 import inspect
 
@@ -33,6 +34,7 @@ class MessagePreview(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "message_preview"
 
         self.db = mongo.MongoDatabase()
@@ -119,7 +121,7 @@ class MessagePreview(commands.Cog):
                     embed_image = e.image.url
 
             # create the message preview
-            embed = await self.discord_helper.send_embed(target_channel,
+            embed = await self.messaging.send_embed(target_channel,
                 embed_title,
                 message=f"{message_content}\n\n{embed_content}",
                 thumbnail=embed_thumbnail,

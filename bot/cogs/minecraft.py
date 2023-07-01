@@ -24,6 +24,7 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
+from .lib.messaging import Messaging
 import inspect
 
 
@@ -35,6 +36,7 @@ class Minecraft(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "minecraft"
         self.SELF_DESTRUCT_TIMEOUT = 30
         self.db = mongo.MongoDatabase()
@@ -80,7 +82,7 @@ class Minecraft(commands.Cog):
             await self.status(ctx)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
     async def status(self, ctx):
         _method = inspect.stack()[0][3]
@@ -107,10 +109,11 @@ class Minecraft(commands.Cog):
                 AUTO_DELETE_TIMEOUT = None
 
             if not self.is_user_whitelisted(guild_id, ctx.author.id):
-                await self.discord_helper.send_embed(output_channel,
+                await self.messaging.send_embed(
+                    channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
                     message=self.settings.get_string(guild_id, "minecraft_not_whitelisted"),
-                    delete_after=AUTO_DELETE_TIMEOUT)
+                    delete_after=AUTO_DELETE_TIMEOUT,)
                 return
 
             status = self.get_minecraft_status(guild_id)
@@ -155,15 +158,16 @@ class Minecraft(commands.Cog):
             for m in cog_settings["mods"]:
                fields.append({ "name": f"{m['name']}", "value": f"{m['version']}", "inline": True })
 
-            await self.discord_helper.send_embed(output_channel,
+            await self.messaging.send_embed(
+                channel=output_channel,
                 title=self.settings.get_string(guild_id, "minecraft_status_server_status"),
                 message=self.settings.get_string(guild_id, "minecraft_status_message", title=status['title'], help=cog_settings['help']),
                 fields=fields,
-                delete_after=AUTO_DELETE_TIMEOUT)
+                delete_after=AUTO_DELETE_TIMEOUT,)
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
     @minecraft.command(name="start")
     @commands.guild_only()
@@ -186,20 +190,22 @@ class Minecraft(commands.Cog):
 
 
             if not self.is_user_whitelisted(guild_id=guild_id, user_id=ctx.author.id):
-                await self.discord_helper.send_embed(output_channel,
+                await self.messaging.send_embed(
+                    channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
                     message=self.settings.get_string(guild_id, "minecraft_control_no_start"),
-                    delete_after=AUTO_DELETE_TIMEOUT)
+                    delete_after=AUTO_DELETE_TIMEOUT,)
                 return
 
 
             status = self.get_minecraft_status(guild_id)
 
             if status['online'] == True:
-                await self.discord_helper.send_embed(output_channel,
+                await self.messaging.send_embed(
+                    channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
                     message=self.settings.get_string(guild_id, "minecraft_control_running"),
-                    delete_after=AUTO_DELETE_TIMEOUT)
+                    delete_after=AUTO_DELETE_TIMEOUT,)
                 return
 
             self.log.warn(guild_id, f"{self._module}.{_method}", f"{ctx.author.name} Started the Minecraft Server.")
@@ -208,30 +214,33 @@ class Minecraft(commands.Cog):
             # TODO: store url in settings
             resp = requests.post(f"http://andeddu.bit13.local:10070/taco/minecraft/server/start")
             if resp.status_code != 200:
-                await self.discord_helper.send_embed(output_channel,
+                await self.messaging.send_embed(
+                    channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
                     message=self.settings.get_string(guild_id, "minecraft_control_start_failure_code", status_code=resp.status_code, action="start"),
-                    delete_after=AUTO_DELETE_TIMEOUT)
+                    delete_after=AUTO_DELETE_TIMEOUT,)
                 return
             data = resp.json()
             if data['status'] != "success":
                 self.log.error(guild_id, f"{self._module}.{_method}", f"Failed to start the server: {data['message']}")
-                await self.discord_helper.send_embed(output_channel,
+                await self.messaging.send_embed(
+                    channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
                     message=self.settings.get_string(guild_id, "minecraft_control_failure", error=data['message'], action="start"),
-                    delete_after=AUTO_DELETE_TIMEOUT)
+                    delete_after=AUTO_DELETE_TIMEOUT,)
                 return
 
             # notify the user that the server was started, and it will take a few minutes for it to be ready
-            await self.discord_helper.send_embed(output_channel,
+            await self.messaging.send_embed(
+                channel=output_channel,
                 title=self.settings.get_string(guild_id, "minecraft_control_title"),
                 message=self.settings.get_string(guild_id, "minecraft_control_start_success"),
-                delete_after=AUTO_DELETE_TIMEOUT)
+                delete_after=AUTO_DELETE_TIMEOUT,)
 
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
 
     @minecraft.command(name="stop")
@@ -257,10 +266,11 @@ class Minecraft(commands.Cog):
             status = self.get_minecraft_status(guild_id)
 
             if status['online'] == False:
-                await self.discord_helper.send_embed(output_channel,
+                await self.messaging.send_embed(
+                    channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
                     message=self.settings.get_string(guild_id, "minecraft_control_stopped"),
-                    delete_after=AUTO_DELETE_TIMEOUT)
+                    delete_after=AUTO_DELETE_TIMEOUT,)
                 return
 
             self.log.warn(guild_id, f"{self._module}.{_method}", f"{ctx.author.name} Stopped the Minecraft Server.")
@@ -269,30 +279,33 @@ class Minecraft(commands.Cog):
             # TODO: store url in settings
             resp = requests.post(f"http://andeddu.bit13.local:10070/taco/minecraft/server/stop")
             if resp.status_code != 200:
-                await self.discord_helper.send_embed(output_channel,
+                await self.messaging.send_embed(
+                    channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
                     message=self.settings.get_string(guild_id, "minecraft_control_start_failure_code", status_code=resp.status_code, action="stop"),
-                    delete_after=AUTO_DELETE_TIMEOUT)
+                    delete_after=AUTO_DELETE_TIMEOUT,)
                 return
             data = resp.json()
             if data['status'] != "success":
                 self.log.error(guild_id, f"{self._module}.{_method}", f"Failed to stop the server: {data['message']}")
-                await self.discord_helper.send_embed(output_channel,
+                await self.messaging.send_embed(
+                    channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
                     message=self.settings.get_string(guild_id, "minecraft_control_failure", error=data['message'], action="stop"),
-                    delete_after=AUTO_DELETE_TIMEOUT)
+                    delete_after=AUTO_DELETE_TIMEOUT,)
                 return
 
             # notify the user that the server was started, and it will take a few minutes for it to be ready
-            await self.discord_helper.send_embed(output_channel,
+            await self.messaging.send_embed(
+                channel=output_channel,
                 title=self.settings.get_string(guild_id, "minecraft_control_title"),
                 message=self.settings.get_string(guild_id, "minecraft_control_stop_success"),
-                delete_after=AUTO_DELETE_TIMEOUT)
+                delete_after=AUTO_DELETE_TIMEOUT,)
 
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
     @minecraft.command()
     @commands.guild_only()
     async def whitelist(self, ctx: Context):
@@ -304,10 +317,11 @@ class Minecraft(commands.Cog):
                 guild_id = ctx.guild.id
 
             if self.is_user_whitelisted(guild_id=guild_id, user_id=ctx.author.id):
-                await self.discord_helper.send_embed(ctx.channel,
+                await self.messaging.send_embed(
+                    channel=ctx.channel,
                     title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
                     message=self.settings.get_string(guild_id, "minecraft_whitelist_already_whitelisted_message"),
-                    delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                    delete_after=self.SELF_DESTRUCT_TIMEOUT,)
                 return
 
             # try DM first
@@ -367,8 +381,8 @@ class Minecraft(commands.Cog):
             if result.status_code != 200:
                 # Need to notify of an error
                 self.log.warn(guild_id, f"{self._module}.{_method}", f"Failed to find player {mc_username}")
-                await self.discord_helper.send_embed(
-                    _ctx.channel,
+                await self.messaging.send_embed(
+                    channel=_ctx.channel,
                     title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
                     message=self.settings.get_string(guild_id, "minecraft_whitelist_unable_to_verify", mc_username=mc_username),
                     color=0xFF0000,
@@ -381,8 +395,8 @@ class Minecraft(commands.Cog):
             # get users uuid for minecraft username
             if not data["success"] or data["code"] != "player.found":
                 self.log.warn(guild_id, f"{self._module}.{_method}", f"Failed to find player {mc_username}")
-                await self.discord_helper.send_embed(
-                    _ctx.channel,
+                await self.messaging.send_embed(
+                    channel=_ctx.channel,
                     title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
                     message=self.settings.get_string(guild_id, "minecraft_whitelist_unable_to_verify", mc_username=mc_username),
                     color=0xFF0000,
@@ -404,10 +418,10 @@ class Minecraft(commands.Cog):
 
             async def yes_no_callback(response: bool):
                 if not response:
-                    await self.discord_helper.send_embed(
-                        _ctx.channel,
-                        self.settings.get_string(guild_id, "minecraft_whitelist_title"),
-                        self.settings.get_string(guild_id, "minecraft_whitelist_run_again"),
+                    await self.messaging.send_embed(
+                        channel=_ctx.channel,
+                        title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
+                        message=self.settings.get_string(guild_id, "minecraft_whitelist_run_again"),
                         color=0xFF0000,
                         delete_after=20,
                     )
@@ -421,10 +435,10 @@ class Minecraft(commands.Cog):
                         username=mc_username,
                         uuid=mc_uuid,
                         whitelist=True)
-                    await self.discord_helper.send_embed(
-                        _ctx.channel,
-                        self.settings.get_string(guild_id, "minecraft_whitelist_title"),
-                        self.settings.get_string(guild_id, "minecraft_whitelist_message", username=mc_username, uuid=mc_uuid, server="mc.fuku.io", modpack="All The Mods 7 v0.4.0"),
+                    await self.messaging.send_embed(
+                        channel=_ctx.channel,
+                        title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
+                        message=self.settings.get_string(guild_id, "minecraft_whitelist_message", username=mc_username, uuid=mc_uuid, server="mc.fuku.io", modpack="All The Mods 7 v0.4.0"),
                         color=0x00FF00,
                         delete_after=30,
                     )
@@ -448,8 +462,8 @@ class Minecraft(commands.Cog):
                 username=mc_username,
                 uuid=mc_uuid,
                 whitelist=True)
-            await self.discord_helper.send_embed(
-                _ctx.channel,
+            await self.messaging.send_embed(
+                channel=_ctx.channel,
                 title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
                 message=self.settings.get_string(guild_id, "minecraft_whitelist_success_message", mc_username=mc_username, mc_uuid=mc_uuid),
                 color=0x00FF00,
@@ -458,7 +472,7 @@ class Minecraft(commands.Cog):
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
     def is_user_whitelisted(self, guild_id: int, user_id: int):
         # check if user is in the whitelist

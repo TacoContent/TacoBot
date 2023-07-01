@@ -21,6 +21,7 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib.system_actions import SystemActions
+from .lib.messaging import Messaging
 
 
 class StreamTeam(commands.Cog):
@@ -31,6 +32,7 @@ class StreamTeam(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "streamteam"
         self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
@@ -70,6 +72,7 @@ class StreamTeam(commands.Cog):
             watch_message_ids = streamteam_settings["message_ids"]
             # get the log channel id
             log_channel_id = streamteam_settings["log_channel"]
+            log_channel = None
             if log_channel_id:
                 log_channel = await self.discord_helper.get_or_fetch_channel(log_channel_id)
 
@@ -83,12 +86,14 @@ class StreamTeam(commands.Cog):
                     twitch_name = twitch_user['twitch_name']
 
                 if log_channel:
-                    await self.discord_helper.send_embed(log_channel,
-                        self.settings.get_string(guild_id, "streamteam_removal_tile"),
-                        self.settings.get_string(guild_id, "streamteam_removal_message",
+                    await self.messaging.send_embed(
+                        channel=log_channel,
+                        title=self.settings.get_string(guild_id, "streamteam_removal_tile"),
+                        message=self.settings.get_string(guild_id, "streamteam_removal_message",
                             user=f"{utils.get_user_display_name(user)}",
                             team_name=team_name,
-                            twitch_name=twitch_name), color=0xff0000)
+                            twitch_name=twitch_name),
+                        color=0xff0000)
 
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
@@ -154,13 +159,13 @@ class StreamTeam(commands.Cog):
                 #     action=SystemActions.LINK_TWITCH_TO_DISCORD,
                 #     data={"user_id": str(user.id), "twitch_name": twitch_name.lower()},
                 # )
-                #             await self.discord_helper.send_embed(user,
+                #             await self.messaging.send_embed(user,
                 #                 self.settings.get_string(guild_id, "success"),
                 #                 self.settings.get_string(guild_id, "streamteam_set_twitch_name_message", twitch_name=twitch_name),
                 #                 color=0x00ff00)
                 #     except discord.Forbidden as e:
                 #         # cant send them a message. Put it in the channel...
-                #         await self.discord_helper.send_embed(channel,
+                #         await self.messaging.send_embed(channel,
                 #             self.settings.get_string(guild_id, "error"),
                 #             self.settings.get_string(guild_id, "twitch_name_dm_error", user=user.mention),
                 #             footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
@@ -171,9 +176,10 @@ class StreamTeam(commands.Cog):
 
                 if log_channel:
                     twitch_name = unknown if twitch_name is None else twitch_name
-                    await self.discord_helper.send_embed(log_channel,
-                        self.settings.get_string(guild_id, "streamteam_join_title"),
-                        self.settings.get_string(guild_id, "streamteam_join_message",
+                    await self.messaging.send_embed(
+                        channel=log_channel,
+                        title=self.settings.get_string(guild_id, "streamteam_join_title"),
+                        message=self.settings.get_string(guild_id, "streamteam_join_message",
                             user=user, team_name=team_name, twitch_name=twitch_name),
                         color=0x00ff00)
         except Exception as ex:
@@ -209,25 +215,28 @@ class StreamTeam(commands.Cog):
                 twitchName = self.db.get_user_twitch_info(ctx.author.id)['twitch_name']
             if twitchName is None:
                 try:
-                    await self.discord_helper.send_embed(ctx.author,
-                        self.settings.get_string(guild_id, "error"),
-                        self.settings.get_string(guild_id, "streamteam_invite_no_twitch_name_message"),
-                        color=0xff0000)
+                    await self.messaging.send_embed(
+                        channel=ctx.author,
+                        title=self.settings.get_string(guild_id, "error"),
+                        message=self.settings.get_string(guild_id, "streamteam_invite_no_twitch_name_message"),
+                        color=0xff0000,)
                     return
                 except discord.Forbidden:
                     # if we cant send to user, then we send to channel
-                    await self.discord_helper.send_embed(ctx.channel,
-                        self.settings.get_string(guild_id, "error"),
-                        self.settings.get_string(guild_id, "streamteam_invite_no_twitch_name_message"),
+                    await self.messaging.send_embed(
+                        channel=ctx.channel,
+                        title=self.settings.get_string(guild_id, "error"),
+                        message=self.settings.get_string(guild_id, "streamteam_invite_no_twitch_name_message"),
                         footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
-                        color=0xff0000, delete_after=30)
+                        color=0xff0000,
+                        delete_after=30,)
                     return
 
             await self._invite_user(ctx, ctx.author, twitchName)
 
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
     @team.command(aliases=["invite-user"])
     @commands.guild_only()
@@ -263,22 +272,25 @@ class StreamTeam(commands.Cog):
             )
             self.db.add_stream_team_request(guildId=ctx.guild.id, twitchName=twitchName, userId=user.id)
 
-            await self.discord_helper.send_embed(ctx.channel,
-                self.settings.get_string(guild_id, "success"),
-                self.settings.get_string(guild_id, "streamteam_invite_success_message", user=f"{utils.get_user_display_name(user)}", team_name=team_name, twitch_name=twitchName),
+            await self.messaging.send_embed(
+                channel=ctx.channel,
+                title=self.settings.get_string(guild_id, "success"),
+                message=self.settings.get_string(guild_id, "streamteam_invite_success_message", user=f"{utils.get_user_display_name(user)}", team_name=team_name, twitch_name=twitchName),
                 footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
-                color=0x00ff00, delete_after=30)
+                color=0x00ff00,
+                delete_after=30,)
 
             if log_channel:
                 twitch_name = unknown if twitch_name is None else twitch_name
-                await self.discord_helper.send_embed(log_channel,
-                    self.settings.get_string(guild_id, "streamteam_join_title"),
-                    self.settings.get_string(guild_id, "streamteam_join_message", user=f"{utils.get_user_display_name(user)}", team_name=team_name, twitch_name=twitchName),
-                    color=0x00ff00)
+                await self.messaging.send_embed(
+                    channel=log_channel,
+                    title=self.settings.get_string(guild_id, "streamteam_join_title"),
+                    message=self.settings.get_string(guild_id, "streamteam_join_message", user=f"{utils.get_user_display_name(user)}", team_name=team_name, twitch_name=twitchName),
+                    color=0x00ff00,)
 
         except Exception as ex:
             self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)

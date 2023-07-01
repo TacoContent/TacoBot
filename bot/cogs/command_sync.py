@@ -10,6 +10,7 @@ from .lib import discordhelper
 from .lib import logger
 from .lib import loglevel
 from .lib import mongo
+from .lib.messaging import Messaging
 
 class CommandSyncCog(commands.Cog):
     def __init__(self, bot: tacobot.TacoBot) -> None:
@@ -19,6 +20,7 @@ class CommandSyncCog(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.messaging = Messaging(bot)
         self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -46,7 +48,7 @@ class CommandSyncCog(commands.Cog):
                     synced = await self.bot.tree.sync(guild=ctx.guild)
                 elif spec == "*":
                     if guild_id == 0:
-                        await self.discord_helper.send_embed(
+                        await self.messaging.send_embed(
                             channel=ctx.channel,
                             title="Command Sync",
                             message="No guild id identified, cannot sync globally.",
@@ -61,7 +63,7 @@ class CommandSyncCog(commands.Cog):
                 else:
                     synced = await self.bot.tree.sync()
 
-                await self.discord_helper.send_embed(
+                await self.messaging.send_embed(
                     channel=ctx.channel,
                     title="Command Sync",
                     message=f"Synced {len(synced)} commands {'globally' if spec is None else 'to the current guild.'}",
@@ -77,7 +79,7 @@ class CommandSyncCog(commands.Cog):
                     pass
                 else:
                     ret += 1
-                await self.discord_helper.send_embed(
+                await self.messaging.send_embed(
                     channel=ctx.channel,
                     title="Command Sync",
                     message=f"Synced the tree to {ret}/{len(guilds)}",
@@ -85,7 +87,7 @@ class CommandSyncCog(commands.Cog):
                 )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", f"Exception: {e}")
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
 async def setup(bot):
     await bot.add_cog(CommandSyncCog(bot))

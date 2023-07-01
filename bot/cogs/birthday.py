@@ -27,6 +27,7 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
+from .lib.messaging import Messaging
 
 class Birthday(commands.Cog):
     def __init__(self, bot):
@@ -37,6 +38,7 @@ class Birthday(commands.Cog):
         self.settings = settings.Settings()
         self.SETTINGS_SECTION = "birthday"
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.messaging = Messaging(bot)
         self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -126,7 +128,7 @@ class Birthday(commands.Cog):
                 { "name": self.settings.get_string(guild_id, "month"), "value": str(month), "inline": True },
                 { "name": self.settings.get_string(guild_id, "day"), "value": str(day), "inline": True },
             ]
-            await self.discord_helper.send_embed(
+            await self.messaging.send_embed(
                 out_channel,
                 self.settings.get_string(guild_id, "birthday_set_title"),
                 self.settings.get_string(guild_id, "birthday_set_confirm", user=ctx.author.mention),
@@ -136,7 +138,7 @@ class Birthday(commands.Cog):
             pass
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
     @birthday.command(name="check")
     @commands.guild_only()
@@ -164,7 +166,7 @@ class Birthday(commands.Cog):
             await asyncio.sleep(0.5)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            self.discord_helper.notify_of_error(ctx)
+            self.messaging.notify_of_error(ctx)
 
     def was_checked_today(self, guildId: int):
         _method = inspect.stack()[0][3]
@@ -236,10 +238,10 @@ class Birthday(commands.Cog):
                     { "name": self.settings.get_string(guild_id, "month"), "value": month_name, "inline": True },
                     { "name": self.settings.get_string(guild_id, "day"), "value": month_day, "inline": True },
                 ]
-                await self.discord_helper.send_embed(
-                    output_channel,
-                    self.settings.get_string(guild_id, "birthday_wishes_title"),
-                    self.settings.get_string(
+                await self.messaging.send_embed(
+                    channel=output_channel,
+                    title=self.settings.get_string(guild_id, "birthday_wishes_title"),
+                    message=self.settings.get_string(
                         guild_id, "birthday_wishes_message", message=message, users=""
                     ),
                     image=image,

@@ -21,6 +21,7 @@ from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
 from .lib.system_actions import SystemActions
+from .lib.messaging import Messaging
 
 class NewAccountCheck(commands.Cog):
     def __init__(self, bot) -> None:
@@ -30,6 +31,7 @@ class NewAccountCheck(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(self.bot)
+        self.messaging = Messaging(self.bot)
         self.SETTINGS_SECTION = "account_age_check"
         self.MINIMUM_ACCOUNT_AGE = 30 # days
         self.db = mongo.MongoDatabase()
@@ -65,7 +67,7 @@ class NewAccountCheck(commands.Cog):
                     "set_by": str(ctx.author.id)
                 }
             )
-            await self.discord_helper.send_embed(
+            await self.messaging.send_embed(
                 channel=ctx.channel,
                 title="Minimum account age set",
                 message=f"Minimum account age: {minimum_age} days\nSet by: {ctx.author.mention}",
@@ -93,7 +95,7 @@ class NewAccountCheck(commands.Cog):
                     "added_by": str(ctx.author.id)
                 }
             )
-            await self.discord_helper.send_embed(
+            await self.messaging.send_embed(
                 channel=ctx.channel,
                 title="User added to join whitelist",
                 message=f"User ID: {user_id}\nAdded by: {ctx.author.mention}",
@@ -123,7 +125,7 @@ class NewAccountCheck(commands.Cog):
                     "removed_by": str(ctx.author.id)
                 }
             )
-            await self.discord_helper.send_embed(
+            await self.messaging.send_embed(
                 channel=ctx.channel,
                 title="User removed from join whitelist",
                 message=f"User ID: {user_id}\nRemoved by: {ctx.author.mention}",

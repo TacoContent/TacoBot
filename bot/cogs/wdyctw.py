@@ -21,6 +21,7 @@ from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
 from .lib.permissions import Permissions
+from .lib.messaging import Messaging
 
 import inspect
 
@@ -32,6 +33,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.messaging = Messaging(bot)
         self.permissions = Permissions(bot)
         self.SETTINGS_SECTION = "wdyctw"
         self.SELF_DESTRUCT_TIMEOUT = 30
@@ -96,15 +98,17 @@ class WhatDoYouCallThisWednesday(commands.Cog):
                     message_content = role_tag
 
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
-            if not out_channel:
+            if out_channel is None:
                 self.log.warn(guild_id, f"{self._module}.{_method}", f"No output channel found for guild {guild_id}")
+                return
 
             # get role
             taco_word = self.settings.get_string(guild_id, "taco_singular")
             if amount != 1:
                 taco_word = self.settings.get_string(guild_id, "taco_plural")
             out_message = self.settings.get_string(guild_id, "wdyctw_out_message", taco_count=amount, taco_word=taco_word)
-            wdyctw_message = await self.discord_helper.send_embed(channel=out_channel,
+            wdyctw_message = await self.messaging.send_embed(
+                channel=out_channel,
                 title=self.settings.get_string(guild_id, "wdyctw_out_title"),
                 message=out_message,
                 content=message_content, color=0x00ff00,
@@ -123,7 +127,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
     @wdyctw.command(name="import")
     @commands.has_permissions(administrator=True)
@@ -154,7 +158,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
 
     @wdyctw.command(name="give")
@@ -170,7 +174,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
 
     async def _on_raw_reaction_add_give(self, payload) -> None:
@@ -179,7 +183,6 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
 
         # check if the user that reacted is in the admin role
-        # if not await self.discord_helper.is_admin(guild_id, payload.user_id):
         if not await self.permissions.is_admin(payload.user_id, guild_id):
             self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
             return
@@ -211,7 +214,6 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
 
         # check if the user that reacted is in the admin role
-        # if not await self.discord_helper.is_admin(guild_id, payload.user_id):
         if not await self.permissions.is_admin(payload.user_id, guild_id):
             self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
             return
@@ -241,7 +243,6 @@ class WhatDoYouCallThisWednesday(commands.Cog):
                 return
 
             # check if the user that reacted is in the admin role
-            # if not await self.discord_helper.is_admin(guild_id, payload.user_id):
             if not await self.permissions.is_admin(payload.user_id, guild_id):
                 self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
                 return
@@ -272,7 +273,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
-            # await self.discord_helper.notify_of_error(ctx)
+            # await self.messaging.notify_of_error(ctx)
 
     def _import_wdyctw(self, message: discord.Message) -> None:
         _method = inspect.stack()[0][3]
@@ -344,20 +345,20 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
             reason_msg = self.settings.get_string(guild_id, "wdyctw_reason_default")
 
-            await self.discord_helper.send_embed(
+            await self.messaging.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_give_title"),
                 # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",
                 message=self.settings.get_string(guild_id, "taco_gift_success", user=self.bot.user, touser=member.mention, amount=amount, taco_word=tacos_word, reason=reason_msg),
                 footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT),
-                delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                delete_after=self.SELF_DESTRUCT_TIMEOUT,)
 
             await self.discord_helper.taco_give_user(guild_id, self.bot.user, member, reason_msg, tacotypes.TacoTypes.WDYCTW, taco_amount=amount )
 
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
 
     def get_cog_settings(self, guildId: int = 0) -> dict:

@@ -256,7 +256,7 @@ class MongoDatabase(database.Database):
                 self.close()
         pass
 
-    def get_total_gifted_tacos(self, guildId: int, userId: int, timespan_seconds: int = 86400) -> typing.Union[int,None]:
+    def get_total_gifted_tacos(self, guildId: int, userId: int, timespan_seconds: int = 86400) -> int:
         try:
             if self.connection is None:
                 self.open()
@@ -272,6 +272,8 @@ class MongoDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+
+            return 0
         finally:
             if self.connection:
                 self.close()

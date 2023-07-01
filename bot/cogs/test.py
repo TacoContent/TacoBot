@@ -20,12 +20,14 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
+from .lib.messaging import Messaging
 
 class TestCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "test"
         self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
@@ -65,7 +67,7 @@ class TestCog(commands.Cog):
         channel = ctx.channel
         await ctx.message.delete()
 
-        await self.discord_helper.send_embed(
+        await self.messaging.send_embed(
             channel,
             "Test",
             "This is a test message",

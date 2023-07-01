@@ -21,6 +21,7 @@ from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
 from .lib.permissions import Permissions
+from .lib.messaging import Messaging
 
 import inspect
 
@@ -33,6 +34,7 @@ class TechThursdays(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.messaging = Messaging(bot)
         self.permissions = Permissions(bot)
         self.SETTINGS_SECTION = "techthurs"
         self.SELF_DESTRUCT_TIMEOUT = 30
@@ -119,7 +121,7 @@ class TechThursdays(commands.Cog):
             out_message = self.settings.get_string(
                 guild_id, "techthurs_out_message", taco_count=amount, taco_word=taco_word
             )
-            techthurs_message = await self.discord_helper.send_embed(
+            techthurs_message = await self.messaging.send_embed(
                 channel=out_channel,
                 title=self.settings.get_string(guild_id, "techthurs_out_title"),
                 message=out_message,
@@ -145,7 +147,7 @@ class TechThursdays(commands.Cog):
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
     @techthurs.command(name="import")
     @commands.has_permissions(administrator=True)
@@ -181,7 +183,7 @@ class TechThursdays(commands.Cog):
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
     @techthurs.command(name="give")
     @commands.has_permissions(administrator=True)
@@ -195,14 +197,13 @@ class TechThursdays(commands.Cog):
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
     async def _on_raw_reaction_add_give(self, payload):
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
 
         # check if the user that reacted is in the admin role
-        # if not await self.discord_helper.is_admin(guild_id, payload.user_id):
         if not await self.permissions.is_admin(payload.user_id, guild_id):
             self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
             return
@@ -246,7 +247,6 @@ class TechThursdays(commands.Cog):
         guild_id = payload.guild_id
 
         # check if the user that reacted is in the admin role
-        # if not await self.discord_helper.is_admin(guild_id, payload.user_id):
         if not await self.permissions.is_admin(payload.user_id, guild_id):
             self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
             return
@@ -280,7 +280,6 @@ class TechThursdays(commands.Cog):
                 return
 
             # check if the user that reacted is in the admin role
-            # if not await self.discord_helper.is_admin(guild_id, payload.user_id):
             if not await self.permissions.is_admin(payload.user_id, guild_id):
                 self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
                 return
@@ -309,7 +308,7 @@ class TechThursdays(commands.Cog):
 
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
-            # await self.discord_helper.notify_of_error(ctx)
+            # await self.messaging.notify_of_error(ctx)
 
     def _import_techthurs(self, message: discord.Message) -> None:
         _method = inspect.stack()[0][3]
@@ -386,7 +385,7 @@ class TechThursdays(commands.Cog):
 
             reason_msg = self.settings.get_string(guild_id, "techthurs_reason_default")
 
-            await self.discord_helper.send_embed(
+            await self.messaging.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_give_title"),
                 # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",
@@ -409,7 +408,7 @@ class TechThursdays(commands.Cog):
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)

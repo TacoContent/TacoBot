@@ -26,6 +26,8 @@ from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
 from .lib.permissions import Permissions
+from .lib.messaging import Messaging
+
 class Suggestions(commands.Cog):
 
     def __init__(self, bot) -> None:
@@ -35,6 +37,7 @@ class Suggestions(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.messaging = Messaging(bot)
         self.permissions = Permissions(bot)
         self.SETTINGS_SECTION = "suggestions"
 
@@ -118,7 +121,12 @@ class Suggestions(commands.Cog):
             ac_list = "\n".join(allowed_channels)
             self.log.debug(guild_id, f"{self._module}.{_method}", f"No suggestion settings found for channel {ctx.channel.id}")
             # notify user that the channel they are in is not configured for suggestions
-            await self.discord_helper.send_embed(ctx.channel, "Suggestions", f"This channel is not configured for suggestions. Please run the `.taco suggest` in a channel that is configured for suggestions.\n\n{ac_list}", delete_after=20, color=0xFF0000)
+            await self.messaging.send_embed(
+                channel=ctx.channel,
+                title="Suggestions",
+                message=f"This channel is not configured for suggestions. Please run the `.taco suggest` in a channel that is configured for suggestions.\n\n{ac_list}",
+                delete_after=20,
+                color=0xFF0000,)
             return
         else:
             channel_settings = channel_settings[0]
@@ -139,7 +147,12 @@ class Suggestions(commands.Cog):
         # get suggestion title
         suggestion_title = await self.discord_helper.ask_text(ctx, ctx.channel, "Create Suggestion", f"{ctx.author.mention}, {title_ask}\n\n**Note:**\nYou can respond with `cancel` to cancel your suggestion request.", timeout=60)
         if suggestion_title is None or suggestion_title.lower().strip() == "cancel":
-            await self.discord_helper.send_embed(ctx.channel, "Suggestion Cancelled", f"{ctx.author.mention}, Your suggestion request has been cancelled.", color=0x00ff00, delete_after=20)
+            await self.messaging.send_embed(
+                channel=ctx.channel,
+                title="Suggestion Cancelled",
+                message=f"{ctx.author.mention}, Your suggestion request has been cancelled.",
+                color=0x00ff00,
+                delete_after=20,)
             return
 
         if suggestion_title is None:
@@ -148,7 +161,12 @@ class Suggestions(commands.Cog):
         # get suggestion message
         suggestion_message = await self.discord_helper.ask_text(ctx, ctx.channel, "Create Suggestion", f"{ctx.author.mention}, {message_ask}\n\n**Note:**\nYou can respond with `cancel` to cancel your suggestion request.", color=0x00ff00, timeout=300)
         if suggestion_message is None or suggestion_message.lower().strip() == "cancel":
-            await self.discord_helper.send_embed(ctx.channel, "Suggestion Cancelled", f"{ctx.author.mention}, Your suggestion request has been cancelled.", color=0x00ff00, delete_after=20)
+            await self.messaging.send_embed(
+                channel=ctx.channel,
+                title="Suggestion Cancelled",
+                message=f"{ctx.author.mention}, Your suggestion request has been cancelled.",
+                color=0x00ff00,
+                delete_after=20,)
             return
 
         legend = [
@@ -156,7 +174,12 @@ class Suggestions(commands.Cog):
             { "name": "🛡 Actions", "value": f"{channel_settings['admin_approve_emoji']} Approved\n{channel_settings['admin_consider_emoji']} Considered\n{channel_settings['admin_implemented_emoji']} Implemented\n{channel_settings['admin_reject_emoji']} Rejected\n{channel_settings['admin_close_emoji']} Closed\n{channel_settings['admin_delete_emoji']} Deleted", "inline": True },
         ]
 
-        s_message = await self.discord_helper.send_embed(response_channel, f"{suggestion_title}", message=f"{suggestion_message}", author=ctx.author, fields=legend)
+        s_message = await self.messaging.send_embed(
+            channel=response_channel,
+            title=f"{suggestion_title}",
+            message=f"{suggestion_message}",
+            author=ctx.author,
+            fields=legend)
 
         vote_emoji = [
             channel_settings["vote_up_emoji"],
@@ -219,26 +242,13 @@ class Suggestions(commands.Cog):
                 pass
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
     @suggest.command()
     async def start(self, ctx) -> None:
         if ctx.message:
             await ctx.message.delete()
         # await self.start_constant_ask()
-
-    @suggest.command()
-    async def help(self, ctx) -> None:
-        guild_id = 0
-        if ctx.guild:
-            guild_id = ctx.guild.id
-            await ctx.message.delete()
-        await self.discord_helper.send_embed(ctx.channel,
-            self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
-            self.settings.get_string(guild_id, "help_module_message", bot_name=self.settings.name, command="suggest"),
-            footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
-            color=0xff0000, delete_after=30)
-        pass
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload) -> None:
@@ -315,13 +325,17 @@ class Suggestions(commands.Cog):
                 if has_user_voted:
                     self.log.debug(guild_id, f"{self._module}.{_method}", f"{user.name} has already voted on suggestion {suggestion['id']}")
                     await message.remove_reaction(payload.emoji, user)
-                    await self.discord_helper.send_embed(user, "Can only vote once", f"You have already voted on this suggestion.", color=0xff0000, delete_after=30)
+                    await self.messaging.send_embed(
+                        channel=user,
+                        title="Can only vote once",
+                        message=f"You have already voted on this suggestion.",
+                        color=0xff0000,
+                        delete_after=30,)
                     return
                 else:
                     self.db.vote_suggestion_by_id(suggestion['id'], user.id, vote)
                 pass
             # if the user reacted with an admin emoji and they are an admin
-            # elif str(payload.emoji) in admin_emoji and await self.discord_helper.is_admin(guild_id, user.id):
             elif str(payload.emoji) in admin_emoji and await self.permissions.is_admin(user.id, guild_id):
                 states = models.SuggestionStates()
                 # change the state based on the emoji
@@ -464,7 +478,6 @@ class Suggestions(commands.Cog):
                     return
                 else:
                     self.db.unvote_suggestion_by_id(guild_id, suggestion['id'], user.id)
-            # elif str(payload.emoji) in admin_emoji and await self.discord_helper.is_admin(guild_id, user.id):
             elif str(payload.emoji) in admin_emoji and await self.permissions.is_admin(user.id, guild_id):
                 states = models.SuggestionStates()
 
@@ -573,7 +586,11 @@ class Suggestions(commands.Cog):
                 "inline": False
             }
         ]
-        await self.discord_helper.update_embed(message, fields=fields, color=color, author=author)
+        await self.messaging.update_embed(
+            message=message,
+            fields=fields,
+            color=color,
+            author=author,)
 
     def get_color_for_state(self, state: str) -> typing.Union[int,None]:
         _method = inspect.stack()[0][3]

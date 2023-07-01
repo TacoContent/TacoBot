@@ -21,6 +21,7 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
+from .lib.messaging import Messaging
 
 import inspect
 
@@ -32,6 +33,7 @@ class Restricted(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "restricted"
         self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
@@ -95,9 +97,12 @@ class Restricted(commands.Cog):
                 await message.delete()
 
                 if not silent:
-                    await self.discord_helper.send_embed(message.channel, self.settings.get_string(guild_id, "restricted"),
-                        self.settings.get_string(guild_id, "restricted_deny_message", user=message.author.mention, reason=deny_message),
-                        delete_after=20, color=0xFF0000)
+                    await self.messaging.send_embed(
+                        channel=message.channel,
+                        title=self.settings.get_string(guild_id, "restricted"),
+                        message=self.settings.get_string(guild_id, "restricted_deny_message", user=message.author.mention, reason=deny_message),
+                        delete_after=20,
+                        color=0xFF0000,)
         except discord.NotFound as nf:
             self.log.info(guild_id, f"{self._module}.{_method}", f"Message not found: {nf}")
         except Exception as e:

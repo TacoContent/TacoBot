@@ -20,6 +20,7 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
+from .lib.messaging import Messaging
 
 class IntroductionCog(commands.Cog):
     def __init__(self, bot) -> None:
@@ -29,6 +30,7 @@ class IntroductionCog(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "introduction"
         self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
@@ -132,7 +134,7 @@ class IntroductionCog(commands.Cog):
             # set the was_imported flag to true
             self.db.set_setting(guildId=guild_id, name=self.SETTINGS_SECTION, key="was_imported", value=True)
 
-            await self.discord_helper.send_embed(
+            await self.messaging.send_embed(
                 channel=ctx.channel,
                 title="Import Complete",
                 message=f"Successfully imported {len(tracked_users)} introductions from {len(channels)} channels",
@@ -142,7 +144,7 @@ class IntroductionCog(commands.Cog):
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
 
     @commands.Cog.listener()
