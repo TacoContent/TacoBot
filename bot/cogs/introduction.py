@@ -151,6 +151,9 @@ class IntroductionCog(commands.Cog):
     @commands.guild_only()
     async def on_message(self, message: discord.Message) -> None:
         _method = inspect.stack()[0][3]
+        if not message.guild:
+            return
+
         guild_id = message.guild.id
         try:
             if message.author.bot or message.author.system:
