@@ -453,6 +453,27 @@ class GameKeys(commands.Cog):
             if offer:
                 # add the view
                 self.log.info(guild_id, f"{self._module}.{_method}", f"Adding game key offer view for existing offer in guild {guild_id}")
+                channel_id = int(offer["channel_id"])
+                message_id = int(offer["message_id"])
+                # get the message
+                channel: discord.TextChannel = await self.discord_helper.get_or_fetch_channel(channel_id)
+                if not channel:
+                    self.log.warn(guild_id, f"{self._module}.{_method}", f"No channel found for game key offer in guild {guild_id}")
+                    return
+                message: discord.Message = await channel.fetch_message(message_id)
+                if not message:
+                    self.log.warn(guild_id, f"{self._module}.{_method}", f"No message found for game key offer in guild {guild_id}")
+                    return
+
+                # get the view from the message
+                imported_view: discord.ui.View = discord.ui.View.from_message(message)
+                if not imported_view:
+                    self.log.warn(guild_id, f"{self._module}.{_method}", f"No view found for game key offer in guild {guild_id}")
+                    return
+
+                # add the view to the client
+                self.bot.add_view(imported_view, message_id)
+
                 # self._add_game_key_offer_view(ctx, offer)
             else:
                 self.log.info(guild_id, f"{self._module}.{_method}", "No existing game key offer found")
