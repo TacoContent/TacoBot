@@ -472,7 +472,7 @@ class GameKeys(commands.Cog):
                     return
 
                 # add the view to the client
-                self.bot.add_view(imported_view, message_id)
+                self.bot.add_view(imported_view, message_id=message_id)
 
                 # self._add_game_key_offer_view(ctx, offer)
             else:
