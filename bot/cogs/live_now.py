@@ -122,11 +122,11 @@ class LiveNow(commands.Cog):
 
                 twitch_name: typing.Union[str, None] = None
                 if asa.platform.lower() == "twitch":
-                    twitch_name = self.handle_twitch_live(after, asa)
+                    twitch_name = self.handle_twitch_live(after, after_streaming_activities)
                 elif asa.platform.lower() == "youtube":
-                    self.handle_youtube_live(after, asa)
+                    self.handle_youtube_live(after, after_streaming_activities)
                 else:
-                    self.handle_other_live(after, asa)
+                    self.handle_other_live(after, after_streaming_activities)
 
                 logging_channel_id = cog_settings.get("logging_channel", None)
                 if logging_channel_id:
