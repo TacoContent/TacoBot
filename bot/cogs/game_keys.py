@@ -44,6 +44,25 @@ class GameKeys(commands.Cog):
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
+    @commands.Cog.listener()
+    async def on_ready(self):
+        pass
+
+    @commands.Cog.listener()
+    async def on_guild_available(self, guild):
+        _method = inspect.stack()[0][3]
+        try:
+            context = self.discord_helper.create_context(
+                bot=self.bot,
+                author=self.bot.user,
+                channel=guild.system_channel,
+                guild=guild
+                )
+            await self._init_exiting_offer(ctx=context)
+        except Exception as e:
+            self.log.error(guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+
+
     @commands.group(name="game-keys")
     @commands.guild_only()
     async def game_keys(self, ctx):
@@ -204,9 +223,6 @@ class GameKeys(commands.Cog):
                 guild_id = ctx.guild.id
 
             cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings:
-                self.log.warn(guild_id, f"{self._module}.{_method}", f"No game_keys settings found for guild {guild_id}")
-                return
             if not cog_settings.get("enabled", False):
                 self.log.debug(guild_id, f"{self._module}.{_method}", f"game_keys is disabled for guild {guild_id}")
                 return
@@ -409,6 +425,39 @@ class GameKeys(commands.Cog):
             return True
         except Exception as e:
             raise e
+
+
+    # import current game key offer and add it to the client as a view
+    async def _init_exiting_offer(self, ctx):
+        _method = inspect.stack()[0][3]
+        if not ctx.guild:
+            return
+
+        guild_id = ctx.guild.id
+        self.log.info(guild_id, f"{self._module}.{_method}", f"Initializing existing game key offer for guild {guild_id}")
+        try:
+
+            cog_settings = self.get_cog_settings(guild_id)
+            if not cog_settings.get("enabled", False):
+                self.log.debug(guild_id, f"{self._module}.{_method}", f"game_keys is disabled for guild {guild_id}")
+                return
+
+            reward_channel_id = cog_settings.get("reward_channel_id", "0")
+            reward_channel: typing.Union[discord.TextChannel, None] = await self.discord_helper.get_or_fetch_channel(int(reward_channel_id))
+
+            if not reward_channel:
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"No reward channel found for guild {guild_id}")
+                return
+
+            offer = self.db.find_open_game_key_offer(guild_id=guild_id, channel_id=reward_channel.id)
+            if offer:
+                # add the view
+                self.log.info(guild_id, f"{self._module}.{_method}", f"Adding game key offer view for existing offer in guild {guild_id}")
+                # self._add_game_key_offer_view(ctx, offer)
+            else:
+                self.log.info(guild_id, f"{self._module}.{_method}", "No existing game key offer found")
+        except Exception as e:
+            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)

@@ -1135,17 +1135,24 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def open_game_key_offer(self, game_key_id: str, guild_id: int, message_id:int, channel_id: int):
+    def open_game_key_offer(self, game_key_id: str, guild_id: int, message_id:int, channel_id: int, expires: typing.Optional[datetime.datetime] = None):
         try:
             if self.connection is None:
                 self.open()
             timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            if expires:
+                expires_ts = utils.to_timestamp(expires)
+            else:
+                # 1 day
+                expires_ts = timestamp + 86400
+
             payload = {
                 "guild_id": str(guild_id),
                 "game_key_id": str(game_key_id),
                 "message_id": str(message_id),
                 "channel_id": str(channel_id),
-                "timestamp": timestamp
+                "timestamp": timestamp,
+                "expires": expires_ts,
             }
             self.connection.game_key_offers.update_one( { "guild_id": str(guild_id), "game_key_id": game_key_id }, { "$set": payload }, upsert=True )
         except Exception as ex:
