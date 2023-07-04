@@ -149,55 +149,53 @@ class LiveNow(commands.Cog):
 
             # ENDED STREAM
             # HMMMM. This is not triggering. Need to figure out why
-            for bsa in before_streaming_activities:
-                # sleep for a bit to make sure the live role is removed before we clean up the db
-                await asyncio.sleep(1)
+            # for bsa in before_streaming_activities:
+            #     # sleep for a bit to make sure the live role is removed before we clean up the db
+            #     await asyncio.sleep(1)
 
-                # check if bsa is in after_streaming_activities
-                found_bsa = len([a for a in after_streaming_activities if a.url == bsa.url and a.platform == bsa.platform]) > 0
-                if found_bsa:
-                    self.log.debug(guild_id, f"{self._module}.{_method}", f"{after.display_name} is still live on {bsa.platform}")
-                    # this activity exists in both lists, so it is still live
-                    continue
+            #     # check if bsa is in after_streaming_activities
+            #     found_bsa = len([a for a in after_streaming_activities if a.url == bsa.url and a.platform == bsa.platform]) > 0
+            #     if found_bsa:
+            #         self.log.debug(guild_id, f"{self._module}.{_method}", f"{after.display_name} is still live on {bsa.platform}")
+            #         # this activity exists in both lists, so it is still live
+            #         continue
 
-                tracked = self.db.get_tracked_live(guildId=guild_id, userId=before.id, platform=bsa.platform)
-                is_tracked = tracked != None and tracked.count() > 0
-                # if it is not tracked, then we don't need to do anything
-                if not is_tracked or not tracked:
-                    self.log.debug(guild_id, f"{self._module}.{_method}", f"{after.display_name} is not tracked for {bsa.platform}")
-                    await self.remove_live_roles(before, cog_settings)
-                    continue
+            #     tracked = self.db.get_tracked_live(guildId=guild_id, userId=before.id, platform=bsa.platform)
+            #     is_tracked = tracked != None and tracked.count() > 0
+            #     # if it is not tracked, then we don't need to do anything
+            #     if not is_tracked or not tracked:
+            #         self.log.debug(guild_id, f"{self._module}.{_method}", f"{after.display_name} is not tracked for {bsa.platform}")
+            #         await self.remove_live_roles(before, cog_settings)
+            #         continue
 
-                # if we get here, then we need to untrack the user live activity
-                self.log.info(guild_id, f"{self._module}.{_method}", f"{before.display_name} stopped streaming on {bsa.platform}")
-                # track the END activity
-                self.db.track_live_activity(guild_id, before.id, False, bsa.platform, url=bsa.url)
+            #     # if we get here, then we need to untrack the user live activity
+            #     self.log.info(guild_id, f"{self._module}.{_method}", f"{before.display_name} stopped streaming on {bsa.platform}")
+            #     # track the END activity
+            #     self.db.track_live_activity(guild_id, before.id, False, bsa.platform, url=bsa.url)
 
-                logging_channel_id = cog_settings.get("logging_channel", None)
-                if logging_channel_id:
-                    logging_channel = await self.discord_helper.get_or_fetch_channel(int(logging_channel_id))
-                    if logging_channel:
-                        for tracked_item in tracked:
-                            message_id = tracked_item.get("message_id", None)
-                            if message_id:
-                                try:
-                                    message = await logging_channel.fetch_message(int(message_id))
-                                    if message:
-                                        self.log.debug(guild_id, f"{self._module}.{_method}", f"Deleting LIVE 🔴 message ({message_id}) from channel {logging_channel}")
-                                        await message.delete()
-                                except discord.errors.NotFound:
-                                    self.log.warn(guild_id, f"{self._module}.{_method}", f"Message {message_id} not found in channel {logging_channel}")
+            #     logging_channel_id = cog_settings.get("logging_channel", None)
+            #     if logging_channel_id:
+            #         logging_channel = await self.discord_helper.get_or_fetch_channel(int(logging_channel_id))
+            #         if logging_channel:
+            #             for tracked_item in tracked:
+            #                 message_id = tracked_item.get("message_id", None)
+            #                 if message_id:
+            #                     try:
+            #                         message = await logging_channel.fetch_message(int(message_id))
+            #                         if message:
+            #                             self.log.debug(guild_id, f"{self._module}.{_method}", f"Deleting LIVE 🔴 message ({message_id}) from channel {logging_channel}")
+            #                             await message.delete()
+            #                     except discord.errors.NotFound:
+            #                         self.log.warn(guild_id, f"{self._module}.{_method}", f"Message {message_id} not found in channel {logging_channel}")
 
-                # remove all tracked items for this live platform (should only be one)
-                self.db.untrack_live(guild_id, before.id, bsa.platform)
+            #     # remove all tracked items for this live platform (should only be one)
+            #     self.db.untrack_live(guild_id, before.id, bsa.platform)
 
-                await self.remove_live_roles(before, cog_settings)
+            #     await self.remove_live_roles(before, cog_settings)
 
-            # check if the user is in any of the "add" roles, but has no streaming activity
-            # remove them from those roles
             if len(before_streaming_activities) == 0 and len(after_streaming_activities) == 0:
                 try:
-                    await self.remove_live_roles(before, cog_settings)
+                    await self.remove_live_roles(after, cog_settings)
                     await self.clean_up_live(guild_id, after.id)
                 except Exception as e:
                     self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
@@ -354,25 +352,39 @@ class LiveNow(commands.Cog):
         if all_tracked_for_user is None or all_tracked_for_user.count() == 0:
             return
 
+        user = await self.discord_helper.get_or_fetch_member(guildId=guild_id, userId=user_id)
+        if user is None:
+            self.log.debug(guild_id, f"{self._module}.{_method}", f"Could not find user {user_id}")
+            return
+
         self.log.debug(guild_id, f"{self._module}.{_method}", f"Cleaning up {all_tracked_for_user.count()} tracked live items for user {user_id}")
         cog_settings = self.get_cog_settings(guild_id)
 
         logging_channel_id = cog_settings.get("logging_channel", None)
+        logging_channel = None
         if logging_channel_id:
             logging_channel = await self.discord_helper.get_or_fetch_channel(int(logging_channel_id))
-            for tracked in all_tracked_for_user:
-                if logging_channel:
-                    message_id = tracked.get("message_id", None)
-                    if message_id is not None and message_id != "None" and message_id != "":
-                        try:
-                            message = await logging_channel.fetch_message(int(message_id))
-                            if message:
-                                await message.delete()
-                        except discord.errors.NotFound:
-                            self.log.debug(guild_id, f"{self._module}.{_method}", f"Message {message_id} not found in channel {logging_channel}")
 
-                # remove all tracked items for this live platform (should only be one)
-                self.db.untrack_live(guild_id, tracked.get('user_id'), tracked.get('platform'))
+
+        for tracked in all_tracked_for_user:
+            platform = tracked.get("platform", "UNKNOWN")
+            url = tracked.get("url", None)
+            self.log.info(guild_id, f"{self._module}.{_method}", f"{utils.get_user_display_name(user)} stopped streaming on {platform}")
+            self.db.track_live_activity(guild_id, user.id, False, platform, url=url)
+
+            if logging_channel:
+                message_id = tracked.get("message_id", None)
+                if message_id is not None and message_id != "None" and message_id != "":
+                    try:
+                        message = await logging_channel.fetch_message(int(message_id))
+                        if message:
+                            await message.delete()
+                    except discord.errors.NotFound:
+                        self.log.debug(guild_id, f"{self._module}.{_method}", f"Message {message_id} not found in channel {logging_channel}")
+
+            # remove all tracked items for this live platform (should only be one)
+            self.db.untrack_live(guild_id, user.id, platform)
+            await self.remove_live_roles(user, cog_settings)
 
     def find_platform_emoji(self, guild: discord.Guild, platform: str) -> typing.Union[discord.Emoji, None]:
         if guild is None:
