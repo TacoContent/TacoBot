@@ -48,19 +48,20 @@ class GameKeys(commands.Cog):
     async def on_ready(self):
         pass
 
-    # @commands.Cog.listener()
-    # async def on_guild_available(self, guild):
-    #     _method = inspect.stack()[0][3]
-    #     try:
-    #         context = self.discord_helper.create_context(
-    #             bot=self.bot,
-    #             author=self.bot.user,
-    #             channel=guild.system_channel,
-    #             guild=guild
-    #             )
-    #         await self._init_exiting_offer(ctx=context)
-    #     except Exception as e:
-    #         self.log.error(guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+    @commands.Cog.listener()
+    async def on_guild_available(self, guild):
+        _method = inspect.stack()[0][3]
+        try:
+            context = self.discord_helper.create_context(
+                bot=self.bot,
+                author=self.bot.user,
+                channel=guild.system_channel,
+                guild=guild
+                )
+            await self._create_offer(ctx=context)
+            # await self._init_exiting_offer(ctx=context)
+        except Exception as e:
+            self.log.error(guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
 
 
     @commands.group(name="game-keys")
