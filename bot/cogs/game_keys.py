@@ -58,7 +58,7 @@ class GameKeys(commands.Cog):
                 channel=guild.system_channel,
                 guild=guild
                 )
-            await self._create_offer(ctx=context)
+            # await self._create_offer(ctx=context)
             # await self._init_exiting_offer(ctx=context)
         except Exception as e:
             self.log.error(guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
