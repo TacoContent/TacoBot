@@ -180,7 +180,8 @@ class GameKeys(commands.Cog):
 
     async def _claim_offer_callback(self, interaction: discord.Interaction):
         _method = inspect.stack()[0][3]
-        await interaction.response.defer()
+        if interaction.response.is_done():
+            return
         # create context from interaction
         ctx = self.discord_helper.create_context(
             self.bot,
@@ -480,6 +481,19 @@ class GameKeys(commands.Cog):
                 self.log.info(guild_id, f"{self._module}.{_method}", "No existing game key offer found")
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+
+    @commands.Cog.listener()
+    async def on_interaction(self, interaction: discord.Interaction):
+        _method = inspect.stack()[0][3]
+        if not interaction.guild:
+            return
+        try:
+          if interaction.response.is_done():
+            return
+
+
+        except Exception as e:
+            self.log.error(interaction.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
