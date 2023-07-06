@@ -488,9 +488,10 @@ class GameKeys(commands.Cog):
         if not interaction.guild:
             return
         try:
-          if interaction.response.is_done():
-            return
+            if interaction.response.is_done():
+                return
 
+            self.log.debug(interaction.guild.id, f"{self._module}.{_method}", f"Interaction received: {interaction}")
 
         except Exception as e:
             self.log.error(interaction.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
