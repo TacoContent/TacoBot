@@ -50,9 +50,12 @@ class GameRewardView(discord.ui.View):
         pass
 
     async def claim_callback(self, interaction: discord.Interaction) -> None:
+        _method = inspect.stack()[0][3]
         # check if the user who clicked the button is the same as the user who started the command
         if interaction.user.id != self.ctx.author.id:
             return
+
+        self.log.debug(self.ctx.guild.id, f"{self._module}.{_method}", "claim_callback" )
         await interaction.response.defer()
         if self.claim_button_callback is not None:
             await self.claim_button_callback(interaction)
