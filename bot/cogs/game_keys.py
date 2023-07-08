@@ -270,9 +270,6 @@ class GameKeys(commands.Cog):
                 guild_id = ctx.guild.id
 
             cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings:
-                self.log.warn(guild_id, f"{self._module}.{_method}", f"No game_keys settings found for guild {guild_id}")
-                return False
             if not cog_settings.get("enabled", False):
                 self.log.debug(guild_id, f"{self._module}.{_method}", f"game_keys is disabled for guild {guild_id}")
                 return False
@@ -281,6 +278,8 @@ class GameKeys(commands.Cog):
             reward_channel: typing.Union[discord.TextChannel, None] = await self.discord_helper.get_or_fetch_channel(int(reward_channel_id))
             log_channel_id = cog_settings.get("log_channel_id", "0")
             log_channel = await self.discord_helper.get_or_fetch_channel(int(log_channel_id))
+
+            self.log.debug(guild_id, f"{self._module}.{_method}", f"Claiming offer {game_id} for guild {guild_id} in channel {reward_channel.name}")
 
             cost = cog_settings.get("cost", 500)
             if cost == 1:
