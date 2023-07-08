@@ -64,12 +64,12 @@ class GameKeys(commands.Cog):
             self.log.error(guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
 
 
-    @commands.group(name="game-keys")
+    @commands.group(name="game-keys", aliases=["gk", "gamekeys", "game-key", "gamekey", "games"])
     @commands.guild_only()
     async def game_keys(self, ctx):
         pass
 
-    @game_keys.command(name="open")
+    @game_keys.command(name="open", aliases=["o", "start", "s"])
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def open(self, ctx) -> None:
@@ -133,7 +133,7 @@ class GameKeys(commands.Cog):
 
             game_data = self.db.get_random_game_key_data(guild_id=guild_id)
             if not game_data:
-                await ctx.send(self.settings.get_string(guild_id, "game_key_no_keys_found_message"), delete_after=10)
+                await reward_channel.send(self.settings.get_string(guild_id, "game_key_no_keys_found_message"), delete_after=10)
                 return
 
             offered_by = await self.bot.fetch_user(int(game_data["offered_by"]))
@@ -183,6 +183,8 @@ class GameKeys(commands.Cog):
         if interaction.response.is_done():
             self.log.debug(interaction.guild.id, f"{self._module}.{_method}", f"Claim offer cancelled because it was already responded to.")
             return
+
+        await interaction.response.defer()
         # create context from interaction
         ctx = self.discord_helper.create_context(
             self.bot,
@@ -322,7 +324,7 @@ class GameKeys(commands.Cog):
                         f"{self._module}.{_method}",
                         f"Game key {game_data['id']} already redeemed by {game_data['redeemed_by']}",
                     )
-                    await ctx.send(
+                    await ctx.channel.send(
                         self.settings.get_string(guild_id, "game_key_already_redeemed_message"), delete_after=10
                     )
                     return False
@@ -346,7 +348,7 @@ class GameKeys(commands.Cog):
                     f"{self._module}.{_method}",
                     f"No game_key found while looking up id '{offer['game_key_id']}'",
                 )
-                await ctx.send(self.settings.get_string(guild_id, "game_key_no_game_data_message"), delete_after=10)
+                await ctx.channel.send(self.settings.get_string(guild_id, "game_key_no_game_data_message"), delete_after=10)
                 return False
 
             # send them the game key
@@ -393,7 +395,7 @@ class GameKeys(commands.Cog):
                     f"{self._module}.{_method}",
                     f"Unable to send game key for game '{game_data['title']}' ({game_id})",
                 )
-                await ctx.send(
+                await ctx.channel.send(
                     self.settings.get_string(guild_id, "game_key_unable_to_send_message", user=ctx.author.mention),
                     delete_after=10,
                 )
