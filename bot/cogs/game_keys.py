@@ -495,7 +495,7 @@ class GameKeys(commands.Cog):
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
 
-    #@commands.Cog.listener()
+    @commands.Cog.listener()
     async def on_interaction(self, interaction: discord.Interaction):
         _method = inspect.stack()[0][3]
         if not interaction.guild:
@@ -506,6 +506,26 @@ class GameKeys(commands.Cog):
                 return
 
             self.log.debug(interaction.guild.id, f"{self._module}.{_method}", f"Interaction received: {interaction}")
+
+            # _claim_offer_callback
+            if "custom_id" not in interaction.data:
+                self.log.debug(interaction.guild.id, f"{self._module}.{_method}", f"No custom_id in interaction data: {interaction}")
+                return
+
+            game_id = interaction.data["custom_id"]
+
+            if not game_id:
+                self.log.debug(interaction.guild.id, f"{self._module}.{_method}", f"Custom id is empty: {interaction}")
+                return
+
+            # get the game data to check if the custom_id IS a game id
+            game_data = self.db.get_game_key_data(str(game_id))
+            if not game_data:
+                self.log.debug(interaction.guild.id, f"{self._module}.{_method}", f"Custom id is not a game id: {interaction}")
+                return
+
+            # trigger the callback
+            await self._claim_offer_callback(interaction)
 
         except Exception as e:
             self.log.error(interaction.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
