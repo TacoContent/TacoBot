@@ -134,9 +134,11 @@ class GameKeys(commands.Cog):
             game_data = self.db.get_random_game_key_data(guild_id=guild_id)
             if not game_data:
                 await reward_channel.send(self.settings.get_string(guild_id, "game_key_no_keys_found_message"), delete_after=10)
+                # log this as an error.
+                self.log.error(guild_id, f"{self._module}.{_method}", self.settings.get_string(guild_id, "game_key_no_keys_found_message"))
                 return
 
-            offered_by = await self.bot.fetch_user(int(game_data["offered_by"]))
+            offered_by = await self.discord_helper.get_or_fetch_user(int(game_data["offered_by"]))
             expires = datetime.datetime.now() + datetime.timedelta(days=1)
             fields = [
 
@@ -183,19 +185,28 @@ class GameKeys(commands.Cog):
         if interaction.response.is_done():
             self.log.debug(interaction.guild.id, f"{self._module}.{_method}", f"Claim offer cancelled because it was already responded to.")
             return
+        guild_id = interaction.guild.id if interaction.guild else 0
+        ctx = None
+        try:
+            await interaction.response.defer()
+        except Exception as e:
+            # if the defer fails, we can't respond to the interaction
+            return
+        try:
+            # create context from interaction
+            ctx = self.discord_helper.create_context(
+                self.bot,
+                author=interaction.user,
+                channel=interaction.channel,
+                message=interaction.message,
+                guild=interaction.guild,
+                custom_id=interaction.data["custom_id"])
+            self.log.debug(guild_id, f"{self._module}.{_method}", f"Claiming offer {interaction.data['custom_id']}")
+            await self._claim_offer(ctx, interaction.data["custom_id"])
+            await self._create_offer(ctx)
 
-        await interaction.response.defer()
-        # create context from interaction
-        ctx = self.discord_helper.create_context(
-            self.bot,
-            author=interaction.user,
-            channel=interaction.channel,
-            message=interaction.message,
-            guild=interaction.guild,
-            custom_id=interaction.data["custom_id"])
-        self.log.debug(ctx.guild.id, f"{self._module}.{_method}", f"Claiming offer {interaction.data['custom_id']}")
-        await self._claim_offer(ctx, interaction.data["custom_id"])
-        await self._create_offer(ctx)
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
 
     # , interaction: discord.Interaction, error: Exception, item: discord.ui.Item
     async def _claim_timeout_callback(self, ctx):
@@ -307,8 +318,20 @@ class GameKeys(commands.Cog):
                 return False
 
             offer = self.db.find_open_game_key_offer(guild_id, reward_channel.id)
+
             game_data = None
             if offer:
+                # check if the game key offer is expired
+                # if offer["expires"] < datetime.datetime.utcnow():
+                #     self.log.debug(
+                #         guild_id,
+                #         f"{self._module}.{_method}",
+                #         f"Game key offer {game_id} expired for guild {guild_id} in channel {reward_channel.name}",
+                #     )
+                #     await ctx.channel.send(
+                #         self.settings.get_string(guild_id, "game_key_offer_expired_message", user=ctx.author.mention), delete_after=10
+                #     )
+                #     return False
                 game_data = self.db.get_game_key_data(str(offer["game_key_id"]))
                 if not game_data:
                     self.log.debug(
@@ -322,10 +345,10 @@ class GameKeys(commands.Cog):
                     self.log.debug(
                         guild_id,
                         f"{self._module}.{_method}",
-                        f"Game key {game_data['id']} already redeemed by {game_data['redeemed_by']}",
+                        f"Game key {game_data['_id']} already redeemed by {game_data['redeemed_by']}",
                     )
                     await ctx.channel.send(
-                        self.settings.get_string(guild_id, "game_key_already_redeemed_message"), delete_after=10
+                        self.settings.get_string(guild_id, "game_key_already_redeemed_message", user=ctx.author.mention), delete_after=10
                     )
                     return False
                 if str(game_id) != str(offer["game_key_id"]) or str(game_data["_id"]) != str(game_id):
@@ -414,7 +437,7 @@ class GameKeys(commands.Cog):
                 type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.GAME_REDEEM)
             )
             # get the user that offered the game key
-            offer_user = await self.discord_helper.get_or_fetch_user(int(offer["user_owner"]))
+            offer_user = await self.discord_helper.get_or_fetch_user(int(game_data["user_owner"]))
             if offer_user:
                 await self.discord_helper.taco_give_user(
                     guildId=guild_id,
