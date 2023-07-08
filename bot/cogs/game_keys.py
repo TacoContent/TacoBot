@@ -181,6 +181,7 @@ class GameKeys(commands.Cog):
     async def _claim_offer_callback(self, interaction: discord.Interaction):
         _method = inspect.stack()[0][3]
         if interaction.response.is_done():
+            self.log.debug(interaction.guild.id, f"{self._module}.{_method}", f"Claim offer cancelled because it was already responded to.")
             return
         # create context from interaction
         ctx = self.discord_helper.create_context(
@@ -481,13 +482,14 @@ class GameKeys(commands.Cog):
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
 
-    @commands.Cog.listener()
+    #@commands.Cog.listener()
     async def on_interaction(self, interaction: discord.Interaction):
         _method = inspect.stack()[0][3]
         if not interaction.guild:
             return
         try:
             if interaction.response.is_done():
+                self.log.debug(interaction.guild.id, f"{self._module}.{_method}", f"Interaction already responded to: {interaction}")
                 return
 
             self.log.debug(interaction.guild.id, f"{self._module}.{_method}", f"Interaction received: {interaction}")
