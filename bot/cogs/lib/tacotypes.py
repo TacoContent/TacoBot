@@ -33,6 +33,7 @@ class TacoTypes(Enum):
     CREATE_VOICE_CHANNEL = 27
     POST_INTRODUCTION = 28
     APPROVE_INTRODUCTION = 29
+    GAME_DONATE_REDEEM = 30
 
 
     TWITCH_BOT_INVITE = 1000 # Invite @OurTacoBot to your Twitch channel
@@ -103,6 +104,8 @@ class TacoTypes(Enum):
             return TacoTypes.LEAVE_SERVER
         elif taco_type_string == "game_key_cost":
             return TacoTypes.GAME_REDEEM
+        elif taco_type_string == "game_donate_count":
+            return TacoTypes.GAME_DONATE_REDEEM
         elif taco_type_string == "trivia_correct_count":
             return TacoTypes.TRIVIA_CORRECT
         elif taco_type_string == "trivia_incorrect_count":
@@ -190,6 +193,8 @@ class TacoTypes(Enum):
             return "LEAVE_SERVER"
         elif taco_type == TacoTypes.GAME_REDEEM:
             return "GAME_REDEEM"
+        elif taco_type == TacoTypes.GAME_DONATE_REDEEM:
+            return "GAME_DONATE_REDEEM"
         elif taco_type == TacoTypes.TRIVIA_CORRECT:
             return "TRIVIA_CORRECT"
         elif taco_type == TacoTypes.TRIVIA_INCORRECT:
@@ -277,6 +282,8 @@ class TacoTypes(Enum):
             return "leave_server_custom"
         elif taco_type == TacoTypes.GAME_REDEEM:
             return "game_key_cost"
+        elif taco_type == TacoTypes.GAME_DONATE_REDEEM:
+            return "game_donate_count"
         elif taco_type == TacoTypes.TRIVIA_CORRECT:
             return "trivia_correct_count"
         elif taco_type == TacoTypes.TRIVIA_INCORRECT:

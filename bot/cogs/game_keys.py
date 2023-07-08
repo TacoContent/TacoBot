@@ -413,6 +413,17 @@ class GameKeys(commands.Cog):
                 reason="Claim game key",
                 type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.GAME_REDEEM)
             )
+            # get the user that offered the game key
+            offer_user = await self.discord_helper.get_or_fetch_user(int(offer["user_owner"]))
+            if offer_user:
+                await self.discord_helper.taco_give_user(
+                    guildId=guild_id,
+                    fromUser=self.bot.user,
+                    toUser=offer_user,
+                    reason=f"Donated game key {game_data['title']} was claimed by {ctx.author.name}",
+                    taco_amount=cost,
+                    give_type=tacotypes.TacoTypes.GAME_DONATE_REDEEM,
+                )
 
             # log that the offer was claimed
             if log_channel:
