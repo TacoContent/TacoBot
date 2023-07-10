@@ -119,7 +119,6 @@ class LiveNow(commands.Cog):
 
                 await self.add_live_roles(after, cog_settings)
 
-
                 twitch_name: typing.Union[str, None] = None
                 if asa.platform.lower() == "twitch":
                     twitch_name = self.handle_twitch_live(after, after_streaming_activities)

@@ -220,16 +220,6 @@ class Tacos(commands.Cog):
             self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
-
-    # @tacos.error()
-    # async def tacos_error(self, ctx, error):
-    #     _method = inspect.stack()[1][3]
-    #     if isinstance(error, discord.errors.NotFound):
-    #         self.log.warn(ctx.guild.id, _method , str(error), traceback.format_exc())
-    #     else:
-    #         self.log.error(ctx.guild.id, _method , str(error), traceback.format_exc())
-    #         await self.messaging.notify_of_error(ctx)
-
     @commands.Cog.listener()
     async def on_message(self, message) -> None:
         _method = inspect.stack()[0][3]
@@ -248,15 +238,6 @@ class Tacos(commands.Cog):
                         self.settings.get_string(guild_id, "taco_reason_boost"),
                         tacotypes.TacoTypes.BOOST )
                     return
-
-                # elif message.type == discord.MessageType.channel_follow_add:
-                #     # add tacos to user that followed the channel
-                #     await self.discord_helper.taco_give_user(
-                #         guild_id, self.bot.user, member,
-                #         self.settings.get_string(guild_id, "taco_reason_follow"),
-                #         tacotypes.TacoTypes.FOLLOW_CHANNEL )
-                #     return
-
 
                 if message.type == discord.MessageType.default:
                     try:
@@ -308,11 +289,14 @@ class Tacos(commands.Cog):
 
                 has_reacted = self.db.get_taco_reaction(guild_id, user.id, channel.id, message.id)
                 if has_reacted:
-                    # log that the user has already reacted
-                    # self.log.debug(guild_id, f"tacos.{_method}", f"{user} has already reacted to {message.id} so no tacos given.")
                     return
 
-
+                # if payload.type is None:
+                #     self.log.debug(guild_id, f"{self._module}.{_method}", f"Regular reaction: No payload reaction type")
+                # elif payload.type == 0: # regular reaction
+                #     self.log.debug(guild_id, f"{self._module}.{_method}", f"Regular reaction")
+                # elif payload.type == 1: # super reaction
+                #     self.log.debug(guild_id, f"{self._module}.{_method}", f"Super reaction")
 
                 reaction_count = taco_settings.get("reaction_count", 1)
                 # reaction_reward_count = taco_settings["reaction_reward_count"]
@@ -322,10 +306,7 @@ class Tacos(commands.Cog):
                 # get the total number of tacos the user has gifted in the last 24 hours
                 total_gifted = self.db.get_total_gifted_tacos(guild_id, user.id, max_gift_taco_timespan)
                 # log the total number of tacos the user has gifted
-                # self.log.debug(guild_id, f"tacos.{_method}", f"{user} has gifted {total_gifted} tacos in the last {max_gift_taco_timespan} seconds.")
                 remaining_gifts = max_gift_tacos - total_gifted
-
-                # self.log.debug(guild_id, f"{self._module}.{_method}", f"🌮 adding taco to user {message.author.name}")
                 # track the user's taco reaction
                 self.db.add_taco_reaction(guild_id, user.id, channel.id, message.id)
                 # # give the user the reaction reward tacos
@@ -334,7 +315,6 @@ class Tacos(commands.Cog):
                     tacotypes.TacoTypes.REACT_REWARD )
 
                 if reaction_count <= remaining_gifts:
-                    # self.log.debug(guild_id, f"{self._module}.{_method}", f"🌮 adding taco to user {user.name}")
                     # track that the user has gifted tacos via reactions
                     self.db.add_taco_gift(guild_id, user.id, reaction_count)
                     # give taco giver tacos too

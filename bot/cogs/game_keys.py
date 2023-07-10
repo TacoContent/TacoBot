@@ -109,8 +109,22 @@ class GameKeys(commands.Cog):
                 self.log.debug(guild_id, f"{self._module}.{_method}", f"game_keys is disabled for guild {guild_id}")
                 return
 
-            # Should we pull this from `tacos` settings?
-            cost = cog_settings.get("cost", 500)
+            reward_channel_id = cog_settings.get("reward_channel_id", "0")
+            reward_channel = await self.discord_helper.get_or_fetch_channel(int(reward_channel_id))
+            if not reward_channel:
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"No reward channel found for guild {guild_id}")
+                return
+
+            game_data = self.db.get_random_game_key_data(guild_id=guild_id)
+            if not game_data:
+                await reward_channel.send(self.settings.get_string(guild_id, "game_key_no_keys_found_message"), delete_after=10)
+                # log this as an error.
+                self.log.error(guild_id, f"{self._module}.{_method}", self.settings.get_string(guild_id, "game_key_no_keys_found_message"))
+                return
+
+            default_cost = cog_settings.get("cost", 500)
+            cost = game_data.get("cost", default_cost)
+
             if cost <= 0:
                 self.log.warn(guild_id, f"{self._module}.{_method}", f"Cost is 0 or less for guild {guild_id}")
                 return
@@ -120,23 +134,12 @@ class GameKeys(commands.Cog):
             else:
                 tacos_word = self.settings.get_string(guild_id, "taco_plural")
 
-            reward_channel_id = cog_settings.get("reward_channel_id", "0")
-            reward_channel = await self.discord_helper.get_or_fetch_channel(int(reward_channel_id))
             log_channel_id = cog_settings.get("log_channel_id", "0")
             log_channel = await self.discord_helper.get_or_fetch_channel(int(log_channel_id))
-            if not reward_channel:
-                self.log.warn(guild_id, f"{self._module}.{_method}", f"No reward channel found for guild {guild_id}")
-                return
             if not log_channel:
                 self.log.warn(guild_id, f"{self._module}.{_method}", f"No log channel found for guild {guild_id}")
                 return
 
-            game_data = self.db.get_random_game_key_data(guild_id=guild_id)
-            if not game_data:
-                await reward_channel.send(self.settings.get_string(guild_id, "game_key_no_keys_found_message"), delete_after=10)
-                # log this as an error.
-                self.log.error(guild_id, f"{self._module}.{_method}", self.settings.get_string(guild_id, "game_key_no_keys_found_message"))
-                return
 
             offered_by = await self.discord_helper.get_or_fetch_user(int(game_data["offered_by"]))
             expires = datetime.datetime.now() + datetime.timedelta(days=1)
@@ -293,9 +296,36 @@ class GameKeys(commands.Cog):
             log_channel_id = cog_settings.get("log_channel_id", "0")
             log_channel = await self.discord_helper.get_or_fetch_channel(int(log_channel_id))
 
+            if not reward_channel:
+                self.log.warn(guild_id, f"{self._module}.{_method}", f"No reward channel found for guild {guild_id}")
+                return False
+
+
             self.log.debug(guild_id, f"{self._module}.{_method}", f"Claiming offer {game_id} for guild {guild_id} in channel {reward_channel.name}")
 
-            cost = cog_settings.get("cost", 500)
+            offer = self.db.find_open_game_key_offer(guild_id, reward_channel.id)
+            if not offer:
+                self.log.warn(
+                    guild_id,
+                    f"{self._module}.{_method}",
+                    f"No offer found for channel {reward_channel.name} in guild {guild_id}",
+                )
+                return False
+
+            # get the game data from the offer game_key_id
+            game_data = self.db.get_game_key_data(str(offer["game_key_id"]))
+            if not game_data:
+                self.log.warn(
+                    guild_id,
+                    f"{self._module}.{_method}",
+                    f"No game_key found while looking up id '{offer['game_key_id']}'",
+                )
+                await ctx.channel.send(self.settings.get_string(guild_id, "game_key_no_game_data_message"), delete_after=10)
+                return False
+
+            default_cost = cog_settings.get("cost", 500)
+            cost = game_data.get("cost", default_cost)
+
             if cost == 1:
                 tacos_word = self.settings.get_string(guild_id, "taco_singular")
             else:
@@ -317,61 +347,35 @@ class GameKeys(commands.Cog):
                 )
                 return False
 
-            offer = self.db.find_open_game_key_offer(guild_id, reward_channel.id)
+            # check if the game key offer is expired
+            # if offer["expires"] < datetime.datetime.utcnow():
+            #     self.log.debug(
+            #         guild_id,
+            #         f"{self._module}.{_method}",
+            #         f"Game key offer {game_id} expired for guild {guild_id} in channel {reward_channel.name}",
+            #     )
+            #     await ctx.channel.send(
+            #         self.settings.get_string(guild_id, "game_key_offer_expired_message", user=ctx.author.mention), delete_after=10
+            #     )
+            #     return False
 
-            game_data = None
-            if offer:
-                # check if the game key offer is expired
-                # if offer["expires"] < datetime.datetime.utcnow():
-                #     self.log.debug(
-                #         guild_id,
-                #         f"{self._module}.{_method}",
-                #         f"Game key offer {game_id} expired for guild {guild_id} in channel {reward_channel.name}",
-                #     )
-                #     await ctx.channel.send(
-                #         self.settings.get_string(guild_id, "game_key_offer_expired_message", user=ctx.author.mention), delete_after=10
-                #     )
-                #     return False
-                game_data = self.db.get_game_key_data(str(offer["game_key_id"]))
-                if not game_data:
-                    self.log.debug(
-                        guild_id,
-                        f"{self._module}.{_method}",
-                        f"No open offer found for game_key_id {offer['game_key_id']} in channel {reward_channel.name}",
-                    )
-                    return False
-                if game_data["redeemed_by"] is not None:
-                    # already redeemed
-                    self.log.debug(
-                        guild_id,
-                        f"{self._module}.{_method}",
-                        f"Game key {game_data['_id']} already redeemed by {game_data['redeemed_by']}",
-                    )
-                    await ctx.channel.send(
-                        self.settings.get_string(guild_id, "game_key_already_redeemed_message", user=ctx.author.mention), delete_after=10
-                    )
-                    return False
-                if str(game_id) != str(offer["game_key_id"]) or str(game_data["_id"]) != str(game_id):
-                    self.log.warn(
-                        guild_id,
-                        f"{self._module}.{_method}",
-                        f"Requested game_id ('{str(game_id)}') with offer game_key_id ('{str(offer['game_key_id'])}') does not match offer game id '{str(game_data['_id'])}'",
-                    )
-                    return False
-            else:
-                self.log.warn(
+            if game_data["redeemed_by"] is not None:
+                # already redeemed
+                self.log.debug(
                     guild_id,
                     f"{self._module}.{_method}",
-                    f"No offer found for channel {reward_channel.name} in guild {guild_id}",
+                    f"Game key {game_data['_id']} already redeemed by {game_data['redeemed_by']}",
+                )
+                await ctx.channel.send(
+                    self.settings.get_string(guild_id, "game_key_already_redeemed_message", user=ctx.author.mention), delete_after=10
                 )
                 return False
-            if not game_data:
+            if str(game_id) != str(offer["game_key_id"]) or str(game_data["_id"]) != str(game_id):
                 self.log.warn(
                     guild_id,
                     f"{self._module}.{_method}",
-                    f"No game_key found while looking up id '{offer['game_key_id']}'",
+                    f"Requested game_id ('{str(game_id)}') with offer game_key_id ('{str(offer['game_key_id'])}') does not match offer game id '{str(game_data['_id'])}'",
                 )
-                await ctx.channel.send(self.settings.get_string(guild_id, "game_key_no_game_data_message"), delete_after=10)
                 return False
 
             # send them the game key
