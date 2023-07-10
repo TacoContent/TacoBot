@@ -29,6 +29,7 @@ from .lib import models
 from .lib import settings
 from .lib import mongo
 from .lib import permissions
+from .lib.messaging import Messaging
 
 class MoveMessage(commands.Cog):
     def __init__(self, bot):
@@ -39,6 +40,7 @@ class MoveMessage(commands.Cog):
         self.settings = settings.Settings()
         self.permissions = permissions.Permissions(bot)
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.messaging = Messaging(bot)
 
         self.SETTINGS_SECTION = "move_message"
 
@@ -122,7 +124,7 @@ class MoveMessage(commands.Cog):
 
             message = await ctx.channel.fetch_message(messageId)
             if message is None:
-                await self.discord_helper.send_embed(
+                await self.messaging.send_embed(
                     channel=channel,
                     title="Move Message",
                     message=self.settings.get_string(guild_id, f"{self._module}.{_method}", who=ctx.author.mention, message_id=messageId),

@@ -22,7 +22,7 @@ from .lib import mongo
 from .lib import tacotypes
 
 
-class FoodPhoto(commands.Cog):
+class PhotoPost(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
         # get the file name without the extension and without the directory
@@ -30,7 +30,7 @@ class FoodPhoto(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
-        self.SETTINGS_SECTION = "food_photo"
+        self.SETTINGS_SECTION = "photo_post"
         self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -58,12 +58,12 @@ class FoodPhoto(commands.Cog):
             # get the settings from settings
             cog_settings = self.get_cog_settings(guild_id)
 
-            food_channel_list = [c for c in cog_settings.get("channels", []) if str(c["id"]) == str(message.channel.id)]
-            food_channel = None
-            if food_channel_list:
-                food_channel = food_channel_list[0]
+            allowed_channel_list = [c for c in cog_settings.get("channels", []) if str(c["id"]) == str(message.channel.id)]
+            post_channel = None
+            if allowed_channel_list:
+                post_channel = allowed_channel_list[0]
 
-            if not food_channel:
+            if not post_channel:
                 return
 
             # if the message is not a photo, ignore
@@ -80,19 +80,19 @@ class FoodPhoto(commands.Cog):
             #     if m.author == message.author and m.attachments:
             #         # check if the bot has already added reactions to the message
             #         # if so, ignore
-            #         for r in food_channel['reactions']:
+            #         for r in post_channel['reactions']:
             #             if r in [r.emoji for r in m.reactions]:
             #                 self.log.debug(guild_id, f"{self._module}.{_method}"", f"User {message.author} already posted a photo in the last 5 minutes")
             #                 self.log.debug(guild_id, f"{self._module}.{_method}", f"Bot already reacted to message {m.id}")
             #                 return
 
             # this SHOULD get the amount from the `tacos` settings, but it doesn't
-            amount = int(food_channel["tacos"] if "tacos" in food_channel else 5)
+            amount = int(post_channel["tacos"] if "tacos" in post_channel else 5)
             amount = amount if amount > 0 else 5
 
-            reason_msg = f"Food photo in #{message.channel.name}"
+            reason_msg = f"Photo post in #{message.channel.name}"
 
-            for r in food_channel["reactions"]:
+            for r in post_channel["reactions"]:
                 await message.add_reaction(r)
 
             # if the message is a photo, add tacos to the user
@@ -101,19 +101,20 @@ class FoodPhoto(commands.Cog):
                 fromUser=self.bot.user,
                 toUser=message.author,
                 reason=reason_msg,
-                give_type=tacotypes.TacoTypes.FOOD_PHOTO,
+                give_type=tacotypes.TacoTypes.PHOTO_POST,
                 taco_amount=amount,
             )
 
             # track the message in the database
             image_url = message.attachments[0].url if message.attachments else matches.group(0) if matches else None
-            self.db.track_food_post(
+            self.db.track_photo_post(
                 guildId=guild_id,
                 userId=message.author.id,
                 messageId=message.id,
                 channelId=message.channel.id,
                 message=message.content,
                 image=image_url,
+                channelName=message.channel.name
             )
 
             pass
@@ -133,4 +134,4 @@ class FoodPhoto(commands.Cog):
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
 async def setup(bot):
-    await bot.add_cog(FoodPhoto(bot))
+    await bot.add_cog(PhotoPost(bot))

@@ -9,7 +9,6 @@ from discord.ext import commands
 
 from random import randint
 import traceback
-import sqlite3
 import sys
 import os
 import glob
@@ -31,7 +30,11 @@ class TacoBot(commands.Bot):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.settings = settings.Settings()
-        super().__init__(command_prefix=self.get_prefix, intents=intents)
+        super().__init__(
+            command_prefix=self.get_prefix,
+            intents=intents,
+            case_insensitive=True,
+        )
         self.remove_command("help")
         # self.command_prefix=self.get_prefix
         # A CommandTree is a special type that holds all the application command
@@ -76,13 +79,6 @@ class TacoBot(commands.Bot):
         self.log.debug(0, f"{self._module}.{_method}", "Setting up bot")
         self.log.debug(0, f"{self._module}.{_method}", "Starting Healthcheck Server")
         self.healthcheck_server = await discordhealthcheck.start(self)
-
-
-        # This copies the global commands over to your guild.
-        # self.tree.copy_global_to(guild=MY_GUILD)
-        # await self.tree.sync(guild=MY_GUILD)
-
-
 
 
 

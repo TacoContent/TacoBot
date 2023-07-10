@@ -28,7 +28,7 @@ from .lib import mongo
 from .lib import tacotypes
 from .lib.system_actions import SystemActions
 import inspect
-
+from .lib.messaging import Messaging
 
 class TwitchInfo(commands.Cog):
     def __init__(self, bot) -> None:
@@ -39,6 +39,7 @@ class TwitchInfo(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "twitchinfo"
 
         self.db = mongo.MongoDatabase()
@@ -65,10 +66,10 @@ class TwitchInfo(commands.Cog):
         if ctx.guild:
             guild_id = ctx.guild.id
             await ctx.message.delete()
-        await self.discord_helper.send_embed(
-            ctx.channel,
-            self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
-            self.settings.get_string(guild_id, "help_module_message", bot_name=self.settings.name, command="twitch"),
+        await self.messaging.send_embed(
+            channel=ctx.channel,
+            title=self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
+            message=self.settings.get_string(guild_id, "help_module_message", bot_name=self.settings.name, command="twitch"),
             footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
             color=0xFF0000,
             delete_after=30,
@@ -79,10 +80,14 @@ class TwitchInfo(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def invite_bot(self, ctx, *, user: typing.Union[discord.Member, discord.User, None] = None) -> None:
         guild_id = 0
+        channel = None
         if ctx.guild:
             guild_id = ctx.guild.id
             channel = ctx.channel
             await ctx.message.delete()
+
+        if channel is None:
+            return
 
         if user == None or user == "":
             # specify channel
@@ -102,10 +107,10 @@ class TwitchInfo(commands.Cog):
             url = f"https://nodered.bit13.local/tacobot/guild/{guild_id}/invite/{twitch_name}"
             result = requests.post(url, headers={"X-AUTH-TOKEN": str(self.bot.id)})
             if result.status_code == 200:
-                await self.discord_helper.send_embed(
-                    channel,
-                    "Invite Bot",
-                    f"Invited @OurTacoBot to {twitch_name}",
+                await self.messaging.send_embed(
+                    channel=channel,
+                    title="Invite Bot",
+                    message=f"Invited @OurTacoBot to {twitch_name}",
                     footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
                     color=0xFF0000,
                     delete_after=30,
@@ -157,10 +162,10 @@ class TwitchInfo(commands.Cog):
         else:
             twitch_name = twitch_info["twitch_name"]
         if not twitch_name is None:
-            await self.discord_helper.send_embed(
-                ctx.author,
-                "Twitch Name",
-                f"The Twitch name for {who} has been set to `{twitch_name}`.\n\nhttps://twitch.tv/{twitch_name}\n\nIf your twitch name changes in the future, you can use `.taco twitch set` in a discord channel, or `.twitch set` in the DM with me to set it.",
+            await self.messaging.send_embed(
+                channel=ctx.author,
+                title="Twitch Name",
+                message=f"The Twitch name for {who} has been set to `{twitch_name}`.\n\nhttps://twitch.tv/{twitch_name}\n\nIf your twitch name changes in the future, you can use `.taco twitch set` in a discord channel, or `.twitch set` in the DM with me to set it.",
                 color=0x00FF00,
             )
 
@@ -196,17 +201,17 @@ class TwitchInfo(commands.Cog):
                     action=SystemActions.LINK_TWITCH_TO_DISCORD,
                     data={"user_id": str(user.id), "twitch_name": twitch_name.lower()},
                 )
-                await self.discord_helper.send_embed(
-                    channel,
-                    "Success",
-                    f"{ctx.author.mention}, The Twitch name has been set to {twitch_name} for {utils.get_user_display_name(user)}.",
+                await self.messaging.send_embed(
+                    channel=channel,
+                    title="Success",
+                    message=f"{ctx.author.mention}, The Twitch name has been set to {twitch_name} for {utils.get_user_display_name(user)}.",
                     color=0x00FF00,
                     delete_after=30,
                 )
             return twitch_name
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
     @twitch.command()
     async def set(self, ctx, twitch_name: typing.Optional[str] = None) -> None:
@@ -265,10 +270,10 @@ class TwitchInfo(commands.Cog):
                     data={"user_id": str(ctx.author.id), "twitch_name": twitch_name.lower()},
                 )
 
-                await self.discord_helper.send_embed(
-                    resp_channel,
-                    self.settings.get_string(guild_id, "twitch_set_title"),
-                    self.settings.get_string(
+                await self.messaging.send_embed(
+                    channel=resp_channel,
+                    title=self.settings.get_string(guild_id, "twitch_set_title"),
+                    message=self.settings.get_string(
                         guild_id, "twitch_set_message", user=ctx.author.mention, twitch_name=twitch_name
                     ),
                     color=0x00FF00,
@@ -276,7 +281,7 @@ class TwitchInfo(commands.Cog):
                 )
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, "tacos")

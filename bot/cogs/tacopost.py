@@ -20,6 +20,7 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
+from .lib.messaging import Messaging
 
 import inspect
 
@@ -31,6 +32,7 @@ class TacoPost(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.messaging = Messaging(bot)
         # pull from database instead of app.manifest
         self.SETTINGS_SECTION = 'tacopost'
 
@@ -95,7 +97,11 @@ class TacoPost(commands.Cog):
             taco_count = self.db.get_tacos_count(guild_id, user.id)
             # if user has doesnt have enough tacos, send a message, and delete their message
             if taco_count is None or taco_count < taco_cost:
-                await self.discord_helper.send_embed(channel, "Not Enough Tacos", f"{user.mention}, You need {taco_cost} tacos to post in this channel.", delete_after=15)
+                await self.messaging.send_embed(
+                    channel=channel,
+                    title="Not Enough Tacos",
+                    message=f"{user.mention}, You need {taco_cost} tacos to post in this channel.",
+                    delete_after=15,)
                 await message.delete()
             else:
                 async def response_callback(response):
@@ -103,9 +109,17 @@ class TacoPost(commands.Cog):
                         # remove the tacos from the user
                         self.db.remove_tacos(guild_id, user.id, taco_cost)
                         # send the message that tacos have been removed
-                        await self.discord_helper.send_embed(channel, "Tacos Removed", f"{user.mention}, You have been charged {taco_cost} tacos from your account.", delete_after=10)
+                        await self.messaging.send_embed(
+                            channel=channel,
+                            title="Tacos Removed",
+                            message=f"{user.mention}, You have been charged {taco_cost} tacos from your account.",
+                            delete_after=10,)
                     else:
-                        await self.discord_helper.send_embed(channel, "Message Removed", f"{user.mention}, You chose to not use your tacos, your message has been removed.", delete_after=10)
+                        await self.messaging.send_embed(
+                            channel=channel,
+                            title="Message Removed",
+                            message=f"{user.mention}, You chose to not use your tacos, your message has been removed.",
+                            delete_after=10,)
                         await message.delete()
                 await self.discord_helper.ask_yes_no(
                     ctx=message,
