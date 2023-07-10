@@ -22,6 +22,8 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
+from .lib.system_actions import SystemActions
+
 
 
 class InviteTracker(commands.Cog):
@@ -100,6 +102,17 @@ class InviteTracker(commands.Cog):
                             inviter,
                             self.settings.get_string(guild_id, "taco_reason_invite", user=member.name),
                             tacotypes.TacoTypes.USER_INVITE,
+                        )
+                        self.db.track_system_action(
+                            guild_id=guild_id,
+                            action=SystemActions.USER_INVITE,
+                            data={
+                                "inviter_id": str(inviter.id),
+                                "inviter_name": inviter.name,
+                                "invited_id": str(member.id),
+                                "invited_name": member.name,
+                                "invite_code": invite.code,
+                            },
                         )
                     return
         except Exception as e:

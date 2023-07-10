@@ -24,6 +24,7 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
+from .lib.messaging import Messaging
 
 import inspect
 
@@ -37,6 +38,7 @@ class AmazonLink(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "amazon_links"
 
         self.db = mongo.MongoDatabase()
@@ -86,8 +88,9 @@ class AmazonLink(commands.Cog):
             await message.delete()
 
             # create an embed with the original message and the new url
-            embed = await self.discord_helper.send_embed(message.channel,
-                "Amazon Link",
+            embed = await self.messaging.send_embed(
+                channel=message.channel,
+                title="Amazon Link",
                 message=f"{message_content}",
                 author=message.author,
                 content=f"Please consider using this link which can help support the discord.\n\n{amazon_link}",)

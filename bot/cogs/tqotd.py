@@ -21,8 +21,23 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
+from .lib.permissions import Permissions
+from .lib.messaging import Messaging
+
 
 import inspect
+
+
+
+def is_admin_check(interaction: discord.Interaction) -> bool:
+    if interaction.guild is None:
+        return False
+    if interaction.user is None:
+        return False
+    if isinstance(interaction.user, discord.Member):
+        if interaction.user.guild_permissions:
+            return interaction.user.guild_permissions.administrator
+    return False
 
 class TacoQuestionOfTheDay(commands.Cog):
     def __init__(self, bot) -> None:
@@ -33,6 +48,8 @@ class TacoQuestionOfTheDay(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.messaging = Messaging(bot)
+        self.permissions = Permissions(bot)
         self.SETTINGS_SECTION = "tqotd"
         self.SELF_DESTRUCT_TIMEOUT = 30
         self.db = mongo.MongoDatabase()
@@ -52,7 +69,8 @@ class TacoQuestionOfTheDay(commands.Cog):
             return
         guild_id = 0
         try:
-            await ctx.message.delete()
+            if ctx.message:
+                await ctx.message.delete()
             guild_id = 0
             if ctx.guild:
                 guild_id = ctx.guild.id
@@ -116,20 +134,20 @@ class TacoQuestionOfTheDay(commands.Cog):
                             data = io.BytesIO(await resp.read())
                             files.append(discord.File(data, filename=attachment.filename))
 
-            await self.discord_helper.send_embed(
+            await self.messaging.send_embed(
                 channel=out_channel,
                 title=self.settings.get_string(guild_id, "tqotd_out_title"),
-                 message=out_message,
-                 content=role_tag,
-                 files=files,
-                 color=0x00ff00)
+                message=out_message,
+                content=role_tag,
+                files=files,
+                color=0x00ff00,)
 
             # save the TQOTD
             self.db.save_tqotd(guild_id, qotd.text, ctx.author.id)
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
     @tqotd.command(name="give")
     @commands.has_permissions(administrator=True)
@@ -143,7 +161,7 @@ class TacoQuestionOfTheDay(commands.Cog):
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
 
     @commands.Cog.listener()
@@ -163,7 +181,7 @@ class TacoQuestionOfTheDay(commands.Cog):
                 return
 
             # check if the user that reacted is in the admin role
-            if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+            if not await self.permissions.is_admin(payload.user_id, guild_id):
                 self.log.debug(guild_id, f"tqotd.{_method}", f"User {payload.user_id} is not an admin")
                 return
             # in the future, check if the user is in a defined role that can grant tacos (e.g. moderator)
@@ -232,13 +250,13 @@ class TacoQuestionOfTheDay(commands.Cog):
 
             reason_msg = self.settings.get_string(guild_id, "tqotd_reason_default")
 
-            await self.discord_helper.send_embed(
+            await self.messaging.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_give_title"),
                 # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",
                 message=self.settings.get_string(guild_id, "taco_gift_success", user=self.bot.user, touser=member.mention, amount=amount, taco_word=tacos_word, reason=reason_msg),
                 footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT),
-                delete_after=self.SELF_DESTRUCT_TIMEOUT)
+                delete_after=self.SELF_DESTRUCT_TIMEOUT,)
 
             await self.discord_helper.taco_give_user(guild_id, self.bot.user, member, reason_msg, tacotypes.TacoTypes.TQOTD, taco_amount=amount )
 

@@ -21,6 +21,8 @@ from .lib import utils
 from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
+from .lib.permissions import Permissions
+from .lib.messaging import Messaging
 
 import inspect
 
@@ -33,6 +35,8 @@ class TacoTuesday(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.messaging = Messaging(bot)
+        self.permissions = Permissions(bot)
         self.SETTINGS_SECTION = "tacotuesday"
         self.SELF_DESTRUCT_TIMEOUT = 30
         self.db = mongo.MongoDatabase()
@@ -99,7 +103,7 @@ class TacoTuesday(commands.Cog):
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
 
     @tuesday.command()
@@ -116,7 +120,7 @@ class TacoTuesday(commands.Cog):
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
     @tuesday.command()
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
@@ -130,14 +134,14 @@ class TacoTuesday(commands.Cog):
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
     async def _on_raw_reaction_add_import(self, payload) -> None:
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
 
         # check if the user that reacted is in the admin role
-        if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+        if not await self.permissions.is_admin(payload.user_id, guild_id):
             self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
             return
 
@@ -161,7 +165,7 @@ class TacoTuesday(commands.Cog):
         guild_id = payload.guild_id
 
         # check if the user that reacted is in the admin role
-        if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+        if not await self.permissions.is_admin(payload.user_id, guild_id):
             self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
             return
 
@@ -202,7 +206,7 @@ class TacoTuesday(commands.Cog):
 
             # check if the user that reacted is in the admin role
             # we really only do anything here if they are an admin
-            if not await self.discord_helper.is_admin(guild_id, payload.user_id):
+            if not await self.permissions.is_admin(payload.user_id, guild_id):
                 return
 
             ###
@@ -250,7 +254,7 @@ class TacoTuesday(commands.Cog):
 
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
-            # await self.discord_helper.notify_of_error(ctx)
+            # await self.messaging.notify_of_error(ctx)
 
     async def _archive_taco_tuesday(self, message: discord.Message, cog_settings: dict = None) -> None:
         _method = inspect.stack()[0][3]
@@ -331,8 +335,8 @@ class TacoTuesday(commands.Cog):
 
             await message.delete()
 
-            await self.discord_helper.send_embed(
-                message.channel,
+            await self.messaging.send_embed(
+                channel=message.channel,
                 title="TACO Tuesday",
                 message=f"Message archived to {archive_channel.mention}",
                 color=discord.Color.green().value,
@@ -341,7 +345,7 @@ class TacoTuesday(commands.Cog):
 
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
-            # await self.discord_helper.notify_of_error(ctx)
+            # await self.messaging.notify_of_error(ctx)
 
     async def _set_taco_tuesday_user(self, ctx: commands.Context, member: discord.Member) -> None:
         _method = inspect.stack()[0][3]
@@ -449,7 +453,7 @@ class TacoTuesday(commands.Cog):
 
             reason_msg = self.settings.get_string(guild_id, "taco_tuesday_reason")
 
-            await self.discord_helper.send_embed(
+            await self.messaging.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_give_title"),
                 # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",
@@ -473,7 +477,7 @@ class TacoTuesday(commands.Cog):
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
             if ctx:
-                await self.discord_helper.notify_of_error(ctx)
+                await self.messaging.notify_of_error(ctx)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)

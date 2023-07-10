@@ -256,7 +256,7 @@ class MongoDatabase(database.Database):
                 self.close()
         pass
 
-    def get_total_gifted_tacos(self, guildId: int, userId: int, timespan_seconds: int = 86400) -> typing.Union[int,None]:
+    def get_total_gifted_tacos(self, guildId: int, userId: int, timespan_seconds: int = 86400) -> int:
         try:
             if self.connection is None:
                 self.open()
@@ -272,6 +272,8 @@ class MongoDatabase(database.Database):
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+
+            return 0
         finally:
             if self.connection:
                 self.close()
@@ -752,8 +754,8 @@ class MongoDatabase(database.Database):
                 "user_id": str(userId),
                 "platform": platform.upper().strip(),
                 "url": url,
-                "channel_id": str(channelId),
-                "message_id": str(messageId),
+                "channel_id": str(channelId) if channelId is not None else None,
+                "message_id": str(messageId) if messageId is not None else None,
                 "timestamp": timestamp
             }
             self.connection.live_tracked.update_one({ "guild_id": str(guildId), "user_id": str(userId), "platform": platform.upper().strip()}, { "$set": payload }, upsert=True)
@@ -1133,17 +1135,24 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def open_game_key_offer(self, game_key_id: str, guild_id: int, message_id:int, channel_id: int):
+    def open_game_key_offer(self, game_key_id: str, guild_id: int, message_id:int, channel_id: int, expires: typing.Optional[datetime.datetime] = None):
         try:
             if self.connection is None:
                 self.open()
             timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            if expires:
+                expires_ts = utils.to_timestamp(expires)
+            else:
+                # 1 day
+                expires_ts = timestamp + 86400
+
             payload = {
                 "guild_id": str(guild_id),
                 "game_key_id": str(game_key_id),
                 "message_id": str(message_id),
                 "channel_id": str(channel_id),
-                "timestamp": timestamp
+                "timestamp": timestamp,
+                "expires": expires_ts,
             }
             self.connection.game_key_offers.update_one( { "guild_id": str(guild_id), "game_key_id": game_key_id }, { "$set": payload }, upsert=True )
         except Exception as ex:
@@ -1828,7 +1837,7 @@ class MongoDatabase(database.Database):
             if self.connection:
                 self.close()
 
-    def track_food_post(self, guildId: int, userId: int, channelId: int, messageId: int, message: str, image: str):
+    def track_photo_post(self, guildId: int, userId: int, channelId: int, messageId: int, message: str, image: str, channelName: str):
         try:
             if self.connection is None:
                 self.open()
@@ -1838,13 +1847,14 @@ class MongoDatabase(database.Database):
                 "guild_id": str(guildId),
                 "user_id": str(userId),
                 "channel_id": str(channelId),
+                "channel_name": channelName,
                 "message_id": str(messageId),
                 "message": message,
                 "image": image,
                 "timestamp": timestamp
             }
 
-            self.connection.food_posts.insert_one(payload)
+            self.connection.photo_posts.insert_one(payload)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -1982,6 +1992,19 @@ class MongoDatabase(database.Database):
         finally:
             if self.connection:
                 self.close()
+
+    # def migrate_food_posts_to_photo_posts(self):
+    #     guild_id = "935294040386183228"
+    #     try:
+    #         if self.connection is None:
+    #             self.open()
+    #         self.connection.tacos_log.update_many({ "guild_id": guild_id, "type": "FOOD_PHOTO" }, { "$set": { "type": "PHOTO_POST" } })
+    #     except Exception as ex:
+    #         print(ex)
+    #         traceback.print_exc()
+    #     finally:
+    #         if self.connection:
+    #             self.close()
 
     def import_taco_tuesday(self):
         try:
@@ -2672,6 +2695,8 @@ class MongoDatabase(database.Database):
     def add_user_to_join_whitelist(self, guild_id: int, user_id: int, added_by: int) -> None:
         """Add a user to the join whitelist for a guild."""
         try:
+            if not self.connection:
+                self.open()
             date = datetime.datetime.utcnow()
             timestamp = utils.to_timestamp(date)
 
@@ -2704,6 +2729,8 @@ class MongoDatabase(database.Database):
     def remove_user_from_join_whitelist(self, guild_id: int, user_id: int) -> None:
         """Remove a user from the join whitelist for a guild."""
         try:
+            if not self.connection:
+                self.open()
             self.connection.join_whitelist.delete_one({"guild_id": str(guild_id), "user_id": str(user_id)})
         except Exception as ex:
             print(ex)
@@ -2715,6 +2742,8 @@ class MongoDatabase(database.Database):
     def track_system_action(self, guild_id: int, action: typing.Union[SystemActions, str], data: typing.Optional[dict] = None) -> None:
         """Track a system action."""
         try:
+            if not self.connection:
+                self.open()
             date = datetime.datetime.utcnow()
             timestamp = utils.to_timestamp(date)
 
@@ -2725,6 +2754,70 @@ class MongoDatabase(database.Database):
                 "data": data
             }
             self.connection.system_actions.insert_one(payload)
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+        finally:
+            if self.connection:
+                self.close()
+
+    def get_guild_ids(self) -> list:
+        """Get all guild IDs."""
+        try:
+            if not self.connection:
+                self.open()
+            return list(self.connection.guilds.distinct("guild_id"))
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return []
+        finally:
+            if self.connection:
+                self.close()
+
+    def get_user_introductions(self, guild_id: int):
+        try:
+            if not self.connection:
+                self.open()
+            return self.connection.introductions.find({"guild_id": str(guild_id)})
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return []
+        finally:
+            if self.connection:
+                self.close()
+
+    def get_user_introduction(self, guild_id: int, user_id: int):
+        try:
+            if not self.connection:
+                self.open()
+            return self.connection.introductions.find_one({"guild_id": str(guild_id), "user_id": str(user_id)})
+        except Exception as ex:
+            print(ex)
+            traceback.print_exc()
+            return None
+        finally:
+            if self.connection:
+                self.close()
+
+    def track_user_introduction(self, guild_id: int, user_id: int, message_id: int, channel_id: int, approved: bool) -> None:
+        try:
+            if not self.connection:
+                self.open()
+            date = datetime.datetime.utcnow()
+            timestamp = utils.to_timestamp(date)
+
+            payload = {
+                "guild_id": str(guild_id),
+                "user_id": str(user_id),
+                "message_id": str(message_id),
+                "channel_id": str(channel_id),
+                "approved": approved,
+                "timestamp": timestamp
+            }
+            self.connection.introductions.update_one({"guild_id": str(guild_id), "user_id": str(user_id)}, { "$set": payload }, upsert=True)
+
         except Exception as ex:
             print(ex)
             traceback.print_exc()

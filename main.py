@@ -3,8 +3,13 @@ import os
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 import bot.tacobot as bot
+from bot.cogs.lib.migration_runner import MigrationRunner
 
 DISCORD_TOKEN = os.environ["DISCORD_TOKEN"]
+
+migrations = MigrationRunner()
+migrations.start_migrations()
+
 intents = discord.Intents.all()
 intents.message_content = True
 intents.members = True

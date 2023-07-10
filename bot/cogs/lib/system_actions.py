@@ -19,3 +19,5 @@ class SystemActions(Enum):
     USER_KICK = 12
 
     AUTOMOD_ACTION = 13
+
+    USER_INVITE = 14

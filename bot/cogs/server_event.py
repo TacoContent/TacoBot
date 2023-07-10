@@ -3,7 +3,6 @@ from discord.ext import commands
 import asyncio
 import json
 import traceback
-import sqlite3
 import sys
 import os
 import glob

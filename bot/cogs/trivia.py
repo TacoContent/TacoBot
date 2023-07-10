@@ -25,6 +25,8 @@ from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
 from .lib.models import TriviaQuestion
+from .lib.messaging import Messaging
+
 class Trivia(commands.Cog):
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
@@ -34,7 +36,7 @@ class Trivia(commands.Cog):
         self.SETTINGS_SECTION = "trivia"
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
-
+        self.messaging = Messaging(bot)
         self.CATEGORY_POINTS_DEFAULTS = { "hard": 15, "medium": 10, "easy": 5 }
         self.CHOICE_EMOJIS_DEFAULTS = ['🇦','🇧','🇨','🇩']
         self.TRIVIA_TIMEOUT_DEFAULT = 60
@@ -145,12 +147,13 @@ class Trivia(commands.Cog):
 
 
 
-                    qm = await self.discord_helper.send_embed(ctx.channel,
-                        self.settings.get_string(guild_id, "trivia_question_title",
+                    qm = await self.messaging.send_embed(
+                        channel=ctx.channel,
+                        title=self.settings.get_string(guild_id, "trivia_question_title",
                             category=html.unescape(question.category),
                             difficulty=question.difficulty.capitalize(),
                             reward=reward),
-                        question_message,
+                        message=question_message,
                         fields=[],
                         content=notify_role_mention if notify_role_mention else None,)
 
@@ -217,9 +220,10 @@ class Trivia(commands.Cog):
                                         give_type=tacotypes.TacoTypes.TRIVIA_INCORRECT,
                                         taco_amount=punishment )
 
-                            result = await self.discord_helper.send_embed(ctx.channel,
-                                self.settings.get_string(guild_id, "trivia_results_title"),
-                                self.settings.get_string(guild_id, "trivia_results_message",
+                            result = await self.messaging.send_embed(
+                                channel=ctx.channel,
+                                title=self.settings.get_string(guild_id, "trivia_results_title"),
+                                message=self.settings.get_string(guild_id, "trivia_results_message",
                                     question=html.unescape(question.question),
                                     correct_emoji=choice_emojis[correct_index],
                                     correct_answer=html.unescape(answers[correct_index]),
@@ -255,21 +259,7 @@ class Trivia(commands.Cog):
                 pass
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
-
-    @trivia.command()
-    @commands.guild_only()
-    async def help(self, ctx) -> None:
-        guild_id = 0
-        if ctx.guild:
-            guild_id = ctx.guild.id
-            await ctx.message.delete()
-        await self.discord_helper.send_embed(ctx.channel,
-            self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
-            self.settings.get_string(guild_id, "help_module_message", bot_name=self.settings.name, command="trivia"),
-            footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
-            color=0xff0000, delete_after=30)
-        pass
+            await self.messaging.notify_of_error(ctx)
 
     def get_question(self, ctx: Context) -> typing.Any:
         _method = inspect.stack()[0][3]

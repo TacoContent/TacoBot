@@ -15,7 +15,7 @@ class TacoTypes(Enum):
     BIRTHDAY = 9
     TWITCH_LINK = 10
     STREAM = 11
-    FOOD_PHOTO = 12
+    PHOTO_POST = 12
     WDYCTW = 13
     TECH_THURSDAY = 14
     TACO_TUESDAY = 15
@@ -29,15 +29,22 @@ class TacoTypes(Enum):
     GAME_REDEEM = 23
     TRIVIA_CORRECT = 24
     TRIVIA_INCORRECT = 25
-    TWITCH_BOT_INVITE = 26 # Invite @OurTacoBot to your Twitch channel
-    TWITCH_RAID = 27
-    TWITCH_SUB = 28
-    TWITCH_BITS = 29
-    TWITCH_FIRST_MESSAGE = 30
-    TWITCH_PROMOTE = 31
+    FOLLOW_CHANNEL = 26
+    CREATE_VOICE_CHANNEL = 27
+    POST_INTRODUCTION = 28
+    APPROVE_INTRODUCTION = 29
+    GAME_DONATE_REDEEM = 30
+
+
+    TWITCH_BOT_INVITE = 1000 # Invite @OurTacoBot to your Twitch channel
+    TWITCH_RAID = 1001
+    TWITCH_SUB = 1002
+    TWITCH_BITS = 1003
+    TWITCH_FIRST_MESSAGE = 1004
+    TWITCH_PROMOTE = 1005
     TWITCH_GIVE_TACOS = 32
-    TWITCH_RECEIVE_TACOS = 33
-    TWITCH_FOLLOW = 34 # not yet implemented until i can figure out how to get the event from eventsub
+    TWITCH_RECEIVE_TACOS = 1006
+    TWITCH_FOLLOW = 1007 # not yet implemented until i can figure out how to get the event from eventsub
 
     PURGE = 9996
     LEAVE_SERVER = 9997
@@ -69,8 +76,8 @@ class TacoTypes(Enum):
             return TacoTypes.TWITCH_LINK
         elif taco_type_string == "stream_count":
             return TacoTypes.STREAM
-        elif taco_type_string == "food_photo_count":
-            return TacoTypes.FOOD_PHOTO
+        elif taco_type_string == "photo_post_count":
+            return TacoTypes.PHOTO_POST
         elif taco_type_string == "wdyctw_count":
             return TacoTypes.WDYCTW
         elif taco_type_string == "tech_thursday_count":
@@ -97,10 +104,20 @@ class TacoTypes(Enum):
             return TacoTypes.LEAVE_SERVER
         elif taco_type_string == "game_key_cost":
             return TacoTypes.GAME_REDEEM
+        elif taco_type_string == "game_donate_count":
+            return TacoTypes.GAME_DONATE_REDEEM
         elif taco_type_string == "trivia_correct_count":
             return TacoTypes.TRIVIA_CORRECT
         elif taco_type_string == "trivia_incorrect_count":
             return TacoTypes.TRIVIA_INCORRECT
+        elif taco_type_string == "follow_channel_count":
+            return TacoTypes.FOLLOW_CHANNEL  # this can't be triggered by events
+        elif taco_type_string == "create_voice_channel_count":
+            return TacoTypes.CREATE_VOICE_CHANNEL
+        elif taco_type_string == "post_introduction_count":
+            return TacoTypes.POST_INTRODUCTION
+        elif taco_type_string == "approve_introduction_count":
+            return TacoTypes.APPROVE_INTRODUCTION
         elif taco_type_string == "twitch_bot_invite":
             return TacoTypes.TWITCH_BOT_INVITE
         elif taco_type_string == "twitch_raid_count":
@@ -148,8 +165,8 @@ class TacoTypes(Enum):
             return "TWITCH_LINK"
         elif taco_type == TacoTypes.STREAM:
             return "STREAM"
-        elif taco_type == TacoTypes.FOOD_PHOTO:
-            return "FOOD_PHOTO"
+        elif taco_type == TacoTypes.PHOTO_POST:
+            return "PHOTO_POST"
         elif taco_type == TacoTypes.WDYCTW:
             return "WDYCTW"
         elif taco_type == TacoTypes.TECH_THURSDAY:
@@ -176,10 +193,20 @@ class TacoTypes(Enum):
             return "LEAVE_SERVER"
         elif taco_type == TacoTypes.GAME_REDEEM:
             return "GAME_REDEEM"
+        elif taco_type == TacoTypes.GAME_DONATE_REDEEM:
+            return "GAME_DONATE_REDEEM"
         elif taco_type == TacoTypes.TRIVIA_CORRECT:
             return "TRIVIA_CORRECT"
         elif taco_type == TacoTypes.TRIVIA_INCORRECT:
             return "TRIVIA_INCORRECT"
+        elif taco_type == TacoTypes.FOLLOW_CHANNEL:  # this can't be triggered by events
+            return "FOLLOW_CHANNEL"
+        elif taco_type == TacoTypes.CREATE_VOICE_CHANNEL:
+            return "CREATE_VOICE_CHANNEL"
+        elif taco_type == TacoTypes.POST_INTRODUCTION:
+            return "POST_INTRODUCTION"
+        elif taco_type == TacoTypes.APPROVE_INTRODUCTION:
+            return "APPROVE_INTRODUCTION"
         elif taco_type == TacoTypes.TWITCH_BOT_INVITE:
             return "TWITCH_BOT_INVITE"
         elif taco_type == TacoTypes.TWITCH_RAID:
@@ -227,8 +254,8 @@ class TacoTypes(Enum):
             return "twitch_count"
         elif taco_type == TacoTypes.STREAM:
             return "stream_count"
-        elif taco_type == TacoTypes.FOOD_PHOTO:
-            return "food_photo_count"
+        elif taco_type == TacoTypes.PHOTO_POST:
+            return "photo_post_count"
         elif taco_type == TacoTypes.WDYCTW:
             return "wdyctw_count"
         elif taco_type == TacoTypes.TECH_THURSDAY:
@@ -255,10 +282,20 @@ class TacoTypes(Enum):
             return "leave_server_custom"
         elif taco_type == TacoTypes.GAME_REDEEM:
             return "game_key_cost"
+        elif taco_type == TacoTypes.GAME_DONATE_REDEEM:
+            return "game_donate_count"
         elif taco_type == TacoTypes.TRIVIA_CORRECT:
             return "trivia_correct_count"
         elif taco_type == TacoTypes.TRIVIA_INCORRECT:
             return "trivia_incorrect_count"
+        elif taco_type == TacoTypes.FOLLOW_CHANNEL: # this can't be triggered by events
+            return "follow_channel_count"
+        elif taco_type == TacoTypes.CREATE_VOICE_CHANNEL:
+            return "create_voice_channel_count"
+        elif taco_type == TacoTypes.POST_INTRODUCTION:
+            return "post_introduction_count"
+        elif taco_type == TacoTypes.APPROVE_INTRODUCTION:
+            return "approve_introduction_count"
         elif taco_type == TacoTypes.TWITCH_BOT_INVITE:
             return "twitch_bot_invite_count"
         elif taco_type == TacoTypes.TWITCH_RAID:

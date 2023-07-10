@@ -23,6 +23,7 @@ from .lib import settings
 from .lib import mongo
 from .lib import tacotypes
 from .lib.system_actions import SystemActions
+from .lib.messaging import Messaging
 class AccountLink(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
@@ -32,6 +33,7 @@ class AccountLink(commands.Cog):
         self.SETTINGS_SECTION = "account_link"
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.messaging = Messaging(bot)
         self.db = mongo.MongoDatabase()
 
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
@@ -82,7 +84,7 @@ class AccountLink(commands.Cog):
                     await ctx.channel.send(f"{ctx.author.mention}, {ve}", delete_after=10)
             except Exception as e:
                 self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-                await self.discord_helper.notify_of_error(ctx)
+                await self.messaging.notify_of_error(ctx)
         else:
             try:
                 # generate code
@@ -107,7 +109,7 @@ class AccountLink(commands.Cog):
                     await ctx.channel.send(f"{ctx.author.mention}, {ve}", delete_after=10)
             except Exception as e:
                 self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-                await self.discord_helper.notify_of_error(ctx)
+                await self.messaging.notify_of_error(ctx)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)

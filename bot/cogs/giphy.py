@@ -24,6 +24,7 @@ from .lib import loglevel
 from .lib import utils
 from .lib import settings
 from .lib import mongo
+from .lib.messaging import Messaging
 
 class Giphy(commands.Cog):
     def __init__(self, bot):
@@ -34,6 +35,7 @@ class Giphy(commands.Cog):
         self.settings = settings.Settings()
         self.SETTINGS_SECTION = "giphy"
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.messaging = Messaging(bot)
         self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -70,7 +72,7 @@ class Giphy(commands.Cog):
                 image_url = data['data'][random_index]['images']['original']['url']
                 url = data['data'][random_index]['url']
 
-                await self.discord_helper.send_embed(
+                await self.messaging.send_embed(
                     channel=ctx.channel,
                     title=title,
                     image=image_url,
@@ -83,7 +85,7 @@ class Giphy(commands.Cog):
                 # await ctx.send(embed=embed)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
-            await self.discord_helper.notify_of_error(ctx)
+            await self.messaging.notify_of_error(ctx)
 
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
