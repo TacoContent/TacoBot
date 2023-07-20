@@ -238,10 +238,6 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             if payload.event_type != 'REACTION_ADD':
                 return
 
-            today = datetime.datetime.now()
-            if today.weekday() != 2: # 2 = Wednesday
-                return
-
             # check if the user that reacted is in the admin role
             if not await self.permissions.is_admin(payload.user_id, guild_id):
                 self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
@@ -267,7 +263,13 @@ class WhatDoYouCallThisWednesday(commands.Cog):
                 await self._on_raw_reaction_add_give(payload)
                 return
 
+            # check if it's Wednesday
+            today = datetime.datetime.now()
+            if today.weekday() != 2: # 2 = Wednesday
+                return
             if str(payload.emoji.name) in reaction_import_emojis:
+
+
                 await self._on_raw_reaction_add_import(payload)
                 return
 

@@ -271,10 +271,6 @@ class MentalMondays(commands.Cog):
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
         try:
-            # is today mondays?
-            today = datetime.datetime.now()
-            if today.weekday() != 0:  # 0 is monday
-                return
 
             if payload.event_type != "REACTION_ADD":
                 return
@@ -305,6 +301,10 @@ class MentalMondays(commands.Cog):
                 return
 
 
+            # is today mondays?
+            today = datetime.datetime.now()
+            if today.weekday() != 0:  # 0 is monday
+                return
             if str(payload.emoji.name) in reaction_import_emojis:
                 await self._on_raw_reaction_add_import(payload)
                 return

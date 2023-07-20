@@ -271,10 +271,6 @@ class TechThursdays(commands.Cog):
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
         try:
-            # is today thursday?
-            today = datetime.datetime.now()
-            if today.weekday() != 3:  # 0 = Monday, 1=Tuesday, 2=Wednesday...
-                return
 
             if payload.event_type != "REACTION_ADD":
                 return
@@ -302,6 +298,10 @@ class TechThursdays(commands.Cog):
                 return
 
 
+            # is today thursday?
+            today = datetime.datetime.now()
+            if today.weekday() != 3:  # 0 = Monday, 1=Tuesday, 2=Wednesday...
+                return
             if str(payload.emoji.name) in reaction_import_emojis:
                 await self._on_raw_reaction_add_import(payload)
                 return
