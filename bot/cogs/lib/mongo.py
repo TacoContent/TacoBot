@@ -37,6 +37,7 @@ class MongoDatabase(database.Database):
     def open(self) -> None:
         if not self.settings.db_url:
             raise ValueError("MONGODB_URL is not set")
+
         self.client = MongoClient(self.settings.db_url)
         self.connection = self.client.tacobot
 
@@ -44,6 +45,8 @@ class MongoDatabase(database.Database):
         try:
             if self.client:
                 self.client.close()
+            self.client = None
+            self.connection = None
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -65,7 +68,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
             self.close()
 
@@ -122,7 +125,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def remove_stream_team_request(self, guildId: int, userId: int) -> None:
@@ -134,7 +137,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     # twitchId: typing.Optional[str] = None,
@@ -152,7 +155,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def get_user_twitch_info(self, userId: int) -> typing.Optional[dict]:
@@ -164,7 +167,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     # Tacos
@@ -179,7 +182,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def add_tacos(self, guildId: int, userId: int, count: int) -> typing.Union[int,None]:
@@ -204,7 +207,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def remove_tacos(self, guildId: int, userId: int, count: int):
@@ -235,7 +238,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def get_tacos_count(self, guildId: int, userId: int) -> typing.Union[int,None]:
@@ -252,7 +255,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
         pass
 
@@ -275,7 +278,7 @@ class MongoDatabase(database.Database):
 
             return 0
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def add_taco_gift(self, guildId: int, userId: int, count: int) -> bool:
@@ -300,7 +303,7 @@ class MongoDatabase(database.Database):
             traceback.print_exc()
             return False
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def add_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int) -> None:
@@ -323,7 +326,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
     def get_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int) -> typing.Union[dict,None]:
         try:
@@ -337,7 +340,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def add_suggestion_create_message(self, guildId: int, channelId: int, messageId: int) -> None:
@@ -359,7 +362,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def remove_suggestion_create_message(self, guildId: int, channelId: int, messageId: int) -> None:
@@ -372,7 +375,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
     def add_settings(self, guildId: int, name:str, settings: dict) -> None:
         try:
@@ -391,7 +394,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     # add or update a setting value in the settings collection, under the settings property
@@ -413,7 +416,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def get_settings(self, guildId: int, name:str) -> typing.Union[dict,None]:
@@ -430,7 +433,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def get_suggestion(self, guildId: int, messageId: int) -> typing.Union[dict,None]:
@@ -447,7 +450,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def get_suggestion_by_id(self, guildId: int, suggestionId: str) -> typing.Union[dict,None]:
@@ -464,7 +467,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def set_state_suggestion_by_id(self, guildId: int, suggestionId: str, state: str, userId: int, reason: str) -> None:
@@ -490,7 +493,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def set_state_suggestion(self, guildId: int, messageId: int, state: str, userId: int, reason: str) -> None:
@@ -515,7 +518,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def has_user_voted_on_suggestion(self, suggestionId: str, userId: int) -> bool:
@@ -535,7 +538,7 @@ class MongoDatabase(database.Database):
             traceback.print_exc()
             return False
         finally:
-            if self.connection:
+            if self.connection is not None:
 
                 self.close()
     def unvote_suggestion_by_id(self, guildId: int, suggestionId: str, userId: int) -> None:
@@ -553,7 +556,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def unvote_suggestion(self, guildId: int, messageId: int, userId: int ) -> None:
@@ -571,7 +574,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def get_suggestion_votes_by_id(self, suggestionId: str) -> typing.Union[dict,None]:
@@ -586,7 +589,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def vote_suggestion(self, guildId: int, messageId: int, userId: int, vote: int) -> None:
@@ -606,7 +609,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
     def vote_suggestion_by_id(self, suggestionId: str, userId: int, vote: int) -> None:
         try:
@@ -625,7 +628,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def add_suggestion(self, guildId: int, messageId: int, suggestion: dict) -> None:
@@ -651,7 +654,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def delete_suggestion_by_id(self, guildId: int, suggestionId: str, userId: int, reason: str) -> None:
@@ -677,7 +680,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def track_invite_code(self, guildId: int, inviteCode: str, inviteInfo: dict, userInvite: dict) -> None:
@@ -699,7 +702,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def get_invite_code(self, guildId: int, inviteCode: str) -> typing.Any:
@@ -711,7 +714,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def track_live_activity(self, guildId: int, userId: int, live: bool, platform: str, url: str) -> None:
@@ -732,7 +735,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def track_live(self, guildId: int, userId: int, platform: typing.Union[str, None], channelId: typing.Union[int, None] = None, messageId: typing.Union[int, None] = None, url: typing.Union[str, None] = None):
@@ -763,7 +766,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def get_tracked_live(self, guildId: int, userId: int, platform: str):
@@ -775,7 +778,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def get_tracked_live_by_url(self, guildId: int, url: str):
@@ -787,7 +790,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def get_tracked_live_by_user(self, guildId: int, userId: int):
@@ -799,7 +802,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def untrack_live(self, guildId: int, userId: int, platform: str):
@@ -811,7 +814,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def add_user_birthday(self, guildId: int, userId: int, month: int, day: int):
@@ -831,7 +834,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def get_user_birthday(self, guildId: int, userId: int):
@@ -843,7 +846,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
     def get_user_birthdays(self, guildId: int, month: int, day: int):
         try:
@@ -854,7 +857,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
     def track_birthday_check(self, guildId: int):
         try:
@@ -870,7 +873,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
     def birthday_was_checked_today(self, guildId: int):
         try:
@@ -904,7 +907,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def save_tqotd(self, guildId: int, question: str, author: int):
@@ -926,7 +929,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
     def track_tqotd_answer(self, guildId: int, userId: int, message_id: int):
         try:
@@ -961,7 +964,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def tqotd_user_message_tracked(self, guildId: int, userId: int, messageId: int):
@@ -999,7 +1002,7 @@ class MongoDatabase(database.Database):
             traceback.print_exc()
             raise ex
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
     def _get_twitch_name(self, userId: int):
         try:
@@ -1013,7 +1016,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def set_twitch_discord_link_code(self, userId: int, code: str):
@@ -1076,7 +1079,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def whitelist_minecraft_user(self, guildId: int, userId: int, username: str, uuid: str, whitelist: bool = True):
@@ -1095,7 +1098,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def op_minecraft_user(self, userId: int, username: str, uuid: str, op: bool = True, level: MinecraftOpLevel = MinecraftOpLevel.LEVEL1, bypassPlayerCount: bool = False):
@@ -1117,7 +1120,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def find_open_game_key_offer(self, guild_id: int, channel_id: int):
@@ -1132,7 +1135,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def open_game_key_offer(self, game_key_id: str, guild_id: int, message_id:int, channel_id: int, expires: typing.Optional[datetime.datetime] = None):
@@ -1159,7 +1162,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
     def close_game_key_offer_by_message(self, guild_id: int, message_id: int):
         try:
@@ -1170,7 +1173,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
     def close_game_key_offer(self, guild_id: int, game_key_id: str):
         try:
@@ -1181,7 +1184,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def claim_game_key_offer(self, game_key_id: str, user_id: int):
@@ -1199,7 +1202,7 @@ class MongoDatabase(database.Database):
             traceback.print_exc()
             raise ex
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def get_game_key_data(self, game_key_id: str):
@@ -1214,7 +1217,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
     def get_random_game_key_data(self, guild_id: int):
         try:
@@ -1239,7 +1242,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def track_wdyctw_answer(self, guild_id: int, user_id: int, message_id: int):
@@ -1282,7 +1285,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
     def save_wdyctw(self, guildId: int, message: str, image: str, author: int, channel_id: int = None, message_id: int = None):
         try:
@@ -1306,7 +1309,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
     def wdyctw_user_message_tracked(self, guildId: int, userId: int, messageId: int):
         # was this message, for this user, already used to answer the WDYCTW?
@@ -1343,7 +1346,7 @@ class MongoDatabase(database.Database):
             traceback.print_exc()
             raise ex
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def track_techthurs_answer(self, guild_id: int, user_id: int, message_id: int):
@@ -1386,7 +1389,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def save_techthurs(self, guildId: int, message: str, image: str, author: int, channel_id: int = None, message_id: int = None):
@@ -1411,7 +1414,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def techthurs_user_message_tracked(self, guildId: int, userId: int, messageId: int):
@@ -1449,7 +1452,7 @@ class MongoDatabase(database.Database):
             traceback.print_exc()
             raise ex
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def track_mentalmondays_answer(self, guild_id: int, user_id: int, message_id: int):
@@ -1492,7 +1495,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def save_mentalmondays(self, guildId: int, message: str, image: str, author: int, channel_id: int = None, message_id: int = None):
@@ -1517,7 +1520,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def mentalmondays_user_message_tracked(self, guildId: int, userId: int, messageId: int):
@@ -1555,7 +1558,7 @@ class MongoDatabase(database.Database):
             traceback.print_exc()
             raise ex
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def save_taco_tuesday(self, guildId: int, message: str, image: str, author: int, channel_id: typing.Optional[int] = None, message_id: typing.Optional[int] = None, tweet: typing.Optional[str] = None):
@@ -1581,7 +1584,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def track_taco_tuesday(self, guild_id: int, user_id: int):
@@ -1620,7 +1623,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def taco_tuesday_user_tracked(self, guildId: int, userId: int, messageId: int):
@@ -1658,7 +1661,7 @@ class MongoDatabase(database.Database):
             traceback.print_exc()
             raise ex
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def taco_tuesday_set_user(self, guildId: int, userId: int):
@@ -1694,7 +1697,7 @@ class MongoDatabase(database.Database):
             traceback.print_exc()
             raise ex
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def taco_tuesday_get_by_message(self, guildId: int, channelId: int, messageId: int):
@@ -1710,7 +1713,7 @@ class MongoDatabase(database.Database):
             traceback.print_exc()
             raise ex
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def taco_tuesday_update_message(self, guildId: int, channelId: int, messageId: int, newChannelId: int, newMessageId: int):
@@ -1727,7 +1730,7 @@ class MongoDatabase(database.Database):
             traceback.print_exc()
             raise ex
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def track_first_message(self, guildId: int, userId: int, channelId: int, messageId: int):
@@ -1752,7 +1755,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def track_message(self, guildId: int, userId: int, channelId: int, messageId: int):
@@ -1776,7 +1779,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def is_first_message_today(self, guildId: int, userId: int):
@@ -1794,7 +1797,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def track_user(
@@ -1834,7 +1837,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def track_photo_post(self, guildId: int, userId: int, channelId: int, messageId: int, message: str, image: str, channelName: str):
@@ -1859,7 +1862,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def track_user_join_leave(self, guildId: int, userId: int, join: bool):
@@ -1881,7 +1884,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
 
@@ -1906,7 +1909,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def track_guild(self, guild: discord.Guild) -> None:
@@ -1931,7 +1934,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def track_trivia_question(self, triviaQuestion: models.TriviaQuestion):
@@ -1963,7 +1966,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
 
@@ -1977,7 +1980,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def migrate_minecraft_whitelist(self):
@@ -1990,7 +1993,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     # def migrate_food_posts_to_photo_posts(self):
@@ -2003,7 +2006,7 @@ class MongoDatabase(database.Database):
     #         print(ex)
     #         traceback.print_exc()
     #     finally:
-    #         if self.connection:
+    #         if self.connection is not None:
     #             self.close()
 
     def import_taco_tuesday(self):
@@ -2689,13 +2692,13 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def add_user_to_join_whitelist(self, guild_id: int, user_id: int, added_by: int) -> None:
         """Add a user to the join whitelist for a guild."""
         try:
-            if not self.connection:
+            if self.connection is None:
                 self.open()
             date = datetime.datetime.utcnow()
             timestamp = utils.to_timestamp(date)
@@ -2711,7 +2714,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def get_user_join_whitelist(self, guild_id: int) -> list:
@@ -2723,26 +2726,26 @@ class MongoDatabase(database.Database):
             traceback.print_exc()
             return []
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def remove_user_from_join_whitelist(self, guild_id: int, user_id: int) -> None:
         """Remove a user from the join whitelist for a guild."""
         try:
-            if not self.connection:
+            if self.connection is None:
                 self.open()
             self.connection.join_whitelist.delete_one({"guild_id": str(guild_id), "user_id": str(user_id)})
         except Exception as ex:
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def track_system_action(self, guild_id: int, action: typing.Union[SystemActions, str], data: typing.Optional[dict] = None) -> None:
         """Track a system action."""
         try:
-            if not self.connection:
+            if self.connection is None:
                 self.open()
             date = datetime.datetime.utcnow()
             timestamp = utils.to_timestamp(date)
@@ -2758,13 +2761,13 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def get_guild_ids(self) -> list:
         """Get all guild IDs."""
         try:
-            if not self.connection:
+            if self.connection is None:
                 self.open()
             return list(self.connection.guilds.distinct("guild_id"))
         except Exception as ex:
@@ -2772,12 +2775,12 @@ class MongoDatabase(database.Database):
             traceback.print_exc()
             return []
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def get_user_introductions(self, guild_id: int):
         try:
-            if not self.connection:
+            if self.connection is None:
                 self.open()
             return self.connection.introductions.find({"guild_id": str(guild_id)})
         except Exception as ex:
@@ -2785,12 +2788,12 @@ class MongoDatabase(database.Database):
             traceback.print_exc()
             return []
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def get_user_introduction(self, guild_id: int, user_id: int):
         try:
-            if not self.connection:
+            if self.connection is None:
                 self.open()
             return self.connection.introductions.find_one({"guild_id": str(guild_id), "user_id": str(user_id)})
         except Exception as ex:
@@ -2798,12 +2801,12 @@ class MongoDatabase(database.Database):
             traceback.print_exc()
             return None
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
 
     def track_user_introduction(self, guild_id: int, user_id: int, message_id: int, channel_id: int, approved: bool) -> None:
         try:
-            if not self.connection:
+            if self.connection is None:
                 self.open()
             date = datetime.datetime.utcnow()
             timestamp = utils.to_timestamp(date)
@@ -2822,5 +2825,5 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
         finally:
-            if self.connection:
+            if self.connection is not None:
                 self.close()
