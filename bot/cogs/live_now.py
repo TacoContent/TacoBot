@@ -92,8 +92,8 @@ class LiveNow(commands.Cog):
             for asa in after_streaming_activities:
                 await asyncio.sleep(1)
 
-                tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform)
-                is_tracked = tracked != None and tracked.count() > 0
+                tracked = list(self.db.get_tracked_live(guild_id, after.id, asa.platform))
+                is_tracked = tracked != None and len(tracked) > 0
                 # if it is already tracked, then we don't need to do anything
                 if is_tracked:
                     self.log.debug(guild_id, f"{self._module}.{_method}", f"{after.display_name} is already tracked for {asa.platform}")
@@ -159,8 +159,8 @@ class LiveNow(commands.Cog):
             #         # this activity exists in both lists, so it is still live
             #         continue
 
-            #     tracked = self.db.get_tracked_live(guildId=guild_id, userId=before.id, platform=bsa.platform)
-            #     is_tracked = tracked != None and tracked.count() > 0
+            #     tracked = list(self.db.get_tracked_live(guildId=guild_id, userId=before.id, platform=bsa.platform))
+            #     is_tracked = tracked != None and len(tracked) > 0
             #     # if it is not tracked, then we don't need to do anything
             #     if not is_tracked or not tracked:
             #         self.log.debug(guild_id, f"{self._module}.{_method}", f"{after.display_name} is not tracked for {bsa.platform}")
@@ -347,8 +347,9 @@ class LiveNow(commands.Cog):
         if guild_id is None or user_id is None:
             return
 
-        all_tracked_for_user = self.db.get_tracked_live_by_user(guildId=guild_id, userId=user_id)
-        if all_tracked_for_user is None or all_tracked_for_user.count() == 0:
+        all_tracked_for_user = list(self.db.get_tracked_live_by_user(guildId=guild_id, userId=user_id))
+        tracked_count = len(all_tracked_for_user)
+        if all_tracked_for_user is None or tracked_count == 0:
             return
 
         user = await self.discord_helper.get_or_fetch_member(guildId=guild_id, userId=user_id)
@@ -356,7 +357,7 @@ class LiveNow(commands.Cog):
             self.log.debug(guild_id, f"{self._module}.{_method}", f"Could not find user {user_id}")
             return
 
-        self.log.debug(guild_id, f"{self._module}.{_method}", f"Cleaning up {all_tracked_for_user.count()} tracked live items for user {user_id}")
+        self.log.debug(guild_id, f"{self._module}.{_method}", f"Cleaning up {tracked_count} tracked live items for user {user_id}")
         cog_settings = self.get_cog_settings(guild_id)
 
         logging_channel_id = cog_settings.get("logging_channel", None)
