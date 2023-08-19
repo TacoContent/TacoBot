@@ -852,7 +852,7 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.birthdays.find({ "guild_id": str(guildId), "month": month, "day": day })
+            return list(self.connection.birthdays.find({ "guild_id": str(guildId), "month": month, "day": day }))
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -879,8 +879,8 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            checks = self.connection.birthday_checks.find({ "guild_id": str(guildId) })
-            if checks.count() > 0:
+            checks = list(self.connection.birthday_checks.find({ "guild_id": str(guildId) }))
+            if len(checks) > 0:
                 # central_tz= pytz.timezone(self.settings.timezone)
                 date = datetime.datetime.utcnow().date()
                 start = datetime.datetime.combine(date, datetime.time.min)

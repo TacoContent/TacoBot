@@ -156,7 +156,7 @@ class Birthday(commands.Cog):
             # get if there are any birthdays today in the database
             birthdays = self.get_todays_birthdays(guild_id)
             # wish the users a happy birthday
-            if birthdays.count() > 0:
+            if len(birthdays) > 0:
                 self.log.debug(
                     guild_id, f"{self._module}.{_method}", f"Sending birthday wishes from check_birthday for {guild_id}"
                 )
@@ -208,7 +208,7 @@ class Birthday(commands.Cog):
                 self.log.debug(guild_id, "birthday.on_member_update", f"birthday is disabled for guild {guild_id}")
                 return
 
-            if birthdays.count() == 0:
+            if len(birthdays) == 0:
                 return
 
             # get all the users
@@ -272,7 +272,7 @@ class Birthday(commands.Cog):
             # get if there are any birthdays today in the database
             birthdays = self.get_todays_birthdays(guild_id)
             # wish the users a happy birthday
-            if birthdays.count() > 0:
+            if len(birthdays) > 0:
                 self.log.debug(
                     guild_id, f"{self._module}.{_method}", f"Sending birthday wishes from on_message for {guild_id}"
                 )
@@ -298,7 +298,7 @@ class Birthday(commands.Cog):
             # get if there are any birthdays today in the database
             birthdays = self.get_todays_birthdays(guild_id)
             # wish the users a happy birthday
-            if birthdays.count() > 0:
+            if len(birthdays) > 0:
                 self.log.debug(
                     guild_id,
                     "birthday.on_member_update",
@@ -326,7 +326,7 @@ class Birthday(commands.Cog):
             # get if there are any birthdays today in the database
             birthdays = self.get_todays_birthdays(guild_id)
             # wish the users a happy birthday
-            if birthdays.count() > 0:
+            if len(birthdays) > 0:
                 self.log.debug(
                     guild_id, f"{self._module}.{_method}", f"Sending birthday wishes from on_member_join for {guild_id}"
                 )
@@ -353,7 +353,7 @@ class Birthday(commands.Cog):
         #         # get if there are any birthdays today in the database
         #         birthdays = self.get_todays_birthdays(guild_id)
         #         # wish the users a happy birthday
-        #         if birthdays.count() > 0:
+        #         if len(birthdays) > 0:
         #             self.log.debug(
         #                 guild_id, "birthday.on_ready", f"Sending birthday wishes from on_ready for {guild_id}"
         #             )
