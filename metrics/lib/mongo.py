@@ -41,7 +41,7 @@ class MongoDatabase:
         level: loglevel.LogLevel,
         method: str,
         message: str,
-        stack: typing.Optional[str] = None
+        stack: typing.Optional[str] = None,
     ) -> None:
         try:
             if self.connection is None:
@@ -215,9 +215,7 @@ class MongoDatabase:
                             "_id": "$guild_id",
                             "total": {
                                 "$sum": {
-                                    "$size": {
-                                        "$ifNull": ["$invites", []]
-                                    },
+                                    "$size": { "$ifNull": ["$invites", []]},
                                 },
                             },
                         },
@@ -397,7 +395,10 @@ class MongoDatabase:
             if self.connection is None:
                 self.open()
             return self.connection.game_keys.aggregate(
-                [{"$match": {"redeemed_by": {"$eq": None}}}, {"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
+                [
+                    {"$match": {"redeemed_by": {"$eq": None}}},
+                    {"$group": {"_id": "$guild_id", "total": {"$sum": 1}}},
+                ]
             )
         except Exception as ex:
             print(ex)
@@ -409,7 +410,10 @@ class MongoDatabase:
             if self.connection is None:
                 self.open()
             return self.connection.game_keys.aggregate(
-                [{"$match": {"redeemed_by": {"$ne": None}}}, {"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
+                [
+                    {"$match": {"redeemed_by": {"$ne": None}}},
+                    {"$group": {"_id": "$guild_id", "total": {"$sum": 1}}},
+                ]
             )
         except Exception as ex:
             print(ex)
@@ -421,7 +425,10 @@ class MongoDatabase:
             if self.connection is None:
                 self.open()
             return self.connection.minecraft_users.aggregate(
-                [{"$match": {"whitelist": {"$eq": True}}}, {"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
+                [
+                    {"$match": {"whitelist": {"$eq": True}}},
+                    {"$group": {"_id": "$guild_id", "total": {"$sum": 1}}},
+                ]
             )
         except Exception as ex:
             print(ex)
@@ -491,9 +498,13 @@ class MongoDatabase:
             if self.connection is None:
                 self.open()
             # get UTC time for midnight today
-            utc_today = datetime.datetime.combine(datetime.datetime.utcnow().today(), datetime.datetime.min.time())
+            utc_today = datetime.datetime.combine(
+                datetime.datetime.utcnow().today(), datetime.datetime.min.time()
+            )
             # convert utc_today to unix timestamp
-            utc_today_ts = int((utc_today - datetime.datetime(1970, 1, 1)).total_seconds())
+            utc_today_ts = int(
+                (utc_today - datetime.datetime(1970, 1, 1)).total_seconds()
+            )
 
             return self.connection.first_message.aggregate(
                 [
@@ -550,15 +561,32 @@ class MongoDatabase:
                     {
                         "$lookup": {
                             "from": "users",
-                            "let": {"user_id": "$_id.user_id", "guild_id": "$_id.guild_id"},
+                            "let": {
+                                "user_id": "$_id.user_id",
+                                "guild_id": "$_id.guild_id",
+                            },
                             "pipeline": [
-                                {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
-                                {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
+                                {
+                                    "$match": {
+                                        "$expr": {"$eq": ["$user_id", "$$user_id"]}
+                                    }
+                                },
+                                {
+                                    "$match": {
+                                        "$expr": {"$eq": ["$guild_id", "$$guild_id"]}
+                                    }
+                                },
                             ],
                             "as": "user",
                         }
                     },
-                    {"$match": {"user.bot": {"$ne": True}, "user.system": {"$ne": True}, "user": {"$ne": []}}},
+                    {
+                        "$match": {
+                            "user.bot": {"$ne": True},
+                            "user.system": {"$ne": True},
+                            "user": {"$ne": []},
+                        }
+                    },
                     {"$sort": {"total": -1}},
                 ]
             )
@@ -577,7 +605,7 @@ class MongoDatabase:
                             "_id": {
                                 "guild_id": "$guild_id",
                                 # if status is None, then set it to unknown
-                                "status": { "$ifNull": ["$status", "UNKNOWN"] },
+                                "status": {"$ifNull": ["$status", "UNKNOWN"]},
                             },
                             "total": {"$sum": 1},
                         },
@@ -585,7 +613,10 @@ class MongoDatabase:
                     # {
                     #     "$lookup": {
                     #         "from": "users",
-                    #         "let": {"user_id": "$_id.user_id", "guild_id": "$_id.guild_id"},
+                    #         "let": {
+                    #             "user_id": "$_id.user_id",
+                    #             "guild_id": "$_id.guild_id",
+                    #         },
                     #         "pipeline": [
                     #             {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
                     #             {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
@@ -600,6 +631,7 @@ class MongoDatabase:
         except Exception as ex:
             print(ex)
             traceback.print_exc()
+
     def get_known_users(self):
         try:
             if self.connection is None:
@@ -617,7 +649,13 @@ class MongoDatabase:
                                     "$cond": [
                                         {"$eq": ["$bot", True]},
                                         "bot",
-                                        {"$cond": [{"$eq": ["$system", True]}, "system", "user"]},
+                                        {
+                                            "$cond": [
+                                                {"$eq": ["$system", True]},
+                                                "system",
+                                                "user"
+                                            ]
+                                        },
                                     ]
                                 },
                             },
@@ -648,7 +686,10 @@ class MongoDatabase:
                     {
                         "$lookup": {
                             "from": "users",
-                            "let": {"user_id": "$_id.user_id", "guild_id": "$_id.guild_id"},
+                            "let": {
+                                "user_id": "$_id.user_id",
+                                "guild_id": "$_id.guild_id"
+                            },
                             "pipeline": [
                                 {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
                                 {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
@@ -682,7 +723,10 @@ class MongoDatabase:
                     {
                         "$lookup": {
                             "from": "users",
-                            "let": {"user_id": "$_id.user_id", "guild_id": "$_id.guild_id"},
+                            "let": {
+                                "user_id": "$_id.user_id",
+                                "guild_id": "$_id.guild_id",
+                            },
                             "pipeline": [
                                 {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
                                 {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
@@ -716,7 +760,10 @@ class MongoDatabase:
                     {
                         "$lookup": {
                             "from": "users",
-                            "let": {"user_id": "$_id.user_id", "guild_id": "$_id.guild_id"},
+                            "let": {
+                                "user_id": "$_id.user_id",
+                                "guild_id": "$_id.guild_id",
+                            },
                             "pipeline": [
                                 {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
                                 {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
@@ -752,7 +799,10 @@ class MongoDatabase:
                     {
                         "$lookup": {
                             "from": "users",
-                            "let": {"user_id": "$_id.user_id", "guild_id": "$_id.guild_id"},
+                            "let": {
+                                "user_id": "$_id.user_id",
+                                "guild_id": "$_id.guild_id",
+                            },
                             "pipeline": [
                                 {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
                                 {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
@@ -826,7 +876,10 @@ class MongoDatabase:
                     {
                         "$lookup": {
                             "from": "users",
-                            "let": {"user_id": "$_id.user_id", "guild_id": "$_id.guild_id"},
+                            "let": {
+                                "user_id": "$_id.user_id",
+                                "guild_id": "$_id.guild_id"
+                            },
                             "pipeline": [
                                 {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
                                 {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
@@ -1072,7 +1125,10 @@ class MongoDatabase:
                 {
                         "$lookup": {
                             "from": "users",
-                            "let": {"user_id": "$_id.user_id", "guild_id": "$_id.guild_id"},
+                            "let": {
+                                "user_id": "$_id.user_id",
+                                "guild_id": "$_id.guild_id",
+                            },
                             "pipeline": [
                                 {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
                                 {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},

@@ -30,6 +30,12 @@ jobs:
             const message = `This PR is targeting the ${targetBranch} branch. Please target the \`${{ env.REQUIRED_BRANCH }}\` branch.`;
             const labels = ['invalid target'];
             if (targetBranch === 'main' || targetBranch === 'master') {
+              github.rest.issues.addLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: labels
+              });
               github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
@@ -41,12 +47,6 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 state: 'closed'
-              });
-              github.rest.issues.addLabels({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                labels: labels
               });
               core.setFailed(message);
             }

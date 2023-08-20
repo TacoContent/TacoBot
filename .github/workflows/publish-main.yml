@@ -49,8 +49,8 @@ jobs:
           GHCR_IMAGE="${CONTAINER_REGISTRY}/${CONTAINER_ORG}/${CONTAINER_NAME}";
           BUILD_DATEZ="$(date +'%Y-%m-%dT%TZ%z' -u)";
           TAGSZ="${GHCR_IMAGE}:latest,${GHCR_IMAGE}:${{ needs.version.outputs.app_version }}";
-          echo BUILD_TAGS="${TAGSZ}" >> $GITHUB_ENV;
-          echo BUILD_DATE="${BUILD_DATEZ}" >> $GITHUB_ENV;
+          echo "BUILD_TAGS=${TAGSZ}" >> "$GITHUB_ENV";
+          echo "BUILD_DATE=${BUILD_DATEZ}" >> "$GITHUB_ENV";
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
