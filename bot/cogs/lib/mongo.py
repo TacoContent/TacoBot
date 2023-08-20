@@ -773,7 +773,7 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.live_tracked.find({ "guild_id": str(guildId), "user_id": str(userId), "platform": platform.upper().strip() })
+            return list(self.connection.live_tracked.find({ "guild_id": str(guildId), "user_id": str(userId), "platform": platform.upper().strip() }))
         except Exception as ex:
             print(ex)
             traceback.print_exc()

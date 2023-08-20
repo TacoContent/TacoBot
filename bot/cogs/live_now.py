@@ -92,7 +92,7 @@ class LiveNow(commands.Cog):
             for asa in after_streaming_activities:
                 await asyncio.sleep(1)
 
-                tracked = list(self.db.get_tracked_live(guild_id, after.id, asa.platform))
+                tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform)
                 is_tracked = tracked != None and len(tracked) > 0
                 # if it is already tracked, then we don't need to do anything
                 if is_tracked:
@@ -159,7 +159,7 @@ class LiveNow(commands.Cog):
             #         # this activity exists in both lists, so it is still live
             #         continue
 
-            #     tracked = list(self.db.get_tracked_live(guildId=guild_id, userId=before.id, platform=bsa.platform))
+            #     tracked = self.db.get_tracked_live(guildId=guild_id, userId=before.id, platform=bsa.platform)
             #     is_tracked = tracked != None and len(tracked) > 0
             #     # if it is not tracked, then we don't need to do anything
             #     if not is_tracked or not tracked:
@@ -347,7 +347,7 @@ class LiveNow(commands.Cog):
         if guild_id is None or user_id is None:
             return
 
-        all_tracked_for_user = list(self.db.get_tracked_live_by_user(guildId=guild_id, userId=user_id))
+        all_tracked_for_user = self.db.get_tracked_live_by_user(guildId=guild_id, userId=user_id)
         tracked_count = len(all_tracked_for_user)
         if all_tracked_for_user is None or tracked_count == 0:
             return
