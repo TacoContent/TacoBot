@@ -123,7 +123,7 @@ class MongoDatabase:
             # count all documents in twitch_users collection
             return self.connection.twitch_users.aggregate(
                 [
-                    {"$group": {"_id": "$guild_id", "total": {"$sum": 1}}},
+                    {"$group": {"_id": 1, "total": {"$sum": 1}}},
                 ]
             )
 
