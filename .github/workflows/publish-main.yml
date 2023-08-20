@@ -90,6 +90,17 @@ jobs:
         tag: ${{ needs.version.outputs.tag }}
         tag_exists_error: false
         message: ''
+    - uses: ncipollo/release-action@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        generateReleaseNotes: true
+        prerelease: false
+        draft: false
+        name: ${{ needs.version.outputs.tag }}
+        body: ${{ needs.version.outputs.tag }}
+        commit: ${{ github.sha }}
+        tag: ${{ needs.version.outputs.tag }}
+
   dispatch_documentation:
     runs-on: ubuntu-latest
     needs:
