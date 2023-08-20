@@ -28,6 +28,7 @@ jobs:
           script: |
             const targetBranch = context.payload.pull_request.base.ref;
             const message = `This PR is targeting the ${targetBranch} branch. Please target the \`${{ env.REQUIRED_BRANCH }}\` branch.`;
+            const labels = ['invalid target'];
             if (targetBranch === 'main' || targetBranch === 'master') {
               github.rest.issues.createComment({
                 issue_number: context.issue.number,
@@ -46,7 +47,7 @@ jobs:
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                labels: ['invalid target']
+                labels: labels
               });
               core.setFailed(message);
             }
