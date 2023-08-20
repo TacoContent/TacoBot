@@ -22,6 +22,7 @@ from .lib import tacotypes
 class ServerEvent(commands.Cog):
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
@@ -33,7 +34,7 @@ class ServerEvent(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
     async def on_scheduled_event_create(self, event: discord.ScheduledEvent) -> None:
@@ -52,7 +53,7 @@ class ServerEvent(commands.Cog):
                 taco_amount=5,
             )
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return
 
     async def on_scheduled_event_delete(self, event: discord.ScheduledEvent) -> None:
@@ -79,7 +80,7 @@ class ServerEvent(commands.Cog):
                 taco_amount=-5,
             )
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return
 
     @commands.Cog.listener()
@@ -115,7 +116,7 @@ class ServerEvent(commands.Cog):
                     taco_amount=5,
                 )
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return
 
     @commands.Cog.listener()
@@ -135,7 +136,7 @@ class ServerEvent(commands.Cog):
                 taco_amount=5,
             )
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return
 
     @commands.Cog.listener()
@@ -155,7 +156,7 @@ class ServerEvent(commands.Cog):
                 taco_amount=-5,
             )
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return
 
 

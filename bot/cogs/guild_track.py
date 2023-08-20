@@ -24,6 +24,7 @@ from .lib import tacotypes
 class GuildTrack(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
@@ -36,7 +37,7 @@ class GuildTrack(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
     async def on_guild_available(self, guild) -> None:
@@ -45,10 +46,10 @@ class GuildTrack(commands.Cog):
             if guild is None:
                 return
 
-            self.log.debug(guild.id, f"{self._module}.{_method}", f"Guild ({guild.id}) is available")
+            self.log.debug(guild.id, f"{self._module}.{self._class}.{_method}", f"Guild ({guild.id}) is available")
             self.db.track_guild(guild=guild)
         except Exception as e:
-            self.log.error(guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
+            self.log.error(guild.id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_guild_update(self, before, after) -> None:
@@ -57,10 +58,10 @@ class GuildTrack(commands.Cog):
             if after is None:
                 return
 
-            self.log.debug(before.id, f"{self._module}.{_method}", f"Guild ({before.id}) is updated")
+            self.log.debug(before.id, f"{self._module}.{self._class}.{_method}", f"Guild ({before.id}) is updated")
             self.db.track_guild(guild=after)
         except Exception as e:
-            self.log.error(before.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
+            self.log.error(before.id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
 
     def get_cog_settings(self, guildId: int = 0) -> dict:

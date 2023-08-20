@@ -25,6 +25,7 @@ from .lib import tacotypes
 class PhotoPost(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
@@ -37,7 +38,7 @@ class PhotoPost(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -69,7 +70,7 @@ class PhotoPost(commands.Cog):
             # if the message is not a photo, ignore
             matches = re.search(media_regex, message.content, re.MULTILINE | re.DOTALL | re.UNICODE | re.IGNORECASE)
             if not message.attachments and matches is None:
-                self.log.debug(guild_id, f"{self._module}.{_method}", f"Message {message.id} does not contain a photo")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Message {message.id} does not contain a photo")
                 return
 
             # # check if the user posted a photo in the channel within the last 5 minutes
@@ -82,8 +83,8 @@ class PhotoPost(commands.Cog):
             #         # if so, ignore
             #         for r in post_channel['reactions']:
             #             if r in [r.emoji for r in m.reactions]:
-            #                 self.log.debug(guild_id, f"{self._module}.{_method}"", f"User {message.author} already posted a photo in the last 5 minutes")
-            #                 self.log.debug(guild_id, f"{self._module}.{_method}", f"Bot already reacted to message {m.id}")
+            #                 self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}"", f"User {message.author} already posted a photo in the last 5 minutes")
+            #                 self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Bot already reacted to message {m.id}")
             #                 return
 
             # this SHOULD get the amount from the `tacos` settings, but it doesn't
@@ -119,7 +120,7 @@ class PhotoPost(commands.Cog):
 
             pass
         except Exception as e:
-            self.log.error(0, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             traceback.print_exc()
 
     def get_cog_settings(self, guildId: int = 0) -> dict:

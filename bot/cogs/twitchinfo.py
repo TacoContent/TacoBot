@@ -33,6 +33,7 @@ from .lib.messaging import Messaging
 class TwitchInfo(commands.Cog):
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
@@ -48,7 +49,7 @@ class TwitchInfo(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
     async def on_message(self, message) -> None:
@@ -210,7 +211,7 @@ class TwitchInfo(commands.Cog):
                 )
             return twitch_name
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
     @twitch.command()
@@ -280,7 +281,7 @@ class TwitchInfo(commands.Cog):
                     delete_after=30,
                 )
         except Exception as ex:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:

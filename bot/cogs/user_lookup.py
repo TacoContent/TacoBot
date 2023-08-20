@@ -25,6 +25,7 @@ from .lib.member_status import MemberStatus
 class UserLookup(commands.Cog):
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
@@ -37,7 +38,7 @@ class UserLookup(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
     async def on_guild_available(self, guild) -> None:
@@ -55,9 +56,9 @@ class UserLookup(commands.Cog):
             if not enabled:
                 return
 
-            self.log.debug(guild.id, f"{self._module}.{_method}", f"Performing full user import for guild {guild.id}")
+            self.log.debug(guild.id, f"{self._module}.{self._class}.{_method}", f"Performing full user import for guild {guild.id}")
             for member in guild.members:
-                self.log.debug(guild.id, f"{self._module}.{_method}", f"Tracking user {member.name} in guild {guild.name}")
+                self.log.debug(guild.id, f"{self._module}.{self._class}.{_method}", f"Tracking user {member.name} in guild {guild.name}")
                 avatar: typing.Union[str,None] = member.avatar.url if member.avatar is not None else member.default_avatar.url
                 self.db.track_user(
                     guildId=guild.id,
@@ -74,7 +75,7 @@ class UserLookup(commands.Cog):
 
 
         except Exception as e:
-            self.log.error(guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
+            self.log.error(guild.id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_guild_available(self, guild):
@@ -108,7 +109,7 @@ class UserLookup(commands.Cog):
             if member is None or member.guild is None:
                 return
             avatar: typing.Union[str,None] = member.avatar.url if member.avatar is not None else member.default_avatar.url
-            self.log.debug(member.guild.id, f"{self._module}.{_method}", f"User {member.id} joined guild {member.guild.id}")
+            self.log.debug(member.guild.id, f"{self._module}.{self._class}.{_method}", f"User {member.id} joined guild {member.guild.id}")
             self.db.track_user(
                 guildId=member.guild.id,
                 userId=member.id,
@@ -122,7 +123,7 @@ class UserLookup(commands.Cog):
                 status=MemberStatus.from_discord(member.status),
             )
         except Exception as e:
-            self.log.error(member.guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
+            self.log.error(member.guild.id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after) -> None:
@@ -131,7 +132,7 @@ class UserLookup(commands.Cog):
             if after is None or after.guild is None:
                 return
             avatar: typing.Union[str,None] = after.avatar.url if after.avatar is not None else after.default_avatar.url
-            self.log.debug(after.guild.id, f"{self._module}.{_method}", f"User {after.id} updated in guild {after.guild.id}")
+            self.log.debug(after.guild.id, f"{self._module}.{self._class}.{_method}", f"User {after.id} updated in guild {after.guild.id}")
             self.db.track_user(
                 guildId=after.guild.id,
                 userId=after.id,
@@ -145,7 +146,7 @@ class UserLookup(commands.Cog):
                 status=MemberStatus.from_discord(after.status),
             )
         except Exception as e:
-            self.log.error(after.guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
+            self.log.error(after.guild.id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
     # @commands.Cog.listener()
     # async def on_message(self, message) -> None:
@@ -177,7 +178,7 @@ class UserLookup(commands.Cog):
     #             status=MemberStatus.from_discord(member.status),
     #         )
     #     except Exception as e:
-    #         self.log.error(message.guild.id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
+    #         self.log.error(message.guild.id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
 
     def get_cog_settings(self, guildId: int = 0) -> dict:

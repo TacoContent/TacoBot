@@ -26,6 +26,7 @@ from .lib.messaging import Messaging
 class NewAccountCheck(commands.Cog):
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
@@ -40,7 +41,7 @@ class NewAccountCheck(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.group(name="new-account", aliases=["new-account-check", "nac"], invoke_without_command=True)
     @commands.has_permissions(administrator=True)
@@ -74,7 +75,7 @@ class NewAccountCheck(commands.Cog):
                 delete_after=15
             )
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", f"{str(e)}", traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
 
     @new_account_check.command(name="whitelist-add", aliases=["wl-add", "wla", "trust", "add"])
     @commands.has_permissions(administrator=True)
@@ -102,7 +103,7 @@ class NewAccountCheck(commands.Cog):
                 delete_after=15
             )
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", f"{str(e)}", traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
 
 
 
@@ -132,7 +133,7 @@ class NewAccountCheck(commands.Cog):
                 delete_after=15
             )
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", f"{str(e)}", traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
 
 
     @commands.Cog.listener()
@@ -150,7 +151,7 @@ class NewAccountCheck(commands.Cog):
     @commands.Cog.listener()
     async def on_error(self, event, *args, **kwargs) -> None:
         _method = inspect.stack()[0][3]
-        self.log.error(0, f"{self._module}.{_method}", f"{str(event)}", traceback.format_exc())
+        self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(event)}", traceback.format_exc())
 
 
     @commands.Cog.listener()
@@ -165,7 +166,7 @@ class NewAccountCheck(commands.Cog):
             if member.id in [x["user_id"] for x in whitelist]:
                 return
 
-            self.log.debug(guild_id, f"{self._module}.{_method}", f"Member {utils.get_user_display_name(member)} joined {member.guild.name}")
+            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Member {utils.get_user_display_name(member)} joined {member.guild.name}")
             # check if the member has an account that is newer than the threshold
             member_created = member.created_at.timestamp()
             now = datetime.datetime.now().timestamp()
@@ -174,7 +175,7 @@ class NewAccountCheck(commands.Cog):
             cog_settings = self.get_cog_settings(guildId=guild_id)
             minimum_account_age = cog_settings.get("minimum_account_age", self.MINIMUM_ACCOUNT_AGE)
             if age_days < minimum_account_age:
-                self.log.warn(guild_id, f"{self._module}.{_method}", f"Member {utils.get_user_display_name(member)} (ID: {member.id}) account age ({age_days} days) is less than {minimum_account_age} days.")
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"Member {utils.get_user_display_name(member)} (ID: {member.id}) account age ({age_days} days) is less than {minimum_account_age} days.")
                 message = f"New Account: account age ({age_days} days) is less than required minimum of {minimum_account_age} days."
                 self.db.track_system_action(guild_id=guild_id, action=SystemActions.NEW_ACCOUNT_KICK, data={ "user_id": str(member.id), "reason": message, "account_age": age_days})
                 if member.guild:
@@ -184,14 +185,14 @@ class NewAccountCheck(commands.Cog):
                         async for message in await system_channel.history(limit=100, check=lambda m: m.author.id == member.id):
                             await message.delete()
                 else:
-                    self.log.warn(guild_id, f"{self._module}.{_method}", f"Member {utils.get_user_display_name(member)} (ID: {member.id}) has no guild.")
+                    self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"Member {utils.get_user_display_name(member)} (ID: {member.id}) has no guild.")
                 # kick the member
                 await member.kick(reason=message, delete_message_days=0)
 
 
             return
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)

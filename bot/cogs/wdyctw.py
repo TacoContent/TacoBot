@@ -28,6 +28,7 @@ import inspect
 class WhatDoYouCallThisWednesday(commands.Cog):
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
@@ -43,7 +44,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.group(name="wdyctw", invoke_without_command=True)
     @commands.has_permissions(administrator=True)
@@ -99,7 +100,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if out_channel is None:
-                self.log.warn(guild_id, f"{self._module}.{_method}", f"No output channel found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}")
                 return
 
             # get role
@@ -126,7 +127,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             )
 
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
     @wdyctw.command(name="import")
@@ -146,7 +147,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
-                self.log.warn(guild_id, f"{self._module}.{_method}", f"No output channel found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}")
 
 
             # get the message from the id
@@ -157,7 +158,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             self._import_wdyctw(message)
 
         except Exception as e:
-            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
 
@@ -173,7 +174,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             await self.give_user_wdyctw_tacos(ctx.guild.id, member.id, ctx.channel.id, None)
 
         except Exception as e:
-            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
 
@@ -184,7 +185,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
         # check if the user that reacted is in the admin role
         if not await self.permissions.is_admin(payload.user_id, guild_id):
-            self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
+            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin")
             return
         # in future, check if the user is in a defined role that can grant tacos (e.g. moderator)
 
@@ -197,16 +198,16 @@ class WhatDoYouCallThisWednesday(commands.Cog):
         # check if this reaction is the first one of this type on the message
         reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)
         if reactions and reactions.count > 1:
-            self.log.debug(guild_id, f"{self._module}.{_method}", f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
+            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
             return
 
         already_tracked = self.db.wdyctw_user_message_tracked(guild_id, message_author.id, message.id)
         if not already_tracked:
             # log that we are giving tacos for this reaction
-            self.log.info(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} reacted with {payload.emoji.name} to message {payload.message_id}")
+            self.log.info(guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} reacted with {payload.emoji.name} to message {payload.message_id}")
             await self.give_user_wdyctw_tacos(guild_id, message_author.id, payload.channel_id, payload.message_id)
         else:
-            self.log.debug(guild_id, f"{self._module}.{_method}", f"Message {payload.message_id} has already been tracked for WDYCTW. Skipping.")
+            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Message {payload.message_id} has already been tracked for WDYCTW. Skipping.")
 
     async def _on_raw_reaction_add_import(self, payload) -> None:
         _method = inspect.stack()[0][3]
@@ -215,7 +216,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
         # check if the user that reacted is in the admin role
         if not await self.permissions.is_admin(payload.user_id, guild_id):
-            self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
+            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin")
             return
 
         channel = self.bot.get_channel(payload.channel_id)
@@ -224,7 +225,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
         # check if this reaction is the first one of this type on the message
         reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)
         if reactions and reactions.count > 1:
-            self.log.debug(guild_id, f"{self._module}.{_method}", f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
+            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
             return
 
         self._import_wdyctw(message)
@@ -240,7 +241,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
             # check if the user that reacted is in the admin role
             if not await self.permissions.is_admin(payload.user_id, guild_id):
-                self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin")
                 return
 
 
@@ -274,7 +275,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
                 return
 
         except Exception as ex:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             # await self.messaging.notify_of_error(ctx)
 
     def _import_wdyctw(self, message: discord.Message) -> None:
@@ -297,7 +298,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
         if message_content is not None and message_content != "":
             text = message_content
 
-        self.log.debug(guild_id, f"{self._module}.{_method}", f"Importing WDYCTW message {message_id} from channel {channel_id} in guild {guild_id} for user {message_author.id} with text {text} and image {image_url}")
+        self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Importing WDYCTW message {message_id} from channel {channel_id} in guild {guild_id} for user {message_author.id} with text {text} and image {image_url}")
         self.db.save_wdyctw (
             guildId=guild_id,
             message=text or "",
@@ -323,7 +324,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             else:
                 channel = guild.system_channel
             if not channel:
-                self.log.warn(guild_id, f"{self._module}.{_method}", f"No output channel found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}")
                 return
             message = None
             # get message
@@ -359,7 +360,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
 
         except Exception as e:
-            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
 
