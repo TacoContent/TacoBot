@@ -27,6 +27,7 @@ import inspect
 class TacoPost(commands.Cog):
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
@@ -42,7 +43,7 @@ class TacoPost(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
     async def on_message(self, message) -> None:
@@ -62,7 +63,7 @@ class TacoPost(commands.Cog):
             tacopost_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
             if not tacopost_settings:
                 # raise exception if there are no suggestion settings
-                self.log.error(guild_id, f"{self._module}.{_method}", f"No tacopost settings found for guild {guild_id}")
+                self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"No tacopost settings found for guild {guild_id}")
                 await self.discord_helper.notify_bot_not_initialized(message, "tacopost")
                 return
 
@@ -79,11 +80,11 @@ class TacoPost(commands.Cog):
             # check if the user is in the role set in channel_settings['exempt'][]
             exempt_list = channel_settings.get('exempt', [])
             if str(user.id) in exempt_list:
-                self.log.debug(guild_id, f"{self._module}.{_method}", f"User {user.name} is exempt from having to pay tacos in channel {channel.name}")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User {user.name} is exempt from having to pay tacos in channel {channel.name}")
                 return
             for role in user.roles:
                 if str(role.id) in exempt_list:
-                    self.log.debug(guild_id, f"{self._module}.{_method}", f"User {user.name} is exempt from having to pay tacos in channel {channel.name}")
+                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User {user.name} is exempt from having to pay tacos in channel {channel.name}")
                     return
 
             prefix = await self.bot.get_prefix(message)
@@ -128,7 +129,7 @@ class TacoPost(commands.Cog):
                     title="Use tacos to post?",
                     result_callback=response_callback)
         except Exception as ex:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
 
 async def setup(bot):
     await bot.add_cog(TacoPost(bot))

@@ -42,6 +42,7 @@ def is_admin_check(interaction: discord.Interaction) -> bool:
 class TacoQuestionOfTheDay(commands.Cog):
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
@@ -58,7 +59,7 @@ class TacoQuestionOfTheDay(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.group(name="tqotd", invoke_without_command=True)
     @commands.has_permissions(administrator=True)
@@ -95,7 +96,7 @@ class TacoQuestionOfTheDay(commands.Cog):
 
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, f"{self._module}.{_method}", f"tqotd is disabled for guild {guild_id}")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"tqotd is disabled for guild {guild_id}")
                 return
 
             tacos_settings = self.get_tacos_settings(guild_id)
@@ -109,7 +110,7 @@ class TacoQuestionOfTheDay(commands.Cog):
 
             out_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
-                self.log.warn(guild_id, f"{self._module}.{_method}", f"No output channel found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}")
 
             # get role
             taco_word = self.settings.get_string(guild_id, "taco_singular")
@@ -129,7 +130,7 @@ class TacoQuestionOfTheDay(commands.Cog):
                     async with aiohttp.ClientSession() as session:
                         async with session.get(attachment.url) as resp:
                             if resp.status != 200:
-                                self.log.warn(guild_id, f"{self._module}.{_method}", f"Unable to download attachment {attachment.url}")
+                                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"Unable to download attachment {attachment.url}")
                                 continue
                             data = io.BytesIO(await resp.read())
                             files.append(discord.File(data, filename=attachment.filename))
@@ -146,7 +147,7 @@ class TacoQuestionOfTheDay(commands.Cog):
             self.db.save_tqotd(guild_id, qotd.text, ctx.author.id)
 
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
     @tqotd.command(name="give")
@@ -160,7 +161,7 @@ class TacoQuestionOfTheDay(commands.Cog):
             await self.give_user_tqotd_tacos(ctx.guild.id, member.id, ctx.channel.id, None)
 
         except Exception as e:
-            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
 
@@ -195,20 +196,20 @@ class TacoQuestionOfTheDay(commands.Cog):
             # check if this reaction is the first one of this type on the message
             reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)
             if reactions and reactions.count > 1:
-                # self.log.debug(guild_id, f"{self._module}.{_method}", f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
+                # self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
                 return
 
             already_tracked = self.db.tqotd_user_message_tracked(guild_id, message_author.id, message.id)
 
             if not already_tracked:
                 # log that we are giving tacos for this reaction
-                self.log.info(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} reacted with {payload.emoji.name} to message {payload.message_id}")
+                self.log.info(guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} reacted with {payload.emoji.name} to message {payload.message_id}")
                 await self.give_user_tqotd_tacos(guild_id, message_author.id, payload.channel_id, payload.message_id)
             else:
-                self.log.debug(guild_id, f"{self._module}.{_method}", f"Message {payload.message_id} has already been tracked for TQOTD. Skipping.")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Message {payload.message_id} has already been tracked for TQOTD. Skipping.")
 
         except Exception as ex:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
 
     async def give_user_tqotd_tacos(self, guild_id, user_id, channel_id, message_id) -> None:
         _method = inspect.stack()[0][3]
@@ -227,7 +228,7 @@ class TacoQuestionOfTheDay(commands.Cog):
             else:
                 channel = guild.system_channel
             if not channel:
-                self.log.warn(guild_id, f"{self._module}.{_method}", f"No output channel found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}")
                 return
             message = None
             # get message
@@ -262,7 +263,7 @@ class TacoQuestionOfTheDay(commands.Cog):
 
 
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             raise e
 
     def get_cog_settings(self, guildId: int = 0) -> dict:

@@ -31,6 +31,7 @@ import inspect
 class Minecraft(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
@@ -45,7 +46,7 @@ class Minecraft(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     # disable user from whitelist if they leave the discord
     @commands.Cog.listener()
@@ -60,7 +61,7 @@ class Minecraft(commands.Cog):
             if not mc_user:
                 return
 
-            self.log.debug(member.guild.id, f"{self._module}.{_method}", f"Member {member.name} has left the server")
+            self.log.debug(member.guild.id, f"{self._module}.{self._class}.{_method}", f"Member {member.name} has left the server")
             self.db.whitelist_minecraft_user(
                 guildId=guild_id,
                 userId=member.id,
@@ -69,7 +70,7 @@ class Minecraft(commands.Cog):
                 whitelist=False)
 
         except Exception as e:
-            self.log.error(member.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(member.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
 
     @commands.group(name="minecraft", invoke_without_command=True)
@@ -81,7 +82,7 @@ class Minecraft(commands.Cog):
         try:
             await self.status(ctx)
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
     async def status(self, ctx):
@@ -96,15 +97,15 @@ class Minecraft(commands.Cog):
             cog_settings = self.get_cog_settings(guild_id)
 
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, f"{self._module}.{_method}", f"minecraft is disabled for guild {guild_id}")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"minecraft is disabled for guild {guild_id}")
                 return
 
             # get the output channel from settings:
             AUTO_DELETE_TIMEOUT = self.SELF_DESTRUCT_TIMEOUT
             output_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel", 0)))
-            self.log.debug(guild_id, f"{self._module}.{_method}", f"output_channel: {output_channel}")
+            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"output_channel: {output_channel}")
             if not output_channel or output_channel.id != ctx.channel.id:
-                self.log.debug(guild_id, f"{self._module}.{_method}", f"output_channel is not set or is not the same as the command channel")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"output_channel is not set or is not the same as the command channel")
                 output_channel = ctx.author
                 AUTO_DELETE_TIMEOUT = None
 
@@ -166,7 +167,7 @@ class Minecraft(commands.Cog):
                 delete_after=AUTO_DELETE_TIMEOUT,)
 
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
     @minecraft.command(name="start")
@@ -208,7 +209,7 @@ class Minecraft(commands.Cog):
                     delete_after=AUTO_DELETE_TIMEOUT,)
                 return
 
-            self.log.warn(guild_id, f"{self._module}.{_method}", f"{ctx.author.name} Started the Minecraft Server.")
+            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"{ctx.author.name} Started the Minecraft Server.")
 
             # send message to start the server
             # TODO: store url in settings
@@ -222,7 +223,7 @@ class Minecraft(commands.Cog):
                 return
             data = resp.json()
             if data['status'] != "success":
-                self.log.error(guild_id, f"{self._module}.{_method}", f"Failed to start the server: {data['message']}")
+                self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"Failed to start the server: {data['message']}")
                 await self.messaging.send_embed(
                     channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
@@ -239,7 +240,7 @@ class Minecraft(commands.Cog):
 
 
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
 
@@ -273,7 +274,7 @@ class Minecraft(commands.Cog):
                     delete_after=AUTO_DELETE_TIMEOUT,)
                 return
 
-            self.log.warn(guild_id, f"{self._module}.{_method}", f"{ctx.author.name} Stopped the Minecraft Server.")
+            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"{ctx.author.name} Stopped the Minecraft Server.")
 
             # send message to stop the server
             # TODO: store url in settings
@@ -287,7 +288,7 @@ class Minecraft(commands.Cog):
                 return
             data = resp.json()
             if data['status'] != "success":
-                self.log.error(guild_id, f"{self._module}.{_method}", f"Failed to stop the server: {data['message']}")
+                self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"Failed to stop the server: {data['message']}")
                 await self.messaging.send_embed(
                     channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
@@ -304,7 +305,7 @@ class Minecraft(commands.Cog):
 
 
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
     @minecraft.command()
     @commands.guild_only()
@@ -380,7 +381,7 @@ class Minecraft(commands.Cog):
             result = requests.get(f"https://playerdb.co/api/player/minecraft/{mc_username}")
             if result.status_code != 200:
                 # Need to notify of an error
-                self.log.warn(guild_id, f"{self._module}.{_method}", f"Failed to find player {mc_username}")
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"Failed to find player {mc_username}")
                 await self.messaging.send_embed(
                     channel=_ctx.channel,
                     title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
@@ -394,7 +395,7 @@ class Minecraft(commands.Cog):
             data = result.json()
             # get users uuid for minecraft username
             if not data["success"] or data["code"] != "player.found":
-                self.log.warn(guild_id, f"{self._module}.{_method}", f"Failed to find player {mc_username}")
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"Failed to find player {mc_username}")
                 await self.messaging.send_embed(
                     channel=_ctx.channel,
                     title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
@@ -471,7 +472,7 @@ class Minecraft(commands.Cog):
             )
 
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
     def is_user_whitelisted(self, guild_id: int, user_id: int):
@@ -504,13 +505,13 @@ class Minecraft(commands.Cog):
         result = requests.get(f"http://andeddu.bit13.local:10070/tacobot/minecraft/status")
         if result.status_code != 200:
             # Need to notify of an error
-            self.log.warn(guild_id, f"{self._module}.{_method}", f"Failed to get minecraft status ({result.status_code} - {result.text})")
+            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"Failed to get minecraft status ({result.status_code} - {result.text})")
             raise Exception(f"Failed to get minecraft status ({result.status_code} - {result.text})")
 
         data = result.json()
         # get users uuid for minecraft username
         if not data["success"]:
-            self.log.warn(guild_id, f"{self._module}.{_method}", f"Failed to get minecraft status")
+            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"Failed to get minecraft status")
         return data
 
 async def setup(bot):

@@ -27,6 +27,7 @@ class TacoBot(commands.Bot):
 
     def __init__(self, *, intents: discord.Intents) -> None:
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.settings = settings.Settings()
@@ -54,14 +55,14 @@ class TacoBot(commands.Bot):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", f"Logger initialized with level {log_level.name}")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Logger initialized with level {log_level.name}")
 
     # In this basic example, we just synchronize the app commands to one guild.
     # Instead of specifying a guild to every command, we copy over our global commands instead.
     # By doing so, we don't have to wait up to an hour until they are shown to the end-user.
     async def setup_hook(self) -> None:
         _method = inspect.stack()[0][3]
-        self.log.debug(0, f"{self._module}.{_method}", "Setup hook called")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Setup hook called")
         # cogs that dont start with an underscore are loaded
         cogs = [
             f"bot.cogs.{os.path.splitext(f)[0]}"
@@ -76,8 +77,8 @@ class TacoBot(commands.Bot):
                 print(f"Failed to load extension {extension}.", file=sys.stderr)
                 traceback.print_exc()
 
-        self.log.debug(0, f"{self._module}.{_method}", "Setting up bot")
-        self.log.debug(0, f"{self._module}.{_method}", "Starting Healthcheck Server")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Setting up bot")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Starting Healthcheck Server")
         self.healthcheck_server = await discordhealthcheck.start(self)
 
 
@@ -110,5 +111,5 @@ class TacoBot(commands.Bot):
             # Do `return prefixes` if you don't want to allow mentions instead of prefix.
             return commands.when_mentioned_or(*prefixes)(self, message)
         except Exception as e:
-            self.log.error(0, f"{self._module}.{_method}", f"Failed to get prefixes: {e}")
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", f"Failed to get prefixes: {e}")
             return commands.when_mentioned_or(*prefixes)(self, message)

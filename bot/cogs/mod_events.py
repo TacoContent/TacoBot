@@ -24,6 +24,7 @@ from .lib.system_actions import SystemActions
 class ModEventsCog(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
@@ -34,24 +35,24 @@ class ModEventsCog(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
     async def on_member_ban(self, guild: discord.Guild, user: typing.Union[discord.User, discord.Member]):
         _method = inspect.stack()[0][3]
-        self.log.debug(0, f"{self._module}.{_method}", f"User {user.name} was banned from {guild.name}")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"User {user.name} was banned from {guild.name}")
         self.db.track_system_action(guild_id=guild.id, action=SystemActions.USER_BAN, data={"user_id": user.id})
 
     @commands.Cog.listener()
     async def on_member_unban(self, guild: discord.Guild, user: discord.User):
         _method = inspect.stack()[0][3]
-        self.log.debug(0, f"{self._module}.{_method}", f"User {user.name} was unbanned from {guild.name}")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"User {user.name} was unbanned from {guild.name}")
         self.db.track_system_action(guild_id=guild.id, action=SystemActions.USER_UNBAN, data={"user_id": user.id})
 
     @commands.Cog.listener()
     async def on_automod_action(self, execution: discord.AutoModAction):
         _method = inspect.stack()[0][3]
-        self.log.debug(0, f"{self._module}.{_method}", f"Automod action {execution.action.type} was executed on {execution.member.name if execution.member else execution.user_id} in {execution.guild.name}")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Automod action {execution.action.type} was executed on {execution.member.name if execution.member else execution.user_id} in {execution.guild.name}")
         self.db.track_system_action(guild_id=execution.guild.id, action=SystemActions.AUTOMOD_ACTION, data={
             "user_id": execution.user_id,
             "action": execution.action.to_dict(),

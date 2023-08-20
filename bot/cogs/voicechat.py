@@ -24,6 +24,7 @@ from .lib import tacotypes
 class VoiceChatCog(commands.Cog):
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
@@ -36,7 +37,7 @@ class VoiceChatCog(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
 
     @commands.Cog.listener()
@@ -52,7 +53,7 @@ class VoiceChatCog(commands.Cog):
 
         try:
             if before.channel is not None and after.channel is None:
-                self.log.debug(guild_id, f"{self._module}.{_method}", f"User {member.name} left voice channel")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User {member.name} left voice channel")
                 return
 
             if before.channel is None and after.channel is not None:
@@ -75,7 +76,7 @@ class VoiceChatCog(commands.Cog):
                 )
                 return
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)

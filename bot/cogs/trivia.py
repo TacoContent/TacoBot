@@ -30,6 +30,7 @@ from .lib.messaging import Messaging
 class Trivia(commands.Cog):
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
@@ -47,7 +48,7 @@ class Trivia(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
         # self.bot.loop.create_task(self.trivia_init())
     # async def trivia_init(self):
@@ -65,9 +66,9 @@ class Trivia(commands.Cog):
     async def on_ready(self) -> None:
         _method = inspect.stack()[0][3]
         try:
-            self.log.debug(0, f"{self._module}.{_method}", "trivia cog is ready")
+            self.log.debug(0, f"{self._module}.{self._class}.{_method}", "trivia cog is ready")
         except Exception as e:
-            self.log.error(0, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
 
     @commands.group(name="trivia", invoke_without_command=True)
@@ -82,7 +83,7 @@ class Trivia(commands.Cog):
                     if ctx.message:
                         await ctx.message.delete()
                 else:
-                    self.log.warn(guild_id, f"{self._module}.{_method}", "Cannot run trivia command in DM")
+                    self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "Cannot run trivia command in DM")
                     return
 
                 channel_id = ctx.channel.id
@@ -92,7 +93,7 @@ class Trivia(commands.Cog):
                 allowed_channels = cog_settings.get("allowed_channels", None)
                 if allowed_channels and str(channel_id) not in allowed_channels:
                     # log that the user tried to use the command in a channel that is not allowed
-                    self.log.debug(guild_id, f"{self._module}.{_method}", f"User {utils.get_user_display_name(ctx.author)} tried to use the trivia command in channel {channel_id}")
+                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User {utils.get_user_display_name(ctx.author)} tried to use the trivia command in channel {channel_id}")
                     return
 
 
@@ -254,11 +255,11 @@ class Trivia(commands.Cog):
                             self.db.track_trivia_question(trivia_question)
                             break
                 else:
-                    self.log.error(guild_id, f"{self._module}.{_method}", "Error retrieving the trivia question")
+                    self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", "Error retrieving the trivia question")
             else:
                 pass
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
     def get_question(self, ctx: Context) -> typing.Any:
