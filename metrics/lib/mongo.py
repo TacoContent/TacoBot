@@ -64,14 +64,7 @@ class MongoDatabase:
             if self.connection is None:
                 self.open()
             return self.connection.tacos.aggregate(
-                [
-                    {
-                        "$group": {
-                            "_id": "$guild_id",
-                            "total": {"$sum": "$count"}
-                        }
-                    }
-                ]
+                [{"$group": {"_id": "$guild_id","total": {"$sum": "$count"}}}]
             )
 
         except Exception as ex:
@@ -83,14 +76,7 @@ class MongoDatabase:
             if self.connection is None:
                 self.open()
             return self.connection.taco_gifts.aggregate(
-                [
-                    {
-                        "$group": {
-                            "_id": "$guild_id",
-                            "total": {"$sum": "$count"}
-                        }
-                    }
-                ]
+                [{"$group": {"_id": "$guild_id","total": {"$sum": "$count"}}}]
             )
         except Exception as ex:
             print(ex)
@@ -101,14 +87,7 @@ class MongoDatabase:
             if self.connection is None:
                 self.open()
             return self.connection.tacos_reactions.aggregate(
-                [
-                    {
-                        "$group": {
-                            "_id": "$guild_id",
-                            "total": {"$sum": 1}
-                        }
-                    }
-                ]
+                [{"$group": {"_id": "$guild_id","total": {"$sum": 1}}}]
             )
         except Exception as ex:
             print(ex)
@@ -119,15 +98,7 @@ class MongoDatabase:
             if self.connection is None:
                 self.open()
             return self.connection.twitch_tacos_gifts.aggregate(
-                [
-                    {
-                        "$group": {
-                            "_id": "$guild_id",
-                            "total": {"$sum": "$count"},
-                        },
-                    },
-                ]
-            )
+                [{"$group": {"_id": "$guild_id","total": {"$sum": "$count"}}}])
 
         except Exception as ex:
             print(ex)
@@ -1070,7 +1041,7 @@ class MongoDatabase:
                                     },
                                     {
                                         "$match": {
-                                        "   $expr": {"$eq": ["$guild_id", "$$guild_id"]}
+                                            "$expr": {"$eq": ["$guild_id", "$$guild_id"]}
                                         }
                                     },
                                 ],
