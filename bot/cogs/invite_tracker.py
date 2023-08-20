@@ -29,6 +29,7 @@ from .lib.system_actions import SystemActions
 class InviteTracker(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
@@ -42,7 +43,7 @@ class InviteTracker(commands.Cog):
         self.invites = {}
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
@@ -55,7 +56,7 @@ class InviteTracker(commands.Cog):
                 invite_payload = self.get_payload_for_invite(invite)
                 self.db.track_invite_code(guild_id, invite.code, invite_payload, None)
 
-        self.log.debug(0, f"{self._module}.{_method}", "InviteTracker ready")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "InviteTracker ready")
 
     @commands.Cog.listener()
     async def on_invite_create(self, invite) -> None:
@@ -64,7 +65,7 @@ class InviteTracker(commands.Cog):
         self.invites[invite.guild.id] = await invite.guild.invites()
 
         for invite in self.invites[guild_id]:
-            self.log.debug(guild_id, f"{self._module}.{_method}", f"adding invite: {invite.code}")
+            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"adding invite: {invite.code}")
             invite_payload = self.get_payload_for_invite(invite)
             self.db.track_invite_code(guild_id, invite.code, invite_payload, None)
 
@@ -83,7 +84,7 @@ class InviteTracker(commands.Cog):
             for invite in invites_before_join:
                 found_code = self.find_invite_by_code(invites_after_join, invite.code)
                 if found_code is not None and invite.uses < found_code.uses:
-                    self.log.debug(0, f"{self._module}.{_method}", "Invite used: " + invite.code)
+                    self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Invite used: " + invite.code)
                     self.invites[member.guild.id] = invites_after_join
 
                     inviter = invite.inviter
@@ -116,7 +117,7 @@ class InviteTracker(commands.Cog):
                         )
                     return
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     def get_payload_for_invite(self, invite) -> dict:
         return {

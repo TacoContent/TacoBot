@@ -32,6 +32,7 @@ import inspect
 class MessageTracker(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
@@ -44,7 +45,7 @@ class MessageTracker(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -71,7 +72,7 @@ class MessageTracker(commands.Cog):
             # track the message in the database
             self.db.track_message(guild_id, message.author.id, message.channel.id, message.id)
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
     async def give_user_first_message_tacos(self, guild_id, user_id, channel_id, message_id):
         _method = inspect.stack()[0][3]
@@ -99,7 +100,7 @@ class MessageTracker(commands.Cog):
             if not tacos_settings:
                 self.log.warn(
                     guild_id,
-                    f"{self._module}.{_method}",
+                    f"{self._module}.{self._class}.{_method}",
                     f"No tacos settings found for guild {guild_id}",
                 )
                 return
@@ -113,7 +114,7 @@ class MessageTracker(commands.Cog):
             )
 
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)

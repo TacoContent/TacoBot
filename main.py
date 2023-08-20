@@ -1,22 +1,62 @@
+
+
 import discord
 import os
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 import bot.tacobot as bot
 from bot.cogs.lib.migration_runner import MigrationRunner
+import signal
+import asyncio
+from metrics.exporter import MetricsExporter
+from concurrent.futures import ProcessPoolExecutor
 
-DISCORD_TOKEN = os.environ["DISCORD_TOKEN"]
+def sighandler(signum, frame):
+    print("<SIGTERM received>")
+    exit(0)
 
-migrations = MigrationRunner()
-migrations.start_migrations()
 
-intents = discord.Intents.all()
-intents.message_content = True
-intents.members = True
-intents.presences = True
-intents.guilds = True
-intents.guild_messages = True
-intents.guild_reactions = True
+def main():
+    try:
+        DISCORD_TOKEN = os.environ["DISCORD_TOKEN"]
 
-tacobot = bot.TacoBot(intents=intents)
-tacobot.run(DISCORD_TOKEN)
+        migrations = MigrationRunner()
+        migrations.start_migrations()
+
+        intents = discord.Intents.all()
+        intents.message_content = True
+        intents.members = True
+        intents.presences = True
+        intents.guilds = True
+        intents.guild_messages = True
+        intents.guild_reactions = True
+
+
+        tacobot = bot.TacoBot(intents=intents)
+        tacobot.remove_command('help')
+        tacobot.run(DISCORD_TOKEN)
+    except KeyboardInterrupt:
+        print("<KeyboardInterrupt received>")
+        exit(0)
+
+def exporter():
+    try:
+        pass
+        exporter = MetricsExporter()
+        exporter.run()
+    except KeyboardInterrupt:
+        print("<KeyboardInterrupt received>")
+        exit(0)
+
+if __name__ == '__main__':
+    loop = asyncio.get_event_loop()
+    signal.signal(signal.SIGTERM, sighandler)
+    try:
+        executor = ProcessPoolExecutor(2)
+        loop.run_in_executor(executor, main)
+        loop.run_in_executor(executor, exporter)
+        loop.run_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        loop.close()

@@ -29,6 +29,7 @@ import inspect
 class TechThursdays(commands.Cog):
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
@@ -44,7 +45,7 @@ class TechThursdays(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.group(name="techthurs", invoke_without_command=True)
     @commands.has_permissions(administrator=True)
@@ -88,7 +89,7 @@ class TechThursdays(commands.Cog):
 
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, f"{self._module}.{_method}", f"techthurs is disabled for guild {guild_id}")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"techthurs is disabled for guild {guild_id}")
                 return
 
             tacos_settings = self.get_tacos_settings(guild_id)
@@ -112,7 +113,7 @@ class TechThursdays(commands.Cog):
 
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
-                self.log.warn(guild_id, f"{self._module}.{_method}", f"No output channel found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}")
 
             # get role
             taco_word = self.settings.get_string(guild_id, "taco_singular")
@@ -146,7 +147,7 @@ class TechThursdays(commands.Cog):
             )
 
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
     @techthurs.command(name="import")
@@ -164,15 +165,15 @@ class TechThursdays(commands.Cog):
 
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings:
-                self.log.warn(guild_id, f"{self._module}.{_method}", f"No techthurs settings found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No techthurs settings found for guild {guild_id}")
                 return
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, f"{self._module}.{_method}", f"techthurs is disabled for guild {guild_id}")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"techthurs is disabled for guild {guild_id}")
                 return
 
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
-                self.log.warn(guild_id, f"{self._module}.{_method}", f"No output channel found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}")
 
             # get the message from the id
             message = await out_channel.fetch_message(message_id)
@@ -182,7 +183,7 @@ class TechThursdays(commands.Cog):
             self._import_techthurs(message)
 
         except Exception as e:
-            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
     @techthurs.command(name="give")
@@ -196,7 +197,7 @@ class TechThursdays(commands.Cog):
             await self.give_user_techthurs_tacos(ctx.guild.id, member.id, ctx.channel.id, None)
 
         except Exception as e:
-            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
     async def _on_raw_reaction_add_give(self, payload):
@@ -205,7 +206,7 @@ class TechThursdays(commands.Cog):
 
         # check if the user that reacted is in the admin role
         if not await self.permissions.is_admin(payload.user_id, guild_id):
-            self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
+            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin")
             return
         # in future, check if the user is in a defined role that can grant tacos (e.g. moderator)
 
@@ -223,7 +224,7 @@ class TechThursdays(commands.Cog):
         if reactions and reactions.count > 1:
             self.log.debug(
                 guild_id,
-                f"{self._module}.{_method}",
+                f"{self._module}.{self._class}.{_method}",
                 f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}",
             )
             return
@@ -233,13 +234,13 @@ class TechThursdays(commands.Cog):
             # log that we are giving tacos for this reaction
             self.log.info(
                 guild_id,
-                f"{self._module}.{_method}",
+                f"{self._module}.{self._class}.{_method}",
                 f"User {payload.user_id} reacted with {payload.emoji.name} to message {payload.message_id}",
             )
             await self.give_user_techthurs_tacos(guild_id, message_author.id, payload.channel_id, payload.message_id)
         else:
             self.log.debug(
-                guild_id, f"{self._module}.{_method}", f"Message {payload.message_id} has already been tracked for techthurs. Skipping."
+                guild_id, f"{self._module}.{self._class}.{_method}", f"Message {payload.message_id} has already been tracked for techthurs. Skipping."
             )
 
     async def _on_raw_reaction_add_import(self, payload) -> None:
@@ -248,7 +249,7 @@ class TechThursdays(commands.Cog):
 
         # check if the user that reacted is in the admin role
         if not await self.permissions.is_admin(payload.user_id, guild_id):
-            self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
+            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin")
             return
 
         channel = self.bot.get_channel(payload.channel_id)
@@ -259,7 +260,7 @@ class TechThursdays(commands.Cog):
         if reactions and reactions.count > 1:
             self.log.debug(
                 guild_id,
-                f"{self._module}.{_method}",
+                f"{self._module}.{self._class}.{_method}",
                 f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}",
             )
             return
@@ -271,17 +272,13 @@ class TechThursdays(commands.Cog):
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
         try:
-            # is today thursday?
-            today = datetime.datetime.now()
-            if today.weekday() != 3:  # 0 = Monday, 1=Tuesday, 2=Wednesday...
-                return
 
             if payload.event_type != "REACTION_ADD":
                 return
 
             # check if the user that reacted is in the admin role
             if not await self.permissions.is_admin(payload.user_id, guild_id):
-                self.log.debug(guild_id, f"{self._module}.{_method}", f"User {payload.user_id} is not an admin")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin")
                 return
 
 
@@ -302,12 +299,16 @@ class TechThursdays(commands.Cog):
                 return
 
 
+            # is today thursday?
+            today = datetime.datetime.now()
+            if today.weekday() != 3:  # 0 = Monday, 1=Tuesday, 2=Wednesday...
+                return
             if str(payload.emoji.name) in reaction_import_emojis:
                 await self._on_raw_reaction_add_import(payload)
                 return
 
         except Exception as ex:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(ex), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             # await self.messaging.notify_of_error(ctx)
 
     def _import_techthurs(self, message: discord.Message) -> None:
@@ -330,7 +331,7 @@ class TechThursdays(commands.Cog):
 
         self.log.debug(
             guild_id,
-            f"{self._module}.{_method}",
+            f"{self._module}.{self._class}.{_method}",
             f"Importing techthurs message {message_id} from channel {channel_id} in guild {guild_id} for user {message_author.id} with text {text} and image {image_url}",
         )
         self.db.save_techthurs(
@@ -359,7 +360,7 @@ class TechThursdays(commands.Cog):
                 channel = guild.system_channel
             if not channel:
                 self.log.warn(
-                    guild_id, f"{self._module}.{_method}", f"No output channel found for guild {guild_id}"
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
                 )
                 return
             message = None
@@ -407,7 +408,7 @@ class TechThursdays(commands.Cog):
             )
 
         except Exception as e:
-            self.log.error(ctx.guild.id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:

@@ -32,6 +32,7 @@ class Suggestions(commands.Cog):
 
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
@@ -47,20 +48,20 @@ class Suggestions(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
         _method = inspect.stack()[0][3]
         try:
-            self.log.debug(0, f"{self._module}.{_method}", "suggestion cog is ready")
+            self.log.debug(0, f"{self._module}.{self._class}.{_method}", "suggestion cog is ready")
             # await self.start_constant_ask()
             for g in self.bot.guilds:
                 guild_id = g.id
                 ss = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
                 if not ss:
                     # raise exception if there are no suggestion settings
-                    self.log.debug(guild_id, f"{self._module}.{_method}", f"No suggestion settings found for guild {guild_id}")
+                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"No suggestion settings found for guild {guild_id}")
                     continue
 
                 # verify all configured channels still exist.
@@ -70,12 +71,12 @@ class Suggestions(commands.Cog):
                     channel = self.bot.get_channel(int(c['id']))
                     if not channel:
                         changed = True
-                        self.log.debug(guild_id, f"{self._module}.{_method}", f"Channel {c['id']} not found. Removing settings for channel.")
+                        self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Channel {c['id']} not found. Removing settings for channel.")
                         ss['channels'].remove(c)
                 if changed:
                     self.db.add_settings(guild_id, self.SETTINGS_SECTION, ss)
         except Exception as e:
-            self.log.error(0, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel) -> None:
@@ -85,7 +86,7 @@ class Suggestions(commands.Cog):
             ss = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
             if not ss:
                 # raise exception if there are no suggestion settings
-                self.log.debug(guild_id, f"{self._module}.{_method}", f"No suggestion settings found for guild {guild_id}")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"No suggestion settings found for guild {guild_id}")
                 return
             ss_channels = ss.get('channels', [])
             tracked_channel = [ c for c in ss_channels if c['id'] == str(channel.id) ]
@@ -119,7 +120,7 @@ class Suggestions(commands.Cog):
                 if ac:
                     allowed_channels.append(f"<#{ac.id}>")
             ac_list = "\n".join(allowed_channels)
-            self.log.debug(guild_id, f"{self._module}.{_method}", f"No suggestion settings found for channel {ctx.channel.id}")
+            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"No suggestion settings found for channel {ctx.channel.id}")
             # notify user that the channel they are in is not configured for suggestions
             await self.messaging.send_embed(
                 channel=ctx.channel,
@@ -133,7 +134,7 @@ class Suggestions(commands.Cog):
 
         response_channel = await self.discord_helper.get_or_fetch_channel(int(channel_settings['id']))
         if not response_channel:
-            self.log.debug(guild_id, f"{self._module}.{_method}", f"No channel found for channel id {channel_settings['id']}")
+            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"No channel found for channel id {channel_settings['id']}")
             return
 
         title_ask = "What is the title of your suggestion?"
@@ -233,7 +234,7 @@ class Suggestions(commands.Cog):
                 ss = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
                 if not ss:
                     # raise exception if there are no suggestion settings
-                    self.log.debug(guild_id, f"{self._module}.{_method}", f"No suggestion settings found for guild {guild_id}")
+                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"No suggestion settings found for guild {guild_id}")
                     raise Exception("No suggestion settings found")
 
                 await self.create_suggestion(ctx, ss)
@@ -241,7 +242,7 @@ class Suggestions(commands.Cog):
             else:
                 pass
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
     @suggest.command()
@@ -279,12 +280,12 @@ class Suggestions(commands.Cog):
             ss = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
             if not ss:
                 # raise exception if there are no suggestion settings
-                self.log.debug(guild_id, f"{self._module}.{_method}", f"No suggestion settings found for guild {guild_id}")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"No suggestion settings found for guild {guild_id}")
                 raise Exception("No suggestion settings found")
 
             channel_settings = [ c for c in ss['channels'] if c['id'] == str(channel.id) ]
             if not channel_settings:
-                self.log.debug(guild_id, f"{self._module}.{_method}", f"No suggestion settings found for channel {channel.id}")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"No suggestion settings found for channel {channel.id}")
                 return
             else:
                 channel_settings = channel_settings[0]
@@ -312,7 +313,7 @@ class Suggestions(commands.Cog):
 
             if str(payload.emoji) in vote_emoji:
                 # vote up or down
-                self.log.debug(guild_id, f"{self._module}.{_method}", f"{user.name} voted {payload.emoji} on suggestion {suggestion['id']}")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"{user.name} voted {payload.emoji} on suggestion {suggestion['id']}")
 
                 if str(payload.emoji) == channel_settings["vote_down_emoji"]:
                     vote = -1
@@ -323,7 +324,7 @@ class Suggestions(commands.Cog):
 
                 has_user_voted = self.db.has_user_voted_on_suggestion(suggestion['id'], user.id)
                 if has_user_voted:
-                    self.log.debug(guild_id, f"{self._module}.{_method}", f"{user.name} has already voted on suggestion {suggestion['id']}")
+                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"{user.name} has already voted on suggestion {suggestion['id']}")
                     await message.remove_reaction(payload.emoji, user)
                     await self.messaging.send_embed(
                         channel=user,
@@ -340,7 +341,7 @@ class Suggestions(commands.Cog):
                 states = models.SuggestionStates()
                 # change the state based on the emoji
                 if str(payload.emoji) == channel_settings["admin_approve_emoji"]:
-                    self.log.debug(guild_id, f"{self._module}.{_method}", f"{user.name} approved suggestion {suggestion['id']}")
+                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"{user.name} approved suggestion {suggestion['id']}")
                     # build ctx to pass to the ask_text function
                     ctx = self.discord_helper.create_context(bot=self.bot, author=user, guild=None, channel=None, message=None)
                     reason = await self.discord_helper.ask_text(ctx, user, "Approve Suggestion", "Please enter a reason for approving this suggestion.", timeout=60) or "No reason given."
@@ -361,7 +362,7 @@ class Suggestions(commands.Cog):
                     self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.IMPLEMENTED, user.id, reason)
                     await self.update_suggestion_state(message, states.IMPLEMENTED, user, reason, author=author)
                 elif str(payload.emoji) == channel_settings["admin_reject_emoji"]:
-                    self.log.debug(guild_id, f"{self._module}.{_method}", f"{user.name} rejected suggestion {suggestion['id']}")
+                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"{user.name} rejected suggestion {suggestion['id']}")
                     # build ctx to pass to the ask_text function
                     ctx = self.discord_helper.create_context(bot=self.bot, author=user, guild=None, channel=None, message=None)
                     reason = await self.discord_helper.ask_text(ctx, user, "Reject Suggestion", "Please enter a reason for rejecting this suggestion.", timeout=60) or "No reason given."
@@ -369,14 +370,14 @@ class Suggestions(commands.Cog):
                     await self.update_suggestion_state(message, states.REJECTED, user, reason, author=author)
                 elif str(payload.emoji) == channel_settings["admin_close_emoji"]:
                     # close the suggestion and move it to the archive
-                    self.log.debug(guild_id, f"{self._module}.{_method}", f"{user.name} closed suggestion {suggestion['id']}")
+                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"{user.name} closed suggestion {suggestion['id']}")
 
 
                     # get the current state of the suggestion
                     state = suggestion['state']
-                    self.log.debug(guild_id, f"{self._module}.{_method}", f"Current state of the suggestion is {state}")
+                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Current state of the suggestion is {state}")
                     close_state_color = self.get_color_for_state(state)
-                    self.log.debug(guild_id, f"{self._module}.{_method}", f"Close state color is {close_state_color}")
+                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Close state color is {close_state_color}")
 
                     # build ctx to pass to the ask_text function
                     ctx = self.discord_helper.create_context(bot=self.bot, author=user, guild=None, channel=None, message=None)
@@ -385,7 +386,7 @@ class Suggestions(commands.Cog):
                     await self.update_suggestion_state(message, states.CLOSED, user, reason, author=author, color=close_state_color)
                     # move it to the archive channel
                     if log_channel is None:
-                        self.log.debug(guild_id, f"{self._module}.{_method}", f"No log suggestion channel. Will use message suggestion channel instead.")
+                        self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"No log suggestion channel. Will use message suggestion channel instead.")
                         log_channel = message.channel
 
                     # add fields with the votes
@@ -411,7 +412,7 @@ class Suggestions(commands.Cog):
                     await message.delete()
                 elif str(payload.emoji) == channel_settings["admin_delete_emoji"]:
                     # delete the suggestion
-                    self.log.debug(guild_id, f"{self._module}.{_method}", f"{user.name} deleted suggestion {suggestion['id']}")
+                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"{user.name} deleted suggestion {suggestion['id']}")
                     # build ctx to pass to the ask_text function
                     ctx = self.discord_helper.create_context(bot=self.bot, author=user, guild=None, channel=None, message=None)
                     reason = await self.discord_helper.ask_text(ctx, user, "Delete Suggestion", "Please enter a reason for deleting this suggestion.", timeout=60) or "Deleted by admin."
@@ -472,7 +473,7 @@ class Suggestions(commands.Cog):
 
             if str(payload.emoji) in vote_emoji:
                 # remove vote
-                self.log.debug(guild_id, f"{self._module}.{_method}", f"{user.name} removed vote from suggestion {suggestion['id']}")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"{user.name} removed vote from suggestion {suggestion['id']}")
                 has_user_voted = self.db.has_user_voted_on_suggestion(suggestion['id'], user.id)
                 if not has_user_voted:
                     return
@@ -482,7 +483,7 @@ class Suggestions(commands.Cog):
                 states = models.SuggestionStates()
 
                 # admin removed reaction. do we need to set the state back to Active?
-                self.log.debug(guild_id, f"{self._module}.{_method}", f"{user.name} removed admin reaction from suggestion {suggestion['id']}")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"{user.name} removed admin reaction from suggestion {suggestion['id']}")
                 reject_reactions = [ r.count for r in message.reactions if str(r.emoji) == channel_settings["admin_reject_emoji"] ]
                 implemented_reactions = [ r.count for r in message.reactions if str(r.emoji) == channel_settings["admin_implemented_emoji"] ]
                 consider_reactions = [ r.count for r in message.reactions if str(r.emoji) == channel_settings["admin_consider_emoji"] ]
@@ -555,7 +556,7 @@ class Suggestions(commands.Cog):
                 pass
 
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return
 
     async def update_suggestion_state(
@@ -596,7 +597,7 @@ class Suggestions(commands.Cog):
         _method = inspect.stack()[0][3]
         states = models.SuggestionStates()
 
-        self.log.debug(0, f"{self._module}.{_method}", f"The state is {state}")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"The state is {state}")
         if state == states.APPROVED:
             self.log.debug(0, "get_color_for_state", f"The state matches {states.APPROVED}")
             return 0x00ff00

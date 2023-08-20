@@ -3,7 +3,7 @@
   "url": "http://darthminos.tv",
   "version": "1.0.0-snapshot",
   "icon": "https://i.imgur.com/ejJu8de.png",
-  "author": "DarthMinos#1161",
+  "author": "@DarthMinos",
   "changelog": "changelog.txt",
   "prefixes": [
     ".taco ",

@@ -28,6 +28,7 @@ RUN \
 	rm -rf /var/cache/apk/*
 
 VOLUME ["/data"]
+VOLUME ["/config"]
 WORKDIR /app
 
 # discordpy upgrade 2.0

@@ -25,6 +25,7 @@ from .lib.messaging import Messaging
 class IntroductionCog(commands.Cog):
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
@@ -38,7 +39,7 @@ class IntroductionCog(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.group(name="introduction", aliases=["intro"], invoke_without_command=True)
     async def introduction(self, ctx) -> None:
@@ -97,7 +98,7 @@ class IntroductionCog(commands.Cog):
                                     break
 
                     reason_msg = f"Imported introduction from {channel.name} by {message.author.name}"
-                    self.log.debug(guild_id, f"{self._module}.{_method}", reason_msg)
+                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", reason_msg)
 
                     await self.discord_helper.taco_give_user(
                         guildId=guild_id,
@@ -110,7 +111,7 @@ class IntroductionCog(commands.Cog):
 
                     if has_approval_emoji:
                         reason_msg = f"{message.author.name} approved introduction in {channel.name}"
-                        self.log.debug(guild_id, f"{self._module}.{_method}", reason_msg)
+                        self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", reason_msg)
                         await self.discord_helper.taco_give_user(
                             guildId=guild_id,
                             fromUser=self.bot.user,
@@ -143,7 +144,7 @@ class IntroductionCog(commands.Cog):
             )
 
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
 
@@ -212,7 +213,7 @@ class IntroductionCog(commands.Cog):
 
             pass
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
 
     @commands.Cog.listener()
@@ -276,7 +277,7 @@ class IntroductionCog(commands.Cog):
 
 
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
 
     def get_cog_settings(self, guildId: int = 0) -> dict:

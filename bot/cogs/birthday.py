@@ -32,6 +32,7 @@ from .lib.messaging import Messaging
 class Birthday(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
@@ -45,7 +46,7 @@ class Birthday(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.group(name="birthday", aliases=["bday"])
     @commands.guild_only()
@@ -87,7 +88,7 @@ class Birthday(commands.Cog):
                     timeout=60,
                 )
             except discord.Forbidden:
-                self.log.info(guild_id, f"{self._module}.{_method}", "Forbidden", traceback.format_exc())
+                self.log.info(guild_id, f"{self._module}.{self._class}.{_method}", "Forbidden", traceback.format_exc())
                 _ctx = ctx
                 out_channel = ctx.channel
                 month = await self.discord_helper.ask_number(
@@ -137,7 +138,7 @@ class Birthday(commands.Cog):
             )
             pass
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
     @birthday.command(name="check")
@@ -156,16 +157,16 @@ class Birthday(commands.Cog):
             # get if there are any birthdays today in the database
             birthdays = self.get_todays_birthdays(guild_id)
             # wish the users a happy birthday
-            if birthdays.count() > 0:
+            if len(birthdays) > 0:
                 self.log.debug(
-                    guild_id, f"{self._module}.{_method}", f"Sending birthday wishes from check_birthday for {guild_id}"
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"Sending birthday wishes from check_birthday for {guild_id}"
                 )
                 await self.send_birthday_message(ctx, birthdays)
             # track the check
             self.db.track_birthday_check(guild_id)
             await asyncio.sleep(0.5)
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             self.messaging.notify_of_error(ctx)
 
     def was_checked_today(self, guildId: int):
@@ -173,7 +174,7 @@ class Birthday(commands.Cog):
         try:
             return self.db.birthday_was_checked_today(guildId)
         except Exception as e:
-            self.log.error(guildId, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guildId, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return False
 
     def get_todays_birthdays(self, guildId: int):
@@ -186,7 +187,7 @@ class Birthday(commands.Cog):
             birthdays = self.db.get_user_birthdays(guildId, month, day)
             return birthdays
         except Exception as e:
-            self.log.error(guildId, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guildId, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return []
 
     async def send_birthday_message(self, ctx: Context, birthdays: typing.List[typing.Dict]):
@@ -202,13 +203,13 @@ class Birthday(commands.Cog):
             # user started streaming
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings:
-                self.log.warn(guild_id, "birthday.on_member_update", f"No live_now settings found for guild {guild_id}")
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No live_now settings found for guild {guild_id}")
                 return
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, "birthday.on_member_update", f"birthday is disabled for guild {guild_id}")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"birthday is disabled for guild {guild_id}")
                 return
 
-            if birthdays.count() == 0:
+            if len(birthdays) == 0:
                 return
 
             # get all the users
@@ -251,11 +252,11 @@ class Birthday(commands.Cog):
                 )
             else:
                 self.log.debug(
-                    guild_id, f"{self._module}.{_method}", f"Could not find channel {output_channel_id}"
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"Could not find channel {output_channel_id}"
                 )
 
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -272,16 +273,16 @@ class Birthday(commands.Cog):
             # get if there are any birthdays today in the database
             birthdays = self.get_todays_birthdays(guild_id)
             # wish the users a happy birthday
-            if birthdays.count() > 0:
+            if len(birthdays) > 0:
                 self.log.debug(
-                    guild_id, f"{self._module}.{_method}", f"Sending birthday wishes from on_message for {guild_id}"
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"Sending birthday wishes from on_message for {guild_id}"
                 )
                 await self.send_birthday_message(message, birthdays)
             # track the check
             self.db.track_birthday_check(guild_id)
             await asyncio.sleep(0.5)
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
@@ -298,10 +299,10 @@ class Birthday(commands.Cog):
             # get if there are any birthdays today in the database
             birthdays = self.get_todays_birthdays(guild_id)
             # wish the users a happy birthday
-            if birthdays.count() > 0:
+            if len(birthdays) > 0:
                 self.log.debug(
                     guild_id,
-                    "birthday.on_member_update",
+                    f"{self._module}.{self._class}.{_method}",
                     f"Sending birthday wishes from on_member_update for {guild_id}",
                 )
                 await self.send_birthday_message(after, birthdays)
@@ -309,7 +310,7 @@ class Birthday(commands.Cog):
             self.db.track_birthday_check(guild_id)
             await asyncio.sleep(0.5)
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -326,16 +327,16 @@ class Birthday(commands.Cog):
             # get if there are any birthdays today in the database
             birthdays = self.get_todays_birthdays(guild_id)
             # wish the users a happy birthday
-            if birthdays.count() > 0:
+            if len(birthdays) > 0:
                 self.log.debug(
-                    guild_id, f"{self._module}.{_method}", f"Sending birthday wishes from on_member_join for {guild_id}"
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"Sending birthday wishes from on_member_join for {guild_id}"
                 )
                 await self.send_birthday_message(member, birthdays)
             # track the check
             self.db.track_birthday_check(guild_id)
             await asyncio.sleep(0.5)
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -353,7 +354,7 @@ class Birthday(commands.Cog):
         #         # get if there are any birthdays today in the database
         #         birthdays = self.get_todays_birthdays(guild_id)
         #         # wish the users a happy birthday
-        #         if birthdays.count() > 0:
+        #         if len(birthdays) > 0:
         #             self.log.debug(
         #                 guild_id, "birthday.on_ready", f"Sending birthday wishes from on_ready for {guild_id}"
         #             )
