@@ -23,7 +23,7 @@ class MongoDatabase:
         if "MONGODB_URL" not in os.environ or os.environ["MONGODB_URL"] == "":
             raise ValueError("MONGODB_URL is not set")
         self.client = MongoClient(os.environ["MONGODB_URL"])
-        self.connection = self.client['tacobot']
+        self.connection = self.client["tacobot"]
 
     def close(self):
         try:
@@ -35,7 +35,14 @@ class MongoDatabase:
             print(ex)
             traceback.print_exc()
 
-    def insert_log(self, guildId: int, level: loglevel.LogLevel, method: str, message: str, stack: typing.Optional[str] = None) -> None:
+    def insert_log(
+        self,
+        guildId: int,
+        level: loglevel.LogLevel,
+        method: str,
+        message: str,
+        stack: typing.Optional[str] = None
+    ) -> None:
         try:
             if self.connection is None:
                 self.open()
@@ -45,7 +52,7 @@ class MongoDatabase:
                 "level": level.name,
                 "method": method,
                 "message": message,
-                "stack_trace": stack if stack else ""
+                "stack_trace": stack if stack else "",
             }
             self.connection.logs.insert_one(payload)
         except Exception as ex:
@@ -56,7 +63,9 @@ class MongoDatabase:
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.tacos.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": "$count"}}}])
+            return self.connection.tacos.aggregate(
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": "$count"}}}]
+            )
 
         except Exception as ex:
             print(ex)
@@ -66,7 +75,9 @@ class MongoDatabase:
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.taco_gifts.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": "$count"}}}])
+            return self.connection.taco_gifts.aggregate(
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": "$count"}}}]
+            )
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -75,7 +86,9 @@ class MongoDatabase:
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.tacos_reactions.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
+            return self.connection.tacos_reactions.aggregate(
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
+            )
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -86,7 +99,12 @@ class MongoDatabase:
                 self.open()
             return self.connection.twitch_tacos_gifts.aggregate(
                 [
-                    {"$group": {"_id": "$guild_id", "total": {"$sum": "$count"}}},
+                    {
+                        "$group": {
+                            "_id": "$guild_id",
+                            "total": {"$sum": "$count"},
+                        },
+                    },
                 ]
             )
 
@@ -98,7 +116,16 @@ class MongoDatabase:
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.live_tracked.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
+            return self.connection.live_tracked.aggregate(
+                [
+                    {
+                        "$group": {
+                            "_id": "$guild_id",
+                            "total": {"$sum": 1},
+                        },
+                    },
+                ]
+            )
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -109,7 +136,12 @@ class MongoDatabase:
                 self.open()
             return self.connection.twitch_channels.aggregate(
                 [
-                    {"$group": {"_id": "$guild_id", "total": {"$sum": 1}}},
+                    {
+                        "$group": {
+                            "_id": "$guild_id",
+                            "total": {"$sum": 1},
+                        },
+                    },
                 ]
             )
         except Exception as ex:
@@ -123,7 +155,12 @@ class MongoDatabase:
             # count all documents in twitch_users collection
             return self.connection.twitch_users.aggregate(
                 [
-                    {"$group": {"_id": 1, "total": {"$sum": 1}}},
+                    {
+                        "$group": {
+                            "_id": 1,
+                            "total": {"$sum": 1},
+                        },
+                    },
                 ]
             )
 
@@ -155,7 +192,12 @@ class MongoDatabase:
                 self.open()
             return self.connection.tqotd.aggregate(
                 [
-                    {"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$answered"}}}},
+                    {
+                        "$group": {
+                            "_id": "$guild_id",
+                            "total": {"$sum": {"$size": "$answered"}},
+                        },
+                    },
                 ]
             )
         except Exception as ex:
@@ -168,7 +210,18 @@ class MongoDatabase:
                 self.open()
             return self.connection.invite_codes.aggregate(
                 [
-                    {"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": {"$ifNull": ["$invites", []]}}}}},
+                    {
+                        "$group": {
+                            "_id": "$guild_id",
+                            "total": {
+                                "$sum": {
+                                    "$size": {
+                                        "$ifNull": ["$invites", []]
+                                    },
+                                },
+                            },
+                        },
+                    },
                 ]
             )
         except Exception as ex:
@@ -182,7 +235,12 @@ class MongoDatabase:
             return self.connection.live_activity.aggregate(
                 [
                     {"$match": {"status": {"$eq": "ONLINE"}}},
-                    {"$group": {"_id": {"platform": "$platform", "guild_id": "$guild_id"}, "total": {"$sum": 1}}},
+                    {
+                        "$group": {
+                            "_id": {"platform": "$platform", "guild_id": "$guild_id"},
+                            "total": {"$sum": 1},
+                        },
+                    },
                 ]
             )
         except Exception as ex:
@@ -213,7 +271,12 @@ class MongoDatabase:
                 self.open()
             return self.connection.wdyctw.aggregate(
                 [
-                    {"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$answered"}}}},
+                    {
+                        "$group": {
+                            "_id": "$guild_id",
+                            "total": {"$sum": {"$size": "$answered"}},
+                        },
+                    },
                 ]
             )
         except Exception as ex:
@@ -244,7 +307,12 @@ class MongoDatabase:
                 self.open()
             return self.connection.techthurs.aggregate(
                 [
-                    {"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$answered"}}}},
+                    {
+                        "$group": {
+                            "_id": "$guild_id",
+                            "total": {"$sum": {"$size": "$answered"}},
+                        },
+                    },
                 ]
             )
         except Exception as ex:
@@ -275,7 +343,12 @@ class MongoDatabase:
                 self.open()
             return self.connection.mentalmondays.aggregate(
                 [
-                    {"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$answered"}}}},
+                    {
+                        "$group": {
+                            "_id": "$guild_id",
+                            "total": {"$sum": {"$size": "$answered"}},
+                        },
+                    },
                 ]
             )
         except Exception as ex:
@@ -306,7 +379,12 @@ class MongoDatabase:
                 self.open()
             return self.connection.taco_tuesday.aggregate(
                 [
-                    {"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$answered"}}}},
+                    {
+                        "$group": {
+                            "_id": "$guild_id",
+                            "total": {"$sum": {"$size": "$answered"}},
+                        },
+                    },
                 ]
             )
         except Exception as ex:
