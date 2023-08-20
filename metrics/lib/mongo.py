@@ -215,7 +215,7 @@ class MongoDatabase:
                             "_id": "$guild_id",
                             "total": {
                                 "$sum": {
-                                    "$size": { "$ifNull": ["$invites", []]},
+                                    "$size": {"$ifNull": ["$invites", []]},
                                 },
                             },
                         },
@@ -444,7 +444,7 @@ class MongoDatabase:
                         "$group": {
                             "_id": {
                                 # if guild_id is None, then set it to 0
-                                "guild_id": { "$ifNull": ["$guild_id", 0] },
+                                "guild_id": {"$ifNull": ["$guild_id", 0]},
                                 "level": "$level",
                             },
                             "total": {"$sum": 1},
@@ -610,21 +610,6 @@ class MongoDatabase:
                             "total": {"$sum": 1},
                         },
                     },
-                    # {
-                    #     "$lookup": {
-                    #         "from": "users",
-                    #         "let": {
-                    #             "user_id": "$_id.user_id",
-                    #             "guild_id": "$_id.guild_id",
-                    #         },
-                    #         "pipeline": [
-                    #             {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
-                    #             {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
-                    #         ],
-                    #         "as": "user",
-                    #     }
-                    # },
-                    # {"$match": {"user.bot": {"$ne": True}, "user.system": {"$ne": True}, "user": {"$ne": []}}},
                     {"$sort": {"total": -1}},
                 ]
             )
@@ -653,7 +638,7 @@ class MongoDatabase:
                                             "$cond": [
                                                 {"$eq": ["$system", True]},
                                                 "system",
-                                                "user"
+                                                "user",
                                             ]
                                         },
                                     ]
@@ -697,7 +682,13 @@ class MongoDatabase:
                             "as": "user",
                         }
                     },
-                    {"$match": {"user.bot": {"$ne": True}, "user.system": {"$ne": True}, "user": {"$ne": []}}},
+                    {
+                        "$match": {
+                            "user.bot": {"$ne": True},
+                            "user.system": {"$ne": True},
+                            "user": {"$ne": []}
+                        }
+                    },
                     {"$sort": {"total": -1}},
                 ]
             )
@@ -728,13 +719,27 @@ class MongoDatabase:
                                 "guild_id": "$_id.guild_id",
                             },
                             "pipeline": [
-                                {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
-                                {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
+                                {
+                                    "$match": {
+                                        "$expr": {"$eq": ["$user_id", "$$user_id"]}
+                                    }
+                                },
+                                {
+                                    "$match": {
+                                        "$expr": {"$eq": ["$guild_id", "$$guild_id"]}
+                                    }
+                                },
                             ],
                             "as": "user",
                         }
                     },
-                    {"$match": {"user.bot": {"$ne": True}, "user.system": {"$ne": True}, "user": {"$ne": []}}},
+                    {
+                        "$match": {
+                            "user.bot": {"$ne": True},
+                            "user.system": {"$ne": True},
+                            "user": {"$ne": []},
+                        }
+                    },
                     {"$sort": {"total": -1}},
                 ]
             )
@@ -765,13 +770,27 @@ class MongoDatabase:
                                 "guild_id": "$_id.guild_id",
                             },
                             "pipeline": [
-                                {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
-                                {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
+                                {
+                                    "$match": {
+                                        "$expr": {"$eq": ["$user_id", "$$user_id"]}
+                                    }
+                                },
+                                {
+                                    "$match": {
+                                        "$expr": {"$eq": ["$guild_id", "$$guild_id"]}
+                                    }
+                                },
                             ],
                             "as": "user",
                         }
                     },
-                    {"$match": {"user.bot": {"$ne": True}, "user.system": {"$ne": True}, "user": {"$ne": []}}},
+                    {
+                        "$match": {
+                            "user.bot": {"$ne": True},
+                            "user.system": {"$ne": True},
+                            "user": {"$ne": []}
+                        }
+                    },
                     {"$sort": {"total": -1}},
                 ]
             )
@@ -810,7 +829,13 @@ class MongoDatabase:
                             "as": "user",
                         }
                     },
-                    {"$match": {"user.bot": {"$ne": True}, "user.system": {"$ne": True}, "user": {"$ne": []}}},
+                    {
+                        "$match": {
+                            "user.bot": {"$ne": True},
+                            "user.system": {"$ne": True},
+                            "user": {"$ne": []}
+                        }
+                    },
                     {"$sort": {"total": -1}},
                 ]
             )
@@ -887,7 +912,13 @@ class MongoDatabase:
                             "as": "user",
                         }
                     },
-                    {"$match": {"user.bot": {"$ne": True}, "user.system": {"$ne": True}, "user": {"$ne": []}}},
+                    {
+                        "$match": {
+                            "user.bot": {"$ne": True},
+                            "user.system": {"$ne": True},
+                            "user": {"$ne": []}
+                        }
+                    },
                     {"$sort": {"total": -1}},
                 ]
             )
@@ -953,7 +984,7 @@ class MongoDatabase:
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.trivia_questions.aggregate(
+            return list(self.connection.trivia_questions.aggregate(
                 [
                     {
                         "$group": {
@@ -977,39 +1008,9 @@ class MongoDatabase:
                             "as": "starter",
                         }
                     },
-                    # {
-                    #     "$lookup": {
-                    #         "from": "users",
-                    #         "let": {"correct_users": "$correct_users"},
-                    #         "pipeline": [
-                    #             {
-                    #                 "$match": {
-                    #                     "guild_id": "$guild_id",
-                    #                     "$expr": {"$in": ["$user_id", "$$correct_users"]},
-                    #                 }
-                    #             }
-                    #         ],
-                    #         "as": "correct_users",
-                    #     }
-                    # },
-                    # {
-                    #     "$lookup": {
-                    #         "from": "users",
-                    #         "let": {"incorrect_users": "$incorrect_users"},
-                    #         "pipeline": [
-                    #             {
-                    #                 "$match": {
-                    #                     "guild_id": "$guild_id",
-                    #                     "$expr": {"$in": ["$user_id", "$$incorrect_users"]},
-                    #                 }
-                    #             }
-                    #         ],
-                    #         "as": "incorrect_users",
-                    #     }
-                    # },
                     {"$sort": {"timestamp": -1}},
                 ]
-            )
+            ))
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -1136,7 +1137,13 @@ class MongoDatabase:
                             "as": "user",
                         }
                     },
-                    {"$match": {"user.bot": {"$ne": True}, "user.system": {"$ne": True}, "user": {"$ne": []}}},
+                    {
+                        "$match": {
+                            "user.bot": {"$ne": True},
+                            "user.system": {"$ne": True},
+                            "user": {"$ne": []}
+                        }
+                    },
                     {"$sort": {"total": -1}},
             ])
         except Exception as ex:
