@@ -160,7 +160,7 @@ class MongoDatabase:
                     {
                         "$group": {
                             "_id": "$guild_id",
-                            "total": {"$sum": {"$size": "$answered"}}
+                            "total": {"$sum": {"$size": "$answered"}},
                         }
                     }
                 ]
@@ -230,7 +230,7 @@ class MongoDatabase:
                     {
                         "$group": {
                             "_id": "$guild_id",
-                            "total": {"$sum": {"$size": "$answered"}}
+                            "total": {"$sum": {"$size": "$answered"}},
                         }
                     }
                 ]
@@ -259,7 +259,7 @@ class MongoDatabase:
                     {
                         "$group": {
                             "_id": "$guild_id",
-                            "total": {"$sum": {"$size": "$answered"}}
+                            "total": {"$sum": {"$size": "$answered"}},
                         }
                     }
                 ]
@@ -288,7 +288,7 @@ class MongoDatabase:
                     {
                         "$group": {
                             "_id": "$guild_id",
-                            "total": {"$sum": {"$size": "$answered"}}
+                            "total": {"$sum": {"$size": "$answered"}},
                         }
                     }
                 ]
@@ -317,7 +317,7 @@ class MongoDatabase:
                     {
                         "$group": {
                             "_id": "$guild_id",
-                            "total": {"$sum": {"$size": "$answered"}}
+                            "total": {"$sum": {"$size": "$answered"}},
                         }
                     }
                 ]
