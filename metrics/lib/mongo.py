@@ -64,7 +64,14 @@ class MongoDatabase:
             if self.connection is None:
                 self.open()
             return self.connection.tacos.aggregate(
-                [{"$group": {"_id": "$guild_id", "total": {"$sum": "$count"}}}]
+                [
+                    {
+                        "$group": {
+                            "_id": "$guild_id",
+                            "total": {"$sum": "$count"}
+                        }
+                    }
+                ]
             )
 
         except Exception as ex:
@@ -76,7 +83,14 @@ class MongoDatabase:
             if self.connection is None:
                 self.open()
             return self.connection.taco_gifts.aggregate(
-                [{"$group": {"_id": "$guild_id", "total": {"$sum": "$count"}}}]
+                [
+                    {
+                        "$group": {
+                            "_id": "$guild_id",
+                            "total": {"$sum": "$count"}
+                        }
+                    }
+                ]
             )
         except Exception as ex:
             print(ex)
@@ -87,7 +101,14 @@ class MongoDatabase:
             if self.connection is None:
                 self.open()
             return self.connection.tacos_reactions.aggregate(
-                [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
+                [
+                    {
+                        "$group": {
+                            "_id": "$guild_id",
+                            "total": {"$sum": 1}
+                        }
+                    }
+                ]
             )
         except Exception as ex:
             print(ex)
@@ -914,7 +935,7 @@ class MongoDatabase:
                                 "guild_id": "$guild_id",
                                 "channel": "$channel_name",
                             },
-                            "total": {"$sum": 1}
+                            "total": {"$sum": 1},
                         }
                     },
                     {
@@ -922,7 +943,7 @@ class MongoDatabase:
                             "from": "users",
                             "let": {
                                 "user_id": "$_id.user_id",
-                                "guild_id": "$_id.guild_id"
+                                "guild_id": "$_id.guild_id",
                             },
                             "pipeline": [
                                 {
@@ -976,7 +997,7 @@ class MongoDatabase:
                     {
                         "$group": {
                             "_id": {"type": "$type", "guild_id": "$guild_id"},
-                            "total": {"$sum": "$count"}
+                            "total": {"$sum": "$count"},
                         }
                     },
                     {"$sort": {"total": -1}},
@@ -993,7 +1014,12 @@ class MongoDatabase:
                 self.open()
             return self.connection.system_actions.aggregate(
                 [
-                    {"$group": {"_id": {"action": "$action", "guild_id": "$guild_id"}, "total": {"$sum": 1}}},
+                    {
+                        "$group": {
+                            "_id": {"action": "$action", "guild_id": "$guild_id"},
+                            "total": {"$sum": 1},
+                        }
+                    },
                     {"$sort": {"total": -1}},
                 ]
             )
@@ -1015,41 +1041,46 @@ class MongoDatabase:
         try:
             if self.connection is None:
                 self.open()
-            return list(self.connection.trivia_questions.aggregate(
-                [
-                    {
-                        "$group": {
-                            "_id": {
-                                "guild_id": "$guild_id",
-                                "category": "$category",
-                                "difficulty": "$difficulty",
-                                "starter_id": "$starter_id",
+            return list(
+                self.connection.trivia_questions.aggregate(
+                    [
+                        {
+                            "$group": {
+                                "_id": {
+                                    "guild_id": "$guild_id",
+                                    "category": "$category",
+                                    "difficulty": "$difficulty",
+                                    "starter_id": "$starter_id",
+                                },
+                                "total": {"$sum": 1},
                             },
-                            "total": {"$sum": 1},
                         },
-                    },
-                    {
-                        "$lookup": {
-                            "from": "users",
-                            "let": {"user_id": "$_id.starter_id", "guild_id": "$_id.guild_id"},
-                            "pipeline": [
-                                {
-                                    "$match": {
-                                        "$expr": {"$eq": ["$user_id", "$$user_id"]}
-                                    }
+                        {
+                            "$lookup": {
+                                "from": "users",
+                                "let": {
+                                    "user_id": "$_id.starter_id",
+                                    "guild_id": "$_id.guild_id",
                                 },
-                                {
-                                    "$match": {
-                                    "   $expr": {"$eq": ["$guild_id", "$$guild_id"]}
-                                    }
-                                },
-                            ],
-                            "as": "starter",
-                        }
-                    },
-                    {"$sort": {"timestamp": -1}},
-                ]
-            ))
+                                "pipeline": [
+                                    {
+                                        "$match": {
+                                            "$expr": {"$eq": ["$user_id", "$$user_id"]}
+                                        }
+                                    },
+                                    {
+                                        "$match": {
+                                        "   $expr": {"$eq": ["$guild_id", "$$guild_id"]}
+                                        }
+                                    },
+                                ],
+                                "as": "starter",
+                            }
+                        },
+                        {"$sort": {"timestamp": -1}},
+                    ]
+                )
+            )
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -1073,7 +1104,7 @@ class MongoDatabase:
                             "from": "users",
                             "let": {
                                 "user_id": "$correct_users",
-                                "guild_id": "$guild_id"
+                                "guild_id": "$guild_id",
                             },
                             "pipeline": [
                                 {
@@ -1097,7 +1128,7 @@ class MongoDatabase:
                             "from": "users",
                             "let": {
                                 "user_id": "$incorrect_users",
-                                "guild_id": "$guild_id"
+                                "guild_id": "$guild_id",
                             },
                             "pipeline": [
                                 {
@@ -1174,47 +1205,49 @@ class MongoDatabase:
             # info.inviter_id is the user who created the invite
             # info.uses is the number of times the invite was used
 
-            return self.connection.invite_codes.aggregate([
-                {
-                    "$group": {
-                        "_id": {
-                            "user_id": "$info.inviter_id",
-                            "guild_id": "$guild_id"
-                        },
-                        "total": {"$sum": "$info.uses"}
-                    }
-                },
-                {
-                        "$lookup": {
-                            "from": "users",
-                            "let": {
-                                "user_id": "$_id.user_id",
-                                "guild_id": "$_id.guild_id",
+            return self.connection.invite_codes.aggregate(
+                [
+                    {
+                        "$group": {
+                            "_id": {
+                                "user_id": "$info.inviter_id",
+                                "guild_id": "$guild_id",
                             },
-                            "pipeline": [
-                                {
-                                    "$match": {
-                                        "$expr": {"$eq": ["$user_id", "$$user_id"]}
-                                    }
-                                },
-                                {
-                                    "$match": {
-                                        "$expr": {"$eq": ["$guild_id", "$$guild_id"]}
-                                    }
-                                },
-                            ],
-                            "as": "user",
+                            "total": {"$sum": "$info.uses"}
                         }
                     },
                     {
-                        "$match": {
-                            "user.bot": {"$ne": True},
-                            "user.system": {"$ne": True},
-                            "user": {"$ne": []},
-                        }
-                    },
-                    {"$sort": {"total": -1}},
-            ])
+                            "$lookup": {
+                                "from": "users",
+                                "let": {
+                                    "user_id": "$_id.user_id",
+                                    "guild_id": "$_id.guild_id",
+                                },
+                                "pipeline": [
+                                    {
+                                        "$match": {
+                                            "$expr": {"$eq": ["$user_id", "$$user_id"]}
+                                        }
+                                    },
+                                    {
+                                        "$match": {
+                                            "$expr": {"$eq": ["$guild_id", "$$guild_id"]}
+                                        }
+                                    },
+                                ],
+                                "as": "user",
+                            }
+                        },
+                        {
+                            "$match": {
+                                "user.bot": {"$ne": True},
+                                "user.system": {"$ne": True},
+                                "user": {"$ne": []},
+                            }
+                        },
+                        {"$sort": {"total": -1}},
+                ]
+            )
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -1223,17 +1256,19 @@ class MongoDatabase:
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.introductions.aggregate([
-                {
-                    "$group": {
-                        "_id": {
-                            "guild_id": "$guild_id",
-                            "approved": "$approved"
-                        },
-                        "total": {"$sum": 1}
-                    }
-                },
-            ])
+            return self.connection.introductions.aggregate(
+                [
+                    {
+                        "$group": {
+                            "_id": {
+                                "guild_id": "$guild_id",
+                                "approved": "$approved"
+                            },
+                            "total": {"$sum": 1},
+                        }
+                    },
+                ]
+            )
         except Exception as ex:
             print(ex)
             traceback.print_exc()
