@@ -41,7 +41,7 @@ class RoleSelectView(discord.ui.View):
 
     async def on_select_callback(self, interaction: discord.Interaction) -> None:
         if interaction.user.id != self.ctx.author.id:
-          return
+            return
         await interaction.response.defer()
         if self.select_callback is not None:
             await self.select_callback(self.role_select, interaction)

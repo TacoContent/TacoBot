@@ -157,7 +157,7 @@ class Minecraft(commands.Cog):
                 })
 
             for m in cog_settings["mods"]:
-               fields.append({ "name": f"{m['name']}", "value": f"{m['version']}", "inline": True })
+                fields.append({ "name": f"{m['name']}", "value": f"{m['version']}", "inline": True })
 
             await self.messaging.send_embed(
                 channel=output_channel,

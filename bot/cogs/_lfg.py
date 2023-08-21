@@ -10,6 +10,7 @@ from .lib import logger
 from .lib import loglevel
 from .lib import mongo
 
+
 class LookingForGamers(commands.Cog):
     def __init__(self, bot: tacobot.TacoBot) -> None:
         _method = inspect.stack()[0][3]
@@ -41,6 +42,7 @@ class LookingForGamers(commands.Cog):
 
     async def _looking_for_gamers(self, ctx) -> None:
         await ctx.channel.send("lfg")
+
 
 async def setup(bot) -> None:
     await bot.add_cog(LookingForGamers(bot))

@@ -24,6 +24,8 @@ from .lib import mongo
 from .lib import tacotypes
 from .lib.system_actions import SystemActions
 from .lib.messaging import Messaging
+
+
 class AccountLink(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
@@ -48,7 +50,7 @@ class AccountLink(commands.Cog):
 
     @commands.command()
     @commands.guild_only()
-    async def link(self, ctx, *, code: typing.Union[str,None] = None):
+    async def link(self, ctx, *, code: typing.Union[str, None] = None):
         _method = inspect.stack()[0][3]
         guild_id = 0
         if ctx.guild:
@@ -67,24 +69,39 @@ class AccountLink(commands.Cog):
                     # try DM, if that fails, use the channel that it originated in
                     try:
                         await ctx.author.send(
-                            self.settings.get_string(guild_id, "account_link_success_message", code=code)
+                            self.settings.get_string(
+                                guild_id, "account_link_success_message", code=code
+                            )
                         )
                     except discord.Forbidden:
                         await ctx.channel.send(
                             f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_success_message", code=code)}',
-                            delete_after=10)
+                            delete_after=10,
+                        )
                 else:
                     try:
-                        await ctx.author.send(self.settings.get_string(guild_id, key="account_link_unknown_code_message"))
+                        await ctx.author.send(
+                            self.settings.get_string(guild_id, key="account_link_unknown_code_message")
+                        )
                     except discord.Forbidden:
-                        await ctx.channel.send(f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_unknown_code_message")}', delete_after=10)
+                        await ctx.channel.send(
+                            f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_unknown_code_message")}',
+                            delete_after=10,
+                        )
             except ValueError as ve:
                 try:
                     await ctx.author.send(f"{ve}")
                 except discord.Forbidden:
-                    await ctx.channel.send(f"{ctx.author.mention}, {ve}", delete_after=10)
+                    await ctx.channel.send(
+                        f"{ctx.author.mention}, {ve}", delete_after=10,
+                    )
             except Exception as e:
-                self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+                self.log.error(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    str(e),
+                    traceback.format_exc(),
+                )
                 await self.messaging.notify_of_error(ctx)
         else:
             try:
@@ -102,14 +119,22 @@ class AccountLink(commands.Cog):
                     try:
                         await ctx.author.send(self.settings.get_string(guild_id, "account_link_save_error_message"))
                     except discord.Forbidden:
-                        await ctx.channel.send(f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_save_error_message")}', delete_after=10)
+                        await ctx.channel.send(
+                            f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_save_error_message")}',
+                            delete_after=10,
+                        )
             except ValueError as ver:
                 try:
                     await ctx.author.send(f"{ver}")
                 except discord.Forbidden:
                     await ctx.channel.send(f"{ctx.author.mention}, {ver}", delete_after=10)
             except Exception as e:
-                self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+                self.log.error(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    str(e),
+                    traceback.format_exc(),
+                )
                 await self.messaging.notify_of_error(ctx)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
@@ -123,6 +148,7 @@ class AccountLink(commands.Cog):
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
+
 
 async def setup(bot):
     await bot.add_cog(AccountLink(bot))

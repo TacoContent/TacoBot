@@ -62,7 +62,10 @@ class AmazonLink(commands.Cog):
                 return
             guild_id = message.guild.id
 
-            pattern = re.compile(r'<?(https://(?:(?:www|smile)\.)?amazon\.com/(.*)?)>?', flags=re.IGNORECASE)
+            pattern = re.compile(
+                r"<?(https://(?:(?:www|smile)\.)?amazon\.com/(.*)?)>?",
+                flags=re.IGNORECASE,
+            )
             match = pattern.search(message.content)
             if not match:
                 return
@@ -70,7 +73,7 @@ class AmazonLink(commands.Cog):
             # get the content of the message and replace the amazon link with the affiliate link
             message_content = message.content
             # remove existing affiliate tag
-            message_content = re.sub(r'\?tag=[a-zA-Z0-9\-_]+', '', message_content)
+            message_content = re.sub(r"\?tag=[a-zA-Z0-9\-_]+", "", message_content)
             match = pattern.search(message_content)
             if not match:
                 return
@@ -93,14 +96,17 @@ class AmazonLink(commands.Cog):
                 title="Amazon Link",
                 message=f"{message_content}",
                 author=message.author,
-                content=f"Please consider using this link which can help support the discord.\n\n{amazon_link}",)
+                content=f"Please consider using this link which can help support the discord.\n\n{amazon_link}",
+            )
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
 
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(
+            self.db, guildId, self.SETTINGS_SECTION
+        )
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings

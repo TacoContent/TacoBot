@@ -17,15 +17,14 @@ LABEL PROJECT_NAME="${PROJECT_NAME}"
 COPY ./ /app/
 RUN \
 	apk update && \
-	apk add --update git curl build-base tcl tk && \
+	apk add --no-cache git curl build-base tcl tk && \
 	mkdir -p /app /data && \
-	pip install --upgrade pip && \
-	pip install -r /app/setup/requirements.txt && \
+	pip install --no-cache-dir --upgrade pip && \
+	pip install --no-cache-dir -r /app/setup/requirements.txt && \
 	sed -i "s/APP_VERSION = \"1.0.0-snapshot\"/APP_VERSION = \"${APP_VERSION}\"/g" "/app/bot/cogs/lib/settings.py" && \
 	sed -i "s/\"version\": \"1.0.0-snapshot\"/\"version\": \"${APP_VERSION}\"/g" "/app/app.manifest" && \
 	apk del git build-base && \
-	rm -rf /app/setup && \
-	rm -rf /var/cache/apk/*
+	rm -rf /app/setup
 
 VOLUME ["/data"]
 VOLUME ["/config"]

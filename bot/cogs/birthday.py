@@ -29,6 +29,7 @@ from .lib import mongo
 from .lib import tacotypes
 from .lib.messaging import Messaging
 
+
 class Birthday(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
@@ -124,10 +125,9 @@ class Birthday(commands.Cog):
                     taco_amount=taco_amount,
                 )
 
-
             fields = [
-                { "name": self.settings.get_string(guild_id, "month"), "value": str(month), "inline": True },
-                { "name": self.settings.get_string(guild_id, "day"), "value": str(day), "inline": True },
+                {"name": self.settings.get_string(guild_id, "month"), "value": str(month), "inline": True},
+                {"name": self.settings.get_string(guild_id, "day"), "value": str(day), "inline": True},
             ]
             await self.messaging.send_embed(
                 out_channel,
@@ -159,7 +159,9 @@ class Birthday(commands.Cog):
             # wish the users a happy birthday
             if len(birthdays) > 0:
                 self.log.debug(
-                    guild_id, f"{self._module}.{self._class}.{_method}", f"Sending birthday wishes from check_birthday for {guild_id}"
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Sending birthday wishes from check_birthday for {guild_id}",
                 )
                 await self.send_birthday_message(ctx, birthdays)
             # track the check
@@ -203,10 +205,16 @@ class Birthday(commands.Cog):
             # user started streaming
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings:
-                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No live_now settings found for guild {guild_id}")
+                self.log.warn(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"No live_now settings found for guild {guild_id}",
+                )
                 return
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"birthday is disabled for guild {guild_id}")
+                self.log.debug(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"birthday is disabled for guild {guild_id}"
+                )
                 return
 
             if len(birthdays) == 0:
@@ -236,15 +244,13 @@ class Birthday(commands.Cog):
                 month_name = date.strftime("%B")
                 month_day = date.strftime("%d")
                 fields = [
-                    { "name": self.settings.get_string(guild_id, "month"), "value": month_name, "inline": True },
-                    { "name": self.settings.get_string(guild_id, "day"), "value": month_day, "inline": True },
+                    {"name": self.settings.get_string(guild_id, "month"), "value": month_name, "inline": True},
+                    {"name": self.settings.get_string(guild_id, "day"), "value": month_day, "inline": True},
                 ]
                 await self.messaging.send_embed(
                     channel=output_channel,
                     title=self.settings.get_string(guild_id, "birthday_wishes_title"),
-                    message=self.settings.get_string(
-                        guild_id, "birthday_wishes_message", message=message, users=""
-                    ),
+                    message=self.settings.get_string(guild_id, "birthday_wishes_message", message=message, users=""),
                     image=image,
                     color=None,
                     content=" ".join(users),
@@ -275,7 +281,9 @@ class Birthday(commands.Cog):
             # wish the users a happy birthday
             if len(birthdays) > 0:
                 self.log.debug(
-                    guild_id, f"{self._module}.{self._class}.{_method}", f"Sending birthday wishes from on_message for {guild_id}"
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Sending birthday wishes from on_message for {guild_id}",
                 )
                 await self.send_birthday_message(message, birthdays)
             # track the check
@@ -329,7 +337,9 @@ class Birthday(commands.Cog):
             # wish the users a happy birthday
             if len(birthdays) > 0:
                 self.log.debug(
-                    guild_id, f"{self._module}.{self._class}.{_method}", f"Sending birthday wishes from on_member_join for {guild_id}"
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Sending birthday wishes from on_member_join for {guild_id}",
                 )
                 await self.send_birthday_message(member, birthdays)
             # track the check
@@ -377,7 +387,6 @@ class Birthday(commands.Cog):
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
-
 
 
 async def setup(bot):

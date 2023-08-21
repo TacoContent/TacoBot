@@ -59,8 +59,8 @@ class LeaveSurvey(commands.Cog):
 
     async def ask_survey(self, member):
         _method = inspect.stack()[0][3]
+        guild_id = member.guild.id
         try:
-            guild_id = member.guild.id
             try:
                 if member.bot:
                     return
@@ -99,7 +99,7 @@ class LeaveSurvey(commands.Cog):
                             self.log.info(guild_id, f"{self._module}.{_method}", f"Failed to send message to {utils.get_user_display_name(member)} ({member.id})")
                         except Exception as e:
                             # an error occurred while asking the user if they want to take the surveys
-                            self.log.error(guild_id, f"{self._module}.{_method}", f"Error in f"{self._module}.{_method}": {e}", traceback.format_exc())
+                            self.log.error(guild_id, f"{self._module}.{_method}", f"Error in {self._module}.{_method}: {e}", traceback.format_exc())
 
                         if log_channel:
                             await self.messaging.send_embed(
@@ -123,7 +123,7 @@ class LeaveSurvey(commands.Cog):
                 self.log.info(guild_id, f"{self._module}.{_method}", f"Failed to send message to {utils.get_user_display_name(member)} ({member.id})")
             except Exception as e:
                 # an error occurred while asking the user if they want to take the surveys
-                self.log.error(guild_id, f"{self._module}.{_method}", f"Error in f"{self._module}.{_method}": {e}", traceback.format_exc())
+                self.log.error(guild_id, f"{self._module}.{_method}", f"Error in {self._module}.{_method}: {e}", traceback.format_exc())
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
