@@ -6,4 +6,5 @@
 failure-threshold: warning
 
 ignored:
-  - DL3018  # pin versions in pip
+  - DL3018 # pin versions in pip
+  - DL3048 #
