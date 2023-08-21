@@ -101,15 +101,10 @@ class AmazonLink(commands.Cog):
             )
 
         except Exception as e:
-            self.log.error(
-                guild_id, f"{self._module}.{_method}", f"{e}", traceback.format_exc()
-            )
-
+            self.log.error(guild_id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(
-            self.db, guildId, self.SETTINGS_SECTION
-        )
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
