@@ -25,6 +25,7 @@ from .lib import tacotypes
 from .lib.GameRewardView import GameRewardView
 from .lib.messaging import Messaging
 
+
 class GameKeys(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
@@ -54,16 +55,12 @@ class GameKeys(commands.Cog):
         _method = inspect.stack()[0][3]
         try:
             context = self.discord_helper.create_context(
-                bot=self.bot,
-                author=self.bot.user,
-                channel=guild.system_channel,
-                guild=guild
-                )
+                bot=self.bot, author=self.bot.user, channel=guild.system_channel, guild=guild
+            )
             # await self._create_offer(ctx=context)
             # await self._init_exiting_offer(ctx=context)
         except Exception as e:
             self.log.error(guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-
 
     @commands.group(name="game-keys", aliases=["gk", "gamekeys", "game-key", "gamekey", "games"])
     @commands.guild_only()
@@ -107,27 +104,39 @@ class GameKeys(commands.Cog):
 
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"game_keys is disabled for guild {guild_id}")
+                self.log.debug(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"game_keys is disabled for guild {guild_id}"
+                )
                 return
 
             reward_channel_id = cog_settings.get("reward_channel_id", "0")
             reward_channel = await self.discord_helper.get_or_fetch_channel(int(reward_channel_id))
             if not reward_channel:
-                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No reward channel found for guild {guild_id}")
+                self.log.warn(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No reward channel found for guild {guild_id}"
+                )
                 return
 
             game_data = self.db.get_random_game_key_data(guild_id=guild_id)
             if not game_data:
-                await reward_channel.send(self.settings.get_string(guild_id, "game_key_no_keys_found_message"), delete_after=10)
+                await reward_channel.send(
+                    self.settings.get_string(guild_id, "game_key_no_keys_found_message"), delete_after=10
+                )
                 # log this as an error.
-                self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", self.settings.get_string(guild_id, "game_key_no_keys_found_message"))
+                self.log.error(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    self.settings.get_string(guild_id, "game_key_no_keys_found_message"),
+                )
                 return
 
             default_cost = cog_settings.get("cost", 500)
             cost = game_data.get("cost", default_cost)
 
             if cost <= 0:
-                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"Cost is 0 or less for guild {guild_id}")
+                self.log.warn(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"Cost is 0 or less for guild {guild_id}"
+                )
                 return
 
             if cost == 1:
@@ -138,14 +147,14 @@ class GameKeys(commands.Cog):
             log_channel_id = cog_settings.get("log_channel_id", "0")
             log_channel = await self.discord_helper.get_or_fetch_channel(int(log_channel_id))
             if not log_channel:
-                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No log channel found for guild {guild_id}")
+                self.log.warn(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No log channel found for guild {guild_id}"
+                )
                 return
-
 
             offered_by = await self.discord_helper.get_or_fetch_user(int(game_data["offered_by"]))
             expires = datetime.datetime.now() + datetime.timedelta(days=1)
             fields = [
-
                 {"name": self.settings.get_string(guild_id, "game"), "value": game_data.get("title", "UNKNOWN")},
                 {"name": self.settings.get_string(guild_id, "platform"), "value": game_data.get("platform", "UNKNOWN")},
                 {"name": self.settings.get_string(guild_id, "cost"), "value": f"{cost} {tacos_word}🌮"},
@@ -166,7 +175,7 @@ class GameKeys(commands.Cog):
                 claim_callback=self._claim_offer_callback,
                 timeout_callback=self._claim_timeout_callback,
                 cost=cost,
-                timeout=timeout
+                timeout=timeout,
             )
 
             offer_message = await self.messaging.send_embed(
@@ -187,7 +196,11 @@ class GameKeys(commands.Cog):
     async def _claim_offer_callback(self, interaction: discord.Interaction):
         _method = inspect.stack()[0][3]
         if interaction.response.is_done():
-            self.log.debug(interaction.guild.id, f"{self._module}.{self._class}.{_method}", f"Claim offer cancelled because it was already responded to.")
+            self.log.debug(
+                interaction.guild.id,
+                f"{self._module}.{self._class}.{_method}",
+                f"Claim offer cancelled because it was already responded to.",
+            )
             return
         guild_id = interaction.guild.id if interaction.guild else 0
         ctx = None
@@ -204,8 +217,11 @@ class GameKeys(commands.Cog):
                 channel=interaction.channel,
                 message=interaction.message,
                 guild=interaction.guild,
-                custom_id=interaction.data["custom_id"])
-            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Claiming offer {interaction.data['custom_id']}")
+                custom_id=interaction.data["custom_id"],
+            )
+            self.log.debug(
+                guild_id, f"{self._module}.{self._class}.{_method}", f"Claiming offer {interaction.data['custom_id']}"
+            )
             await self._claim_offer(ctx, interaction.data["custom_id"])
             await self._create_offer(ctx)
 
@@ -223,7 +239,9 @@ class GameKeys(commands.Cog):
             message=ctx.message,
             guild=ctx.guild,
         )
-        self.log.debug(ctx.guild.id, f"{self._module}.{self._class}.{_method}", f"Claim offer {ctx.custom_id} timed out")
+        self.log.debug(
+            ctx.guild.id, f"{self._module}.{self._class}.{_method}", f"Claim offer {ctx.custom_id} timed out"
+        )
         await self._create_offer(ctx)
         pass
 
@@ -246,14 +264,20 @@ class GameKeys(commands.Cog):
 
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"game_keys is disabled for guild {guild_id}")
+                self.log.debug(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"game_keys is disabled for guild {guild_id}"
+                )
                 return
 
             reward_channel_id = cog_settings.get("reward_channel_id", "0")
-            reward_channel: typing.Union[discord.TextChannel, None] = await self.discord_helper.get_or_fetch_channel(int(reward_channel_id))
+            reward_channel: typing.Union[discord.TextChannel, None] = await self.discord_helper.get_or_fetch_channel(
+                int(reward_channel_id)
+            )
 
             if not reward_channel:
-                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No reward channel found for guild {guild_id}")
+                self.log.warn(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No reward channel found for guild {guild_id}"
+                )
                 return
 
             offer = self.db.find_open_game_key_offer(guild_id, reward_channel.id)
@@ -266,7 +290,11 @@ class GameKeys(commands.Cog):
                         except Exception as e:
                             pass
                 except discord.NotFound as nfe:
-                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Offer message not found for guild {guild_id}")
+                    self.log.debug(
+                        guild_id,
+                        f"{self._module}.{self._class}.{_method}",
+                        f"Offer message not found for guild {guild_id}",
+                    )
                     pass
 
                 self.db.close_game_key_offer_by_message(guild_id, int(offer["message_id"]))
@@ -291,20 +319,29 @@ class GameKeys(commands.Cog):
 
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"game_keys is disabled for guild {guild_id}")
+                self.log.debug(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"game_keys is disabled for guild {guild_id}"
+                )
                 return False
 
             reward_channel_id = cog_settings.get("reward_channel_id", "0")
-            reward_channel: typing.Union[discord.TextChannel, None] = await self.discord_helper.get_or_fetch_channel(int(reward_channel_id))
+            reward_channel: typing.Union[discord.TextChannel, None] = await self.discord_helper.get_or_fetch_channel(
+                int(reward_channel_id)
+            )
             log_channel_id = cog_settings.get("log_channel_id", "0")
             log_channel = await self.discord_helper.get_or_fetch_channel(int(log_channel_id))
 
             if not reward_channel:
-                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No reward channel found for guild {guild_id}")
+                self.log.warn(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No reward channel found for guild {guild_id}"
+                )
                 return False
 
-
-            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Claiming offer {game_id} for guild {guild_id} in channel {reward_channel.name}")
+            self.log.debug(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"Claiming offer {game_id} for guild {guild_id} in channel {reward_channel.name}",
+            )
 
             offer = self.db.find_open_game_key_offer(guild_id, reward_channel.id)
             if not offer:
@@ -323,7 +360,9 @@ class GameKeys(commands.Cog):
                     f"{self._module}.{self._class}.{_method}",
                     f"No game_key found while looking up id '{offer['game_key_id']}'",
                 )
-                await ctx.channel.send(self.settings.get_string(guild_id, "game_key_no_game_data_message"), delete_after=10)
+                await ctx.channel.send(
+                    self.settings.get_string(guild_id, "game_key_no_game_data_message"), delete_after=10
+                )
                 return False
 
             default_cost = cog_settings.get("cost", 500)
@@ -370,7 +409,8 @@ class GameKeys(commands.Cog):
                     f"Game key {game_data['_id']} already redeemed by {game_data['redeemed_by']}",
                 )
                 await ctx.channel.send(
-                    self.settings.get_string(guild_id, "game_key_already_redeemed_message", user=ctx.author.mention), delete_after=10
+                    self.settings.get_string(guild_id, "game_key_already_redeemed_message", user=ctx.author.mention),
+                    delete_after=10,
                 )
                 return False
             if str(game_id) != str(offer["game_key_id"]) or str(game_data["_id"]) != str(game_id):
@@ -441,7 +481,7 @@ class GameKeys(commands.Cog):
                 toUserId=self.bot.user.id,
                 count=cost * -1,
                 reason="Claim game key",
-                type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.GAME_REDEEM)
+                type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.GAME_REDEEM),
             )
             # get the user that offered the game key
             offer_user = await self.discord_helper.get_or_fetch_user(int(game_data["user_owner"]))
@@ -471,7 +511,6 @@ class GameKeys(commands.Cog):
         except Exception as e:
             raise e
 
-
     # import current game key offer and add it to the client as a view
     async def _init_exiting_offer(self, ctx):
         _method = inspect.stack()[0][3]
@@ -479,41 +518,66 @@ class GameKeys(commands.Cog):
             return
 
         guild_id = ctx.guild.id
-        self.log.info(guild_id, f"{self._module}.{self._class}.{_method}", f"Initializing existing game key offer for guild {guild_id}")
+        self.log.info(
+            guild_id,
+            f"{self._module}.{self._class}.{_method}",
+            f"Initializing existing game key offer for guild {guild_id}",
+        )
         try:
-
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"game_keys is disabled for guild {guild_id}")
+                self.log.debug(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"game_keys is disabled for guild {guild_id}"
+                )
                 return
 
             reward_channel_id = cog_settings.get("reward_channel_id", "0")
-            reward_channel: typing.Union[discord.TextChannel, None] = await self.discord_helper.get_or_fetch_channel(int(reward_channel_id))
+            reward_channel: typing.Union[discord.TextChannel, None] = await self.discord_helper.get_or_fetch_channel(
+                int(reward_channel_id)
+            )
 
             if not reward_channel:
-                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No reward channel found for guild {guild_id}")
+                self.log.warn(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No reward channel found for guild {guild_id}"
+                )
                 return
 
             offer = self.db.find_open_game_key_offer(guild_id=guild_id, channel_id=reward_channel.id)
             if offer:
                 # add the view
-                self.log.info(guild_id, f"{self._module}.{self._class}.{_method}", f"Adding game key offer view for existing offer in guild {guild_id}")
+                self.log.info(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Adding game key offer view for existing offer in guild {guild_id}",
+                )
                 channel_id = int(offer["channel_id"])
                 message_id = int(offer["message_id"])
                 # get the message
                 channel: discord.TextChannel = await self.discord_helper.get_or_fetch_channel(channel_id)
                 if not channel:
-                    self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No channel found for game key offer in guild {guild_id}")
+                    self.log.warn(
+                        guild_id,
+                        f"{self._module}.{self._class}.{_method}",
+                        f"No channel found for game key offer in guild {guild_id}",
+                    )
                     return
                 message: discord.Message = await channel.fetch_message(message_id)
                 if not message:
-                    self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No message found for game key offer in guild {guild_id}")
+                    self.log.warn(
+                        guild_id,
+                        f"{self._module}.{self._class}.{_method}",
+                        f"No message found for game key offer in guild {guild_id}",
+                    )
                     return
 
                 # get the view from the message
                 imported_view: discord.ui.View = discord.ui.View.from_message(message)
                 if not imported_view:
-                    self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No view found for game key offer in guild {guild_id}")
+                    self.log.warn(
+                        guild_id,
+                        f"{self._module}.{self._class}.{_method}",
+                        f"No view found for game key offer in guild {guild_id}",
+                    )
                     return
 
                 # add the view to the client
@@ -532,33 +596,53 @@ class GameKeys(commands.Cog):
             return
         try:
             if interaction.response.is_done():
-                self.log.debug(interaction.guild.id, f"{self._module}.{self._class}.{_method}", f"Interaction already responded to: {interaction}")
+                self.log.debug(
+                    interaction.guild.id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Interaction already responded to: {interaction}",
+                )
                 return
 
-            self.log.debug(interaction.guild.id, f"{self._module}.{self._class}.{_method}", f"Interaction received: {interaction}")
+            self.log.debug(
+                interaction.guild.id, f"{self._module}.{self._class}.{_method}", f"Interaction received: {interaction}"
+            )
 
             # _claim_offer_callback
             if "custom_id" not in interaction.data:
-                self.log.debug(interaction.guild.id, f"{self._module}.{self._class}.{_method}", f"No custom_id in interaction data: {interaction}")
+                self.log.debug(
+                    interaction.guild.id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"No custom_id in interaction data: {interaction}",
+                )
                 return
 
             game_id = interaction.data["custom_id"]
 
             if not game_id:
-                self.log.debug(interaction.guild.id, f"{self._module}.{self._class}.{_method}", f"Custom id is empty: {interaction}")
+                self.log.debug(
+                    interaction.guild.id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Custom id is empty: {interaction}",
+                )
                 return
 
             # get the game data to check if the custom_id IS a game id
             game_data = self.db.get_game_key_data(str(game_id))
             if not game_data:
-                self.log.debug(interaction.guild.id, f"{self._module}.{self._class}.{_method}", f"Custom id is not a game id: {interaction}")
+                self.log.debug(
+                    interaction.guild.id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Custom id is not a game id: {interaction}",
+                )
                 return
 
             # trigger the callback
             await self._claim_offer_callback(interaction)
 
         except Exception as e:
-            self.log.error(interaction.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            self.log.error(
+                interaction.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc()
+            )
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)

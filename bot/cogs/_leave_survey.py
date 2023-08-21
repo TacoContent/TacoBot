@@ -30,6 +30,7 @@ from .lib.messaging import Messaging
 class LeaveSurvey(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
@@ -44,7 +45,7 @@ class LeaveSurvey(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.group()
     @commands.has_permissions(manage_guild=True)
@@ -73,10 +74,17 @@ class LeaveSurvey(commands.Cog):
                 pass
 
             # get the leave_survey settings from settings
-            cog_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+            cog_settings = self.settings.get_settings(
+                self.db,
+                guild_id, self.SETTINGS_SECTION
+            )
             if not cog_settings:
                 # raise exception if there are no leave_survey settings
-                self.log.error(guild_id, f"{self._module}.{_method}", f"No leave_survey settings found for guild {guild_id}")
+                self.log.error(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"No leave_survey settings found for guild {guild_id}",
+                )
                 return
 
             log_channel_id = int(cog_settings["log_channel_id"])
@@ -86,20 +94,48 @@ class LeaveSurvey(commands.Cog):
             take_survey = False
             reason = "Did not answer the survey asking why they left."
             try:
-                ctx = self.discord_helper.create_context(bot=self.bot, author=member, guild=member.guild, channe=None)
+                ctx = self.discord_helper.create_context(
+                    bot=self.bot,
+                    author=member,
+                    guild=member.guild,
+                    channel=None,
+                )
                 async def response_callback(result):
                     if result:
                         reason = "No reason given."
                         try:
-                            reason = await self.discord_helper.ask_text(ctx, member, "Leave Survey", "Please tell us why you are leaving.", timeout=600)
-                            await self.messaging.send_embed(member, "Thank You!", "Thank you for your feedback. We will review your feedback and take action accordingly.")
+                            reason = await self.discord_helper.ask_text(
+                                ctx,
+                                member,
+                                "Leave Survey",
+                                "Please tell us why you are leaving.",
+                                timeout=600,
+                            )
+                            await self.messaging.send_embed(
+                                member,
+                                "Thank You!",
+                                "Thank you for your feedback. We will review your feedback and take action accordingly.",
+                            )
                         except discord.Forbidden as f:
-                            self.log.info(guild_id, f"{self._module}.{_method}", f"Failed to send message to {utils.get_user_display_name(member)} ({member.id})")
+                            self.log.info(
+                                guild_id,
+                                f"{self._module}.{self._class}.{_method}",
+                                f"Failed to send message to {utils.get_user_display_name(member)} ({member.id})",
+                            )
                         except discord.NotFound as nf:
-                            self.log.info(guild_id, f"{self._module}.{_method}", f"Failed to send message to {utils.get_user_display_name(member)} ({member.id})")
+                            self.log.info(
+                                guild_id,
+                                f"{self._module}.{self._class}.{_method}",
+                                f"Failed to send message to {utils.get_user_display_name(member)} ({member.id})",
+                            )
                         except Exception as e:
                             # an error occurred while asking the user if they want to take the surveys
-                            self.log.error(guild_id, f"{self._module}.{_method}", f"Error in {self._module}.{_method}: {e}", traceback.format_exc())
+                            self.log.error(
+                                guild_id,
+                                f"{self._module}.{self._class}.{_method}",
+                                f"Error in {self._module}.{self._class}.{_method}: {e}",
+                                traceback.format_exc(),
+                            )
 
                         if log_channel:
                             await self.messaging.send_embed(
@@ -118,28 +154,48 @@ class LeaveSurvey(commands.Cog):
                     result_callback=response_callback)
 
             except discord.Forbidden as f:
-                self.log.info(guild_id, f"{self._module}.{_method}", f"Failed to send message to {utils.get_user_display_name(member)} ({member.id})")
+                self.log.info(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Failed to send message to {utils.get_user_display_name(member)} ({member.id})",
+                )
             except discord.NotFound as nf:
-                self.log.info(guild_id, f"{self._module}.{_method}", f"Failed to send message to {utils.get_user_display_name(member)} ({member.id})")
+                self.log.info(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Failed to send message to {utils.get_user_display_name(member)} ({member.id})",
+                )
             except Exception as e:
                 # an error occurred while asking the user if they want to take the surveys
-                self.log.error(guild_id, f"{self._module}.{_method}", f"Error in {self._module}.{_method}: {e}", traceback.format_exc())
+                self.log.error(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Error in {self._module}.{_method}: {e}",
+                    traceback.format_exc(),
+                )
 
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
+            self.log.error(
+                guild_id,
+                f"{self._module}.{_method}",
+                str(e),
+                traceback.format_exc(),
+            )
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         await self.ask_survey(member)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(
+            self.db, guildId, self.SETTINGS_SECTION,
+        )
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos",)
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

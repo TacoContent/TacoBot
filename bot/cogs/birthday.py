@@ -89,7 +89,12 @@ class Birthday(commands.Cog):
                     timeout=60,
                 )
             except discord.Forbidden:
-                self.log.info(guild_id, f"{self._module}.{self._class}.{_method}", "Forbidden", traceback.format_exc())
+                self.log.info(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    "Forbidden",
+                    traceback.format_exc(),
+                )
                 _ctx = ctx
                 out_channel = ctx.channel
                 month = await self.discord_helper.ask_number(
@@ -126,19 +131,34 @@ class Birthday(commands.Cog):
                 )
 
             fields = [
-                {"name": self.settings.get_string(guild_id, "month"), "value": str(month), "inline": True},
-                {"name": self.settings.get_string(guild_id, "day"), "value": str(day), "inline": True},
+                {
+                    "name": self.settings.get_string(guild_id, "month"),
+                    "value": str(month),
+                    "inline": True
+                },
+                {
+                    "name": self.settings.get_string(guild_id, "day"),
+                    "value": str(day),
+                    "inline": True
+                },
             ]
             await self.messaging.send_embed(
                 out_channel,
                 self.settings.get_string(guild_id, "birthday_set_title"),
-                self.settings.get_string(guild_id, "birthday_set_confirm", user=ctx.author.mention),
+                self.settings.get_string(
+                    guild_id, "birthday_set_confirm", user=ctx.author.mention
+                ),
                 fields=fields,
                 delete_after=10,
             )
             pass
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            self.log.error(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                str(e),
+                traceback.format_exc(),
+            )
             await self.messaging.notify_of_error(ctx)
 
     @birthday.command(name="check")
@@ -168,8 +188,13 @@ class Birthday(commands.Cog):
             self.db.track_birthday_check(guild_id)
             await asyncio.sleep(0.5)
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            self.messaging.notify_of_error(ctx)
+            self.log.error(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                str(e),
+                traceback.format_exc(),
+            )
+            await self.messaging.notify_of_error(ctx)
 
     def was_checked_today(self, guildId: int):
         _method = inspect.stack()[0][3]
@@ -189,7 +214,12 @@ class Birthday(commands.Cog):
             birthdays = self.db.get_user_birthdays(guildId, month, day)
             return birthdays
         except Exception as e:
-            self.log.error(guildId, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            self.log.error(
+                guildId,
+                f"{self._module}.{self._class}.{_method}",
+                str(e),
+                traceback.format_exc(),
+            )
             return []
 
     async def send_birthday_message(self, ctx: Context, birthdays: typing.List[typing.Dict]):
@@ -213,7 +243,9 @@ class Birthday(commands.Cog):
                 return
             if not cog_settings.get("enabled", False):
                 self.log.debug(
-                    guild_id, f"{self._module}.{self._class}.{_method}", f"birthday is disabled for guild {guild_id}"
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"birthday is disabled for guild {guild_id}",
                 )
                 return
 
@@ -244,13 +276,23 @@ class Birthday(commands.Cog):
                 month_name = date.strftime("%B")
                 month_day = date.strftime("%d")
                 fields = [
-                    {"name": self.settings.get_string(guild_id, "month"), "value": month_name, "inline": True},
-                    {"name": self.settings.get_string(guild_id, "day"), "value": month_day, "inline": True},
+                    {
+                        "name": self.settings.get_string(guild_id, "month"),
+                        "value": month_name,
+                        "inline": True
+                    },
+                    {
+                        "name": self.settings.get_string(guild_id, "day"),
+                        "value": month_day,
+                        "inline": True
+                    },
                 ]
                 await self.messaging.send_embed(
                     channel=output_channel,
                     title=self.settings.get_string(guild_id, "birthday_wishes_title"),
-                    message=self.settings.get_string(guild_id, "birthday_wishes_message", message=message, users=""),
+                    message=self.settings.get_string(
+                        guild_id, "birthday_wishes_message", message=message, users=""
+                    ),
                     image=image,
                     color=None,
                     content=" ".join(users),
@@ -262,7 +304,12 @@ class Birthday(commands.Cog):
                 )
 
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            self.log.error(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                str(e),
+                traceback.format_exc(),
+            )
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -290,7 +337,12 @@ class Birthday(commands.Cog):
             self.db.track_birthday_check(guild_id)
             await asyncio.sleep(0.5)
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            self.log.error(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                str(e),
+                traceback.format_exc(),
+            )
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
@@ -318,7 +370,12 @@ class Birthday(commands.Cog):
             self.db.track_birthday_check(guild_id)
             await asyncio.sleep(0.5)
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            self.log.error(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                str(e),
+                traceback.format_exc(),
+            )
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -346,7 +403,12 @@ class Birthday(commands.Cog):
             self.db.track_birthday_check(guild_id)
             await asyncio.sleep(0.5)
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            self.log.error(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                str(e),
+                traceback.format_exc(),
+            )
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -377,7 +439,9 @@ class Birthday(commands.Cog):
         #     self.log.error(guild_id, "birthday.on_member_join", str(e), traceback.format_exc())
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(
+            self.db, guildId, self.SETTINGS_SECTION
+        )
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings

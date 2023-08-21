@@ -12,6 +12,7 @@ from .lib import loglevel
 from .lib import mongo
 from .lib.messaging import Messaging
 
+
 class CommandSyncCog(commands.Cog):
     def __init__(self, bot: tacobot.TacoBot) -> None:
         _method = inspect.stack()[0][3]
@@ -39,7 +40,12 @@ class CommandSyncCog(commands.Cog):
     @app_command.command(name="sync", aliases=["s"])
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
-    async def sync(self, ctx: Context, guilds: Greedy[discord.Object], spec: typing.Optional[typing.Literal["~", "*", "^"]] = None) -> None:
+    async def sync(
+        self,
+        ctx: Context,
+        guilds: Greedy[discord.Object],
+        spec: typing.Optional[typing.Literal["~", "*", "^"]] = None,
+    ) -> None:
         _method = inspect.stack()[0][3]
         guild_id = ctx.guild.id if ctx.guild else 0
         try:
@@ -53,7 +59,8 @@ class CommandSyncCog(commands.Cog):
                             channel=ctx.channel,
                             title="Command Sync",
                             message="No guild id identified, cannot sync globally.",
-                            delete_after=15)
+                            delete_after=15,
+                        )
                         return
                     self.bot.tree.copy_global_to(guild=discord.Object(guild_id))
                     synced = await self.bot.tree.sync(guild=ctx.guild)
@@ -68,7 +75,8 @@ class CommandSyncCog(commands.Cog):
                     channel=ctx.channel,
                     title="Command Sync",
                     message=f"Synced {len(synced)} commands {'globally' if spec is None else 'to the current guild.'}",
-                    delete_after=15)
+                    delete_after=15,
+                )
                 return
 
             ret = 0
@@ -76,7 +84,9 @@ class CommandSyncCog(commands.Cog):
                 try:
                     await self.bot.tree.sync(guild=guild)
                 except discord.HTTPException as e:
-                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Failed to sync guild {guild.id}: {e}")
+                    self.log.debug(
+                        guild_id, f"{self._module}.{self._class}.{_method}", f"Failed to sync guild {guild.id}: {e}"
+                    )
                     pass
                 else:
                     ret += 1
@@ -84,11 +94,14 @@ class CommandSyncCog(commands.Cog):
                     channel=ctx.channel,
                     title="Command Sync",
                     message=f"Synced the tree to {ret}/{len(guilds)}",
-                    delete_after=15
+                    delete_after=15,
                 )
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"Exception: {e}")
+            self.log.error(
+                guild_id, f"{self._module}.{self._class}.{_method}", f"Exception: {e}"
+            )
             await self.messaging.notify_of_error(ctx)
+
 
 async def setup(bot):
     await bot.add_cog(CommandSyncCog(bot))

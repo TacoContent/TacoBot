@@ -6,5 +6,6 @@
 failure-threshold: warning
 
 ignored:
-  - DL3018 # pin versions in pip
-  - DL3048 #
+  - DL3013 # pin versions in pip
+  - DL3018 # pin versions in apk
+  - DL3048 # Invalid label key.

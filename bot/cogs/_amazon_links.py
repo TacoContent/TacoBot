@@ -32,6 +32,7 @@ import inspect
 class AmazonLink(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.affiliate_tag = "darthminos0f-20"
@@ -100,7 +101,9 @@ class AmazonLink(commands.Cog):
             )
 
         except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
+            self.log.error(
+                guild_id, f"{self._module}.{_method}", f"{e}", traceback.format_exc()
+            )
 
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
