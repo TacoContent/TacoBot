@@ -1,32 +1,13 @@
 # Before: https://www.amazon.com/dp/B0042TVKZY/
 # After: https://www.amazon.com/dp/B0042TVKZY/?tag=darthminos0f-20
-
-# this is for restricted channels that only allow specific commands in chat.
-import discord
-from discord.ext import commands
-import asyncio
-import json
-import traceback
-import sys
-import os
-import glob
-import typing
-import math
-import re
-
-from discord.ext.commands.cooldowns import BucketType
-from discord.ext.commands import has_permissions, CheckFailure
-
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib.messaging import Messaging
-
 import inspect
+import os
+import re
+import traceback
+
+from discord.ext import commands
+from .lib import discordhelper, logger, loglevel, mongo, settings
+from .lib.messaging import Messaging
 
 
 class AmazonLink(commands.Cog):
@@ -63,7 +44,7 @@ class AmazonLink(commands.Cog):
                 return
             guild_id = message.guild.id
 
-            pattern = re.compile(r"<?(https://(?:(?:www|smile)\.)?amazon\.com/(.*)?)>?",flags=re.IGNORECASE)
+            pattern = re.compile(r"<?(https://(?:(?:www|smile)\.)?amazon\.com/(.*)?)>?", flags=re.IGNORECASE)
             match = pattern.search(message.content)
             if not match:
                 return

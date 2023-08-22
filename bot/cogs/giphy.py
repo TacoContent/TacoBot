@@ -8,9 +8,9 @@ import uuid
 from discord.ext import commands
 from random import random
 from urllib import parse, request
-
 from .lib import settings, discordhelper, logger, loglevel, mongo
 from .lib.messaging import Messaging
+
 
 class Giphy(commands.Cog):
     def __init__(self, bot):
@@ -48,7 +48,7 @@ class Giphy(commands.Cog):
                 'limit': 50,
                 'offset': math.floor(random() * 50),
                 "random_id": uuid.uuid4().hex,
-                'rating': 'r'
+                'rating': 'r',
             }
             url = url + '?' + parse.urlencode(params)
             with request.urlopen(url) as f:
@@ -64,7 +64,7 @@ class Giphy(commands.Cog):
                     title=title,
                     image=image_url,
                     url=url,
-                    color=0X00FF00,
+                    color=0x00FF00,
                     author=ctx.author,
                     footer="Powered by Giphy",
                 )

@@ -1,12 +1,12 @@
 import discord
 from discord.ext import commands
-import traceback
-import os
-
 import inspect
+import os
+import traceback
 
 from .lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
 from .lib.messaging import Messaging
+
 
 class IntroductionCog(commands.Cog):
     def __init__(self, bot) -> None:
@@ -122,7 +122,6 @@ class IntroductionCog(commands.Cog):
                         approved=has_approval_emoji,
                     )
 
-
             # set the was_imported flag to true
             self.db.set_setting(guildId=guild_id, name=self.SETTINGS_SECTION, key="was_imported", value=True)
 
@@ -137,7 +136,6 @@ class IntroductionCog(commands.Cog):
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
-
 
     @commands.Cog.listener()
     @commands.guild_only()
@@ -199,8 +197,6 @@ class IntroductionCog(commands.Cog):
                 message_id=message.id,
                 approved=False,
             )
-
-
 
             pass
         except Exception as e:
@@ -268,7 +264,6 @@ class IntroductionCog(commands.Cog):
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
-
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)

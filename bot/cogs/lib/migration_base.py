@@ -4,7 +4,8 @@ import traceback
 from pymongo import MongoClient
 from . import settings
 
-class MigrationBase():
+
+class MigrationBase:
     def __init__(self) -> None:
         self._module = os.path.basename(__file__)[:-3]
         self.settings = settings.Settings()
@@ -33,10 +34,7 @@ class MigrationBase():
             self.open()
 
         try:
-            run = self.connection.migration_runs.find_one(
-                {
-                    "module": self._module
-                })
+            run = self.connection.migration_runs.find_one({"module": self._module})
             if run is None:
                 return True
             else:
@@ -48,22 +46,14 @@ class MigrationBase():
             if self.connection is not None:
                 self.close()
 
-
     def track_run(self, success: bool) -> None:
         if self.connection is None:
             self.open()
 
         try:
             self.connection.migration_runs.update_one(
-                {
-                    "module": self._module
-                },
-                {
-                    "$set": {
-                        "completed": success,
-                    }
-                },
-                upsert=True)
+                {"module": self._module},{"$set": {"completed": success}},upsert=True
+            )
         except Exception as ex:
             print(ex)
             traceback.print_exc()

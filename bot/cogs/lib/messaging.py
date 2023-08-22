@@ -6,7 +6,7 @@ import typing
 from . import logger, loglevel, settings, mongo, utils
 
 
-class Messaging():
+class Messaging:
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
         # get the file name without the extension and without the directory
@@ -55,8 +55,7 @@ class Messaging():
         embed = discord.Embed(title=title, description=message, color=color, url=url)
         if author:
             embed.set_author(
-                name=f"{utils.get_user_display_name(author)}",
-                icon_url=author.avatar.url if author.avatar else None
+                name=f"{utils.get_user_display_name(author)}", icon_url=author.avatar.url if author.avatar else None
             )
         if embed.fields is not None:
             for f in embed.fields:
@@ -81,13 +80,7 @@ class Messaging():
             embed.set_thumbnail(url=thumbnail)
         if image is not None:
             embed.set_image(url=image)
-        return await channel.send(
-            content=content,
-            embed=embed,
-            delete_after=delete_after,
-            view=view,
-            files=files
-        )
+        return await channel.send(content=content, embed=embed, delete_after=delete_after, view=view, files=files)
 
     async def update_embed(
         self,
@@ -157,7 +150,6 @@ class Messaging():
             )
 
         await message.edit(content=target_content, embed=updated_embed)
-
 
     async def notify_of_error(self, ctx):
         guild_id = 0

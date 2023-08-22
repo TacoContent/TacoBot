@@ -6,7 +6,7 @@ import typing
 import json
 
 
-class SuggestionStates():
+class SuggestionStates:
     def __init__(self) -> None:
         self.ACTIVE = "ACTIVE"
         self.APPROVED = "APPROVED"
@@ -15,30 +15,30 @@ class SuggestionStates():
         self.IMPLEMENTED = "IMPLEMENTED"
         self.CONSIDERED = "CONSIDERED"
         self.DELETED = "DELETED"
-        
-class TextWithAttachments():
+
+class TextWithAttachments:
     def __init__(self, text, attachments) -> None:
         self.text = text
         self.attachments = attachments
 
-class TriviaQuestion():
+class TriviaQuestion:
     def __init__(
-            self,
-            guild_id: int,
-            channel_id: int,
-            message_id: int,
-            starter_id: int,
-            question: str,
-            correct_answer: str,
-            incorrect_answers:
-            typing.List[str],
-            category: str,
-            difficulty: int,
-            reward: int = 0,
-            punishment: int = 0,
-            correct_users: typing.List[int] = [],
-            incorrect_users: typing.List[int] = [],
-            ) -> None:
+        self,
+        guild_id: int,
+        channel_id: int,
+        message_id: int,
+        starter_id: int,
+        question: str,
+        correct_answer: str,
+        incorrect_answers:
+        typing.List[str],
+        category: str,
+        difficulty: int,
+        reward: int = 0,
+        punishment: int = 0,
+        correct_users: typing.List[int] = [],
+        incorrect_users: typing.List[int] = [],
+    ) -> None:
         self.guild_id = guild_id
         self.channel_id = channel_id
         self.message_id = message_id

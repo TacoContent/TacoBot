@@ -1,4 +1,3 @@
-
 import datetime
 import typing
 
@@ -6,11 +5,14 @@ from . import models, loglevel
 from .system_actions import SystemActions
 from .member_status import MemberStatus
 
+
 class Database():
     def __init__(self):
         pass
+
     def open(self):
         pass
+
     def close(self):
         pass
 
@@ -18,6 +20,7 @@ class Database():
         self, guildId: int, level: loglevel.LogLevel, method: str, message: str, stack: typing.Optional[str] = None
     ):
         pass
+
     def clear_log(self, guildId: int):
         pass
 
@@ -45,12 +48,12 @@ class Database():
     def remove_tacos(self, guildId: int, userId: int, count: int):
         pass
 
-    def get_tacos_count(self, guildId: int, userId: int) -> typing.Union[int,None]:
+    def get_tacos_count(self, guildId: int, userId: int) -> typing.Union[int, None]:
         pass
 
     def get_total_gifted_tacos(
         self, guildId: int, userId: int, timespan_seconds: int = 86400
-    ) -> typing.Union[int,None]:
+    ) -> typing.Union[int, None]:
         pass
 
     def add_taco_gift(self, guildId: int, userId: int, count: int):
@@ -63,10 +66,10 @@ class Database():
         pass
 
 
-    def add_settings(self, guildId: int, name:str, settings: dict):
+    def add_settings(self, guildId: int, name: str, settings: dict):
         pass
 
-    def get_settings(self, guildId: int, name:str):
+    def get_settings(self, guildId: int, name: str):
         pass
 
     def get_suggestion(self, guildId: int, messageId: int):
@@ -177,12 +180,7 @@ class Database():
         pass
 
     def taco_tuesday_update_message(
-        self,
-        guildId: int,
-        channelId: int,
-        messageId: int,
-        newChannelId: int,
-        newMessageId: int,
+        self, guildId: int, channelId: int, messageId: int, newChannelId: int, newMessageId: int
     ) -> None:
         pass
 
@@ -211,28 +209,14 @@ class Database():
         pass
 
     def track_food_post(
-        self,
-        guildId: int,
-        userId: int,
-        channelId: int,
-        messageId: int,
-        message: str,
-        image: str
+        self, guildId: int, userId: int, channelId: int, messageId: int, message: str, image: str
     ) -> None:
         pass
 
     def track_user_join_leave(self, guildId: int, userId: int, join: bool):
         pass
 
-    def track_tacos_log(
-        self,
-        guildId: int,
-        fromUserId: int,
-        toUserId: int,
-        count: int,
-        type: str,
-        reason: str
-    ) -> None:
+    def track_tacos_log(self, guildId: int, fromUserId: int, toUserId: int, count: int, type: str, reason: str) -> None:
         pass
 
     def track_trivia_question(self, triviaQuestion: models.TriviaQuestion) -> None:

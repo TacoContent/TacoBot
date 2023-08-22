@@ -139,7 +139,8 @@ class LeaveSurvey(commands.Cog):
                     question="We are very sorry to see you leave. \n\nWould you be willing to let us know why you are leaving?",
                     title="Leave Survey",
                     timeout=60,
-                    result_callback=response_callback,)
+                    result_callback=response_callback,
+                )
 
             except discord.Forbidden as f:
                 self.log.info(

@@ -205,7 +205,8 @@ class Birthday(commands.Cog):
             # user started streaming
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings:
-                self.log.warn(guild_id,
+                self.log.warn(
+                    guild_id,
                     f"{self._module}.{self._class}.{_method}",
                     f"No live_now settings found for guild {guild_id}",
                 )
