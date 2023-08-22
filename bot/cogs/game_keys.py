@@ -218,11 +218,7 @@ class GameKeys(commands.Cog):
         _method = inspect.stack()[0][3]
         # create context from interaction
         ctx = self.discord_helper.create_context(
-            self.bot,
-            author=ctx.author,
-            channel=ctx.channel,
-            message=ctx.message,
-            guild=ctx.guild,
+            self.bot, author=ctx.author, channel=ctx.channel, message=ctx.message, guild=ctx.guild
         )
         self.log.debug(
             ctx.guild.id, f"{self._module}.{self._class}.{_method}", f"Claim offer {ctx.custom_id} timed out"
@@ -442,7 +438,7 @@ class GameKeys(commands.Cog):
                         platform=game_data["type"],
                         download_link=download_link,
                         help_link=help_link,
-                    ),
+                    )
                 )
             except discord.Forbidden as f:
                 self.log.warn(

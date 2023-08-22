@@ -1,25 +1,10 @@
-import discord
-from discord.ext import commands
-import asyncio
-import json
 import traceback
-import sys
 import os
-import glob
-import typing
-import math
-import datetime
 
 import inspect
 
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib import tacotypes
+from discord.ext import commands
+from .lib import settings, discordhelper, logger, loglevel, mongo
 
 class GuildTrack(commands.Cog):
     def __init__(self, bot):
@@ -62,7 +47,6 @@ class GuildTrack(commands.Cog):
             self.db.track_guild(guild=after)
         except Exception as e:
             self.log.error(before.id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
-
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)

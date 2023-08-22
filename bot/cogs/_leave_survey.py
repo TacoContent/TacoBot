@@ -139,7 +139,7 @@ class LeaveSurvey(commands.Cog):
                     question="We are very sorry to see you leave. \n\nWould you be willing to let us know why you are leaving?",
                     title="Leave Survey",
                     timeout=60,
-                    result_callback=response_callback)
+                    result_callback=response_callback,)
 
             except discord.Forbidden as f:
                 self.log.info(
@@ -170,7 +170,7 @@ class LeaveSurvey(commands.Cog):
         await self.ask_survey(member)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION,)
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings

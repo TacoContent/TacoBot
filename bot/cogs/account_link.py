@@ -79,9 +79,7 @@ class AccountLink(commands.Cog):
                 else:
                     try:
                         await ctx.author.send(
-                            self.settings.get_string(
-                                guild_id, key="account_link_unknown_code_message"
-                            )
+                            self.settings.get_string(guild_id, key="account_link_unknown_code_message")
                         )
                     except discord.Forbidden:
                         await ctx.channel.send(
@@ -94,12 +92,7 @@ class AccountLink(commands.Cog):
                 except discord.Forbidden:
                     await ctx.channel.send(f"{ctx.author.mention}, {ve}", delete_after=10)
             except Exception as e:
-                self.log.error(
-                    guild_id,
-                    f"{self._module}.{self._class}.{_method}",
-                    str(e),
-                    traceback.format_exc(),
-                )
+                self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
                 await self.messaging.notify_of_error(ctx)
         else:
             try:
@@ -131,9 +124,7 @@ class AccountLink(commands.Cog):
                 await self.messaging.notify_of_error(ctx)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(
-            self.db, guildId, self.SETTINGS_SECTION
-        )
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings

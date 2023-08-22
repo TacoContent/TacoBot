@@ -1,25 +1,11 @@
 import discord
 from discord.ext import commands
-import asyncio
-import json
 import traceback
-import sys
 import os
-import glob
-import typing
-import math
-import datetime
 
 import inspect
 
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib import tacotypes
+from .lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
 from .lib.messaging import Messaging
 
 class IntroductionCog(commands.Cog):
@@ -75,7 +61,12 @@ class IntroductionCog(commands.Cog):
 
                 messages = channel.history(limit=200, oldest_first=True)
                 async for message in messages:
-                    if message.author.bot or message.author.system or message.author.id in tracked_users or message.author.id in existing_introductions:
+                    if (
+                        message.author.bot
+                        or message.author.system
+                        or message.author.id in tracked_users
+                        or message.author.id in existing_introductions
+                    ):
                         continue
 
                     if isinstance(message.author, discord.User):
@@ -106,7 +97,7 @@ class IntroductionCog(commands.Cog):
                         toUser=message.author,
                         reason=reason_msg,
                         give_type=tacotypes.TacoTypes.POST_INTRODUCTION,
-                        taco_amount=0
+                        taco_amount=0,
                     )
 
                     if has_approval_emoji:
@@ -118,7 +109,7 @@ class IntroductionCog(commands.Cog):
                             toUser=message.author,
                             reason=reason_msg,
                             give_type=tacotypes.TacoTypes.APPROVE_INTRODUCTION,
-                            taco_amount=0
+                            taco_amount=0,
                         )
 
                     # add the user to the tracked users list
@@ -198,7 +189,7 @@ class IntroductionCog(commands.Cog):
                 toUser=message.author,
                 reason=reason_msg,
                 give_type=tacotypes.TacoTypes.POST_INTRODUCTION,
-                taco_amount=0
+                taco_amount=0,
             )
 
             self.db.track_user_introduction(
@@ -264,7 +255,7 @@ class IntroductionCog(commands.Cog):
                 toUser=message.author,
                 reason=reason_msg,
                 give_type=tacotypes.TacoTypes.APPROVE_INTRODUCTION,
-                taco_amount=0
+                taco_amount=0,
             )
 
             self.db.track_user_introduction(
@@ -274,7 +265,6 @@ class IntroductionCog(commands.Cog):
                 message_id=message.id,
                 approved=True,
             )
-
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
@@ -291,6 +281,7 @@ class IntroductionCog(commands.Cog):
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
+
 
 async def setup(bot):
     await bot.add_cog(IntroductionCog(bot))
