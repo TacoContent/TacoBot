@@ -126,7 +126,7 @@ class MongoDatabase(database.Database):
                 self.open()
             payload = {"user_id": str(userId), "twitch_name": twitchName}
             # insert or update user twitch info
-            self.connection.twitch_user.update_one({ "user_id": str(userId) }, { "$set": payload }, upsert=True)
+            self.connection.twitch_user.update_one({"user_id": str(userId)}, {"$set": payload}, upsert=True)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -152,7 +152,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
 
-    def add_tacos(self, guildId: int, userId: int, count: int) -> typing.Union[int,None]:
+    def add_tacos(self, guildId: int, userId: int, count: int) -> typing.Union[int, None]:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
@@ -211,7 +211,7 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            data = self.connection.tacos.find_one({"guild_id": str(guildId), "user_id": str(userId) })
+            data = self.connection.tacos.find_one({"guild_id": str(guildId), "user_id": str(userId)})
             if data is None:
                 print(f"[DEBUG] [{self._module}.{_method}] [guild:{guildId}] User {userId} not in table")
                 return None
@@ -274,7 +274,8 @@ class MongoDatabase(database.Database):
             # log entry for the user
             print(f"[DEBUG] [{self._module}.{_method}] [guild:0] Adding taco reaction for user {userId}")
             self.connection.tacos_reactions.update_one(
-                {"guild_id": str(guildId), "user_id": str(userId), "timestamp": timestamp}, {"$set": payload},
+                {"guild_id": str(guildId), "user_id": str(userId), "timestamp": timestamp},
+                {"$set": payload},
                 upsert=True,
             )
         except Exception as ex:
@@ -315,7 +316,9 @@ class MongoDatabase(database.Database):
             # log entry for the user
             print(f"[DEBUG] [{self._module}.{_method}] [guild:0] Adding suggestion create message for guild {guildId}")
             self.connection.suggestion_create_messages.update_one(
-                {"guild_id": str(guildId), "channel_id": str(channelId), "message_id": messageId}, {"$set": payload}, upsert=True
+                {"guild_id": str(guildId), "channel_id": str(channelId), "message_id": messageId},
+                {"$set": payload},
+                upsert=True,
             )
         except Exception as ex:
             print(ex)
@@ -346,7 +349,7 @@ class MongoDatabase(database.Database):
             payload = {"guild_id": str(guildId), "name": name, "settings": settings, "timestamp": timestamp}
             # insert the settings for the guild in to the database with key name and timestamp
             self.connection.settings.update_one(
-                {"guild_id": str(guildId), "name": name}, {"$set": payload }, upsert=True
+                {"guild_id": str(guildId), "name": name}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
             print(ex)
@@ -371,7 +374,7 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
 
-    def get_settings(self, guildId: int, name: str) -> typing.Union[dict,None]:
+    def get_settings(self, guildId: int, name: str) -> typing.Union[dict, None]:
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -997,7 +1000,7 @@ class MongoDatabase(database.Database):
                 "user_id": str(userId),
                 "username": username,
                 "uuid": uuid,
-                "op": {"enabled": op, "level": int(level), "bypassesPlayerLimit": bypassPlayerCount }
+                "op": {"enabled": op, "level": int(level), "bypassesPlayerLimit": bypassPlayerCount}
             }
             self.connection.minecraft_users.update_one({"user_id": str(userId)}, {"$set": payload}, upsert=True)
         except Exception as ex:
@@ -1243,10 +1246,10 @@ class MongoDatabase(database.Database):
 
             if result:
                 self.connection.techthurs.update_one(
-                    {"guild_id": str(guild_id), "timestamp": timestamp },
+                    {"guild_id": str(guild_id), "timestamp": timestamp},
                     {
                         "$push": {
-                            "answered": { "user_id": str(user_id), "message_id": messageId, "timestamp": ts_track }
+                            "answered": { "user_id": str(user_id), "message_id": messageId, "timestamp": ts_track}
                         }
                     },
                     upsert=True,
@@ -1404,7 +1407,7 @@ class MongoDatabase(database.Database):
                 "channel_id": str(channel_id),
                 "message_id": str(message_id)
             }
-            self.connection.mentalmondays.update_one({ "guild_id": str(guildId), "timestamp": timestamp }, { "$set": payload }, upsert=True)
+            self.connection.mentalmondays.update_one({"guild_id": str(guildId), "timestamp": timestamp}, {"$set": payload}, upsert=True)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -1462,7 +1465,7 @@ class MongoDatabase(database.Database):
                 "channel_id": str(channel_id),
                 "message_id": str(message_id)
             }
-            self.connection.taco_tuesday.update_one({ "guild_id": str(guildId), "timestamp": timestamp }, { "$set": payload }, upsert=True)
+            self.connection.taco_tuesday.update_one({"guild_id": str(guildId), "timestamp": timestamp}, {"$set": payload}, upsert=True)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -1482,7 +1485,11 @@ class MongoDatabase(database.Database):
             )
 
             if result:
-                self.connection.taco_tuesday.update_one({ "guild_id": str(guild_id), "timestamp": timestamp }, { "$push": { "answered": { "user_id": str(user_id), "timestamp": ts_track } } }, upsert=True)
+                self.connection.taco_tuesday.update_one(
+                    {"guild_id": str(guild_id), "timestamp": timestamp},
+                    {"$push": {"answered": {"user_id": str(user_id), "timestamp": ts_track}}},
+                    upsert=True,
+                )
             else:
                 now_date = datetime.datetime.utcnow().date()
                 back_date = now_date - datetime.timedelta(days=7)
@@ -1496,7 +1503,11 @@ class MongoDatabase(database.Database):
                     }}
                 )
                 if result:
-                    self.connection.taco_tuesday.update_one({ "guild_id": str(guild_id), "timestamp": result['timestamp'] }, { "$push": { "answered": { "user_id": str(user_id), "timestamp": ts_track } } }, upsert=True)
+                    self.connection.taco_tuesday.update_one(
+                        {"guild_id": str(guild_id), "timestamp": result['timestamp']},
+                        {"$push": {"answered": {"user_id": str(user_id), "timestamp": ts_track}}},
+                        upsert=True,
+                    )
                 else:
                     raise Exception(f"No taco tuesday found for guild {guild_id} for the last 7 days")
         except Exception as ex:
@@ -1550,7 +1561,9 @@ class MongoDatabase(database.Database):
                 {"guild_id": str(guildId), "timestamp": timestamp}
             )
             if result:
-                self.connection.taco_tuesday.update_one({ "guild_id": str(guildId), "timestamp": timestamp }, { "$set": { "user_id": str(userId) } }, upsert=True)
+                self.connection.taco_tuesday.update_one(
+                    {"guild_id": str(guildId), "timestamp": timestamp}, {"$set": {"user_id": str(userId)}}, upsert=True
+                )
             else:
                 now_date = datetime.datetime.utcnow().date()
                 back_date = now_date - datetime.timedelta(days=7)
@@ -1615,7 +1628,11 @@ class MongoDatabase(database.Database):
             }
 
             # if self.is_first_message_today(guildId=guildId, userId=userId):
-            self.connection.first_message.update_one({ "guild_id": str(guildId), "user_id": str(userId), "timestamp": timestamp }, { "$set": payload }, upsert=True)
+            self.connection.first_message.update_one(
+                {"guild_id": str(guildId), "user_id": str(userId), "timestamp": timestamp},
+                {"$set": payload},
+                upsert=True,
+            )
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -1632,11 +1649,26 @@ class MongoDatabase(database.Database):
                 "user_id": str(userId)
             }
 
-            result = self.connection.messages.find_one( { "guild_id": str(guildId), "user_id": str(userId) } )
+            result = self.connection.messages.find_one({"guild_id": str(guildId), "user_id": str(userId)})
             if result:
-                self.connection.messages.update_one({ "guild_id": str(guildId), "user_id": str(userId) }, { "$push": { "messages": { "channel_id": str(channelId), "message_id": str(messageId), "timestamp": timestamp } } }, upsert=True)
+                self.connection.messages.update_one(
+                    {"guild_id": str(guildId), "user_id": str(userId)},
+                    {
+                        "$push": {
+                            "messages": {"channel_id": str(channelId), "message_id": str(messageId), "timestamp": timestamp}
+                        }
+                    },
+                    upsert=True,
+                )
             else:
-                self.connection.messages.insert_one({ **payload, "messages": [{ "channel_id": str(channelId), "message_id": str(messageId), "timestamp": timestamp }] })
+                self.connection.messages.insert_one(
+                    {
+                        **payload,
+                        "messages": [
+                            {"channel_id": str(channelId), "message_id": str(messageId), "timestamp": timestamp}
+                        ]
+                    }
+                )
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -1648,7 +1680,9 @@ class MongoDatabase(database.Database):
             date = datetime.datetime.utcnow().date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
-            result = self.connection.first_message.find_one( { "guild_id": str(guildId), "user_id": str(userId), "timestamp": timestamp } )
+            result = self.connection.first_message.find_one(
+                {"guild_id": str(guildId), "user_id": str(userId), "timestamp": timestamp}
+            )
             if result:
                 return False
             return True
@@ -1688,7 +1722,9 @@ class MongoDatabase(database.Database):
                 "timestamp": timestamp
             }
 
-            self.connection.users.update_one({ "guild_id": str(guildId), "user_id": str(userId) }, { "$set": payload }, upsert=True)
+            self.connection.users.update_one(
+                {"guild_id": str(guildId), "user_id": str(userId)}, {"$set": payload}, upsert=True
+            )
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -1772,7 +1808,7 @@ class MongoDatabase(database.Database):
                 "timestamp": timestamp
             }
 
-            self.connection.guilds.update_one({ "guild_id": str(guild.id) }, { "$set": payload }, upsert=True)
+            self.connection.guilds.update_one({"guild_id": str(guild.id)}, {"$set": payload}, upsert=True)
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -1811,7 +1847,7 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            self.connection.game_keys.update_many({ "guild_id": { "$exists": False } }, { "$set": { "guild_id": guild_id } })
+            self.connection.game_keys.update_many({"guild_id": {"$exists": False}}, {"$set": {"guild_id": guild_id}})
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -1821,7 +1857,10 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            self.connection.minecraft_users.update_many({ "guild_id": { "$exists": False } }, { "$set": { "guild_id": guild_id } })
+            self.connection.minecraft_users.update_many(
+                {"guild_id": {"$exists": False}},
+                {"$set": {"guild_id": guild_id}},
+            )
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -2533,7 +2572,9 @@ class MongoDatabase(database.Database):
                 "added_by": str(added_by),
                 "timestamp": timestamp
             }
-            self.connection.join_whitelist.update_one({"guild_id": str(guild_id), "user_id": str(user_id)}, { "$set": payload }, upsert=True)
+            self.connection.join_whitelist.update_one(
+                {"guild_id": str(guild_id), "user_id": str(user_id)}, {"$set": payload}, upsert=True
+            )
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -2622,7 +2663,9 @@ class MongoDatabase(database.Database):
                 "approved": approved,
                 "timestamp": timestamp
             }
-            self.connection.introductions.update_one({"guild_id": str(guild_id), "user_id": str(user_id)}, { "$set": payload }, upsert=True)
+            self.connection.introductions.update_one(
+                {"guild_id": str(guild_id), "user_id": str(user_id)}, {"$set": payload}, upsert=True
+            )
 
         except Exception as ex:
             print(ex)

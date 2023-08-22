@@ -3,6 +3,7 @@ import typing
 from . import mongo
 from . import loglevel
 
+
 class Log:
     def __init__(self, minimumLogLevel: loglevel.LogLevel = loglevel.LogLevel.DEBUG) -> None:
         self.db = mongo.MongoDatabase()

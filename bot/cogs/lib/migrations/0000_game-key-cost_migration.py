@@ -15,9 +15,7 @@ class Migration(MigrationBase):
             if self.connection is None:
                 self.open()
             # update all game keys that don't have a cost to 500
-            result = self.connection.game_keys.update_many(
-                {"cost": {"$exists": False}}, {"$set": {"cost": 500}}
-            )
+            result = self.connection.game_keys.update_many({"cost": {"$exists": False}}, {"$set": {"cost": 500}})
 
             print(f"Updated {result.modified_count} game keys with no cost to cost of 500")
 
