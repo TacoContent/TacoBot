@@ -43,7 +43,7 @@ class JoinLeaveTracker(commands.Cog):
                 fromUserId=self.bot.user.id,
                 count=0,
                 reason="leaving the server",
-                type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.LEAVE_SERVER)
+                type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.LEAVE_SERVER),
             )
             self.db.track_user_join_leave(guildId=guild_id, userId=member.id, join=False)
             self.db.track_system_action(
@@ -64,16 +64,16 @@ class JoinLeaveTracker(commands.Cog):
 
             await self.discord_helper.taco_give_user(guild_id, self.bot.user, member,
                 self.settings.get_string(guild_id, "taco_reason_join"),
-                tacotypes.TacoTypes.JOIN_SERVER )
+                tacotypes.TacoTypes.JOIN_SERVER,
+            )
 
             self.db.track_user_join_leave(guildId=guild_id, userId=member.id, join=True)
             self.db.track_system_action(
-                guild_id=guild_id,
-                action=SystemActions.JOIN_SERVER,
-                data={"user_id": str(member.id)},
+                guild_id=guild_id, action=SystemActions.JOIN_SERVER, data={"user_id": str(member.id)}
             )
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+
 
 async def setup(bot) -> None:
     await bot.add_cog(JoinLeaveTracker(bot))

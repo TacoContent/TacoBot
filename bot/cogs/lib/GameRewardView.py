@@ -55,10 +55,10 @@ class GameRewardView(discord.ui.View):
         if interaction.user.id != self.ctx.author.id:
             return
 
-        self.log.debug(self.ctx.guild.id, f"{self._module}.{_method}", "claim_callback" )
+        self.log.debug(self.ctx.guild.id, f"{self._module}.{_method}", "claim_callback")
         # await interaction.response.defer()
         if self.claim_button_callback is not None:
-            self.log.debug(self.ctx.guild.id, f"{self._module}.{_method}", "trigger claim_button_callback" )
+            self.log.debug(self.ctx.guild.id, f"{self._module}.{_method}", "trigger claim_button_callback")
             await self.claim_button_callback(interaction)
             self.stop()
 

@@ -6,7 +6,6 @@ class MemberStatus(Enum):
     OFFLINE = 2
     IDLE = 3
     DND = 4
-
     UNKNOWN = 9999
 
     def __str__(self) -> str:

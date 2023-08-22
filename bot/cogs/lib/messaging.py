@@ -1,38 +1,9 @@
-import async_timeout
 import discord
-from discord.ext import commands
-import asyncio
-import json
-import traceback
-import sys
-import os
-import glob
-import typing
-import collections
-
-from .ChannelSelect import ChannelSelect, ChannelSelectView
-from .RoleSelectView import RoleSelectView, RoleSelect
-
-from discord.ext.commands.cooldowns import BucketType
-from discord import (
-    SelectOption,
-    ActionRow,
-    SelectMenu,
-)
-from discord.ui import Button, Select, TextInput
-from discord.ext.commands import has_permissions, CheckFailure
-
-from . import utils
-from . import logger
-from . import loglevel
-from . import settings
-from . import mongo
-from . import tacotypes
-from .models import TextWithAttachments
-from .YesOrNoView import YesOrNoView
-
-
 import inspect
+import os
+import typing
+
+from . import logger, loglevel, settings, mongo, utils
 
 
 class Messaging():
@@ -50,7 +21,16 @@ class Messaging():
 
     async def send_embed(
         self,
-        channel: typing.Union[discord.abc.GuildChannel, discord.TextChannel, discord.DMChannel, discord.GroupChannel, discord.Thread, discord.User, discord.Member, discord.abc.Messageable],
+        channel: typing.Union[
+            discord.abc.GuildChannel,
+            discord.TextChannel,
+            discord.DMChannel,
+            discord.GroupChannel,
+            discord.Thread,
+            discord.User,
+            discord.Member,
+            discord.abc.Messageable,
+        ],
         title: typing.Optional[str] = None,
         message: typing.Optional[str] = None,
         fields: typing.Optional[list[dict[str, typing.Any]]] = None,
@@ -74,7 +54,10 @@ class Messaging():
 
         embed = discord.Embed(title=title, description=message, color=color, url=url)
         if author:
-            embed.set_author(name=f"{utils.get_user_display_name(author)}", icon_url=author.avatar.url if author.avatar else None)
+            embed.set_author(
+                name=f"{utils.get_user_display_name(author)}",
+                icon_url=author.avatar.url if author.avatar else None
+            )
         if embed.fields is not None:
             for f in embed.fields:
                 embed.add_field(name=f.name, value=f.value, inline=f.inline)
@@ -169,7 +152,9 @@ class Messaging():
             target_content = content
 
         if author:
-            updated_embed.set_author(name=f"{utils.get_user_display_name(author)}", icon_url=author.avatar.url if author.avatar else None)
+            updated_embed.set_author(
+                name=f"{utils.get_user_display_name(author)}", icon_url=author.avatar.url if author.avatar else None
+            )
 
         await message.edit(content=target_content, embed=updated_embed)
 

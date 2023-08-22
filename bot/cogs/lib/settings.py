@@ -1,13 +1,13 @@
-import sys
-import os
-import traceback
 import glob
-import typing
-from . import utils
-import json
-# from . import logger
-# from . import loglevel
 import inspect
+import json
+import os
+import sys
+import traceback
+import typing
+
+from . import utils
+
 
 class Settings:
     APP_VERSION = "1.0.0-snapshot"
@@ -86,7 +86,9 @@ class Settings:
         _method = inspect.stack()[1][3]
         self.strings = {}
 
-        lang_files = glob.glob(os.path.join(os.path.dirname(__file__), "../../../languages", "[a-z][a-z]-[a-z][a-z].json"))
+        lang_files = glob.glob(
+            os.path.join(os.path.dirname(__file__), "../../../languages", "[a-z][a-z]-[a-z][a-z].json")
+        )
         languages = [os.path.basename(f)[:-5] for f in lang_files if os.path.isfile(f)]
         for lang in languages:
             self.strings[lang] = {}

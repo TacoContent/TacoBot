@@ -1,17 +1,14 @@
+import datetime
 import discord
+import inspect
 import json
-from discord.ext import commands
-import traceback
-import sys
-import os
-import glob
-import typing
 import requests
 import random
 import re
-import datetime
-import inspect
 import string
+import traceback
+import typing
+
 
 def dict_get(dictionary, key, default_value = None) -> typing.Any:
     if key in dictionary.keys():
@@ -43,7 +40,6 @@ def chunk_list(lst, size):
 def get_random_string(length: int = 10) -> str:
     return "".join(random.choice(string.ascii_letters + string.digits) for _ in range(length))
 
-
 def get_random_name(noun_count = 1, adjective_count = 1) -> str:
     try:
         adjectives = load_from_gist("adjectives", adjective_count)
@@ -54,8 +50,12 @@ def get_random_name(noun_count = 1, adjective_count = 1) -> str:
         print(ex)
         traceback.print_exc()
         try:
-            nouns = requests.get(f"https://random-word-form.herokuapp.com/random/noun?count={str(noun_count)}").json()
-            adjectives = requests.get(f"https://random-word-form.herokuapp.com/random/adjective?count={str(adjective_count)}").json()
+            nouns = requests.get(
+                f"https://random-word-form.herokuapp.com/random/noun?count={str(noun_count)}"
+            ).json()
+            adjectives = requests.get(
+                f"https://random-word-form.herokuapp.com/random/adjective?count={str(adjective_count)}"
+            ).json()
             results = adjectives + nouns
             print("FROM random-word-form")
             return " ".join(w.title() for w in results)
@@ -64,7 +64,9 @@ def get_random_name(noun_count = 1, adjective_count = 1) -> str:
             traceback.print_exc()
             try:
                 print("FROM random-word-api")
-                results = requests.get(f"https://random-word-api.herokuapp.com/word?number={str(noun_count + adjective_count)}&swear=0").json()
+                results = requests.get(
+                    f"https://random-word-api.herokuapp.com/word?number={str(noun_count + adjective_count)}&swear=0"
+                ).json()
                 return " ".join(w.title() for w in results)
             except Exception as ex:
                 print(ex)
@@ -98,7 +100,9 @@ def load_from_gist(type, count) -> typing.List[str]:
         count = 1
     elif count > 10:
         count = 10
-    data = requests.get(f"https://gist.githubusercontent.com/camalot/8d2af3796ac86083e873995eab98190d/raw/b39de3a6ba03205380caf5d58e0cae8a869ac36d/{type}.js").text
+    data = requests.get(
+        f"https://gist.githubusercontent.com/camalot/8d2af3796ac86083e873995eab98190d/raw/b39de3a6ba03205380caf5d58e0cae8a869ac36d/{type}.js"
+    ).text
     data = re.sub(r"(var\s(adjectives|nouns|verbs)\s=\s)|;$","", data)
     jdata = json.loads(data)
     return random.sample(jdata, count)

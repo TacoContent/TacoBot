@@ -3,6 +3,8 @@
 ### UPDATE TacoBotTwitch/cogs/lib/tacotypes.py WHEN CHANGING TACO TYPES ###
 
 from enum import Enum
+
+
 class TacoTypes(Enum):
     JOIN_SERVER = 1
     BOOST = 2

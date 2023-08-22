@@ -1,9 +1,7 @@
 import os
-import inspect
-from pymongo import MongoClient
-from bson.objectid import ObjectId
 import traceback
 
+from pymongo import MongoClient
 from . import settings
 
 class MigrationBase():
