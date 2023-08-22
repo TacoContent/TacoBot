@@ -74,10 +74,7 @@ class LeaveSurvey(commands.Cog):
                 pass
 
             # get the leave_survey settings from settings
-            cog_settings = self.settings.get_settings(
-                self.db,
-                guild_id, self.SETTINGS_SECTION
-            )
+            cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings:
                 # raise exception if there are no leave_survey settings
                 self.log.error(
@@ -94,22 +91,13 @@ class LeaveSurvey(commands.Cog):
             take_survey = False
             reason = "Did not answer the survey asking why they left."
             try:
-                ctx = self.discord_helper.create_context(
-                    bot=self.bot,
-                    author=member,
-                    guild=member.guild,
-                    channel=None,
-                )
+                ctx = self.discord_helper.create_context(bot=self.bot, author=member, guild=member.guild, channel=None)
                 async def response_callback(result):
                     if result:
                         reason = "No reason given."
                         try:
                             reason = await self.discord_helper.ask_text(
-                                ctx,
-                                member,
-                                "Leave Survey",
-                                "Please tell us why you are leaving.",
-                                timeout=600,
+                                ctx, member, "Leave Survey", "Please tell us why you are leaving.", timeout=600
                             )
                             await self.messaging.send_embed(
                                 member,
@@ -142,7 +130,7 @@ class LeaveSurvey(commands.Cog):
                                 channel=log_channel,
                                 title="Leave Survey",
                                 message=f"{utils.get_user_display_name(member)} ({member.id}) has left the server. \n\n**Reason given:**\n\n{reason}",
-                                author=member
+                                author=member,
                             )
 
                 await self.discord_helper.ask_yes_no(
@@ -175,27 +163,20 @@ class LeaveSurvey(commands.Cog):
                 )
 
         except Exception as e:
-            self.log.error(
-                guild_id,
-                f"{self._module}.{_method}",
-                str(e),
-                traceback.format_exc(),
-            )
+            self.log.error(guild_id, f"{self._module}.{_method}", str(e), traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         await self.ask_survey(member)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(
-            self.db, guildId, self.SETTINGS_SECTION,
-        )
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION,)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos",)
+        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

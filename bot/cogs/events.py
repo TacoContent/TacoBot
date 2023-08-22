@@ -40,15 +40,11 @@ class Events(commands.Cog):
     async def on_ready(self):
         _method = inspect.stack()[0][3]
         self.log.debug(
-            0,
-            f"{self._module}.{self._class}.{_method}",
-            f"Logged in as {self.bot.user.name}:{self.bot.user.id}",
+            0, f"{self._module}.{self._class}.{_method}", f"Logged in as {self.bot.user.name}:{self.bot.user.id}"
         )
         # TODO: load this from the database
         self.log.debug(
-            0,
-            f"{self._module}.{self._class}.{_method}",
-            f"Setting Bot Presence '🌮 Taco; Not Just For Tuesday's 🌮'",
+            0, f"{self._module}.{self._class}.{_method}", f"Setting Bot Presence '🌮 Taco; Not Just For Tuesday's 🌮'"
         )
         await self.bot.change_presence(activity=discord.Game(name="🌮 Taco; Not Just For Tuesday's 🌮"))
 
@@ -63,31 +59,20 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_disconnect(self):
         _method = inspect.stack()[0][3]
-        self.log.debug(
-            0, f"{self._module}.{self._class}.{_method}", f"Bot Disconnected"
-        )
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Bot Disconnected")
 
     @commands.Cog.listener()
     async def on_resumed(self):
         _method = inspect.stack()[0][3]
-        self.log.debug(
-            0, f"{self._module}.{self._class}.{_method}", f"Bot Session Resumed"
-        )
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Bot Session Resumed")
 
     @commands.Cog.listener()
     async def on_error(self, event, *args, **kwargs):
         _method = inspect.stack()[0][3]
-        self.log.error(
-            0,
-            f"{self._module}.{self._class}.{_method}",
-            f"{str(event)}",
-            traceback.format_exc(),
-        )
+        self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(event)}", traceback.format_exc())
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(
-            self.db, guildId, self.SETTINGS_SECTION
-        )
+        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings

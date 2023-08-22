@@ -63,10 +63,7 @@ class AmazonLink(commands.Cog):
                 return
             guild_id = message.guild.id
 
-            pattern = re.compile(
-                r"<?(https://(?:(?:www|smile)\.)?amazon\.com/(.*)?)>?",
-                flags=re.IGNORECASE,
-            )
+            pattern = re.compile(r"<?(https://(?:(?:www|smile)\.)?amazon\.com/(.*)?)>?",flags=re.IGNORECASE,)
             match = pattern.search(message.content)
             if not match:
                 return

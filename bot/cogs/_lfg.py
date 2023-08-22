@@ -36,9 +36,7 @@ class LookingForGamers(commands.Cog):
     async def looking_for_gamers_app(self, interaction: discord.Interaction) -> None:
         await interaction.response.send_message("lfg")
 
-    @commands.group(
-        name="lfg", aliases=["looking-for-gamers"], invoke_without_command=True
-    )
+    @commands.group(name="lfg", aliases=["looking-for-gamers"], invoke_without_command=True)
     @commands.guild_only()
     async def looking_for_gamers_cmd(self, ctx) -> None:
         await self._looking_for_gamers(ctx)

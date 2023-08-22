@@ -41,10 +41,7 @@ class CommandSyncCog(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def sync(
-        self,
-        ctx: Context,
-        guilds: Greedy[discord.Object],
-        spec: typing.Optional[typing.Literal["~", "*", "^"]] = None,
+        self, ctx: Context, guilds: Greedy[discord.Object], spec: typing.Optional[typing.Literal["~", "*", "^"]] = None
     ) -> None:
         _method = inspect.stack()[0][3]
         guild_id = ctx.guild.id if ctx.guild else 0
@@ -97,9 +94,7 @@ class CommandSyncCog(commands.Cog):
                     delete_after=15,
                 )
         except Exception as e:
-            self.log.error(
-                guild_id, f"{self._module}.{self._class}.{_method}", f"Exception: {e}"
-            )
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"Exception: {e}")
             await self.messaging.notify_of_error(ctx)
 
 

@@ -69,9 +69,7 @@ class AccountLink(commands.Cog):
                     # try DM, if that fails, use the channel that it originated in
                     try:
                         await ctx.author.send(
-                            self.settings.get_string(
-                                guild_id, "account_link_success_message", code=code
-                            )
+                            self.settings.get_string(guild_id, "account_link_success_message", code=code)
                         )
                     except discord.Forbidden:
                         await ctx.channel.send(
@@ -94,10 +92,7 @@ class AccountLink(commands.Cog):
                 try:
                     await ctx.author.send(f"{ve}")
                 except discord.Forbidden:
-                    await ctx.channel.send(
-                        f"{ctx.author.mention}, {ve}",
-                        delete_after=10,
-                    )
+                    await ctx.channel.send(f"{ctx.author.mention}, {ve}", delete_after=10)
             except Exception as e:
                 self.log.error(
                     guild_id,
@@ -112,23 +107,15 @@ class AccountLink(commands.Cog):
                 code = utils.get_random_string(length=6)
                 # save code to db
                 result = self.db.set_twitch_discord_link_code(ctx.author.id, code)
-                notice_message = self.settings.get_string(
-                    guild_id, "account_link_notice_message", code=code
-                )
+                notice_message = self.settings.get_string(guild_id, "account_link_notice_message", code=code)
                 if result:
                     try:
                         await ctx.author.send(notice_message)
                     except discord.Forbidden:
-                        await ctx.channel.send(
-                            f"{ctx.author.mention}, {notice_message}", delete_after=10
-                        )
+                        await ctx.channel.send(f"{ctx.author.mention}, {notice_message}", delete_after=10)
                 else:
                     try:
-                        await ctx.author.send(
-                            self.settings.get_string(
-                                guild_id, "account_link_save_error_message"
-                            )
-                        )
+                        await ctx.author.send(self.settings.get_string(guild_id, "account_link_save_error_message"))
                     except discord.Forbidden:
                         await ctx.channel.send(
                             f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_save_error_message")}',
@@ -138,16 +125,9 @@ class AccountLink(commands.Cog):
                 try:
                     await ctx.author.send(f"{ver}")
                 except discord.Forbidden:
-                    await ctx.channel.send(
-                        f"{ctx.author.mention}, {ver}", delete_after=10
-                    )
+                    await ctx.channel.send(f"{ctx.author.mention}, {ver}", delete_after=10)
             except Exception as e:
-                self.log.error(
-                    guild_id,
-                    f"{self._module}.{self._class}.{_method}",
-                    str(e),
-                    traceback.format_exc(),
-                )
+                self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
                 await self.messaging.notify_of_error(ctx)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
