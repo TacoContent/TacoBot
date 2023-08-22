@@ -16,10 +16,12 @@ class SuggestionStates:
         self.CONSIDERED = "CONSIDERED"
         self.DELETED = "DELETED"
 
+
 class TextWithAttachments:
     def __init__(self, text, attachments) -> None:
         self.text = text
         self.attachments = attachments
+
 
 class TriviaQuestion:
     def __init__(
@@ -30,8 +32,7 @@ class TriviaQuestion:
         starter_id: int,
         question: str,
         correct_answer: str,
-        incorrect_answers:
-        typing.List[str],
+        incorrect_answers: typing.List[str],
         category: str,
         difficulty: int,
         reward: int = 0,

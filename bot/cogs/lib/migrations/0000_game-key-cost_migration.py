@@ -1,6 +1,8 @@
-import traceback
 import os
+import traceback
+
 from ..migration_base import MigrationBase
+
 
 class Migration(MigrationBase):
     def __init__(self) -> None:
@@ -14,8 +16,7 @@ class Migration(MigrationBase):
                 self.open()
             # update all game keys that don't have a cost to 500
             result = self.connection.game_keys.update_many(
-                {"cost": {"$exists": False}},
-                {"$set": {"cost": 500}}
+                {"cost": {"$exists": False}}, {"$set": {"cost": 500}}
             )
 
             print(f"Updated {result.modified_count} game keys with no cost to cost of 500")

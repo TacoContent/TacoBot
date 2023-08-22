@@ -6,7 +6,7 @@ from .system_actions import SystemActions
 from .member_status import MemberStatus
 
 
-class Database():
+class Database:
     def __init__(self):
         pass
 
@@ -64,7 +64,6 @@ class Database():
 
     def get_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int):
         pass
-
 
     def add_settings(self, guildId: int, name: str, settings: dict):
         pass

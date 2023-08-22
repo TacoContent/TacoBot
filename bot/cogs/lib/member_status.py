@@ -30,7 +30,7 @@ class MemberStatus(Enum):
             return MemberStatus.UNKNOWN
 
     @staticmethod
-    def from_str(status: str) -> "MemberStatus" :
+    def from_str(status: str) -> "MemberStatus":
         if status.lower() == "online":
             return MemberStatus.ONLINE
         elif status.lower() == "offline":

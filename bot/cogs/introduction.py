@@ -77,7 +77,6 @@ class IntroductionCog(commands.Cog):
                         # we dont care about any other message type
                         continue
 
-
                     # check if the message has any of the approval emojis
                     has_approval_emoji = False
                     for r in message.reactions:
@@ -201,7 +200,6 @@ class IntroductionCog(commands.Cog):
             pass
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
-
 
     @commands.Cog.listener()
     @commands.guild_only()

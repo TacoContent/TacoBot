@@ -52,7 +52,7 @@ class MigrationBase:
 
         try:
             self.connection.migration_runs.update_one(
-                {"module": self._module},{"$set": {"completed": success}},upsert=True
+                {"module": self._module}, {"$set": {"completed": success}}, upsert=True
             )
         except Exception as ex:
             print(ex)

@@ -1,20 +1,16 @@
 import typing
+
 from . import mongo
 from . import loglevel
 
-class Log():
+class Log:
     def __init__(self, minimumLogLevel: loglevel.LogLevel = loglevel.LogLevel.DEBUG) -> None:
         self.db = mongo.MongoDatabase()
         self.minimum_log_level = minimumLogLevel
         pass
 
     def __write(
-        self,
-        guildId: int,
-        level: loglevel.LogLevel,
-        method: str,
-        message: str,
-        stack: typing.Optional[str] = None
+        self, guildId: int, level: loglevel.LogLevel, method: str, message: str, stack: typing.Optional[str] = None
     ) -> None:
         print(f"[{level.name}] [{method}] [guild:{str(guildId)}] {message}")
         if stack:

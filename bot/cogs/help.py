@@ -145,7 +145,6 @@ class Help(commands.Cog):
                 fields=fields,
             )
 
-
             subcommands = cmd["subcommands"]
             if subcommand is None:
                 filtered_list = subcommands.keys()
@@ -184,7 +183,6 @@ class Help(commands.Cog):
                     fields=fields,
                 )
                 page += 1
-
 
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())

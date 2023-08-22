@@ -92,6 +92,7 @@ class LeaveSurvey(commands.Cog):
             reason = "Did not answer the survey asking why they left."
             try:
                 ctx = self.discord_helper.create_context(bot=self.bot, author=member, guild=member.guild, channel=None)
+
                 async def response_callback(result):
                     if result:
                         reason = "No reason given."
@@ -181,6 +182,7 @@ class LeaveSurvey(commands.Cog):
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
+
 
 async def setup(bot):
     await bot.add_cog(LeaveSurvey(bot))
