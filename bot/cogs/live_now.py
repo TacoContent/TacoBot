@@ -1,32 +1,17 @@
-import json
-from random import random
-import discord
-from discord.ext import commands
 import asyncio
-import traceback
-import sys
-import os
-import glob
-import typing
-import math
-import re
-import uuid
-import requests
-
-from discord.ext.commands.cooldowns import BucketType
-from discord.ext.commands import has_permissions, CheckFailure
+import discord
 import inspect
+import os
+import requests
+import traceback
+import typing
 
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib import tacotypes
+from discord.ext import commands
+from random import random
+from .lib import settings, discordhelper, logger, loglevel, utils, mongo, tacotypes
 from .lib.system_actions import SystemActions
 from .lib.messaging import Messaging
+
 
 class LiveNow(commands.Cog):
     def __init__(self, bot):
@@ -68,25 +53,33 @@ class LiveNow(commands.Cog):
             before_streaming_activities = []
             after_streaming_activities = []
 
-            before_streaming_activities_temp = [ a for a in before.activities if a.type == discord.ActivityType.streaming ]
-            after_streaming_activities_temp = [ a for a in after.activities if a.type == discord.ActivityType.streaming ]
+            before_streaming_activities_temp = [a for a in before.activities if a.type == discord.ActivityType.streaming]
+            after_streaming_activities_temp = [a for a in after.activities if a.type == discord.ActivityType.streaming]
 
             if len(before_streaming_activities_temp) == 0:
                 if before.activity and before.activity.type == discord.ActivityType.streaming:
-                    before_streaming_activities = [ before.activity ]
+                    before_streaming_activities = [before.activity]
             if len(after_streaming_activities_temp) == 0:
                 if after.activity and after.activity.type == discord.ActivityType.streaming:
-                    after_streaming_activities = [ after.activity ]
+                    after_streaming_activities = [after.activity]
 
             for bsa in before_streaming_activities_temp:
                 # if item is not in the list, add it
                 if len([b for b in before_streaming_activities if b.platform.lower() == bsa.platform.lower()]) == 0:
-                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Adding {bsa.platform} to before_streaming_activities for {before.display_name}")
+                    self.log.debug(
+                        guild_id,
+                        f"{self._module}.{self._class}.{_method}",
+                        f"Adding {bsa.platform} to before_streaming_activities for {before.display_name}",
+                    )
                     before_streaming_activities.append(bsa)
 
             for asa in after_streaming_activities_temp:
                 if len([a for a in after_streaming_activities if a.platform.lower() == asa.platform.lower()]) == 0:
-                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Adding {asa.platform} to after_streaming_activities for {after.display_name}")
+                    self.log.debug(
+                        guild_id,
+                        f"{self._module}.{self._class}.{_method}",
+                        f"Adding {asa.platform} to after_streaming_activities for {after.display_name}",
+                    )
                     after_streaming_activities.append(asa)
 
             # WENT LIVE
@@ -97,25 +90,28 @@ class LiveNow(commands.Cog):
                 is_tracked = tracked != None and len(tracked) > 0
                 # if it is already tracked, then we don't need to do anything
                 if is_tracked:
-                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"{after.display_name} is already tracked for {asa.platform}")
+                    self.log.debug(
+                        guild_id,
+                        f"{self._module}.{self._class}.{_method}",
+                        f"{after.display_name} is already tracked for {asa.platform}",
+                    )
                     await self.add_live_roles(after, cog_settings)
                     continue
 
-                self.log.info(guild_id, f"{self._module}.{self._class}.{_method}", f"{after.display_name} started streaming on {asa.platform}")
+                self.log.info(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"{after.display_name} started streaming on {asa.platform}",
+                )
 
                 # if we get here, then we need to track the user live activity
-                self.db.track_live(
-                    guildId=guild_id,
-                    userId=after.id,
-                    platform=asa.platform,
-                    url=asa.url
-                )
+                self.db.track_live(guildId=guild_id,userId=after.id,platform=asa.platform,url=asa.url)
                 self.db.track_live_activity(
                     guildId=guild_id,
                     userId=after.id,
                     live=True,
                     platform=asa.platform,
-                    url=asa.url
+                    url=asa.url,
                 )
 
                 await self.add_live_roles(after, cog_settings)
@@ -130,7 +126,11 @@ class LiveNow(commands.Cog):
 
                 logging_channel_id = cog_settings.get("logging_channel", None)
                 if logging_channel_id:
-                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Logging live post {after.display_name} ({asa.platform}) to channel {logging_channel_id}")
+                    self.log.debug(
+                        guild_id,
+                        f"{self._module}.{self._class}.{_method}",
+                        f"Logging live post {after.display_name} ({asa.platform}) to channel {logging_channel_id}"
+                    )
                     # this is double posting. need to figure out why
                     await self.log_live_post(int(logging_channel_id), asa, after, twitch_name)
 
@@ -144,7 +144,8 @@ class LiveNow(commands.Cog):
                     toUser=before,
                     reason=reason_msg,
                     give_type=tacotypes.TacoTypes.STREAM,
-                    taco_amount=taco_amount )
+                    taco_amount=taco_amount,
+                )
 
 
             # ENDED STREAM
@@ -212,7 +213,9 @@ class LiveNow(commands.Cog):
             # we add the "remove_roles" and remove the "add_roles"
             add_roles = wg.get("remove_roles", [])
             remove_roles = wg.get("add_roles", [])
-            await self.discord_helper.add_remove_roles(user=user, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
+            await self.discord_helper.add_remove_roles(
+                user=user, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles
+            )
 
     async def add_live_roles(self, user: discord.Member, cog_settings: dict):
         # get the watch groups
@@ -222,39 +225,71 @@ class LiveNow(commands.Cog):
             add_roles = wg.get("add_roles", [])
             remove_roles = wg.get("remove_roles", [])
             # add / remove roles defined in the watch groups
-            await self.discord_helper.add_remove_roles(user=user, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles)
+            await self.discord_helper.add_remove_roles(
+                user=user, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles
+            )
 
-    def handle_other_live(self, user: discord.Member, activities: typing.List[discord.Streaming]) -> typing.Union[str, None]:
+    def handle_other_live(
+        self, user: discord.Member, activities: typing.List[discord.Streaming]
+    ) -> typing.Union[str, None]:
         _method = inspect.stack()[0][3]
         guild_id = user.guild.id
         # get non-youtube activities and non-twitch activities
-        other_activities = [a for a in activities if a.platform is not None and a.platform.lower() != "youtube" and a.platform.lower() != "twitch"]
+        other_activities = [
+            a
+            for a in activities
+            if a.platform is not None and a.platform.lower() != "youtube" and a.platform.lower() != "twitch"
+        ]
 
         if len(other_activities) > 1:
-            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"{user.display_name} has more than one streaming activity")
+            self.log.warn(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"{user.display_name} has more than one streaming activity",
+            )
 
         for a in other_activities:
-            self.log.info(guild_id, f"{self._module}.{self._class}.{_method}", f"{user.display_name} started streaming on an {a.platform} platform")
+            self.log.info(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"{user.display_name} started streaming on an {a.platform} platform",
+            )
         return None
 
-    def handle_youtube_live(self, user: discord.Member, activities: typing.List[discord.Streaming]) -> typing.Union[str, None]:
+    def handle_youtube_live(
+        self, user: discord.Member, activities: typing.List[discord.Streaming]
+    ) -> typing.Union[str, None]:
         _method = inspect.stack()[0][3]
         guild_id = user.guild.id
         # get only the youtube activity
         youtube_activities = [a for a in activities if a.platform is not None and a.platform.lower() == "youtube"]
         if len(youtube_activities) > 1:
-            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"{user.display_name} has more than one streaming activity")
+            self.log.warn(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"{user.display_name} has more than one streaming activity",
+            )
 
         if len(youtube_activities) == 0:
-            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"{user.display_name} has no youtube streaming activity")
+            self.log.warn(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"{user.display_name} has no youtube streaming activity",
+            )
             return None
 
         activity = youtube_activities[0]
 
-        self.log.info(guild_id, f"{self._module}.{self._class}.{_method}", f"{user.display_name} started streaming on youtube")
+        self.log.info(
+            guild_id,
+            f"{self._module}.{self._class}.{_method}",
+            f"{user.display_name} started streaming on youtube",
+        )
         return None
 
-    def handle_twitch_live(self, user: discord.Member, activities: typing.List[discord.Streaming]) -> typing.Union[str, None]:
+    def handle_twitch_live(
+        self, user: discord.Member, activities: typing.List[discord.Streaming]
+    ) -> typing.Union[str, None]:
         _method = inspect.stack()[0][3]
         guild_id = user.guild.id
 
@@ -264,7 +299,11 @@ class LiveNow(commands.Cog):
         twitch_name: str = None
         twitch_info = self.db.get_user_twitch_info(user.id)
         if len(twitch_activities) > 1:
-            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"{user.display_name} has more than one streaming activity")
+            self.log.warn(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"{user.display_name} has more than one streaming activity",
+            )
         # Only add the twitch name if we don't have it already
         # and only if we can get the twitch name from the url or activity
         # or if we have a different twitch name in the database
@@ -280,7 +319,11 @@ class LiveNow(commands.Cog):
         else:
             twitch_info_name = None
         if twitch_name and twitch_name != "" and twitch_name != twitch_info_name:
-            self.log.info(guild_id, f"{self._module}.{self._class}.{_method}", f"{user.display_name} has a different twitch name: {twitch_name}")
+            self.log.info(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"{user.display_name} has a different twitch name: {twitch_name}",
+            )
             self.db.set_user_twitch_info(user.id, twitch_name)
             self.db.track_system_action(
                 guild_id=guild_id,
@@ -291,11 +334,17 @@ class LiveNow(commands.Cog):
         elif not twitch_name and twitch_info_name:
             twitch_name = twitch_info_name
         if not twitch_name:
-            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{user.display_name} has no twitch name")
+            self.log.error(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"{user.display_name} has no twitch name",
+            )
 
         return twitch_name
 
-    async def log_live_post(self, channel_id: int, activity: discord.Streaming, user: discord.Member, twitch_name: typing.Union[str, None]) -> None:
+    async def log_live_post(
+        self, channel_id: int, activity: discord.Streaming, user: discord.Member, twitch_name: typing.Union[str, None]
+    ) -> None:
         _method = inspect.stack()[0][3]
         guild_id = user.guild.id
         # get the logging channel
@@ -314,16 +363,22 @@ class LiveNow(commands.Cog):
 
             fields = []
             if activity.game:
-                fields.append({ "name": self.settings.get_string(guild_id, "game"), "value": activity.game, "inline": False },)
+                fields.append(
+                    {"name": self.settings.get_string(guild_id, "game"), "value": activity.game, "inline": False}
+                )
             if activity.platform:
                 platform_emoji = self.find_platform_emoji(user.guild, activity.platform)
                 emoji = ""
                 if platform_emoji:
                     emoji = f"<:{platform_emoji.name}:{platform_emoji.id}> "
 
-                fields.append({ "name": self.settings.get_string(guild_id, "platform"), "value": f"{emoji}{activity.platform}", "inline": True },)
+                fields.append(
+                    {"name": self.settings.get_string(guild_id, "platform"), "value": f"{emoji}{activity.platform}", "inline": True}
+                )
 
-            profile_icon: typing.Union[str,None] = profile_icon if profile_icon else user.avatar.url if user.avatar else user.default_avatar.url
+            profile_icon: typing.Union[str,None] = (
+                profile_icon if profile_icon else user.avatar.url if user.avatar else user.default_avatar.url
+            )
 
             if activity.assets:
                 image_url = activity.assets.get("large_image", None)
@@ -333,10 +388,14 @@ class LiveNow(commands.Cog):
                         profile_icon = self.get_user_profile_image(twitch_name)
 
             user_display_name = utils.get_user_display_name(user)
-            message = await self.messaging.send_embed(logging_channel,
-                f"🔴 {user_display_name}", description,
-                fields, thumbnail=profile_icon,
-                author=user, color=0x6a0dad)
+            message = await self.messaging.send_embed(
+                logging_channel,
+                f"🔴 {user_display_name}",
+                description,
+                fields,
+                thumbnail=profile_icon,
+                author=user, color=0x6A0DAD,
+            )
 
             # this should update the existing entry with the channel and message id
             self.db.track_live(guild_id, user.id, activity.platform, logging_channel.id, message.id, url=activity.url)
@@ -355,10 +414,18 @@ class LiveNow(commands.Cog):
 
         user = await self.discord_helper.get_or_fetch_member(guildId=guild_id, userId=user_id)
         if user is None:
-            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Could not find user {user_id}")
+            self.log.debug(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"Could not find user {user_id}",
+            )
             return
 
-        self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Cleaning up {tracked_count} tracked live items for user {user_id}")
+        self.log.debug(
+            guild_id,
+            f"{self._module}.{self._class}.{_method}",
+            f"Cleaning up {tracked_count} tracked live items for user {user_id}",
+        )
         cog_settings = self.get_cog_settings(guild_id)
 
         logging_channel_id = cog_settings.get("logging_channel", None)
@@ -370,7 +437,11 @@ class LiveNow(commands.Cog):
         for tracked in all_tracked_for_user:
             platform = tracked.get("platform", "UNKNOWN")
             url = tracked.get("url", None)
-            self.log.info(guild_id, f"{self._module}.{self._class}.{_method}", f"{utils.get_user_display_name(user)} stopped streaming on {platform}")
+            self.log.info(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"{utils.get_user_display_name(user)} stopped streaming on {platform}",
+            )
             self.db.track_live_activity(guild_id, user.id, False, platform, url=url)
 
             if logging_channel:
@@ -381,7 +452,11 @@ class LiveNow(commands.Cog):
                         if message:
                             await message.delete()
                     except discord.errors.NotFound:
-                        self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Message {message_id} not found in channel {logging_channel}")
+                        self.log.debug(
+                            guild_id,
+                            f"{self._module}.{self._class}.{_method}",
+                            f"Message {message_id} not found in channel {logging_channel}",
+                        )
 
             # remove all tracked items for this live platform (should only be one)
             self.db.untrack_live(guild_id, user.id, platform)
@@ -401,7 +476,11 @@ class LiveNow(commands.Cog):
             if result.status_code == 200:
                 return result.text
             else:
-                self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Failed to get profile image for {twitch_user}")
+                self.log.debug(
+                    0,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Failed to get profile image for {twitch_user}",
+                )
                 self.log.info(0, f"{self._module}.{self._class}.{_method}", f"{result.text}")
         return None
 

@@ -525,9 +525,7 @@ class MongoDatabase(database.Database):
             payload = {"user_id": userId, "vote": vote, "timestamp": timestamp}
             # insert the suggestion into the database
             self.connection.suggestions.update_one(
-                {"guild_id": str(guildId), "message_id": str(messageId)},
-                {"$push": {"votes": payload}},
-                upsert=True,
+                {"guild_id": str(guildId), "message_id": str(messageId)},{"$push": {"votes": payload}},upsert=True
             )
         except Exception as ex:
             print(ex)
@@ -1235,11 +1233,7 @@ class MongoDatabase(database.Database):
             if result:
                 self.connection.techthurs.update_one(
                     {"guild_id": str(guild_id), "timestamp": timestamp},
-                    {
-                        "$push": {
-                            "answered": {"user_id": str(user_id), "message_id": messageId, "timestamp": ts_track}
-                        }
-                    },
+                    {"$push": {"answered": {"user_id": str(user_id), "message_id": messageId, "timestamp": ts_track}}},
                     upsert=True,
                 )
             else:
@@ -1274,7 +1268,7 @@ class MongoDatabase(database.Database):
             traceback.print_exc()
 
     def save_techthurs(
-            self, guildId: int, message: str, image: str, author: int, channel_id: int = None, message_id: int = None
+        self, guildId: int, message: str, image: str, author: int, channel_id: int = None, message_id: int = None
     ):
         try:
             if self.connection is None or self.client is None:
@@ -1370,7 +1364,11 @@ class MongoDatabase(database.Database):
                 if result:
                     self.connection.mentalmondays.update_one(
                         {"guild_id": str(guild_id), "timestamp": result['timestamp']},
-                        {"$push": {"answered": {"user_id": str(user_id), "message_id": messageId, "timestamp": ts_track}}},
+                        {
+                            "$push": {
+                                "answered": {"user_id": str(user_id), "message_id": messageId, "timestamp": ts_track}
+                            }
+                        },
                         upsert=True,
                     )
                 else:
@@ -1569,10 +1567,13 @@ class MongoDatabase(database.Database):
                 ts_now_date = datetime.datetime.combine(now_date, datetime.time.max)
                 ts_back_date = datetime.datetime.combine(back_date, datetime.time.min)
                 result = self.connection.taco_tuesday.find_one(
-                    {"guild_id": str(guildId), "timestamp": {
-                        "$gte": utils.to_timestamp(ts_back_date),
-                        "$lte": utils.to_timestamp(ts_now_date),
-                    }}
+                    {
+                        "guild_id": str(guildId),
+                        "timestamp": {
+                            "$gte": utils.to_timestamp(ts_back_date),
+                            "$lte": utils.to_timestamp(ts_now_date),
+                        },
+                    }
                 )
                 if result:
                     self.connection.taco_tuesday.update_one(
@@ -1620,7 +1621,6 @@ class MongoDatabase(database.Database):
 
     def track_first_message(self, guildId: int, userId: int, channelId: int, messageId: int):
         try:
-
             if self.connection is None or self.client is None:
                 self.open()
             date = datetime.datetime.utcnow().date()
@@ -1631,7 +1631,7 @@ class MongoDatabase(database.Database):
                 "channel_id": str(channelId),
                 "message_id": str(messageId),
                 "user_id": str(userId),
-                "timestamp": timestamp
+                "timestamp": timestamp,
             }
 
             # if self.is_first_message_today(guildId=guildId, userId=userId):
@@ -1674,7 +1674,7 @@ class MongoDatabase(database.Database):
                         **payload,
                         "messages": [
                             {"channel_id": str(channelId), "message_id": str(messageId), "timestamp": timestamp}
-                        ]
+                        ],
                     }
                 )
         except Exception as ex:
@@ -1728,7 +1728,7 @@ class MongoDatabase(database.Database):
                 "bot": bot,
                 "system": system,
                 "status": str(status) if status else None,
-                "timestamp": timestamp
+                "timestamp": timestamp,
             }
 
             self.connection.users.update_one(
@@ -1754,7 +1754,7 @@ class MongoDatabase(database.Database):
                 "message_id": str(messageId),
                 "message": message,
                 "image": image,
-                "timestamp": timestamp
+                "timestamp": timestamp,
             }
 
             self.connection.photo_posts.insert_one(payload)
@@ -1772,7 +1772,7 @@ class MongoDatabase(database.Database):
                 "guild_id": str(guildId),
                 "user_id": str(userId),
                 "action": "JOIN" if join else "LEAVE",
-                "timestamp": timestamp
+                "timestamp": timestamp,
             }
 
             self.connection.user_join_leave.insert_one(payload)
@@ -1794,7 +1794,7 @@ class MongoDatabase(database.Database):
                 "count": count,
                 "type": type,
                 "reason": reason,
-                "timestamp": timestamp
+                "timestamp": timestamp,
             }
 
             self.connection.tacos_log.insert_one(payload)
@@ -1816,7 +1816,7 @@ class MongoDatabase(database.Database):
                 "vanity_url": guild.vanity_url or None,
                 "vanity_url_code": guild.vanity_url_code or None,
                 "icon": guild.icon.url if guild.icon else None,
-                "timestamp": timestamp
+                "timestamp": timestamp,
             }
 
             self.connection.guilds.update_one({"guild_id": str(guild.id)}, {"$set": payload}, upsert=True)
@@ -1845,7 +1845,7 @@ class MongoDatabase(database.Database):
                 "punishment": triviaQuestion.punishment,
                 "correct_users": [str(u) for u in triviaQuestion.correct_users],
                 "incorrect_users": [str(u) for u in triviaQuestion.incorrect_users],
-                "timestamp": timestamp
+                "timestamp": timestamp,
             }
 
             self.connection.trivia_questions.insert_one(payload)
@@ -1869,21 +1869,11 @@ class MongoDatabase(database.Database):
             if self.connection is None or self.client is None:
                 self.open()
             self.connection.minecraft_users.update_many(
-                {"guild_id": {"$exists": False}},{"$set": {"guild_id": guild_id}}
+                {"guild_id": {"$exists": False}}, {"$set": {"guild_id": guild_id}}
             )
         except Exception as ex:
             print(ex)
             traceback.print_exc()
-
-    # def migrate_food_posts_to_photo_posts(self):
-    #     guild_id = "935294040386183228"
-    #     try:
-    #         if self.connection is None or self.client is None:
-    #             self.open()
-    #         self.connection.tacos_log.update_many({ "guild_id": guild_id, "type": "FOOD_PHOTO" }, { "$set": { "type": "PHOTO_POST" } })
-    #     except Exception as ex:
-    #         print(ex)
-    #         traceback.print_exc()
 
     def add_user_to_join_whitelist(self, guild_id: int, user_id: int, added_by: int) -> None:
         """Add a user to the join whitelist for a guild."""
@@ -1897,7 +1887,7 @@ class MongoDatabase(database.Database):
                 "guild_id": str(guild_id),
                 "user_id": str(user_id),
                 "added_by": str(added_by),
-                "timestamp": timestamp
+                "timestamp": timestamp,
             }
             self.connection.join_whitelist.update_one(
                 {"guild_id": str(guild_id), "user_id": str(user_id)}, {"$set": payload}, upsert=True
@@ -1925,7 +1915,9 @@ class MongoDatabase(database.Database):
             print(ex)
             traceback.print_exc()
 
-    def track_system_action(self, guild_id: int, action: typing.Union[SystemActions, str], data: typing.Optional[dict] = None) -> None:
+    def track_system_action(
+        self, guild_id: int, action: typing.Union[SystemActions, str], data: typing.Optional[dict] = None
+    ) -> None:
         """Track a system action."""
         try:
             if self.connection is None or self.client is None:
@@ -1937,7 +1929,7 @@ class MongoDatabase(database.Database):
                 "guild_id": str(guild_id),
                 "action": str(action.name if isinstance(action, SystemActions) else action),
                 "timestamp": timestamp,
-                "data": data
+                "data": data,
             }
             self.connection.system_actions.insert_one(payload)
         except Exception as ex:
@@ -1975,7 +1967,9 @@ class MongoDatabase(database.Database):
             traceback.print_exc()
             return None
 
-    def track_user_introduction(self, guild_id: int, user_id: int, message_id: int, channel_id: int, approved: bool) -> None:
+    def track_user_introduction(
+        self, guild_id: int, user_id: int, message_id: int, channel_id: int, approved: bool
+    ) -> None:
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1988,7 +1982,7 @@ class MongoDatabase(database.Database):
                 "message_id": str(message_id),
                 "channel_id": str(channel_id),
                 "approved": approved,
-                "timestamp": timestamp
+                "timestamp": timestamp,
             }
             self.connection.introductions.update_one(
                 {"guild_id": str(guild_id), "user_id": str(user_id)}, {"$set": payload}, upsert=True

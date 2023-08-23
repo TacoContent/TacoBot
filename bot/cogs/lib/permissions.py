@@ -1,5 +1,5 @@
-import typing
 import discord
+import typing
 
 from . import discordhelper, settings, mongo
 
@@ -62,7 +62,7 @@ class Permissions:
 
         return role_id in [r.id for r in member.roles if r.id == role_id]
 
-    async def is_admin(self, user: typing.Union[discord.Member, int], guildId: typing.Optional[int] = None ) -> bool:
+    async def is_admin(self, user: typing.Union[discord.Member, int], guildId: typing.Optional[int] = None) -> bool:
         if isinstance(user, int):
             if guildId is None:
                 raise ValueError("guildId must be specified if user is an int")
