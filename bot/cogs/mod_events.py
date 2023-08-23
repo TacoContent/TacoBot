@@ -1,25 +1,12 @@
 import discord
-from discord.ext import commands
-import asyncio
-import json
-import traceback
-import sys
-import os
-import glob
-import typing
-import math
-import datetime
-
 import inspect
+import os
+import typing
 
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
+from discord.ext import commands
+from .lib import settings, logger, loglevel, mongo
 from .lib.system_actions import SystemActions
+
 
 class ModEventsCog(commands.Cog):
     def __init__(self, bot):
@@ -52,23 +39,32 @@ class ModEventsCog(commands.Cog):
     @commands.Cog.listener()
     async def on_automod_action(self, execution: discord.AutoModAction):
         _method = inspect.stack()[0][3]
-        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Automod action {execution.action.type} was executed on {execution.member.name if execution.member else execution.user_id} in {execution.guild.name}")
-        self.db.track_system_action(guild_id=execution.guild.id, action=SystemActions.AUTOMOD_ACTION, data={
-            "user_id": execution.user_id,
-            "action": execution.action.to_dict(),
-            "guild_id": execution.guild.id,
-            "content": execution.content,
-            "message_id": execution.message_id,
-            "channel_id": execution.channel_id,
-            "rule": {
-                "id": execution.rule_id,
-                "type": execution.rule_trigger_type
-            },
-            "matched": {
-                "keyword": execution.matched_keyword,
-                "content": execution.matched_content,
-            },
-        })
+        self.log.debug(
+            0,
+            f"{self._module}.{self._class}.{_method}",
+            f"Automod action {execution.action.type} was executed on {execution.member.name if execution.member else execution.user_id} in {execution.guild.name}",
+        )
+        self.db.track_system_action(
+            guild_id=execution.guild.id,
+            action=SystemActions.AUTOMOD_ACTION,
+            data={
+                "user_id": execution.user_id,
+                "action": execution.action.to_dict(),
+                "guild_id": execution.guild.id,
+                "content": execution.content,
+                "message_id": execution.message_id,
+                "channel_id": execution.channel_id,
+                "rule": {
+                    "id": execution.rule_id,
+                    "type": execution.rule_trigger_type
+                },
+                "matched": {
+                    "keyword": execution.matched_keyword,
+                    "content": execution.matched_content,
+                },
+            }
+        )
+
 
 async def setup(bot):
     await bot.add_cog(ModEventsCog(bot))

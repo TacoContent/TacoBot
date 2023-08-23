@@ -4,31 +4,13 @@
 # it will identify the original author in the new embeded message that is sent by the bot.
 
 import discord
-from discord.ext import commands
-import asyncio
-import json
-import traceback
-import sys
-import os
-import glob
-import typing
-import math
 import inspect
-import uuid
-import datetime
+import os
+import traceback
 
-from discord.ext.commands.cooldowns import BucketType
-from discord.ext.commands import has_permissions, CheckFailure
 
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import models
-from .lib import settings
-from .lib import mongo
-from .lib import permissions
+from discord.ext import commands
+from .lib import settings, discordhelper, logger, loglevel, mongo, permissions
 from .lib.messaging import Messaging
 
 class MoveMessage(commands.Cog):
@@ -77,13 +59,13 @@ class MoveMessage(commands.Cog):
             if user is None or user.bot or user.system:
                 return
 
-
-
             react_member = await self.discord_helper.get_or_fetch_member(guild_id, user.id)
             if self.permissions.has_permission(react_member, discord.Permissions(manage_messages=True)):
                 # self.log.debug(guild_id, f"move_message.{_method}", f"{user.name} reacted to message {message.id} with {str(payload.emoji)}")
                 if str(payload.emoji) == '⏭️':
-                    ctx = self.discord_helper.create_context(bot=self.bot, message=message, channel=channel, author=user, guild=message.guild)
+                    ctx = self.discord_helper.create_context(
+                        bot=self.bot, message=message, channel=channel, author=user, guild=message.guild
+                    )
 
                     async def callback(target_channel):
                         await self.discord_helper.move_message(
@@ -91,7 +73,7 @@ class MoveMessage(commands.Cog):
                             targetChannel=target_channel,
                             author=message.author,
                             who=ctx.author,
-                            reason="Moved by admin"
+                            reason="Moved by admin",
                         )
                         await message.delete()
 
@@ -100,7 +82,8 @@ class MoveMessage(commands.Cog):
                         title=self.settings.get_string(guild_id, "move_choose_channel_title"),
                         message=self.settings.get_string(guild_id, "move_choose_channel_message"),
                         timeout=60,
-                        callback=callback)
+                        callback=callback,
+                    )
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -128,21 +111,29 @@ class MoveMessage(commands.Cog):
                 await self.messaging.send_embed(
                     channel=channel,
                     title="Move Message",
-                    message=self.settings.get_string(guild_id, f"{self._module}.{self._class}.{_method}", who=ctx.author.mention, message_id=messageId),
-                    color=0xff0000,
-                    delete_after=20)
+                    message=self.settings.get_string(
+                        guild_id,
+                        f"{self._module}.{self._class}.{_method}",
+                        who=ctx.author.mention,
+                        message_id=messageId,
+                    ),
+                    color=0xFF0000,
+                    delete_after=20,
+                )
                 return
             ctx = self.discord_helper.create_context(
                 bot=self.bot,
                 message=message,
                 channel=channel,
                 author=message.author,
-                guild=ctx.guild)
+                guild=ctx.guild,
+            )
             target_channel = await self.discord_helper.ask_channel(
                 ctx=ctx,
                 title=self.settings.get_string(guild_id, "move_choose_channel_title"),
                 message=self.settings.get_string(guild_id, "move_choose_channel_message"),
-                timeout=60)
+                timeout=60,
+            )
             if target_channel is None:
                 return
 
@@ -151,13 +142,12 @@ class MoveMessage(commands.Cog):
                 targetChannel=target_channel,
                 author=message.author,
                 who=ctx.author,
-                reason="Moved by admin"
+                reason="Moved by admin",
             )
             await message.delete()
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return
-
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
@@ -170,6 +160,7 @@ class MoveMessage(commands.Cog):
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
+
 
 async def setup(bot):
     await bot.add_cog(MoveMessage(bot))

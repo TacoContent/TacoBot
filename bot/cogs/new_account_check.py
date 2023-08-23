@@ -1,27 +1,14 @@
-import discord
-from discord.ext import commands
-import asyncio
-import json
-import traceback
-import sys
-import os
-import glob
-import typing
-import math
 import datetime
-
 import inspect
+import math
+import os
+import traceback
 
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib import tacotypes
+from discord.ext import commands
+from .lib import settings, discordhelper, logger, loglevel, mongo, utils
 from .lib.system_actions import SystemActions
 from .lib.messaging import Messaging
+
 
 class NewAccountCheck(commands.Cog):
     def __init__(self, bot) -> None:
@@ -34,7 +21,7 @@ class NewAccountCheck(commands.Cog):
         self.discord_helper = discordhelper.DiscordHelper(self.bot)
         self.messaging = Messaging(self.bot)
         self.SETTINGS_SECTION = "account_age_check"
-        self.MINIMUM_ACCOUNT_AGE = 30 # days
+        self.MINIMUM_ACCOUNT_AGE = 30  # days
         self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -59,20 +46,22 @@ class NewAccountCheck(commands.Cog):
         try:
             await ctx.message.delete()
 
-            self.db.set_setting(guildId=guild_id, name=self.SETTINGS_SECTION, key="minimum_account_age", value=minimum_age)
+            self.db.set_setting(
+                guildId=guild_id, name=self.SETTINGS_SECTION, key="minimum_account_age", value=minimum_age
+            )
             self.db.track_system_action(
                 guild_id=guild_id,
                 action=SystemActions.MINIMUM_ACCOUNT_AGE_SET,
                 data={
                     "minimum_account_age": str(minimum_age),
-                    "set_by": str(ctx.author.id)
+                    "set_by": str(ctx.author.id),
                 }
             )
             await self.messaging.send_embed(
                 channel=ctx.channel,
                 title="Minimum account age set",
                 message=f"Minimum account age: {minimum_age} days\nSet by: {ctx.author.mention}",
-                delete_after=15
+                delete_after=15,
             )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
@@ -93,21 +82,22 @@ class NewAccountCheck(commands.Cog):
                 action=SystemActions.JOIN_WHITELIST_ADD,
                 data={
                     "user_id": str(user_id),
-                    "added_by": str(ctx.author.id)
+                    "added_by": str(ctx.author.id),
                 }
             )
             await self.messaging.send_embed(
                 channel=ctx.channel,
                 title="User added to join whitelist",
                 message=f"User ID: {user_id}\nAdded by: {ctx.author.mention}",
-                delete_after=15
+                delete_after=15,
             )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
 
-
-
-    @new_account_check.command(name="whitelist-remove", aliases=["whitelist-delete", "wlr", "wl-remove", "wl-delete", "wld", "untrust", "remove"])
+    @new_account_check.command(
+        name="whitelist-remove",
+        aliases=["whitelist-delete", "wlr", "wl-remove", "wl-delete", "wld", "untrust", "remove"]
+    )
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
     async def whitelist_remove(self, ctx, user_id: int) -> None:
@@ -121,20 +111,16 @@ class NewAccountCheck(commands.Cog):
             self.db.track_system_action(
                 guild_id=guild_id,
                 action=SystemActions.JOIN_WHITELIST_REMOVE,
-                data={
-                    "user_id": str(user_id),
-                    "removed_by": str(ctx.author.id)
-                }
+                data={"user_id": str(user_id), "removed_by": str(ctx.author.id)},
             )
             await self.messaging.send_embed(
                 channel=ctx.channel,
                 title="User removed from join whitelist",
                 message=f"User ID: {user_id}\nRemoved by: {ctx.author.mention}",
-                delete_after=15
+                delete_after=15,
             )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
-
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
@@ -153,7 +139,6 @@ class NewAccountCheck(commands.Cog):
         _method = inspect.stack()[0][3]
         self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(event)}", traceback.format_exc())
 
-
     @commands.Cog.listener()
     async def on_member_join(self, member) -> None:
         guild_id = member.guild.id
@@ -166,7 +151,11 @@ class NewAccountCheck(commands.Cog):
             if member.id in [x["user_id"] for x in whitelist]:
                 return
 
-            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Member {utils.get_user_display_name(member)} joined {member.guild.name}")
+            self.log.debug(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"Member {utils.get_user_display_name(member)} joined {member.guild.name}",
+            )
             # check if the member has an account that is newer than the threshold
             member_created = member.created_at.timestamp()
             now = datetime.datetime.now().timestamp()
@@ -175,9 +164,17 @@ class NewAccountCheck(commands.Cog):
             cog_settings = self.get_cog_settings(guildId=guild_id)
             minimum_account_age = cog_settings.get("minimum_account_age", self.MINIMUM_ACCOUNT_AGE)
             if age_days < minimum_account_age:
-                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"Member {utils.get_user_display_name(member)} (ID: {member.id}) account age ({age_days} days) is less than {minimum_account_age} days.")
+                self.log.warn(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Member {utils.get_user_display_name(member)} (ID: {member.id}) account age ({age_days} days) is less than {minimum_account_age} days.",
+                )
                 message = f"New Account: account age ({age_days} days) is less than required minimum of {minimum_account_age} days."
-                self.db.track_system_action(guild_id=guild_id, action=SystemActions.NEW_ACCOUNT_KICK, data={ "user_id": str(member.id), "reason": message, "account_age": age_days})
+                self.db.track_system_action(
+                    guild_id=guild_id,
+                    action=SystemActions.NEW_ACCOUNT_KICK,
+                    data={"user_id": str(member.id), "reason": message, "account_age": age_days},
+                )
                 if member.guild:
                     # find messages by the user and delete them
                     system_channel = member.guild.system_channel
@@ -185,11 +182,13 @@ class NewAccountCheck(commands.Cog):
                         async for message in await system_channel.history(limit=100, check=lambda m: m.author.id == member.id):
                             await message.delete()
                 else:
-                    self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"Member {utils.get_user_display_name(member)} (ID: {member.id}) has no guild.")
+                    self.log.warn(
+                        guild_id,
+                        f"{self._module}.{self._class}.{_method}",
+                        f"Member {utils.get_user_display_name(member)} (ID: {member.id}) has no guild.",
+                    )
                 # kick the member
                 await member.kick(reason=message, delete_message_days=0)
-
-
             return
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -205,7 +204,6 @@ class NewAccountCheck(commands.Cog):
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
-
 
 
 async def setup(bot):

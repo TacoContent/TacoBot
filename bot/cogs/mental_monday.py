@@ -165,9 +165,7 @@ class MentalMondays(commands.Cog):
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
                 self.log.warn(
-                    guild_id,
-                    f"{self._module}.{self._class}.{_method}",
-                    f"No output channel found for guild {guild_id}",
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
                 )
 
             # get the message from the id
@@ -202,9 +200,7 @@ class MentalMondays(commands.Cog):
         # check if the user that reacted is in the admin role
         if not await self.permissions.is_admin(payload.user_id, guild_id):
             self.log.debug(
-                guild_id,
-                f"{self._module}.{self._class}.{_method}",
-                f"User {payload.user_id} is not an admin",
+                guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin"
             )
             return
         # in future, check if the user is in a defined role that can grant tacos (e.g. moderator)
@@ -250,9 +246,7 @@ class MentalMondays(commands.Cog):
         # check if the user that reacted is in the admin role
         if not await self.permissions.is_admin(payload.user_id, guild_id):
             self.log.debug(
-                guild_id,
-                f"{self._module}.{self._class}.{_method}",
-                f"User {payload.user_id} is not an admin",
+                guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin"
             )
             return
 
@@ -287,7 +281,6 @@ class MentalMondays(commands.Cog):
                 )
                 return
 
-
             react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
             if not react_user or react_user.bot or react_user.system:
                 return
@@ -302,11 +295,9 @@ class MentalMondays(commands.Cog):
             if str(payload.emoji.name) not in check_list:
                 return
 
-
             if str(payload.emoji.name) in reaction_emojis:
                 await self._on_raw_reaction_add_give(payload)
                 return
-
 
             # is today mondays?
             today = datetime.datetime.now()
@@ -381,9 +372,7 @@ class MentalMondays(commands.Cog):
                 channel = guild.system_channel
             if not channel:
                 self.log.warn(
-                    guild_id,
-                    f"{self._module}.{self._class}.{_method}",
-                    f"No output channel found for guild {guild_id}",
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No tacos settings found for guild {guild_id}"
                 )
                 return
             message = None

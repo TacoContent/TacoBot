@@ -1,32 +1,9 @@
-# Before: https://www.amazon.com/dp/B0042TVKZY/
-# After: https://www.amazon.com/dp/B0042TVKZY/?tag=darthminos0f-20
-
-# this is for restricted channels that only allow specific commands in chat.
-import discord
-from discord.ext import commands
-import asyncio
-import json
-import traceback
-import sys
-import os
-import glob
-import typing
-import math
-import re
-
-from discord.ext.commands.cooldowns import BucketType
-from discord.ext.commands import has_permissions, CheckFailure
-
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib import tacotypes
-
 import inspect
+import os
+import traceback
+
+from discord.ext import commands
+from .lib import discordhelper, logger, loglevel, settings, mongo, tacotypes
 
 
 class MessageTracker(commands.Cog):
@@ -97,14 +74,6 @@ class MessageTracker(commands.Cog):
             self.db.track_first_message(guild_id, member.id, channel_id, message_id)
 
             tacos_settings = self.get_tacos_settings(guild_id)
-            if not tacos_settings:
-                self.log.warn(
-                    guild_id,
-                    f"{self._module}.{self._class}.{_method}",
-                    f"No tacos settings found for guild {guild_id}",
-                )
-                return
-
             amount = tacos_settings.get("first_message_count", 5)
 
             reason_msg = self.settings.get_string(guild_id, "first_message_reason")
@@ -127,7 +96,6 @@ class MessageTracker(commands.Cog):
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
-
 
 
 async def setup(bot):

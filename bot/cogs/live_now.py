@@ -366,7 +366,11 @@ class LiveNow(commands.Cog):
                     emoji = f"<:{platform_emoji.name}:{platform_emoji.id}> "
 
                 fields.append(
-                    {"name": self.settings.get_string(guild_id, "platform"), "value": f"{emoji}{activity.platform}", "inline": True}
+                    {
+                        "name": self.settings.get_string(guild_id, "platform"),
+                        "value": f"{emoji}{activity.platform}",
+                        "inline": True,
+                    }
                 )
 
             profile_icon: typing.Union[str, None] = (
@@ -394,8 +398,6 @@ class LiveNow(commands.Cog):
             # this should update the existing entry with the channel and message id
             self.db.track_live(guild_id, user.id, activity.platform, logging_channel.id, message.id, url=activity.url)
 
-
-
     async def clean_up_live(self, guild_id: int, user_id: int) -> None:
         _method = inspect.stack()[0][3]
         if guild_id is None or user_id is None:
@@ -408,9 +410,7 @@ class LiveNow(commands.Cog):
 
         user = await self.discord_helper.get_or_fetch_member(guildId=guild_id, userId=user_id)
         if user is None:
-            self.log.debug(
-                guild_id, f"{self._module}.{self._class}.{_method}", f"Could not find user {user_id}"
-            )
+            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Could not find user {user_id}")
             return
 
         self.log.debug(
@@ -424,7 +424,6 @@ class LiveNow(commands.Cog):
         logging_channel = None
         if logging_channel_id:
             logging_channel = await self.discord_helper.get_or_fetch_channel(int(logging_channel_id))
-
 
         for tracked in all_tracked_for_user:
             platform = tracked.get("platform", "UNKNOWN")
