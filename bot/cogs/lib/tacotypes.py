@@ -37,7 +37,7 @@ class TacoTypes(Enum):
     APPROVE_INTRODUCTION = 29
     GAME_DONATE_REDEEM = 30
 
-    TWITCH_BOT_INVITE = 1000 # Invite @OurTacoBot to your Twitch channel
+    TWITCH_BOT_INVITE = 1000  # Invite @OurTacoBot to your Twitch channel
     TWITCH_RAID = 1001
     TWITCH_SUB = 1002
     TWITCH_BITS = 1003
@@ -45,7 +45,7 @@ class TacoTypes(Enum):
     TWITCH_PROMOTE = 1005
     TWITCH_GIVE_TACOS = 32
     TWITCH_RECEIVE_TACOS = 1006
-    TWITCH_FOLLOW = 1007 # not yet implemented until i can figure out how to get the event from eventsub
+    TWITCH_FOLLOW = 1007  # not yet implemented until i can figure out how to get the event from eventsub
 
     PURGE = 9996
     LEAVE_SERVER = 9997
@@ -292,7 +292,7 @@ class TacoTypes(Enum):
             return "trivia_correct_count"
         elif taco_type == TacoTypes.TRIVIA_INCORRECT:
             return "trivia_incorrect_count"
-        elif taco_type == TacoTypes.FOLLOW_CHANNEL: # this can't be triggered by events
+        elif taco_type == TacoTypes.FOLLOW_CHANNEL:  # this can't be triggered by events
             return "follow_channel_count"
         elif taco_type == TacoTypes.CREATE_VOICE_CHANNEL:
             return "create_voice_channel_count"

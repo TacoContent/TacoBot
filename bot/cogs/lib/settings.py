@@ -24,12 +24,12 @@ class Settings:
             print(e, file=sys.stderr)
 
         self.bot_owner = utils.dict_get(os.environ, 'BOT_OWNER', default_value='262031734260891648')
-        self.log_level = utils.dict_get(os.environ, 'LOG_LEVEL', default_value= 'DEBUG')
-        self.language = utils.dict_get(os.environ, "LANGUAGE", default_value= "en-us").lower()
-        self.db_url = utils.dict_get(os.environ, "MONGODB_URL", default_value= "mongodb://localhost:27017/tacobot")
-        self.strawpoll_api_key = utils.dict_get(os.environ, "STRAWPOLL_API_KEY", default_value= "")
-        self.giphy_api_key = utils.dict_get(os.environ, "GIPHY_API_KEY", default_value= "")
-        self.timezone = utils.dict_get(os.environ, "TIMEZONE", default_value= "America/Chicago")
+        self.log_level = utils.dict_get(os.environ, 'LOG_LEVEL', default_value='DEBUG')
+        self.language = utils.dict_get(os.environ, "LANGUAGE", default_value="en-us").lower()
+        self.db_url = utils.dict_get(os.environ, "MONGODB_URL", default_value="mongodb://localhost:27017/tacobot")
+        self.strawpoll_api_key = utils.dict_get(os.environ, "STRAWPOLL_API_KEY", default_value="")
+        self.giphy_api_key = utils.dict_get(os.environ, "GIPHY_API_KEY", default_value="")
+        self.timezone = utils.dict_get(os.environ, "TIMEZONE", default_value="America/Chicago")
 
         # log_level = loglevel.LogLevel[self.log_level.upper()]
         # if not log_level:

@@ -102,9 +102,7 @@ class MentalMondays(commands.Cog):
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
                 self.log.warn(
-                    guild_id,
-                    f"{self._module}.{self._class}.{_method}",
-                    f"No output channel found for guild {guild_id}",
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
                 )
 
             # get role

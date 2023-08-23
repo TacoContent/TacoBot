@@ -525,7 +525,7 @@ class MongoDatabase(database.Database):
             payload = {"user_id": userId, "vote": vote, "timestamp": timestamp}
             # insert the suggestion into the database
             self.connection.suggestions.update_one(
-                {"guild_id": str(guildId), "message_id": str(messageId)},{"$push": {"votes": payload}},upsert=True
+                {"guild_id": str(guildId), "message_id": str(messageId)}, {"$push": {"votes": payload}}, upsert=True
             )
         except Exception as ex:
             print(ex)
@@ -1500,7 +1500,7 @@ class MongoDatabase(database.Database):
                         "timestamp": {
                             "$gte": utils.to_timestamp(ts_back_date),
                             "$lte": utils.to_timestamp(ts_now_date),
-                        }
+                        },
                     }
                 )
                 if result:

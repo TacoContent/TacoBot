@@ -53,7 +53,9 @@ class LiveNow(commands.Cog):
             before_streaming_activities = []
             after_streaming_activities = []
 
-            before_streaming_activities_temp = [a for a in before.activities if a.type == discord.ActivityType.streaming]
+            before_streaming_activities_temp = [
+                a for a in before.activities if a.type == discord.ActivityType.streaming
+            ]
             after_streaming_activities_temp = [a for a in after.activities if a.type == discord.ActivityType.streaming]
 
             if len(before_streaming_activities_temp) == 0:
@@ -105,13 +107,9 @@ class LiveNow(commands.Cog):
                 )
 
                 # if we get here, then we need to track the user live activity
-                self.db.track_live(guildId=guild_id,userId=after.id,platform=asa.platform,url=asa.url)
+                self.db.track_live(guildId=guild_id, userId=after.id, platform=asa.platform, url=asa.url)
                 self.db.track_live_activity(
-                    guildId=guild_id,
-                    userId=after.id,
-                    live=True,
-                    platform=asa.platform,
-                    url=asa.url,
+                    guildId=guild_id, userId=after.id, live=True, platform=asa.platform, url=asa.url
                 )
 
                 await self.add_live_roles(after, cog_settings)
@@ -129,7 +127,7 @@ class LiveNow(commands.Cog):
                     self.log.debug(
                         guild_id,
                         f"{self._module}.{self._class}.{_method}",
-                        f"Logging live post {after.display_name} ({asa.platform}) to channel {logging_channel_id}"
+                        f"Logging live post {after.display_name} ({asa.platform}) to channel {logging_channel_id}",
                     )
                     # this is double posting. need to figure out why
                     await self.log_live_post(int(logging_channel_id), asa, after, twitch_name)
@@ -146,7 +144,6 @@ class LiveNow(commands.Cog):
                     give_type=tacotypes.TacoTypes.STREAM,
                     taco_amount=taco_amount,
                 )
-
 
             # ENDED STREAM
             # HMMMM. This is not triggering. Need to figure out why
@@ -281,9 +278,7 @@ class LiveNow(commands.Cog):
         activity = youtube_activities[0]
 
         self.log.info(
-            guild_id,
-            f"{self._module}.{self._class}.{_method}",
-            f"{user.display_name} started streaming on youtube",
+            guild_id, f"{self._module}.{self._class}.{_method}", f"{user.display_name} started streaming on youtube"
         )
         return None
 
@@ -335,9 +330,7 @@ class LiveNow(commands.Cog):
             twitch_name = twitch_info_name
         if not twitch_name:
             self.log.error(
-                guild_id,
-                f"{self._module}.{self._class}.{_method}",
-                f"{user.display_name} has no twitch name",
+                guild_id, f"{self._module}.{self._class}.{_method}", f"{user.display_name} has no twitch name"
             )
 
         return twitch_name
@@ -376,7 +369,7 @@ class LiveNow(commands.Cog):
                     {"name": self.settings.get_string(guild_id, "platform"), "value": f"{emoji}{activity.platform}", "inline": True}
                 )
 
-            profile_icon: typing.Union[str,None] = (
+            profile_icon: typing.Union[str, None] = (
                 profile_icon if profile_icon else user.avatar.url if user.avatar else user.default_avatar.url
             )
 
@@ -394,7 +387,8 @@ class LiveNow(commands.Cog):
                 description,
                 fields,
                 thumbnail=profile_icon,
-                author=user, color=0x6A0DAD,
+                author=user,
+                color=0x6A0DAD,
             )
 
             # this should update the existing entry with the channel and message id
@@ -415,9 +409,7 @@ class LiveNow(commands.Cog):
         user = await self.discord_helper.get_or_fetch_member(guildId=guild_id, userId=user_id)
         if user is None:
             self.log.debug(
-                guild_id,
-                f"{self._module}.{self._class}.{_method}",
-                f"Could not find user {user_id}",
+                guild_id, f"{self._module}.{self._class}.{_method}", f"Could not find user {user_id}"
             )
             return
 
@@ -477,13 +469,10 @@ class LiveNow(commands.Cog):
                 return result.text
             else:
                 self.log.debug(
-                    0,
-                    f"{self._module}.{self._class}.{_method}",
-                    f"Failed to get profile image for {twitch_user}",
+                    0, f"{self._module}.{self._class}.{_method}", f"Failed to get profile image for {twitch_user}"
                 )
                 self.log.info(0, f"{self._module}.{self._class}.{_method}", f"{result.text}")
         return None
-
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)

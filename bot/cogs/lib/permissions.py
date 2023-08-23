@@ -38,7 +38,7 @@ class Permissions:
         self,
         user: typing.Union[discord.Member, int],
         role: typing.Optional[typing.Union[discord.Role, int]] = None,
-        guildId: typing.Optional[int] = None
+        guildId: typing.Optional[int] = None,
     ) -> bool:
         if isinstance(user, int):
             if guildId is None:
