@@ -243,7 +243,7 @@ class DiscordHelper:
             self.log.debug(
                 guild_id,
                 f"{self._module}.{self._class}.{_method}",
-                f"{fromMember.name} purged all tacos from {toMember.name} for {reason}"
+                f"{fromMember.name} purged all tacos from {toMember.name} for {reason}",
             )
             if log_channel:
                 await log_channel.send(
@@ -296,7 +296,6 @@ class DiscordHelper:
                 f"{utils.get_user_display_name(toMember)} {action} {positive_count} {taco_word} from {utils.get_user_display_name(fromMember)} for {reason}",
             )
             if log_channel:
-
                 fields = [
                     {"name": "▶ TO USER", "value": toMember.name},
                     {"name": "◀ FROM USER", "value": fromMember.name},
@@ -370,8 +369,8 @@ class DiscordHelper:
             return None
 
     async def get_or_fetch_channel(
-            self, channelId: int
-        ) -> typing.Optional[typing.Union[discord.TextChannel, discord.DMChannel, discord.Thread]]:
+        self, channelId: int
+    ) -> typing.Optional[typing.Union[discord.TextChannel, discord.DMChannel, discord.Thread]]:
         _method = inspect.stack()[1][3]
         try:
             if channelId:
@@ -643,7 +642,7 @@ class DiscordHelper:
                 self.log.debug(
                     guild_id,
                     f"{self._module}.{self._class}.{_method}",
-                    f"Tried to clean up, but the messages were not found."
+                    f"Tried to clean up, but the messages were not found.",
                 )
             except discord.Forbidden as f:
                 self.log.debug(
@@ -662,7 +661,6 @@ class DiscordHelper:
         timeout: int = 60,
         color=None,
     ) -> typing.Union[str, None]:
-
         def check_user(m):
             same = m.author.id == ctx.author.id
             return same
@@ -710,7 +708,6 @@ class DiscordHelper:
         timeout: int = 60,
         color=None,
     ) -> typing.Union[TextWithAttachments, None]:
-
         def check_user(m):
             same = m.author.id == ctx.author.id
             return same
@@ -842,7 +839,7 @@ class DiscordHelper:
         guild_id = user.guild.id
         if user.roles:
             # check if the user has any of the watch roles
-            user_is_in_watch_role =  any([str(r.id) for r in user.roles if str(r.id) in check_list])
+            user_is_in_watch_role = any([str(r.id) for r in user.roles if str(r.id) in check_list])
 
             if user_is_in_watch_role or allow_everyone:
                 # remove the roles from the user
@@ -872,7 +869,11 @@ class DiscordHelper:
                         role = user.guild.get_role(int(role_id))
                         if role and role not in user.roles:
                             role_list.append(role)
-                            self.log.info(guild_id, f"{self._module}.{self._class}.{_method}", f"Added role {role.name} to user {user.display_name}")
+                            self.log.info(
+                                guild_id,
+                                f"{self._module}.{self._class}.{_method}",
+                                f"Added role {role.name} to user {user.display_name}",
+                            )
 
                     if role_list and len(role_list) > 0:
                         try:
