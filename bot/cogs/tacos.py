@@ -389,7 +389,7 @@ class Tacos(commands.Cog):
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
-    
+
 
 async def setup(bot):
     await bot.add_cog(Tacos(bot))

@@ -224,7 +224,9 @@ class Minecraft(commands.Cog):
             data = resp.json()
             if data['status'] != "success":
                 self.log.error(
-                    guild_id, f"{self._module}.{self._class}.{_method}", f"Failed to start the server: {data['message']}"
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Failed to start the server: {data['message']}",
                 )
                 await self.messaging.send_embed(
                     channel=output_channel,
@@ -478,7 +480,7 @@ class Minecraft(commands.Cog):
                 _ctx.channel,
                 title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
                 question=self.settings.get_string(
-                    guild_id, "minecraft_whitelist_account_verify",mc_username=mc_username
+                    guild_id, "minecraft_whitelist_account_verify", mc_username=mc_username
                 ),
                 fields=fields,
                 image=avatar_url,

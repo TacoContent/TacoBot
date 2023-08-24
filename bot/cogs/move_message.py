@@ -8,10 +8,10 @@ import inspect
 import os
 import traceback
 
-
 from discord.ext import commands
 from .lib import settings, discordhelper, logger, loglevel, mongo, permissions
 from .lib.messaging import Messaging
+
 
 class MoveMessage(commands.Cog):
     def __init__(self, bot):

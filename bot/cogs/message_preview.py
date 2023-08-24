@@ -104,7 +104,6 @@ class MessagePreview(commands.Cog):
                 if e.color is not None:
                     embed_color = e.color
 
-
                 if message.attachments:
                     for a in message.attachments:
                         self.log.debug(
@@ -139,7 +138,6 @@ class MessagePreview(commands.Cog):
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
             raise e
-
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)

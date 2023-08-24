@@ -297,7 +297,7 @@ class TacoQuestionOfTheDay(commands.Cog):
         if not cog_settings:
             raise Exception(f"No tqotd settings found for guild {guildId}")
         return cog_settings
-    
+
     def get_tacos_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
         if not cog_settings:
