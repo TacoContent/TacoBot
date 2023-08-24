@@ -77,7 +77,6 @@ class Minecraft(commands.Cog):
                 await ctx.message.delete()
                 guild_id = ctx.guild.id
 
-
             cog_settings = self.get_cog_settings(guild_id)
 
             if not cog_settings.get("enabled", False):
@@ -141,11 +140,13 @@ class Minecraft(commands.Cog):
             if status['online'] == False:
                 # add field to tell user how to start the server
 
-                fields.append({
-                    "name": self.settings.get_string(guild_id, "minecraft_status_server_status"),
-                    "value": f"Server is offline. Run `.taco minecraft start` to start the server.",
-                    "inline": False,
-                })
+                fields.append(
+                    {
+                        "name": self.settings.get_string(guild_id, "minecraft_status_server_status"),
+                        "value": f"Server is offline. Run `.taco minecraft start` to start the server.",
+                        "inline": False,
+                    }
+                )
 
             for m in cog_settings["mods"]:
                 fields.append({"name": f"{m['name']}", "value": f"{m['version']}", "inline": True})
@@ -182,7 +183,6 @@ class Minecraft(commands.Cog):
             if not output_channel or output_channel.id != ctx.channel.id:
                 output_channel = ctx.author
                 AUTO_DELETE_TIMEOUT = None
-
 
             if not self.is_user_whitelisted(guild_id=guild_id, user_id=ctx.author.id):
                 await self.messaging.send_embed(
@@ -243,7 +243,6 @@ class Minecraft(commands.Cog):
                 message=self.settings.get_string(guild_id, "minecraft_control_start_success"),
                 delete_after=AUTO_DELETE_TIMEOUT,
             )
-
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -319,7 +318,6 @@ class Minecraft(commands.Cog):
                 message=self.settings.get_string(guild_id, "minecraft_control_stop_success"),
                 delete_after=AUTO_DELETE_TIMEOUT,
             )
-
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())

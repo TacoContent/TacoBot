@@ -1,30 +1,15 @@
 import discord
-from discord.ext import commands
-import asyncio
-import json
-import traceback
 import datetime
-import sys
+import inspect
 import os
-import glob
-import typing
 import re
+import traceback
+import typing
 
-from discord.ext.commands.cooldowns import BucketType
-from discord.ext.commands import has_permissions, CheckFailure, Context
-
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib import tacotypes
+from discord.ext import commands
+from .lib import settings, discordhelper, logger, loglevel, utils, mongo, tacotypes
 from .lib.permissions import Permissions
 from .lib.messaging import Messaging
-
-import inspect
 
 
 class TacoTuesday(commands.Cog):
@@ -88,7 +73,9 @@ class TacoTuesday(commands.Cog):
                 message_template,
                 tweet=tweet,
                 role=tag_role_mention,
-                tacos=tacos_settings.get(tacotypes.TacoTypes.get_string_from_taco_type(tacotypes.TacoTypes.TACO_TUESDAY), 250),
+                tacos=tacos_settings.get(
+                    tacotypes.TacoTypes.get_string_from_taco_type(tacotypes.TacoTypes.TACO_TUESDAY), 250
+                ),
             )
 
 
@@ -143,7 +130,9 @@ class TacoTuesday(commands.Cog):
 
         # check if the user that reacted is in the admin role
         if not await self.permissions.is_admin(payload.user_id, guild_id):
-            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin")
+            self.log.debug(
+                guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin"
+            )
             return
 
         channel = self.bot.get_channel(payload.channel_id)
@@ -167,7 +156,9 @@ class TacoTuesday(commands.Cog):
 
         # check if the user that reacted is in the admin role
         if not await self.permissions.is_admin(payload.user_id, guild_id):
-            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin")
+            self.log.debug(
+                guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin"
+            )
             return
 
         channel = self.bot.get_channel(payload.channel_id)
@@ -182,7 +173,11 @@ class TacoTuesday(commands.Cog):
                 was_imported = True
                 break
         if not was_imported:
-            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Message {payload.message_id} was not imported. No need to archive.")
+            self.log.debug(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"Message {payload.message_id} was not imported. No need to archive.",
+            )
             return
 
         # check if this reaction is the first one of this type on the message
@@ -209,7 +204,6 @@ class TacoTuesday(commands.Cog):
             # we really only do anything here if they are an admin
             if not await self.permissions.is_admin(payload.user_id, guild_id):
                 return
-
             ###
             # archive_enabled: true,
             # archive_emoji: [
@@ -217,7 +211,6 @@ class TacoTuesday(commands.Cog):
             # ],
             # archive_channel_id: '948689068961706034',
             ###
-
             cog_settings = self.get_cog_settings(guild_id)
 
             if not cog_settings.get("enabled", False):
@@ -234,12 +227,20 @@ class TacoTuesday(commands.Cog):
             reaction_import_emojis = cog_settings.get("import_emoji", ["🇮"])
             check_list = reaction_archive_emojis + reaction_import_emojis
             if str(payload.emoji.name) not in check_list:
-                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Reaction {payload.emoji.name} not in check list")
+                self.log.debug(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Reaction {payload.emoji.name} not in check list",
+                )
                 return
 
             if str(payload.emoji.name) in reaction_archive_emojis:
                 if cog_settings.get("archive_enabled", False):
-                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Archive is enabled. Archiving message")
+                    self.log.debug(
+                        guild_id,
+                        f"{self._module}.{self._class}.{_method}",
+                        f"Archive is enabled. Archiving message",
+                    )
                     await self._on_raw_reaction_add_archive(payload)
                     return
 
@@ -264,7 +265,9 @@ class TacoTuesday(commands.Cog):
             archive_channel_id = cog_settings.get("archive_channel_id", None)
             if not archive_channel_id:
                 self.log.error(
-                    guild_id, f"{self._module}.{self._class}.{_method}", f"No archive_channel_id found for guild {guild_id}"
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"No archive_channel_id found for guild {guild_id}",
                 )
                 return
 
@@ -278,7 +281,9 @@ class TacoTuesday(commands.Cog):
                 return
 
             # get taco tuesday info
-            taco_tuesday_info = self.db.taco_tuesday_get_by_message(guildId=guild_id, channelId=message.channel.id, messageId=message.id)
+            taco_tuesday_info = self.db.taco_tuesday_get_by_message(
+                guildId=guild_id, channelId=message.channel.id, messageId=message.id
+            )
             if taco_tuesday_info:
                 # get the user id
                 user_id = taco_tuesday_info.get("user_id", None)
@@ -300,20 +305,21 @@ class TacoTuesday(commands.Cog):
                             )
 
             # build field info:
-            temp_reactions = [a for a in message.reactions if str(a.emoji) not in cog_settings.get("import_emoji", ["🇮"]) and str(a.emoji) not in cog_settings.get("archive_emoji", ["🔒"])]
+            temp_reactions = [
+                a
+                for a in message.reactions
+                if str(a.emoji) not in cog_settings.get("import_emoji", ["🇮"])
+                and str(a.emoji) not in cog_settings.get("archive_emoji", ["🔒"])
+            ]
 
             fields = []
             if len(temp_reactions) > 0:
                 fields = [
-                    { "name": "Reactions", "value": f"------------------", "inline": False },
+                    {"name": "Reactions", "value": f"------------------", "inline": False},
                 ]
                 for r in message.reactions:
                     fields.append(
-                        {
-                            "name": str(r.emoji),
-                            "value": f"{r.count}",
-                            "inline": True,
-                        }
+                        {"name": str(r.emoji), "value": f"{r.count}", "inline": True}
                     )
 
 
@@ -322,7 +328,7 @@ class TacoTuesday(commands.Cog):
                 targetChannel=archive_channel,
                 who=self.bot.user,
                 fields=fields,
-                reason="TACO Tuesday archive"
+                reason="TACO Tuesday archive",
             )
 
             # Should Update the entry to the new channel and message id
@@ -331,7 +337,7 @@ class TacoTuesday(commands.Cog):
                 channelId=message.channel.id,
                 messageId=message.id,
                 newChannelId=moved_message.channel.id,
-                newMessageId=moved_message.id
+                newMessageId=moved_message.id,
             )
 
             await message.delete()
@@ -363,14 +369,18 @@ class TacoTuesday(commands.Cog):
             self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Focus role not set")
             return
 
-        self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Adding user {member.id} to focus role {focus_role_id}")
+        self.log.debug(
+            guild_id,
+            f"{self._module}.{self._class}.{_method}",
+            f"Adding user {member.id} to focus role {focus_role_id}",
+        )
         # add user to focus_role
         await self.discord_helper.add_remove_roles(
             user=member,
             check_list=[],
             add_list=[focus_role_id],
             remove_list=[],
-            allow_everyone=True
+            allow_everyone=True,
         )
     def _import_taco_tuesday(self, message: discord.Message, tweet: typing.Optional[str] = None) -> None:
         _method = inspect.stack()[0][3]
@@ -431,7 +441,9 @@ class TacoTuesday(commands.Cog):
                 channel = guild.system_channel
             if not channel:
                 self.log.warn(
-                    guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"No output channel found for guild {guild_id}",
                 )
                 return
             message = None

@@ -122,11 +122,7 @@ class MoveMessage(commands.Cog):
                 )
                 return
             ctx = self.discord_helper.create_context(
-                bot=self.bot,
-                message=message,
-                channel=channel,
-                author=message.author,
-                guild=ctx.guild,
+                bot=self.bot, message=message, channel=channel, author=message.author, guild=ctx.guild
             )
             target_channel = await self.discord_helper.ask_channel(
                 ctx=ctx,

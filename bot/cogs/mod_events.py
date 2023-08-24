@@ -54,14 +54,8 @@ class ModEventsCog(commands.Cog):
                 "content": execution.content,
                 "message_id": execution.message_id,
                 "channel_id": execution.channel_id,
-                "rule": {
-                    "id": execution.rule_id,
-                    "type": execution.rule_trigger_type
-                },
-                "matched": {
-                    "keyword": execution.matched_keyword,
-                    "content": execution.matched_content,
-                },
+                "rule": {"id": execution.rule_id, "type": execution.rule_trigger_type},
+                "matched": {"keyword": execution.matched_keyword, "content": execution.matched_content},
             }
         )
 

@@ -44,8 +44,7 @@ class MessagePreview(commands.Cog):
             guild_id = message.guild.id
 
             pattern = re.compile(
-                r'https:\/\/discord(?:app)?\.com\/channels\/(\d+)\/(\d+)\/(\d+)$',
-                flags=re.MULTILINE | re.IGNORECASE,
+                r'https:\/\/discord(?:app)?\.com\/channels\/(\d+)\/(\d+)\/(\d+)$', flags=re.MULTILINE | re.IGNORECASE
             )
             match = pattern.search(message.content)
             if not match:
@@ -69,9 +68,7 @@ class MessagePreview(commands.Cog):
                         )
                 else:
                     self.log.debug(
-                        0,
-                        f"{self._module}.{self._class}.{_method}",
-                        f"Could not find channel ({channel_id})",
+                        0, f"{self._module}.{self._class}.{_method}", f"Could not find channel ({channel_id})"
                     )
             else:
                 self.log.debug(
@@ -111,9 +108,7 @@ class MessagePreview(commands.Cog):
                 if message.attachments:
                     for a in message.attachments:
                         self.log.debug(
-                            guild_id,
-                            f"{self._module}.{self._class}.{_method}",
-                            f"Found attachment: {a.url}",
+                            guild_id, f"{self._module}.{self._class}.{_method}", f"Found attachment: {a.url}"
                         )
                         file_attachments.append(discord.File(a.url))
 
@@ -137,16 +132,12 @@ class MessagePreview(commands.Cog):
                 image=embed_image,
                 files=file_attachments,
                 footer=self.settings.get_string(
-                    guild_id,
-                    "message_preview_footer",
-                    created=created.strftime('%Y-%m-%d %H:%M:%S')
+                    guild_id, "message_preview_footer", created=created.strftime('%Y-%m-%d %H:%M:%S')
                 ),
             )
             return embed
         except Exception as e:
-            self.log.error(
-                ctx.guild.id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc()
-            )
+            self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
             raise e
 
 

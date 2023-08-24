@@ -1,29 +1,16 @@
 # this is for restricted channels that only allow specific commands in chat.
-import discord
-from discord.ext import commands
 import asyncio
-import json
+import discord
+import inspect
 import traceback
-import sys
 import os
-import glob
-import typing
-import math
 import re
+import typing
 
-from discord.ext.commands.cooldowns import BucketType
-from discord.ext.commands import has_permissions, CheckFailure
-
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
+from discord.ext import commands
+from .lib import settings, discordhelper, logger, loglevel, mongo
 from .lib.messaging import Messaging
 
-import inspect
 
 class Restricted(commands.Cog):
     def __init__(self, bot) -> None:
@@ -73,7 +60,9 @@ class Restricted(commands.Cog):
             cog_settings = self.get_cog_settings(guild_id)
 
             # get the suggestion channel ids from settings
-            restricted_channels: typing.List[dict] = [c for c in cog_settings.get("channels", []) if str(c['id']) == str(message.channel.id)]
+            restricted_channels: typing.List[dict] = [
+                c for c in cog_settings.get("channels", []) if str(c['id']) == str(message.channel.id)
+            ]
             restricted_channel: typing.Union[dict,None] = None
             if restricted_channels:
                 restricted_channel = restricted_channels[0]
@@ -92,7 +81,9 @@ class Restricted(commands.Cog):
                 deny_message = restricted_channel.get("deny_message")
 
             # if message matches the allowed[] regular expressions then continue
-            if not any(re.search(r, message.content) for r in allowed) or any(re.search(r, message.content) for r in denied):
+            if not any(re.search(r, message.content) for r in allowed) or any(
+                re.search(r, message.content) for r in denied
+            ):
                 # wait
                 await asyncio.sleep(0.5)
                 await message.delete()
@@ -101,9 +92,12 @@ class Restricted(commands.Cog):
                     await self.messaging.send_embed(
                         channel=message.channel,
                         title=self.settings.get_string(guild_id, "restricted"),
-                        message=self.settings.get_string(guild_id, "restricted_deny_message", user=message.author.mention, reason=deny_message),
+                        message=self.settings.get_string(
+                            guild_id, "restricted_deny_message", user=message.author.mention, reason=deny_message
+                        ),
                         delete_after=20,
-                        color=0xFF0000,)
+                        color=0xFF0000,
+                    )
         except discord.NotFound as nf:
             self.log.info(guild_id, f"{self._module}.{self._class}.{_method}", f"Message not found: {nf}")
         except Exception as e:
@@ -121,6 +115,7 @@ class Restricted(commands.Cog):
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
+
 
 async def setup(bot):
     await bot.add_cog(Restricted(bot))

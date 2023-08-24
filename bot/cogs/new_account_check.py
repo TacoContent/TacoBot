@@ -52,10 +52,7 @@ class NewAccountCheck(commands.Cog):
             self.db.track_system_action(
                 guild_id=guild_id,
                 action=SystemActions.MINIMUM_ACCOUNT_AGE_SET,
-                data={
-                    "minimum_account_age": str(minimum_age),
-                    "set_by": str(ctx.author.id),
-                }
+                data={"minimum_account_age": str(minimum_age), "set_by": str(ctx.author.id)}
             )
             await self.messaging.send_embed(
                 channel=ctx.channel,
@@ -80,10 +77,7 @@ class NewAccountCheck(commands.Cog):
             self.db.track_system_action(
                 guild_id=guild_id,
                 action=SystemActions.JOIN_WHITELIST_ADD,
-                data={
-                    "user_id": str(user_id),
-                    "added_by": str(ctx.author.id),
-                }
+                data={"user_id": str(user_id), "added_by": str(ctx.author.id)}
             )
             await self.messaging.send_embed(
                 channel=ctx.channel,
@@ -96,7 +90,7 @@ class NewAccountCheck(commands.Cog):
 
     @new_account_check.command(
         name="whitelist-remove",
-        aliases=["whitelist-delete", "wlr", "wl-remove", "wl-delete", "wld", "untrust", "remove"]
+        aliases=["whitelist-delete", "wlr", "wl-remove", "wl-delete", "wld", "untrust", "remove"],
     )
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
@@ -126,6 +120,7 @@ class NewAccountCheck(commands.Cog):
     async def on_ready(self) -> None:
         pass
         # self.MINIMUM_ACCOUNT_AGE = self.settings.get_setting(self.SETTINGS_SECTION, "minimum_account_age", 30)
+
     @commands.Cog.listener()
     async def on_disconnect(self) -> None:
         pass
@@ -179,7 +174,9 @@ class NewAccountCheck(commands.Cog):
                     # find messages by the user and delete them
                     system_channel = member.guild.system_channel
                     if system_channel:
-                        async for message in await system_channel.history(limit=100, check=lambda m: m.author.id == member.id):
+                        async for message in await system_channel.history(
+                            limit=100, check=lambda m: m.author.id == member.id
+                        ):
                             await message.delete()
                 else:
                     self.log.warn(

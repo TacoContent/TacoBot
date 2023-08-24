@@ -270,7 +270,6 @@ class MentalMondays(commands.Cog):
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
         try:
-
             if payload.event_type != "REACTION_ADD":
                 return
 
@@ -350,7 +349,6 @@ class MentalMondays(commands.Cog):
         _method = inspect.stack()[0][3]
         ctx = None
         try:
-
             # create context
             # self, bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
             # get guild from id
@@ -390,14 +388,6 @@ class MentalMondays(commands.Cog):
             self.db.track_mentalmondays_answer(guild_id, member.id, message_id)
 
             tacos_settings = self.get_tacos_settings(guild_id)
-            if not tacos_settings:
-                self.log.warn(
-                    guild_id,
-                    f"{self._module}.{self._class}.{_method}",
-                    f"No tacos settings found for guild {guild_id}",
-                )
-                return
-
             amount = tacos_settings.get("mentalmondays_count", 5)
 
             tacos_word = self.settings.get_string(guild_id, "taco_singular")

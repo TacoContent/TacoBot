@@ -346,7 +346,6 @@ class LiveNow(commands.Cog):
             logging_channel = self.bot.get_channel(channel_id)
         # if we are logging this to a channel...
         if logging_channel:
-
             profile_icon: typing.Union[str, None] = None
 
             if twitch_name:
