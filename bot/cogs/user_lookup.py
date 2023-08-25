@@ -142,9 +142,7 @@ class UserLookup(commands.Cog):
         try:
             if after is None or after.guild is None:
                 return
-            avatar: typing.Union[str, None] = (
-                after.avatar.url if after.avatar is not None else after.default_avatar.url
-            )
+            avatar: typing.Union[str, None] = after.avatar.url if after.avatar is not None else after.default_avatar.url
             self.log.debug(
                 after.guild.id,
                 f"{self._module}.{self._class}.{_method}",

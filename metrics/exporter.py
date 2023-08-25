@@ -8,7 +8,7 @@ from .lib.logger import Log
 from .lib.loglevel import LogLevel
 
 
-class MetricsExporter():
+class MetricsExporter:
     def __init__(self):
         self._class = self.__class__.__name__
         self._module = os.path.basename(__file__)[:-3]
@@ -27,7 +27,7 @@ class MetricsExporter():
         self.log.info(
             0,
             f"{self._module}.{self._class}.{_method}",
-            f"Exporter Starting Listen => :{config.metrics['port']}/metrics"
+            f"Exporter Starting Listen => :{config.metrics['port']}/metrics",
         )
         start_http_server(config.metrics["port"])
         app_metrics.run_metrics_loop()

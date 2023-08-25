@@ -422,7 +422,7 @@ class Suggestions(commands.Cog):
                         bot=self.bot, author=user, guild=None, channel=None, message=None
                     )
                     reason = (
-                            await self.discord_helper.ask_text(
+                        await self.discord_helper.ask_text(
                             ctx,
                             user,
                             "Consider Suggestion",

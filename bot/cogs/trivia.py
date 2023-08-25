@@ -220,7 +220,7 @@ class Trivia(commands.Cog):
 
                             result = await self.messaging.send_embed(
                                 channel=ctx.channel,
-                                title=self.settings.get_string(guild_id,"trivia_results_title"),
+                                title=self.settings.get_string(guild_id, "trivia_results_title"),
                                 message=self.settings.get_string(
                                     guild_id,
                                     "trivia_results_message",

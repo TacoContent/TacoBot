@@ -366,6 +366,7 @@ class TacoTuesday(commands.Cog):
         await self.discord_helper.add_remove_roles(
             user=member, check_list=[], add_list=[focus_role_id], remove_list=[], allow_everyone=True
         )
+
     def _import_taco_tuesday(self, message: discord.Message, tweet: typing.Optional[str] = None) -> None:
         _method = inspect.stack()[0][3]
         guild_id = message.guild.id

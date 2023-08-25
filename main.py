@@ -11,6 +11,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 load_dotenv(find_dotenv())
 
+
 def sighandler(signum, frame):
     print("<SIGTERM received>")
     exit(0)
@@ -47,7 +48,7 @@ def exporter():
     except KeyboardInterrupt:
         print("<KeyboardInterrupt received>")
         exit(0)
-        
+
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
