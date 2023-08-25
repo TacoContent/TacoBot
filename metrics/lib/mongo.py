@@ -31,12 +31,7 @@ class MongoDatabase:
             traceback.print_exc()
 
     def insert_log(
-        self,
-        guildId: int,
-        level: loglevel.LogLevel,
-        method: str,
-        message: str,
-        stack: typing.Optional[str] = None,
+        self, guildId: int, level: loglevel.LogLevel, method: str, message: str, stack: typing.Optional[str] = None
     ) -> None:
         try:
             if self.connection is None:
@@ -58,9 +53,7 @@ class MongoDatabase:
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.tacos.aggregate(
-                [{"$group": {"_id": "$guild_id", "total": {"$sum": "$count"}}}]
-            )
+            return self.connection.tacos.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": "$count"}}}])
 
         except Exception as ex:
             print(ex)
@@ -70,9 +63,7 @@ class MongoDatabase:
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.taco_gifts.aggregate(
-                [{"$group": {"_id": "$guild_id", "total": {"$sum": "$count"}}}]
-            )
+            return self.connection.taco_gifts.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": "$count"}}}])
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -81,9 +72,7 @@ class MongoDatabase:
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.tacos_reactions.aggregate(
-                [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
-            )
+            return self.connection.tacos_reactions.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -104,9 +93,7 @@ class MongoDatabase:
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.live_tracked.aggregate(
-                [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
-            )
+            return self.connection.live_tracked.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -115,9 +102,7 @@ class MongoDatabase:
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.twitch_channels.aggregate(
-                [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
-            )
+            return self.connection.twitch_channels.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -127,9 +112,7 @@ class MongoDatabase:
             if self.connection is None:
                 self.open()
             # count all documents in twitch_users collection
-            return self.connection.twitch_users.aggregate(
-                [{"$group": {"_id": 1, "total": {"$sum": 1}}}]
-            )
+            return self.connection.twitch_users.aggregate([{"$group": {"_id": 1, "total": {"$sum": 1}}}])
 
         except Exception as ex:
             print(ex)
@@ -139,9 +122,7 @@ class MongoDatabase:
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.tqotd.aggregate(
-                [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
-            )
+            return self.connection.tqotd.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -151,14 +132,7 @@ class MongoDatabase:
             if self.connection is None:
                 self.open()
             return self.connection.tqotd.aggregate(
-                [
-                    {
-                        "$group": {
-                            "_id": "$guild_id",
-                            "total": {"$sum": {"$size": "$answered"}},
-                        }
-                    }
-                ]
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$answered"}}}}]
             )
         except Exception as ex:
             print(ex)
@@ -169,18 +143,7 @@ class MongoDatabase:
             if self.connection is None:
                 self.open()
             return self.connection.invite_codes.aggregate(
-                [
-                    {
-                        "$group": {
-                            "_id": "$guild_id",
-                            "total": {
-                                "$sum": {
-                                    "$size": {"$ifNull": ["$invites", []]},
-                                },
-                            },
-                        },
-                    },
-                ]
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": { "$size": {"$ifNull": ["$invites", []]}}}}}]
             )
         except Exception as ex:
             print(ex)
@@ -193,12 +156,7 @@ class MongoDatabase:
             return self.connection.live_activity.aggregate(
                 [
                     {"$match": {"status": {"$eq": "ONLINE"}}},
-                    {
-                        "$group": {
-                            "_id": {"platform": "$platform", "guild_id": "$guild_id"},
-                            "total": {"$sum": 1},
-                        },
-                    },
+                    {"$group": {"_id": {"platform": "$platform", "guild_id": "$guild_id"}, "total": {"$sum": 1}}},
                 ]
             )
         except Exception as ex:
@@ -209,9 +167,7 @@ class MongoDatabase:
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.wdyctw.aggregate(
-                [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
-            )
+            return self.connection.wdyctw.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -221,14 +177,7 @@ class MongoDatabase:
             if self.connection is None:
                 self.open()
             return self.connection.wdyctw.aggregate(
-                [
-                    {
-                        "$group": {
-                            "_id": "$guild_id",
-                            "total": {"$sum": {"$size": "$answered"}},
-                        }
-                    }
-                ]
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$answered"}}}}]
             )
         except Exception as ex:
             print(ex)
@@ -238,9 +187,7 @@ class MongoDatabase:
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.techthurs.aggregate(
-                [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
-            )
+            return self.connection.techthurs.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -250,14 +197,7 @@ class MongoDatabase:
             if self.connection is None:
                 self.open()
             return self.connection.techthurs.aggregate(
-                [
-                    {
-                        "$group": {
-                            "_id": "$guild_id",
-                            "total": {"$sum": {"$size": "$answered"}},
-                        }
-                    }
-                ]
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$answered"}}}}]
             )
         except Exception as ex:
             print(ex)
@@ -267,9 +207,7 @@ class MongoDatabase:
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.mentalmondays.aggregate(
-                [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
-            )
+            return self.connection.mentalmondays.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -279,14 +217,7 @@ class MongoDatabase:
             if self.connection is None:
                 self.open()
             return self.connection.mentalmondays.aggregate(
-                [
-                    {
-                        "$group": {
-                            "_id": "$guild_id",
-                            "total": {"$sum": {"$size": "$answered"}},
-                        }
-                    }
-                ]
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$answered"}}}}]
             )
         except Exception as ex:
             print(ex)
@@ -296,9 +227,7 @@ class MongoDatabase:
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.taco_tuesday.aggregate(
-                [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
-            )
+            return self.connection.taco_tuesday.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -308,14 +237,7 @@ class MongoDatabase:
             if self.connection is None:
                 self.open()
             return self.connection.taco_tuesday.aggregate(
-                [
-                    {
-                        "$group": {
-                            "_id": "$guild_id",
-                            "total": {"$sum": {"$size": "$answered"}},
-                        }
-                    }
-                ]
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$answered"}}}}]
             )
         except Exception as ex:
             print(ex)
@@ -374,11 +296,7 @@ class MongoDatabase:
                 [
                     {
                         "$group": {
-                            "_id": {
-                                # if guild_id is None, then set it to 0
-                                "guild_id": {"$ifNull": ["$guild_id", 0]},
-                                "level": "$level",
-                            },
+                            "_id": {"guild_id": {"$ifNull": ["$guild_id", 0]}, "level": "$level"},
                             "total": {"$sum": 1},
                         },
                     },
@@ -393,14 +311,7 @@ class MongoDatabase:
             if self.connection is None:
                 self.open()
             return self.connection.stream_team_requests.aggregate(
-                [
-                    {
-                        "$group": {
-                            "_id": "$guild_id",
-                            "total": {"$sum": 1},
-                        },
-                    },
-                ]
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
             )
         except Exception as ex:
             print(ex)
@@ -411,14 +322,7 @@ class MongoDatabase:
             if self.connection is None:
                 self.open()
             return self.connection.birthdays.aggregate(
-                [
-                    {
-                        "$group": {
-                            "_id": "$guild_id",
-                            "total": {"$sum": 1},
-                        },
-                    },
-                ]
+                 [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
             )
 
         except Exception as ex:
@@ -441,12 +345,7 @@ class MongoDatabase:
             return self.connection.first_message.aggregate(
                 [
                     {"$match": {"timestamp": {"$gte": utc_today_ts}}},
-                    {
-                        "$group": {
-                            "_id": "$guild_id",
-                            "total": {"$sum": 1},
-                        },
-                    },
+                    {"$group": {"_id": "$guild_id", "total": {"$sum": 1}}},
                 ]
             )
         except Exception as ex:
@@ -458,14 +357,7 @@ class MongoDatabase:
             if self.connection is None:
                 self.open()
             return self.connection.messages.aggregate(
-                [
-                    {
-                        "$group": {
-                            "_id": "$guild_id",
-                            "total": {"$sum": {"$size": "$messages"}},
-                        },
-                    },
-                ]
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$messages"}}}}]
             )
         except Exception as ex:
             print(ex)
@@ -483,31 +375,17 @@ class MongoDatabase:
                 [
                     {
                         "$group": {
-                            "_id": {
-                                "guild_id": "$guild_id",
-                                "user_id": "$user_id",
-                            },
+                            "_id": {"guild_id": "$guild_id", "user_id": "$user_id"},
                             "total": {"$sum": {"$size": "$messages"}},
                         },
                     },
                     {
                         "$lookup": {
                             "from": "users",
-                            "let": {
-                                "user_id": "$_id.user_id",
-                                "guild_id": "$_id.guild_id",
-                            },
+                            "let": {"user_id": "$_id.user_id", "guild_id": "$_id.guild_id"},
                             "pipeline": [
-                                {
-                                    "$match": {
-                                        "$expr": {"$eq": ["$user_id", "$$user_id"]}
-                                    }
-                                },
-                                {
-                                    "$match": {
-                                        "$expr": {"$eq": ["$guild_id", "$$guild_id"]}
-                                    }
-                                },
+                                {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
+                                {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
                             ],
                             "as": "user",
                         }
@@ -540,7 +418,7 @@ class MongoDatabase:
                                 "status": {"$ifNull": ["$status", "UNKNOWN"]},
                             },
                             "total": {"$sum": 1},
-                        },
+                        }
                     },
                     {"$sort": {"total": -1}},
                 ]
@@ -566,13 +444,7 @@ class MongoDatabase:
                                     "$cond": [
                                         {"$eq": ["$bot", True]},
                                         "bot",
-                                        {
-                                            "$cond": [
-                                                {"$eq": ["$system", True]},
-                                                "system",
-                                                "user",
-                                            ]
-                                        },
+                                        {"$cond": [{"$eq": ["$system", True]},"system","user"]},
                                     ]
                                 },
                             },
@@ -593,31 +465,17 @@ class MongoDatabase:
                 [
                     {
                         "$group": {
-                            "_id": {
-                                "user_id": "$user_id",
-                                "guild_id": "$guild_id",
-                            },
+                            "_id": {"user_id": "$user_id", "guild_id": "$guild_id"},
                             "total": {"$sum": "$count"},
                         }
                     },
                     {
                         "$lookup": {
                             "from": "users",
-                            "let": {
-                                "user_id": "$_id.user_id",
-                                "guild_id": "$_id.guild_id",
-                            },
+                            "let": {"user_id": "$_id.user_id", "guild_id": "$_id.guild_id"},
                             "pipeline": [
-                                {
-                                    "$match": {
-                                        "$expr": {"$eq": ["$user_id", "$$user_id"]}
-                                    }
-                                },
-                                {
-                                    "$match": {
-                                        "$expr": {"$eq": ["$guild_id", "$$guild_id"]}
-                                    }
-                                },
+                                {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
+                                {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
                             ],
                             "as": "user",
                         }
@@ -644,31 +502,17 @@ class MongoDatabase:
                 [
                     {
                         "$group": {
-                            "_id": {
-                                "user_id": "$user_id",
-                                "guild_id": "$guild_id",
-                            },
+                            "_id": {"user_id": "$user_id", "guild_id": "$guild_id"},
                             "total": {"$sum": 1},
                         }
                     },
                     {
                         "$lookup": {
                             "from": "users",
-                            "let": {
-                                "user_id": "$_id.user_id",
-                                "guild_id": "$_id.guild_id",
-                            },
+                            "let": {"user_id": "$_id.user_id", "guild_id": "$_id.guild_id"},
                             "pipeline": [
-                                {
-                                    "$match": {
-                                        "$expr": {"$eq": ["$user_id", "$$user_id"]}
-                                    }
-                                },
-                                {
-                                    "$match": {
-                                        "$expr": {"$eq": ["$guild_id", "$$guild_id"]}
-                                    }
-                                },
+                                {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
+                                {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
                             ],
                             "as": "user",
                         }
@@ -695,31 +539,17 @@ class MongoDatabase:
                 [
                     {
                         "$group": {
-                            "_id": {
-                                "user_id": "$user_id",
-                                "guild_id": "$guild_id",
-                            },
+                            "_id": {"user_id": "$user_id", "guild_id": "$guild_id"},
                             "total": {"$sum": "$count"},
                         }
                     },
                     {
                         "$lookup": {
                             "from": "users",
-                            "let": {
-                                "user_id": "$_id.user_id",
-                                "guild_id": "$_id.guild_id",
-                            },
+                            "let": {"user_id": "$_id.user_id", "guild_id": "$_id.guild_id"},
                             "pipeline": [
-                                {
-                                    "$match": {
-                                        "$expr": {"$eq": ["$user_id", "$$user_id"]}
-                                    }
-                                },
-                                {
-                                    "$match": {
-                                        "$expr": {"$eq": ["$guild_id", "$$guild_id"]}
-                                    }
-                                },
+                                {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
+                                {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
                             ],
                             "as": "user",
                         }
@@ -758,21 +588,10 @@ class MongoDatabase:
                     {
                         "$lookup": {
                             "from": "users",
-                            "let": {
-                                "user_id": "$_id.user_id",
-                                "guild_id": "$_id.guild_id",
-                            },
+                            "let": {"user_id": "$_id.user_id", "guild_id": "$_id.guild_id"},
                             "pipeline": [
-                                {
-                                    "$match": {
-                                        "$expr": {"$eq": ["$user_id", "$$user_id"]}
-                                    }
-                                },
-                                {
-                                    "$match": {
-                                        "$expr": {"$eq": ["$guild_id", "$$guild_id"]}
-                                    }
-                                },
+                                {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
+                                {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
                             ],
                             "as": "user",
                         }

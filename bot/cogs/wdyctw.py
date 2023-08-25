@@ -51,16 +51,22 @@ class WhatDoYouCallThisWednesday(commands.Cog):
                 _ctx = self.discord_helper.create_context(
                     self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
                 )
-                twa = await self.discord_helper.ask_for_image_or_text(_ctx, ctx.author,
+                twa = await self.discord_helper.ask_for_image_or_text(
+                    _ctx,
+                    ctx.author,
                     self.settings.get_string(guild_id, "wdyctw_ask_title"),
                     self.settings.get_string(guild_id, "wdyctw_ask_message"),
-                    timeout=60 * 5)
+                    timeout=60 * 5,
+                )
             except discord.Forbidden:
                 _ctx = ctx
-                twa = await self.discord_helper.ask_for_image_or_text(_ctx, ctx.author,
+                twa = await self.discord_helper.ask_for_image_or_text(
+                    _ctx,
+                    ctx.author,
                     self.settings.get_string(guild_id, "wdyctw_ask_title"),
                     self.settings.get_string(guild_id, "wdyctw_ask_message"),
-                    timeout=60 * 5)
+                    timeout=60 * 5,
+                )
 
             # ask the user for the WDYCTW in DM
             if twa is None or twa.text.lower() == "cancel" or twa.attachments is None or len(twa.attachments) == 0:
@@ -104,7 +110,8 @@ class WhatDoYouCallThisWednesday(commands.Cog):
                 channel=out_channel,
                 title=self.settings.get_string(guild_id, "wdyctw_out_title"),
                 message=out_message,
-                content=message_content, color=0x00ff00,
+                content=message_content,
+                color=0x00FF00,
                 image=twa.attachments[0].url,
                 thumbnail=None,
                 footer=None,
@@ -114,7 +121,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             )
 
             # save the WDYCTW to the database
-            self.db.save_wdyctw (
+            self.db.save_wdyctw(
                 guildId=guild_id,
                 message=twa.text,
                 image=twa.attachments[0].url,
@@ -178,7 +185,6 @@ class WhatDoYouCallThisWednesday(commands.Cog):
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
 
-
         # check if the user that reacted is in the admin role
         if not await self.permissions.is_admin(payload.user_id, guild_id):
             self.log.debug(
@@ -222,7 +228,6 @@ class WhatDoYouCallThisWednesday(commands.Cog):
     async def _on_raw_reaction_add_import(self, payload) -> None:
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
-
 
         # check if the user that reacted is in the admin role
         if not await self.permissions.is_admin(payload.user_id, guild_id):
@@ -284,7 +289,6 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             if today.weekday() != 2:  # 2 = Wednesday
                 return
             if str(payload.emoji.name) in reaction_import_emojis:
-
                 await self._on_raw_reaction_add_import(payload)
                 return
 
@@ -317,7 +321,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             f"{self._module}.{self._class}.{_method}",
             f"Importing WDYCTW message {message_id} from channel {channel_id} in guild {guild_id} for user {message_author.id} with text {text} and image {image_url}",
         )
-        self.db.save_wdyctw (
+        self.db.save_wdyctw(
             guildId=guild_id,
             message=text or "",
             image=image_url,
@@ -353,7 +357,9 @@ class WhatDoYouCallThisWednesday(commands.Cog):
 
             # get bot
             bot = self.bot
-            ctx = self.discord_helper.create_context(bot=bot, guild=guild, author=member, channel=channel, message=message)
+            ctx = self.discord_helper.create_context(
+                bot=bot, guild=guild, author=member, channel=channel, message=message
+            )
 
             # track that the user answered the question.
             self.db.track_wdyctw_answer(guild_id, member.id, message_id)

@@ -15,6 +15,7 @@ def sighandler(signum, frame):
     print("<SIGTERM received>")
     exit(0)
 
+
 def main():
     try:
         DISCORD_TOKEN = os.environ["DISCORD_TOKEN"]
@@ -30,13 +31,13 @@ def main():
         intents.guild_messages = True
         intents.guild_reactions = True
 
-
         tacobot = bot.TacoBot(intents=intents)
         tacobot.remove_command('help')
         tacobot.run(DISCORD_TOKEN)
     except KeyboardInterrupt:
         print("<KeyboardInterrupt received>")
         exit(0)
+
 
 def exporter():
     try:
@@ -46,6 +47,7 @@ def exporter():
     except KeyboardInterrupt:
         print("<KeyboardInterrupt received>")
         exit(0)
+        
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()

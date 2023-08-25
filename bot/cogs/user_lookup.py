@@ -67,7 +67,6 @@ class UserLookup(commands.Cog):
                     status=MemberStatus.from_discord(member.status),
                 )
 
-
         except Exception as e:
             self.log.error(guild.id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
@@ -114,7 +113,9 @@ class UserLookup(commands.Cog):
         try:
             if member is None or member.guild is None:
                 return
-            avatar: typing.Union[str,None] = member.avatar.url if member.avatar is not None else member.default_avatar.url
+            avatar: typing.Union[str, None] = (
+                member.avatar.url if member.avatar is not None else member.default_avatar.url
+            )
             self.log.debug(
                 member.guild.id,
                 f"{self._module}.{self._class}.{_method}",
@@ -141,7 +142,9 @@ class UserLookup(commands.Cog):
         try:
             if after is None or after.guild is None:
                 return
-            avatar: typing.Union[str,None] = after.avatar.url if after.avatar is not None else after.default_avatar.url
+            avatar: typing.Union[str, None] = (
+                after.avatar.url if after.avatar is not None else after.default_avatar.url
+            )
             self.log.debug(
                 after.guild.id,
                 f"{self._module}.{self._class}.{_method}",

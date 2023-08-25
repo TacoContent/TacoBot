@@ -21,6 +21,7 @@ def is_admin_check(interaction: discord.Interaction) -> bool:
             return interaction.user.guild_permissions.administrator
     return False
 
+
 class TacoQuestionOfTheDay(commands.Cog):
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]

@@ -223,14 +223,7 @@ class Suggestions(commands.Cog):
             channel_settings["vote_neutral_emoji"],
             channel_settings["vote_down_emoji"],
         ]
-        admin_emoji = [
-            channel_settings["admin_approve_emoji"],
-            channel_settings["admin_consider_emoji"],
-            channel_settings["admin_implemented_emoji"],
-            channel_settings["admin_reject_emoji"],
-            channel_settings["admin_close_emoji"],
-            channel_settings["admin_delete_emoji"],
-        ]
+
         reactions = vote_emoji
         for r in reactions:
             # add reaction to the message from the bot
@@ -244,7 +237,7 @@ class Suggestions(commands.Cog):
             "id": uuid.uuid4().hex,
             "message_id": str(s_message.id),
             "author_id": str(ctx.author.id),
-            "suggestion" : {"title": suggestion_title, "description": suggestion_message},
+            "suggestion": {"title": suggestion_title, "description": suggestion_message},
         }
         self.db.add_suggestion(guild_id, s_message.id, suggestion_data)
 
@@ -506,11 +499,7 @@ class Suggestions(commands.Cog):
 
                     # build ctx to pass to the ask_text function
                     ctx = self.discord_helper.create_context(
-                        bot=self.bot,
-                        author=user,
-                        guild=None,
-                        channel=None,
-                        message=None,
+                        bot=self.bot, author=user, guild=None, channel=None, message=None
                     )
                     reason = (
                         await self.discord_helper.ask_text(
@@ -546,10 +535,7 @@ class Suggestions(commands.Cog):
                     down_votes = [vote for vote in votes if vote['vote'] == -1] or []
                     down_word = "Vote" if len(down_votes) == 1 else "Votes"
 
-                    remove_fields = [
-                        {"name": "Voting"},
-                        {"name": "🛡 Actions"}
-                    ]
+                    remove_fields = [{"name": "Voting"}, {"name": "🛡 Actions"}]
                     # rogelioVzz98 - hosted the channel
                     fields = [
                         {
@@ -624,7 +610,6 @@ class Suggestions(commands.Cog):
             author = await self.discord_helper.get_or_fetch_user(int(suggestion['author_id']))
 
             cog_settings = self.get_cog_settings(guild_id)
-
 
             channel_settings = [c for c in cog_settings['channels'] if c['id'] == str(channel.id)]
             if not channel_settings:

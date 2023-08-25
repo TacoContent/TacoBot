@@ -18,11 +18,7 @@ class TacoBot(commands.Bot):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.settings = settings.Settings()
-        super().__init__(
-            command_prefix=self.get_prefix,
-            intents=intents,
-            case_insensitive=True,
-        )
+        super().__init__(command_prefix=self.get_prefix, intents=intents, case_insensitive=True)
         self.remove_command("help")
         # self.command_prefix=self.get_prefix
         # A CommandTree is a special type that holds all the application command

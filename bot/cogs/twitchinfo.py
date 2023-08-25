@@ -12,6 +12,7 @@ from .lib import settings, discordhelper, logger, loglevel, utils, mongo, tacoty
 from .lib.system_actions import SystemActions
 from .lib.messaging import Messaging
 
+
 class TwitchInfo(commands.Cog):
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]

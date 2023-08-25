@@ -78,7 +78,6 @@ class Trivia(commands.Cog):
 
                 question = self.get_question(ctx)
                 if question:
-
                     choice_emojis = cog_settings.get("choices", self.CHOICE_EMOJIS_DEFAULTS)
 
                     # get incorrect answers unescaped and add them to the list
@@ -100,7 +99,6 @@ class Trivia(commands.Cog):
                         index = answers.index(answer)
                         choices.append(f"{choice_emojis[index]} **{answer}**")
                     choice_message = '\n'.join(choices)
-
 
                     # get the reward and punishment
                     reward = cog_settings.get('category_points', self.CATEGORY_POINTS_DEFAULTS).get(
@@ -139,7 +137,7 @@ class Trivia(commands.Cog):
                             "trivia_question_title",
                             category=html.unescape(question.category),
                             difficulty=question.difficulty.capitalize(),
-                            reward=reward
+                            reward=reward,
                         ),
                         message=question_message,
                         fields=[],
@@ -154,7 +152,7 @@ class Trivia(commands.Cog):
                         try:
                             available_choices = choice_emojis[0 : len(answers)]
 
-                            def check (reaction, user):
+                            def check(reaction, user):
                                 # check if user already reacted
                                 # or if the user.id is in the correct or incorrect list of users
                                 if (
@@ -171,6 +169,7 @@ class Trivia(commands.Cog):
                                     else:
                                         incorrect_users.append(user)
                                     return True
+
                             reaction, user = await self.bot.wait_for(
                                 'reaction_add', timeout=trivia_timeout, check=check
                             )
@@ -216,7 +215,8 @@ class Trivia(commands.Cog):
                                         toUser=u,
                                         reason=reason_msg,
                                         give_type=tacotypes.TacoTypes.TRIVIA_INCORRECT,
-                                        taco_amount=punishment )
+                                        taco_amount=punishment,
+                                    )
 
                             result = await self.messaging.send_embed(
                                 channel=ctx.channel,
@@ -228,7 +228,7 @@ class Trivia(commands.Cog):
                                     correct_emoji=choice_emojis[correct_index],
                                     correct_answer=html.unescape(answers[correct_index]),
                                     reward=reward,
-                                    taco_word=taco_word
+                                    taco_word=taco_word,
                                 ),
                                 fields=fields,
                             )

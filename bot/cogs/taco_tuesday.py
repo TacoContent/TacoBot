@@ -78,7 +78,6 @@ class TacoTuesday(commands.Cog):
                 ),
             )
 
-
             result_message = await output_channel.send(content=message)
             # add import_emoji to message so we can archive it later
             import_emoji = cog_settings.get("import_emoji", ["🇮"])
@@ -92,7 +91,6 @@ class TacoTuesday(commands.Cog):
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
-
 
     @tuesday.command()
     @commands.has_permissions(administrator=True)
@@ -109,6 +107,7 @@ class TacoTuesday(commands.Cog):
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
+
     @tuesday.command()
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
