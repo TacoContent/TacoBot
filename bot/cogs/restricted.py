@@ -31,7 +31,6 @@ class Restricted(commands.Cog):
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
-
     @commands.Cog.listener()
     async def on_message(self, message) -> None:
         _method = inspect.stack()[0][3]
@@ -63,7 +62,7 @@ class Restricted(commands.Cog):
             restricted_channels: typing.List[dict] = [
                 c for c in cog_settings.get("channels", []) if str(c['id']) == str(message.channel.id)
             ]
-            restricted_channel: typing.Union[dict,None] = None
+            restricted_channel: typing.Union[dict, None] = None
             if restricted_channels:
                 restricted_channel = restricted_channels[0]
             # if channel.id is not in restricted_channel_ids[] return
@@ -102,7 +101,6 @@ class Restricted(commands.Cog):
             self.log.info(guild_id, f"{self._module}.{self._class}.{_method}", f"Message not found: {nf}")
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
-
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)

@@ -100,9 +100,7 @@ class TechThursdays(commands.Cog):
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
                 self.log.warn(
-                    guild_id,
-                    f"{self._module}.{self._class}.{_method}",
-                    f"No output channel found for guild {guild_id}",
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
                 )
 
             # get role
@@ -170,9 +168,7 @@ class TechThursdays(commands.Cog):
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
                 self.log.warn(
-                    guild_id,
-                    f"{self._module}.{self._class}.{_method}",
-                    f"No output channel found for guild {guild_id}",
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
                 )
 
             # get the message from the id
@@ -278,7 +274,6 @@ class TechThursdays(commands.Cog):
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
         try:
-
             if payload.event_type != "REACTION_ADD":
                 return
 
@@ -288,7 +283,6 @@ class TechThursdays(commands.Cog):
                     guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin"
                 )
                 return
-
 
             react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
             if not react_user or react_user.bot or react_user.system:
@@ -305,7 +299,6 @@ class TechThursdays(commands.Cog):
             if str(payload.emoji.name) in reaction_emojis:
                 await self._on_raw_reaction_add_give(payload)
                 return
-
 
             # is today thursday?
             today = datetime.datetime.now()
@@ -368,9 +361,7 @@ class TechThursdays(commands.Cog):
                 channel = guild.system_channel
             if not channel:
                 self.log.warn(
-                    guild_id,
-                    f"{self._module}.{self._class}.{_method}",
-                    f"No output channel found for guild {guild_id}",
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
                 )
                 return
             message = None

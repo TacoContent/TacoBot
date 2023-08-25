@@ -13,7 +13,6 @@ from .lib.messaging import Messaging
 
 
 class Suggestions(commands.Cog):
-
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
@@ -86,7 +85,7 @@ class Suggestions(commands.Cog):
                 )
                 return
             ss_channels = ss.get('channels', [])
-            tracked_channel = [ c for c in ss_channels if c['id'] == str(channel.id) ]
+            tracked_channel = [c for c in ss_channels if c['id'] == str(channel.id)]
             if tracked_channel and len(tracked_channel) > 0:
                 # if this channel was in the settings, remove it
                 ss['channels'].remove(tracked_channel[0])
@@ -109,7 +108,6 @@ class Suggestions(commands.Cog):
         ss_channels = suggestion_settings.get('channels', [])
         channel_settings = [c for c in ss_channels if c['id'] == str(ctx.channel.id)]
         if not channel_settings:
-
             allowed_channel_ids = [int(c['id']) for c in ss_channels]
             allowed_channels = []
             for aci in allowed_channel_ids:
@@ -161,7 +159,8 @@ class Suggestions(commands.Cog):
 
         # get suggestion title
         suggestion_title = await self.discord_helper.ask_text(
-            ctx, ctx.channel,
+            ctx,
+            ctx.channel,
             "Create Suggestion",
             f"{ctx.author.mention}, {title_ask}\n\n**Note:**\nYou can respond with `cancel` to cancel your suggestion request.",
             timeout=60,
@@ -193,7 +192,7 @@ class Suggestions(commands.Cog):
                 channel=ctx.channel,
                 title="Suggestion Cancelled",
                 message=f"{ctx.author.mention}, Your suggestion request has been cancelled.",
-                color=0x00ff00,
+                color=0x00FF00,
                 delete_after=20,
             )
             return
@@ -245,10 +244,7 @@ class Suggestions(commands.Cog):
             "id": uuid.uuid4().hex,
             "message_id": str(s_message.id),
             "author_id": str(ctx.author.id),
-            "suggestion" : {
-                "title": suggestion_title,
-                "description": suggestion_message,
-            },
+            "suggestion" : {"title": suggestion_title, "description": suggestion_message},
         }
         self.db.add_suggestion(guild_id, s_message.id, suggestion_data)
 
@@ -265,7 +261,7 @@ class Suggestions(commands.Cog):
                 guild_id = ctx.guild.id
                 await ctx.message.delete()
             if ctx.author.bot or ctx.author.system:
-                return # ignore bots
+                return  # ignore bots
 
             if ctx.invoked_subcommand is None:
                 ss = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
@@ -328,7 +324,7 @@ class Suggestions(commands.Cog):
                 )
                 raise Exception("No suggestion settings found")
 
-            channel_settings = [ c for c in ss['channels'] if c['id'] == str(channel.id) ]
+            channel_settings = [c for c in ss['channels'] if c['id'] == str(channel.id)]
             if not channel_settings:
                 self.log.debug(
                     guild_id,
@@ -389,8 +385,9 @@ class Suggestions(commands.Cog):
                         channel=user,
                         title="Can only vote once",
                         message=f"You have already voted on this suggestion.",
-                        color=0xff0000,
-                        delete_after=30,)
+                        color=0xFF0000,
+                        delete_after=30,
+                    )
                     return
                 else:
                     self.db.vote_suggestion_by_id(suggestion['id'], user.id, vote)
@@ -409,13 +406,16 @@ class Suggestions(commands.Cog):
                     ctx = self.discord_helper.create_context(
                         bot=self.bot, author=user, guild=None, channel=None, message=None
                     )
-                    reason = await self.discord_helper.ask_text(
-                        ctx,
-                        user,
-                        "Approve Suggestion",
-                        "Please enter a reason for approving this suggestion.",
-                        timeout=60,
-                    ) or "No reason given."
+                    reason = (
+                        await self.discord_helper.ask_text(
+                            ctx,
+                            user,
+                            "Approve Suggestion",
+                            "Please enter a reason for approving this suggestion.",
+                            timeout=60,
+                        )
+                        or "No reason given."
+                    )
                     self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.APPROVED, user.id, reason)
                     await self.update_suggestion_state(message, states.APPROVED, user, reason, author=author)
                 elif str(payload.emoji) == channel_settings["admin_consider_emoji"]:
@@ -428,13 +428,16 @@ class Suggestions(commands.Cog):
                     ctx = self.discord_helper.create_context(
                         bot=self.bot, author=user, guild=None, channel=None, message=None
                     )
-                    reason = await self.discord_helper.ask_text(
-                        ctx,
-                        user,
-                        "Consider Suggestion",
-                        "Please enter a reason for considering this suggestion.",
-                        timeout=60,
-                    ) or "No reason given."
+                    reason = (
+                            await self.discord_helper.ask_text(
+                            ctx,
+                            user,
+                            "Consider Suggestion",
+                            "Please enter a reason for considering this suggestion.",
+                            timeout=60,
+                        )
+                        or "No reason given."
+                    )
                     self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.CONSIDERED, user.id, reason)
                     await self.update_suggestion_state(message, states.CONSIDERED, user, reason, author=author)
                 elif str(payload.emoji) == channel_settings["admin_implemented_emoji"]:
@@ -447,13 +450,16 @@ class Suggestions(commands.Cog):
                     ctx = self.discord_helper.create_context(
                         bot=self.bot, author=user, guild=None, channel=None, message=None
                     )
-                    reason = await self.discord_helper.ask_text(
-                        ctx,
-                        user,
-                        "Implement Suggestion",
-                        "Please enter a reason for implementing this suggestion.",
-                        timeout=60,
-                    ) or "No reason given."
+                    reason = (
+                        await self.discord_helper.ask_text(
+                            ctx,
+                            user,
+                            "Implement Suggestion",
+                            "Please enter a reason for implementing this suggestion.",
+                            timeout=60,
+                        )
+                        or "No reason given."
+                    )
                     self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.IMPLEMENTED, user.id, reason)
                     await self.update_suggestion_state(message, states.IMPLEMENTED, user, reason, author=author)
                 elif str(payload.emoji) == channel_settings["admin_reject_emoji"]:
@@ -466,13 +472,16 @@ class Suggestions(commands.Cog):
                     ctx = self.discord_helper.create_context(
                         bot=self.bot, author=user, guild=None, channel=None, message=None
                     )
-                    reason = await self.discord_helper.ask_text(
-                        ctx,
-                        user,
-                        "Reject Suggestion",
-                        "Please enter a reason for rejecting this suggestion.",
-                        timeout=60,
-                    ) or "No reason given."
+                    reason = (
+                        await self.discord_helper.ask_text(
+                            ctx,
+                            user,
+                            "Reject Suggestion",
+                            "Please enter a reason for rejecting this suggestion.",
+                            timeout=60,
+                        )
+                        or "No reason given."
+                    )
                     self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.REJECTED, user.id, reason)
                     await self.update_suggestion_state(message, states.REJECTED, user, reason, author=author)
                 elif str(payload.emoji) == channel_settings["admin_close_emoji"]:
@@ -492,9 +501,7 @@ class Suggestions(commands.Cog):
                     )
                     close_state_color = self.get_color_for_state(state)
                     self.log.debug(
-                        guild_id,
-                        f"{self._module}.{self._class}.{_method}",
-                        f"Close state color is {close_state_color}",
+                        guild_id, f"{self._module}.{self._class}.{_method}", f"Close state color is {close_state_color}"
                     )
 
                     # build ctx to pass to the ask_text function
@@ -505,15 +512,20 @@ class Suggestions(commands.Cog):
                         channel=None,
                         message=None,
                     )
-                    reason = await self.discord_helper.ask_text(
-                        ctx,
-                        user,
-                        "Close Suggestion",
-                        "Please enter a reason for closing this suggestion.",
-                        timeout=60,
-                    ) or "Closed by admin."
+                    reason = (
+                        await self.discord_helper.ask_text(
+                            ctx,
+                            user,
+                            "Close Suggestion",
+                            "Please enter a reason for closing this suggestion.",
+                            timeout=60,
+                        )
+                        or "Closed by admin."
+                    )
                     self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.CLOSED, user.id, reason)
-                    await self.update_suggestion_state(message, states.CLOSED, user, reason, author=author, color=close_state_color)
+                    await self.update_suggestion_state(
+                        message, states.CLOSED, user, reason, author=author, color=close_state_color
+                    )
                     # move it to the archive channel
                     if log_channel is None:
                         self.log.debug(
@@ -527,23 +539,25 @@ class Suggestions(commands.Cog):
                     # get the votes from the database
                     votes = self.db.get_suggestion_votes_by_id(suggestion['id'])
                     # get count of each type of vote. either -1, 0, or 1
-                    up_votes = [ vote for vote in votes if vote['vote'] == 1 ] or []
+                    up_votes = [vote for vote in votes if vote['vote'] == 1] or []
                     up_word = "Vote" if len(up_votes) == 1 else "Votes"
-                    neutral_votes = [ vote for vote in votes if vote['vote'] == 0 ] or []
+                    neutral_votes = [vote for vote in votes if vote['vote'] == 0] or []
                     neutral_word = "Vote" if len(neutral_votes) == 1 else "Votes"
-                    down_votes = [ vote for vote in votes if vote['vote'] == -1 ] or []
+                    down_votes = [vote for vote in votes if vote['vote'] == -1] or []
                     down_word = "Vote" if len(down_votes) == 1 else "Votes"
 
                     remove_fields = [
-                        { "name": "Voting" },
-                        { "name": "🛡 Actions" }
+                        {"name": "Voting"},
+                        {"name": "🛡 Actions"}
                     ]
                     # rogelioVzz98 - hosted the channel
                     fields = [
                         {
                             "name": "Votes",
-                            "value": f"{channel_settings['vote_up_emoji']} {len(up_votes)} Up {up_word}\n{channel_settings['vote_neutral_emoji']} {len(neutral_votes)} Neutral {neutral_word}\n{channel_settings['vote_down_emoji']} {len(down_votes)} Down {down_word}",
-                        },
+                            "value": f"""{channel_settings['vote_up_emoji']} {len(up_votes)} Up {up_word}
+{channel_settings['vote_neutral_emoji']} {len(neutral_votes)} Neutral {neutral_word}
+{channel_settings['vote_down_emoji']} {len(down_votes)} Down {down_word}""",
+                        }
                     ]
                     await self.discord_helper.move_message(
                         message,
@@ -566,13 +580,16 @@ class Suggestions(commands.Cog):
                     ctx = self.discord_helper.create_context(
                         bot=self.bot, author=user, guild=None, channel=None, message=None
                     )
-                    reason = await self.discord_helper.ask_text(
-                        ctx,
-                        user,
-                        "Delete Suggestion",
-                        "Please enter a reason for deleting this suggestion.",
-                        timeout=60,
-                    ) or "Deleted by admin."
+                    reason = (
+                        await self.discord_helper.ask_text(
+                            ctx,
+                            user,
+                            "Delete Suggestion",
+                            "Please enter a reason for deleting this suggestion.",
+                            timeout=60,
+                        )
+                        or "Deleted by admin."
+                    )
                     self.db.delete_suggestion_by_id(guild_id, suggestion['id'], user.id, reason=reason)
                     await message.delete()
 
@@ -609,7 +626,7 @@ class Suggestions(commands.Cog):
             cog_settings = self.get_cog_settings(guild_id)
 
 
-            channel_settings = [ c for c in cog_settings['channels'] if c['id'] == str(channel.id) ]
+            channel_settings = [c for c in cog_settings['channels'] if c['id'] == str(channel.id)]
             if not channel_settings:
                 return
             else:
@@ -806,7 +823,7 @@ class Suggestions(commands.Cog):
         user: discord.User,
         reason: typing.Optional[str],
         author: typing.Optional[typing.Union[discord.User, discord.Member, None]] = None,
-        color: typing.Optional[typing.Union[int,None]] = None,
+        color: typing.Optional[typing.Union[int, None]] = None,
     ) -> None:
         if not state:
             return
@@ -818,14 +835,10 @@ class Suggestions(commands.Cog):
 
         # get the date and time now formatted MM/dd/yyyy HH:mm:ss
         now = datetime.datetime.now().strftime("%m/%d/%Y %H:%M:%S")
-        fields = [
-            {"name": f"{state} @ {now}", "value": f"{user.mention}: {reason}", "inline": False}
-        ]
-        await self.messaging.update_embed(
-            message=message, fields=fields, color=color, author=author
-        )
+        fields = [{"name": f"{state} @ {now}", "value": f"{user.mention}: {reason}", "inline": False}]
+        await self.messaging.update_embed(message=message, fields=fields, color=color, author=author)
 
-    def get_color_for_state(self, state: str) -> typing.Union[int,None]:
+    def get_color_for_state(self, state: str) -> typing.Union[int, None]:
         _method = inspect.stack()[0][3]
         states = models.SuggestionStates()
 

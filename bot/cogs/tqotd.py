@@ -103,9 +103,7 @@ class TacoQuestionOfTheDay(commands.Cog):
             out_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
                 self.log.warn(
-                    guild_id,
-                    f"{self._module}.{self._class}.{_method}",
-                    f"No output channel found for guild {guild_id}",
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
                 )
 
             # get role
@@ -166,7 +164,6 @@ class TacoQuestionOfTheDay(commands.Cog):
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
-
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload) -> None:
@@ -240,9 +237,7 @@ class TacoQuestionOfTheDay(commands.Cog):
                 channel = guild.system_channel
             if not channel:
                 self.log.warn(
-                    guild_id,
-                    f"{self._module}.{self._class}.{_method}",
-                    f"No output channel found for guild {guild_id}",
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
                 )
                 return
             message = None
@@ -282,7 +277,8 @@ class TacoQuestionOfTheDay(commands.Cog):
                     reason=reason_msg,
                 ),
                 footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT),
-                delete_after=self.SELF_DESTRUCT_TIMEOUT,)
+                delete_after=self.SELF_DESTRUCT_TIMEOUT,
+            )
 
             await self.discord_helper.taco_give_user(
                 guild_id, self.bot.user, member, reason_msg, tacotypes.TacoTypes.TQOTD, taco_amount=amount

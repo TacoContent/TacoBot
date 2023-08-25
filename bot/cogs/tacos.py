@@ -53,7 +53,7 @@ class Tacos(commands.Cog):
     # create command called remove_all_tacos that asks for the user
     @tacos.command(aliases=['purge'])
     @commands.has_permissions(administrator=True)
-    async def remove_all_tacos(self, ctx, user: discord.Member, *, reason: typing.Union[str,None] = None) -> None:
+    async def remove_all_tacos(self, ctx, user: discord.Member, *, reason: typing.Union[str, None] = None) -> None:
         _method = inspect.stack()[0][3]
         try:
             guild_id = ctx.guild.id
@@ -80,7 +80,6 @@ class Tacos(commands.Cog):
         _method = inspect.stack()[0][3]
         guild_id = ctx.guild.id
         try:
-
             await ctx.message.delete()
             # if the user that ran the command is the same as member, then exit the function
             if ctx.author.id == member.id:
@@ -88,7 +87,9 @@ class Tacos(commands.Cog):
                     channel=ctx.channel,
                     title=self.settings.get_string(guild_id, "error"),
                     message=self.settings.get_string(guild_id, "taco_self_gift_message", user=ctx.author.mention),
-                    footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT),
+                    footer=self.settings.get_string(
+                        guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT
+                    ),
                     delete_after=self.SELF_DESTRUCT_TIMEOUT,
                 )
                 return
@@ -122,7 +123,6 @@ class Tacos(commands.Cog):
                 guild_id, ctx.author, member, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount
             )
 
-
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -146,11 +146,7 @@ class Tacos(commands.Cog):
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_count_title"),
                 message=self.settings.get_string(
-                    guild_id,
-                    "taco_count_message",
-                    user=ctx.author.mention,
-                    count=taco_count,
-                    taco_word=tacos_word,
+                    guild_id, "taco_count_message", user=ctx.author.mention, count=taco_count, taco_word=tacos_word
                 ),
                 footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT),
                 delete_after=self.SELF_DESTRUCT_TIMEOUT,
@@ -170,8 +166,6 @@ class Tacos(commands.Cog):
             await ctx.message.delete()
             taco_settings = self.get_tacos_settings(guild_id)
 
-
-
             # if the user that ran the command is the same as member, then exit the function
             if ctx.author.id == member.id:
                 await self.messaging.send_embed(
@@ -181,7 +175,8 @@ class Tacos(commands.Cog):
                     footer=self.settings.get_string(
                         guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT
                     ),
-                    delete_after=self.SELF_DESTRUCT_TIMEOUT,)
+                    delete_after=self.SELF_DESTRUCT_TIMEOUT,
+                )
                 return
             max_gift_tacos: int = taco_settings.get("max_gift_tacos", 10)
             max_gift_taco_timespan = taco_settings.get("max_gift_taco_timespan", 86400)
@@ -192,7 +187,6 @@ class Tacos(commands.Cog):
             tacos_word = self.settings.get_string(guild_id, "taco_plural")
             if amount > 1:
                 tacos_word = self.settings.get_string(guild_id, "taco_singular")
-
 
             if remaining_gifts <= 0:
                 await self.messaging.send_embed(
@@ -215,7 +209,9 @@ class Tacos(commands.Cog):
                         remaining=remaining_gifts,
                         taco_word=tacos_word,
                     ),
-                    footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT),
+                    footer=self.settings.get_string(
+                        guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT
+                    ),
                     delete_after=self.SELF_DESTRUCT_TIMEOUT,
                 )
                 return
@@ -263,9 +259,13 @@ class Tacos(commands.Cog):
 
                 if message.type == discord.MessageType.premium_guild_subscription:
                     # add tacos to user that boosted the server
-                    await self.discord_helper.taco_give_user(guild_id, self.bot.user, member,
+                    await self.discord_helper.taco_give_user(
+                        guild_id,
+                        self.bot.user,
+                        member,
                         self.settings.get_string(guild_id, "taco_reason_boost"),
-                        tacotypes.TacoTypes.BOOST )
+                        tacotypes.TacoTypes.BOOST,
+                    )
                     return
 
                 if message.type == discord.MessageType.default:

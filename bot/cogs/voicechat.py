@@ -24,7 +24,6 @@ class VoiceChatCog(commands.Cog):
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
-
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after) -> None:
         _method = inspect.stack()[0][3]
@@ -44,9 +43,7 @@ class VoiceChatCog(commands.Cog):
                 return
 
             if before.channel is None and after.channel is not None:
-
                 cog_settings = self.get_cog_settings(guild_id)
-
                 # this channel is not one we care about
                 if str(after.channel.id) not in cog_settings.get("channels", []):
                     return
@@ -59,7 +56,7 @@ class VoiceChatCog(commands.Cog):
                     toUser=member,
                     reason=reason_msg,
                     give_type=tacotypes.TacoTypes.CREATE_VOICE_CHANNEL,
-                    taco_amount=0
+                    taco_amount=0,
                 )
                 return
         except Exception as e:

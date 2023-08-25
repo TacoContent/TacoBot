@@ -1,8 +1,9 @@
 import codecs
-import yaml
 import os
+import yaml
 
 from .lib.utils import dict_get
+
 
 class TacoBotMetricsConfig:
     def __init__(self, file: str):

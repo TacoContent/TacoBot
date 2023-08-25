@@ -1,20 +1,19 @@
-
-
+import asyncio
 import discord
 import os
+import signal
 from dotenv import load_dotenv, find_dotenv
-load_dotenv(find_dotenv())
 import bot.tacobot as bot
 from bot.cogs.lib.migration_runner import MigrationRunner
-import signal
-import asyncio
 from metrics.exporter import MetricsExporter
 from concurrent.futures import ProcessPoolExecutor
+
+
+load_dotenv(find_dotenv())
 
 def sighandler(signum, frame):
     print("<SIGTERM received>")
     exit(0)
-
 
 def main():
     try:

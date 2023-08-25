@@ -77,7 +77,7 @@ class NewAccountCheck(commands.Cog):
             self.db.track_system_action(
                 guild_id=guild_id,
                 action=SystemActions.JOIN_WHITELIST_ADD,
-                data={"user_id": str(user_id), "added_by": str(ctx.author.id)}
+                data={"user_id": str(user_id), "added_by": str(ctx.author.id)},
             )
             await self.messaging.send_embed(
                 channel=ctx.channel,

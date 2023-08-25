@@ -102,6 +102,7 @@ class TacoPost(commands.Cog):
                 )
                 await message.delete()
             else:
+
                 async def response_callback(response):
                     if response:
                         # remove the tacos from the user
@@ -121,6 +122,7 @@ class TacoPost(commands.Cog):
                             delete_after=10,
                         )
                         await message.delete()
+
                 await self.discord_helper.ask_yes_no(
                     ctx=message,
                     targetChannel=message.channel,

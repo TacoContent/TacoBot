@@ -85,7 +85,7 @@ class StreamTeam(commands.Cog):
                             "streamteam_removal_message",
                             user=f"{utils.get_user_display_name(user)}",
                             team_name=team_name,
-                            twitch_name=twitch_name
+                            twitch_name=twitch_name,
                         ),
                         color=0xFF0000,
                     )
@@ -165,21 +165,15 @@ class StreamTeam(commands.Cog):
                 #             self.settings.get_string(guild_id, "twitch_name_dm_error", user=user.mention),
                 #             footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
                 #             color=0xff0000, delete_after=30)
-
                 # else:
                 #     twitch_name = twitch_user['twitch_name']
-
                 if log_channel:
                     twitch_name = unknown if twitch_name is None else twitch_name
                     await self.messaging.send_embed(
                         channel=log_channel,
                         title=self.settings.get_string(guild_id, "streamteam_join_title"),
                         message=self.settings.get_string(
-                            guild_id,
-                            "streamteam_join_message",
-                            user=user,
-                            team_name=team_name,
-                            twitch_name=twitch_name,
+                            guild_id, "streamteam_join_message", user=user, team_name=team_name, twitch_name=twitch_name
                         ),
                         color=0x00FF00,
                     )
@@ -206,11 +200,10 @@ class StreamTeam(commands.Cog):
 
     @team.command()
     @commands.guild_only()
-    async def invite(self, ctx, twitchName: str = None) -> None:
+    async def invite(self, ctx, twitchName: typing.Optional[str] = None) -> None:
         _method = inspect.stack()[0][3]
         guild_id = ctx.guild.id
         try:
-
             if twitchName is None:
                 twitchName = self.db.get_user_twitch_info(ctx.author.id)['twitch_name']
             if twitchName is None:

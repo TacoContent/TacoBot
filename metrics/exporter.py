@@ -1,14 +1,14 @@
-from prometheus_client import start_http_server
+import inspect
 import os
+from prometheus_client import start_http_server
 from .tacobot import TacoBotMetrics
 from .config import TacoBotMetricsConfig
 from .lib.utils import dict_get
 from .lib.logger import Log
 from .lib.loglevel import LogLevel
-import inspect
+
 
 class MetricsExporter():
-
     def __init__(self):
         self._class = self.__class__.__name__
         self._module = os.path.basename(__file__)[:-3]

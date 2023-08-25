@@ -1,30 +1,17 @@
 import discord
 import discordhealthcheck
-from discord import app_commands
-import math
-import asyncio
-import aiohttp
-import json
-from discord.ext import commands
-
-from random import randint
-import traceback
-import sys
-import os
-import glob
-import typing
 import inspect
+import os
+import sys
+import traceback
+import typing
 
-from .cogs.lib import utils
-from .cogs.lib import settings
-
-from .cogs.lib import mongo
-from .cogs.lib import logger
-from .cogs.lib import loglevel
+from discord.ext import commands
+from random import randint
+from .cogs.lib import settings, mongo, logger, loglevel
 
 
 class TacoBot(commands.Bot):
-
     def __init__(self, *, intents: discord.Intents) -> None:
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
@@ -80,8 +67,6 @@ class TacoBot(commands.Bot):
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Setting up bot")
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Starting Healthcheck Server")
         self.healthcheck_server = await discordhealthcheck.start(self)
-
-
 
     def initDB(self) -> None:
         pass

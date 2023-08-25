@@ -237,9 +237,7 @@ class TacoTuesday(commands.Cog):
             if str(payload.emoji.name) in reaction_archive_emojis:
                 if cog_settings.get("archive_enabled", False):
                     self.log.debug(
-                        guild_id,
-                        f"{self._module}.{self._class}.{_method}",
-                        f"Archive is enabled. Archiving message",
+                        guild_id, f"{self._module}.{self._class}.{_method}", f"Archive is enabled. Archiving message"
                     )
                     await self._on_raw_reaction_add_archive(payload)
                     return
@@ -297,11 +295,7 @@ class TacoTuesday(commands.Cog):
                             remove_role_list = [focus_role_id]
                             # remove the user from the taco tuesday role
                             await self.discord_helper.add_remove_roles(
-                                user=user,
-                                check_list=[],
-                                remove_list=remove_role_list,
-                                add_list=[],
-                                allow_everyone=True
+                                user=user, check_list=[], remove_list=remove_role_list, add_list=[], allow_everyone=True
                             )
 
             # build field info:
@@ -314,14 +308,9 @@ class TacoTuesday(commands.Cog):
 
             fields = []
             if len(temp_reactions) > 0:
-                fields = [
-                    {"name": "Reactions", "value": f"------------------", "inline": False},
-                ]
+                fields = [{"name": "Reactions", "value": f"------------------", "inline": False}]
                 for r in message.reactions:
-                    fields.append(
-                        {"name": str(r.emoji), "value": f"{r.count}", "inline": True}
-                    )
-
+                    fields.append({"name": str(r.emoji), "value": f"{r.count}", "inline": True})
 
             moved_message = await self.discord_helper.move_message(
                 message=message,
@@ -376,11 +365,7 @@ class TacoTuesday(commands.Cog):
         )
         # add user to focus_role
         await self.discord_helper.add_remove_roles(
-            user=member,
-            check_list=[],
-            add_list=[focus_role_id],
-            remove_list=[],
-            allow_everyone=True,
+            user=member, check_list=[], add_list=[focus_role_id], remove_list=[], allow_everyone=True
         )
     def _import_taco_tuesday(self, message: discord.Message, tweet: typing.Optional[str] = None) -> None:
         _method = inspect.stack()[0][3]
@@ -441,9 +426,7 @@ class TacoTuesday(commands.Cog):
                 channel = guild.system_channel
             if not channel:
                 self.log.warn(
-                    guild_id,
-                    f"{self._module}.{self._class}.{_method}",
-                    f"No output channel found for guild {guild_id}",
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
                 )
                 return
             message = None
