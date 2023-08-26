@@ -598,7 +598,6 @@ class MongoDatabase:
         try:
             if self.connection is None:
                 self.open()
-
             # this is the log entry docuemnt
             # {
             #     _id: ObjectId('64823bc04b3af18f34e7e2ec'),

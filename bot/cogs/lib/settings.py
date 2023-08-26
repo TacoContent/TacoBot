@@ -6,7 +6,7 @@ import sys
 import traceback
 import typing
 
-from . import utils
+from . import utils  # pylint: disable=no-name-in-module
 
 
 class Settings:

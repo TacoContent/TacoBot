@@ -9,9 +9,9 @@ import uuid
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from bot.cogs.lib.minecraft_op import MinecraftOpLevel
-from . import database, loglevel, models, settings, utils  # pylint: disable=no-name-in-module
-from system_actions import SystemActions  # pylint: disable=relative-beyond-top-level
-from member_status import MemberStatus  # pylint: disable=relative-beyond-top-level
+from bot.cogs.lib import database, loglevel, models, settings, utils  # pylint: disable=no-name-in-module
+from bot.cogs.lib.system_actions import SystemActions  # pylint: disable=relative-beyond-top-level
+from bot.cogs.lib.member_status import MemberStatus  # pylint: disable=relative-beyond-top-level
 
 
 class MongoDatabase(database.Database):
@@ -105,7 +105,7 @@ class MongoDatabase(database.Database):
             if not self.connection.stream_team_requests.find_one(payload):
                 self.connection.stream_team_requests.insert_one(payload)
             else:
-                print(f"[DEBUG] [{self._module}.{_method}] [guild:0] User {userName}, already in table")
+                print(f"[DEBUG] [{self._module}.{_method}] [guild:0] User {userId}, already in table")
         except Exception as ex:
             print(ex)
             traceback.print_exc()
@@ -498,7 +498,7 @@ class MongoDatabase(database.Database):
                 self.open()
             # insert the suggestion into the database
             self.connection.suggestions.update_one(
-                {"guild_id": str(guildId), "message_id": str(messageId)}, {"$push": {"votes": payload}}, upsert=True
+                {"guild_id": str(guildId), "message_id": str(messageId)}, {"$push": {"votes": {"user_id": str(userId)}}}, upsert=True
             )
         except Exception as ex:
             print(ex)

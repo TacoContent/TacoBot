@@ -6,9 +6,10 @@ import os
 import traceback
 
 from discord.ext import commands
-from .lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
-from .lib.permissions import Permissions
-from .lib.messaging import Messaging
+from discord.ext.commands import Context
+from lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
+from lib.permissions import Permissions
+from lib.messaging import Messaging
 
 
 def is_admin_check(interaction: discord.Interaction) -> bool:

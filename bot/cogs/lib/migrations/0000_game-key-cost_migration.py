@@ -1,7 +1,7 @@
 import os
 import traceback
 
-from ..migration_base import MigrationBase
+from ..migration_base import MigrationBase  # pylint: disable=relative-beyond-top-level
 
 
 class Migration(MigrationBase):
