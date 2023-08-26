@@ -25,30 +25,11 @@ class TacoBotMetrics:
         self.namespace = "tacobot"
         self.polling_interval_seconds = config.metrics["pollingInterval"]
         self.config = config
-        labels = [
-            "guild_id",
-        ]
+        labels = ["guild_id"]
 
-        user_labels = [
-            "guild_id",
-            "user_id",
-            "username",
-        ]
-
-        photo_post_labels = [
-            "guild_id",
-            "user_id",
-            "username",
-            "channel",
-        ]
-
-
-        live_labels = [
-            "guild_id",
-            "user_id",
-            "username",
-            "platform",
-        ]
+        user_labels = ["guild_id", "user_id", "username"]
+        photo_post_labels = ["guild_id", "user_id", "username", "channel"]
+        live_labels = ["guild_id", "user_id", "username", "platform"]
 
         # merge labels and config labels
         # labels = labels + [x['name'] for x in self.config.labels]
@@ -209,10 +190,7 @@ class TacoBotMetrics:
         )
 
         self.sum_logs = Gauge(
-            namespace=self.namespace,
-            name=f"logs",
-            documentation="The number of logs",
-            labelnames=["guild_id", "level"],
+            namespace=self.namespace, name=f"logs", documentation="The number of logs", labelnames=["guild_id", "level"]
         )
 
         self.sum_stream_team_requests = Gauge(
@@ -223,10 +201,7 @@ class TacoBotMetrics:
         )
 
         self.sum_birthdays = Gauge(
-            namespace=self.namespace,
-            name=f"birthdays",
-            documentation="The number of birthdays",
-            labelnames=labels,
+            namespace=self.namespace, name=f"birthdays", documentation="The number of birthdays", labelnames=labels
         )
 
         self.sum_first_messages = Gauge(
@@ -251,10 +226,7 @@ class TacoBotMetrics:
         )
 
         self.top_gifters = Gauge(
-            namespace=self.namespace,
-            name=f"gifters",
-            documentation="The number of top gifters",
-            labelnames=user_labels,
+            namespace=self.namespace, name=f"gifters", documentation="The number of top gifters", labelnames=user_labels
         )
 
         self.top_reactors = Gauge(
@@ -265,10 +237,7 @@ class TacoBotMetrics:
         )
 
         self.top_tacos = Gauge(
-            namespace=self.namespace,
-            name=f"top_tacos",
-            documentation="The number of top tacos",
-            labelnames=user_labels,
+            namespace=self.namespace, name=f"top_tacos", documentation="The number of top tacos", labelnames=user_labels
         )
 
         self.taco_logs = Gauge(
@@ -364,7 +333,6 @@ class TacoBotMetrics:
             labelnames=["version", "ref", "build_date", "sha"],
         )
 
-
         ver = dict_get(os.environ, "APP_VERSION", "1.0.0-snapshot")
         ref = dict_get(os.environ, "APP_BUILD_REF", "unknown")
         build_date = dict_get(os.environ, "APP_BUILD_DATE", "unknown")
@@ -385,7 +353,6 @@ class TacoBotMetrics:
         _method = inspect.stack()[1][3]
         error_count = 0
         try:
-
             q_guilds = self.db.get_guilds()
             known_guilds = []
             for row in q_guilds:
@@ -435,8 +402,8 @@ class TacoBotMetrics:
 
             q_live_platform = self.db.get_sum_live_by_platform()
             for row in q_live_platform:
-                self.sum_live_platform.labels(
-                    guild_id=row['_id']['guild_id'], platform=row['_id']['platform']).set(row['total']
+                self.sum_live_platform.labels(guild_id=row['_id']['guild_id'], platform=row['_id']['platform']).set(
+                    row['total']
                 )
 
             q_wdyctw = self.db.get_wdyctw_questions_count()
@@ -520,9 +487,12 @@ class TacoBotMetrics:
                 if u["user"] is not None and len(u["user"]) > 0:
                     user = u["user"][0]
 
-                user_labels = {"guild_id": u['_id']['guild_id'], "user_id": user['user_id'], "username": user['username']}
+                user_labels = {
+                    "guild_id": u['_id']['guild_id'],
+                    "user_id": user['user_id'],
+                    "username": user['username'],
+                }
                 self.top_messages.labels(**user_labels).set(u["total"])
-
 
             q_top_gifters = self.db.get_top_taco_gifters()
             for u in q_top_gifters:
@@ -531,7 +501,9 @@ class TacoBotMetrics:
                     user = u["user"][0]
 
                 user_labels = {
-                    "guild_id": u['_id']['guild_id'], "user_id": u["_id"]['user_id'], "username": user['username']
+                    "guild_id": u['_id']['guild_id'],
+                    "user_id": u["_id"]['user_id'],
+                    "username": user['username'],
                 }
                 self.top_gifters.labels(**user_labels).set(u["total"])
 
@@ -548,41 +520,44 @@ class TacoBotMetrics:
 
             q_top_tacos = self.db.get_top_taco_receivers()
             for u in q_top_tacos:
-                user = {
-                    "user_id": u["_id"]['user_id'],
-                    "username": u["_id"]['user_id']
-                }
+                user = {"user_id": u["_id"]['user_id'], "username": u["_id"]['user_id']}
                 if u["user"] is not None and len(u["user"]) > 0:
                     user = u["user"][0]
 
-                user_labels = { "guild_id": u['_id']['guild_id'], "user_id": user['user_id'], "username": user['username'] }
+                user_labels = {
+                    "guild_id": u['_id']['guild_id'],
+                    "user_id": user['user_id'],
+                    "username": user['username'],
+                }
                 self.top_tacos.labels(**user_labels).set(u["total"])
 
             q_top_live = self.db.get_live_activity()
             for u in q_top_live:
-                user = {
-                    "user_id": u["_id"]['user_id'],
-                    "username": u["_id"]['user_id']
-                }
+                user = {"user_id": u["_id"]['user_id'], "username": u["_id"]['user_id']}
                 if u["user"] is not None and len(u["user"]) > 0:
                     user = u["user"][0]
 
-                user_labels = { "guild_id": u['_id']['guild_id'], "user_id": user['user_id'], "username": user['username'], "platform": u["_id"]['platform'] }
+                user_labels = {
+                    "guild_id": u['_id']['guild_id'],
+                    "user_id": user['user_id'],
+                    "username": user['username'],
+                    "platform": u["_id"]['platform'],
+                }
                 self.top_live_activity.labels(**user_labels).set(u["total"])
 
             q_suggestions = self.db.get_suggestions()
             for gid in known_guilds:
                 for state in ["ACTIVE", "APPROVED", "REJECTED", "IMPLEMENTED", "CONSIDERED", "DELETED", "CLOSED"]:
-                    suggestion_labels = { "guild_id": gid, "status": state }
+                    suggestion_labels = {"guild_id": gid, "status": state}
                     self.suggestions.labels(**suggestion_labels).set(0)
             for row in q_suggestions:
-                suggestion_labels = { "guild_id": row['_id']['guild_id'], "status": row['_id']['state'] }
+                suggestion_labels = {"guild_id": row['_id']['guild_id'], "status": row['_id']['state']}
                 self.suggestions.labels(**suggestion_labels).set(row["total"])
 
             q_join_leave = self.db.get_user_join_leave()
             for gid in known_guilds:
                 for state in ["JOIN", "LEAVE"]:
-                    join_leave_labels = { "guild_id": gid, "action": state }
+                    join_leave_labels = {"guild_id": gid, "action": state}
                     self.user_join_leave.labels(**join_leave_labels).set(0)
 
             for row in q_join_leave:
@@ -599,7 +574,7 @@ class TacoBotMetrics:
                     "guild_id": u['_id']['guild_id'],
                     "user_id": user['user_id'],
                     "username": user['username'],
-                    "channel": u["_id"]['channel']
+                    "channel": u["_id"]['channel'],
                 }
                 self.photo_posts.labels(**user_labels).set(u["total"])
 
@@ -655,11 +630,11 @@ class TacoBotMetrics:
             q_introductions = self.db.get_introductions()
             for gid in known_guilds:
                 for approved in ["true", "false"]:
-                    intro_labels = { "guild_id": gid, "approved": approved }
+                    intro_labels = {"guild_id": gid, "approved": approved}
                     self.introductions.labels(**intro_labels).set(0)
 
             for row in q_introductions:
-                intro_labels = {"guild_id": row['_id']["guild_id"],"approved": str(row['_id']["approved"]).lower()}
+                intro_labels = {"guild_id": row['_id']["guild_id"], "approved": str(row['_id']["approved"]).lower()}
                 total_count = row["total"]
                 if total_count is not None and total_count > 0:
                     self.introductions.labels(**intro_labels).set(row["total"])

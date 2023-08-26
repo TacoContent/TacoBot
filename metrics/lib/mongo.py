@@ -420,7 +420,7 @@ class MongoDatabase:
                                         "bot",
                                         {"$cond": [{"$eq": ["$system", True]}, "system", "user"]},
                                     ]
-                                },
+                                }
                             },
                             "total": {"$sum": 1},
                         },
@@ -663,7 +663,7 @@ class MongoDatabase:
                                     "starter_id": "$starter_id",
                                 },
                                 "total": {"$sum": 1},
-                            },
+                            }
                         },
                         {
                             "$lookup": {

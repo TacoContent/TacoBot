@@ -11,8 +11,8 @@ class Log:
         pass
 
     def __write(
-            self, guildId: int, level: loglevel.LogLevel, method: str, message: str, stack: typing.Optional[str] = None
-        ) -> None:
+        self, guildId: int, level: loglevel.LogLevel, method: str, message: str, stack: typing.Optional[str] = None
+    ) -> None:
         print(f"[{level.name}] [{method}] [guild:{str(guildId)}] {message}")
         if stack:
             print(stack)
