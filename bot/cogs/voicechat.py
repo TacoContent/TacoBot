@@ -2,8 +2,8 @@ import inspect
 import traceback
 import os
 
-from discord.ext import commands
 from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
+from discord.ext import commands
 
 
 class VoiceChatCog(commands.Cog):

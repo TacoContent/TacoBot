@@ -4,11 +4,11 @@ import inspect
 import traceback
 import os
 
+from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
+from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.permissions import Permissions
 from discord.ext.commands import Context
 from discord.ext import commands
-from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
-from bot.cogs.lib.permissions import Permissions
-from bot.cogs.lib.messaging import Messaging
 
 
 class WhatDoYouCallThisWednesday(commands.Cog):

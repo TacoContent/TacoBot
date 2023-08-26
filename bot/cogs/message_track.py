@@ -2,8 +2,8 @@ import inspect
 import os
 import traceback
 
-from discord.ext import commands
 from bot.cogs.lib import discordhelper, logger, loglevel, settings, mongo, tacotypes
+from discord.ext import commands
 
 
 class MessageTracker(commands.Cog):

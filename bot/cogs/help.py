@@ -4,9 +4,9 @@ import os
 import math
 import re
 
-from discord.ext import commands
 from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, utils
 from bot.cogs.lib.messaging import Messaging
+from discord.ext import commands
 
 
 class Help(commands.Cog):

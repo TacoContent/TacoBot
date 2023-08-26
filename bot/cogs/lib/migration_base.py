@@ -1,8 +1,8 @@
 import os
 import traceback
 
-from pymongo import MongoClient
 from bot.cogs.lib import settings  # pylint: disable=no-name-in-module
+from pymongo import MongoClient
 
 
 class MigrationBase:

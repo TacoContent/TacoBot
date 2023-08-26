@@ -1,12 +1,12 @@
 import inspect
 import os
 
-from prometheus_client import start_http_server
-from metrics.tacobot import TacoBotMetrics
 from metrics.config import TacoBotMetricsConfig
-from metrics.lib.utils import dict_get
+from metrics.tacobot import TacoBotMetrics
 from metrics.lib.logger import Log
 from metrics.lib.loglevel import LogLevel
+from metrics.lib.utils import dict_get
+from prometheus_client import start_http_server
 
 
 class MetricsExporter:

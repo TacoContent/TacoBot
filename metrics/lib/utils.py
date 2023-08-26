@@ -1,5 +1,5 @@
-import typing
 import datetime
+import typing
 
 
 def dict_get(dictionary, key, default_value=None) -> typing.Any:

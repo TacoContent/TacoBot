@@ -5,11 +5,11 @@ import os
 import math
 import uuid
 
+from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo
+from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 from random import random
 from urllib import parse, request
-from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo
-from bot.cogs.lib.messaging import Messaging
 
 
 class Giphy(commands.Cog):

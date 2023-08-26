@@ -3,11 +3,11 @@ import typing
 import inspect
 import os
 
-from discord.ext import commands
-from discord.ext.commands import Greedy, Context
 from bot import tacobot  # pylint: disable=no-name-in-module
 from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo
 from bot.cogs.lib.messaging import Messaging
+from discord.ext import commands
+from discord.ext.commands import Greedy, Context
 
 
 class CommandSyncCog(commands.Cog):

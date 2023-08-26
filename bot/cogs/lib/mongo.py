@@ -6,12 +6,12 @@ import traceback
 import typing
 import uuid
 
-from pymongo import MongoClient
-from bson.objectid import ObjectId
-from bot.cogs.lib.minecraft_op import MinecraftOpLevel
 from bot.cogs.lib import database, loglevel, models, settings, utils  # pylint: disable=no-name-in-module
-from bot.cogs.lib.system_actions import SystemActions  # pylint: disable=relative-beyond-top-level
+from bot.cogs.lib.minecraft_op import MinecraftOpLevel
 from bot.cogs.lib.member_status import MemberStatus  # pylint: disable=relative-beyond-top-level
+from bot.cogs.lib.system_actions import SystemActions  # pylint: disable=relative-beyond-top-level
+from bson.objectid import ObjectId
+from pymongo import MongoClient
 
 
 class MongoDatabase(database.Database):

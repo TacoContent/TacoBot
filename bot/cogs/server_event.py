@@ -4,8 +4,8 @@ import inspect
 import os
 import traceback
 
-from discord.ext import commands
 from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, utils, tacotypes
+from discord.ext import commands
 
 
 class ServerEvent(commands.Cog):

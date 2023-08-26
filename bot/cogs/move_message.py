@@ -8,9 +8,9 @@ import inspect
 import os
 import traceback
 
-from discord.ext import commands
 from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, permissions
 from bot.cogs.lib.messaging import Messaging
+from discord.ext import commands
 
 
 class MoveMessage(commands.Cog):

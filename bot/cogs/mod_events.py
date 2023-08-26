@@ -3,9 +3,9 @@ import inspect
 import os
 import typing
 
-from discord.ext import commands
 from bot.cogs.lib import settings, logger, loglevel, mongo
 from bot.cogs.lib.system_actions import SystemActions
+from discord.ext import commands
 
 
 class ModEventsCog(commands.Cog):

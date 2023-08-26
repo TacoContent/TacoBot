@@ -1,6 +1,5 @@
 import datetime
 import discord
-from discord.ext import commands
 import inspect
 import os
 import traceback
@@ -13,8 +12,9 @@ from bot.cogs.lib import (
     loglevel,
     tacotypes,
 )  # pylint: disable=no-name-in-module
-from bot.cogs.lib.permissions import Permissions
 from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.permissions import Permissions
+from discord.ext import commands
 
 
 class MentalMondays(commands.Cog):

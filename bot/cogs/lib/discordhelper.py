@@ -8,10 +8,10 @@ import typing
 
 from bot.cogs.lib import utils, settings, mongo, loglevel, logger, tacotypes  # pylint: disable=no-name-in-module
 from bot.cogs.lib.ChannelSelect import ChannelSelectView  # pylint: disable=relative-beyond-top-level
-from bot.cogs.lib.RoleSelectView import RoleSelectView, RoleSelect  # pylint: disable=relative-beyond-top-level
-from bot.cogs.lib.models import TextWithAttachments  # pylint: disable=relative-beyond-top-level
-from bot.cogs.lib.YesOrNoView import YesOrNoView  # pylint: disable=relative-beyond-top-level
 from bot.cogs.lib.messaging import Messaging  # pylint: disable=relative-beyond-top-level
+from bot.cogs.lib.models import TextWithAttachments  # pylint: disable=relative-beyond-top-level
+from bot.cogs.lib.RoleSelectView import RoleSelectView, RoleSelect  # pylint: disable=relative-beyond-top-level
+from bot.cogs.lib.YesOrNoView import YesOrNoView  # pylint: disable=relative-beyond-top-level
 
 
 class DiscordHelper:

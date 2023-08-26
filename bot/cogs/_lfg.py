@@ -2,9 +2,9 @@ import discord
 import inspect
 import os
 
-from discord.ext import commands
 from bot import tacobot  # pylint: disable=relative-beyond-top-level
 from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo
+from discord.ext import commands
 
 
 class LookingForGamers(commands.Cog):

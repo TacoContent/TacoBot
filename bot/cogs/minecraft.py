@@ -8,10 +8,10 @@ import os
 import requests
 import traceback
 
-from discord.ext import commands
-from discord.ext.commands import Context
 from bot.cogs.lib import settings, logger, discordhelper, loglevel, mongo
 from bot.cogs.lib.messaging import Messaging
+from discord.ext import commands
+from discord.ext.commands import Context
 
 
 class Minecraft(commands.Cog):

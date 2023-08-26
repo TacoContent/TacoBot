@@ -1,11 +1,11 @@
 import discord
-from discord.ext import commands
 import inspect
 import os
 import traceback
 
 from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
 from bot.cogs.lib.messaging import Messaging
+from discord.ext import commands
 
 
 class IntroductionCog(commands.Cog):

@@ -2,8 +2,8 @@ import inspect
 import os
 import traceback
 
-from discord.ext import commands
 from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo
+from discord.ext import commands
 
 
 class GuildTrack(commands.Cog):

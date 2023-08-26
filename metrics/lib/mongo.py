@@ -3,8 +3,8 @@ import os
 import traceback
 import typing
 
-from pymongo import MongoClient
 from metrics.lib import loglevel, utils
+from pymongo import MongoClient
 
 
 class MongoDatabase:

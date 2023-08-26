@@ -1,12 +1,13 @@
 import asyncio
+import bot.tacobot as bot
 import discord
 import os
 import signal
-from dotenv import load_dotenv, find_dotenv
-import bot.tacobot as bot
+
 from bot.cogs.lib.migration_runner import MigrationRunner
-from metrics.exporter import MetricsExporter
 from concurrent.futures import ProcessPoolExecutor
+from dotenv import load_dotenv, find_dotenv
+from metrics.exporter import MetricsExporter
 
 
 load_dotenv(find_dotenv())

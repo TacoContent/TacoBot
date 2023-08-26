@@ -3,9 +3,9 @@ import os
 import traceback
 import typing
 
-from discord.ext import commands
 from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo
 from bot.cogs.lib.member_status import MemberStatus
+from discord.ext import commands
 
 
 class UserLookup(commands.Cog):

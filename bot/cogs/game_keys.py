@@ -5,10 +5,10 @@ import os
 import traceback
 import typing
 
-from discord.ext import commands
 from bot.cogs.lib import settings, discordhelper, logger, loglevel, utils, mongo, tacotypes
 from bot.cogs.lib.GameRewardView import GameRewardView
 from bot.cogs.lib.messaging import Messaging
+from discord.ext import commands
 
 
 class GameKeys(commands.Cog):
