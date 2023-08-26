@@ -598,6 +598,8 @@ class MongoDatabase:
         try:
             if self.connection is None:
                 self.open()
+
+            # pylint: disable=syntax-error
             # this is the log entry docuemnt
             # {
             #     _id: ObjectId('64823bc04b3af18f34e7e2ec'),
@@ -609,7 +611,7 @@ class MongoDatabase:
             #     reason: 'reacting to darthminos\'s message with a 🌮',
             #     timestamp: 1686256576.813649
             # }
-
+            # pylint: enable=syntax-error
             # aggregate all tacos_log entries for a guild, grouped by type, and sum the count
             logs = self.connection.tacos_log.aggregate(
                 [

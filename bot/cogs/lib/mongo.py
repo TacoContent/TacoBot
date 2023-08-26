@@ -605,7 +605,7 @@ class MongoDatabase(database.Database):
             else:
                 self.connection.invite_codes.update_one(
                     {"guild_id": str(guildId), "code": inviteCode},
-                    {"$set": payload, "$push": {"invites": userInvite}},  # pylint: disable=syntax-error
+                    {"$set": payload, "$push": {"invites": userInvite}},
                     upsert=True,
                 )
         except Exception as ex:
