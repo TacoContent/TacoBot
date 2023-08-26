@@ -15,7 +15,7 @@ class TacoBotMetrics:
         # get the class name
         self._class = self.__class__.__name__
         self._module = os.path.basename(__file__)[:-3]
-        log_level_value = dict_get(os.environ, 'LOG_LEVEL', default_value = 'DEBUG')
+        log_level_value = dict_get(os.environ, 'LOG_LEVEL', default_value='DEBUG')
 
         log_level = loglevel.LogLevel[log_level_value.upper()]
         if not log_level:
@@ -514,7 +514,9 @@ class TacoBotMetrics:
                     user = u["user"][0]
 
                 user_labels = {
-                    "guild_id": u['_id']['guild_id'], "user_id": user['user_id'], "username": user['username']
+                    "guild_id": u['_id']['guild_id'],
+                    "user_id": user['user_id'],
+                    "username": user['username'],
                 }
                 self.top_reactors.labels(**user_labels).set(u["total"])
 

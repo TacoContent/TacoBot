@@ -423,8 +423,8 @@ class MongoDatabase:
                                 }
                             },
                             "total": {"$sum": 1},
-                        },
-                    },
+                        }
+                    }
                 ]
             )
         except Exception as ex:
