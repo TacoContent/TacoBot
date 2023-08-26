@@ -1,9 +1,9 @@
-import discord
 import inspect
 import os
 import typing
 
-from bot.cogs.lib import logger, loglevel, settings, mongo, utils  # pylint: disable=no-name-in-module
+import discord
+from bot.cogs.lib import logger, loglevel, mongo, settings, utils
 
 
 class Messaging:

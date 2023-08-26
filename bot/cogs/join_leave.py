@@ -3,7 +3,7 @@ import traceback
 import os
 
 import discord
-from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
 from bot.cogs.lib.system_actions import SystemActions
 from discord.ext import commands
 

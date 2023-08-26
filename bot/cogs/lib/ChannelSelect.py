@@ -1,10 +1,9 @@
-import discord
 import inspect
 import os
 import traceback
 
-
-from bot.cogs.lib import settings, logger, loglevel  # pylint: disable=no-name-in-module
+import discord
+from bot.cogs.lib import settings, logger, loglevel
 
 
 class ChannelSelect(discord.ui.Select):

@@ -6,7 +6,7 @@ import os
 import traceback
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, utils  # pylint: disable=no-name-in-module
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, utils
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 

@@ -5,7 +5,7 @@ import traceback
 import typing
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, utils, mongo, settings, tacotypes
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes, utils
 from bot.cogs.lib.GameRewardView import GameRewardView
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands

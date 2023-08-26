@@ -1,8 +1,8 @@
-import traceback
 import inspect
-import os
 import math
+import os
 import re
+import traceback
 
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, utils
 from bot.cogs.lib.messaging import Messaging

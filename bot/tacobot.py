@@ -1,12 +1,12 @@
-import discord
-import discordhealthcheck
 import inspect
 import os
 import sys
 import traceback
 import typing
 
-from bot.cogs.lib import settings, mongo, logger, loglevel  # pylint: disable=no-name-in-module
+import discord
+import discordhealthcheck
+from bot.cogs.lib import logger, loglevel, mongo, settings
 from discord.ext import commands
 
 

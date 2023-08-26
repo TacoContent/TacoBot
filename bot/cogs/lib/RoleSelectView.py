@@ -1,9 +1,9 @@
-import discord
 import inspect
 import os
 import typing
 
-from bot.cogs.lib import settings, logger, loglevel  # pylint: disable=no-name-in-module
+import discord
+from bot.cogs.lib import settings, logger, loglevel
 
 
 class RoleSelectView(discord.ui.View):

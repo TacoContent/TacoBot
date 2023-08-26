@@ -4,9 +4,9 @@ import math
 import os
 import traceback
 import uuid
-
 from random import random
 from urllib import parse, request
+
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands

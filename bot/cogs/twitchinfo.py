@@ -2,11 +2,11 @@
 import collections
 import inspect
 import os
-import requests
 import traceback
 import typing
 
 import discord
+import requests
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes, utils
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.system_actions import SystemActions

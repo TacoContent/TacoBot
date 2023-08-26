@@ -1,10 +1,10 @@
-import discord
 import os
 import inspect
 import traceback
 import typing
 
-from bot.cogs.lib import settings, logger, loglevel  # pylint: disable=no-name-in-module
+import discord
+from bot.cogs.lib import settings, logger, loglevel
 
 
 class GameRewardView(discord.ui.View):

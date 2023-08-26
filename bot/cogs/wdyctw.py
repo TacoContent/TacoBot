@@ -1,14 +1,14 @@
 import datetime
 import inspect
-import traceback
 import os
+import traceback
 
 import discord
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.permissions import Permissions
-from discord.ext.commands import Context
 from discord.ext import commands
+from discord.ext.commands import Context
 
 
 class WhatDoYouCallThisWednesday(commands.Cog):

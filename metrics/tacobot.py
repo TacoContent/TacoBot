@@ -3,8 +3,7 @@ import os
 import time
 import traceback
 
-from metrics.lib import logger
-from metrics.lib import loglevel
+from metrics.lib import logger, loglevel
 from metrics.lib.mongo import MongoDatabase
 from metrics.lib.utils import dict_get
 from prometheus_client import Gauge

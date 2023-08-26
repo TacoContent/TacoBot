@@ -7,7 +7,7 @@ from bot import tacobot  # pylint: disable=no-name-in-module
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
-from discord.ext.commands import Greedy, Context
+from discord.ext.commands import Context, Greedy
 
 
 class CommandSyncCog(commands.Cog):

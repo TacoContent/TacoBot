@@ -4,7 +4,7 @@ import os
 import traceback
 import typing
 
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, utils, settings, tacotypes
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes, utils
 from bot.cogs.lib.system_actions import SystemActions
 from discord.ext import commands
 

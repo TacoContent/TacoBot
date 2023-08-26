@@ -4,13 +4,13 @@ import inspect
 import os
 import traceback
 import typing
+from random import random
 
 import discord
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 from discord.ext.commands import Context
-from random import random
 
 
 class Birthday(commands.Cog):

@@ -1,10 +1,10 @@
 # this is for restricted channels that only allow specific commands in chat.
-import discord
 import inspect
 import os
-import traceback
 import re
+import traceback
 
+import discord
 from bot.cogs.lib import discordhelper, logger, loglevel, settings, mongo
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands

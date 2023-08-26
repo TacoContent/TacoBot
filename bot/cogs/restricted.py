@@ -1,9 +1,9 @@
 # this is for restricted channels that only allow specific commands in chat.
 import asyncio
 import inspect
-import traceback
 import os
 import re
+import traceback
 import typing
 
 import discord

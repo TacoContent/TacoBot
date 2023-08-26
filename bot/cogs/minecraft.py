@@ -4,8 +4,8 @@
 
 import inspect
 import os
-import requests
 import traceback
+import requests
 
 import discord
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings

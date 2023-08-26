@@ -1,18 +1,17 @@
 import asyncio
 import collections
-import discord
 import inspect
 import os
 import traceback
 import typing
 
-from bot.cogs.lib import utils, settings, mongo, loglevel, logger, tacotypes  # pylint: disable=no-name-in-module
-from bot.cogs.lib.ChannelSelect import ChannelSelectView  # pylint: disable=relative-beyond-top-level
-from bot.cogs.lib.messaging import Messaging  # pylint: disable=relative-beyond-top-level
-from bot.cogs.lib.models import TextWithAttachments  # pylint: disable=relative-beyond-top-level
-from bot.cogs.lib.RoleSelectView import RoleSelectView, RoleSelect  # pylint: disable=relative-beyond-top-level
-from bot.cogs.lib.YesOrNoView import YesOrNoView  # pylint: disable=relative-beyond-top-level
-
+import discord
+from bot.cogs.lib import logger, loglevel, mongo, settings, tacotypes, utils
+from bot.cogs.lib.ChannelSelect import ChannelSelectView
+from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.models import TextWithAttachments
+from bot.cogs.lib.RoleSelectView import RoleSelect, RoleSelectView
+from bot.cogs.lib.YesOrNoView import YesOrNoView
 
 class DiscordHelper:
     def __init__(self, bot) -> None:

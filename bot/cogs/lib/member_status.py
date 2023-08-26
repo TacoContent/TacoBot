@@ -1,5 +1,4 @@
 import discord
-
 from enum import Enum
 
 

@@ -1,15 +1,15 @@
 import datetime
-import discord
 import inspect
 import os
 import traceback
 import typing
 import uuid
 
-from bot.cogs.lib import database, loglevel, models, settings, utils  # pylint: disable=no-name-in-module
+import discord
+from bot.cogs.lib import database, loglevel, models, settings, utils
+from bot.cogs.lib.member_status import MemberStatus
 from bot.cogs.lib.minecraft_op import MinecraftOpLevel
-from bot.cogs.lib.member_status import MemberStatus  # pylint: disable=relative-beyond-top-level
-from bot.cogs.lib.system_actions import SystemActions  # pylint: disable=relative-beyond-top-level
+from bot.cogs.lib.system_actions import SystemActions
 from bson.objectid import ObjectId
 from pymongo import MongoClient
 

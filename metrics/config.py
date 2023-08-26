@@ -1,7 +1,7 @@
 import codecs
 import os
-import yaml
 
+import yaml
 from metrics.lib.utils import dict_get
 
 
