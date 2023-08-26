@@ -3,7 +3,7 @@ import os
 import traceback
 
 import discord
-from bot.cogs.lib import settings, logger, loglevel
+from bot.cogs.lib import logger, loglevel, settings
 
 
 class ChannelSelect(discord.ui.Select):

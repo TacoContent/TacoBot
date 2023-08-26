@@ -1,6 +1,6 @@
 import typing
 
-from metrics.lib import mongo, loglevel
+from metrics.lib import loglevel, mongo
 
 
 class Log:

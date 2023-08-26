@@ -5,7 +5,7 @@ import re
 import traceback
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, settings, mongo
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 

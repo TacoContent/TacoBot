@@ -1,5 +1,6 @@
-import discord
 from enum import Enum
+
+import discord
 
 
 class MemberStatus(Enum):

@@ -1,9 +1,9 @@
-import aiohttp
 import inspect
 import io
 import os
 import traceback
 
+import aiohttp
 import discord
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
 from bot.cogs.lib.messaging import Messaging

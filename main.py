@@ -9,7 +9,6 @@ from bot.cogs.lib.migration_runner import MigrationRunner
 from dotenv import find_dotenv, load_dotenv
 from metrics.exporter import MetricsExporter
 
-
 load_dotenv(find_dotenv())
 
 

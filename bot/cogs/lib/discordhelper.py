@@ -13,6 +13,7 @@ from bot.cogs.lib.models import TextWithAttachments
 from bot.cogs.lib.RoleSelectView import RoleSelect, RoleSelectView
 from bot.cogs.lib.YesOrNoView import YesOrNoView
 
+
 class DiscordHelper:
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]

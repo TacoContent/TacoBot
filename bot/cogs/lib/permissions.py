@@ -3,6 +3,7 @@ import typing
 import discord
 from bot.cogs.lib import discordhelper, mongo, settings
 
+
 class Permissions:
     def __init__(self, bot) -> None:
         self.settings = settings.Settings()

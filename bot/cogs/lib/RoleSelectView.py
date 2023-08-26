@@ -3,7 +3,7 @@ import os
 import typing
 
 import discord
-from bot.cogs.lib import settings, logger, loglevel
+from bot.cogs.lib import logger, loglevel, settings
 
 
 class RoleSelectView(discord.ui.View):

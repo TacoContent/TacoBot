@@ -1,6 +1,6 @@
 import inspect
-import traceback
 import os
+import traceback
 
 import discord
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes

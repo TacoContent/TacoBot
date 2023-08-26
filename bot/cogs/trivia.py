@@ -8,15 +8,7 @@ import requests
 import traceback
 import typing
 
-from bot.cogs.lib import (
-    discordhelper,
-    logger,
-    loglevel,
-    mongo,
-    settings,
-    utils,
-    tacotypes,
-)  # pylint: disable=no-name-in-module
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes, utils
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.models import TriviaQuestion
 from discord.ext import commands
