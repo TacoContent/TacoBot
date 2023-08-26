@@ -8,8 +8,8 @@ import uuid
 from discord.ext import commands
 from random import random
 from urllib import parse, request
-from .lib import settings, discordhelper, logger, loglevel, mongo
-from .lib.messaging import Messaging
+from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo
+from bot.cogs.lib.messaging import Messaging
 
 
 class Giphy(commands.Cog):

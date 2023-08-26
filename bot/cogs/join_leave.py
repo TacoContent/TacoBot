@@ -4,8 +4,8 @@ import traceback
 import os
 
 from discord.ext import commands
-from .lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
-from .lib.system_actions import SystemActions
+from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
+from bot.cogs.lib.system_actions import SystemActions
 
 
 class JoinLeaveTracker(commands.Cog):

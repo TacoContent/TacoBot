@@ -6,7 +6,7 @@ import sys
 import traceback
 import typing
 
-from . import utils  # pylint: disable=no-name-in-module
+from bot.cogs.lib import utils  # pylint: disable=no-name-in-module
 
 
 class Settings:

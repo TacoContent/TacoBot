@@ -8,8 +8,8 @@ import re
 import typing
 
 from discord.ext import commands
-from .lib import settings, discordhelper, logger, loglevel, mongo
-from .lib.messaging import Messaging
+from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo
+from bot.cogs.lib.messaging import Messaging
 
 
 class Restricted(commands.Cog):

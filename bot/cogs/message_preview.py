@@ -6,8 +6,8 @@ import os
 import traceback
 import re
 
-from .lib import discordhelper, logger, loglevel, settings, mongo
-from .lib.messaging import Messaging
+from bot.cogs.lib import discordhelper, logger, loglevel, settings, mongo
+from bot.cogs.lib.messaging import Messaging
 
 
 class MessagePreview(commands.Cog):

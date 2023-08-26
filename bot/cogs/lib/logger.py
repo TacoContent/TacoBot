@@ -1,6 +1,6 @@
 import typing
 
-from . import mongo, loglevel  # pylint: disable=no-name-in-module
+from bot.cogs.lib import mongo, loglevel  # pylint: disable=no-name-in-module
 
 
 class Log:

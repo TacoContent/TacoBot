@@ -5,9 +5,9 @@ import os
 
 from discord.ext import commands
 from discord.ext.commands import Greedy, Context
-from .. import tacobot  # pylint: disable=relative-beyond-top-level
-from .lib import settings, discordhelper, logger, loglevel, mongo
-from .lib.messaging import Messaging
+from bot import tacobot  # pylint: disable=no-name-in-module
+from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo
+from bot.cogs.lib.messaging import Messaging
 
 
 class CommandSyncCog(commands.Cog):

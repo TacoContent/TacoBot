@@ -7,8 +7,7 @@ import traceback
 import typing
 
 from discord.ext import commands
-from random import randint
-from .cogs.lib import settings, mongo, logger, loglevel
+from bot.cogs.lib import settings, mongo, logger, loglevel
 
 
 class TacoBot(commands.Bot):

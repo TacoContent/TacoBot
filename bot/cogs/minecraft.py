@@ -10,8 +10,8 @@ import traceback
 
 from discord.ext import commands
 from discord.ext.commands import Context
-from .lib import settings, logger, discordhelper, loglevel, mongo
-from .lib.messaging import Messaging
+from bot.cogs.lib import settings, logger, discordhelper, loglevel, mongo
+from bot.cogs.lib.messaging import Messaging
 
 
 class Minecraft(commands.Cog):

@@ -1,9 +1,9 @@
 import datetime
 import typing
 
-from . import models, loglevel  # pylint: disable=no-name-in-module
-from .system_actions import SystemActions  # pylint: disable=relative-beyond-top-level
-from .member_status import MemberStatus  # pylint: disable=relative-beyond-top-level
+from bot.cogs.lib import models, loglevel  # pylint: disable=no-name-in-module
+from bot.cogs.lib.system_actions import SystemActions  # pylint: disable=relative-beyond-top-level
+from bot.cogs.lib.member_status import MemberStatus  # pylint: disable=relative-beyond-top-level
 
 
 class Database:

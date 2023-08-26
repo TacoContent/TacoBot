@@ -7,9 +7,9 @@ import traceback
 
 from discord.ext import commands
 from discord.ext.commands import Context
-from lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
-from lib.permissions import Permissions
-from lib.messaging import Messaging
+from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, tacotypes  # pylint: disable=no-name-in-module
+from bot.cogs.lib.permissions import Permissions
+from bot.cogs.lib.messaging import Messaging
 
 
 def is_admin_check(interaction: discord.Interaction) -> bool:

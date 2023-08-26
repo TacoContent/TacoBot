@@ -4,7 +4,7 @@ import traceback
 import typing
 
 from pymongo import MongoClient
-from . import loglevel, utils
+from metrics.lib import loglevel, utils
 
 
 class MongoDatabase:

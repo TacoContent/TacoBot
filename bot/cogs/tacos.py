@@ -5,8 +5,8 @@ import traceback
 import typing
 
 from discord.ext import commands
-from .lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
-from .lib.messaging import Messaging
+from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
+from bot.cogs.lib.messaging import Messaging
 
 
 class Tacos(commands.Cog):

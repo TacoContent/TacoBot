@@ -1,7 +1,6 @@
 import typing
 
-from . import mongo  # pylint: disable=no-name-in-module
-from . import loglevel  # pylint: disable=no-name-in-module
+from metrics.lib import mongo, loglevel  # pylint: disable=no-name-in-module
 
 
 class Log:

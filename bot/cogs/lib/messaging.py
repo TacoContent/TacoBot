@@ -3,7 +3,7 @@ import inspect
 import os
 import typing
 
-from . import logger, loglevel, settings, mongo, utils  # pylint: disable=no-name-in-module
+from bot.cogs.lib import logger, loglevel, settings, mongo, utils  # pylint: disable=no-name-in-module
 
 
 class Messaging:

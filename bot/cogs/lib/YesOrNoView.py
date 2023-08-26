@@ -4,7 +4,7 @@ import os
 import traceback
 import typing
 
-from . import settings, logger, loglevel  # pylint: disable=no-name-in-module
+from bot.cogs.lib import settings, logger, loglevel  # pylint: disable=no-name-in-module
 
 
 class YesOrNoView(discord.ui.View):

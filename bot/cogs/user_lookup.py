@@ -4,8 +4,8 @@ import traceback
 import typing
 
 from discord.ext import commands
-from .lib import settings, discordhelper, logger, loglevel, mongo
-from .lib.member_status import MemberStatus
+from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo
+from bot.cogs.lib.member_status import MemberStatus
 
 
 class UserLookup(commands.Cog):

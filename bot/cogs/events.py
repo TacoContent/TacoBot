@@ -4,7 +4,7 @@ import os
 import traceback
 
 from discord.ext import commands
-from .lib import settings, logger, loglevel, mongo
+from bot.cogs.lib import settings, logger, loglevel, mongo
 
 
 class Events(commands.Cog):

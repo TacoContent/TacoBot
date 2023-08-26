@@ -1,7 +1,7 @@
 import discord
 import typing
 
-from . import discordhelper, settings, mongo  # pylint: disable=no-name-in-module
+from bot.cogs.lib import discordhelper, settings, mongo  # pylint: disable=no-name-in-module
 
 
 class Permissions:

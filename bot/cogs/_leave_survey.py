@@ -1,30 +1,14 @@
 # This cog will message the user if they leave the discord and ask them
 # the reason for leaving.
 
-from unicodedata import is_normalized
 import discord
-from discord.ext import commands
-import asyncio
-import json
-import traceback
-import sys
-import os
-import glob
-import typing
-import math
-
-from discord.ext.commands.cooldowns import BucketType
-from discord.ext.commands import has_permissions, CheckFailure
 import inspect
+import os
+import traceback
 
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib.messaging import Messaging
+from discord.ext import commands
+from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, utils  # pylint: disable=no-name-in-module
+from bot.cogs.lib.messaging import Messaging
 
 
 class LeaveSurvey(commands.Cog):

@@ -5,8 +5,8 @@ import math
 import re
 
 from discord.ext import commands
-from .lib import settings, discordhelper, logger, loglevel, mongo, utils
-from .lib.messaging import Messaging
+from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, utils
+from bot.cogs.lib.messaging import Messaging
 
 
 class Help(commands.Cog):

@@ -4,10 +4,10 @@ import time
 import traceback
 
 from prometheus_client import Gauge
-from .lib.mongo import MongoDatabase
-from .lib.utils import dict_get
-from .lib import logger
-from .lib import loglevel
+from metrics.lib.mongo import MongoDatabase
+from metrics.lib.utils import dict_get
+from metrics.lib import logger
+from metrics.lib import loglevel
 
 
 class TacoBotMetrics:

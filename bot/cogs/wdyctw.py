@@ -6,9 +6,9 @@ import os
 
 from discord.ext.commands import Context
 from discord.ext import commands
-from .lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
-from .lib.permissions import Permissions
-from .lib.messaging import Messaging
+from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
+from bot.cogs.lib.permissions import Permissions
+from bot.cogs.lib.messaging import Messaging
 
 
 class WhatDoYouCallThisWednesday(commands.Cog):

@@ -2,7 +2,7 @@ import os
 import traceback
 
 from pymongo import MongoClient
-from . import settings  # pylint: disable=no-name-in-module
+from bot.cogs.lib import settings  # pylint: disable=no-name-in-module
 
 
 class MigrationBase:

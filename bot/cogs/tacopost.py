@@ -4,8 +4,8 @@ import os
 import traceback
 
 from discord.ext import commands
-from .lib import settings, discordhelper, logger, loglevel, mongo, messaging
-from .lib.messaging import Messaging
+from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, messaging
+from bot.cogs.lib.messaging import Messaging
 
 
 class TacoPost(commands.Cog):

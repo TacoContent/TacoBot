@@ -3,7 +3,7 @@ import inspect
 import os
 import typing
 
-from . import settings, logger, loglevel  # pylint: disable=no-name-in-module
+from bot.cogs.lib import settings, logger, loglevel  # pylint: disable=no-name-in-module
 
 
 class RoleSelectView(discord.ui.View):

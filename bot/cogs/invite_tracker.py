@@ -5,8 +5,8 @@ import traceback
 import typing
 
 from discord.ext import commands
-from .lib import settings, discordhelper, logger, loglevel, mongo, utils, tacotypes
-from .lib.system_actions import SystemActions
+from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, utils, tacotypes
+from bot.cogs.lib.system_actions import SystemActions
 
 
 class InviteTracker(commands.Cog):

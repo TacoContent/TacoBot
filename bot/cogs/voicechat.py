@@ -3,7 +3,7 @@ import traceback
 import os
 
 from discord.ext import commands
-from .lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
+from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
 
 
 class VoiceChatCog(commands.Cog):

@@ -4,7 +4,7 @@ import re
 import traceback
 
 from discord.ext import commands
-from .lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
+from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
 
 
 class PhotoPost(commands.Cog):

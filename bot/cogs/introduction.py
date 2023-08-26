@@ -4,8 +4,8 @@ import inspect
 import os
 import traceback
 
-from .lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
-from .lib.messaging import Messaging
+from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
+from bot.cogs.lib.messaging import Messaging
 
 
 class IntroductionCog(commands.Cog):

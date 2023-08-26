@@ -6,9 +6,9 @@ import traceback
 import typing
 
 from discord.ext import commands
-from .lib import settings, discordhelper, logger, loglevel, utils, mongo, tacotypes
-from .lib.GameRewardView import GameRewardView
-from .lib.messaging import Messaging
+from bot.cogs.lib import settings, discordhelper, logger, loglevel, utils, mongo, tacotypes
+from bot.cogs.lib.GameRewardView import GameRewardView
+from bot.cogs.lib.messaging import Messaging
 
 
 class GameKeys(commands.Cog):
