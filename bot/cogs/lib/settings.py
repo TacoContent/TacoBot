@@ -17,6 +17,14 @@ class Settings:
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
+        # setup properties that are needed
+        self.changelog = ""
+        self.name = ""
+        self.version = ""
+        self.languages = {}
+        self.strings = {}
+        self.commands = {}
+
         try:
             with open('app.manifest', encoding="UTF-8") as json_file:
                 self.__dict__.update(json.load(json_file))

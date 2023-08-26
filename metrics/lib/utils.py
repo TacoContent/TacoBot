@@ -9,9 +9,9 @@ def dict_get(dictionary, key, default_value=None) -> typing.Any:
         return default_value
 
 
-def to_timestamp(date, tz: typing.Optional[datetime.timezone]=None) -> float:
+def to_timestamp(date, tz: typing.Optional[datetime.timezone] = None) -> float:
     date = date.replace(tzinfo=tz)
-    return (date - datetime.datetime(1970,1,1, tzinfo=tz)).total_seconds()
+    return (date - datetime.datetime(1970, 1, 1, tzinfo=tz)).total_seconds()
 
 
 def from_timestamp(timestamp: float) -> datetime.datetime:

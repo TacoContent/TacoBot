@@ -6,8 +6,8 @@ import re
 import traceback
 
 from discord.ext import commands
-from .lib import discordhelper, logger, loglevel, mongo, settings
-from .lib.messaging import Messaging
+from .lib import discordhelper, logger, loglevel, mongo, settings  # pylint: disable=no-name-in-module
+from lib.messaging import Messaging
 
 
 class AmazonLink(commands.Cog):

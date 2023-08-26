@@ -420,7 +420,7 @@ class MongoDatabase:
                                         "bot",
                                         {"$cond": [{"$eq": ["$system", True]}, "system", "user"]},
                                     ]
-                                }
+                                },
                             },
                             "total": {"$sum": 1},
                         }

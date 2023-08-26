@@ -9,9 +9,9 @@ import uuid
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from bot.cogs.lib.minecraft_op import MinecraftOpLevel
-from . import database, loglevel, models, settings, utils
-from .system_actions import SystemActions
-from .member_status import MemberStatus
+from . import database, loglevel, models, settings, utils  # pylint: disable=no-name-in-module
+from system_actions import SystemActions  # pylint: disable=relative-beyond-top-level
+from member_status import MemberStatus  # pylint: disable=relative-beyond-top-level
 
 
 class MongoDatabase(database.Database):

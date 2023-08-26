@@ -4,7 +4,6 @@ import os
 import math
 import re
 
-
 from discord.ext import commands
 from .lib import settings, discordhelper, logger, loglevel, mongo, utils
 from .lib.messaging import Messaging

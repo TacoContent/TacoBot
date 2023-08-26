@@ -1,32 +1,15 @@
-import json
-from random import random
-from urllib import parse, request
-import discord
-import pytz
-import datetime
-from discord.ext import commands
 import asyncio
-import traceback
-import sys
-import os
-import glob
-import typing
-import math
-import re
-import uuid
-
-from discord.ext.commands.cooldowns import BucketType
-from discord.ext.commands import has_permissions, CheckFailure, Context
+import discord
+import datetime
 import inspect
+import os
+import traceback
+import typing
 
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib import tacotypes
+from discord.ext import commands
+from random import random
+from discord.ext.commands import Context
+from .lib import settings, discordhelper, logger, loglevel, mongo, tacotypes
 from .lib.messaging import Messaging
 
 

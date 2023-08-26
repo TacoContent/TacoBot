@@ -1,15 +1,12 @@
 import discord
-from discord.ext import commands
-from discord.ext.commands import Greedy, Context
 import typing
 import inspect
 import os
-from .. import tacobot
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import mongo
+
+from discord.ext import commands
+from discord.ext.commands import Greedy, Context
+from .. import tacobot  # pylint: disable=relative-beyond-top-level
+from .lib import settings, discordhelper, logger, loglevel, mongo
 from .lib.messaging import Messaging
 
 

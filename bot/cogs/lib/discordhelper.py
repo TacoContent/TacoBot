@@ -6,12 +6,12 @@ import os
 import traceback
 import typing
 
-from . import utils, settings, mongo, loglevel, logger, tacotypes
-from .ChannelSelect import ChannelSelectView
-from .RoleSelectView import RoleSelectView, RoleSelect
-from .models import TextWithAttachments
-from .YesOrNoView import YesOrNoView
-from .messaging import Messaging
+from . import utils, settings, mongo, loglevel, logger, tacotypes  # pylint: disable=no-name-in-module
+from .ChannelSelect import ChannelSelectView  # pylint: disable=relative-beyond-top-level
+from .RoleSelectView import RoleSelectView, RoleSelect  # pylint: disable=relative-beyond-top-level
+from .models import TextWithAttachments  # pylint: disable=relative-beyond-top-level
+from .YesOrNoView import YesOrNoView  # pylint: disable=relative-beyond-top-level
+from .messaging import Messaging  # pylint: disable=relative-beyond-top-level
 
 
 class DiscordHelper:
