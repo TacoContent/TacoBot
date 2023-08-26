@@ -60,7 +60,7 @@ class AmazonLink(commands.Cog):
             # extract the full amazon link
             amazon_link = match.group(1)
             # remove the original link from the message completely
-            message_content = message_content.replace(amazon_link, f"")
+            message_content = message_content.replace(amazon_link, "")
             # if link has a ? in it, add the affiliate tag with an &
             if "?" in amazon_link:
                 amazon_link = f"{amazon_link}&tag={self.affiliate_tag}"
@@ -70,7 +70,7 @@ class AmazonLink(commands.Cog):
             await message.delete()
 
             # create an embed with the original message and the new url
-            embed = await self.messaging.send_embed(
+            await self.messaging.send_embed(
                 channel=message.channel,
                 title="Amazon Link",
                 message=f"{message_content}",

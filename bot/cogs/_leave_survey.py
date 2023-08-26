@@ -87,7 +87,8 @@ class LeaveSurvey(commands.Cog):
                             await self.messaging.send_embed(
                                 member,
                                 "Thank You!",
-                                "Thank you for your feedback. We will review your feedback and take action accordingly.",
+                                """Thank you for your feedback.
+We will review your feedback and take action accordingly.""",
                             )
                         except discord.Forbidden as f:
                             self.log.info(
@@ -114,14 +115,18 @@ class LeaveSurvey(commands.Cog):
                             await self.messaging.send_embed(
                                 channel=log_channel,
                                 title="Leave Survey",
-                                message=f"{utils.get_user_display_name(member)} ({member.id}) has left the server. \n\n**Reason given:**\n\n{reason}",
+                                message=f"""{utils.get_user_display_name(member)} ({member.id}) has left the server.
+
+**Reason given:**\n\n{reason}""",
                                 author=member,
                             )
 
                 await self.discord_helper.ask_yes_no(
                     ctx=ctx,
                     targetChannel=member,
-                    question="We are very sorry to see you leave. \n\nWould you be willing to let us know why you are leaving?",
+                    question="""We are very sorry to see you leave.
+
+Would you be willing to let us know why you are leaving?""",
                     title="Leave Survey",
                     timeout=60,
                     result_callback=response_callback,

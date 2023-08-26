@@ -39,11 +39,12 @@ class GameKeys(commands.Cog):
     async def on_guild_available(self, guild):
         _method = inspect.stack()[0][3]
         try:
-            context = self.discord_helper.create_context(
-                bot=self.bot, author=self.bot.user, channel=guild.system_channel, guild=guild
-            )
+            # context = self.discord_helper.create_context(
+            #     bot=self.bot, author=self.bot.user, channel=guild.system_channel, guild=guild
+            # )
             # await self._create_offer(ctx=context)
             # await self._init_exiting_offer(ctx=context)
+            pass
         except Exception as e:
             self.log.error(guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
@@ -184,14 +185,14 @@ class GameKeys(commands.Cog):
             self.log.debug(
                 interaction.guild.id,
                 f"{self._module}.{self._class}.{_method}",
-                f"Claim offer cancelled because it was already responded to.",
+                "Claim offer cancelled because it was already responded to.",
             )
             return
         guild_id = interaction.guild.id if interaction.guild else 0
         ctx = None
         try:
             await interaction.response.defer()
-        except Exception as e:
+        except Exception:
             # if the defer fails, we can't respond to the interaction
             return
         try:

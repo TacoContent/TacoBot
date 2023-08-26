@@ -498,7 +498,9 @@ class MongoDatabase(database.Database):
                 self.open()
             # insert the suggestion into the database
             self.connection.suggestions.update_one(
-                {"guild_id": str(guildId), "message_id": str(messageId)}, {"$push": {"votes": {"user_id": str(userId)}}}, upsert=True
+                {"guild_id": str(guildId), "message_id": str(messageId)},
+                {"$push": {"votes": {"user_id": str(userId)}}},
+                upsert=True,
             )
         except Exception as ex:
             print(ex)

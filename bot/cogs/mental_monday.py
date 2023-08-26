@@ -5,7 +5,14 @@ import inspect
 import os
 import traceback
 
-from bot.cogs.lib import settings, mongo, discordhelper, logger, loglevel, tacotypes  # pylint: disable=no-name-in-module
+from bot.cogs.lib import (
+    settings,
+    mongo,
+    discordhelper,
+    logger,
+    loglevel,
+    tacotypes,
+)  # pylint: disable=no-name-in-module
 from bot.cogs.lib.permissions import Permissions
 from bot.cogs.lib.messaging import Messaging
 

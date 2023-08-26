@@ -10,7 +10,15 @@ import typing
 
 from discord.ext import commands
 from discord.ext.commands import Context
-from bot.cogs.lib import settings, discordhelper, logger, loglevel, utils, mongo, tacotypes  # pylint: disable=no-name-in-module
+from bot.cogs.lib import (
+    settings,
+    discordhelper,
+    logger,
+    loglevel,
+    utils,
+    mongo,
+    tacotypes,
+)  # pylint: disable=no-name-in-module
 from bot.cogs.lib.models import TriviaQuestion
 from bot.cogs.lib.messaging import Messaging
 

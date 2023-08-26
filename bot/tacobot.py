@@ -7,7 +7,7 @@ import traceback
 import typing
 
 from discord.ext import commands
-from bot.cogs.lib import settings, mongo, logger, loglevel
+from bot.cogs.lib import settings, mongo, logger, loglevel # pylint: disable=no-name-in-module
 
 
 class TacoBot(commands.Bot):

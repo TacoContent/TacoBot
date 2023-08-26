@@ -32,7 +32,7 @@ class Events(commands.Cog):
         )
         # TODO: load this from the database
         self.log.debug(
-            0, f"{self._module}.{self._class}.{_method}", f"Setting Bot Presence '🌮 Taco; Not Just For Tuesday's 🌮'"
+            0, f"{self._module}.{self._class}.{_method}", "Setting Bot Presence '🌮 Taco; Not Just For Tuesday's 🌮'"
         )
         await self.bot.change_presence(activity=discord.Game(name="🌮 Taco; Not Just For Tuesday's 🌮"))
 
@@ -46,12 +46,12 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_disconnect(self):
         _method = inspect.stack()[0][3]
-        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Bot Disconnected")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Bot Disconnected")
 
     @commands.Cog.listener()
     async def on_resumed(self):
         _method = inspect.stack()[0][3]
-        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Bot Session Resumed")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Bot Session Resumed")
 
     @commands.Cog.listener()
     async def on_error(self, event, *args, **kwargs):

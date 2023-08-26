@@ -57,7 +57,7 @@ class AccountLink(commands.Cog):
                         )
                     except discord.Forbidden:
                         await ctx.channel.send(
-                            f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_success_message", code=code)}',
+                            f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_success_message", code=code)}',  # pylint: disable=line-too-long
                             delete_after=10,
                         )
                 else:
@@ -67,7 +67,7 @@ class AccountLink(commands.Cog):
                         )
                     except discord.Forbidden:
                         await ctx.channel.send(
-                            f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_unknown_code_message")}',
+                            f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_unknown_code_message")}',  # pylint: disable=line-too-long
                             delete_after=10,
                         )
             except ValueError as ve:
@@ -95,7 +95,7 @@ class AccountLink(commands.Cog):
                         await ctx.author.send(self.settings.get_string(guild_id, "account_link_save_error_message"))
                     except discord.Forbidden:
                         await ctx.channel.send(
-                            f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_save_error_message")}',
+                            f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_save_error_message")}',  # pylint: disable=line-too-long
                             delete_after=10,
                         )
             except ValueError as ver:
