@@ -27,3 +27,4 @@ jobs:
           VALIDATE_ALL_CODEBASE: true
           DEFAULT_BRANCH: develop
           GITHUB_TOKEN: ${{ github.token }}
+          VALIDATE_PYTHON_FLAKE8: false

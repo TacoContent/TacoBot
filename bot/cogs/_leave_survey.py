@@ -53,7 +53,7 @@ class LeaveSurvey(commands.Cog):
                 is_banned = await member.guild.fetch_ban(member) is not None
                 if is_banned:
                     return
-            except discord.NotFound as nf:
+            except discord.NotFound:
                 # user is not banned
                 pass
 
@@ -72,8 +72,8 @@ class LeaveSurvey(commands.Cog):
             log_channel = None
             if log_channel_id:
                 log_channel = await self.bot.fetch_channel(log_channel_id)
-            take_survey = False
-            reason = "Did not answer the survey asking why they left."
+            # take_survey = False
+            # reason = "Did not answer the survey asking why they left."
             try:
                 ctx = self.discord_helper.create_context(bot=self.bot, author=member, guild=member.guild, channel=None)
 
@@ -90,13 +90,13 @@ class LeaveSurvey(commands.Cog):
                                 """Thank you for your feedback.
 We will review your feedback and take action accordingly.""",
                             )
-                        except discord.Forbidden as f:
+                        except discord.Forbidden:
                             self.log.info(
                                 guild_id,
                                 f"{self._module}.{self._class}.{_method}",
                                 f"Failed to send message to {utils.get_user_display_name(member)} ({member.id})",
                             )
-                        except discord.NotFound as nf:
+                        except discord.NotFound:
                             self.log.info(
                                 guild_id,
                                 f"{self._module}.{self._class}.{_method}",
@@ -132,13 +132,13 @@ Would you be willing to let us know why you are leaving?""",
                     result_callback=response_callback,
                 )
 
-            except discord.Forbidden as f:
+            except discord.Forbidden:
                 self.log.info(
                     guild_id,
                     f"{self._module}.{self._class}.{_method}",
                     f"Failed to send message to {utils.get_user_display_name(member)} ({member.id})",
                 )
-            except discord.NotFound as nf:
+            except discord.NotFound:
                 self.log.info(
                     guild_id,
                     f"{self._module}.{self._class}.{_method}",

@@ -43,8 +43,8 @@ class Help(commands.Cog):
             sections = re.split(r'(\*\*v?\d{1,}\.\d{1,}\.\d{1,}\*\*)', changelog_data)
             versions = {}
             cversion = None
-            for s in list(filter(lambda x: x != '' and x != None, sections)):
-                if s == '' or s == None:
+            for s in list(filter(lambda x: x != '' and x is not None, sections)):
+                if s == '' or s is None:
                     continue
 
                 if s.startswith('**'):
