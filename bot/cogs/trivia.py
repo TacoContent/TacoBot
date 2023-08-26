@@ -9,12 +9,12 @@ import traceback
 import typing
 
 from bot.cogs.lib import (
-    settings,
     discordhelper,
     logger,
     loglevel,
-    utils,
     mongo,
+    settings,
+    utils,
     tacotypes,
 )  # pylint: disable=no-name-in-module
 from bot.cogs.lib.messaging import Messaging

@@ -1,9 +1,9 @@
-import discord
 import inspect
 import os
 
+import discord
 from bot import tacobot  # pylint: disable=relative-beyond-top-level
-from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
 from discord.ext import commands
 
 

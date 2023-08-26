@@ -1,9 +1,9 @@
-import discord
 import inspect
 import os
 import traceback
 
-from bot.cogs.lib import settings, logger, loglevel, mongo
+import discord
+from bot.cogs.lib import logger, loglevel, mongo, settings
 from discord.ext import commands
 
 

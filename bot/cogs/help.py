@@ -4,7 +4,7 @@ import os
 import math
 import re
 
-from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, utils
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, utils
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 

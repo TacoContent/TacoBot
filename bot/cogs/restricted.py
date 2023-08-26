@@ -1,13 +1,13 @@
 # this is for restricted channels that only allow specific commands in chat.
 import asyncio
-import discord
 import inspect
 import traceback
 import os
 import re
 import typing
 
-from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo
+import discord
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 

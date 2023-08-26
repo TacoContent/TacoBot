@@ -1,10 +1,10 @@
-import discord
 import inspect
 import os
 import traceback
 import typing
 
-from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, utils
+import discord
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, utils
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.system_actions import SystemActions
 from discord.ext import commands

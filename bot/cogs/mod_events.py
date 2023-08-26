@@ -1,9 +1,9 @@
-import discord
 import inspect
 import os
 import typing
 
-from bot.cogs.lib import settings, logger, loglevel, mongo
+import discord
+from bot.cogs.lib import logger, loglevel, mongo, settings
 from bot.cogs.lib.system_actions import SystemActions
 from discord.ext import commands
 

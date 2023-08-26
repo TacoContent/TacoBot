@@ -1,15 +1,15 @@
-import json
 import inspect
-import traceback
-import os
+import json
 import math
+import os
+import traceback
 import uuid
 
-from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo
-from bot.cogs.lib.messaging import Messaging
-from discord.ext import commands
 from random import random
 from urllib import parse, request
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
+from bot.cogs.lib.messaging import Messaging
+from discord.ext import commands
 
 
 class Giphy(commands.Cog):

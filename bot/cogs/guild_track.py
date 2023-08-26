@@ -2,7 +2,7 @@ import inspect
 import os
 import traceback
 
-from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
 from discord.ext import commands
 
 

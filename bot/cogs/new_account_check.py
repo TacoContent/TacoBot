@@ -4,7 +4,7 @@ import math
 import os
 import traceback
 
-from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, utils
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, utils
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.system_actions import SystemActions
 from discord.ext import commands

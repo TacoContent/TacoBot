@@ -1,12 +1,12 @@
 # This cog will message the user if they leave the discord and ask them
 # the reason for leaving.
 
-import discord
 import inspect
 import os
 import traceback
 
-from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, utils  # pylint: disable=no-name-in-module
+import discord
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, utils  # pylint: disable=no-name-in-module
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 

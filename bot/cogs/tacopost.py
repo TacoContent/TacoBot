@@ -3,7 +3,7 @@ import inspect
 import os
 import traceback
 
-from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, messaging
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 

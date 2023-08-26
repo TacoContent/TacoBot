@@ -2,13 +2,13 @@
 # https://playerdb.co/
 # https://playerdb.co/api/player/minecraft/<name|uuid>
 
-import discord
 import inspect
 import os
 import requests
 import traceback
 
-from bot.cogs.lib import settings, logger, discordhelper, loglevel, mongo
+import discord
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 from discord.ext.commands import Context

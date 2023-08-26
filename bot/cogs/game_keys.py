@@ -1,11 +1,11 @@
 import datetime
-import discord
 import inspect
 import os
 import traceback
 import typing
 
-from bot.cogs.lib import settings, discordhelper, logger, loglevel, utils, mongo, tacotypes
+import discord
+from bot.cogs.lib import discordhelper, logger, loglevel, utils, mongo, settings, tacotypes
 from bot.cogs.lib.GameRewardView import GameRewardView
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands

@@ -1,12 +1,12 @@
 import datetime
-import discord
 import os
 import inspect
 import traceback
 import typing
 import uuid
 
-from bot.cogs.lib import settings, discordhelper, logger, loglevel, models, mongo, tacotypes
+import discord
+from bot.cogs.lib import discordhelper, logger, loglevel, models, mongo, settings, tacotypes
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.permissions import Permissions
 from discord.ext import commands

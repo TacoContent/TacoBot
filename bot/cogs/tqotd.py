@@ -1,16 +1,16 @@
 import aiohttp
-import discord
 import inspect
 import io
 import os
 import traceback
 
+import discord
 from bot.cogs.lib import (
-    settings,
     discordhelper,
     logger,
     loglevel,
     mongo,
+    settings,
     tacotypes,
 )  # pylint: disable=no-name-in-module
 from bot.cogs.lib.messaging import Messaging

@@ -3,12 +3,12 @@
 # and send the message to the new channel with the same content as the original.
 # it will identify the original author in the new embeded message that is sent by the bot.
 
-import discord
 import inspect
 import os
 import traceback
 
-from bot.cogs.lib import settings, discordhelper, logger, loglevel, mongo, permissions
+import discord
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, permissions
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 
