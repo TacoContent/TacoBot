@@ -1,18 +1,16 @@
-import discord
-from discord.ext import commands
-from discord import app_commands
 import inspect
 import os
-from .. import tacobot
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import mongo
+
+import discord
+from bot import tacobot  # pylint: disable=relative-beyond-top-level
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
+from discord.ext import commands
+
 
 class LookingForGamers(commands.Cog):
     def __init__(self, bot: tacobot.TacoBot) -> None:
         _method = inspect.stack()[0][3]
+        self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
@@ -25,7 +23,7 @@ class LookingForGamers(commands.Cog):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     # @commands.group(name="lfg", aliases=["looking-for-gamers"], invoke_without_command=True)
     # @commands.guild_only()
@@ -41,6 +39,7 @@ class LookingForGamers(commands.Cog):
 
     async def _looking_for_gamers(self, ctx) -> None:
         await ctx.channel.send("lfg")
+
 
 async def setup(bot) -> None:
     await bot.add_cog(LookingForGamers(bot))

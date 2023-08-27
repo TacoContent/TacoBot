@@ -1,25 +1,10 @@
-import discord
-from discord.ext import commands
-import asyncio
-import json
-import traceback
-import sys
-import os
-import glob
-import typing
 import inspect
-import collections
-import datetime
+import os
 import re
+import traceback
 
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib import tacotypes
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from discord.ext import commands
 
 
 class PhotoPost(commands.Cog):
@@ -59,7 +44,9 @@ class PhotoPost(commands.Cog):
             # get the settings from settings
             cog_settings = self.get_cog_settings(guild_id)
 
-            allowed_channel_list = [c for c in cog_settings.get("channels", []) if str(c["id"]) == str(message.channel.id)]
+            allowed_channel_list = [
+                c for c in cog_settings.get("channels", []) if str(c["id"]) == str(message.channel.id)
+            ]
             post_channel = None
             if allowed_channel_list:
                 post_channel = allowed_channel_list[0]
@@ -70,7 +57,11 @@ class PhotoPost(commands.Cog):
             # if the message is not a photo, ignore
             matches = re.search(media_regex, message.content, re.MULTILINE | re.DOTALL | re.UNICODE | re.IGNORECASE)
             if not message.attachments and matches is None:
-                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Message {message.id} does not contain a photo")
+                self.log.debug(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Message {message.id} does not contain a photo",
+                )
                 return
 
             # # check if the user posted a photo in the channel within the last 5 minutes
@@ -115,7 +106,7 @@ class PhotoPost(commands.Cog):
                 channelId=message.channel.id,
                 message=message.content,
                 image=image_url,
-                channelName=message.channel.name
+                channelName=message.channel.name,
             )
 
             pass
@@ -134,5 +125,7 @@ class PhotoPost(commands.Cog):
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
+
+
 async def setup(bot):
     await bot.add_cog(PhotoPost(bot))

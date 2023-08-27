@@ -1,11 +1,9 @@
-import discord
-from discord.ext import commands
-import traceback
 import inspect
 import os
-from . import settings
-from . import logger
-from . import loglevel
+import traceback
+
+import discord
+from bot.cogs.lib import logger, loglevel, settings
 
 
 class ChannelSelect(discord.ui.Select):
@@ -39,15 +37,15 @@ class ChannelSelect(discord.ui.Select):
 
 class ChannelSelectView(discord.ui.View):
     def __init__(
-            self,
-            ctx,
-            placeholder: str,
-            channels,
-            select_callback=None,
-            timeout_callback=None,
-            allow_none: bool = False,
-            timeout: int = 180
-        ) -> None:
+        self,
+        ctx,
+        placeholder: str,
+        channels,
+        select_callback=None,
+        timeout_callback=None,
+        allow_none: bool = False,
+        timeout: int = 180,
+    ) -> None:
         super().__init__(timeout=timeout)
         _method = inspect.stack()[0][3]
         # get the file name without the extension and without the directory

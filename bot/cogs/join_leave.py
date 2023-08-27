@@ -1,26 +1,12 @@
-import discord
-from discord.ext import commands
-import asyncio
-import json
-import traceback
-import sys
-import os
-import glob
-import typing
-
-from discord.ext.commands.cooldowns import BucketType
-from discord.ext.commands import has_permissions, CheckFailure
-
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib import tacotypes
-from .lib.system_actions import SystemActions
 import inspect
+import os
+import traceback
+
+import discord
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from bot.cogs.lib.system_actions import SystemActions
+from discord.ext import commands
+
 
 class JoinLeaveTracker(commands.Cog):
     def __init__(self, bot) -> None:
@@ -57,13 +43,11 @@ class JoinLeaveTracker(commands.Cog):
                 fromUserId=self.bot.user.id,
                 count=0,
                 reason="leaving the server",
-                type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.LEAVE_SERVER)
+                type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.LEAVE_SERVER),
             )
             self.db.track_user_join_leave(guildId=guild_id, userId=member.id, join=False)
             self.db.track_system_action(
-                guild_id=guild_id,
-                action=SystemActions.LEAVE_SERVER,
-                data={"user_id": str(member.id)},
+                guild_id=guild_id, action=SystemActions.LEAVE_SERVER, data={"user_id": str(member.id)}
             )
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
@@ -76,18 +60,21 @@ class JoinLeaveTracker(commands.Cog):
             if not member or member.bot or member.system:
                 return
 
-            await self.discord_helper.taco_give_user(guild_id, self.bot.user, member,
+            await self.discord_helper.taco_give_user(
+                guild_id,
+                self.bot.user,
+                member,
                 self.settings.get_string(guild_id, "taco_reason_join"),
-                tacotypes.TacoTypes.JOIN_SERVER )
+                tacotypes.TacoTypes.JOIN_SERVER,
+            )
 
             self.db.track_user_join_leave(guildId=guild_id, userId=member.id, join=True)
             self.db.track_system_action(
-                guild_id=guild_id,
-                action=SystemActions.JOIN_SERVER,
-                data={"user_id": str(member.id)},
+                guild_id=guild_id, action=SystemActions.JOIN_SERVER, data={"user_id": str(member.id)}
             )
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+
 
 async def setup(bot) -> None:
     await bot.add_cog(JoinLeaveTracker(bot))

@@ -1,22 +1,11 @@
-import discord
-from discord.ext import commands
-import asyncio
-import json
-import traceback
-import sys
-import os
-import glob
-import typing
 import datetime
 import inspect
+import os
+import traceback
 
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import settings
-from .lib import mongo
-from .lib import tacotypes
+import discord
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from discord.ext import commands
 
 
 class ServerEvent(commands.Cog):

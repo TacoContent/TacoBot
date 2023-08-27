@@ -1,25 +1,10 @@
-import discord
-from discord.ext import commands
-import asyncio
-import json
-import traceback
-import sys
-import os
-import glob
-import typing
-import math
-import datetime
-
 import inspect
+import os
+import traceback
 
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib import tacotypes
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from discord.ext import commands
+
 
 class VoiceChatCog(commands.Cog):
     def __init__(self, bot) -> None:
@@ -39,7 +24,6 @@ class VoiceChatCog(commands.Cog):
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
-
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after) -> None:
         _method = inspect.stack()[0][3]
@@ -53,13 +37,13 @@ class VoiceChatCog(commands.Cog):
 
         try:
             if before.channel is not None and after.channel is None:
-                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User {member.name} left voice channel")
+                self.log.debug(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"User {member.name} left voice channel"
+                )
                 return
 
             if before.channel is None and after.channel is not None:
-
                 cog_settings = self.get_cog_settings(guild_id)
-
                 # this channel is not one we care about
                 if str(after.channel.id) not in cog_settings.get("channels", []):
                     return
@@ -72,7 +56,7 @@ class VoiceChatCog(commands.Cog):
                     toUser=member,
                     reason=reason_msg,
                     give_type=tacotypes.TacoTypes.CREATE_VOICE_CHANNEL,
-                    taco_amount=0
+                    taco_amount=0,
                 )
                 return
         except Exception as e:
@@ -89,6 +73,7 @@ class VoiceChatCog(commands.Cog):
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
+
 
 async def setup(bot):
     await bot.add_cog(VoiceChatCog(bot))

@@ -1,34 +1,17 @@
 # this cog will DM the user if they have not yet told the bot what their twitch name is if they interact with the bot.
-
-from ctypes import Union
-
-import requests
-import discord
-from discord.ext import commands
-import asyncio
-import json
-import traceback
-import sys
-import os
-import glob
-import typing
-import math
 import collections
-
-from discord.ext.commands.cooldowns import BucketType
-from discord.ext.commands import has_permissions, CheckFailure
-
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib import tacotypes
-from .lib.system_actions import SystemActions
 import inspect
-from .lib.messaging import Messaging
+import os
+import traceback
+import typing
+
+import discord
+import requests
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes, utils
+from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.system_actions import SystemActions
+from discord.ext import commands
+
 
 class TwitchInfo(commands.Cog):
     def __init__(self, bot) -> None:
@@ -62,7 +45,6 @@ class TwitchInfo(commands.Cog):
     @twitch.command()
     @commands.guild_only()
     async def help(self, ctx) -> None:
-
         guild_id = 0
         if ctx.guild:
             guild_id = ctx.guild.id
@@ -70,7 +52,9 @@ class TwitchInfo(commands.Cog):
         await self.messaging.send_embed(
             channel=ctx.channel,
             title=self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
-            message=self.settings.get_string(guild_id, "help_module_message", bot_name=self.settings.name, command="twitch"),
+            message=self.settings.get_string(
+                guild_id, "help_module_message", bot_name=self.settings.name, command="twitch"
+            ),
             footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
             color=0xFF0000,
             delete_after=30,
@@ -130,7 +114,6 @@ class TwitchInfo(commands.Cog):
         else:
             who = utils.get_user_display_name(member)
 
-
         guild_id = 0
         channel = ctx.author
         if ctx.guild:
@@ -188,10 +171,7 @@ class TwitchInfo(commands.Cog):
 
             if twitch_name is None:
                 twitch_name = await self.discord_helper.ask_text(
-                    ctx,
-                    ctx.author,
-                    "Twitch Name",
-                    "Please respond with the twitch name you want to set for the user."
+                    ctx, ctx.author, "Twitch Name", "Please respond with the twitch name you want to set for the user."
                 )
 
             if twitch_name is not None and user is not None:

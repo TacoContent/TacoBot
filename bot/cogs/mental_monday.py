@@ -1,29 +1,13 @@
-import discord
-from discord.ext import commands
-import asyncio
-import json
-import traceback
-import sys
-import os
-import glob
-import typing
 import datetime
-
-from discord.ext.commands.cooldowns import BucketType
-from discord.ext.commands import has_permissions, CheckFailure
-
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib import tacotypes
-from .lib.permissions import Permissions
-from .lib.messaging import Messaging
-
 import inspect
+import os
+import traceback
+
+import discord
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.permissions import Permissions
+from discord.ext import commands
 
 
 class MentalMondays(commands.Cog):
@@ -91,7 +75,9 @@ class MentalMondays(commands.Cog):
 
             if not cog_settings.get("enabled", False):
                 self.log.debug(
-                    guild_id, f"{self._module}.{self._class}.{_method}", f"mentalmondays is disabled for guild {guild_id}"
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"mentalmondays is disabled for guild {guild_id}",
                 )
                 return
 
@@ -115,7 +101,9 @@ class MentalMondays(commands.Cog):
 
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
-                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}")
+                self.log.warn(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
+                )
 
             # get role
             taco_word = self.settings.get_string(guild_id, "taco_singular")
@@ -168,13 +156,17 @@ class MentalMondays(commands.Cog):
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings.get("enabled", False):
                 self.log.debug(
-                    guild_id, f"{self._module}.{self._class}.{_method}", f"mentalmondays is disabled for guild {guild_id}"
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"mentalmondays is disabled for guild {guild_id}",
                 )
                 return
 
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
-                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}")
+                self.log.warn(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
+                )
 
             # get the message from the id
             message = await out_channel.fetch_message(message_id)
@@ -207,7 +199,9 @@ class MentalMondays(commands.Cog):
 
         # check if the user that reacted is in the admin role
         if not await self.permissions.is_admin(payload.user_id, guild_id):
-            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin")
+            self.log.debug(
+                guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin"
+            )
             return
         # in future, check if the user is in a defined role that can grant tacos (e.g. moderator)
 
@@ -240,7 +234,9 @@ class MentalMondays(commands.Cog):
             )
         else:
             self.log.debug(
-                guild_id, f"{self._module}.{self._class}.{_method}", f"Message {payload.message_id} has already been tracked for mentalmondays. Skipping."
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"Message {payload.message_id} has already been tracked for mentalmondays. Skipping.",
             )
 
     async def _on_raw_reaction_add_import(self, payload) -> None:
@@ -249,7 +245,9 @@ class MentalMondays(commands.Cog):
 
         # check if the user that reacted is in the admin role
         if not await self.permissions.is_admin(payload.user_id, guild_id):
-            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin")
+            self.log.debug(
+                guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin"
+            )
             return
 
         channel = self.bot.get_channel(payload.channel_id)
@@ -272,15 +270,15 @@ class MentalMondays(commands.Cog):
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
         try:
-
             if payload.event_type != "REACTION_ADD":
                 return
 
             # check if the user that reacted is in the admin role
             if not await self.permissions.is_admin(payload.user_id, guild_id):
-                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin")
+                self.log.debug(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin"
+                )
                 return
-
 
             react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
             if not react_user or react_user.bot or react_user.system:
@@ -296,11 +294,9 @@ class MentalMondays(commands.Cog):
             if str(payload.emoji.name) not in check_list:
                 return
 
-
             if str(payload.emoji.name) in reaction_emojis:
                 await self._on_raw_reaction_add_give(payload)
                 return
-
 
             # is today mondays?
             today = datetime.datetime.now()
@@ -347,11 +343,12 @@ class MentalMondays(commands.Cog):
             message_id=message_id,
         )
 
-    async def give_user_mentalmondays_tacos(self, guild_id: int, user_id: int, channel_id: int, message_id: int) -> None:
+    async def give_user_mentalmondays_tacos(
+        self, guild_id: int, user_id: int, channel_id: int, message_id: int
+    ) -> None:
         _method = inspect.stack()[0][3]
         ctx = None
         try:
-
             # create context
             # self, bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
             # get guild from id
@@ -373,9 +370,7 @@ class MentalMondays(commands.Cog):
                 channel = guild.system_channel
             if not channel:
                 self.log.warn(
-                    guild_id,
-                    f"{self._module}.{self._class}.{_method}",
-                    f"No output channel found for guild {guild_id}",
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No tacos settings found for guild {guild_id}"
                 )
                 return
             message = None
@@ -393,10 +388,6 @@ class MentalMondays(commands.Cog):
             self.db.track_mentalmondays_answer(guild_id, member.id, message_id)
 
             tacos_settings = self.get_tacos_settings(guild_id)
-            if not tacos_settings:
-                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No tacos settings found for guild {guild_id}")
-                return
-
             amount = tacos_settings.get("mentalmondays_count", 5)
 
             tacos_word = self.settings.get_string(guild_id, "taco_singular")

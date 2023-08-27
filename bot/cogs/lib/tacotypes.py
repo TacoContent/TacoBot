@@ -3,6 +3,8 @@
 ### UPDATE TacoBotTwitch/cogs/lib/tacotypes.py WHEN CHANGING TACO TYPES ###
 
 from enum import Enum
+
+
 class TacoTypes(Enum):
     JOIN_SERVER = 1
     BOOST = 2
@@ -35,8 +37,7 @@ class TacoTypes(Enum):
     APPROVE_INTRODUCTION = 29
     GAME_DONATE_REDEEM = 30
 
-
-    TWITCH_BOT_INVITE = 1000 # Invite @OurTacoBot to your Twitch channel
+    TWITCH_BOT_INVITE = 1000  # Invite @OurTacoBot to your Twitch channel
     TWITCH_RAID = 1001
     TWITCH_SUB = 1002
     TWITCH_BITS = 1003
@@ -44,7 +45,7 @@ class TacoTypes(Enum):
     TWITCH_PROMOTE = 1005
     TWITCH_GIVE_TACOS = 32
     TWITCH_RECEIVE_TACOS = 1006
-    TWITCH_FOLLOW = 1007 # not yet implemented until i can figure out how to get the event from eventsub
+    TWITCH_FOLLOW = 1007  # not yet implemented until i can figure out how to get the event from eventsub
 
     PURGE = 9996
     LEAVE_SERVER = 9997
@@ -111,7 +112,8 @@ class TacoTypes(Enum):
         elif taco_type_string == "trivia_incorrect_count":
             return TacoTypes.TRIVIA_INCORRECT
         elif taco_type_string == "follow_channel_count":
-            return TacoTypes.FOLLOW_CHANNEL  # this can't be triggered by events
+            # this can't be triggered by events
+            return TacoTypes.FOLLOW_CHANNEL
         elif taco_type_string == "create_voice_channel_count":
             return TacoTypes.CREATE_VOICE_CHANNEL
         elif taco_type_string == "post_introduction_count":
@@ -130,9 +132,11 @@ class TacoTypes(Enum):
             return TacoTypes.TWITCH_FIRST_MESSAGE
         elif taco_type_string == "twitch_promote_count":
             return TacoTypes.TWITCH_PROMOTE
-        elif taco_type_string == "twitch_give_tacos":  # this property is not saved in settings, as it should be the amount they give
+        elif taco_type_string == "twitch_give_tacos":
+            # this property is not saved in settings, as it should be the amount they give
             return TacoTypes.TWITCH_GIVE_TACOS
-        elif taco_type_string == "twitch_receive_tacos":  # this property is not saved in settings, as it should be the amount they receive
+        elif taco_type_string == "twitch_receive_tacos":
+            # this property is not saved in settings, as it should be the amount they receive
             return TacoTypes.TWITCH_RECEIVE_TACOS
         elif taco_type_string == "twitch_follow_count":
             return TacoTypes.TWITCH_FOLLOW
@@ -288,7 +292,7 @@ class TacoTypes(Enum):
             return "trivia_correct_count"
         elif taco_type == TacoTypes.TRIVIA_INCORRECT:
             return "trivia_incorrect_count"
-        elif taco_type == TacoTypes.FOLLOW_CHANNEL: # this can't be triggered by events
+        elif taco_type == TacoTypes.FOLLOW_CHANNEL:  # this can't be triggered by events
             return "follow_channel_count"
         elif taco_type == TacoTypes.CREATE_VOICE_CHANNEL:
             return "create_voice_channel_count"
@@ -309,9 +313,11 @@ class TacoTypes(Enum):
         elif taco_type == TacoTypes.TWITCH_PROMOTE:
             return "twitch_promote_count"
         elif taco_type == TacoTypes.TWITCH_GIVE_TACOS:
-            return "twitch_give_tacos" # this property is not saved in settings, as it should be the amount they give
+            return "twitch_give_tacos"
+            # this property is not saved in settings, as it should be the amount they give
         elif taco_type == TacoTypes.TWITCH_RECEIVE_TACOS:
-            return "twitch_receive_tacos" # this property is not saved in settings, as it should be the amount they give
+            return "twitch_receive_tacos"
+            # this property is not saved in settings, as it should be the amount they give
         elif taco_type == TacoTypes.TWITCH_FOLLOW:
             return "twitch_follow_count"
         elif taco_type == TacoTypes.TWITCH_CUSTOM:

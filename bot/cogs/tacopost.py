@@ -1,28 +1,12 @@
 # this watches channels, and requires a user to have tacos to post in the channel
-
-import discord
-from discord.ext import commands
-import asyncio
-import json
-import traceback
-import sys
-import os
-import glob
-import typing
-
-from discord.ext.commands.cooldowns import BucketType
-from discord.ext.commands import has_permissions, CheckFailure
-
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib.messaging import Messaging
-
 import inspect
+import os
+import traceback
+
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
+from bot.cogs.lib.messaging import Messaging
+from discord.ext import commands
+
 
 class TacoPost(commands.Cog):
     def __init__(self, bot) -> None:
@@ -63,7 +47,11 @@ class TacoPost(commands.Cog):
             tacopost_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
             if not tacopost_settings:
                 # raise exception if there are no suggestion settings
-                self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"No tacopost settings found for guild {guild_id}")
+                self.log.error(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"No tacopost settings found for guild {guild_id}",
+                )
                 await self.discord_helper.notify_bot_not_initialized(message, "tacopost")
                 return
 
@@ -80,11 +68,19 @@ class TacoPost(commands.Cog):
             # check if the user is in the role set in channel_settings['exempt'][]
             exempt_list = channel_settings.get('exempt', [])
             if str(user.id) in exempt_list:
-                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User {user.name} is exempt from having to pay tacos in channel {channel.name}")
+                self.log.debug(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"User {user.name} is exempt from having to pay tacos in channel {channel.name}",
+                )
                 return
             for role in user.roles:
                 if str(role.id) in exempt_list:
-                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User {user.name} is exempt from having to pay tacos in channel {channel.name}")
+                    self.log.debug(
+                        guild_id,
+                        f"{self._module}.{self._class}.{_method}",
+                        f"User {user.name} is exempt from having to pay tacos in channel {channel.name}",
+                    )
                     return
 
             prefix = await self.bot.get_prefix(message)
@@ -102,9 +98,11 @@ class TacoPost(commands.Cog):
                     channel=channel,
                     title="Not Enough Tacos",
                     message=f"{user.mention}, You need {taco_cost} tacos to post in this channel.",
-                    delete_after=15,)
+                    delete_after=15,
+                )
                 await message.delete()
             else:
+
                 async def response_callback(response):
                     if response:
                         # remove the tacos from the user
@@ -114,22 +112,27 @@ class TacoPost(commands.Cog):
                             channel=channel,
                             title="Tacos Removed",
                             message=f"{user.mention}, You have been charged {taco_cost} tacos from your account.",
-                            delete_after=10,)
+                            delete_after=10,
+                        )
                     else:
                         await self.messaging.send_embed(
                             channel=channel,
                             title="Message Removed",
                             message=f"{user.mention}, You chose to not use your tacos, your message has been removed.",
-                            delete_after=10,)
+                            delete_after=10,
+                        )
                         await message.delete()
+
                 await self.discord_helper.ask_yes_no(
                     ctx=message,
                     targetChannel=message.channel,
                     question=f"{user.mention}, Are you sure you want to post in this channel?\n\n**It will cost you {taco_cost} tacos 🌮.**\n\nYou currently have {taco_count} tacos 🌮.",
                     title="Use tacos to post?",
-                    result_callback=response_callback)
+                    result_callback=response_callback,
+                )
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+
 
 async def setup(bot):
     await bot.add_cog(TacoPost(bot))

@@ -1,4 +1,6 @@
 from enum import Enum
+
+
 class SystemActions(Enum):
     NEW_ACCOUNT_KICK = 1
     JOIN_WHITELIST_ADD = 2
@@ -12,7 +14,6 @@ class SystemActions(Enum):
 
     ADD_ROLE = 8
     REMOVE_ROLE = 9
-
 
     USER_BAN = 10
     USER_UNBAN = 11

@@ -1,8 +1,8 @@
-import traceback
 import os
-from .migration_base import MigrationBase
+import traceback
 
-class MigrationRunner():
+
+class MigrationRunner:
     def __init__(self) -> None:
         self._module = os.path.basename(__file__)[:-3]
 
@@ -11,15 +11,12 @@ class MigrationRunner():
         for file in os.listdir(os.path.join(os.getcwd(), "bot", "cogs", "lib", "migrations")):
             if file.endswith("_migration.py"):
                 print(f"Found migration {file[:-3]}")
-                self._migrations.append({
-                    "id": int(file[:-3].split("_")[0]),
-                    "name": file[:-3]
-                })
+                self._migrations.append({"id": int(file[:-3].split("_")[0]), "name": file[:-3]})
 
         # sort migrations by id
         self._migrations.sort(key=lambda x: x["id"])
 
-        # load migrations and run them if they haven't been run yet
+    # load migrations and run them if they haven't been run yet
     def start_migrations(self) -> None:
         for migration in self._migrations:
             try:

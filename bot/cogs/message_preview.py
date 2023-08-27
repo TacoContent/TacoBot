@@ -1,29 +1,13 @@
 # this is for restricted channels that only allow specific commands in chat.
-import discord
-from discord.ext import commands
-import asyncio
-import json
-import traceback
-import sys
-import os
-import glob
-import typing
-import math
-import re
-
-from discord.ext.commands.cooldowns import BucketType
-from discord.ext.commands import has_permissions, CheckFailure
-
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib.messaging import Messaging
-
 import inspect
+import os
+import re
+import traceback
+
+import discord
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
+from bot.cogs.lib.messaging import Messaging
+from discord.ext import commands
 
 
 class MessagePreview(commands.Cog):
@@ -59,7 +43,9 @@ class MessagePreview(commands.Cog):
                 return
             guild_id = message.guild.id
 
-            pattern = re.compile(r'https:\/\/discord(?:app)?\.com\/channels\/(\d+)\/(\d+)\/(\d+)$', flags=re.MULTILINE | re.IGNORECASE)
+            pattern = re.compile(
+                r'https:\/\/discord(?:app)?\.com\/channels\/(\d+)\/(\d+)\/(\d+)$', flags=re.MULTILINE | re.IGNORECASE
+            )
             match = pattern.search(message.content)
             if not match:
                 return
@@ -75,11 +61,21 @@ class MessagePreview(commands.Cog):
                         await self.create_message_preview(message, ref_message)
                         await message.delete()
                     else:
-                        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Could not find message ({message_id}) in channel ({channel_id})")
+                        self.log.debug(
+                            0,
+                            f"{self._module}.{self._class}.{_method}",
+                            f"Could not find message ({message_id}) in channel ({channel_id})",
+                        )
                 else:
-                    self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Could not find channel ({channel_id})")
+                    self.log.debug(
+                        0, f"{self._module}.{self._class}.{_method}", f"Could not find channel ({channel_id})"
+                    )
             else:
-                self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Guild ({ref_guild_id}) does not match this guild ({guild_id})")
+                self.log.debug(
+                    0,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Guild ({ref_guild_id}) does not match this guild ({guild_id})",
+                )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
@@ -108,21 +104,23 @@ class MessagePreview(commands.Cog):
                 if e.color is not None:
                     embed_color = e.color
 
-
                 if message.attachments:
                     for a in message.attachments:
-                        self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Found attachment: {a.url}")
+                        self.log.debug(
+                            guild_id, f"{self._module}.{self._class}.{_method}", f"Found attachment: {a.url}"
+                        )
                         file_attachments.append(discord.File(a.url))
 
                 for f in e.fields:
-                    fields.append({ "name": f.name, "value": f.value, "inline": f.inline })
+                    fields.append({"name": f.name, "value": f.value, "inline": f.inline})
                 if e.thumbnail:
                     embed_thumbnail = e.thumbnail.url
                 if e.image:
                     embed_image = e.image.url
 
             # create the message preview
-            embed = await self.messaging.send_embed(target_channel,
+            embed = await self.messaging.send_embed(
+                target_channel,
                 embed_title,
                 message=f"{message_content}\n\n{embed_content}",
                 thumbnail=embed_thumbnail,
@@ -132,12 +130,14 @@ class MessagePreview(commands.Cog):
                 color=embed_color,
                 image=embed_image,
                 files=file_attachments,
-                footer=self.settings.get_string(guild_id, "message_preview_footer", created=created.strftime('%Y-%m-%d %H:%M:%S')))
+                footer=self.settings.get_string(
+                    guild_id, "message_preview_footer", created=created.strftime('%Y-%m-%d %H:%M:%S')
+                ),
+            )
             return embed
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
             raise e
-
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
@@ -150,6 +150,7 @@ class MessagePreview(commands.Cog):
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
+
 
 async def setup(bot):
     await bot.add_cog(MessagePreview(bot))
