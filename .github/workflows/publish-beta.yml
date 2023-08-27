@@ -6,13 +6,13 @@ on:
       - '!develop'
       - '!main'
       - "!master"
+env:
+  CONTAINER_ORG: "${{ github.repository_owner }}"
+  CONTAINER_NAME: "${{ github.event.repository.name }}"
+  CONTAINER_REGISTRY: "ghcr.io"
 jobs:
   docker:
     runs-on: ubuntu-latest
-    env:
-      CONTAINER_ORG: "${{ github.repository_owner }}"
-      CONTAINER_NAME: "${{ github.event.repository.name }}"
-      CONTAINER_REGISTRY: "ghcr.io"
     steps:
       - name: Prepare
         id: prep
@@ -32,9 +32,9 @@ jobs:
       - name: Login to GHCR
         uses: docker/login-action@v2
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ github.token }}
+          registry: "ghcr.io"
+          username: "${{ github.actor }}"
+          password: "${{ github.token }}"
 
       - name: Build and Push GHCR
         id: docker_build
