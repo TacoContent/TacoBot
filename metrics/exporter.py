@@ -2,9 +2,9 @@ import inspect
 import os
 
 from metrics.config import TacoBotMetricsConfig
-from metrics.lib.logger import Log
-from metrics.lib.loglevel import LogLevel
-from metrics.lib.utils import dict_get
+from bot.cogs.lib.logger import Log
+from bot.cogs.lib.loglevel import LogLevel
+from bot.cogs.lib.utils import dict_get
 from metrics.tacobot import TacoBotMetrics
 from prometheus_client import start_http_server
 

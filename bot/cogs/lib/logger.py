@@ -1,7 +1,7 @@
 import typing
 
 from bot.cogs.lib import loglevel, mongo
-
+from bot.cogs.lib.colors import Colors
 
 class Log:
     def __init__(self, minimumLogLevel: loglevel.LogLevel = loglevel.LogLevel.DEBUG) -> None:
@@ -12,9 +12,20 @@ class Log:
     def __write(
         self, guildId: int, level: loglevel.LogLevel, method: str, message: str, stack: typing.Optional[str] = None
     ) -> None:
-        print(f"[{level.name}] [{method}] [guild:{str(guildId)}] {message}")
+
+        color = Colors.get_color(level)
+        m_level = Colors.colorize(color, f"[{level.name}]", bold=True)
+        m_method = Colors.colorize(Colors.HEADER, f"[{method}]", bold=False)
+        m_message = f"{Colors.colorize(color, message)}"
+        m_guild = Colors.colorize(Colors.OKGREEN, f"[{guildId}]", bold=False)
+        str_out = f"{m_level} {m_method} {m_guild} {m_message}"
+        print(str_out)
         if stack:
-            print(stack)
+            print(Colors.colorize(color, stack))
+
+        # print(f"[{level.name}] [{method}] [guild:{str(guildId)}] {message}")
+        # if stack:
+        #     print(stack)
         if level >= self.minimum_log_level:
             self.db.insert_log(guildId=guildId, level=level, method=method, message=message, stack=stack)
 

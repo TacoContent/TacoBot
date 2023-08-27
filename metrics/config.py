@@ -2,7 +2,7 @@ import codecs
 import os
 
 import yaml
-from metrics.lib.utils import dict_get
+from bot.cogs.lib.utils import dict_get
 
 
 class TacoBotMetricsConfig:

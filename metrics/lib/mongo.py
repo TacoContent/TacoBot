@@ -3,7 +3,7 @@ import os
 import traceback
 import typing
 
-from metrics.lib import loglevel, utils
+from bot.cogs.lib import loglevel, utils
 from pymongo import MongoClient
 
 
