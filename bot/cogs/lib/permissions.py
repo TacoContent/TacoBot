@@ -1,10 +1,8 @@
-import enum
 import typing
+
 import discord
-from . import settings
-from . import mongo
-from . import utils
-from . import discordhelper
+from bot.cogs.lib import discordhelper, mongo, settings
+
 
 class Permissions:
     def __init__(self, bot) -> None:
@@ -12,7 +10,12 @@ class Permissions:
         self.db = mongo.MongoDatabase()
         self.discord_helper = discordhelper.DiscordHelper(bot)
 
-    async def has_permission(self, user: typing.Optional[typing.Union[discord.Member,int]] = None, permissions: typing.Optional[discord.Permissions] = None, guildId: typing.Optional[int] = None) -> bool:
+    async def has_permission(
+        self,
+        user: typing.Optional[typing.Union[discord.Member, int]] = None,
+        permissions: typing.Optional[discord.Permissions] = None,
+        guildId: typing.Optional[int] = None,
+    ) -> bool:
         if user is None:
             return False
         if isinstance(user, int):
@@ -31,7 +34,12 @@ class Permissions:
             return True
         return member.guild_permissions >= permissions
 
-    async def has_role(self, user: typing.Union[discord.Member, int], role: typing.Optional[typing.Union[discord.Role, int]] = None, guildId: typing.Optional[int] = None) -> bool:
+    async def has_role(
+        self,
+        user: typing.Union[discord.Member, int],
+        role: typing.Optional[typing.Union[discord.Role, int]] = None,
+        guildId: typing.Optional[int] = None,
+    ) -> bool:
         if isinstance(user, int):
             if guildId is None:
                 raise ValueError("guildId must be specified if user is an int")
@@ -54,7 +62,7 @@ class Permissions:
 
         return role_id in [r.id for r in member.roles if r.id == role_id]
 
-    async def is_admin(self, user: typing.Union[discord.Member, int], guildId: typing.Optional[int] = None ) -> bool:
+    async def is_admin(self, user: typing.Union[discord.Member, int], guildId: typing.Optional[int] = None) -> bool:
         if isinstance(user, int):
             if guildId is None:
                 raise ValueError("guildId must be specified if user is an int")

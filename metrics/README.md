@@ -11,5 +11,5 @@
 
 ## DASHBOARD
 
-![](https://i.imgur.com/rprBHRz.png)
-![](https://i.imgur.com/rhCZ7Wd.png)
+![dashboard](https://i.imgur.com/rprBHRz.png)
+![dashboard](https://i.imgur.com/rhCZ7Wd.png)

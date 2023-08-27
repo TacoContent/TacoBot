@@ -1,29 +1,15 @@
-import discord
-from discord.ext import commands
-import asyncio
-import json
-import traceback
-import sys
-import os
-import glob
-import typing
-import math
-import datetime
-
-from discord.ext.commands.cooldowns import BucketType
-from discord.ext.commands import has_permissions, CheckFailure
 import inspect
+import os
+import traceback
+import typing
 
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib import tacotypes
-from .lib.system_actions import SystemActions
-from .lib.messaging import Messaging
+import discord
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, utils
+from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.system_actions import SystemActions
+from discord.ext import commands
+
+
 class AccountLink(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
@@ -48,7 +34,7 @@ class AccountLink(commands.Cog):
 
     @commands.command()
     @commands.guild_only()
-    async def link(self, ctx, *, code: typing.Union[str,None] = None):
+    async def link(self, ctx, *, code: typing.Union[str, None] = None):
         _method = inspect.stack()[0][3]
         guild_id = 0
         if ctx.guild:
@@ -71,13 +57,19 @@ class AccountLink(commands.Cog):
                         )
                     except discord.Forbidden:
                         await ctx.channel.send(
-                            f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_success_message", code=code)}',
-                            delete_after=10)
+                            f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_success_message", code=code)}',  # pylint: disable=line-too-long
+                            delete_after=10,
+                        )
                 else:
                     try:
-                        await ctx.author.send(self.settings.get_string(guild_id, key="account_link_unknown_code_message"))
+                        await ctx.author.send(
+                            self.settings.get_string(guild_id, key="account_link_unknown_code_message")
+                        )
                     except discord.Forbidden:
-                        await ctx.channel.send(f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_unknown_code_message")}', delete_after=10)
+                        await ctx.channel.send(
+                            f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_unknown_code_message")}',  # pylint: disable=line-too-long
+                            delete_after=10,
+                        )
             except ValueError as ve:
                 try:
                     await ctx.author.send(f"{ve}")
@@ -102,7 +94,10 @@ class AccountLink(commands.Cog):
                     try:
                         await ctx.author.send(self.settings.get_string(guild_id, "account_link_save_error_message"))
                     except discord.Forbidden:
-                        await ctx.channel.send(f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_save_error_message")}', delete_after=10)
+                        await ctx.channel.send(
+                            f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_save_error_message")}',  # pylint: disable=line-too-long
+                            delete_after=10,
+                        )
             except ValueError as ver:
                 try:
                     await ctx.author.send(f"{ver}")
@@ -123,6 +118,7 @@ class AccountLink(commands.Cog):
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
+
 
 async def setup(bot):
     await bot.add_cog(AccountLink(bot))

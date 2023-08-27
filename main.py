@@ -1,15 +1,16 @@
-
-
-import discord
-import os
-from dotenv import load_dotenv, find_dotenv
-load_dotenv(find_dotenv())
-import bot.tacobot as bot
-from bot.cogs.lib.migration_runner import MigrationRunner
-import signal
 import asyncio
-from metrics.exporter import MetricsExporter
+import os
+import signal
 from concurrent.futures import ProcessPoolExecutor
+
+import bot.tacobot as bot
+import discord
+from bot.cogs.lib.migration_runner import MigrationRunner
+from dotenv import find_dotenv, load_dotenv
+from metrics.exporter import MetricsExporter
+
+load_dotenv(find_dotenv())
+
 
 def sighandler(signum, frame):
     print("<SIGTERM received>")
@@ -31,13 +32,13 @@ def main():
         intents.guild_messages = True
         intents.guild_reactions = True
 
-
         tacobot = bot.TacoBot(intents=intents)
         tacobot.remove_command('help')
         tacobot.run(DISCORD_TOKEN)
     except KeyboardInterrupt:
         print("<KeyboardInterrupt received>")
         exit(0)
+
 
 def exporter():
     try:
@@ -47,6 +48,7 @@ def exporter():
     except KeyboardInterrupt:
         print("<KeyboardInterrupt received>")
         exit(0)
+
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()

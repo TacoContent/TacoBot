@@ -1,20 +1,29 @@
-import sys
-import os
-import traceback
 import glob
-import typing
-from . import utils
-import json
-# from . import logger
-# from . import loglevel
 import inspect
+import json
+import os
+import sys
+import traceback
+import typing
+
+from bot.cogs.lib import utils  # pylint: disable=no-name-in-module
+
 
 class Settings:
     APP_VERSION = "1.0.0-snapshot"
+
     def __init__(self) -> None:
         _method = inspect.stack()[0][3]
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
+
+        # setup properties that are needed
+        self.changelog = ""
+        self.name = ""
+        self.version = ""
+        self.languages = {}
+        self.strings = {}
+        self.commands = {}
 
         try:
             with open('app.manifest', encoding="UTF-8") as json_file:
@@ -22,13 +31,13 @@ class Settings:
         except Exception as e:
             print(e, file=sys.stderr)
 
-        self.bot_owner = utils.dict_get(os.environ, 'BOT_OWNER', default_value= '262031734260891648')
-        self.log_level = utils.dict_get(os.environ, 'LOG_LEVEL', default_value = 'DEBUG')
-        self.language = utils.dict_get(os.environ, "LANGUAGE", default_value = "en-us").lower()
-        self.db_url = utils.dict_get(os.environ, "MONGODB_URL", default_value = "mongodb://localhost:27017/tacobot")
-        self.strawpoll_api_key = utils.dict_get(os.environ, "STRAWPOLL_API_KEY", default_value = "")
-        self.giphy_api_key = utils.dict_get(os.environ, "GIPHY_API_KEY", default_value = "")
-        self.timezone = utils.dict_get(os.environ, "TIMEZONE", default_value = "America/Chicago")
+        self.bot_owner = utils.dict_get(os.environ, 'BOT_OWNER', default_value='262031734260891648')
+        self.log_level = utils.dict_get(os.environ, 'LOG_LEVEL', default_value='DEBUG')
+        self.language = utils.dict_get(os.environ, "LANGUAGE", default_value="en-us").lower()
+        self.db_url = utils.dict_get(os.environ, "MONGODB_URL", default_value="mongodb://localhost:27017/tacobot")
+        self.strawpoll_api_key = utils.dict_get(os.environ, "STRAWPOLL_API_KEY", default_value="")
+        self.giphy_api_key = utils.dict_get(os.environ, "GIPHY_API_KEY", default_value="")
+        self.timezone = utils.dict_get(os.environ, "TIMEZONE", default_value="America/Chicago")
 
         # log_level = loglevel.LogLevel[self.log_level.upper()]
         # if not log_level:
@@ -42,7 +51,7 @@ class Settings:
     def get(self, name, default_value=None) -> typing.Any:
         return utils.dict_get(self.__dict__, name, default_value)
 
-    def get_settings(self, db, guildId: int, name:str) -> typing.Any:
+    def get_settings(self, db, guildId: int, name: str) -> typing.Any:
         return db.get_settings(guildId, name)
 
     def get_string(self, guildId: int, key: str, *args, **kwargs) -> str:
@@ -86,7 +95,9 @@ class Settings:
         _method = inspect.stack()[1][3]
         self.strings = {}
 
-        lang_files = glob.glob(os.path.join(os.path.dirname(__file__), "../../../languages", "[a-z][a-z]-[a-z][a-z].json"))
+        lang_files = glob.glob(
+            os.path.join(os.path.dirname(__file__), "../../../languages", "[a-z][a-z]-[a-z][a-z].json")
+        )
         languages = [os.path.basename(f)[:-5] for f in lang_files if os.path.isfile(f)]
         for lang in languages:
             self.strings[lang] = {}
@@ -103,7 +114,6 @@ class Settings:
                 print(f"{e}", file=sys.stderr)
                 traceback.print_exc()
                 # self.log.error(0, "settings.load_strings", str(e), traceback.format_exc())
-
 
     def load_language_manifest(self) -> None:
         lang_manifest = os.path.join(os.path.dirname(__file__), "../../../languages/manifest.json")

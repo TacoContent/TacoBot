@@ -1,29 +1,12 @@
-import discord
-from discord.ext import commands
-import asyncio
-import json
-import traceback
-import sys
-import os
-import glob
-import typing
-import math
 import datetime
-
-from discord.ext.commands.cooldowns import BucketType
-from discord.ext.commands import has_permissions, CheckFailure
 import inspect
+import os
+import traceback
+import typing
 
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib import tacotypes
-from .lib.system_actions import SystemActions
-
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes, utils
+from bot.cogs.lib.system_actions import SystemActions
+from discord.ext import commands
 
 
 class InviteTracker(commands.Cog):
@@ -78,7 +61,6 @@ class InviteTracker(commands.Cog):
         guild_id = member.guild.id
         _method = inspect.stack()[0][3]
         try:
-
             invites_before_join = self.invites[member.guild.id]
             invites_after_join = await member.guild.invites()
             for invite in invites_before_join:

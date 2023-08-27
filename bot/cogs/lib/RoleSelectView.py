@@ -1,13 +1,9 @@
-import discord
-from discord.ext import commands
-import traceback
 import inspect
 import os
 import typing
 
-from . import settings
-from . import logger
-from . import loglevel
+import discord
+from bot.cogs.lib import logger, loglevel, settings
 
 
 class RoleSelectView(discord.ui.View):
@@ -41,7 +37,7 @@ class RoleSelectView(discord.ui.View):
 
     async def on_select_callback(self, interaction: discord.Interaction) -> None:
         if interaction.user.id != self.ctx.author.id:
-          return
+            return
         await interaction.response.defer()
         if self.select_callback is not None:
             await self.select_callback(self.role_select, interaction)

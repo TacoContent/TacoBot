@@ -1,12 +1,13 @@
 from enum import Enum
+
 import discord
+
 
 class MemberStatus(Enum):
     ONLINE = 1
     OFFLINE = 2
     IDLE = 3
     DND = 4
-
     UNKNOWN = 9999
 
     def __str__(self) -> str:
@@ -16,7 +17,7 @@ class MemberStatus(Enum):
         return self.name
 
     @staticmethod
-    def from_discord (status: discord.Status) -> "MemberStatus":
+    def from_discord(status: discord.Status) -> "MemberStatus":
         if status == discord.Status.online:
             return MemberStatus.ONLINE
         elif status == discord.Status.offline:
@@ -29,7 +30,7 @@ class MemberStatus(Enum):
             return MemberStatus.UNKNOWN
 
     @staticmethod
-    def from_str (status: str) -> "MemberStatus" :
+    def from_str(status: str) -> "MemberStatus":
         if status.lower() == "online":
             return MemberStatus.ONLINE
         elif status.lower() == "offline":

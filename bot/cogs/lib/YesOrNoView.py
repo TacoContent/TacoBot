@@ -1,13 +1,11 @@
-import discord
-from discord.ext import commands
-import traceback
 import inspect
 import os
+import traceback
 import typing
-from . import settings
-from . import logger
-from . import loglevel
-from . import utils
+
+import discord
+from bot.cogs.lib import logger, loglevel, settings
+
 
 class YesOrNoView(discord.ui.View):
     def __init__(
@@ -48,7 +46,7 @@ class YesOrNoView(discord.ui.View):
     async def answer_callback(self, interaction: discord.Interaction) -> None:
         # check if the user who clicked the button is the same as the user who started the command
         if interaction.user.id != self.ctx.author.id:
-          return
+            return
         await interaction.response.defer()
 
         await interaction.delete_original_response()

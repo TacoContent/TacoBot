@@ -1,29 +1,13 @@
-import discord
-from discord.ext import commands
-import asyncio
-import json
-import traceback
-import sys
-import os
-import glob
-import typing
 import datetime
-
-from discord.ext.commands.cooldowns import BucketType
-from discord.ext.commands import has_permissions, CheckFailure
-
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib import tacotypes
-from .lib.permissions import Permissions
-from .lib.messaging import Messaging
-
 import inspect
+import os
+import traceback
+
+import discord
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.permissions import Permissions
+from discord.ext import commands
 
 
 class TechThursdays(commands.Cog):
@@ -89,7 +73,9 @@ class TechThursdays(commands.Cog):
 
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"techthurs is disabled for guild {guild_id}")
+                self.log.debug(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"techthurs is disabled for guild {guild_id}"
+                )
                 return
 
             tacos_settings = self.get_tacos_settings(guild_id)
@@ -113,7 +99,9 @@ class TechThursdays(commands.Cog):
 
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
-                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}")
+                self.log.warn(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
+                )
 
             # get role
             taco_word = self.settings.get_string(guild_id, "taco_singular")
@@ -165,15 +153,23 @@ class TechThursdays(commands.Cog):
 
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings:
-                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No techthurs settings found for guild {guild_id}")
+                self.log.warn(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"No techthurs settings found for guild {guild_id}",
+                )
                 return
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"techthurs is disabled for guild {guild_id}")
+                self.log.debug(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"techthurs is disabled for guild {guild_id}"
+                )
                 return
 
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
-                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}")
+                self.log.warn(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
+                )
 
             # get the message from the id
             message = await out_channel.fetch_message(message_id)
@@ -206,7 +202,9 @@ class TechThursdays(commands.Cog):
 
         # check if the user that reacted is in the admin role
         if not await self.permissions.is_admin(payload.user_id, guild_id):
-            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin")
+            self.log.debug(
+                guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin"
+            )
             return
         # in future, check if the user is in a defined role that can grant tacos (e.g. moderator)
 
@@ -240,7 +238,9 @@ class TechThursdays(commands.Cog):
             await self.give_user_techthurs_tacos(guild_id, message_author.id, payload.channel_id, payload.message_id)
         else:
             self.log.debug(
-                guild_id, f"{self._module}.{self._class}.{_method}", f"Message {payload.message_id} has already been tracked for techthurs. Skipping."
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"Message {payload.message_id} has already been tracked for techthurs. Skipping.",
             )
 
     async def _on_raw_reaction_add_import(self, payload) -> None:
@@ -249,7 +249,9 @@ class TechThursdays(commands.Cog):
 
         # check if the user that reacted is in the admin role
         if not await self.permissions.is_admin(payload.user_id, guild_id):
-            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin")
+            self.log.debug(
+                guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin"
+            )
             return
 
         channel = self.bot.get_channel(payload.channel_id)
@@ -272,15 +274,15 @@ class TechThursdays(commands.Cog):
         _method = inspect.stack()[0][3]
         guild_id = payload.guild_id
         try:
-
             if payload.event_type != "REACTION_ADD":
                 return
 
             # check if the user that reacted is in the admin role
             if not await self.permissions.is_admin(payload.user_id, guild_id):
-                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin")
+                self.log.debug(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"User {payload.user_id} is not an admin"
+                )
                 return
-
 
             react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
             if not react_user or react_user.bot or react_user.system:
@@ -297,7 +299,6 @@ class TechThursdays(commands.Cog):
             if str(payload.emoji.name) in reaction_emojis:
                 await self._on_raw_reaction_add_give(payload)
                 return
-
 
             # is today thursday?
             today = datetime.datetime.now()

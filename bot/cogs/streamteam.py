@@ -1,27 +1,13 @@
-import discord
-from discord.ext import commands
-import asyncio
-import json
-import traceback
-import sys
-import os
-import glob
-import typing
 import inspect
-import collections
+import os
+import traceback
+import typing
 
-from discord.ext.commands.cooldowns import BucketType
-from discord.ext.commands import has_permissions, CheckFailure
-
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib.system_actions import SystemActions
-from .lib.messaging import Messaging
+import discord
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, utils
+from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.system_actions import SystemActions
+from discord.ext import commands
 
 
 class StreamTeam(commands.Cog):
@@ -62,7 +48,11 @@ class StreamTeam(commands.Cog):
             streamteam_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
             if not streamteam_settings:
                 # raise exception if there are no streamteam settings
-                self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"No streamteam settings found for guild {guild_id}")
+                self.log.error(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"No streamteam settings found for guild {guild_id}",
+                )
                 await self.discord_helper.notify_bot_not_initialized(message, "streamteam")
                 return
 
@@ -90,11 +80,15 @@ class StreamTeam(commands.Cog):
                     await self.messaging.send_embed(
                         channel=log_channel,
                         title=self.settings.get_string(guild_id, "streamteam_removal_tile"),
-                        message=self.settings.get_string(guild_id, "streamteam_removal_message",
+                        message=self.settings.get_string(
+                            guild_id,
+                            "streamteam_removal_message",
                             user=f"{utils.get_user_display_name(user)}",
                             team_name=team_name,
-                            twitch_name=twitch_name),
-                        color=0xff0000)
+                            twitch_name=twitch_name,
+                        ),
+                        color=0xFF0000,
+                    )
 
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
@@ -171,21 +165,20 @@ class StreamTeam(commands.Cog):
                 #             self.settings.get_string(guild_id, "twitch_name_dm_error", user=user.mention),
                 #             footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
                 #             color=0xff0000, delete_after=30)
-
                 # else:
                 #     twitch_name = twitch_user['twitch_name']
-
                 if log_channel:
                     twitch_name = unknown if twitch_name is None else twitch_name
                     await self.messaging.send_embed(
                         channel=log_channel,
                         title=self.settings.get_string(guild_id, "streamteam_join_title"),
-                        message=self.settings.get_string(guild_id, "streamteam_join_message",
-                            user=user, team_name=team_name, twitch_name=twitch_name),
-                        color=0x00ff00)
+                        message=self.settings.get_string(
+                            guild_id, "streamteam_join_message", user=user, team_name=team_name, twitch_name=twitch_name
+                        ),
+                        color=0x00FF00,
+                    )
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
-
 
     @commands.Cog.listener()
     async def on_disconnect(self) -> None:
@@ -207,11 +200,10 @@ class StreamTeam(commands.Cog):
 
     @team.command()
     @commands.guild_only()
-    async def invite(self, ctx, twitchName: str = None) -> None:
+    async def invite(self, ctx, twitchName: typing.Optional[str] = None) -> None:
         _method = inspect.stack()[0][3]
         guild_id = ctx.guild.id
         try:
-
             if twitchName is None:
                 twitchName = self.db.get_user_twitch_info(ctx.author.id)['twitch_name']
             if twitchName is None:
@@ -220,7 +212,8 @@ class StreamTeam(commands.Cog):
                         channel=ctx.author,
                         title=self.settings.get_string(guild_id, "error"),
                         message=self.settings.get_string(guild_id, "streamteam_invite_no_twitch_name_message"),
-                        color=0xff0000,)
+                        color=0xFF0000,
+                    )
                     return
                 except discord.Forbidden:
                     # if we cant send to user, then we send to channel
@@ -229,8 +222,9 @@ class StreamTeam(commands.Cog):
                         title=self.settings.get_string(guild_id, "error"),
                         message=self.settings.get_string(guild_id, "streamteam_invite_no_twitch_name_message"),
                         footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
-                        color=0xff0000,
-                        delete_after=30,)
+                        color=0xFF0000,
+                        delete_after=30,
+                    )
                     return
 
             await self._invite_user(ctx, ctx.author, twitchName)
@@ -253,7 +247,11 @@ class StreamTeam(commands.Cog):
             streamteam_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
             if not streamteam_settings:
                 # raise exception if there are no streamteam settings
-                self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"No streamteam settings found for guild {guild_id}")
+                self.log.error(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"No streamteam settings found for guild {guild_id}",
+                )
                 await self.discord_helper.notify_bot_not_initialized(ctx, "streamteam")
                 return
             unknown = self.settings.get_string(guild_id, "unknown")
@@ -276,18 +274,32 @@ class StreamTeam(commands.Cog):
             await self.messaging.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "success"),
-                message=self.settings.get_string(guild_id, "streamteam_invite_success_message", user=f"{utils.get_user_display_name(user)}", team_name=team_name, twitch_name=twitchName),
+                message=self.settings.get_string(
+                    guild_id,
+                    "streamteam_invite_success_message",
+                    user=f"{utils.get_user_display_name(user)}",
+                    team_name=team_name,
+                    twitch_name=twitchName,
+                ),
                 footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
-                color=0x00ff00,
-                delete_after=30,)
+                color=0x00FF00,
+                delete_after=30,
+            )
 
             if log_channel:
                 twitch_name = unknown if twitch_name is None else twitch_name
                 await self.messaging.send_embed(
                     channel=log_channel,
                     title=self.settings.get_string(guild_id, "streamteam_join_title"),
-                    message=self.settings.get_string(guild_id, "streamteam_join_message", user=f"{utils.get_user_display_name(user)}", team_name=team_name, twitch_name=twitchName),
-                    color=0x00ff00,)
+                    message=self.settings.get_string(
+                        guild_id,
+                        "streamteam_join_message",
+                        user=f"{utils.get_user_display_name(user)}",
+                        team_name=team_name,
+                        twitch_name=twitchName,
+                    ),
+                    color=0x00FF00,
+                )
 
         except Exception as ex:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
@@ -304,6 +316,7 @@ class StreamTeam(commands.Cog):
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
+
 
 async def setup(bot):
     await bot.add_cog(StreamTeam(bot))

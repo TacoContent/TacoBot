@@ -1,30 +1,16 @@
+import inspect
 import json
+import math
+import os
+import traceback
+import uuid
 from random import random
 from urllib import parse, request
-import discord
+
+from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
+from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
-import asyncio
-import traceback
-import sys
-import os
-import glob
-import typing
-import math
-import re
-import uuid
 
-from discord.ext.commands.cooldowns import BucketType
-from discord.ext.commands import has_permissions, CheckFailure
-import inspect
-
-from .lib import settings
-from .lib import discordhelper
-from .lib import logger
-from .lib import loglevel
-from .lib import utils
-from .lib import settings
-from .lib import mongo
-from .lib.messaging import Messaging
 
 class Giphy(commands.Cog):
     def __init__(self, bot):
@@ -62,7 +48,7 @@ class Giphy(commands.Cog):
                 'limit': 50,
                 'offset': math.floor(random() * 50),
                 "random_id": uuid.uuid4().hex,
-                'rating': 'r'
+                'rating': 'r',
             }
             url = url + '?' + parse.urlencode(params)
             with request.urlopen(url) as f:
@@ -78,16 +64,16 @@ class Giphy(commands.Cog):
                     title=title,
                     image=image_url,
                     url=url,
-                    color=0x00ff00,
+                    color=0x00FF00,
                     author=ctx.author,
-                    footer="Powered by Giphy")
+                    footer="Powered by Giphy",
+                )
                 # embed = discord.Embed(title=data['data'][random_index]['title'], url=data['data'][random_index]['url'], color=0x00ff00)
                 # embed.set_image(url=data['data'][random_index]['images']['original']['url'])
                 # await ctx.send(embed=embed)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
-
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
@@ -100,6 +86,7 @@ class Giphy(commands.Cog):
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
+
 
 async def setup(bot):
     await bot.add_cog(Giphy(bot))
