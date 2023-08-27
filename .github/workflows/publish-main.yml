@@ -5,17 +5,17 @@ on:
     branches:
       - develop
     #   - beta/*
+env:
+  GITHUB_TOKEN: "${{ github.token }}"
+  CONTAINER_ORG: "${{ github.repository_owner }}"
+  CONTAINER_NAME: "${{ github.event.repository.name }}"
+  CONTAINER_REGISTRY: "ghcr.io"
 jobs:
   version:
     runs-on: ubuntu-latest
     outputs:
       app_version: ${{ steps.semvers.outputs.patch }} # set the app_version to be the PATCH updated version
       tag: ${{ steps.semvers.outputs.v_patch }} # set the tag to be the PATCH updated version.
-    env:
-      GITHUB_TOKEN: "${{ github.token }}"
-      CONTAINER_ORG: "${{ github.repository_owner }}"
-      CONTAINER_NAME: "${{ github.event.repository.name }}"
-      CONTAINER_REGISTRY: "ghcr.io"
     steps:
       - uses: actions/checkout@v3
         with:
@@ -61,7 +61,7 @@ jobs:
       - name: Login to GHCR
         uses: docker/login-action@v2
         with:
-          registry: "${{ env.CONTAINER_REGISTRY }}}}"
+          registry: "${{ env.CONTAINER_REGISTRY }}"
           username: "${{ secrets.GHCR_USERNAME }}"
           password: "${{ github.token }}"
 
