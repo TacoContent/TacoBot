@@ -3,8 +3,9 @@ name: TacoBot Publish Beta
 on:
   push:
     branches:
-      - '!develop'
-      - '!main'
+      - "*"
+      - "!develop"
+      - "!main"
       - "!master"
 env:
   CONTAINER_ORG: "${{ github.repository_owner }}"
