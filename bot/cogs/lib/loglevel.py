@@ -2,6 +2,7 @@ from enum import Enum
 
 
 class LogLevel(Enum):
+    PRINT = -1
     DEBUG = 0
     INFO = 1
     WARNING = 2

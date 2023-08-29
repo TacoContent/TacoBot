@@ -24,8 +24,6 @@ def get_scalar_result(conn, sql, default_value=None, *args) -> typing.Any:
         cursor.execute(sql, args)
         return cursor.fetchone()[0]
     except Exception as ex:
-        print(ex)
-        traceback.print_exc()
         return default_value
 
 
@@ -54,28 +52,20 @@ def get_random_name(noun_count=1, adjective_count=1) -> str:
         results = adjectives + nouns
         return " ".join(w.title() for w in results)
     except Exception as ex:
-        print(ex)
-        traceback.print_exc()
         try:
             nouns = requests.get(f"https://random-word-form.herokuapp.com/random/noun?count={str(noun_count)}").json()
             adjectives = requests.get(
                 f"https://random-word-form.herokuapp.com/random/adjective?count={str(adjective_count)}"
             ).json()
             results = adjectives + nouns
-            print("FROM random-word-form")
             return " ".join(w.title() for w in results)
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
             try:
-                print("FROM random-word-api")
                 results = requests.get(
                     f"https://random-word-api.herokuapp.com/word?number={str(noun_count + adjective_count)}&swear=0"
                 ).json()
                 return " ".join(w.title() for w in results)
             except Exception as ex:
-                print(ex)
-                traceback.print_exc()
                 return "New Voice Channel"
 
 

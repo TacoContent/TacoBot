@@ -29,7 +29,7 @@ class Settings:
             with open('app.manifest', encoding="UTF-8") as json_file:
                 self.__dict__.update(json.load(json_file))
         except Exception as e:
-            print(e, file=sys.stderr)
+            raise e
 
         self.bot_owner = utils.dict_get(os.environ, 'BOT_OWNER', default_value='262031734260891648')
         self.log_level = utils.dict_get(os.environ, 'LOG_LEVEL', default_value='DEBUG')
@@ -111,9 +111,7 @@ class Settings:
                 with open(lang_json, encoding="UTF-8") as lang_file:
                     self.strings[lang].update(json.load(lang_file))
             except Exception as e:
-                print(f"{e}", file=sys.stderr)
-                traceback.print_exc()
-                # self.log.error(0, "settings.load_strings", str(e), traceback.format_exc())
+                raise e
 
     def load_language_manifest(self) -> None:
         lang_manifest = os.path.join(os.path.dirname(__file__), "../../../languages/manifest.json")

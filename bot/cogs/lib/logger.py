@@ -1,3 +1,4 @@
+import sys
 import typing
 
 from bot.cogs.lib import loglevel, mongo
@@ -10,7 +11,13 @@ class Log:
         pass
 
     def __write(
-        self, guildId: int, level: loglevel.LogLevel, method: str, message: str, stack: typing.Optional[str] = None
+        self,
+        guildId: int,
+        level: loglevel.LogLevel,
+        method: str,
+        message: str,
+        stack: typing.Optional[str] = None,
+        file: typing.IO = sys.stdout,
     ) -> None:
 
         color = Colors.get_color(level)
@@ -19,27 +26,39 @@ class Log:
         m_message = f"{Colors.colorize(color, message)}"
         m_guild = Colors.colorize(Colors.OKGREEN, f"[{guildId}]", bold=False)
         str_out = f"{m_level} {m_method} {m_guild} {m_message}"
-        print(str_out)
+        print(str_out, file=file)
         if stack:
-            print(Colors.colorize(color, stack))
+            print(Colors.colorize(color, stack), file=file)
 
-        # print(f"[{level.name}] [{method}] [guild:{str(guildId)}] {message}")
-        # if stack:
-        #     print(stack)
         if level >= self.minimum_log_level:
             self.db.insert_log(guildId=guildId, level=level, method=method, message=message, stack=stack)
 
     def debug(self, guildId: int, method: str, message: str, stack: typing.Optional[str] = None) -> None:
-        self.__write(guildId=guildId, level=loglevel.LogLevel.DEBUG, method=method, message=message, stack=stack)
+        self.__write(
+            guildId=guildId, level=loglevel.LogLevel.DEBUG, method=method, message=message, stack=stack, file=sys.stdout
+        )
 
     def info(self, guildId: int, method: str, message: str, stack: typing.Optional[str] = None) -> None:
-        self.__write(guildId=guildId, level=loglevel.LogLevel.INFO, method=method, message=message, stack=stack)
+        self.__write(
+            guildId=guildId, level=loglevel.LogLevel.INFO, method=method, message=message, stack=stack, file=sys.stdout
+        )
 
     def warn(self, guildId: int, method: str, message: str, stack: typing.Optional[str] = None) -> None:
-        self.__write(guildId=guildId, level=loglevel.LogLevel.WARNING, method=method, message=message, stack=stack)
+        self.__write(
+            guildId=guildId,
+            level=loglevel.LogLevel.WARNING,
+            method=method,
+            message=message,
+            stack=stack,
+            file=sys.stdout,
+        )
 
     def error(self, guildId: int, method: str, message: str, stack: typing.Optional[str] = None) -> None:
-        self.__write(guildId=guildId, level=loglevel.LogLevel.ERROR, method=method, message=message, stack=stack)
+        self.__write(
+            guildId=guildId, level=loglevel.LogLevel.ERROR, method=method, message=message, stack=stack, file=sys.stderr
+        )
 
     def fatal(self, guildId: int, method: str, message: str, stack: typing.Optional[str] = None) -> None:
-        self.__write(guildId=guildId, level=loglevel.LogLevel.FATAL, method=method, message=message, stack=stack)
+        self.__write(
+            guildId=guildId, level=loglevel.LogLevel.FATAL, method=method, message=message, stack=stack, file=sys.stderr
+        )

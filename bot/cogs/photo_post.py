@@ -112,7 +112,6 @@ class PhotoPost(commands.Cog):
             pass
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            traceback.print_exc()
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)

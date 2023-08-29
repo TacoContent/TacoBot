@@ -28,7 +28,6 @@ class TacoBot(commands.Bot):
         # Note: When using commands.Bot instead of discord.Client, the bot will
         # maintain its own tree instead.
         # self.tree = app_commands.CommandTree(self)
-        print(f"APP VERSION: {self.settings.APP_VERSION}")
         self.db = mongo.MongoDatabase()
         self.initDB()
 
@@ -37,6 +36,7 @@ class TacoBot(commands.Bot):
             log_level = loglevel.LogLevel.DEBUG
 
         self.log = logger.Log(minimumLogLevel=log_level)
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"APP VERSION: {self.settings.APP_VERSION}")
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Logger initialized with level {log_level.name}")
 
     # In this basic example, we just synchronize the app commands to one guild.
@@ -56,8 +56,12 @@ class TacoBot(commands.Bot):
             try:
                 await self.load_extension(extension)
             except Exception as e:
-                print(f"Failed to load extension {extension}.", file=sys.stderr)
-                traceback.print_exc()
+                self.log.error(
+                    0,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Failed to load extension {extension}: {e}",
+                    traceback.format_exc(),
+                )
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Setting up bot")
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Starting Healthcheck Server")

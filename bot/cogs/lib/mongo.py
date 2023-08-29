@@ -1,12 +1,14 @@
 import datetime
 import inspect
 import os
+import sys
 import traceback
 import typing
 import uuid
 
 import discord
 from bot.cogs.lib import database, loglevel, models, settings, utils
+from bot.cogs.lib.colors import Colors
 from bot.cogs.lib.member_status import MemberStatus
 from bot.cogs.lib.minecraft_op import MinecraftOpLevel
 from bot.cogs.lib.system_actions import SystemActions
@@ -19,7 +21,7 @@ class MongoDatabase(database.Database):
         super().__init__()
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-
+        self._class = self.__class__.__name__
         self.settings = settings.Settings()
         self.client = None
         self.connection = None
@@ -33,18 +35,71 @@ class MongoDatabase(database.Database):
         self.connection = self.client.tacobot
 
     def close(self) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.client:
                 self.client.close()
             self.client = None
             self.connection = None
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"Failed to close connection: {ex}",
+                stackTrace=traceback.format_exc(),
+            )
+
+    def log(
+            self,
+            guildId: typing.Optional[int],
+            level: loglevel.LogLevel,
+            method: str,
+            message: str,
+            stackTrace: typing.Optional[str] = None,
+            outIO: typing.Optional[typing.IO] = None,
+            colorOverride: typing.Optional[str] = None,
+        ) -> None:
+        _method = inspect.stack()[0][3]
+        if guildId is None:
+            guildId = 0
+        if colorOverride is None:
+            color = Colors.get_color(level)
+        else:
+            color = colorOverride
+
+        m_level = Colors.colorize(color, f"[{level.name}]", bold=True)
+        m_method = Colors.colorize(Colors.HEADER, f"[{method}]", bold=True)
+        m_guild = Colors.colorize(Colors.OKGREEN, f"[{guildId}]", bold=True)
+        m_message = f"{Colors.colorize(color, message)}"
+
+        str_out = f"{m_level} {m_method} {m_guild} {m_message}"
+        if outIO is None:
+            stdoe = sys.stdout if level < loglevel.LogLevel.ERROR else sys.stderr
+        else:
+            stdoe = outIO
+
+        print(str_out, file=stdoe)
+        if stackTrace:
+            print(Colors.colorize(color, stackTrace), file=stdoe)
+        try:
+            if level >= loglevel.LogLevel.INFO:
+                self.insert_log(guildId=guildId, level=level, method=method, message=message, stack=stackTrace)
+        except Exception as ex:
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.PRINT,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"Unable to log to database: {ex}",
+                stackTrace=traceback.format_exc(),
+                outIO=sys.stderr,
+                colorOverride=Colors.FAIL,
+            )
 
     def insert_log(
         self, guildId: int, level: loglevel.LogLevel, method: str, message: str, stack: typing.Optional[str] = None
     ) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -58,19 +113,33 @@ class MongoDatabase(database.Database):
             }
             self.connection.logs.insert_one(payload)
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.PRINT,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"Failed to insert log: {ex}",
+                stackTrace=traceback.format_exc(),
+                outIO=sys.stderr,
+                colorOverride=Colors.FAIL,
+            )
 
     def clear_log(self, guildId: int) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
             self.connection.logs.delete_many({"guild_id": guildId})
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"Failed to clear log: {ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def add_twitchbot_to_channel(self, guildId: int, twitch_channel: str) -> bool:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -85,8 +154,13 @@ class MongoDatabase(database.Database):
             )
             return True
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.FATAL,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
             raise ex
 
     def add_stream_team_request(self, guildId: int, userId: int, twitchName: typing.Optional[str] = None) -> None:
@@ -105,22 +179,39 @@ class MongoDatabase(database.Database):
             if not self.connection.stream_team_requests.find_one(payload):
                 self.connection.stream_team_requests.insert_one(payload)
             else:
-                print(f"[DEBUG] [{self._module}.{_method}] [guild:0] User {userId}, already in table")
+                self.log(
+                    guildId=guildId,
+                    level=loglevel.LogLevel.DEBUG,
+                    method=f"{self._module}.{self._class}.{_method}",
+                    message=f"User {userId}, already in table"
+                )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def remove_stream_team_request(self, guildId: int, userId: int) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
             self.connection.stream_team_requests.delete_many({"guild_id": str(guildId), "user_id": str(userId)})
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     # twitchId: typing.Optional[str] = None,
     def set_user_twitch_info(self, userId: int, twitchName: typing.Optional[str] = None) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -128,17 +219,28 @@ class MongoDatabase(database.Database):
             # insert or update user twitch info
             self.connection.twitch_user.update_one({"user_id": str(userId)}, {"$set": payload}, upsert=True)
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def get_user_twitch_info(self, userId: int) -> typing.Optional[dict]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
             return self.connection.twitch_user.find_one({"user_id": str(userId)})
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     # Tacos
     def remove_all_tacos(self, guildId: int, userId: int) -> None:
@@ -146,11 +248,21 @@ class MongoDatabase(database.Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            print(f"[DEBUG] [{self._module}.{_method}] [guild:0] Removing tacos for user {userId}")
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.DEBUG,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"Removing tacos for user {userId}",
+            )
             self.connection.tacos.delete_many({"guild_id": str(guildId), "user_id": str(userId)})
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def add_tacos(self, guildId: int, userId: int, count: int) -> typing.Union[int, None]:
         _method = inspect.stack()[0][3]
@@ -160,51 +272,96 @@ class MongoDatabase(database.Database):
 
             user_tacos = self.get_tacos_count(guildId, userId)
             if user_tacos is None:
-                print(f"[DEBUG] [{self._module}.{_method}] [guild:0] User {userId} not in table")
+                self.log(
+                    guildId=guildId,
+                    level=loglevel.LogLevel.DEBUG,
+                    method=f"{self._module}.{self._class}.{_method}",
+                    message=f"User {userId} not in table",
+                )
                 user_tacos = 0
             else:
                 user_tacos = user_tacos or 0
-                print(f"[DEBUG] [{self._module}.{_method}] [guild:0] User {userId} has {user_tacos} tacos")
+                self.log(
+                    guildId=guildId,
+                    level=loglevel.LogLevel.DEBUG,
+                    method=f"{self._module}.{self._class}.{_method}",
+                    message=f"User {userId} has {user_tacos} tacos",
+                )
 
             user_tacos += count
-            print(f"[DEBUG] [{self._module}.{_method}] [guild:0] User {userId} now has {user_tacos} tacos")
+            self.log(
+                    guildId=guildId,
+                    level=loglevel.LogLevel.DEBUG,
+                    method=f"{self._module}.{self._class}.{_method}",
+                    message=f"User {userId} has {user_tacos} tacos",
+                )
             self.connection.tacos.update_one(
                 {"guild_id": str(guildId), "user_id": str(userId)}, {"$set": {"count": user_tacos}}, upsert=True
             )
             return user_tacos
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def remove_tacos(self, guildId: int, userId: int, count: int):
         _method = inspect.stack()[0][3]
         try:
             if count < 0:
-                print(f"[DEBUG] [{self._module}.{_method}] [guild:0] Count is less than 0")
+                self.log(
+                    guildId=guildId,
+                    level=loglevel.LogLevel.DEBUG,
+                    method=f"{self._module}.{self._class}.{_method}",
+                    message=f"Count is less than 0",
+                )
                 return 0
             if self.connection is None or self.client is None:
                 self.open()
 
             user_tacos = self.get_tacos_count(guildId, userId)
             if user_tacos is None:
-                print(f"[DEBUG] [{self._module}.{_method}] [guild:0] User {userId} not in table")
+                self.log(
+                    guildId=guildId,
+                    level=loglevel.LogLevel.DEBUG,
+                    method=f"{self._module}.{self._class}.{_method}",
+                    message=f"User {userId} not in table",
+                )
                 user_tacos = 0
             else:
                 user_tacos = user_tacos or 0
-                print(f"[DEBUG] [{self._module}.{_method}] [guild:0] User {userId} has {user_tacos} tacos")
+                self.log(
+                    guildId=guildId,
+                    level=loglevel.LogLevel.DEBUG,
+                    method=f"{self._module}.{self._class}.{_method}",
+                    message=f"User {userId} has {user_tacos} tacos",
+                )
 
             user_tacos -= count
             if user_tacos < 0:
                 user_tacos = 0
 
-            print(f"[DEBUG] [{self._module}.{_method}] [guild:0] User {userId} now has {user_tacos} tacos")
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.DEBUG,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"User {userId} now has {user_tacos} tacos",
+            )
             self.connection.tacos.update_one(
                 {"guild_id": str(guildId), "user_id": str(userId)}, {"$set": {"count": user_tacos}}, upsert=True
             )
             return user_tacos
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def get_tacos_count(self, guildId: int, userId: int) -> typing.Union[int, None]:
         _method = inspect.stack()[0][3]
@@ -213,14 +370,25 @@ class MongoDatabase(database.Database):
                 self.open()
             data = self.connection.tacos.find_one({"guild_id": str(guildId), "user_id": str(userId)})
             if data is None:
-                print(f"[DEBUG] [{self._module}.{_method}] [guild:{guildId}] User {userId} not in table")
+                self.log(
+                    guildId=guildId,
+                    level=loglevel.LogLevel.DEBUG,
+                    method=f"{self._module}.{self._class}.{_method}",
+                    message=f"User {userId} not in table",
+                )
                 return None
             return data['count']
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def get_total_gifted_tacos(self, guildId: int, userId: int, timespan_seconds: int = 86400) -> int:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -236,12 +404,18 @@ class MongoDatabase(database.Database):
                 total_gifts += gift['count']
             return total_gifts
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
             return 0
 
     def add_taco_gift(self, guildId: int, userId: int, count: int) -> bool:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -254,8 +428,13 @@ class MongoDatabase(database.Database):
             return True
 
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
             return False
 
     def add_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int) -> None:
@@ -272,17 +451,28 @@ class MongoDatabase(database.Database):
                 "timestamp": timestamp,
             }
             # log entry for the user
-            print(f"[DEBUG] [{self._module}.{_method}] [guild:0] Adding taco reaction for user {userId}")
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.DEBUG,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"Adding taco reaction for user {userId}",
+            )
             self.connection.tacos_reactions.update_one(
                 {"guild_id": str(guildId), "user_id": str(userId), "timestamp": timestamp},
                 {"$set": payload},
                 upsert=True,
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def get_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int) -> typing.Union[dict, None]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -298,8 +488,13 @@ class MongoDatabase(database.Database):
                 return None
             return reaction
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def add_suggestion_create_message(self, guildId: int, channelId: int, messageId: int) -> None:
         _method = inspect.stack()[0][3]
@@ -314,17 +509,28 @@ class MongoDatabase(database.Database):
                 "timestamp": timestamp,
             }
             # log entry for the user
-            print(f"[DEBUG] [{self._module}.{_method}] [guild:0] Adding suggestion create message for guild {guildId}")
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.DEBUG,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"Adding suggestion create message for guild {guildId}",
+            )
             self.connection.suggestion_create_messages.update_one(
                 {"guild_id": str(guildId), "channel_id": str(channelId), "message_id": messageId},
                 {"$set": payload},
                 upsert=True,
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def remove_suggestion_create_message(self, guildId: int, channelId: int, messageId: int) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -338,10 +544,16 @@ class MongoDatabase(database.Database):
                 }
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def add_settings(self, guildId: int, name: str, settings: dict) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -352,11 +564,17 @@ class MongoDatabase(database.Database):
                 {"guild_id": str(guildId), "name": name}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     # add or update a setting value in the settings collection, under the settings property
     def set_setting(self, guildId: int, name: str, key: str, value: typing.Any) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -371,10 +589,16 @@ class MongoDatabase(database.Database):
             # update the settings object in the database
             self.add_settings(guildId, name, settings)
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def get_settings(self, guildId: int, name: str) -> typing.Union[dict, None]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -385,10 +609,16 @@ class MongoDatabase(database.Database):
             # return the settings object
             return settings['settings']
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def get_suggestion(self, guildId: int, messageId: int) -> typing.Union[dict, None]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -399,10 +629,16 @@ class MongoDatabase(database.Database):
             # return the suggestion object
             return suggestion
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def get_suggestion_by_id(self, guildId: int, suggestionId: str) -> typing.Union[dict, None]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -413,10 +649,16 @@ class MongoDatabase(database.Database):
             # return the suggestion object
             return suggestion
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def set_state_suggestion_by_id(self, guildId: int, suggestionId: str, state: str, userId: int, reason: str) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -436,10 +678,16 @@ class MongoDatabase(database.Database):
                 upsert=True,
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def set_state_suggestion(self, guildId: int, messageId: int, state: str, userId: int, reason: str) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -458,10 +706,16 @@ class MongoDatabase(database.Database):
                 upsert=True,
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def has_user_voted_on_suggestion(self, suggestionId: str, userId: int) -> bool:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -474,11 +728,17 @@ class MongoDatabase(database.Database):
                 return True
             return False
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
             return False
 
     def unvote_suggestion_by_id(self, guildId: int, suggestionId: str, userId: int) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -489,10 +749,16 @@ class MongoDatabase(database.Database):
                 upsert=True,
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def unvote_suggestion(self, guildId: int, messageId: int, userId: int) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -503,10 +769,16 @@ class MongoDatabase(database.Database):
                 upsert=True,
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def get_suggestion_votes_by_id(self, suggestionId: str) -> typing.Union[dict, None]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -515,10 +787,16 @@ class MongoDatabase(database.Database):
                 return None
             return suggestion['votes']
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def vote_suggestion(self, guildId: int, messageId: int, userId: int, vote: int) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -530,10 +808,16 @@ class MongoDatabase(database.Database):
                 {"guild_id": str(guildId), "message_id": str(messageId)}, {"$push": {"votes": payload}}, upsert=True
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def vote_suggestion_by_id(self, suggestionId: str, userId: int, vote: int) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -543,10 +827,16 @@ class MongoDatabase(database.Database):
             # insert the suggestion into the database
             self.connection.suggestions.update_one({"id": suggestionId}, {"$push": {"votes": payload}}, upsert=True)
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def add_suggestion(self, guildId: int, messageId: int, suggestion: dict) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -566,10 +856,16 @@ class MongoDatabase(database.Database):
             # insert the suggestion for the guild in to the database with key name and timestamp
             self.connection.suggestions.insert_one(payload)
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def delete_suggestion_by_id(self, guildId: int, suggestionId: str, userId: int, reason: str) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -589,10 +885,16 @@ class MongoDatabase(database.Database):
                 upsert=True,
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def track_invite_code(self, guildId: int, inviteCode: str, inviteInfo: dict, userInvite: dict) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -609,19 +911,31 @@ class MongoDatabase(database.Database):
                     upsert=True,
                 )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def get_invite_code(self, guildId: int, inviteCode: str) -> typing.Any:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
             return self.connection.invite_codes.find_one({"guild_id": str(guildId), "code": inviteCode})
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def track_live_activity(self, guildId: int, userId: int, live: bool, platform: str, url: str) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -636,8 +950,13 @@ class MongoDatabase(database.Database):
             }
             self.connection.live_activity.insert_one(payload)
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def track_live(
         self,
@@ -648,6 +967,7 @@ class MongoDatabase(database.Database):
         messageId: typing.Union[int, None] = None,
         url: typing.Union[str, None] = None,
     ):
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -675,10 +995,16 @@ class MongoDatabase(database.Database):
                 upsert=True,
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def get_tracked_live(self, guildId: int, userId: int, platform: str):
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -688,28 +1014,46 @@ class MongoDatabase(database.Database):
                 )
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def get_tracked_live_by_url(self, guildId: int, url: str):
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
             return self.connection.live_tracked.find({"guild_id": str(guildId), "url": url})
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def get_tracked_live_by_user(self, guildId: int, userId: int):
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
             return list(self.connection.live_tracked.find({"guild_id": str(guildId), "user_id": str(userId)}))
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def untrack_live(self, guildId: int, userId: int, platform: str):
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -717,10 +1061,16 @@ class MongoDatabase(database.Database):
                 {"guild_id": str(guildId), "user_id": str(userId), "platform": platform.upper().strip()}
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def add_user_birthday(self, guildId: int, userId: int, month: int, day: int):
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -736,28 +1086,47 @@ class MongoDatabase(database.Database):
                 {"guild_id": str(guildId), "user_id": str(userId)}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
-    def get_user_birthday(self, guildId: int, userId: int):
+    def get_user_birthday(self, guildId: int, userId: int) -> typing.Optional[dict]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
             return self.connection.birthdays.find_one({"guild_id": str(guildId), "user_id": str(userId)})
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
-    def get_user_birthdays(self, guildId: int, month: int, day: int):
+    def get_user_birthdays(self, guildId: int, month: int, day: int) -> typing.Optional[typing.List[dict]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
             return list(self.connection.birthdays.find({"guild_id": str(guildId), "month": month, "day": day}))
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def track_birthday_check(self, guildId: int):
+    def track_birthday_check(self, guildId: int) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -765,10 +1134,16 @@ class MongoDatabase(database.Database):
             payload = {"guild_id": str(guildId), "timestamp": timestamp}
             self.connection.birthday_checks.update_one({"guild_id": str(guildId)}, {"$set": payload}, upsert=True)
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
-    def birthday_was_checked_today(self, guildId: int):
+    def birthday_was_checked_today(self, guildId: int) -> bool:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -797,10 +1172,17 @@ class MongoDatabase(database.Database):
                 #     return True
             return False
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return False
 
-    def save_tqotd(self, guildId: int, question: str, author: int):
+    def save_tqotd(self, guildId: int, question: str, author: int) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -818,10 +1200,16 @@ class MongoDatabase(database.Database):
                 {"guild_id": str(guildId), "timestamp": timestamp}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def track_tqotd_answer(self, guildId: int, userId: int, message_id: int):
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -859,10 +1247,16 @@ class MongoDatabase(database.Database):
                 else:
                     raise Exception(f"No TQOTD found for guild {guildId} for {datetime.datetime.utcnow().date()}")
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def tqotd_user_message_tracked(self, guildId: int, userId: int, messageId: int):
+        _method = inspect.stack()[0][3]
         # was this message, for this user, already used to answer the TQOTD?
         try:
             if self.connection is None or self.client is None:
@@ -889,11 +1283,17 @@ class MongoDatabase(database.Database):
                 else:
                     raise Exception(f"No TQOTD found for guild {guildId} for {datetime.datetime.utcnow().date()}")
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.FATAL,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
             raise ex
 
-    def _get_twitch_name(self, userId: int):
+    def _get_twitch_name(self, userId: int) -> typing.Union[str, None]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -902,10 +1302,17 @@ class MongoDatabase(database.Database):
                 return result["twitch_name"]
             return None
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
     def set_twitch_discord_link_code(self, userId: int, code: str):
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -917,11 +1324,17 @@ class MongoDatabase(database.Database):
             else:
                 raise ValueError(f"Twitch user {twitch_name} already linked")
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.FATAL,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
             raise ex
 
     def link_twitch_to_discord_from_code(self, userId: int, code: str):
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -938,11 +1351,17 @@ class MongoDatabase(database.Database):
             else:
                 raise ValueError(f"Twitch user {twitch_name} already linked")
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.FATAL,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
             raise ex
 
-    def get_minecraft_user(self, guildId: int, userId: int):
+    def get_minecraft_user(self, guildId: int, userId: int) -> typing.Union[dict, None]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -951,10 +1370,18 @@ class MongoDatabase(database.Database):
                 return result
             return None
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
-    def whitelist_minecraft_user(self, guildId: int, userId: int, username: str, uuid: str, whitelist: bool = True):
+    def whitelist_minecraft_user(
+        self, guildId: int, userId: int, username: str, uuid: str, whitelist: bool = True
+    ) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -969,8 +1396,13 @@ class MongoDatabase(database.Database):
                 {"user_id": str(userId), "guild_id": str(guildId)}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def op_minecraft_user(
         self,
@@ -980,7 +1412,8 @@ class MongoDatabase(database.Database):
         op: bool = True,
         level: MinecraftOpLevel = MinecraftOpLevel.LEVEL1,
         bypassPlayerCount: bool = False,
-    ):
+    ) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -992,10 +1425,16 @@ class MongoDatabase(database.Database):
             }
             self.connection.minecraft_users.update_one({"user_id": str(userId)}, {"$set": payload}, upsert=True)
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
-    def find_open_game_key_offer(self, guild_id: int, channel_id: int):
+    def find_open_game_key_offer(self, guild_id: int, channel_id: int) -> typing.Optional[dict]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1006,8 +1445,13 @@ class MongoDatabase(database.Database):
                 return result
             return None
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def open_game_key_offer(
         self,
@@ -1016,7 +1460,8 @@ class MongoDatabase(database.Database):
         message_id: int,
         channel_id: int,
         expires: typing.Optional[datetime.datetime] = None,
-    ):
+    ) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1039,28 +1484,46 @@ class MongoDatabase(database.Database):
                 {"guild_id": str(guild_id), "game_key_id": game_key_id}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
-    def close_game_key_offer_by_message(self, guild_id: int, message_id: int):
+    def close_game_key_offer_by_message(self, guild_id: int, message_id: int) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
             self.connection.game_key_offers.delete_one({"guild_id": str(guild_id), "message_id": str(message_id)})
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
-    def close_game_key_offer(self, guild_id: int, game_key_id: str):
+    def close_game_key_offer(self, guild_id: int, game_key_id: str) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
             self.connection.game_key_offers.delete_one({"guild_id": str(guild_id), "game_key_id": game_key_id})
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
-    def claim_game_key_offer(self, game_key_id: str, user_id: int):
+    def claim_game_key_offer(self, game_key_id: str, user_id: int) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1068,11 +1531,17 @@ class MongoDatabase(database.Database):
             payload = {"redeemed_by": str(user_id), "redeemed_timestamp": timestamp}
             self.connection.game_keys.update_one({"_id": ObjectId(game_key_id)}, {"$set": payload}, upsert=True)
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.FATAL,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
             raise ex
 
-    def get_game_key_data(self, game_key_id: str):
+    def get_game_key_data(self, game_key_id: str) -> typing.Optional[dict]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1081,10 +1550,16 @@ class MongoDatabase(database.Database):
                 return result
             return None
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
-    def get_random_game_key_data(self, guild_id: int):
+    def get_random_game_key_data(self, guild_id: int) -> typing.Optional[dict]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1103,10 +1578,16 @@ class MongoDatabase(database.Database):
                 }
             return None
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
-    def track_wdyctw_answer(self, guild_id: int, user_id: int, message_id: int):
+    def track_wdyctw_answer(self, guild_id: int, user_id: int, message_id: int) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1156,12 +1637,18 @@ class MongoDatabase(database.Database):
                 else:
                     raise Exception(f"No WDYCTW found for guild {guild_id} for the last 7 days")
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def save_wdyctw(
         self, guildId: int, message: str, image: str, author: int, channel_id: int = None, message_id: int = None
-    ):
+    ) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1182,10 +1669,16 @@ class MongoDatabase(database.Database):
                 {"guild_id": str(guildId), "timestamp": timestamp}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
-    def wdyctw_user_message_tracked(self, guildId: int, userId: int, messageId: int):
+    def wdyctw_user_message_tracked(self, guildId: int, userId: int, messageId: int) -> bool:
+        _method = inspect.stack()[0][3]
         # was this message, for this user, already used to answer the WDYCTW?
         try:
             if self.connection is None or self.client is None:
@@ -1212,11 +1705,17 @@ class MongoDatabase(database.Database):
                 else:
                     raise Exception(f"No WDYCTW found for guild {guildId} for {datetime.datetime.utcnow().date()}")
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.FATAL,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
             raise ex
 
-    def track_techthurs_answer(self, guild_id: int, user_id: int, message_id: int):
+    def track_techthurs_answer(self, guild_id: int, user_id: int, message_id: int) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1266,12 +1765,24 @@ class MongoDatabase(database.Database):
                 else:
                     raise Exception(f"No techthurs found for guild {guild_id} for the last 7 days")
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def save_techthurs(
-        self, guildId: int, message: str, image: str, author: int, channel_id: int = None, message_id: int = None
-    ):
+        self,
+        guildId: int,
+        message: str,
+        image: str,
+        author: int,
+        channel_id: typing.Optional[int] = None,
+        message_id: typing.Optional[int] = None,
+    ) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1292,10 +1803,16 @@ class MongoDatabase(database.Database):
                 {"guild_id": str(guildId), "timestamp": timestamp}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def techthurs_user_message_tracked(self, guildId: int, userId: int, messageId: int):
+        _method = inspect.stack()[0][3]
         # was this message, for this user, already used to answer the techthurs?
         try:
             if self.connection is None or self.client is None:
@@ -1322,11 +1839,17 @@ class MongoDatabase(database.Database):
                 else:
                     raise Exception(f"No techthurs found for guild {guildId} for {datetime.datetime.utcnow().date()}")
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.FATAL,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
             raise ex
 
-    def track_mentalmondays_answer(self, guild_id: int, user_id: int, message_id: int):
+    def track_mentalmondays_answer(self, guild_id: int, user_id: int, message_id: int) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1376,12 +1899,24 @@ class MongoDatabase(database.Database):
                 else:
                     raise Exception(f"No mentalmondays found for guild {guild_id} for the last 7 days")
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def save_mentalmondays(
-        self, guildId: int, message: str, image: str, author: int, channel_id: int = None, message_id: int = None
-    ):
+        self,
+        guildId: int,
+        message: str,
+        image: str,
+        author: int,
+        channel_id: typing.Optional[int] = None,
+        message_id: typing.Optional[int] = None,
+    ) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1402,10 +1937,16 @@ class MongoDatabase(database.Database):
                 {"guild_id": str(guildId), "timestamp": timestamp}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
-    def mentalmondays_user_message_tracked(self, guildId: int, userId: int, messageId: int):
+    def mentalmondays_user_message_tracked(self, guildId: int, userId: int, messageId: int) -> bool:
+        _method = inspect.stack()[0][3]
         # was this message, for this user, already used to answer the mentalmondays?
         try:
             if self.connection is None or self.client is None:
@@ -1434,8 +1975,13 @@ class MongoDatabase(database.Database):
                         f"No mentalmondays found for guild {guildId} for {datetime.datetime.utcnow().date()}"
                     )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.FATAL,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
             raise ex
 
     def save_taco_tuesday(
@@ -1447,7 +1993,8 @@ class MongoDatabase(database.Database):
         channel_id: typing.Optional[int] = None,
         message_id: typing.Optional[int] = None,
         tweet: typing.Optional[str] = None,
-    ):
+    ) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1469,10 +2016,16 @@ class MongoDatabase(database.Database):
                 {"guild_id": str(guildId), "timestamp": timestamp}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
-    def track_taco_tuesday(self, guild_id: int, user_id: int):
+    def track_taco_tuesday(self, guild_id: int, user_id: int) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1514,11 +2067,17 @@ class MongoDatabase(database.Database):
                 else:
                     raise Exception(f"No taco tuesday found for guild {guild_id} for the last 7 days")
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
-    def taco_tuesday_user_tracked(self, guildId: int, userId: int, messageId: int):
-        # was this message, for this user, already used to answer the WDYCTW?
+    def taco_tuesday_user_tracked(self, guildId: int, userId: int) -> bool:
+        _method = inspect.stack()[0][3]
+        # was this message, for this user, already used to answer the taco tuesday?
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1546,11 +2105,17 @@ class MongoDatabase(database.Database):
                         f"No Taco Tuesday found for guild {guildId} for {datetime.datetime.utcnow().date()}"
                     )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.FATAL,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
             raise ex
 
-    def taco_tuesday_set_user(self, guildId: int, userId: int):
+    def taco_tuesday_set_user(self, guildId: int, userId: int) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1588,11 +2153,17 @@ class MongoDatabase(database.Database):
                         f"No Taco Tuesday found for guild {guildId} for {datetime.datetime.utcnow().date()}"
                     )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.FATAL,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
             raise ex
 
-    def taco_tuesday_get_by_message(self, guildId: int, channelId: int, messageId: int):
+    def taco_tuesday_get_by_message(self, guildId: int, channelId: int, messageId: int) -> typing.Optional[dict]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1601,13 +2172,19 @@ class MongoDatabase(database.Database):
             )
             return result
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.FATAL,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
             raise ex
 
     def taco_tuesday_update_message(
         self, guildId: int, channelId: int, messageId: int, newChannelId: int, newMessageId: int
-    ):
+    ) -> typing.Optional[dict]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1617,11 +2194,17 @@ class MongoDatabase(database.Database):
             )
             return result
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.FATAL,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
             raise ex
 
-    def track_first_message(self, guildId: int, userId: int, channelId: int, messageId: int):
+    def track_first_message(self, guildId: int, userId: int, channelId: int, messageId: int) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1643,10 +2226,16 @@ class MongoDatabase(database.Database):
                 upsert=True,
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId ,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
-    def track_message(self, guildId: int, userId: int, channelId: int, messageId: int):
+    def track_message(self, guildId: int, userId: int, channelId: int, messageId: int) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1680,10 +2269,16 @@ class MongoDatabase(database.Database):
                     }
                 )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
-    def is_first_message_today(self, guildId: int, userId: int):
+    def is_first_message_today(self, guildId: int, userId: int) -> bool:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1697,8 +2292,14 @@ class MongoDatabase(database.Database):
                 return False
             return True
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return False
 
     def track_user(
         self,
@@ -1712,7 +2313,8 @@ class MongoDatabase(database.Database):
         bot: bool = False,
         system: bool = False,
         status: typing.Optional[typing.Union[str, MemberStatus]] = None,
-    ):
+    ) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1737,12 +2339,18 @@ class MongoDatabase(database.Database):
                 {"guild_id": str(guildId), "user_id": str(userId)}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def track_photo_post(
         self, guildId: int, userId: int, channelId: int, messageId: int, message: str, image: str, channelName: str
-    ):
+    ) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1761,10 +2369,16 @@ class MongoDatabase(database.Database):
 
             self.connection.photo_posts.insert_one(payload)
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
-    def track_user_join_leave(self, guildId: int, userId: int, join: bool):
+    def track_user_join_leave(self, guildId: int, userId: int, join: bool) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1778,12 +2392,17 @@ class MongoDatabase(database.Database):
             }
 
             self.connection.user_join_leave.insert_one(payload)
-
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
-    def track_tacos_log(self, guildId: int, fromUserId: int, toUserId: int, count: int, type: str, reason: str):
+    def track_tacos_log(self, guildId: int, fromUserId: int, toUserId: int, count: int, type: str, reason: str) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1801,10 +2420,16 @@ class MongoDatabase(database.Database):
 
             self.connection.tacos_log.insert_one(payload)
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def track_guild(self, guild: discord.Guild) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1823,10 +2448,16 @@ class MongoDatabase(database.Database):
 
             self.connection.guilds.update_one({"guild_id": str(guild.id)}, {"$set": payload}, upsert=True)
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guild.id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
-    def track_trivia_question(self, triviaQuestion: models.TriviaQuestion):
+    def track_trivia_question(self, triviaQuestion: models.TriviaQuestion) -> None:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1852,20 +2483,32 @@ class MongoDatabase(database.Database):
 
             self.connection.trivia_questions.insert_one(payload)
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=triviaQuestion.guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
-    def migrate_game_keys(self):
+    def migrate_game_keys(self) -> None:
+        _method = inspect.stack()[0][3]
         guild_id = "935294040386183228"
         try:
             if self.connection is None or self.client is None:
                 self.open()
             self.connection.game_keys.update_many({"guild_id": {"$exists": False}}, {"$set": {"guild_id": guild_id}})
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=int(guild_id),
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
-    def migrate_minecraft_whitelist(self):
+    def migrate_minecraft_whitelist(self) -> None:
+        _method = inspect.stack()[0][3]
         guild_id = "935294040386183228"
         try:
             if self.connection is None or self.client is None:
@@ -1874,11 +2517,17 @@ class MongoDatabase(database.Database):
                 {"guild_id": {"$exists": False}}, {"$set": {"guild_id": guild_id}}
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=int(guild_id),
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def add_user_to_join_whitelist(self, guild_id: int, user_id: int, added_by: int) -> None:
         """Add a user to the join whitelist for a guild."""
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1895,32 +2544,50 @@ class MongoDatabase(database.Database):
                 {"guild_id": str(guild_id), "user_id": str(user_id)}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def get_user_join_whitelist(self, guild_id: int) -> list:
         """Get the join whitelist for a guild."""
+        _method = inspect.stack()[0][3]
         try:
             return list(self.connection.join_whitelist.find({"guild_id": str(guild_id)}))
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
             return []
 
     def remove_user_from_join_whitelist(self, guild_id: int, user_id: int) -> None:
         """Remove a user from the join whitelist for a guild."""
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
             self.connection.join_whitelist.delete_one({"guild_id": str(guild_id), "user_id": str(user_id)})
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def track_system_action(
         self, guild_id: int, action: typing.Union[SystemActions, str], data: typing.Optional[dict] = None
     ) -> None:
         """Track a system action."""
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1935,43 +2602,68 @@ class MongoDatabase(database.Database):
             }
             self.connection.system_actions.insert_one(payload)
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
 
     def get_guild_ids(self) -> list:
         """Get all guild IDs."""
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
             return list(self.connection.guilds.distinct("guild_id"))
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
             return []
 
-    def get_user_introductions(self, guild_id: int):
+    def get_user_introductions(self, guild_id: int) -> list:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            return self.connection.introductions.find({"guild_id": str(guild_id)})
+            return list(self.connection.introductions.find({"guild_id": str(guild_id)}))
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
             return []
 
-    def get_user_introduction(self, guild_id: int, user_id: int):
+    def get_user_introduction(self, guild_id: int, user_id: int) -> typing.Optional[dict]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
             return self.connection.introductions.find_one({"guild_id": str(guild_id), "user_id": str(user_id)})
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
             return None
 
     def track_user_introduction(
         self, guild_id: int, user_id: int, message_id: int, channel_id: int, approved: bool
     ) -> None:
+        """Track a user introduction."""
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
@@ -1991,5 +2683,10 @@ class MongoDatabase(database.Database):
             )
 
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )

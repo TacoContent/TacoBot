@@ -16,9 +16,8 @@ class TacoBotMetricsConfig:
         try:
             # check if file exists
             if os.path.exists(file):
-                print(f"Loading config from {file}")
                 with codecs.open(file, encoding="utf-8-sig", mode="r") as f:
                     settings = yaml.safe_load(f)
                     self.__dict__.update(settings)
         except yaml.YAMLError as exc:
-            print(exc)
+            raise exc
