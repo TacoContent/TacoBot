@@ -3,9 +3,11 @@ name: Lint Helm Chart
 on:
   push:
     branches:
-      - '!develop'
-      - '!main'
-      - "!master"
+      - "**" # All branches
+      - "!gh-pages" # Except gh-pages
+      - '!develop' # Except develop
+      - '!main' # Except main
+      - "!master" # Except master
   pull_request:
     types:
       - synchronize

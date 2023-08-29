@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - "**" # All branches
+      - "!main" # Except main
+      - "!master" # Except master
+      - "!gh-pages" # Except gh-pages
+      - "!develop" # Except develop
 env:
   CONTAINER_ORG: "${{ github.repository_owner }}"
   CONTAINER_NAME: "${{ github.event.repository.name }}"
