@@ -3,7 +3,7 @@ name: TacoBot Publish Beta
 on:
   push:
     branches:
-      - "*" # All branches
+      - "**" # All branches
 env:
   CONTAINER_ORG: "${{ github.repository_owner }}"
   CONTAINER_NAME: "${{ github.event.repository.name }}"
