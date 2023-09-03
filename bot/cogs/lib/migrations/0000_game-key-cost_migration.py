@@ -23,7 +23,7 @@ class Migration(MigrationBase):
             self.log.info(
                 0,
                 f"{self._module}.{self._class}.{_method}",
-                f"Updated {result.modified_count} game keys with no cost to cost of 500"
+                f"Updated {result.modified_count} game keys with no cost to cost of 500",
             )
 
             self.track_run(True)
