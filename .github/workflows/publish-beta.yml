@@ -44,9 +44,9 @@ jobs:
         with:
           push: true
           build-args: |
-            PROJECT_NAME="${{ env.CONTAINER_NAME }}"
-            BUILD_VERSION="beta-${{ github.sha }}"
-            BUILD_REF="${{ github.ref }}"
-            BUILD_SHA="${{ github.sha }}"
-            BUILD_DATE="${{ env.BUILD_DATE }}"
+            PROJECT_NAME=${{ env.CONTAINER_NAME }}
+            BUILD_VERSION=beta-${{ github.sha }}
+            BUILD_REF=${{ github.ref }}
+            BUILD_SHA=${{ github.sha }}
+            BUILD_DATE=${{ env.BUILD_DATE }}
           tags: "${{ env.BUILD_TAGS }}"
