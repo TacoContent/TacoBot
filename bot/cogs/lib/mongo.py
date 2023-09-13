@@ -51,15 +51,15 @@ class MongoDatabase(database.Database):
             )
 
     def log(
-            self,
-            guildId: typing.Optional[int],
-            level: loglevel.LogLevel,
-            method: str,
-            message: str,
-            stackTrace: typing.Optional[str] = None,
-            outIO: typing.Optional[typing.IO] = None,
-            colorOverride: typing.Optional[str] = None,
-        ) -> None:
+        self,
+        guildId: typing.Optional[int],
+        level: loglevel.LogLevel,
+        method: str,
+        message: str,
+        stackTrace: typing.Optional[str] = None,
+        outIO: typing.Optional[typing.IO] = None,
+        colorOverride: typing.Optional[str] = None,
+    ) -> None:
         _method = inspect.stack()[0][3]
         if guildId is None:
             guildId = 0
@@ -183,7 +183,7 @@ class MongoDatabase(database.Database):
                     guildId=guildId,
                     level=loglevel.LogLevel.DEBUG,
                     method=f"{self._module}.{self._class}.{_method}",
-                    message=f"User {userId}, already in table"
+                    message=f"User {userId}, already in table",
                 )
         except Exception as ex:
             self.log(
@@ -290,11 +290,11 @@ class MongoDatabase(database.Database):
 
             user_tacos += count
             self.log(
-                    guildId=guildId,
-                    level=loglevel.LogLevel.DEBUG,
-                    method=f"{self._module}.{self._class}.{_method}",
-                    message=f"User {userId} has {user_tacos} tacos",
-                )
+                guildId=guildId,
+                level=loglevel.LogLevel.DEBUG,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"User {userId} has {user_tacos} tacos",
+            )
             self.connection.tacos.update_one(
                 {"guild_id": str(guildId), "user_id": str(userId)}, {"$set": {"count": user_tacos}}, upsert=True
             )
@@ -788,7 +788,7 @@ class MongoDatabase(database.Database):
             return suggestion['votes']
         except Exception as ex:
             self.log(
-                guildId=guildId,
+                guildId=0,
                 level=loglevel.LogLevel.ERROR,
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"{ex}",
@@ -1303,7 +1303,7 @@ class MongoDatabase(database.Database):
             return None
         except Exception as ex:
             self.log(
-                guildId=guildId,
+                guildId=0,
                 level=loglevel.LogLevel.ERROR,
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"{ex}",
@@ -1485,7 +1485,7 @@ class MongoDatabase(database.Database):
             )
         except Exception as ex:
             self.log(
-                guildId=guildId,
+                guildId=0,
                 level=loglevel.LogLevel.ERROR,
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"{ex}",
@@ -1579,7 +1579,7 @@ class MongoDatabase(database.Database):
             return None
         except Exception as ex:
             self.log(
-                guildId=guildId,
+                guildId=0,
                 level=loglevel.LogLevel.ERROR,
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"{ex}",
@@ -2227,7 +2227,7 @@ class MongoDatabase(database.Database):
             )
         except Exception as ex:
             self.log(
-                guildId=guildId ,
+                guildId=guildId,
                 level=loglevel.LogLevel.ERROR,
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"{ex}",
@@ -2621,7 +2621,7 @@ class MongoDatabase(database.Database):
             return list(self.connection.guilds.distinct("guild_id"))
         except Exception as ex:
             self.log(
-                guildId=guild_id,
+                guildId=0,
                 level=loglevel.LogLevel.ERROR,
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"{ex}",
