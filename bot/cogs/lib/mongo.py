@@ -2556,6 +2556,8 @@ class MongoDatabase(database.Database):
         """Get the join whitelist for a guild."""
         _method = inspect.stack()[0][3]
         try:
+            if self.connection is None or self.client is None:
+                self.open()
             return list(self.connection.join_whitelist.find({"guild_id": str(guild_id)}))
         except Exception as ex:
             self.log(
