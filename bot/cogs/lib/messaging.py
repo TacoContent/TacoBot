@@ -149,7 +149,7 @@ class Messaging:
                 name=f"{utils.get_user_display_name(author)}", icon_url=author.avatar.url if author.avatar else None
             )
 
-        await message.edit(content=target_content, embed=updated_embed)
+        await message.edit(content=target_content, embed=updated_embed, view=view)
 
     async def notify_of_error(self, ctx):
         guild_id = 0
