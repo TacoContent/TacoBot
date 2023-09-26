@@ -119,7 +119,7 @@ class Messaging:
                 description = embed.description
             else:
                 description = ""
-        updated_embed = discord.Embed(color=color, title=embed.title, description=f"{description}", view=view)
+        updated_embed = discord.Embed(color=color, title=embed.title, description=f"{description}")
         for f in embed.fields:
             updated_embed.add_field(name=f.name, value=f.value, inline=f.inline)
         if fields is not None:
