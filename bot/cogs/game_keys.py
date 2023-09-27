@@ -225,7 +225,7 @@ class GameKeys(commands.Cog):
             self.bot, author=ctx.author, channel=ctx.channel, message=ctx.message, guild=ctx.guild
         )
         self.log.debug(
-            ctx.guild.id, f"{self._module}.{self._class}.{_method}", f"Claim offer {ctx.custom_id} timed out"
+            ctx.guild.id, f"{self._module}.{self._class}.{_method}", f"Claim offer timed out"
         )
         await self._create_offer(ctx)
         pass
