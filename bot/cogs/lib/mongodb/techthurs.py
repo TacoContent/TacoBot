@@ -7,6 +7,7 @@ import typing
 from bot.cogs.lib import loglevel, utils
 from bot.cogs.lib.mongodb.database import Database
 
+
 class TechThursDatabase(Database):
     def __init__(self) -> None:
         super().__init__()
@@ -14,7 +15,6 @@ class TechThursDatabase(Database):
         self._module = os.path.basename(__file__)[:-3]
         self._class = self.__class__.__name__
         pass
-
 
     def track_techthurs_answer(self, guild_id: int, user_id: int, message_id: int) -> None:
         _method = inspect.stack()[0][3]

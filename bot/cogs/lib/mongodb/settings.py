@@ -7,6 +7,7 @@ import typing
 from bot.cogs.lib import loglevel, utils
 from bot.cogs.lib.mongodb.basedatabase import BaseDatabase
 
+
 class SettingsDatabase(BaseDatabase):
     def __init__(self) -> None:
         super().__init__()

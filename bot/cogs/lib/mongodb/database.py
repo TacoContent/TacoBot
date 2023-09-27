@@ -1,14 +1,8 @@
-
-import inspect
 import os
-import sys
-import traceback
-import typing
 
-from pymongo import MongoClient
-from bot.cogs.lib import loglevel, settings, utils
+from bot.cogs.lib import settings
 from bot.cogs.lib.mongodb.basedatabase import BaseDatabase
-from bot.cogs.lib.colors import Colors
+
 
 class Database(BaseDatabase):
     def __init__(self) -> None:

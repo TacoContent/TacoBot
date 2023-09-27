@@ -20,7 +20,6 @@ class TrackingDatabase(Database):
         self._class = self.__class__.__name__
         pass
 
-
     def track_first_message(self, guildId: int, userId: int, channelId: int, messageId: int) -> None:
         _method = inspect.stack()[0][3]
         try:

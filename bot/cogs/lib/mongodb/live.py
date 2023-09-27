@@ -7,6 +7,7 @@ import typing
 from bot.cogs.lib import loglevel, utils
 from bot.cogs.lib.mongodb.database import Database
 
+
 class LiveDatabase(Database):
     def __init__(self) -> None:
         super().__init__()
@@ -14,7 +15,6 @@ class LiveDatabase(Database):
         self._module = os.path.basename(__file__)[:-3]
         self._class = self.__class__.__name__
         pass
-
 
     def track_live_activity(self, guildId: int, userId: int, live: bool, platform: str, url: str) -> None:
         _method = inspect.stack()[0][3]

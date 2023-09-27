@@ -5,6 +5,7 @@ from bot.cogs.lib import loglevel
 from bot.cogs.lib.mongodb.logs import LogsDatabase
 from bot.cogs.lib.colors import Colors
 
+
 class Log:
     def __init__(self, minimumLogLevel: loglevel.LogLevel = loglevel.LogLevel.DEBUG) -> None:
         self.logs_db = LogsDatabase()
@@ -20,7 +21,6 @@ class Log:
         stack: typing.Optional[str] = None,
         file: typing.IO = sys.stdout,
     ) -> None:
-
         color = Colors.get_color(level)
         m_level = Colors.colorize(color, f"[{level.name}]", bold=True)
         m_method = Colors.colorize(Colors.HEADER, f"[{method}]", bold=False)

@@ -8,6 +8,7 @@ from pymongo import MongoClient
 from bot.cogs.lib import loglevel, utils
 from bot.cogs.lib.colors import Colors
 
+
 class BaseDatabase:
     def __init__(self) -> None:
         # get the file name without the extension and without the directory
@@ -16,7 +17,9 @@ class BaseDatabase:
         self.client = None
         self.connection = None
         self.database_name = "tacobot"
-        self.db_url = utils.dict_get(os.environ, "MONGODB_URL", default_value=f"mongodb://localhost:27017/{self.database_name}")
+        self.db_url = utils.dict_get(
+            os.environ, "MONGODB_URL", default_value=f"mongodb://localhost:27017/{self.database_name}"
+        )
 
     def open(self) -> None:
         if not self.db_url:
