@@ -1,10 +1,12 @@
 import datetime
 import inspect
-import traceback
 import os
+import traceback
 import typing
+import uuid
 
 from bot.cogs.lib import loglevel, utils
+from bot.cogs.lib.models import SuggestionStates
 from bot.cogs.lib.mongodb.database import Database
 
 
@@ -331,7 +333,7 @@ class SuggestionsDatabase(Database):
             if self.connection is None or self.client is None:
                 self.open()
             timestamp = utils.to_timestamp(datetime.datetime.utcnow())
-            states = models.SuggestionStates()
+            states = SuggestionStates()
             state = states.DELETED
             action_payload = {
                 "state": state.upper().strip(),

@@ -1,7 +1,7 @@
 import datetime
 import inspect
-import traceback
 import os
+import traceback
 import typing
 
 from bot.cogs.lib import loglevel, utils

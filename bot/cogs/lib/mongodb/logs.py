@@ -1,6 +1,6 @@
 import inspect
-import traceback
 import os
+import traceback
 
 from bot.cogs.lib import loglevel, utils
 from bot.cogs.lib.mongodb.database import Database

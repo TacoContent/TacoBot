@@ -1,7 +1,7 @@
 import datetime
 import inspect
-import traceback
 import os
+import traceback
 import typing
 
 from bot.cogs.lib import loglevel, utils
@@ -15,7 +15,6 @@ class InvitesDatabase(Database):
         self._module = os.path.basename(__file__)[:-3]
         self._class = self.__class__.__name__
         pass
-
 
     def track_invite_code(self, guildId: int, inviteCode: str, inviteInfo: dict, userInvite: dict) -> None:
         _method = inspect.stack()[0][3]

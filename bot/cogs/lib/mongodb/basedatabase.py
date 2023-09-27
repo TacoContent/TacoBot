@@ -4,9 +4,9 @@ import sys
 import traceback
 import typing
 
-from pymongo import MongoClient
 from bot.cogs.lib import loglevel, utils
 from bot.cogs.lib.colors import Colors
+from pymongo import MongoClient
 
 
 class BaseDatabase:
