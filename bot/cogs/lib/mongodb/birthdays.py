@@ -1,11 +1,12 @@
 import datetime
 import inspect
-import traceback
 import os
+import traceback
 import typing
 
 from bot.cogs.lib import loglevel, utils
 from bot.cogs.lib.mongodb.database import Database
+
 
 class BirthdaysDatabase(Database):
     def __init__(self) -> None:
@@ -14,7 +15,6 @@ class BirthdaysDatabase(Database):
         self._module = os.path.basename(__file__)[:-3]
         self._class = self.__class__.__name__
         pass
-
 
     def add_user_birthday(self, guildId: int, userId: int, month: int, day: int):
         _method = inspect.stack()[0][3]
