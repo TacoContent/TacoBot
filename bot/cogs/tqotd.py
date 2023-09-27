@@ -6,6 +6,7 @@ import traceback
 import aiohttp
 import discord
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from bot.cogs.lib.mongodb.toqtd import TQOTDDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.permissions import Permissions
 from discord.ext import commands
@@ -38,6 +39,7 @@ class TacoQuestionOfTheDay(commands.Cog):
         self.SETTINGS_SECTION = "tqotd"
         self.SELF_DESTRUCT_TIMEOUT = 30
         self.db = mongo.MongoDatabase()
+        self.tqotd_db = TQOTDDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -147,7 +149,7 @@ class TacoQuestionOfTheDay(commands.Cog):
             )
 
             # save the TQOTD
-            self.db.save_tqotd(guild_id, qotd.text, ctx.author.id)
+            self.tqotd_db.save_tqotd(guild_id, qotd.text, ctx.author.id)
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -201,7 +203,7 @@ class TacoQuestionOfTheDay(commands.Cog):
                 # self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
                 return
 
-            already_tracked = self.db.tqotd_user_message_tracked(guild_id, message_author.id, message.id)
+            already_tracked = self.tqotd_db.tqotd_user_message_tracked(guild_id, message_author.id, message.id)
 
             if not already_tracked:
                 # log that we are giving tacos for this reaction
@@ -253,7 +255,7 @@ class TacoQuestionOfTheDay(commands.Cog):
                 bot=bot, guild=guild, author=member, channel=channel, message=message
             )
             # track that the user answered the question.
-            self.db.track_tqotd_answer(guild_id, member.id, message_id)
+            self.tqotd_db.track_tqotd_answer(guild_id, member.id, message_id)
 
             tacos_settings = self.get_tacos_settings(guild_id)
 

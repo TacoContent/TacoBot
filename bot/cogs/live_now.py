@@ -7,6 +7,8 @@ import typing
 import discord
 import requests
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes, utils
+from bot.cogs.lib.mongodb.live import LiveDatabase
+from bot.cogs.lib.mongodb.twitch import TwitchDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.system_actions import SystemActions
 from discord.ext import commands
@@ -24,6 +26,8 @@ class LiveNow(commands.Cog):
         self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "live_now"
         self.db = mongo.MongoDatabase()
+        self.live_db = LiveDatabase()
+        self.twitch_db = TwitchDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -87,7 +91,7 @@ class LiveNow(commands.Cog):
             for asa in after_streaming_activities:
                 await asyncio.sleep(1)
 
-                tracked = self.db.get_tracked_live(guild_id, after.id, asa.platform)
+                tracked = self.live_db.get_tracked_live(guild_id, after.id, asa.platform)
                 is_tracked = tracked != None and len(tracked) > 0
                 # if it is already tracked, then we don't need to do anything
                 if is_tracked:
@@ -106,8 +110,8 @@ class LiveNow(commands.Cog):
                 )
 
                 # if we get here, then we need to track the user live activity
-                self.db.track_live(guildId=guild_id, userId=after.id, platform=asa.platform, url=asa.url)
-                self.db.track_live_activity(
+                self.live_db.track_live(guildId=guild_id, userId=after.id, platform=asa.platform, url=asa.url)
+                self.live_db.track_live_activity(
                     guildId=guild_id, userId=after.id, live=True, platform=asa.platform, url=asa.url
                 )
 
@@ -157,7 +161,7 @@ class LiveNow(commands.Cog):
             #         # this activity exists in both lists, so it is still live
             #         continue
 
-            #     tracked = self.db.get_tracked_live(guildId=guild_id, userId=before.id, platform=bsa.platform)
+            #     tracked = self.live_db.get_tracked_live(guildId=guild_id, userId=before.id, platform=bsa.platform)
             #     is_tracked = tracked != None and len(tracked) > 0
             #     # if it is not tracked, then we don't need to do anything
             #     if not is_tracked or not tracked:
@@ -168,7 +172,7 @@ class LiveNow(commands.Cog):
             #     # if we get here, then we need to untrack the user live activity
             #     self.log.info(guild_id, f"{self._module}.{self._class}.{_method}", f"{before.display_name} stopped streaming on {bsa.platform}")
             #     # track the END activity
-            #     self.db.track_live_activity(guild_id, before.id, False, bsa.platform, url=bsa.url)
+            #     self.live_db.track_live_activity(guild_id, before.id, False, bsa.platform, url=bsa.url)
 
             #     logging_channel_id = cog_settings.get("logging_channel", None)
             #     if logging_channel_id:
@@ -186,7 +190,7 @@ class LiveNow(commands.Cog):
             #                         self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"Message {message_id} not found in channel {logging_channel}")
 
             #     # remove all tracked items for this live platform (should only be one)
-            #     self.db.untrack_live(guild_id, before.id, bsa.platform)
+            #     self.live_db.untrack_live(guild_id, before.id, bsa.platform)
 
             #     await self.remove_live_roles(before, cog_settings)
 
@@ -290,8 +294,8 @@ class LiveNow(commands.Cog):
         # get only the twitch activity
         twitch_activities = [a for a in activities if a.platform is not None and a.platform.lower() == "twitch"]
 
-        twitch_name: str = None
-        twitch_info = self.db.get_user_twitch_info(user.id)
+        twitch_name: typing.Optional[str] = None
+        twitch_info = self.twitch_db.get_user_twitch_info(user.id)
         if len(twitch_activities) > 1:
             self.log.warn(
                 guild_id,
@@ -318,7 +322,7 @@ class LiveNow(commands.Cog):
                 f"{self._module}.{self._class}.{_method}",
                 f"{user.display_name} has a different twitch name: {twitch_name}",
             )
-            self.db.set_user_twitch_info(user.id, twitch_name)
+            self.twitch_db.set_user_twitch_info(user.id, twitch_name)
             self.db.track_system_action(
                 guild_id=guild_id,
                 action=SystemActions.LINK_TWITCH_TO_DISCORD,
@@ -394,14 +398,16 @@ class LiveNow(commands.Cog):
             )
 
             # this should update the existing entry with the channel and message id
-            self.db.track_live(guild_id, user.id, activity.platform, logging_channel.id, message.id, url=activity.url)
+            self.live_db.track_live(
+                guild_id, user.id, activity.platform, logging_channel.id, message.id, url=activity.url
+            )
 
     async def clean_up_live(self, guild_id: int, user_id: int) -> None:
         _method = inspect.stack()[0][3]
         if guild_id is None or user_id is None:
             return
 
-        all_tracked_for_user = self.db.get_tracked_live_by_user(guildId=guild_id, userId=user_id)
+        all_tracked_for_user = self.live_db.get_tracked_live_by_user(guildId=guild_id, userId=user_id)
         tracked_count = len(all_tracked_for_user)
         if all_tracked_for_user is None or tracked_count == 0:
             return
@@ -431,7 +437,7 @@ class LiveNow(commands.Cog):
                 f"{self._module}.{self._class}.{_method}",
                 f"{utils.get_user_display_name(user)} stopped streaming on {platform}",
             )
-            self.db.track_live_activity(guild_id, user.id, False, platform, url=url)
+            self.live_db.track_live_activity(guild_id, user.id, False, platform, url=url)
 
             if logging_channel:
                 message_id = tracked.get("message_id", None)
@@ -448,7 +454,7 @@ class LiveNow(commands.Cog):
                         )
 
             # remove all tracked items for this live platform (should only be one)
-            self.db.untrack_live(guild_id, user.id, platform)
+            self.live_db.untrack_live(guild_id, user.id, platform)
             await self.remove_live_roles(user, cog_settings)
 
     def find_platform_emoji(self, guild: discord.Guild, platform: str) -> typing.Union[discord.Emoji, None]:

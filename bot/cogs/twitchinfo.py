@@ -8,6 +8,7 @@ import typing
 import discord
 import requests
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes, utils
+from bot.cogs.lib.mongodb.twitch import TwitchDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.system_actions import SystemActions
 from discord.ext import commands
@@ -27,6 +28,7 @@ class TwitchInfo(commands.Cog):
         self.SETTINGS_SECTION = "twitchinfo"
 
         self.db = mongo.MongoDatabase()
+        self.twitch_db = TwitchDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -77,7 +79,7 @@ class TwitchInfo(commands.Cog):
         if user == None or user == "":
             # specify channel
             return
-        twitch_info = self.db.get_user_twitch_info(user.id)
+        twitch_info = self.twitch_db.get_user_twitch_info(user.id)
         twitch_name = None
         if twitch_info:
             twitch_name = twitch_info["twitch_name"]
@@ -125,7 +127,7 @@ class TwitchInfo(commands.Cog):
         alt_ctx = collections.namedtuple("Context", ctx_dict.keys())(*ctx_dict.values())
 
         twitch_name = None
-        twitch_info = self.db.get_user_twitch_info(member.id)
+        twitch_info = self.twitch_db.get_user_twitch_info(member.id)
         # if ctx.author is administrator, then we can get the twitch name from the database
         if twitch_info is None:
             if ctx.author.guild_permissions.administrator or check_member is None:
@@ -137,7 +139,7 @@ class TwitchInfo(commands.Cog):
                     60,
                 )
                 if not twitch_name is None:
-                    self.db.set_user_twitch_info(ctx.author.id, twitch_name.lower().strip())
+                    self.twitch_db.set_user_twitch_info(ctx.author.id, twitch_name.lower().strip())
                     self.db.track_system_action(
                         guild_id=guild_id,
                         action=SystemActions.LINK_TWITCH_TO_DISCORD,
@@ -176,7 +178,7 @@ class TwitchInfo(commands.Cog):
 
             if twitch_name is not None and user is not None:
                 twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
-                self.db.set_user_twitch_info(user.id, twitch_name)
+                self.twitch_db.set_user_twitch_info(user.id, twitch_name)
                 self.db.track_system_action(
                     guild_id=guild_id,
                     action=SystemActions.LINK_TWITCH_TO_DISCORD,
@@ -229,7 +231,7 @@ class TwitchInfo(commands.Cog):
             self.log.debug(0, f"tqotd.{_method}", f"{ctx.author} requested to set twitch name {twitch_name}")
             if twitch_name is not None:
                 twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
-                found_twitch = self.db.get_user_twitch_info(ctx.author.id)
+                found_twitch = self.twitch_db.get_user_twitch_info(ctx.author.id)
                 if found_twitch is None:
                     # only set if we haven't set it already.
                     taco_settings = self.get_tacos_settings(guild_id)
@@ -244,7 +246,7 @@ class TwitchInfo(commands.Cog):
                         taco_amount=taco_amount,
                     )
 
-                self.db.set_user_twitch_info(ctx.author.id, twitch_name)
+                self.twitch_db.set_user_twitch_info(ctx.author.id, twitch_name)
                 self.db.track_system_action(
                     guild_id=guild_id,
                     action=SystemActions.LINK_TWITCH_TO_DISCORD,

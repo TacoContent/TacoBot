@@ -1,12 +1,13 @@
 import sys
 import typing
 
-from bot.cogs.lib import loglevel, mongo
+from bot.cogs.lib import loglevel
+from bot.cogs.lib.mongodb.logs import LogsDatabase
 from bot.cogs.lib.colors import Colors
 
 class Log:
     def __init__(self, minimumLogLevel: loglevel.LogLevel = loglevel.LogLevel.DEBUG) -> None:
-        self.db = mongo.MongoDatabase()
+        self.db = LogsDatabase()
         self.minimum_log_level = minimumLogLevel
         pass
 

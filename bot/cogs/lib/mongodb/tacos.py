@@ -1,12 +1,20 @@
 import datetime
 import inspect
+import os
 import traceback
 import typing
 
-from bot.cogs.lib import loglevel, utils
+from bot.cogs.lib import loglevel, settings, utils
 from bot.cogs.lib.mongodb.database import Database
 
 class TacosDatabase(Database):
+    def __init__(self) -> None:
+        super().__init__()
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
+        self._class = self.__class__.__name__
+        pass
+
     # Tacos
     def remove_all_tacos(self, guildId: int, userId: int) -> None:
         _method = inspect.stack()[0][3]

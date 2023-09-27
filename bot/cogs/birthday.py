@@ -8,6 +8,7 @@ from random import random
 
 import discord
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from bot.cogs.lib.mongodb.birthdays import BirthdaysDatabase
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -25,6 +26,7 @@ class Birthday(commands.Cog):
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.db = mongo.MongoDatabase()
+        self.birthdays_db = BirthdaysDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -92,8 +94,8 @@ class Birthday(commands.Cog):
                     timeout=60,
                 )
 
-            user_bday_set = self.db.get_user_birthday(guild_id, ctx.author.id)
-            self.db.add_user_birthday(guild_id, ctx.author.id, month, day)
+            user_bday_set = self.birthdays_db.get_user_birthday(guild_id, ctx.author.id)
+            self.birthdays_db.add_user_birthday(guild_id, ctx.author.id, month, day)
 
             if not user_bday_set:
                 taco_settings = self.get_tacos_settings(guild_id)
@@ -148,7 +150,7 @@ class Birthday(commands.Cog):
                 )
                 await self.send_birthday_message(ctx, birthdays)
             # track the check
-            self.db.track_birthday_check(guild_id)
+            self.birthdays_db.track_birthday_check(guild_id)
             await asyncio.sleep(0.5)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -157,7 +159,7 @@ class Birthday(commands.Cog):
     def was_checked_today(self, guildId: int):
         _method = inspect.stack()[0][3]
         try:
-            return self.db.birthday_was_checked_today(guildId)
+            return self.birthdays_db.birthday_was_checked_today(guildId)
         except Exception as e:
             self.log.error(guildId, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return False
@@ -169,7 +171,7 @@ class Birthday(commands.Cog):
             date = datetime.datetime.now(tz=None)
             month = date.month
             day = date.day
-            birthdays = self.db.get_user_birthdays(guildId, month, day)
+            birthdays = self.birthdays_db.get_user_birthdays(guildId, month, day)
             return birthdays
         except Exception as e:
             self.log.error(guildId, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -270,7 +272,7 @@ class Birthday(commands.Cog):
                 )
                 await self.send_birthday_message(message, birthdays)
             # track the check
-            self.db.track_birthday_check(guild_id)
+            self.birthdays_db.track_birthday_check(guild_id)
             await asyncio.sleep(0.5)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -298,7 +300,7 @@ class Birthday(commands.Cog):
                 )
                 await self.send_birthday_message(after, birthdays)
             # track the check
-            self.db.track_birthday_check(guild_id)
+            self.birthdays_db.track_birthday_check(guild_id)
             await asyncio.sleep(0.5)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -326,7 +328,7 @@ class Birthday(commands.Cog):
                 )
                 await self.send_birthday_message(member, birthdays)
             # track the check
-            self.db.track_birthday_check(guild_id)
+            self.birthdays_db.track_birthday_check(guild_id)
             await asyncio.sleep(0.5)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -354,7 +356,7 @@ class Birthday(commands.Cog):
         #             ctx = self.discord_helper.create_context(bot=self.bot, guild=guild)
         #             await self.send_birthday_message(ctx, birthdays)
         #         # track the check
-        #         self.db.track_birthday_check(guild_id)
+        #         self.birthdays_db.track_birthday_check(guild_id)
         #         await asyncio.sleep(0.5)
         # except Exception as e:
         #     self.log.error(guild_id, "birthday.on_member_join", str(e), traceback.format_exc())

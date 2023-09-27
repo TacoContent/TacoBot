@@ -5,6 +5,7 @@ import typing
 
 import discord
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, utils
+from bot.cogs.lib.mongodb.twitch import TwitchDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.system_actions import SystemActions
 from discord.ext import commands
@@ -22,6 +23,7 @@ class AccountLink(commands.Cog):
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.db = mongo.MongoDatabase()
+        self.twitch_db = TwitchDatabase()
 
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -43,7 +45,7 @@ class AccountLink(commands.Cog):
 
         if code:
             try:
-                result = self.db.link_twitch_to_discord_from_code(ctx.author.id, code)
+                result = self.twitch_db.link_twitch_to_discord_from_code(ctx.author.id, code)
                 self.db.track_system_action(
                     guild_id=guild_id,
                     action=SystemActions.LINK_TWITCH_TO_DISCORD,
@@ -83,7 +85,7 @@ class AccountLink(commands.Cog):
                 # generate code
                 code = utils.get_random_string(length=6)
                 # save code to db
-                result = self.db.set_twitch_discord_link_code(ctx.author.id, code)
+                result = self.twitch_db.set_twitch_discord_link_code(ctx.author.id, code)
                 notice_message = self.settings.get_string(guild_id, "account_link_notice_message", code=code)
                 if result:
                     try:

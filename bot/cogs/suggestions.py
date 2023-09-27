@@ -7,6 +7,7 @@ import uuid
 
 import discord
 from bot.cogs.lib import discordhelper, logger, loglevel, models, mongo, settings, tacotypes
+from bot.cogs.lib.mongodb.suggestions import SuggestionsDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.permissions import Permissions
 from discord.ext import commands
@@ -26,6 +27,7 @@ class Suggestions(commands.Cog):
         self.SETTINGS_SECTION = "suggestions"
 
         self.db = mongo.MongoDatabase()
+        self.suggestions_db = SuggestionsDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -239,7 +241,7 @@ class Suggestions(commands.Cog):
             "author_id": str(ctx.author.id),
             "suggestion": {"title": suggestion_title, "description": suggestion_message},
         }
-        self.db.add_suggestion(guild_id, s_message.id, suggestion_data)
+        self.suggestions_db.add_suggestion(guild_id, s_message.id, suggestion_data)
 
     @commands.group(aliases=["suggestion"])
     @commands.guild_only()
@@ -301,7 +303,7 @@ class Suggestions(commands.Cog):
                 return
 
             # get suggestion from database
-            suggestion = self.db.get_suggestion(guild_id, payload.message_id)
+            suggestion = self.suggestions_db.get_suggestion(guild_id, payload.message_id)
             if not suggestion or suggestion['message_id'] != str(payload.message_id):
                 return
 
@@ -366,7 +368,7 @@ class Suggestions(commands.Cog):
                 else:
                     vote = 1
 
-                has_user_voted = self.db.has_user_voted_on_suggestion(suggestion['id'], user.id)
+                has_user_voted = self.suggestions_db.has_user_voted_on_suggestion(suggestion['id'], user.id)
                 if has_user_voted:
                     self.log.debug(
                         guild_id,
@@ -383,7 +385,7 @@ class Suggestions(commands.Cog):
                     )
                     return
                 else:
-                    self.db.vote_suggestion_by_id(suggestion['id'], user.id, vote)
+                    self.suggestions_db.vote_suggestion_by_id(suggestion['id'], user.id, vote)
                 pass
             # if the user reacted with an admin emoji and they are an admin
             elif str(payload.emoji) in admin_emoji and await self.permissions.is_admin(user.id, guild_id):
@@ -409,7 +411,9 @@ class Suggestions(commands.Cog):
                         )
                         or "No reason given."
                     )
-                    self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.APPROVED, user.id, reason)
+                    self.suggestions_db.set_state_suggestion_by_id(
+                        guild_id, suggestion['id'], states.APPROVED, user.id, reason
+                    )
                     await self.update_suggestion_state(message, states.APPROVED, user, reason, author=author)
                 elif str(payload.emoji) == channel_settings["admin_consider_emoji"]:
                     self.log.debug(
@@ -431,7 +435,9 @@ class Suggestions(commands.Cog):
                         )
                         or "No reason given."
                     )
-                    self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.CONSIDERED, user.id, reason)
+                    self.suggestions_db.set_state_suggestion_by_id(
+                        guild_id, suggestion['id'], states.CONSIDERED, user.id, reason
+                    )
                     await self.update_suggestion_state(message, states.CONSIDERED, user, reason, author=author)
                 elif str(payload.emoji) == channel_settings["admin_implemented_emoji"]:
                     self.log.debug(
@@ -453,7 +459,9 @@ class Suggestions(commands.Cog):
                         )
                         or "No reason given."
                     )
-                    self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.IMPLEMENTED, user.id, reason)
+                    self.suggestions_db.set_state_suggestion_by_id(
+                        guild_id, suggestion['id'], states.IMPLEMENTED, user.id, reason
+                    )
                     await self.update_suggestion_state(message, states.IMPLEMENTED, user, reason, author=author)
                 elif str(payload.emoji) == channel_settings["admin_reject_emoji"]:
                     self.log.debug(
@@ -475,7 +483,9 @@ class Suggestions(commands.Cog):
                         )
                         or "No reason given."
                     )
-                    self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.REJECTED, user.id, reason)
+                    self.suggestions_db.set_state_suggestion_by_id(
+                        guild_id, suggestion['id'], states.REJECTED, user.id, reason
+                    )
                     await self.update_suggestion_state(message, states.REJECTED, user, reason, author=author)
                 elif str(payload.emoji) == channel_settings["admin_close_emoji"]:
                     # close the suggestion and move it to the archive
@@ -511,7 +521,9 @@ class Suggestions(commands.Cog):
                         )
                         or "Closed by admin."
                     )
-                    self.db.set_state_suggestion_by_id(guild_id, suggestion['id'], states.CLOSED, user.id, reason)
+                    self.suggestions_db.set_state_suggestion_by_id(
+                        guild_id, suggestion['id'], states.CLOSED, user.id, reason
+                    )
                     await self.update_suggestion_state(
                         message, states.CLOSED, user, reason, author=author, color=close_state_color
                     )
@@ -526,7 +538,7 @@ class Suggestions(commands.Cog):
 
                     # add fields with the votes
                     # get the votes from the database
-                    votes = self.db.get_suggestion_votes_by_id(suggestion['id'])
+                    votes = self.suggestions_db.get_suggestion_votes_by_id(suggestion['id'])
                     # get count of each type of vote. either -1, 0, or 1
                     up_votes = [vote for vote in votes if vote['vote'] == 1] or []
                     up_word = "Vote" if len(up_votes) == 1 else "Votes"
@@ -576,7 +588,7 @@ class Suggestions(commands.Cog):
                         )
                         or "Deleted by admin."
                     )
-                    self.db.delete_suggestion_by_id(guild_id, suggestion['id'], user.id, reason=reason)
+                    self.suggestions_db.delete_suggestion_by_id(guild_id, suggestion['id'], user.id, reason=reason)
                     await message.delete()
 
             else:
@@ -603,7 +615,7 @@ class Suggestions(commands.Cog):
                 return
 
             # get suggestion from database
-            suggestion = self.db.get_suggestion(guild_id, payload.message_id)
+            suggestion = self.suggestions_db.get_suggestion(guild_id, payload.message_id)
             if not suggestion or suggestion['message_id'] != str(payload.message_id):
                 return
 
@@ -640,11 +652,11 @@ class Suggestions(commands.Cog):
                     f"{self._module}.{self._class}.{_method}",
                     f"{user.name} removed vote from suggestion {suggestion['id']}",
                 )
-                has_user_voted = self.db.has_user_voted_on_suggestion(suggestion['id'], user.id)
+                has_user_voted = self.suggestions_db.has_user_voted_on_suggestion(suggestion['id'], user.id)
                 if not has_user_voted:
                     return
                 else:
-                    self.db.unvote_suggestion_by_id(guild_id, suggestion['id'], user.id)
+                    self.suggestions_db.unvote_suggestion_by_id(guild_id, suggestion['id'], user.id)
             elif str(payload.emoji) in admin_emoji and await self.permissions.is_admin(user.id, guild_id):
                 states = models.SuggestionStates()
 
@@ -676,28 +688,28 @@ class Suggestions(commands.Cog):
                 if str(payload.emoji) == channel_settings["admin_reject_emoji"]:
                     if reject_count <= 0:
                         if implemented_count != 0:
-                            self.db.set_state_suggestion_by_id(
+                            self.suggestions_db.set_state_suggestion_by_id(
                                 guild_id, suggestion['id'], states.IMPLEMENTED, user.id, "Reject State Was Removed"
                             )
                             await self.update_suggestion_state(
                                 message, states.IMPLEMENTED, user, "Reject State Was Removed", author=author
                             )
                         elif consider_count != 0:
-                            self.db.set_state_suggestion_by_id(
+                            self.suggestions_db.set_state_suggestion_by_id(
                                 guild_id, suggestion['id'], states.CONSIDERED, user.id, "Reject State Was Removed"
                             )
                             await self.update_suggestion_state(
                                 message, states.CONSIDERED, user, "Reject State Was Removed", author=author
                             )
                         elif approve_count != 0:
-                            self.db.set_state_suggestion_by_id(
+                            self.suggestions_db.set_state_suggestion_by_id(
                                 guild_id, suggestion['id'], states.APPROVED, user.id, "Reject State Was Removed"
                             )
                             await self.update_suggestion_state(
                                 message, states.APPROVED, user, "Reject State Was Removed", author=author
                             )
                         else:
-                            self.db.set_state_suggestion_by_id(
+                            self.suggestions_db.set_state_suggestion_by_id(
                                 guild_id, suggestion['id'], states.ACTIVE, user.id, "Reject State Was Removed"
                             )
                             await self.update_suggestion_state(
@@ -706,28 +718,28 @@ class Suggestions(commands.Cog):
                 elif str(payload.emoji) == channel_settings["admin_implemented_emoji"]:
                     if implemented_count <= 0:
                         if reject_count > 0:
-                            self.db.set_state_suggestion_by_id(
+                            self.suggestions_db.set_state_suggestion_by_id(
                                 guild_id, suggestion['id'], states.REJECTED, user.id, "Implemented State Was Removed"
                             )
                             await self.update_suggestion_state(
                                 message, states.REJECTED, user, "Implemented State Was Removed", author=author
                             )
                         elif consider_count > 0:
-                            self.db.set_state_suggestion_by_id(
+                            self.suggestions_db.set_state_suggestion_by_id(
                                 guild_id, suggestion['id'], states.CONSIDERED, user.id, "Implemented State Was Removed"
                             )
                             await self.update_suggestion_state(
                                 message, states.CONSIDERED, user, "Reject State Was Removed", author=author
                             )
                         elif approve_count > 0:
-                            self.db.set_state_suggestion_by_id(
+                            self.suggestions_db.set_state_suggestion_by_id(
                                 guild_id, suggestion['id'], states.APPROVED, user.id, "Implemented State Was Removed"
                             )
                             await self.update_suggestion_state(
                                 message, states.APPROVED, user, "Reject State Was Removed", author=author
                             )
                         else:
-                            self.db.set_state_suggestion_by_id(
+                            self.suggestions_db.set_state_suggestion_by_id(
                                 guild_id, suggestion['id'], states.ACTIVE, user.id, "Implemented State Was Removed"
                             )
                             await self.update_suggestion_state(
@@ -736,28 +748,28 @@ class Suggestions(commands.Cog):
                 elif str(payload.emoji) == channel_settings["admin_consider_emoji"]:
                     if consider_count <= 0:
                         if reject_count > 0:
-                            self.db.set_state_suggestion_by_id(
+                            self.suggestions_db.set_state_suggestion_by_id(
                                 guild_id, suggestion['id'], states.REJECTED, user.id, "Consider State Was Removed"
                             )
                             await self.update_suggestion_state(
                                 message, states.REJECTED, user, "Consider State Was Removed", author=author
                             )
                         elif implemented_count > 0:
-                            self.db.set_state_suggestion_by_id(
+                            self.suggestions_db.set_state_suggestion_by_id(
                                 guild_id, suggestion['id'], states.IMPLEMENTED, user.id, "Consider State Was Removed"
                             )
                             await self.update_suggestion_state(
                                 message, states.IMPLEMENTED, user, "Consider State Was Removed", author=author
                             )
                         elif approve_count > 0:
-                            self.db.set_state_suggestion_by_id(
+                            self.suggestions_db.set_state_suggestion_by_id(
                                 guild_id, suggestion['id'], states.APPROVED, user.id, "Consider State Was Removed"
                             )
                             await self.update_suggestion_state(
                                 message, states.APPROVED, user, "Consider State Was Removed", author=author
                             )
                         else:
-                            self.db.set_state_suggestion_by_id(
+                            self.suggestions_db.set_state_suggestion_by_id(
                                 guild_id, suggestion['id'], states.ACTIVE, user.id, "Consider State Was Removed"
                             )
                             await self.update_suggestion_state(
@@ -766,28 +778,28 @@ class Suggestions(commands.Cog):
                 elif str(payload.emoji) == channel_settings["admin_approve_emoji"]:
                     if approve_count <= 0:
                         if reject_count > 0:
-                            self.db.set_state_suggestion_by_id(
+                            self.suggestions_db.set_state_suggestion_by_id(
                                 guild_id, suggestion['id'], states.REJECTED, user.id, "Approve State Was Removed"
                             )
                             await self.update_suggestion_state(
                                 message, states.REJECTED, user, "Approve State Was Removed", author=author
                             )
                         elif implemented_count > 0:
-                            self.db.set_state_suggestion_by_id(
+                            self.suggestions_db.set_state_suggestion_by_id(
                                 guild_id, suggestion['id'], states.IMPLEMENTED, user.id, "Approve State Was Removed"
                             )
                             await self.update_suggestion_state(
                                 message, states.IMPLEMENTED, user, "Approve State Was Removed", author=author
                             )
                         elif consider_count > 0:
-                            self.db.set_state_suggestion_by_id(
+                            self.suggestions_db.set_state_suggestion_by_id(
                                 guild_id, suggestion['id'], states.CONSIDERED, user.id, "Approve State Was Removed"
                             )
                             await self.update_suggestion_state(
                                 message, states.CONSIDERED, user, "Approve State Was Removed", author=author
                             )
                         else:
-                            self.db.set_state_suggestion_by_id(
+                            self.suggestions_db.set_state_suggestion_by_id(
                                 guild_id, suggestion['id'], states.ACTIVE, user.id, "Approve State Was Removed"
                             )
                             await self.update_suggestion_state(

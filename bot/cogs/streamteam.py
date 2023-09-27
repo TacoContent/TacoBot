@@ -5,6 +5,7 @@ import typing
 
 import discord
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, utils
+from bot.cogs.lib.mongodb.twitch import TwitchDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.system_actions import SystemActions
 from discord.ext import commands
@@ -22,6 +23,7 @@ class StreamTeam(commands.Cog):
         self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "streamteam"
         self.db = mongo.MongoDatabase()
+        self.twitch_db = TwitchDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -70,8 +72,8 @@ class StreamTeam(commands.Cog):
             # check if the message that is reacted to is in the list of message ids and the emoji is one that is configured.
             if str(message.id) in watch_message_ids and str(payload.emoji) in emoji:
                 # add user to the stream team requests
-                self.db.remove_stream_team_request(guild_id, user.id)
-                twitch_user = self.db.get_user_twitch_info(user.id)
+                self.twitch_db.remove_stream_team_request(guild_id, user.id)
+                twitch_user = self.twitch_db.get_user_twitch_info(user.id)
                 twitch_name = "UNKNOWN"
                 if twitch_user:
                     twitch_name = twitch_user['twitch_name']
@@ -130,43 +132,20 @@ class StreamTeam(commands.Cog):
 
             # check if the message that is reacted to is in the list of message ids and the emoji is one that is configured.
             if str(message.id) in watch_message_ids and str(payload.emoji) in emoji:
-                # add user to the stream team requests
-                self.db.add_stream_team_request(guild_id, utils.get_user_display_name(user), user.id)
+
                 unknown = self.settings.get_string(guild_id, "unknown")
                 # send a message to the user and ask them their twitch name if it is not yet set
                 twitch_name = unknown
-                # twitch_user = self.db.get_user_twitch_info(user.id)
-                # if not twitch_user:
-                #     try:
-                #         ctx_dict = {"bot": self.bot, "author": user, "guild": None, "channel": None}
-                #         ctx = collections.namedtuple("Context", ctx_dict.keys())(*ctx_dict.values())
-                #         twitch_name = await self.discord_helper.ask_text(ctx, user,
-                #             self.settings.get_string(guild_id, "twitch_name_title"),
-                #             self.settings.get_string(guild_id, "twitch_name_question", team_name=team_name),
-                #             timeout=60)
-                #         if twitch_name:
-                #             twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
+                twitch_info = self.twitch_db.get_user_twitch_info(user.id)
+                if twitch_info:
+                    twitch_name = twitch_info['twitch_name']
+                    if twitch_name is None or twitch_name == "":
+                        twitch_name = unknown
+                # add user to the stream team requests
+                self.twitch_db.add_stream_team_request(
+                    guildId=guild_id, userId=user.id, twitchName=twitch_name
+                )
 
-                #             self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"{utils.get_user_display_name(user)} requested to set twitch name {twitch_user}")
-                #             self.db.set_user_twitch_info(user.id, twitch_name)
-                # self.db.track_system_action(
-                #     guild_id=guild_id,
-                #     action=SystemActions.LINK_TWITCH_TO_DISCORD,
-                #     data={"user_id": str(user.id), "twitch_name": twitch_name.lower()},
-                # )
-                #             await self.messaging.send_embed(user,
-                #                 self.settings.get_string(guild_id, "success"),
-                #                 self.settings.get_string(guild_id, "streamteam_set_twitch_name_message", twitch_name=twitch_name),
-                #                 color=0x00ff00)
-                #     except discord.Forbidden as e:
-                #         # cant send them a message. Put it in the channel...
-                #         await self.messaging.send_embed(channel,
-                #             self.settings.get_string(guild_id, "error"),
-                #             self.settings.get_string(guild_id, "twitch_name_dm_error", user=user.mention),
-                #             footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
-                #             color=0xff0000, delete_after=30)
-                # else:
-                #     twitch_name = twitch_user['twitch_name']
                 if log_channel:
                     twitch_name = unknown if twitch_name is None else twitch_name
                     await self.messaging.send_embed(
@@ -205,7 +184,9 @@ class StreamTeam(commands.Cog):
         guild_id = ctx.guild.id
         try:
             if twitchName is None:
-                twitchName = self.db.get_user_twitch_info(ctx.author.id)['twitch_name']
+                twitchInfo = self.twitch_db.get_user_twitch_info(ctx.author.id)
+                if twitchInfo is not None:
+                    twitchName = twitchInfo['twitch_name']
             if twitchName is None:
                 try:
                     await self.messaging.send_embed(
@@ -263,13 +244,13 @@ class StreamTeam(commands.Cog):
                 log_channel = await self.discord_helper.get_or_fetch_channel(log_channel_id)
             team_name = streamteam_settings["name"]
 
-            self.db.set_user_twitch_info(user.id, twitchName)
+            self.twitch_db.set_user_twitch_info(user.id, twitchName)
             self.db.track_system_action(
                 guild_id=guild_id,
                 action=SystemActions.LINK_TWITCH_TO_DISCORD,
                 data={"user_id": str(user.id), "twitch_name": twitch_name.lower()},
             )
-            self.db.add_stream_team_request(guildId=ctx.guild.id, twitchName=twitchName, userId=user.id)
+            self.twitch_db.add_stream_team_request(guildId=ctx.guild.id, twitchName=twitchName, userId=user.id)
 
             await self.messaging.send_embed(
                 channel=ctx.channel,

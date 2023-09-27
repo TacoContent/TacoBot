@@ -16,95 +16,13 @@ class Database:
     def close(self):
         pass
 
-    def insert_log(
-        self, guildId: int, level: loglevel.LogLevel, method: str, message: str, stack: typing.Optional[str] = None
-    ):
-        pass
-
-    def clear_log(self, guildId: int):
-        pass
-
-    # add StreamTeamMember to database
-    def add_stream_team_request(
-        self, guildId: int, userName: str, userId: int, twitchName: typing.Optional[str] = None
-    ) -> None:
-        pass
-
-    def remove_stream_team_request(self, guildId: int, userId: int):
-        pass
-
     def get_stream_team_requests(self, guildId: int):
-        pass
-
-    def set_user_twitch_info(self, userId: int, twitchName: typing.Optional[str] = None):
-        pass
-
-    def get_user_twitch_info(self, userId: int):
         pass
 
     def add_settings(self, guildId: int, name: str, settings: dict):
         pass
 
     def get_settings(self, guildId: int, name: str):
-        pass
-
-    def get_suggestion(self, guildId: int, messageId: int):
-        pass
-
-    def get_suggestion_by_id(self, guildId: int, suggestionId: str):
-        pass
-
-    def add_suggestion(self, guildId: int, messageId: int, suggestion: dict):
-        pass
-
-    def add_suggestion_create_message(self, guildId: int, channelId: int, messageId: int):
-        pass
-
-    def remove_suggestion_create_message(self, guildId: int, channelId: int, messageId: int):
-        pass
-
-    def track_invite_code(self, guildId: int, inviteCode: str, inviteInfo: dict):
-        pass
-
-    def get_invite_code(self, guildId: int, inviteCode: str):
-        pass
-
-    def track_live(
-        self,
-        guildId: int,
-        userId: int,
-        platform: str,
-        channelId: typing.Optional[int] = None,
-        messageId: typing.Optional[int] = None,
-        url: typing.Optional[str] = None,
-    ) -> None:
-        pass
-
-    def get_tracked_live(self, guildId: int, userId: int, platform: str):
-        pass
-
-    def untrack_live(self, guildId: int, userId: int, platform: str):
-        pass
-
-    def get_tracked_live_by_url(self, guildId: int, url: str):
-        pass
-
-    def get_tracked_live_by_user(self, guildId: int, userId: int):
-        pass
-
-    def birthday_was_checked_today(self, guildId: int):
-        pass
-
-    def track_birthday_check(self, guildId: int):
-        pass
-
-    def get_user_birthdays(self, guildId: int, month: int, day: int):
-        pass
-
-    def add_user_birthday(self, guildId: int, userId: int, month: int, day: int):
-        pass
-
-    def save_tqotd(self, guildId: int, quote: str, author: int):
         pass
 
     def save_wdyctw(self, guildId: int, message: str, image: str, author: int):
@@ -114,12 +32,6 @@ class Database:
         pass
 
     def save_mentalmondays(self, guildId: int, message: str, image: str, author: int):
-        pass
-
-    def track_tqotd_answer(self, guildId: int, userId: int):
-        pass
-
-    def tqotd_user_message_tracked(self, guildId: int, userId: int, messageId: int):
         pass
 
     def track_wdyctw_answer(self, guildId: int, userId: int):

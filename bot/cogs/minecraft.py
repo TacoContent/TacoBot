@@ -9,6 +9,7 @@ import traceback
 import discord
 import requests
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
+from bot.cogs.lib.mongodb.minecraft import MinecraftDatabase
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -27,6 +28,7 @@ class Minecraft(commands.Cog):
         self.SETTINGS_SECTION = "minecraft"
         self.SELF_DESTRUCT_TIMEOUT = 30
         self.db = mongo.MongoDatabase()
+        self.minecraft_db = MinecraftDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -43,14 +45,14 @@ class Minecraft(commands.Cog):
 
             if not self.is_user_whitelisted(guild_id=guild_id, user_id=member.id):
                 return
-            mc_user = self.db.get_minecraft_user(guildId=guild_id, userId=member.id)
+            mc_user = self.minecraft_db.get_minecraft_user(guildId=guild_id, userId=member.id)
             if not mc_user:
                 return
 
             self.log.debug(
                 member.guild.id, f"{self._module}.{self._class}.{_method}", f"Member {member.name} has left the server"
             )
-            self.db.whitelist_minecraft_user(
+            self.minecraft_db.whitelist_minecraft_user(
                 guildId=guild_id, userId=member.id, username=mc_user['username'], uuid=mc_user['uuid'], whitelist=False
             )
 
@@ -456,8 +458,8 @@ class Minecraft(commands.Cog):
                 else:
                     # if correct, add to whitelist
                     # check if user is in the whitelist
-                    # minecraft_user = self.db.get_minecraft_user(ctx.author.id)
-                    self.db.whitelist_minecraft_user(
+                    # minecraft_user = self.minecraft_db.get_minecraft_user(ctx.author.id)
+                    self.minecraft_db.whitelist_minecraft_user(
                         guildId=guild_id, userId=ctx.author.id, username=mc_username, uuid=mc_uuid, whitelist=True
                     )
                     await self.messaging.send_embed(
@@ -490,7 +492,7 @@ class Minecraft(commands.Cog):
             # if correct, add to whitelist
             # check if user is in the whitelist
             # minecraft_user = self.db.get_minecraft_user(ctx.author.id)
-            self.db.whitelist_minecraft_user(
+            self.minecraft_db.whitelist_minecraft_user(
                 guildId=guild_id, userId=ctx.author.id, username=mc_username, uuid=mc_uuid, whitelist=True
             )
             await self.messaging.send_embed(
@@ -509,7 +511,7 @@ class Minecraft(commands.Cog):
 
     def is_user_whitelisted(self, guild_id: int, user_id: int):
         # check if user is in the whitelist
-        minecraft_user = self.db.get_minecraft_user(guildId=guild_id, userId=user_id)
+        minecraft_user = self.minecraft_db.get_minecraft_user(guildId=guild_id, userId=user_id)
         if not minecraft_user:
             return False
 
