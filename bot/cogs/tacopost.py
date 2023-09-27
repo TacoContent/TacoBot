@@ -3,7 +3,7 @@ import inspect
 import os
 import traceback
 
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
+from bot.cogs.lib import discordhelper, logger, loglevel, settings
 from bot.cogs.lib.mongodb.tacos import TacosDatabase
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
@@ -23,7 +23,6 @@ class TacoPost(commands.Cog):
         self.SETTINGS_SECTION = 'tacopost'
 
         self.tacos_db = TacosDatabase()
-        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -46,7 +45,7 @@ class TacoPost(commands.Cog):
                 return
 
             # get the settings for tacopost out of the settings
-            tacopost_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+            tacopost_settings = self.settings.get_settings(guild_id, self.SETTINGS_SECTION)
             if not tacopost_settings:
                 # raise exception if there are no suggestion settings
                 self.log.error(

@@ -3,7 +3,8 @@ import os
 import typing
 
 import discord
-from bot.cogs.lib import logger, loglevel, mongo, settings
+from bot.cogs.lib import logger, loglevel, settings
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.system_actions import SystemActions
 from discord.ext import commands
 
@@ -16,7 +17,7 @@ class ModEventsCog(commands.Cog):
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
-        self.db = mongo.MongoDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -28,13 +29,13 @@ class ModEventsCog(commands.Cog):
     async def on_member_ban(self, guild: discord.Guild, user: typing.Union[discord.User, discord.Member]):
         _method = inspect.stack()[0][3]
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"User {user.name} was banned from {guild.name}")
-        self.db.track_system_action(guild_id=guild.id, action=SystemActions.USER_BAN, data={"user_id": user.id})
+        self.tracking_db.track_system_action(guild_id=guild.id, action=SystemActions.USER_BAN, data={"user_id": user.id})
 
     @commands.Cog.listener()
     async def on_member_unban(self, guild: discord.Guild, user: discord.User):
         _method = inspect.stack()[0][3]
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"User {user.name} was unbanned from {guild.name}")
-        self.db.track_system_action(guild_id=guild.id, action=SystemActions.USER_UNBAN, data={"user_id": user.id})
+        self.tracking_db.track_system_action(guild_id=guild.id, action=SystemActions.USER_UNBAN, data={"user_id": user.id})
 
     @commands.Cog.listener()
     async def on_automod_action(self, execution: discord.AutoModAction):
@@ -44,7 +45,7 @@ class ModEventsCog(commands.Cog):
             f"{self._module}.{self._class}.{_method}",
             f"Automod action {execution.action.type} was executed on {execution.member.name if execution.member else execution.user_id} in {execution.guild.name}",
         )
-        self.db.track_system_action(
+        self.tracking_db.track_system_action(
             guild_id=execution.guild.id,
             action=SystemActions.AUTOMOD_ACTION,
             data={

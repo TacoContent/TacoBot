@@ -4,7 +4,8 @@ import traceback
 import typing
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, utils
+from bot.cogs.lib import discordhelper, logger, loglevel, settings, utils
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.mongodb.twitch import TwitchDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.system_actions import SystemActions
@@ -22,8 +23,8 @@ class StreamTeam(commands.Cog):
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "streamteam"
-        self.db = mongo.MongoDatabase()
         self.twitch_db = TwitchDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -47,7 +48,7 @@ class StreamTeam(commands.Cog):
                 return
 
             # get the streamteam settings from settings
-            streamteam_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+            streamteam_settings = self.settings.get_settings(guild_id, self.SETTINGS_SECTION)
             if not streamteam_settings:
                 # raise exception if there are no streamteam settings
                 self.log.error(
@@ -225,7 +226,7 @@ class StreamTeam(commands.Cog):
         guild_id = ctx.guild.id
         try:
             # get the streamteam settings from settings
-            streamteam_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+            streamteam_settings = self.settings.get_settings(guild_id, self.SETTINGS_SECTION)
             if not streamteam_settings:
                 # raise exception if there are no streamteam settings
                 self.log.error(
@@ -245,7 +246,7 @@ class StreamTeam(commands.Cog):
             team_name = streamteam_settings["name"]
 
             self.twitch_db.set_user_twitch_info(user.id, twitchName)
-            self.db.track_system_action(
+            self.tracking_db.track_system_action(
                 guild_id=guild_id,
                 action=SystemActions.LINK_TWITCH_TO_DISCORD,
                 data={"user_id": str(user.id), "twitch_name": twitch_name.lower()},
@@ -287,13 +288,13 @@ class StreamTeam(commands.Cog):
             await self.messaging.notify_of_error(ctx)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

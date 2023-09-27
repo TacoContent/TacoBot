@@ -7,7 +7,7 @@ from bot.cogs.lib.colors import Colors
 
 class Log:
     def __init__(self, minimumLogLevel: loglevel.LogLevel = loglevel.LogLevel.DEBUG) -> None:
-        self.db = LogsDatabase()
+        self.logs_db = LogsDatabase()
         self.minimum_log_level = minimumLogLevel
         pass
 
@@ -32,7 +32,7 @@ class Log:
             print(Colors.colorize(color, stack), file=file)
 
         if level >= self.minimum_log_level:
-            self.db.insert_log(guildId=guildId, level=level, method=method, message=message, stack=stack)
+            self.logs_db.insert_log(guildId=guildId, level=level, method=method, message=message, stack=stack)
 
     def debug(self, guildId: int, method: str, message: str, stack: typing.Optional[str] = None) -> None:
         self.__write(

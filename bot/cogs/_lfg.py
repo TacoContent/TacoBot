@@ -3,7 +3,7 @@ import os
 
 import discord
 from bot import tacobot  # pylint: disable=relative-beyond-top-level
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
+from bot.cogs.lib import discordhelper, logger, loglevel, settings
 from discord.ext import commands
 
 
@@ -17,7 +17,6 @@ class LookingForGamers(commands.Cog):
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.SETTINGS_SECTION = "lfg"
-        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG

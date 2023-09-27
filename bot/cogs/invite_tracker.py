@@ -4,7 +4,8 @@ import os
 import traceback
 import typing
 
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes, utils
+from bot.cogs.lib import discordhelper, logger, loglevel, settings, tacotypes, utils
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.mongodb.invites import InvitesDatabase
 from bot.cogs.lib.system_actions import SystemActions
 from discord.ext import commands
@@ -19,8 +20,8 @@ class InviteTracker(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
-        self.db = mongo.MongoDatabase()
         self.invites_db = InvitesDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -88,7 +89,7 @@ class InviteTracker(commands.Cog):
                             self.settings.get_string(guild_id, "taco_reason_invite", user=member.name),
                             tacotypes.TacoTypes.USER_INVITE,
                         )
-                        self.db.track_system_action(
+                        self.tracking_db.track_system_action(
                             guild_id=guild_id,
                             action=SystemActions.USER_INVITE,
                             data={

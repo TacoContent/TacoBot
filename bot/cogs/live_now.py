@@ -6,7 +6,8 @@ import typing
 
 import discord
 import requests
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes, utils
+from bot.cogs.lib import discordhelper, logger, loglevel, settings, tacotypes, utils
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.mongodb.live import LiveDatabase
 from bot.cogs.lib.mongodb.twitch import TwitchDatabase
 from bot.cogs.lib.messaging import Messaging
@@ -25,9 +26,9 @@ class LiveNow(commands.Cog):
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "live_now"
-        self.db = mongo.MongoDatabase()
         self.live_db = LiveDatabase()
         self.twitch_db = TwitchDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -323,7 +324,7 @@ class LiveNow(commands.Cog):
                 f"{user.display_name} has a different twitch name: {twitch_name}",
             )
             self.twitch_db.set_user_twitch_info(user.id, twitch_name)
-            self.db.track_system_action(
+            self.tracking_db.track_system_action(
                 guild_id=guild_id,
                 action=SystemActions.LINK_TWITCH_TO_DISCORD,
                 data={"user_id": str(user.id), "twitch_name": twitch_name.lower()},
@@ -478,13 +479,13 @@ class LiveNow(commands.Cog):
         return None
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

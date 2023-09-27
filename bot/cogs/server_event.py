@@ -4,7 +4,7 @@ import os
 import traceback
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from bot.cogs.lib import discordhelper, logger, loglevel, settings, tacotypes
 from discord.ext import commands
 
 
@@ -16,7 +16,6 @@ class ServerEvent(commands.Cog):
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.settings = settings.Settings()
-        self.db = mongo.MongoDatabase()
         self.discord_helper = discordhelper.DiscordHelper(bot)
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:

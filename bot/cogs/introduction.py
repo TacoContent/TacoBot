@@ -3,7 +3,10 @@ import os
 import traceback
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from bot.cogs.lib import discordhelper, logger, loglevel, settings, tacotypes
+from bot.cogs.lib.mongodb.introductions import IntroductionsDatabase
+from bot.cogs.lib.mongodb.settings import SettingsDatabase
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 
@@ -19,7 +22,9 @@ class IntroductionCog(commands.Cog):
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "introduction"
-        self.db = mongo.MongoDatabase()
+        self.settings_db = SettingsDatabase()
+        self.introductions_db = IntroductionsDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -52,7 +57,7 @@ class IntroductionCog(commands.Cog):
 
             tracked_users = []
             # get all the users that already have tracked introductions
-            existing_introductions = [int(u['user_id']) for u in self.db.get_user_introductions(guild_id)]
+            existing_introductions = [int(u['user_id']) for u in self.introductions_db.get_user_introductions(guild_id)]
 
             for channel_id in channels:
                 channel = await self.discord_helper.get_or_fetch_channel(channelId=int(channel_id))
@@ -113,7 +118,7 @@ class IntroductionCog(commands.Cog):
 
                     # add the user to the tracked users list
                     tracked_users.append(message.author.id)
-                    self.db.track_user_introduction(
+                    self.tracking_db.track_user_introduction(
                         guild_id=guild_id,
                         user_id=message.author.id,
                         channel_id=channel.id,
@@ -122,7 +127,7 @@ class IntroductionCog(commands.Cog):
                     )
 
             # set the was_imported flag to true
-            self.db.set_setting(guildId=guild_id, name=self.SETTINGS_SECTION, key="was_imported", value=True)
+            self.settings_db.set_setting(guildId=guild_id, name=self.SETTINGS_SECTION, key="was_imported", value=True)
 
             await self.messaging.send_embed(
                 channel=ctx.channel,
@@ -164,7 +169,7 @@ class IntroductionCog(commands.Cog):
                 return
 
             # is this user already tracked?
-            tracked_user = self.db.get_user_introduction(guild_id, message.author.id)
+            tracked_user = self.introductions_db.get_user_introduction(guild_id, message.author.id)
             if tracked_user:
                 return
 
@@ -189,7 +194,7 @@ class IntroductionCog(commands.Cog):
                 taco_amount=0,
             )
 
-            self.db.track_user_introduction(
+            self.tracking_db.track_user_introduction(
                 guild_id=guild_id,
                 user_id=message.author.id,
                 channel_id=message.channel.id,
@@ -238,7 +243,7 @@ class IntroductionCog(commands.Cog):
             if payload.emoji.name not in approval_emoji:
                 return
 
-            tracked_user = self.db.get_user_introduction(guild_id, message.author.id)
+            tracked_user = self.introductions_db.get_user_introduction(guild_id, message.author.id)
             if tracked_user and tracked_user.get('approved', False):
                 return
 
@@ -252,7 +257,7 @@ class IntroductionCog(commands.Cog):
                 taco_amount=0,
             )
 
-            self.db.track_user_introduction(
+            self.tracking_db.track_user_introduction(
                 guild_id=guild_id,
                 user_id=message.author.id,
                 channel_id=message.channel.id,
@@ -264,13 +269,13 @@ class IntroductionCog(commands.Cog):
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

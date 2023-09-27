@@ -6,8 +6,9 @@ import typing
 import uuid
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, models, mongo, settings, tacotypes
+from bot.cogs.lib import discordhelper, logger, loglevel, models, settings, tacotypes
 from bot.cogs.lib.mongodb.suggestions import SuggestionsDatabase
+from bot.cogs.lib.mongodb.settings import SettingsDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.permissions import Permissions
 from discord.ext import commands
@@ -26,7 +27,7 @@ class Suggestions(commands.Cog):
         self.permissions = Permissions(bot)
         self.SETTINGS_SECTION = "suggestions"
 
-        self.db = mongo.MongoDatabase()
+        self.settings_db = SettingsDatabase()
         self.suggestions_db = SuggestionsDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -43,7 +44,7 @@ class Suggestions(commands.Cog):
             # await self.start_constant_ask()
             for g in self.bot.guilds:
                 guild_id = g.id
-                ss = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+                ss = self.settings.get_settings(guild_id, self.SETTINGS_SECTION)
                 if not ss:
                     # raise exception if there are no suggestion settings
                     self.log.debug(
@@ -67,7 +68,7 @@ class Suggestions(commands.Cog):
                         )
                         ss['channels'].remove(c)
                 if changed:
-                    self.db.add_settings(guild_id, self.SETTINGS_SECTION, ss)
+                    self.settings_db.add_settings(guild_id, self.SETTINGS_SECTION, ss)
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
@@ -77,7 +78,7 @@ class Suggestions(commands.Cog):
         try:
             guild_id = channel.guild.id
 
-            ss = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+            ss = self.settings.get_settings(guild_id, self.SETTINGS_SECTION)
             if not ss:
                 # raise exception if there are no suggestion settings
                 self.log.debug(
@@ -91,7 +92,7 @@ class Suggestions(commands.Cog):
             if tracked_channel and len(tracked_channel) > 0:
                 # if this channel was in the settings, remove it
                 ss['channels'].remove(tracked_channel[0])
-                self.db.add_settings(guild_id, self.SETTINGS_SECTION, ss)
+                self.settings_db.add_settings(guild_id, self.SETTINGS_SECTION, ss)
 
         except Exception as e:
             self.log.error(channel.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -259,7 +260,7 @@ class Suggestions(commands.Cog):
                 return  # ignore bots
 
             if ctx.invoked_subcommand is None:
-                ss = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+                ss = self.settings.get_settings(guild_id, self.SETTINGS_SECTION)
                 if not ss:
                     # raise exception if there are no suggestion settings
                     self.log.debug(
@@ -309,7 +310,7 @@ class Suggestions(commands.Cog):
 
             author = await self.discord_helper.get_or_fetch_user(int(suggestion['author_id']))
 
-            ss = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+            ss = self.settings.get_settings(guild_id, self.SETTINGS_SECTION)
             if not ss:
                 # raise exception if there are no suggestion settings
                 self.log.debug(
@@ -860,13 +861,13 @@ class Suggestions(commands.Cog):
             return None
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

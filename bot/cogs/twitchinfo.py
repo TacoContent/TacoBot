@@ -7,7 +7,8 @@ import typing
 
 import discord
 import requests
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes, utils
+from bot.cogs.lib import discordhelper, logger, loglevel, settings, tacotypes, utils
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.mongodb.twitch import TwitchDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.system_actions import SystemActions
@@ -27,8 +28,8 @@ class TwitchInfo(commands.Cog):
         self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "twitchinfo"
 
-        self.db = mongo.MongoDatabase()
         self.twitch_db = TwitchDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -140,7 +141,7 @@ class TwitchInfo(commands.Cog):
                 )
                 if not twitch_name is None:
                     self.twitch_db.set_user_twitch_info(ctx.author.id, twitch_name.lower().strip())
-                    self.db.track_system_action(
+                    self.tracking_db.track_system_action(
                         guild_id=guild_id,
                         action=SystemActions.LINK_TWITCH_TO_DISCORD,
                         data={"user_id": str(ctx.author.id), "twitch_name": twitch_name.lower()},
@@ -179,7 +180,7 @@ class TwitchInfo(commands.Cog):
             if twitch_name is not None and user is not None:
                 twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
                 self.twitch_db.set_user_twitch_info(user.id, twitch_name)
-                self.db.track_system_action(
+                self.tracking_db.track_system_action(
                     guild_id=guild_id,
                     action=SystemActions.LINK_TWITCH_TO_DISCORD,
                     data={"user_id": str(user.id), "twitch_name": twitch_name.lower()},
@@ -247,7 +248,7 @@ class TwitchInfo(commands.Cog):
                     )
 
                 self.twitch_db.set_user_twitch_info(ctx.author.id, twitch_name)
-                self.db.track_system_action(
+                self.tracking_db.track_system_action(
                     guild_id=guild_id,
                     action=SystemActions.LINK_TWITCH_TO_DISCORD,
                     data={"user_id": str(ctx.author.id), "twitch_name": twitch_name.lower()},
@@ -267,7 +268,7 @@ class TwitchInfo(commands.Cog):
             await self.messaging.notify_of_error(ctx)
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

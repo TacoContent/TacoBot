@@ -4,7 +4,7 @@ import os
 import traceback
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from bot.cogs.lib import discordhelper, logger, loglevel, settings, tacotypes
 from bot.cogs.lib.mongodb.mentalmondays import MentalMondaysDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.permissions import Permissions
@@ -24,7 +24,6 @@ class MentalMondays(commands.Cog):
         self.permissions = Permissions(bot)
         self.SETTINGS_SECTION = "mentalmondays"
         self.SELF_DESTRUCT_TIMEOUT = 30
-        self.db = mongo.MongoDatabase()
         self.mentalmondays_db = MentalMondaysDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -425,13 +424,13 @@ class MentalMondays(commands.Cog):
                 await self.messaging.notify_of_error(ctx)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

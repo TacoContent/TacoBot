@@ -3,7 +3,7 @@ import os
 import typing
 
 import discord
-from bot.cogs.lib import logger, loglevel, mongo, settings, utils
+from bot.cogs.lib import logger, loglevel, settings, utils
 
 
 class Messaging:
@@ -13,7 +13,7 @@ class Messaging:
         self._module = os.path.basename(__file__)[:-3]
         self.settings = settings.Settings()
         self.bot = bot
-        self.db = mongo.MongoDatabase()
+
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG

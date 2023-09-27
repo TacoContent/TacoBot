@@ -8,7 +8,7 @@ import traceback
 
 import discord
 import requests
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
+from bot.cogs.lib import discordhelper, logger, loglevel, settings
 from bot.cogs.lib.mongodb.minecraft import MinecraftDatabase
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
@@ -27,7 +27,6 @@ class Minecraft(commands.Cog):
         self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "minecraft"
         self.SELF_DESTRUCT_TIMEOUT = 30
-        self.db = mongo.MongoDatabase()
         self.minecraft_db = MinecraftDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -491,7 +490,7 @@ class Minecraft(commands.Cog):
 
             # if correct, add to whitelist
             # check if user is in the whitelist
-            # minecraft_user = self.db.get_minecraft_user(ctx.author.id)
+            # minecraft_user = self.minecraft_db.get_minecraft_user(ctx.author.id)
             self.minecraft_db.whitelist_minecraft_user(
                 guildId=guild_id, userId=ctx.author.id, username=mc_username, uuid=mc_uuid, whitelist=True
             )
@@ -522,13 +521,13 @@ class Minecraft(commands.Cog):
         return True
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

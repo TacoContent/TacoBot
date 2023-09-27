@@ -3,7 +3,8 @@ import os
 import re
 import traceback
 
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from bot.cogs.lib import discordhelper, logger, loglevel, settings, tacotypes
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 
 
@@ -17,7 +18,7 @@ class PhotoPost(commands.Cog):
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.SETTINGS_SECTION = "photo_post"
-        self.db = mongo.MongoDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -99,7 +100,7 @@ class PhotoPost(commands.Cog):
 
             # track the message in the database
             image_url = message.attachments[0].url if message.attachments else matches.group(0) if matches else None
-            self.db.track_photo_post(
+            self.tracking_db.track_photo_post(
                 guildId=guild_id,
                 userId=message.author.id,
                 messageId=message.id,
@@ -114,13 +115,13 @@ class PhotoPost(commands.Cog):
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

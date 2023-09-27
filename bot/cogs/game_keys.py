@@ -5,7 +5,8 @@ import traceback
 import typing
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes, utils
+from bot.cogs.lib import discordhelper, logger, loglevel, settings, tacotypes, utils
+from bot.cogs.lib.mongodb.gamekeys import GameKeysDatabase
 from bot.cogs.lib.mongodb.tacos import TacosDatabase
 from bot.cogs.lib.GameRewardView import GameRewardView
 from bot.cogs.lib.messaging import Messaging
@@ -23,8 +24,8 @@ class GameKeys(commands.Cog):
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "game_keys"
-        self.db = mongo.MongoDatabase()
         self.tacos_db = TacosDatabase()
+        self.gamekeys_db = GameKeysDatabase()
 
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -105,7 +106,7 @@ class GameKeys(commands.Cog):
                 )
                 return
 
-            game_data = self.db.get_random_game_key_data(guild_id=guild_id)
+            game_data = self.gamekeys_db.get_random_game_key_data(guild_id=guild_id)
             if not game_data:
                 await reward_channel.send(
                     self.settings.get_string(guild_id, "game_key_no_keys_found_message"), delete_after=10
@@ -176,7 +177,7 @@ class GameKeys(commands.Cog):
             )
 
             # record offer
-            self.db.open_game_key_offer(game_data["id"], guild_id, offer_message.id, ctx.channel.id)
+            self.gamekeys_db.open_game_key_offer(game_data["id"], guild_id, offer_message.id, ctx.channel.id)
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -264,7 +265,7 @@ class GameKeys(commands.Cog):
                 )
                 return
 
-            offer = self.db.find_open_game_key_offer(guild_id, reward_channel.id)
+            offer = self.gamekeys_db.find_open_game_key_offer(guild_id, reward_channel.id)
             if offer:
                 try:
                     offer_message = await reward_channel.fetch_message(int(offer["message_id"]))
@@ -281,7 +282,7 @@ class GameKeys(commands.Cog):
                     )
                     pass
 
-                self.db.close_game_key_offer_by_message(guild_id, int(offer["message_id"]))
+                self.gamekeys_db.close_game_key_offer_by_message(guild_id, int(offer["message_id"]))
 
             else:
                 self.log.debug(
@@ -327,7 +328,7 @@ class GameKeys(commands.Cog):
                 f"Claiming offer {game_id} for guild {guild_id} in channel {reward_channel.name}",
             )
 
-            offer = self.db.find_open_game_key_offer(guild_id, reward_channel.id)
+            offer = self.gamekeys_db.find_open_game_key_offer(guild_id, reward_channel.id)
             if not offer:
                 self.log.warn(
                     guild_id,
@@ -337,7 +338,7 @@ class GameKeys(commands.Cog):
                 return False
 
             # get the game data from the offer game_key_id
-            game_data = self.db.get_game_key_data(str(offer["game_key_id"]))
+            game_data = self.gamekeys_db.get_game_key_data(str(offer["game_key_id"]))
             if not game_data:
                 self.log.warn(
                     guild_id,
@@ -455,7 +456,7 @@ class GameKeys(commands.Cog):
                 )
                 return False
             # set the game as claimed
-            self.db.claim_game_key_offer(game_id, ctx.author.id)
+            self.gamekeys_db.claim_game_key_offer(game_id, ctx.author.id)
             # remove the tacos from the user
             self.tacos_db.remove_tacos(guild_id, ctx.author.id, cost)
 
@@ -526,7 +527,7 @@ class GameKeys(commands.Cog):
                 )
                 return
 
-            offer = self.db.find_open_game_key_offer(guild_id=guild_id, channel_id=reward_channel.id)
+            offer = self.gamekeys_db.find_open_game_key_offer(guild_id=guild_id, channel_id=reward_channel.id)
             if offer:
                 # add the view
                 self.log.info(
@@ -611,7 +612,7 @@ class GameKeys(commands.Cog):
                 return
 
             # get the game data to check if the custom_id IS a game id
-            game_data = self.db.get_game_key_data(str(game_id))
+            game_data = self.gamekeys_db.get_game_key_data(str(game_id))
             if not game_data:
                 self.log.debug(
                     interaction.guild.id,
@@ -629,13 +630,13 @@ class GameKeys(commands.Cog):
             )
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

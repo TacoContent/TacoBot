@@ -4,7 +4,10 @@ import math
 import os
 import traceback
 
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, utils
+from bot.cogs.lib import discordhelper, logger, loglevel, settings, utils
+from bot.cogs.lib.mongodb.settings import SettingsDatabase
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
+from bot.cogs.lib.mongodb.whitelist import WhitelistDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.system_actions import SystemActions
 from discord.ext import commands
@@ -22,7 +25,9 @@ class NewAccountCheck(commands.Cog):
         self.messaging = Messaging(self.bot)
         self.SETTINGS_SECTION = "account_age_check"
         self.MINIMUM_ACCOUNT_AGE = 30  # days
-        self.db = mongo.MongoDatabase()
+        self.settings_db = SettingsDatabase()
+        self.tracking_db = TrackingDatabase()
+        self.whitelist_db = WhitelistDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -46,10 +51,10 @@ class NewAccountCheck(commands.Cog):
         try:
             await ctx.message.delete()
 
-            self.db.set_setting(
+            self.settings_db.set_setting(
                 guildId=guild_id, name=self.SETTINGS_SECTION, key="minimum_account_age", value=minimum_age
             )
-            self.db.track_system_action(
+            self.tracking_db.track_system_action(
                 guild_id=guild_id,
                 action=SystemActions.MINIMUM_ACCOUNT_AGE_SET,
                 data={"minimum_account_age": str(minimum_age), "set_by": str(ctx.author.id)},
@@ -73,8 +78,8 @@ class NewAccountCheck(commands.Cog):
         try:
             await ctx.message.delete()
 
-            self.db.add_user_to_join_whitelist(guild_id=guild_id, user_id=user_id, added_by=ctx.author.id)
-            self.db.track_system_action(
+            self.whitelist_db.add_user_to_join_whitelist(guild_id=guild_id, user_id=user_id, added_by=ctx.author.id)
+            self.tracking_db.track_system_action(
                 guild_id=guild_id,
                 action=SystemActions.JOIN_WHITELIST_ADD,
                 data={"user_id": str(user_id), "added_by": str(ctx.author.id)},
@@ -101,8 +106,8 @@ class NewAccountCheck(commands.Cog):
         try:
             await ctx.message.delete()
 
-            self.db.remove_user_from_join_whitelist(guild_id=guild_id, user_id=user_id)
-            self.db.track_system_action(
+            self.whitelist_db.remove_user_from_join_whitelist(guild_id=guild_id, user_id=user_id)
+            self.tracking_db.track_system_action(
                 guild_id=guild_id,
                 action=SystemActions.JOIN_WHITELIST_REMOVE,
                 data={"user_id": str(user_id), "removed_by": str(ctx.author.id)},
@@ -140,7 +145,7 @@ class NewAccountCheck(commands.Cog):
         _method = inspect.stack()[0][3]
         try:
             # check if the member is in the white list
-            whitelist = self.db.get_user_join_whitelist(guild_id=guild_id)
+            whitelist = self.whitelist_db.get_user_join_whitelist(guild_id=guild_id)
 
             # if they are in the whitelist, let them in
             if member.id in [x["user_id"] for x in whitelist]:
@@ -165,7 +170,7 @@ class NewAccountCheck(commands.Cog):
                     f"Member {utils.get_user_display_name(member)} (ID: {member.id}) account age ({age_days} days) is less than {minimum_account_age} days.",
                 )
                 message = f"New Account: account age ({age_days} days) is less than required minimum of {minimum_account_age} days."
-                self.db.track_system_action(
+                self.tracking_db.track_system_action(
                     guild_id=guild_id,
                     action=SystemActions.NEW_ACCOUNT_KICK,
                     data={"user_id": str(member.id), "reason": message, "account_age": age_days},
@@ -191,13 +196,13 @@ class NewAccountCheck(commands.Cog):
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

@@ -4,7 +4,7 @@ import os
 import re
 import traceback
 
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, utils
+from bot.cogs.lib import discordhelper, logger, loglevel, settings, utils
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 
@@ -19,7 +19,6 @@ class Help(commands.Cog):
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
-        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG

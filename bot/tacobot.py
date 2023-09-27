@@ -6,7 +6,7 @@ import typing
 
 import discord
 import discordhealthcheck
-from bot.cogs.lib import logger, loglevel, mongo, settings
+from bot.cogs.lib import logger, loglevel, settings
 from discord.ext import commands
 
 
@@ -28,7 +28,6 @@ class TacoBot(commands.Bot):
         # Note: When using commands.Bot instead of discord.Client, the bot will
         # maintain its own tree instead.
         # self.tree = app_commands.CommandTree(self)
-        self.db = mongo.MongoDatabase()
         self.initDB()
 
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
@@ -80,14 +79,14 @@ class TacoBot(commands.Bot):
             if message.guild:
                 guild_id = message.guild.id
                 # get settings from db
-                settings = self.settings.get_settings(self.db, guild_id, "tacobot")
+                settings = self.settings.get_settings(guild_id, "tacobot")
                 if not settings:
                     raise Exception("No bot settings found")
                 prefixes = settings["command_prefixes"]
 
             elif not message.guild:
                 # get the prefix for the DM using 0 for the guild_id
-                settings = self.settings.get_settings(self.db, 0, "tacobot")
+                settings = self.settings.get_settings(0, "tacobot")
                 if not settings:
                     raise Exception("No bot settings found")
                 prefixes = settings["command_prefixes"]

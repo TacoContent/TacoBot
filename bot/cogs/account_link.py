@@ -4,7 +4,8 @@ import traceback
 import typing
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, utils
+from bot.cogs.lib import discordhelper, logger, loglevel, settings, utils
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.mongodb.twitch import TwitchDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.system_actions import SystemActions
@@ -22,8 +23,8 @@ class AccountLink(commands.Cog):
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
-        self.db = mongo.MongoDatabase()
         self.twitch_db = TwitchDatabase()
+        self.tracking_db = TrackingDatabase()
 
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -46,7 +47,7 @@ class AccountLink(commands.Cog):
         if code:
             try:
                 result = self.twitch_db.link_twitch_to_discord_from_code(ctx.author.id, code)
-                self.db.track_system_action(
+                self.tracking_db.track_system_action(
                     guild_id=guild_id,
                     action=SystemActions.LINK_TWITCH_TO_DISCORD,
                     data={"user_id": str(ctx.author.id), "code": code},
@@ -110,13 +111,13 @@ class AccountLink(commands.Cog):
                 await self.messaging.notify_of_error(ctx)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

@@ -6,7 +6,7 @@ import traceback
 import typing
 
 import discord
-from bot.cogs.lib import logger, loglevel, mongo, settings, tacotypes, utils
+from bot.cogs.lib import logger, loglevel, settings, tacotypes, utils
 from bot.cogs.lib.ChannelSelect import ChannelSelectView
 from bot.cogs.lib.mongodb.tacos import TacosDatabase
 from bot.cogs.lib.messaging import Messaging
@@ -23,7 +23,7 @@ class DiscordHelper:
         self._module = os.path.basename(__file__)[:-3]
         self.settings = settings.Settings()
         self.bot = bot
-        self.db = mongo.MongoDatabase()
+
         self.tacos_db = TacosDatabase()
         self.messaging = Messaging(bot=self.bot)
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
@@ -825,7 +825,7 @@ class DiscordHelper:
         )
 
     def _get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
