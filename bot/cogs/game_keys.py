@@ -6,6 +6,7 @@ import typing
 
 import discord
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes, utils
+from bot.cogs.lib.mongodb.tacos import TacosDatabase
 from bot.cogs.lib.GameRewardView import GameRewardView
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
@@ -23,6 +24,7 @@ class GameKeys(commands.Cog):
         self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "game_keys"
         self.db = mongo.MongoDatabase()
+        self.tacos_db = TacosDatabase()
 
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -356,7 +358,7 @@ class GameKeys(commands.Cog):
                 tacos_word = self.settings.get_string(guild_id, "taco_plural")
 
             # does the user have enough tacos?
-            taco_count: int = self.db.get_tacos_count(guild_id, ctx.author.id)
+            taco_count: int = self.tacos_db.get_tacos_count(guild_id, ctx.author.id)
             if taco_count < cost:
                 await ctx.channel.send(
                     self.settings.get_string(
@@ -455,9 +457,9 @@ class GameKeys(commands.Cog):
             # set the game as claimed
             self.db.claim_game_key_offer(game_id, ctx.author.id)
             # remove the tacos from the user
-            self.db.remove_tacos(guild_id, ctx.author.id, cost)
+            self.tacos_db.remove_tacos(guild_id, ctx.author.id, cost)
 
-            self.db.track_tacos_log(
+            self.tacos_db.track_tacos_log(
                 guildId=guild_id,
                 fromUserId=ctx.author.id,
                 toUserId=self.bot.user.id,

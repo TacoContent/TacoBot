@@ -5,6 +5,7 @@ import typing
 
 import discord
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from bot.cogs.lib.mongodb.tacos import TacosDatabase
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 
@@ -22,6 +23,7 @@ class Tacos(commands.Cog):
         self.SETTINGS_SECTION = "tacos"
         self.SELF_DESTRUCT_TIMEOUT = 30
         self.db = mongo.MongoDatabase()
+        self.tacos_db = TacosDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -58,7 +60,7 @@ class Tacos(commands.Cog):
         try:
             guild_id = ctx.guild.id
             await ctx.message.delete()
-            self.db.remove_all_tacos(guild_id, user.id)
+            self.tacos_db.remove_all_tacos(guild_id, user.id)
             reason_msg = reason if reason else "No reason given."
             await self.messaging.send_embed(
                 channel=ctx.channel,
@@ -136,7 +138,7 @@ class Tacos(commands.Cog):
                 guild_id = ctx.guild.id
                 await ctx.message.delete()
             # get taco count for message author
-            taco_count = self.db.get_tacos_count(guild_id, ctx.author.id)
+            taco_count = self.tacos_db.get_tacos_count(guild_id, ctx.author.id)
             tacos_word = self.settings.get_string(guild_id, "taco_singular")
             if taco_count is None:
                 taco_count = 0
@@ -181,7 +183,7 @@ class Tacos(commands.Cog):
             max_gift_tacos: int = taco_settings.get("max_gift_tacos", 10)
             max_gift_taco_timespan = taco_settings.get("max_gift_taco_timespan", 86400)
             # get the total number of tacos the user has gifted in the last 24 hours
-            total_gifted: int = self.db.get_total_gifted_tacos(ctx.guild.id, ctx.author.id, max_gift_taco_timespan)
+            total_gifted: int = self.tacos_db.get_total_gifted_tacos(ctx.guild.id, ctx.author.id, max_gift_taco_timespan)
             remaining_gifts = max_gift_tacos - total_gifted
 
             tacos_word = self.settings.get_string(guild_id, "taco_plural")
@@ -220,7 +222,7 @@ class Tacos(commands.Cog):
             if reason:
                 reason_msg = f"{reason}"
 
-            self.db.add_taco_gift(ctx.guild.id, ctx.author.id, amount)
+            self.tacos_db.add_taco_gift(ctx.guild.id, ctx.author.id, amount)
             await self.messaging.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_gift_title"),
@@ -330,7 +332,7 @@ class Tacos(commands.Cog):
                 if message.author.bot or message.author.id == user.id:
                     return
 
-                has_reacted = self.db.get_taco_reaction(guild_id, user.id, channel.id, message.id)
+                has_reacted = self.tacos_db.get_taco_reaction(guild_id, user.id, channel.id, message.id)
                 if has_reacted:
                     return
 
@@ -347,11 +349,11 @@ class Tacos(commands.Cog):
                 max_gift_tacos = taco_settings.get("max_gift_tacos", 10)
                 max_gift_taco_timespan = taco_settings.get("max_gift_taco_timespan", 86400)
                 # get the total number of tacos the user has gifted in the last 24 hours
-                total_gifted = self.db.get_total_gifted_tacos(guild_id, user.id, max_gift_taco_timespan)
+                total_gifted = self.tacos_db.get_total_gifted_tacos(guild_id, user.id, max_gift_taco_timespan)
                 # log the total number of tacos the user has gifted
                 remaining_gifts = max_gift_tacos - total_gifted
                 # track the user's taco reaction
-                self.db.add_taco_reaction(guild_id, user.id, channel.id, message.id)
+                self.tacos_db.add_taco_reaction(guild_id, user.id, channel.id, message.id)
                 # # give the user the reaction reward tacos
                 await self.discord_helper.taco_give_user(
                     guild_id,
@@ -363,7 +365,7 @@ class Tacos(commands.Cog):
 
                 if reaction_count <= remaining_gifts:
                     # track that the user has gifted tacos via reactions
-                    self.db.add_taco_gift(guild_id, user.id, reaction_count)
+                    self.tacos_db.add_taco_gift(guild_id, user.id, reaction_count)
                     # give taco giver tacos too
                     await self.discord_helper.taco_give_user(
                         guild_id,

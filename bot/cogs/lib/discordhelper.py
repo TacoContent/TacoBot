@@ -8,6 +8,7 @@ import typing
 import discord
 from bot.cogs.lib import logger, loglevel, mongo, settings, tacotypes, utils
 from bot.cogs.lib.ChannelSelect import ChannelSelectView
+from bot.cogs.lib.mongodb.tacos import TacosDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.models import TextWithAttachments
 from bot.cogs.lib.RoleSelectView import RoleSelect, RoleSelectView
@@ -23,6 +24,7 @@ class DiscordHelper:
         self.settings = settings.Settings()
         self.bot = bot
         self.db = mongo.MongoDatabase()
+        self.tacos_db = TacosDatabase()
         self.messaging = Messaging(bot=self.bot)
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -205,7 +207,7 @@ class DiscordHelper:
 
             reason_msg = reason if reason else self.settings.get_string(guildId, "no_reason")
 
-            total_taco_count = self.db.add_tacos(guildId, toUser.id, taco_count)
+            total_taco_count = self.tacos_db.add_tacos(guildId, toUser.id, taco_count)
             await self.tacos_log(
                 guild_id=guildId,
                 toMember=toUser,
@@ -215,7 +217,7 @@ class DiscordHelper:
                 reason=reason_msg,
             )
 
-            self.db.track_tacos_log(
+            self.tacos_db.track_tacos_log(
                 guildId=guildId,
                 toUserId=toUser.id,
                 fromUserId=fromUser.id,
@@ -251,7 +253,7 @@ class DiscordHelper:
                         guild_id, "tacos_purged_log", touser=toMember.name, fromuser=fromMember.name, reason=reason
                     )
                 )
-            self.db.track_tacos_log(
+            self.tacos_db.track_tacos_log(
                 guildId=guild_id,
                 toUserId=toMember.id,
                 fromUserId=fromMember.id,

@@ -42,29 +42,6 @@ class Database:
     def get_user_twitch_info(self, userId: int):
         pass
 
-    def add_tacos(self, guildId: int, userId: int, count: int):
-        pass
-
-    def remove_tacos(self, guildId: int, userId: int, count: int):
-        pass
-
-    def get_tacos_count(self, guildId: int, userId: int) -> typing.Union[int, None]:
-        pass
-
-    def get_total_gifted_tacos(
-        self, guildId: int, userId: int, timespan_seconds: int = 86400
-    ) -> typing.Union[int, None]:
-        pass
-
-    def add_taco_gift(self, guildId: int, userId: int, count: int):
-        pass
-
-    def add_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int):
-        pass
-
-    def get_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int):
-        pass
-
     def add_settings(self, guildId: int, name: str, settings: dict):
         pass
 
