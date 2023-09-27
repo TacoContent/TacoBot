@@ -15,14 +15,18 @@ class TQOTDDatabase(Database):
         self._class = self.__class__.__name__
         pass
 
+    def _get_timestamp(self) -> float:
+        date = datetime.datetime.utcnow().date()
+        ts_date = datetime.datetime.combine(date, datetime.time.min)
+        timestamp = utils.to_timestamp(ts_date)
+        return timestamp
+
     def save_tqotd(self, guildId: int, question: str, author: int) -> None:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow().date()
-            ts_date = datetime.datetime.combine(date, datetime.time.min)
-            timestamp = utils.to_timestamp(ts_date)
+            timestamp = self._get_timestamp()
             payload = {
                 "guild_id": str(guildId),
                 "question": question,
@@ -47,9 +51,7 @@ class TQOTDDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow().date()
-            ts_date = datetime.datetime.combine(date, datetime.time.min)
-            timestamp = utils.to_timestamp(ts_date)
+            timestamp = self._get_timestamp()
             ts_track = utils.to_timestamp(datetime.datetime.utcnow())
             result = self.connection.tqotd.find_one({"guild_id": str(guildId), "timestamp": timestamp})
 
@@ -64,7 +66,7 @@ class TQOTDDatabase(Database):
                     upsert=True,
                 )
             else:
-                date = date - datetime.timedelta(days=1)
+                date = datetime.datetime.utcnow().date() - datetime.timedelta(days=1)
                 ts_date = datetime.datetime.combine(date, datetime.time.min)
                 timestamp = utils.to_timestamp(ts_date)
                 result = self.connection.tqotd.find_one({"guild_id": str(guildId), "timestamp": timestamp})
@@ -95,9 +97,7 @@ class TQOTDDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow().date()
-            ts_date = datetime.datetime.combine(date, datetime.time.min)
-            timestamp = utils.to_timestamp(ts_date)
+            timestamp = self._get_timestamp()
             result = self.connection.tqotd.find_one({"guild_id": str(guildId), "timestamp": timestamp})
             if result:
                 for answer in result["answered"]:
@@ -105,7 +105,7 @@ class TQOTDDatabase(Database):
                         return True
                 return False
             else:
-                date = date - datetime.timedelta(days=1)
+                date = datetime.datetime.utcnow().date() - datetime.timedelta(days=1)
                 ts_date = datetime.datetime.combine(date, datetime.time.min)
                 timestamp = utils.to_timestamp(ts_date)
                 result = self.connection.tqotd.find_one({"guild_id": str(guildId), "timestamp": timestamp})

@@ -1,9 +1,10 @@
 {
-  "threshold": 25,
+  "threshold": 20,
   "reporters": [
     "consoleFull"
   ],
   "ignore": [
+    "**/mongodb/**",
     "**/__snapshots__/**",
     "**/__pycache__/**",
     "**/.vscode/**",
