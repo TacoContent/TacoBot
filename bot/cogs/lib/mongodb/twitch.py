@@ -167,3 +167,22 @@ class TwitchDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             raise ex
+
+    def _get_twitch_name(self, userId: int) -> typing.Union[str, None]:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            result = self.connection.twitch_names.find_one({"user_id": str(userId)})
+            if result:
+                return result["twitch_name"]
+            return None
+        except Exception as ex:
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None

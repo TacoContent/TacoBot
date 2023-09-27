@@ -188,24 +188,6 @@ class MongoDatabase(database.Database):
                 stackTrace=traceback.format_exc(),
             )
 
-    def _get_twitch_name(self, userId: int) -> typing.Union[str, None]:
-        _method = inspect.stack()[0][3]
-        try:
-            if self.connection is None or self.client is None:
-                self.open()
-            result = self.connection.twitch_names.find_one({"user_id": str(userId)})
-            if result:
-                return result["twitch_name"]
-            return None
-        except Exception as ex:
-            self.log(
-                guildId=0,
-                level=loglevel.LogLevel.ERROR,
-                method=f"{self._module}.{self._class}.{_method}",
-                message=f"{ex}",
-                stackTrace=traceback.format_exc(),
-            )
-            return None
 
     def find_open_game_key_offer(self, guild_id: int, channel_id: int) -> typing.Optional[dict]:
         _method = inspect.stack()[0][3]
