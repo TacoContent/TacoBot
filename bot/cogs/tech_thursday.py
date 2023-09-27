@@ -5,6 +5,7 @@ import traceback
 
 import discord
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from bot.cogs.lib.mongodb.techthurs import TechThursDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.permissions import Permissions
 from discord.ext import commands
@@ -24,6 +25,7 @@ class TechThursdays(commands.Cog):
         self.SETTINGS_SECTION = "techthurs"
         self.SELF_DESTRUCT_TIMEOUT = 30
         self.db = mongo.MongoDatabase()
+        self.techthurs_db = TechThursDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -125,7 +127,7 @@ class TechThursdays(commands.Cog):
             )
 
             # save the techthurs to the database
-            self.db.save_techthurs(
+            self.techthurs_db.save_techthurs(
                 guildId=guild_id,
                 message=twa.text,
                 image=twa.attachments[0].url,
@@ -227,7 +229,7 @@ class TechThursdays(commands.Cog):
             )
             return
 
-        already_tracked = self.db.techthurs_user_message_tracked(guild_id, message_author.id, message.id)
+        already_tracked = self.techthurs_db.techthurs_user_message_tracked(guild_id, message_author.id, message.id)
         if not already_tracked:
             # log that we are giving tacos for this reaction
             self.log.info(
@@ -335,7 +337,7 @@ class TechThursdays(commands.Cog):
             f"{self._module}.{self._class}.{_method}",
             f"Importing techthurs message {message_id} from channel {channel_id} in guild {guild_id} for user {message_author.id} with text {text} and image {image_url}",
         )
-        self.db.save_techthurs(
+        self.techthurs_db.save_techthurs(
             guildId=guild_id,
             message=text or "",
             image=image_url,
@@ -376,7 +378,7 @@ class TechThursdays(commands.Cog):
             )
 
             # track that the user answered the question.
-            self.db.track_techthurs_answer(guild_id, member.id, message_id)
+            self.techthurs_db.track_techthurs_answer(guild_id, member.id, message_id)
 
             tacos_settings = self.get_tacos_settings(guild_id)
             amount = tacos_settings.get("tech_thursday_count", 5)

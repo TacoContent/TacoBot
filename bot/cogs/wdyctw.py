@@ -5,6 +5,7 @@ import traceback
 
 import discord
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from bot.cogs.lib.mongodb.wdyctw import WDYCTWDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.permissions import Permissions
 from discord.ext import commands
@@ -25,6 +26,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
         self.SETTINGS_SECTION = "wdyctw"
         self.SELF_DESTRUCT_TIMEOUT = 30
         self.db = mongo.MongoDatabase()
+        self.wdyctw_db = WDYCTWDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -121,7 +123,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             )
 
             # save the WDYCTW to the database
-            self.db.save_wdyctw(
+            self.wdyctw_db.save_wdyctw(
                 guildId=guild_id,
                 message=twa.text,
                 image=twa.attachments[0].url,
@@ -209,7 +211,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             )
             return
 
-        already_tracked = self.db.wdyctw_user_message_tracked(guild_id, message_author.id, message.id)
+        already_tracked = self.wdyctw_db.wdyctw_user_message_tracked(guild_id, message_author.id, message.id)
         if not already_tracked:
             # log that we are giving tacos for this reaction
             self.log.info(
@@ -321,7 +323,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             f"{self._module}.{self._class}.{_method}",
             f"Importing WDYCTW message {message_id} from channel {channel_id} in guild {guild_id} for user {message_author.id} with text {text} and image {image_url}",
         )
-        self.db.save_wdyctw(
+        self.wdyctw_db.save_wdyctw(
             guildId=guild_id,
             message=text or "",
             image=image_url,
@@ -362,7 +364,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             )
 
             # track that the user answered the question.
-            self.db.track_wdyctw_answer(guild_id, member.id, message_id)
+            self.wdyctw_db.track_wdyctw_answer(guild_id, member.id, message_id)
 
             tacos_settings = self.get_tacos_settings(guild_id)
 

@@ -5,6 +5,7 @@ import traceback
 
 import discord
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from bot.cogs.lib.mongodb.mentalmondays import MentalMondaysDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.permissions import Permissions
 from discord.ext import commands
@@ -24,6 +25,7 @@ class MentalMondays(commands.Cog):
         self.SETTINGS_SECTION = "mentalmondays"
         self.SELF_DESTRUCT_TIMEOUT = 30
         self.db = mongo.MongoDatabase()
+        self.mentalmondays_db = MentalMondaysDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -127,7 +129,7 @@ class MentalMondays(commands.Cog):
             )
 
             # save the mentalmondays to the database
-            self.db.save_mentalmondays(
+            self.mentalmondays_db.save_mentalmondays(
                 guildId=guild_id,
                 message=twa.text,
                 image=twa.attachments[0].url,
@@ -221,7 +223,7 @@ class MentalMondays(commands.Cog):
             )
             return
 
-        already_tracked = self.db.mentalmondays_user_message_tracked(guild_id, message_author.id, message.id)
+        already_tracked = self.mentalmondays_db.mentalmondays_user_message_tracked(guild_id, message_author.id, message.id)
         if not already_tracked:
             # log that we are giving tacos for this reaction
             self.log.info(
@@ -334,7 +336,7 @@ class MentalMondays(commands.Cog):
             "mentalmondays._import_mentalmondays",
             f"Importing mentalmondays message {message_id} from channel {channel_id} in guild {guild_id} for user {message_author.id} with text {text} and image {image_url}",
         )
-        self.db.save_mentalmondays(
+        self.mentalmondays_db.save_mentalmondays(
             guildId=guild_id,
             message=text or "",
             image=image_url,
@@ -385,7 +387,7 @@ class MentalMondays(commands.Cog):
             )
 
             # track that the user answered the question.
-            self.db.track_mentalmondays_answer(guild_id, member.id, message_id)
+            self.mentalmondays_db.track_mentalmondays_answer(guild_id, member.id, message_id)
 
             tacos_settings = self.get_tacos_settings(guild_id)
             amount = tacos_settings.get("mentalmondays_count", 5)

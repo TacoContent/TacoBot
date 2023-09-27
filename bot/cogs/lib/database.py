@@ -25,53 +25,6 @@ class Database:
     def get_settings(self, guildId: int, name: str):
         pass
 
-    def save_wdyctw(self, guildId: int, message: str, image: str, author: int):
-        pass
-
-    def save_techthurs(self, guildId: int, message: str, image: str, author: int):
-        pass
-
-    def save_mentalmondays(self, guildId: int, message: str, image: str, author: int):
-        pass
-
-    def track_wdyctw_answer(self, guildId: int, userId: int):
-        pass
-
-    def wdyctw_user_message_tracked(self, guildId: int, userId: int, messageId: int):
-        pass
-
-    def track_techthurs_answer(self, guildId: int, userId: int):
-        pass
-
-    def techthurs_user_message_tracked(self, guildId: int, userId: int, messageId: int):
-        pass
-
-    def track_mentalmondays_answer(self, guildId: int, userId: int):
-        pass
-
-    def mentalmondays_user_message_tracked(self, guildId: int, userId: int, messageId: int):
-        pass
-
-    def save_taco_tuesday(self, guildId: int, message: str, image: str, author: int):
-        pass
-
-    def track_taco_tuesday(self, guildId: int, userId: int):
-        pass
-
-    def taco_tuesday_user_tracked(self, guildId: int, userId: int, messageId: int):
-        pass
-
-    def taco_tuesday_set_user(self, guildId: int, userId: int):
-        pass
-
-    def taco_tuesday_get_by_message(self, guildId: int, channelId: int, messageId: int):
-        pass
-
-    def taco_tuesday_update_message(
-        self, guildId: int, channelId: int, messageId: int, newChannelId: int, newMessageId: int
-    ) -> None:
-        pass
-
     def track_first_message(self, guildId: int, userId: int, channelId: int, messageId: int):
         pass
 

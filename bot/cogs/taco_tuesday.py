@@ -7,6 +7,7 @@ import typing
 
 import discord
 from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes, utils
+from bot.cogs.lib.mongodb.tacotuesdays import TacoTuesdaysDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.permissions import Permissions
 from discord.ext import commands
@@ -26,6 +27,7 @@ class TacoTuesday(commands.Cog):
         self.SETTINGS_SECTION = "tacotuesday"
         self.SELF_DESTRUCT_TIMEOUT = 30
         self.db = mongo.MongoDatabase()
+        self.tacotuesdays_db = TacoTuesdaysDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -278,7 +280,7 @@ class TacoTuesday(commands.Cog):
                 return
 
             # get taco tuesday info
-            taco_tuesday_info = self.db.taco_tuesday_get_by_message(
+            taco_tuesday_info = self.tacotuesdays_db.taco_tuesday_get_by_message(
                 guildId=guild_id, channelId=message.channel.id, messageId=message.id
             )
             if taco_tuesday_info:
@@ -320,7 +322,7 @@ class TacoTuesday(commands.Cog):
             )
 
             # Should Update the entry to the new channel and message id
-            self.db.taco_tuesday_update_message(
+            self.tacotuesdays_db.taco_tuesday_update_message(
                 guildId=guild_id,
                 channelId=message.channel.id,
                 messageId=message.id,
@@ -349,7 +351,7 @@ class TacoTuesday(commands.Cog):
 
         guild_id = ctx.guild.id
         cog_settings = self.get_cog_settings(guild_id)
-        self.db.taco_tuesday_set_user(guild_id, member.id)
+        self.tacotuesdays_db.taco_tuesday_set_user(guild_id, member.id)
 
         # get focus role id
         focus_role_id = cog_settings.get("focus_role", None)
@@ -398,7 +400,7 @@ class TacoTuesday(commands.Cog):
             f"{self._module}.{self._class}.{_method}",
             f"Importing TACO Tuesday message {message_id} from channel {channel_id} in guild {guild_id} for user {message_author.id} with text {text} and image {image_url}",
         )
-        self.db.save_taco_tuesday(
+        self.tacotuesdays_db.save_taco_tuesday(
             guildId=guild_id,
             message=text or "",
             image=image_url or "",
@@ -438,7 +440,7 @@ class TacoTuesday(commands.Cog):
             )
 
             # track that the user answered the question.
-            self.db.track_taco_tuesday(guild_id, member.id)
+            self.tacotuesdays_db.track_taco_tuesday(guild_id, member.id)
 
             tacos_settings = self.get_tacos_settings(guild_id)
             amount = tacos_settings.get("taco_tuesday_count", 250)
