@@ -4,7 +4,8 @@ import typing
 
 import discord
 from bot import tacobot  # pylint: disable=no-name-in-module
-from bot.cogs.lib import discordhelper, logger, loglevel, settings
+from bot.cogs.lib import discordhelper, logger, settings
+from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 from discord.ext.commands import Context, Greedy

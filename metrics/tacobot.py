@@ -3,9 +3,10 @@ import os
 import time
 import traceback
 
-from bot.cogs.lib import logger, loglevel
+from bot.cogs.lib import logger
+from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.utils import dict_get
-from metrics.lib.mongo import MongoDatabase
+from bot.cogs.lib.mongodb.metrics import MetricsDatabase
 from prometheus_client import Gauge
 
 
@@ -32,7 +33,7 @@ class TacoBotMetrics:
 
         # merge labels and config labels
         # labels = labels + [x['name'] for x in self.config.labels]
-        self.db = MongoDatabase()
+        self.db = MetricsDatabase()
 
         self.sum_tacos = Gauge(
             namespace=self.namespace,

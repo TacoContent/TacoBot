@@ -3,8 +3,8 @@ import os
 import traceback
 import typing
 
-from bot.cogs.lib import loglevel
-from bot.cogs.lib.minecraft_op import MinecraftOpLevel
+from bot.cogs.lib.enums import loglevel
+from bot.cogs.lib.enums.minecraft_op import MinecraftOpLevel
 from bot.cogs.lib.mongodb.database import Database
 
 

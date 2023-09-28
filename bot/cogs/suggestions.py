@@ -6,8 +6,10 @@ import typing
 import uuid
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, models, settings, tacotypes
+from bot.cogs.lib import discordhelper, logger, models, settings
+from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.mongodb.suggestions import SuggestionsDatabase
+from bot.cogs.lib.models.suggestionstates import SuggestionStates
 from bot.cogs.lib.mongodb.settings import SettingsDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.permissions import Permissions
@@ -390,7 +392,7 @@ class Suggestions(commands.Cog):
                 pass
             # if the user reacted with an admin emoji and they are an admin
             elif str(payload.emoji) in admin_emoji and await self.permissions.is_admin(user.id, guild_id):
-                states = models.SuggestionStates()
+                states = SuggestionStates()
                 # change the state based on the emoji
                 if str(payload.emoji) == channel_settings["admin_approve_emoji"]:
                     self.log.debug(
@@ -659,7 +661,7 @@ class Suggestions(commands.Cog):
                 else:
                     self.suggestions_db.unvote_suggestion_by_id(guild_id, suggestion['id'], user.id)
             elif str(payload.emoji) in admin_emoji and await self.permissions.is_admin(user.id, guild_id):
-                states = models.SuggestionStates()
+                states = SuggestionStates()
 
                 # admin removed reaction. do we need to set the state back to Active?
                 self.log.debug(
@@ -838,7 +840,7 @@ class Suggestions(commands.Cog):
 
     def get_color_for_state(self, state: str) -> typing.Union[int, None]:
         _method = inspect.stack()[0][3]
-        states = models.SuggestionStates()
+        states = SuggestionStates()
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"The state is {state}")
         if state == states.APPROVED:

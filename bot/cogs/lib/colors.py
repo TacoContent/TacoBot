@@ -1,4 +1,4 @@
-from bot.cogs.lib import loglevel
+from bot.cogs.lib.enums import loglevel
 
 
 class Colors:

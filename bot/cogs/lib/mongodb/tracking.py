@@ -5,11 +5,12 @@ import traceback
 import typing
 
 import discord
-from bot.cogs.lib import loglevel, utils
-from bot.cogs.lib.member_status import MemberStatus
-from bot.cogs.lib.models import TriviaQuestion
+from bot.cogs.lib import utils
+from bot.cogs.lib.enums import loglevel
+from bot.cogs.lib.enums.member_status import MemberStatus
+from bot.cogs.lib.models.triviaquestion import TriviaQuestion
 from bot.cogs.lib.mongodb.database import Database
-from bot.cogs.lib.system_actions import SystemActions
+from bot.cogs.lib.enums.system_actions import SystemActions
 
 
 class TrackingDatabase(Database):

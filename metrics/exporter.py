@@ -3,7 +3,7 @@ import os
 
 from metrics.config import TacoBotMetricsConfig
 from bot.cogs.lib.logger import Log
-from bot.cogs.lib.loglevel import LogLevel
+from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.utils import dict_get
 from metrics.tacobot import TacoBotMetrics
 from prometheus_client import start_http_server

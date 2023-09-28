@@ -2,8 +2,10 @@ import inspect
 import os
 import traceback
 
-from bot.cogs.lib import logger, loglevel, settings
+from bot.cogs.lib import logger, settings
 from pymongo import MongoClient
+
+from bot.cogs.lib.enums import loglevel
 
 
 class MigrationBase:

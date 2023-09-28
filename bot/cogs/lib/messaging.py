@@ -3,7 +3,8 @@ import os
 import typing
 
 import discord
-from bot.cogs.lib import logger, loglevel, settings, utils
+from bot.cogs.lib import logger, settings, utils
+from bot.cogs.lib.enums import loglevel
 
 
 class Messaging:

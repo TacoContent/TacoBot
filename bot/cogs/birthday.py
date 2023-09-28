@@ -7,7 +7,8 @@ import typing
 from random import random
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, settings, tacotypes
+from bot.cogs.lib import discordhelper, logger, settings
+from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.mongodb.birthdays import BirthdaysDatabase
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands

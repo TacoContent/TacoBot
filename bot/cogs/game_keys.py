@@ -5,7 +5,8 @@ import traceback
 import typing
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, settings, tacotypes, utils
+from bot.cogs.lib import discordhelper, logger, settings, utils
+from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.mongodb.gamekeys import GameKeysDatabase
 from bot.cogs.lib.mongodb.tacos import TacosDatabase
 from bot.cogs.lib.GameRewardView import GameRewardView

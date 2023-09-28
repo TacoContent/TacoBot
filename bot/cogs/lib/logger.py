@@ -1,7 +1,7 @@
 import sys
 import typing
 
-from bot.cogs.lib import loglevel
+from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.mongodb.logs import LogsDatabase
 from bot.cogs.lib.colors import Colors
 

@@ -4,11 +4,12 @@ import traceback
 import typing
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, settings, utils
+from bot.cogs.lib import discordhelper, logger, settings, utils
+from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.mongodb.twitch import TwitchDatabase
 from bot.cogs.lib.messaging import Messaging
-from bot.cogs.lib.system_actions import SystemActions
+from bot.cogs.lib.enums.system_actions import SystemActions
 from discord.ext import commands
 
 

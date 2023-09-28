@@ -4,7 +4,8 @@ import os
 import traceback
 import typing
 
-from bot.cogs.lib import loglevel, settings, utils
+from bot.cogs.lib import settings, utils
+from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.mongodb.database import Database
 
 

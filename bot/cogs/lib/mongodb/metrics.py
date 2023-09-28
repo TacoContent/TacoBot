@@ -5,100 +5,20 @@ import sys
 import traceback
 import typing
 
-from bot.cogs.lib import loglevel, utils
+from bot.cogs.lib import utils
 from bot.cogs.lib.colors import Colors
-from pymongo import MongoClient
+from bot.cogs.lib.enums import loglevel
+from bot.cogs.lib.mongodb.database import Database
 
 
-class MongoDatabase:
+class MetricsDatabase(Database):
     def __init__(self):
+        super().__init__()
         self._module = os.path.basename(__file__)[:-3]
         self._class = self.__class__.__name__
         self.client = None
         self.connection = None
         pass
-
-    def open(self):
-        if "MONGODB_URL" not in os.environ or os.environ["MONGODB_URL"] == "":
-            raise ValueError("MONGODB_URL is not set")
-        self.client = MongoClient(os.environ["MONGODB_URL"])
-        self.connection = self.client["tacobot"]
-
-    def close(self):
-        _method = inspect.stack()[0][3]
-        try:
-            if self.client:
-                self.client.close()
-                self.client = None
-                self.connection = None
-        except Exception as ex:
-            self.log(
-                guildId=0,
-                level=loglevel.LogLevel.ERROR,
-                method=f"{self._module}.{self._class}.{_method}",
-                message=f"{ex}",
-                stackTrace=traceback.format_exc(),
-            )
-
-    def log(
-            self,
-            guildId: typing.Optional[int],
-            level: loglevel.LogLevel,
-            method: str,
-            message: str,
-            stackTrace: typing.Optional[str] = None
-        ) -> None:
-        _method = inspect.stack()[0][3]
-        if guildId is None:
-            guildId = 0
-        color = Colors.get_color(level)
-        m_level = Colors.colorize(color, f"[{level.name}]", bold=True)
-        m_method = Colors.colorize(Colors.HEADER, f"[{method}]", bold=True)
-        m_guild = Colors.colorize(Colors.OKGREEN, f"[{guildId}]", bold=True)
-        m_message = f"{Colors.colorize(color, message)}"
-
-        str_out = f"{m_level} {m_method} {m_guild} {m_message}"
-        stdoe = sys.stdout if level < loglevel.LogLevel.ERROR else sys.stderr
-
-        print(str_out, file=stdoe)
-        if stackTrace:
-            print(Colors.colorize(color, stackTrace), file=stdoe)
-        try:
-            if level >= loglevel.LogLevel.INFO:
-                self.insert_log(guildId=guildId, level=level, method=method, message=message, stack=stackTrace)
-        except Exception as ex:
-            self.log(
-                guildId=guildId,
-                level=loglevel.LogLevel.PRINT,
-                method=f"{self._module}.{self._class}.{_method}",
-                message=f"Unable to log to database: {ex}",
-                stackTrace=traceback.format_exc(),
-            )
-
-    def insert_log(
-        self, guildId: int, level: loglevel.LogLevel, method: str, message: str, stack: typing.Optional[str] = None
-    ) -> None:
-        _method = inspect.stack()[0][3]
-        try:
-            if self.connection is None:
-                self.open()
-            payload = {
-                "guild_id": str(guildId),
-                "timestamp": utils.get_timestamp(),
-                "level": level.name,
-                "method": method,
-                "message": message,
-                "stack_trace": stack if stack else "",
-            }
-            self.connection.logs.insert_one(payload)
-        except Exception as ex:
-            self.log(
-                guildId=guildId,
-                level=loglevel.LogLevel.PRINT,
-                method=f"{self._module}.{self._class}.{_method}",
-                message=f"Unable to log to database: {ex}",
-                stackTrace=traceback.format_exc(),
-            )
 
     def get_sum_all_tacos(self):
         _method = inspect.stack()[0][3]
@@ -225,6 +145,7 @@ class MongoDatabase:
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+
     def get_tqotd_answers_count(self):
         _method = inspect.stack()[0][3]
         try:

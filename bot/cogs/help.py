@@ -4,7 +4,8 @@ import os
 import re
 import traceback
 
-from bot.cogs.lib import discordhelper, logger, loglevel, settings, utils
+from bot.cogs.lib import discordhelper, logger, settings, utils
+from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 

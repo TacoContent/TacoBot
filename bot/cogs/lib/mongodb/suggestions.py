@@ -5,8 +5,9 @@ import traceback
 import typing
 import uuid
 
-from bot.cogs.lib import loglevel, utils
-from bot.cogs.lib.models import SuggestionStates
+from bot.cogs.lib import utils
+from bot.cogs.lib.enums import loglevel
+from bot.cogs.lib.models.suggestionstates import SuggestionStates
 from bot.cogs.lib.mongodb.database import Database
 
 

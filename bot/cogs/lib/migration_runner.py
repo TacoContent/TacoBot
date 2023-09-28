@@ -2,7 +2,8 @@ import inspect
 import os
 import traceback
 
-from bot.cogs.lib import logger, loglevel, settings
+from bot.cogs.lib import logger, settings
+from bot.cogs.lib.enums import loglevel
 
 
 class MigrationRunner:

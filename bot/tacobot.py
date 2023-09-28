@@ -6,8 +6,10 @@ import typing
 
 import discord
 import discordhealthcheck
-from bot.cogs.lib import logger, loglevel, settings
+from bot.cogs.lib import logger, settings
 from discord.ext import commands
+
+from bot.cogs.lib.enums import loglevel
 
 
 class TacoBot(commands.Bot):
