@@ -120,7 +120,7 @@ class MetricsDatabase(Database):
             if self.connection is None:
                 self.open()
             # count all documents in twitch_users collection
-            return self.connection.twitch_users.aggregate([{"$group": {"_id": 1, "total": {"$sum": 1}}}])
+            return self.connection.twitch_user.aggregate([{"$group": {"_id": 1, "total": {"$sum": 1}}}])
 
         except Exception as ex:
             self.log(
