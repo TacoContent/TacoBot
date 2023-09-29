@@ -21,6 +21,39 @@ class TrackingDatabase(Database):
         self._class = self.__class__.__name__
         pass
 
+    def track_command_usage(
+        self, guildId: int,
+        channelId: typing.Optional[int],
+        userId: int,
+        command: str,
+        subcommand: typing.Optional[str] = None,
+        args: typing.Optional[typing.List[dict]] = None,
+    ) -> None:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            date = datetime.datetime.utcnow().date()
+            ts_date = datetime.datetime.combine(date, datetime.time.min)
+            timestamp = utils.to_timestamp(ts_date)
+            payload = {
+                "guild_id": str(guildId),
+                "channel_id": str(channelId),
+                "user_id": str(userId),
+                "command": command,
+                "subcommand": subcommand,
+                "arguments": args,
+                "timestamp": timestamp,
+            }
+            self.connection.commands_usage.insert_one(payload)
+        except Exception as ex:
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+            )
+
     def track_first_message(self, guildId: int, userId: int, channelId: int, messageId: int) -> None:
         _method = inspect.stack()[0][3]
         try:

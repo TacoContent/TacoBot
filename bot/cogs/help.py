@@ -7,6 +7,7 @@ import traceback
 from bot.cogs.lib import discordhelper, logger, settings, utils
 from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 
 
@@ -20,6 +21,7 @@ class Help(commands.Cog):
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -80,6 +82,15 @@ class Help(commands.Cog):
                         fields=fields,
                     )
                 page += 1
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="changelog",
+                subcommand=None,
+                args=None,
+            )
         except Exception as ex:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -94,8 +105,24 @@ class Help(commands.Cog):
             await ctx.message.delete()
         if command is None:
             await self.root_help(ctx)
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="help",
+                subcommand=None,
+                args=[{"type": "command"}],
+            )
         else:
             await self.subcommand_help(ctx, command, subcommand)
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="help",
+                subcommand=command,
+                args=[{"type": "command"}, {"subcommand": subcommand}],
+            )
 
     async def subcommand_help(self, ctx, command: str = "", subcommand: str = ""):
         _method = inspect.stack()[1][3]

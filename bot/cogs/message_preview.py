@@ -8,6 +8,7 @@ import discord
 from bot.cogs.lib import discordhelper, logger, settings
 from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 
 
@@ -22,6 +23,7 @@ class MessagePreview(commands.Cog):
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "message_preview"
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -75,6 +77,14 @@ class MessagePreview(commands.Cog):
                     f"{self._module}.{self._class}.{_method}",
                     f"Guild ({ref_guild_id}) does not match this guild ({guild_id})",
                 )
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=message.channel.id if message.channel else None,
+                userId=message.author.id,
+                command="message_preview",
+                args=[{"type": "event"}, {"event": "on_message"}, {"message_id": str(message.id)}],
+            )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 

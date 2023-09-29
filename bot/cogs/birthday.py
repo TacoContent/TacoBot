@@ -10,6 +10,7 @@ import discord
 from bot.cogs.lib import discordhelper, logger, settings
 from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.mongodb.birthdays import BirthdaysDatabase
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -27,6 +28,7 @@ class Birthday(commands.Cog):
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.birthdays_db = BirthdaysDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -121,7 +123,15 @@ class Birthday(commands.Cog):
                 fields=fields,
                 delete_after=10,
             )
-            pass
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="birthday",
+                subcommand=None,
+                args=[{"type": "command"}],
+            )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -140,7 +150,7 @@ class Birthday(commands.Cog):
             if self.was_checked_today(guild_id):
                 return
             # get if there are any birthdays today in the database
-            birthdays = self.get_todays_birthdays(guild_id)
+            birthdays = self.get_todays_birthdays(guild_id) or []
             # wish the users a happy birthday
             if len(birthdays) > 0:
                 self.log.debug(
@@ -151,6 +161,15 @@ class Birthday(commands.Cog):
                 await self.send_birthday_message(ctx, birthdays)
             # track the check
             self.birthdays_db.track_birthday_check(guild_id)
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="birthday",
+                subcommand="check",
+                args=[{"type": "command"}],
+            )
             await asyncio.sleep(0.5)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -262,7 +281,7 @@ class Birthday(commands.Cog):
                 return
             await asyncio.sleep(1)
             # get if there are any birthdays today in the database
-            birthdays = self.get_todays_birthdays(guild_id)
+            birthdays = self.get_todays_birthdays(guild_id) or []
             # wish the users a happy birthday
             if len(birthdays) > 0:
                 self.log.debug(
@@ -290,7 +309,7 @@ class Birthday(commands.Cog):
                 return
             await asyncio.sleep(1)
             # get if there are any birthdays today in the database
-            birthdays = self.get_todays_birthdays(guild_id)
+            birthdays = self.get_todays_birthdays(guild_id) or []
             # wish the users a happy birthday
             if len(birthdays) > 0:
                 self.log.debug(
@@ -318,7 +337,7 @@ class Birthday(commands.Cog):
                 return
             await asyncio.sleep(1)
             # get if there are any birthdays today in the database
-            birthdays = self.get_todays_birthdays(guild_id)
+            birthdays = self.get_todays_birthdays(guild_id) or []
             # wish the users a happy birthday
             if len(birthdays) > 0:
                 self.log.debug(

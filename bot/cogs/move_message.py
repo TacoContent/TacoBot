@@ -11,6 +11,7 @@ import discord
 from bot.cogs.lib import discordhelper, logger, permissions, settings
 from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 
 
@@ -25,6 +26,7 @@ class MoveMessage(commands.Cog):
         self.permissions = permissions.Permissions(bot)
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
+        self.tracking_db = TrackingDatabase()
 
         self.SETTINGS_SECTION = "move_message"
 
@@ -85,6 +87,15 @@ class MoveMessage(commands.Cog):
                         callback=callback,
                     )
 
+                    self.tracking_db.track_command_usage(
+                        guildId=guild_id,
+                        channelId=ctx.channel.id if ctx.channel else None,
+                        userId=ctx.author.id,
+                        command="move-message",
+                        subcommand=None,
+                        args=[{"type": "reaction"}, {"payload": payload}],
+                    )
+
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return
@@ -141,6 +152,15 @@ class MoveMessage(commands.Cog):
                 reason="Moved by admin",
             )
             await message.delete()
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="move-message",
+                subcommand="move",
+                args=[{"type": "command"}, {"message_id": messageId}],
+            )
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return

@@ -11,6 +11,7 @@ from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.mongodb.suggestions import SuggestionsDatabase
 from bot.cogs.lib.models.suggestionstates import SuggestionStates
 from bot.cogs.lib.mongodb.settings import SettingsDatabase
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.permissions import Permissions
 from discord.ext import commands
@@ -31,6 +32,7 @@ class Suggestions(commands.Cog):
 
         self.settings_db = SettingsDatabase()
         self.suggestions_db = SuggestionsDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -273,7 +275,14 @@ class Suggestions(commands.Cog):
                     raise Exception("No suggestion settings found")
 
                 await self.create_suggestion(ctx, ss)
-                pass
+                self.tracking_db.track_command_usage(
+                    guildId=guild_id,
+                    channelId=ctx.channel.id if ctx.channel else None,
+                    userId=ctx.author.id,
+                    command="suggestion",
+                    subcommand="create",
+                    args=[{"type": "command"}],
+                )
             else:
                 pass
         except Exception as e:

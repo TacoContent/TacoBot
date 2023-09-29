@@ -11,6 +11,7 @@ from bot.cogs.lib.GameRewardView import GameRewardView
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.mongodb.gamekeys import GameKeysDatabase
 from bot.cogs.lib.mongodb.tacos import TacosDatabase
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 
 
@@ -27,6 +28,7 @@ class GameKeys(commands.Cog):
         self.SETTINGS_SECTION = "game_keys"
         self.tacos_db = TacosDatabase()
         self.gamekeys_db = GameKeysDatabase()
+        self.tracking_db = TrackingDatabase()
 
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -62,9 +64,21 @@ class GameKeys(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def open(self, ctx) -> None:
         _method = inspect.stack()[0][3]
+        guild_id = 0
         try:
+            if ctx.guild:
+                guild_id = ctx.guild.id
             await ctx.message.delete()
             await self._create_offer(ctx)
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="game-keys",
+                subcommand="open",
+                args=[{"type": "command"}],
+            )
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -74,9 +88,21 @@ class GameKeys(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def close(self, ctx):
         _method = inspect.stack()[0][3]
+        guild_id = 0
         try:
+            if ctx.guild:
+                guild_id = ctx.guild.id
             await ctx.message.delete()
             await self._close_offer(ctx)
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="game-keys",
+                subcommand="close",
+                args=[{"type": "command"}],
+            )
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)

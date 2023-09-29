@@ -7,6 +7,7 @@ import discord
 from bot.cogs.lib import discordhelper, logger, settings
 from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.mongodb.mentalmondays import MentalMondaysDatabase
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.permissions import Permissions
 from discord.ext import commands
@@ -26,6 +27,7 @@ class MentalMondays(commands.Cog):
         self.SETTINGS_SECTION = "mentalmondays"
         self.SELF_DESTRUCT_TIMEOUT = 30
         self.mentalmondays_db = MentalMondaysDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -138,6 +140,15 @@ class MentalMondays(commands.Cog):
                 message_id=mentalmondays_message.id,
             )
 
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="mentalmondays",
+                subcommand=None,
+                args=[{"type": "command"}],
+            )
+
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -177,6 +188,15 @@ class MentalMondays(commands.Cog):
 
             self._import_mentalmondays(message)
 
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="mentalmondays",
+                subcommand="import",
+                args=[{"type": "command"}, {"message_id": message_id}],
+            )
+
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -186,10 +206,22 @@ class MentalMondays(commands.Cog):
     @commands.guild_only()
     async def give(self, ctx, member: discord.Member) -> None:
         _method = inspect.stack()[0][3]
+        guild_id = 0
         try:
-            await ctx.message.delete()
+            if ctx.guild:
+                guild_id = ctx.guild.id
+                await ctx.message.delete()
 
             await self.give_user_mentalmondays_tacos(ctx.guild.id, member.id, ctx.channel.id, None)
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="mentalmondays",
+                subcommand="give",
+                args=[{"type": "command"}, {"member": str(member.id)}],
+            )
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -298,6 +330,14 @@ class MentalMondays(commands.Cog):
 
             if str(payload.emoji.name) in reaction_emojis:
                 await self._on_raw_reaction_add_give(payload)
+                self.tracking_db.track_command_usage(
+                    guildId=guild_id,
+                    channelId=payload.channel_id,
+                    userId=payload.user_id,
+                    command="mentalmondays",
+                    subcommand="give",
+                    args=[{"type": "reaction"}, {"payload": payload}],
+                )
                 return
 
             # is today mondays?
@@ -306,6 +346,14 @@ class MentalMondays(commands.Cog):
                 return
             if str(payload.emoji.name) in reaction_import_emojis:
                 await self._on_raw_reaction_add_import(payload)
+                self.tracking_db.track_command_usage(
+                    guildId=guild_id,
+                    channelId=payload.channel_id,
+                    userId=payload.user_id,
+                    command="mentalmondays",
+                    subcommand="import",
+                    args=[{"type": "reaction"}, {"payload": payload}],
+                )
                 return
 
         except Exception as ex:

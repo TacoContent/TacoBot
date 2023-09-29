@@ -11,6 +11,7 @@ import requests
 from bot.cogs.lib import discordhelper, logger, settings
 from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.mongodb.minecraft import MinecraftDatabase
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -29,6 +30,7 @@ class Minecraft(commands.Cog):
         self.SETTINGS_SECTION = "minecraft"
         self.SELF_DESTRUCT_TIMEOUT = 30
         self.minecraft_db = MinecraftDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -163,6 +165,15 @@ class Minecraft(commands.Cog):
                 delete_after=AUTO_DELETE_TIMEOUT,
             )
 
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="minecraft",
+                subcommand="status",
+                args=[{"type": "command"}],
+            )
+
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -248,6 +259,15 @@ class Minecraft(commands.Cog):
                 delete_after=AUTO_DELETE_TIMEOUT,
             )
 
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="minecraft",
+                subcommand="start",
+                args=[{"type": "command"}],
+            )
+
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -321,6 +341,15 @@ class Minecraft(commands.Cog):
                 title=self.settings.get_string(guild_id, "minecraft_control_title"),
                 message=self.settings.get_string(guild_id, "minecraft_control_stop_success"),
                 delete_after=AUTO_DELETE_TIMEOUT,
+            )
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="minecraft",
+                subcommand="stop",
+                args=[{"type": "command"}],
             )
 
         except Exception as e:
@@ -503,6 +532,15 @@ class Minecraft(commands.Cog):
                 ),
                 color=0x00FF00,
                 delete_after=30,
+            )
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="minecraft",
+                subcommand="whitelist",
+                args=[{"type": "command"}],
             )
 
         except Exception as e:

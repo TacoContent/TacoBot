@@ -203,6 +203,15 @@ class IntroductionCog(commands.Cog):
                 approved=False,
             )
 
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=message.channel.id if message.channel else None,
+                userId=message.author.id,
+                command="introduction",
+                subcommand="track",
+                args=[{"type": "event"}, {"event": "on_message"}, {"message_id": str(message.id)}],
+            )
+
             pass
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())

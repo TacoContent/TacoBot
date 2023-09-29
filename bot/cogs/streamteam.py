@@ -94,6 +94,15 @@ class StreamTeam(commands.Cog):
                         color=0xFF0000,
                     )
 
+                self.tracking_db.track_command_usage(
+                    guildId=guild_id,
+                    channelId=payload.channel_id if payload.channel_id else None,
+                    userId=payload.user_id,
+                    command="streamteam",
+                    subcommand="remove",
+                    args=[{"type": "reaction"}, {"payload": payload}],
+                )
+
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
 
@@ -158,6 +167,15 @@ class StreamTeam(commands.Cog):
                         ),
                         color=0x00FF00,
                     )
+
+                self.tracking_db.track_command_usage(
+                    guildId=guild_id,
+                    channelId=payload.channel_id if payload.channel_id else None,
+                    userId=payload.user_id,
+                    command="streamteam",
+                    subcommand="add",
+                    args=[{"type": "reaction"}, {"payload": payload}],
+                )
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
 
@@ -212,6 +230,15 @@ class StreamTeam(commands.Cog):
 
             await self._invite_user(ctx, ctx.author, twitchName)
 
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="streamteam",
+                subcommand="invite",
+                args=[{"type": "command"}, {"twitchName": twitchName}],
+            )
+
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -220,7 +247,22 @@ class StreamTeam(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
     async def invite_user(self, ctx, user: discord.User, twitchName: str) -> None:
-        await self._invite_user(ctx, user, twitchName)
+        _method = inspect.stack()[0][3]
+        guild_id = 0
+        try:
+            guild_id = ctx.guild.id if ctx.guild else 0
+            await self._invite_user(ctx, user, twitchName)
+            self.tracking_db.track_command_usage(
+                    guildId=guild_id,
+                    channelId=ctx.channel.id if ctx.channel else None,
+                    userId=ctx.author.id,
+                    command="streamteam",
+                    subcommand="invite",
+                    args=[{"type": "command"}, {"twitchName": twitchName}, {"user_id": str(user.id)}],
+                )
+        except Exception as ex:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            await self.messaging.notify_of_error(ctx)
 
     async def _invite_user(self, ctx, user: discord.User, twitchName: typing.Optional[str] = None) -> None:
         _method = inspect.stack()[0][3]

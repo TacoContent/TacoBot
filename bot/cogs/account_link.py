@@ -41,75 +41,90 @@ class AccountLink(commands.Cog):
     async def link(self, ctx, *, code: typing.Union[str, None] = None):
         _method = inspect.stack()[0][3]
         guild_id = 0
-        if ctx.guild:
-            guild_id = ctx.guild.id
-            await ctx.message.delete()
+        try:
+            if ctx.guild:
+                guild_id = ctx.guild.id
+                await ctx.message.delete()
 
-        if code:
-            try:
-                result = self.twitch_db.link_twitch_to_discord_from_code(ctx.author.id, code)
-                self.tracking_db.track_system_action(
-                    guild_id=guild_id,
-                    action=SystemActions.LINK_TWITCH_TO_DISCORD,
-                    data={"user_id": str(ctx.author.id), "code": code},
-                )
-                if result:
-                    # try DM, if that fails, use the channel that it originated in
-                    try:
-                        await ctx.author.send(
-                            self.settings.get_string(guild_id, "account_link_success_message", code=code)
-                        )
-                    except discord.Forbidden:
-                        await ctx.channel.send(
-                            f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_success_message", code=code)}',  # pylint: disable=line-too-long
-                            delete_after=10,
-                        )
-                else:
-                    try:
-                        await ctx.author.send(
-                            self.settings.get_string(guild_id, key="account_link_unknown_code_message")
-                        )
-                    except discord.Forbidden:
-                        await ctx.channel.send(
-                            f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_unknown_code_message")}',  # pylint: disable=line-too-long
-                            delete_after=10,
-                        )
-            except ValueError as ve:
+            if code:
                 try:
-                    await ctx.author.send(f"{ve}")
-                except discord.Forbidden:
-                    await ctx.channel.send(f"{ctx.author.mention}, {ve}", delete_after=10)
-            except Exception as e:
-                self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-                await self.messaging.notify_of_error(ctx)
-        else:
-            try:
-                # generate code
-                code = utils.get_random_string(length=6)
-                # save code to db
-                result = self.twitch_db.set_twitch_discord_link_code(ctx.author.id, code)
-                notice_message = self.settings.get_string(guild_id, "account_link_notice_message", code=code)
-                if result:
+                    result = self.twitch_db.link_twitch_to_discord_from_code(ctx.author.id, code)
+                    self.tracking_db.track_system_action(
+                        guild_id=guild_id,
+                        action=SystemActions.LINK_TWITCH_TO_DISCORD,
+                        data={"user_id": str(ctx.author.id), "code": code},
+                    )
+                    if result:
+                        # try DM, if that fails, use the channel that it originated in
+                        try:
+                            await ctx.author.send(
+                                self.settings.get_string(guild_id, "account_link_success_message", code=code)
+                            )
+                        except discord.Forbidden:
+                            await ctx.channel.send(
+                                f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_success_message", code=code)}',  # pylint: disable=line-too-long
+                                delete_after=10,
+                            )
+                    else:
+                        try:
+                            await ctx.author.send(
+                                self.settings.get_string(guild_id, key="account_link_unknown_code_message")
+                            )
+                        except discord.Forbidden:
+                            await ctx.channel.send(
+                                f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_unknown_code_message")}',  # pylint: disable=line-too-long
+                                delete_after=10,
+                            )
+                except ValueError as ve:
                     try:
-                        await ctx.author.send(notice_message)
+                        await ctx.author.send(f"{ve}")
                     except discord.Forbidden:
-                        await ctx.channel.send(f"{ctx.author.mention}, {notice_message}", delete_after=10)
-                else:
-                    try:
-                        await ctx.author.send(self.settings.get_string(guild_id, "account_link_save_error_message"))
-                    except discord.Forbidden:
-                        await ctx.channel.send(
-                            f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_save_error_message")}',  # pylint: disable=line-too-long
-                            delete_after=10,
-                        )
-            except ValueError as ver:
+                        await ctx.channel.send(f"{ctx.author.mention}, {ve}", delete_after=10)
+                except Exception as e:
+                    self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+                    await self.messaging.notify_of_error(ctx)
+            else:
                 try:
-                    await ctx.author.send(f"{ver}")
-                except discord.Forbidden:
-                    await ctx.channel.send(f"{ctx.author.mention}, {ver}", delete_after=10)
-            except Exception as e:
-                self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-                await self.messaging.notify_of_error(ctx)
+                    # generate code
+                    code = utils.get_random_string(length=6)
+                    # save code to db
+                    result = self.twitch_db.set_twitch_discord_link_code(ctx.author.id, code)
+                    notice_message = self.settings.get_string(guild_id, "account_link_notice_message", code=code)
+                    if result:
+                        try:
+                            await ctx.author.send(notice_message)
+                        except discord.Forbidden:
+                            await ctx.channel.send(f"{ctx.author.mention}, {notice_message}", delete_after=10)
+                    else:
+                        try:
+                            await ctx.author.send(self.settings.get_string(guild_id, "account_link_save_error_message"))
+                        except discord.Forbidden:
+                            await ctx.channel.send(
+                                f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_save_error_message")}',  # pylint: disable=line-too-long
+                                delete_after=10,
+                            )
+                except ValueError as ver:
+                    try:
+                        await ctx.author.send(f"{ver}")
+                    except discord.Forbidden:
+                        await ctx.channel.send(f"{ctx.author.mention}, {ver}", delete_after=10)
+                except Exception as e:
+                    self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+                    await self.messaging.notify_of_error(ctx)
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="link",
+                subcommand=None,
+                args=[{"type": "command"}, {"code": code}],
+            )
+        except Exception as e:
+            self.log.error(
+                guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc()
+            )
+            await self.messaging.notify_of_error(ctx)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
