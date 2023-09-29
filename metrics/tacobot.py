@@ -5,8 +5,8 @@ import traceback
 
 from bot.cogs.lib import logger
 from bot.cogs.lib.enums import loglevel
-from bot.cogs.lib.utils import dict_get
 from bot.cogs.lib.mongodb.metrics import MetricsDatabase
+from bot.cogs.lib.utils import dict_get
 from prometheus_client import Gauge
 
 
