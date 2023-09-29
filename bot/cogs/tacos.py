@@ -213,7 +213,9 @@ class Tacos(commands.Cog):
             max_gift_tacos: int = taco_settings.get("max_gift_tacos", 10)
             max_gift_taco_timespan = taco_settings.get("max_gift_taco_timespan", 86400)
             # get the total number of tacos the user has gifted in the last 24 hours
-            total_gifted: int = self.tacos_db.get_total_gifted_tacos(ctx.guild.id, ctx.author.id, max_gift_taco_timespan)
+            total_gifted: int = self.tacos_db.get_total_gifted_tacos(
+                ctx.guild.id, ctx.author.id, max_gift_taco_timespan
+            )
             remaining_gifts = max_gift_tacos - total_gifted
 
             tacos_word = self.settings.get_string(guild_id, "taco_plural")

@@ -255,7 +255,9 @@ class MentalMondays(commands.Cog):
             )
             return
 
-        already_tracked = self.mentalmondays_db.mentalmondays_user_message_tracked(guild_id, message_author.id, message.id)
+        already_tracked = self.mentalmondays_db.mentalmondays_user_message_tracked(
+            guild_id, message_author.id, message.id
+        )
         if not already_tracked:
             # log that we are giving tacos for this reaction
             self.log.info(

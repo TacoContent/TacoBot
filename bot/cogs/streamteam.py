@@ -143,7 +143,6 @@ class StreamTeam(commands.Cog):
 
             # check if the message that is reacted to is in the list of message ids and the emoji is one that is configured.
             if str(message.id) in watch_message_ids and str(payload.emoji) in emoji:
-
                 unknown = self.settings.get_string(guild_id, "unknown")
                 # send a message to the user and ask them their twitch name if it is not yet set
                 twitch_name = unknown
@@ -153,9 +152,7 @@ class StreamTeam(commands.Cog):
                     if twitch_name is None or twitch_name == "":
                         twitch_name = unknown
                 # add user to the stream team requests
-                self.twitch_db.add_stream_team_request(
-                    guildId=guild_id, userId=user.id, twitchName=twitch_name
-                )
+                self.twitch_db.add_stream_team_request(guildId=guild_id, userId=user.id, twitchName=twitch_name)
 
                 if log_channel:
                     twitch_name = unknown if twitch_name is None else twitch_name
@@ -253,13 +250,13 @@ class StreamTeam(commands.Cog):
             guild_id = ctx.guild.id if ctx.guild else 0
             await self._invite_user(ctx, user, twitchName)
             self.tracking_db.track_command_usage(
-                    guildId=guild_id,
-                    channelId=ctx.channel.id if ctx.channel else None,
-                    userId=ctx.author.id,
-                    command="streamteam",
-                    subcommand="invite",
-                    args=[{"type": "command"}, {"twitchName": twitchName}, {"user_id": str(user.id)}],
-                )
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="streamteam",
+                subcommand="invite",
+                args=[{"type": "command"}, {"twitchName": twitchName}, {"user_id": str(user.id)}],
+            )
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)

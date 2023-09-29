@@ -214,7 +214,6 @@ class TechThursdays(commands.Cog):
         try:
             await ctx.message.delete()
 
-
             await self.give_user_techthurs_tacos(ctx.guild.id, member.id, ctx.channel.id, None)
 
             self.tracking_db.track_command_usage(
