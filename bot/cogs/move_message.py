@@ -104,7 +104,7 @@ class MoveMessage(commands.Cog):
                                     "user_id": payload.user_id,
                                     "emoji": payload.emoji.name,
                                     "event_type": payload.event_type,
-                                    "burst": payload.burst,
+                                    # "burst": payload.burst,
                                 }
                             },
                         ],
