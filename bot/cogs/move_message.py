@@ -93,7 +93,21 @@ class MoveMessage(commands.Cog):
                         userId=ctx.author.id,
                         command="move-message",
                         subcommand=None,
-                        args=[{"type": "reaction"}, {"payload": payload.__dict__}],
+                        args=[
+                            {"type": "reaction"},
+                            {"action": "add"},
+                            {
+                                "payload": {
+                                    "message_id": payload.message_id,
+                                    "channel_id": payload.channel_id,
+                                    "guild_id": payload.guild_id,
+                                    "user_id": payload.user_id,
+                                    "emoji": payload.emoji.name,
+                                    "event_type": payload.event_type,
+                                    "burst": payload.burst,
+                                }
+                            },
+                        ],
                     )
 
         except Exception as e:

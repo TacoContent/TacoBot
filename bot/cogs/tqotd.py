@@ -241,7 +241,21 @@ class TacoQuestionOfTheDay(commands.Cog):
                     userId=payload.user_id,
                     command="tqotd",
                     subcommand="give",
-                    args=[{"type": "reaction"}, {"payload": payload.__dict__}],
+                    args=[
+                        {"type": "reaction"},
+                        {"action": "add"},
+                        {
+                            "payload": {
+                                "message_id": payload.message_id,
+                                "channel_id": payload.channel_id,
+                                "guild_id": payload.guild_id,
+                                "user_id": payload.user_id,
+                                "emoji": payload.emoji.name,
+                                "event_type": payload.event_type,
+                                "burst": payload.burst,
+                            }
+                        },
+                    ],
                 )
             else:
                 self.log.debug(
