@@ -386,7 +386,7 @@ class TacoBotMetrics:
 
             q_twitch_linked_accounts = self.db.get_twitch_linked_accounts_count()
             for row in q_twitch_linked_accounts:
-                self.sum_twitch_linked_accounts.labels(guild_id=row['_id']).set(row['total'])
+                self.sum_twitch_linked_accounts.set(row['total'])
 
             q_tqotd_questions = self.db.get_tqotd_questions_count()
             for row in q_tqotd_questions:
