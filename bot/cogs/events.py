@@ -8,7 +8,6 @@ from bot.cogs.lib.enums import loglevel
 from discord.ext import commands
 
 
-
 class Events(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]

@@ -8,7 +8,6 @@ from bot.cogs.lib.enums import loglevel
 from discord.ext import commands
 
 
-
 class LookingForGamers(commands.Cog):
     def __init__(self, bot: tacobot.TacoBot) -> None:
         _method = inspect.stack()[0][3]

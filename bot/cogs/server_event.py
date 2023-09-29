@@ -9,7 +9,6 @@ from bot.cogs.lib.enums import loglevel, tacotypes
 from discord.ext import commands
 
 
-
 class ServerEvent(commands.Cog):
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
