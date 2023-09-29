@@ -10,9 +10,9 @@ import discord
 import requests
 from bot.cogs.lib import discordhelper, logger, settings
 from bot.cogs.lib.enums import loglevel
+from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.mongodb.minecraft import MinecraftDatabase
 from bot.cogs.lib.mongodb.tracking import TrackingDatabase
-from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 from discord.ext.commands import Context
 

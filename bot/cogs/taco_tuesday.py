@@ -8,9 +8,9 @@ import typing
 import discord
 from bot.cogs.lib import discordhelper, logger, settings, utils
 from bot.cogs.lib.enums import loglevel, tacotypes
+from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.mongodb.tacotuesdays import TacoTuesdaysDatabase
 from bot.cogs.lib.mongodb.tracking import TrackingDatabase
-from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.permissions import Permissions
 from discord.ext import commands
 

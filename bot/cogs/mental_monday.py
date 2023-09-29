@@ -6,9 +6,9 @@ import traceback
 import discord
 from bot.cogs.lib import discordhelper, logger, settings
 from bot.cogs.lib.enums import loglevel, tacotypes
+from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.mongodb.mentalmondays import MentalMondaysDatabase
 from bot.cogs.lib.mongodb.tracking import TrackingDatabase
-from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.permissions import Permissions
 from discord.ext import commands
 

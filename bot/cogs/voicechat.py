@@ -3,9 +3,9 @@ import os
 import traceback
 
 from bot.cogs.lib import discordhelper, logger, settings
+from bot.cogs.lib.enums import loglevel, tacotypes
 from discord.ext import commands
 
-from bot.cogs.lib.enums import loglevel, tacotypes
 
 
 class VoiceChatCog(commands.Cog):
