@@ -7,6 +7,7 @@ import discord
 from bot.cogs.lib import discordhelper, logger, settings
 from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.mongodb.tacos import TacosDatabase
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 
@@ -25,6 +26,7 @@ class Tacos(commands.Cog):
         self.SELF_DESTRUCT_TIMEOUT = 30
 
         self.tacos_db = TacosDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -70,6 +72,15 @@ class Tacos(commands.Cog):
                 delete_after=self.SELF_DESTRUCT_TIMEOUT,
             )
             await self.discord_helper.taco_purge_log(ctx.guild.id, user, ctx.author, reason_msg)
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel.id else None,
+                userId=ctx.author.id,
+                command="tacos",
+                subcommand="purge",
+                args=[{"type": "command"}, {"user_id": user.id}, {"reason": reason_msg}],
+            )
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -126,6 +137,15 @@ class Tacos(commands.Cog):
                 guild_id, ctx.author, member, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount
             )
 
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel.id else None,
+                userId=ctx.author.id,
+                command="tacos",
+                subcommand="give",
+                args=[{"type": "command"}, {"user_id": member.id}, {"amount": amount}, {"reason": reason_msg}],
+            )
+
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -153,6 +173,15 @@ class Tacos(commands.Cog):
                 ),
                 footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT),
                 delete_after=self.SELF_DESTRUCT_TIMEOUT,
+            )
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel.id else None,
+                userId=ctx.author.id,
+                command="tacos",
+                subcommand="count",
+                args=[{"type": "command"}],
             )
         except Exception as e:
             await ctx.message.delete()
@@ -242,6 +271,15 @@ class Tacos(commands.Cog):
 
             await self.discord_helper.taco_give_user(
                 guild_id, ctx.author, member, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount
+            )
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel.id else None,
+                userId=ctx.author.id,
+                command="tacos",
+                subcommand="gift",
+                args=[{"type": "command"}, {"user_id": member.id}, {"amount": amount}, {"reason": reason_msg}],
             )
 
         except Exception as e:
@@ -362,6 +400,15 @@ class Tacos(commands.Cog):
                     message.author,
                     self.settings.get_string(guild_id, "taco_reason_react", user=message.author.name),
                     tacotypes.TacoTypes.REACT_REWARD,
+                )
+
+                self.tracking_db.track_command_usage(
+                    guildId=guild_id,
+                    channelId=payload.channel_id if payload.channel_id else None,
+                    userId=payload.user_id,
+                    command="tacos",
+                    subcommand="reaction",
+                    args=[{"type": "reaction"}, {"payload": payload}],
                 )
 
                 if reaction_count <= remaining_gifts:

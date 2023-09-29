@@ -65,6 +65,15 @@ class Trivia(commands.Cog):
                     )
                     return
 
+                self.tracking_db.track_command_usage(
+                    guildId=guild_id,
+                    channelId=ctx.channel.id if ctx.channel.id else None,
+                    userId=ctx.author.id,
+                    command="trivia",
+                    subcommand=None,
+                    args=[{"type": "command"}],
+                )
+
                 channel_id = ctx.channel.id
 
                 cog_settings = self.get_cog_settings(guild_id)

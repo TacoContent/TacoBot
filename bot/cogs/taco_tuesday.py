@@ -9,6 +9,7 @@ import discord
 from bot.cogs.lib import discordhelper, logger, settings, utils
 from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.mongodb.tacotuesdays import TacoTuesdaysDatabase
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.permissions import Permissions
 from discord.ext import commands
@@ -28,6 +29,7 @@ class TacoTuesday(commands.Cog):
         self.SETTINGS_SECTION = "tacotuesday"
         self.SELF_DESTRUCT_TIMEOUT = 30
         self.tacotuesdays_db = TacoTuesdaysDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -90,6 +92,15 @@ class TacoTuesday(commands.Cog):
 
             await self._set_taco_tuesday_user(ctx=ctx, member=member)
 
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="tuesday",
+                subcommand="new",
+                args=[{"type": "command"}, {"member_id": str(member.id)}, {"tweet": tweet}],
+            )
+
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -106,6 +117,15 @@ class TacoTuesday(commands.Cog):
 
             await self._set_taco_tuesday_user(ctx=ctx, member=member)
 
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="tuesday",
+                subcommand="set",
+                args=[{"type": "command"}, {"member_id": str(member.id)}],
+            )
+
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -116,11 +136,20 @@ class TacoTuesday(commands.Cog):
     async def give(self, ctx, member: discord.Member) -> None:
         """Gives the user tacos"""
         _method = inspect.stack()[0][3]
+        guild_id = 0
         try:
+            guild_id = ctx.guild.id
             await ctx.message.delete()
 
             await self.give_user_tacotuesday_tacos(ctx.guild.id, member.id, ctx.channel.id)
-
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="tuesday",
+                subcommand="give",
+                args=[{"type": "command"}, {"member_id": str(member.id)}],
+            )
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -150,6 +179,15 @@ class TacoTuesday(commands.Cog):
             return
 
         self._import_taco_tuesday(message)
+
+        self.tracking_db.track_command_usage(
+            guildId=guild_id,
+            channelId=payload.channel_id if payload.channel_id else None,
+            userId=payload.user_id,
+            command="tuesday",
+            subcommand="import",
+            args=[{"type": "reaction"}, {"payload": payload}],
+        )
 
     async def _on_raw_reaction_add_archive(self, payload) -> None:
         _method = inspect.stack()[0][3]
@@ -192,6 +230,15 @@ class TacoTuesday(commands.Cog):
             return
 
         await self._archive_taco_tuesday(message, cog_settings)
+
+        self.tracking_db.track_command_usage(
+            guildId=guild_id,
+            channelId=payload.channel_id if payload.channel_id else None,
+            userId=payload.user_id,
+            command="tuesday",
+            subcommand="archive",
+            args=[{"type": "reaction"}, {"payload": payload}],
+        )
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload) -> None:

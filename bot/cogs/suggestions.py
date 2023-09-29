@@ -398,6 +398,15 @@ class Suggestions(commands.Cog):
                     return
                 else:
                     self.suggestions_db.vote_suggestion_by_id(suggestion['id'], user.id, vote)
+
+                    self.tracking_db.track_command_usage(
+                        guildId=guild_id,
+                        channelId=payload.channel_id if payload.channel_id else None,
+                        userId=payload.user_id,
+                        command="suggestion",
+                        subcommand="vote",
+                        args=[{"type": "reaction"}, {"action": "add"}, {"payload": payload}],
+                    )
                 pass
             # if the user reacted with an admin emoji and they are an admin
             elif str(payload.emoji) in admin_emoji and await self.permissions.is_admin(user.id, guild_id):
@@ -603,6 +612,14 @@ class Suggestions(commands.Cog):
                     self.suggestions_db.delete_suggestion_by_id(guild_id, suggestion['id'], user.id, reason=reason)
                     await message.delete()
 
+                self.tracking_db.track_command_usage(
+                    guildId=guild_id,
+                    channelId=payload.channel_id if payload.channel_id else None,
+                    userId=payload.user_id,
+                    command="suggestion",
+                    subcommand="admin",
+                    args=[{"type": "reaction"}, {"action": "add"}, {"payload": payload}],
+                )
             else:
                 # unknown emoji. remove it
                 await message.remove_reaction(payload.emoji, user)
@@ -669,6 +686,14 @@ class Suggestions(commands.Cog):
                     return
                 else:
                     self.suggestions_db.unvote_suggestion_by_id(guild_id, suggestion['id'], user.id)
+                    self.tracking_db.track_command_usage(
+                        guildId=guild_id,
+                        channelId=payload.channel_id if payload.channel_id else None,
+                        userId=payload.user_id,
+                        command="suggestion",
+                        subcommand="unvote",
+                        args=[{"type": "reaction"}, {"action": "add"}, {"payload": payload}],
+                    )
             elif str(payload.emoji) in admin_emoji and await self.permissions.is_admin(user.id, guild_id):
                 states = SuggestionStates()
 
@@ -817,6 +842,14 @@ class Suggestions(commands.Cog):
                             await self.update_suggestion_state(
                                 message, states.ACTIVE, user, "Approve State Was Removed", author=author
                             )
+                self.tracking_db.track_command_usage(
+                    guildId=guild_id,
+                    channelId=payload.channel_id if payload.channel_id else None,
+                    userId=payload.user_id,
+                    command="suggestion",
+                    subcommand="admin",
+                    args=[{"type": "reaction"}, {"action": "remove"}, {"payload": payload}],
+                )
             else:
                 # unknown emoji. remove it
                 pass

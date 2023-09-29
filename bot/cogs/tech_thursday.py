@@ -7,6 +7,7 @@ import discord
 from bot.cogs.lib import discordhelper, logger, settings
 from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.mongodb.techthurs import TechThursDatabase
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.permissions import Permissions
 from discord.ext import commands
@@ -27,6 +28,8 @@ class TechThursdays(commands.Cog):
         self.SELF_DESTRUCT_TIMEOUT = 30
 
         self.techthurs_db = TechThursDatabase()
+        self.tracking_db = TrackingDatabase()
+
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -137,6 +140,15 @@ class TechThursdays(commands.Cog):
                 message_id=techthurs_message.id,
             )
 
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="techthurs",
+                subcommand=None,
+                args=[{"type": "command"}, {"message_id": str(techthurs_message.id)}],
+            )
+
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -181,6 +193,15 @@ class TechThursdays(commands.Cog):
 
             self._import_techthurs(message)
 
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="techthurs",
+                subcommand="import",
+                args=[{"type": "command"}, {"message_id": str(message.id)}],
+            )
+
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -193,7 +214,17 @@ class TechThursdays(commands.Cog):
         try:
             await ctx.message.delete()
 
+
             await self.give_user_techthurs_tacos(ctx.guild.id, member.id, ctx.channel.id, None)
+
+            self.tracking_db.track_command_usage(
+                guildId=ctx.guild.id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="techthurs",
+                subcommand="give",
+                args=[{"type": "command"}, {"member_id": str(member.id)}],
+            )
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -239,6 +270,15 @@ class TechThursdays(commands.Cog):
                 f"User {payload.user_id} reacted with {payload.emoji.name} to message {payload.message_id}",
             )
             await self.give_user_techthurs_tacos(guild_id, message_author.id, payload.channel_id, payload.message_id)
+
+            self.tracking_db.track_command_usage(
+                guildId=payload.guild_id,
+                channelId=payload.channel_id if payload.channel_id else None,
+                userId=payload.user_id,
+                command="techthurs",
+                subcommand="give",
+                args=[{"type": "reaction"}, {"payload": payload}],
+            )
         else:
             self.log.debug(
                 guild_id,
@@ -271,6 +311,15 @@ class TechThursdays(commands.Cog):
             return
 
         self._import_techthurs(message)
+
+        self.tracking_db.track_command_usage(
+            guildId=payload.guild_id,
+            channelId=payload.channel_id if payload.channel_id else None,
+            userId=payload.user_id,
+            command="techthurs",
+            subcommand="import",
+            args=[{"type": "reaction"}, {"payload": payload}],
+        )
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):

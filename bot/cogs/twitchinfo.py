@@ -46,28 +46,12 @@ class TwitchInfo(commands.Cog):
     async def twitch(self, ctx) -> None:
         pass
 
-    @twitch.command()
-    @commands.guild_only()
-    async def help(self, ctx) -> None:
-        guild_id = 0
-        if ctx.guild:
-            guild_id = ctx.guild.id
-            await ctx.message.delete()
-        await self.messaging.send_embed(
-            channel=ctx.channel,
-            title=self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
-            message=self.settings.get_string(
-                guild_id, "help_module_message", bot_name=self.settings.name, command="twitch"
-            ),
-            footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
-            color=0xFF0000,
-            delete_after=30,
-        )
-
     @twitch.command(aliases=["invite-bot"])
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
-    async def invite_bot(self, ctx, *, user: typing.Union[discord.Member, discord.User, None] = None) -> None:
+    async def invite_bot(
+        self, ctx, *, user: typing.Optional[typing.Union[discord.Member, discord.User]] = None
+    ) -> None:
         guild_id = 0
         channel = None
         if ctx.guild:
@@ -103,6 +87,15 @@ class TwitchInfo(commands.Cog):
                     footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
                     color=0xFF0000,
                     delete_after=30,
+                )
+
+                self.tracking_db.track_command_usage(
+                    guildId=guild_id,
+                    channelId=ctx.channel.id if ctx.channel.id else None,
+                    userId=ctx.author.id,
+                    command="twitch",
+                    subcommand="invite-bot",
+                    args=[{"type": "command"}, {"user_id": str(user.id)}],
                 )
 
     @twitch.command()
@@ -157,10 +150,21 @@ class TwitchInfo(commands.Cog):
                 color=0x00FF00,
             )
 
+        self.tracking_db.track_command_usage(
+            guildId=guild_id,
+            channelId=ctx.channel.id if ctx.channel.id else None,
+            userId=ctx.author.id,
+            command="twitch",
+            subcommand="get",
+            args=[{"type": "command"}, {"member_id": str(member.id if member else "")}],
+        )
+
     @twitch.command(aliases=["set-user"])
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def set_user(self, ctx, user: discord.Member, twitch_name: typing.Optional[str] = None) -> None:
+    async def set_user(
+        self, ctx, user: discord.Member, twitch_name: typing.Optional[str] = None
+    ) -> typing.Optional[str]:
         guild_id = 0
         _method = inspect.stack()[0][3]
         try:
@@ -193,10 +197,20 @@ class TwitchInfo(commands.Cog):
                     color=0x00FF00,
                     delete_after=30,
                 )
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel.id else None,
+                userId=ctx.author.id,
+                command="twitch",
+                subcommand="set-user",
+                args=[{"type": "command"}, {"user_id": str(user.id if user else "")}, {"twitch_name": twitch_name}],
+            )
             return twitch_name
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
+            return None
 
     @twitch.command()
     async def set(self, ctx, twitch_name: typing.Optional[str] = None) -> None:
@@ -263,6 +277,19 @@ class TwitchInfo(commands.Cog):
                     ),
                     color=0x00FF00,
                     delete_after=30,
+                )
+
+                self.tracking_db.track_command_usage(
+                    guildId=guild_id,
+                    channelId=ctx.channel.id if ctx.channel.id else None,
+                    userId=ctx.author.id,
+                    command="twitch",
+                    subcommand="set",
+                    args=[
+                        {"type": "command"},
+                        {"user_id": str(ctx.author.id if ctx.author else "")},
+                        {"twitch_name": twitch_name},
+                    ],
                 )
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
