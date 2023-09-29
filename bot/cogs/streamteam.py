@@ -100,7 +100,7 @@ class StreamTeam(commands.Cog):
                     userId=payload.user_id,
                     command="streamteam",
                     subcommand="remove",
-                    args=[{"type": "reaction"}, {"payload": payload}],
+                    args=[{"type": "reaction"}, {"payload": payload.__dict__}],
                 )
 
         except Exception as ex:
@@ -174,7 +174,7 @@ class StreamTeam(commands.Cog):
                     userId=payload.user_id,
                     command="streamteam",
                     subcommand="add",
-                    args=[{"type": "reaction"}, {"payload": payload}],
+                    args=[{"type": "reaction"}, {"payload": payload.__dict__}],
                 )
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())

@@ -336,7 +336,7 @@ class MentalMondays(commands.Cog):
                     userId=payload.user_id,
                     command="mentalmondays",
                     subcommand="give",
-                    args=[{"type": "reaction"}, {"payload": payload}],
+                    args=[{"type": "reaction"}, {"payload": payload.__dict__}],
                 )
                 return
 
@@ -352,7 +352,7 @@ class MentalMondays(commands.Cog):
                     userId=payload.user_id,
                     command="mentalmondays",
                     subcommand="import",
-                    args=[{"type": "reaction"}, {"payload": payload}],
+                    args=[{"type": "reaction"}, {"payload": payload.__dict__}],
                 )
                 return
 

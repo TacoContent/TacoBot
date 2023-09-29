@@ -186,7 +186,7 @@ class TacoTuesday(commands.Cog):
             userId=payload.user_id,
             command="tuesday",
             subcommand="import",
-            args=[{"type": "reaction"}, {"payload": payload}],
+            args=[{"type": "reaction"}, {"payload": payload.__dict__}],
         )
 
     async def _on_raw_reaction_add_archive(self, payload) -> None:
@@ -237,7 +237,7 @@ class TacoTuesday(commands.Cog):
             userId=payload.user_id,
             command="tuesday",
             subcommand="archive",
-            args=[{"type": "reaction"}, {"payload": payload}],
+            args=[{"type": "reaction"}, {"payload": payload.__dict__}],
         )
 
     @commands.Cog.listener()

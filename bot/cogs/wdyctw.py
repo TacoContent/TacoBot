@@ -255,7 +255,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
                 userId=payload.user_id,
                 command="wdyctw",
                 subcommand="give",
-                args=[{"type": "reaction"}, {"payload": payload}],
+                args=[{"type": "reaction"}, {"payload": payload.__dict__}],
             )
         else:
             self.log.debug(
@@ -296,7 +296,7 @@ class WhatDoYouCallThisWednesday(commands.Cog):
             userId=payload.user_id,
             command="wdyctw",
             subcommand="import",
-            args=[{"type": "reaction"}, {"payload": payload}],
+            args=[{"type": "reaction"}, {"payload": payload.__dict__}],
         )
 
     @commands.Cog.listener()

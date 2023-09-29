@@ -277,7 +277,7 @@ class TechThursdays(commands.Cog):
                 userId=payload.user_id,
                 command="techthurs",
                 subcommand="give",
-                args=[{"type": "reaction"}, {"payload": payload}],
+                args=[{"type": "reaction"}, {"payload": payload.__dict__}],
             )
         else:
             self.log.debug(
@@ -318,7 +318,7 @@ class TechThursdays(commands.Cog):
             userId=payload.user_id,
             command="techthurs",
             subcommand="import",
-            args=[{"type": "reaction"}, {"payload": payload}],
+            args=[{"type": "reaction"}, {"payload": payload.__dict__}],
         )
 
     @commands.Cog.listener()

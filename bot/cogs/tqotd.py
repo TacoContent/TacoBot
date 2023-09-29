@@ -241,7 +241,7 @@ class TacoQuestionOfTheDay(commands.Cog):
                     userId=payload.user_id,
                     command="tqotd",
                     subcommand="give",
-                    args=[{"type": "reaction"}, {"payload": payload}],
+                    args=[{"type": "reaction"}, {"payload": payload.__dict__}],
                 )
             else:
                 self.log.debug(

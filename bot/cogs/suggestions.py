@@ -405,7 +405,7 @@ class Suggestions(commands.Cog):
                         userId=payload.user_id,
                         command="suggestion",
                         subcommand="vote",
-                        args=[{"type": "reaction"}, {"action": "add"}, {"payload": payload}],
+                        args=[{"type": "reaction"}, {"action": "add"}, {"payload": payload.__dict__}],
                     )
                 pass
             # if the user reacted with an admin emoji and they are an admin
@@ -618,7 +618,7 @@ class Suggestions(commands.Cog):
                     userId=payload.user_id,
                     command="suggestion",
                     subcommand="admin",
-                    args=[{"type": "reaction"}, {"action": "add"}, {"payload": payload}],
+                    args=[{"type": "reaction"}, {"action": "add"}, {"payload": payload.__dict__}],
                 )
             else:
                 # unknown emoji. remove it
@@ -692,7 +692,7 @@ class Suggestions(commands.Cog):
                         userId=payload.user_id,
                         command="suggestion",
                         subcommand="unvote",
-                        args=[{"type": "reaction"}, {"action": "add"}, {"payload": payload}],
+                        args=[{"type": "reaction"}, {"action": "add"}, {"payload": payload.__dict__}],
                     )
             elif str(payload.emoji) in admin_emoji and await self.permissions.is_admin(user.id, guild_id):
                 states = SuggestionStates()
@@ -848,7 +848,7 @@ class Suggestions(commands.Cog):
                     userId=payload.user_id,
                     command="suggestion",
                     subcommand="admin",
-                    args=[{"type": "reaction"}, {"action": "remove"}, {"payload": payload}],
+                    args=[{"type": "reaction"}, {"action": "remove"}, {"payload": payload.__dict__}],
                 )
             else:
                 # unknown emoji. remove it

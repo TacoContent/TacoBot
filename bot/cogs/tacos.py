@@ -408,7 +408,7 @@ class Tacos(commands.Cog):
                     userId=payload.user_id,
                     command="tacos",
                     subcommand="reaction",
-                    args=[{"type": "reaction"}, {"payload": payload}],
+                    args=[{"type": "reaction"}, {"payload": payload.__dict__}],
                 )
 
                 if reaction_count <= remaining_gifts:
