@@ -226,9 +226,7 @@ class GameKeys(commands.Cog):
             ctx = self.discord_helper.create_context(
                 self.bot, author=ctx.author, channel=ctx.channel, message=ctx.message, guild=ctx.guild
             )
-            self.log.debug(
-                ctx.guild.id, f"{self._module}.{self._class}.{_method}", f"Claim offer timed out"
-            )
+            self.log.debug(ctx.guild.id, f"{self._module}.{self._class}.{_method}", f"Claim offer timed out")
             await self._create_offer(ctx)
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
