@@ -340,13 +340,12 @@ class MentalMondays(commands.Cog):
                     subcommand="give",
                     args=[
                         {"type": "reaction"},
-                        {"action": "add"},
                         {
                             "payload": {
-                                "message_id": payload.message_id,
-                                "channel_id": payload.channel_id,
-                                "guild_id": payload.guild_id,
-                                "user_id": payload.user_id,
+                                "message_id": str(payload.message_id),
+                                "channel_id": str(payload.channel_id),
+                                "guild_id": str(payload.guild_id),
+                                "user_id": str(payload.user_id),
                                 "emoji": payload.emoji.name,
                                 "event_type": payload.event_type,
                                 # "burst": payload.burst,
@@ -370,13 +369,12 @@ class MentalMondays(commands.Cog):
                     subcommand="import",
                     args=[
                         {"type": "reaction"},
-                        {"action": "add"},
                         {
                             "payload": {
-                                "message_id": payload.message_id,
-                                "channel_id": payload.channel_id,
-                                "guild_id": payload.guild_id,
-                                "user_id": payload.user_id,
+                                "message_id": str(payload.message_id),
+                                "channel_id": str(payload.channel_id),
+                                "guild_id": str(payload.guild_id),
+                                "user_id": str(payload.user_id),
                                 "emoji": payload.emoji.name,
                                 "event_type": payload.event_type,
                                 # "burst": payload.burst,
