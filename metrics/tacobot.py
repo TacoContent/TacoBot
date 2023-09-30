@@ -6,6 +6,7 @@ import traceback
 from bot.cogs.lib import logger
 from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.mongodb.metrics import MetricsDatabase
+from bot.cogs.lib.settings import Settings
 from bot.cogs.lib.utils import dict_get
 from prometheus_client import Gauge
 
@@ -13,11 +14,13 @@ from prometheus_client import Gauge
 class TacoBotMetrics:
     def __init__(self, config):
         # get the class name
+        _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         self._module = os.path.basename(__file__)[:-3]
-        log_level_value = dict_get(os.environ, 'LOG_LEVEL', default_value='DEBUG')
 
-        log_level = loglevel.LogLevel[log_level_value.upper()]
+        self.settings = Settings()
+
+        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
         self.log = logger.Log(log_level)
@@ -338,150 +341,264 @@ class TacoBotMetrics:
         build_date = dict_get(os.environ, "APP_BUILD_DATE", "unknown")
         sha = dict_get(os.environ, "APP_BUILD_SHA", "unknown")
         self.build_info.labels(version=ver, ref=ref, build_date=build_date, sha=sha).set(1)
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Metrics initialized")
 
     def run_metrics_loop(self):
         """Metrics fetching loop"""
         _method = inspect.stack()[1][3]
-        while True:
-            self.log.info(0, f"{self._module}.{self._class}.{_method}", f"Begin metrics fetch")
-            self.fetch()
-            self.log.info(0, f"{self._module}.{self._class}.{_method}", f"End metrics fetch")
-            time.sleep(self.polling_interval_seconds)
+        try:
+            while True:
+                self.log.info(0, f"{self._module}.{self._class}.{_method}", f"Begin metrics fetch")
+                self.fetch()
+                self.log.info(0, f"{self._module}.{self._class}.{_method}", f"End metrics fetch")
+                self.log.debug(
+                    0,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Sleeping for {self.polling_interval_seconds} seconds",
+                )
+                time.sleep(self.polling_interval_seconds)
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
 
     def fetch(self):
         """Fetch metrics from the database"""
         _method = inspect.stack()[1][3]
         error_count = 0
+        known_guilds = []
         try:
-            q_guilds = self.db.get_guilds()
-            known_guilds = []
+            q_guilds = self.db.get_guilds() or []
             for row in q_guilds:
                 known_guilds.append(row['guild_id'])
                 self.guilds.labels(guild_id=row['guild_id'], name=row['name']).set(1)
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            error_count += 1
 
-            q_all_tacos = self.db.get_sum_all_tacos()
+        try:
+            q_all_tacos = self.db.get_sum_all_tacos() or []
             for row in q_all_tacos:
                 self.sum_tacos.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            error_count += 1
 
+        try:
             q_all_gift_tacos = self.db.get_sum_all_gift_tacos()
             for row in q_all_gift_tacos:
                 self.sum_taco_gifts.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            error_count += 1
 
+        try:
             q_all_reaction_tacos = self.db.get_sum_all_taco_reactions()
             for row in q_all_reaction_tacos:
                 self.sum_taco_reactions.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            error_count += 1
 
+        try:
             q_live_now = self.db.get_live_now_count()
             for row in q_live_now:
                 self.sum_live_now.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            error_count += 1
 
-            # self.sum_twitch_channels.labels(**labels).set(guage_values['twitch_channels'])
-            q_twitch_channels = self.db.get_twitch_channel_bot_count()
+        try:
+            q_twitch_channels = self.db.get_twitch_channel_bot_count() or []
             for row in q_twitch_channels:
                 self.sum_twitch_channels.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            error_count += 1
 
-            q_all_twitch_tacos = self.db.get_sum_all_twitch_tacos()
+        try:
+            q_all_twitch_tacos = self.db.get_sum_all_twitch_tacos() or []
             for row in q_all_twitch_tacos:
                 self.sum_twitch_tacos.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            error_count += 1
 
-            q_twitch_linked_accounts = self.db.get_twitch_linked_accounts_count()
+        try:
+            q_twitch_linked_accounts = self.db.get_twitch_linked_accounts_count() or []
             for row in q_twitch_linked_accounts:
                 self.sum_twitch_linked_accounts.set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            error_count += 1
 
-            q_tqotd_questions = self.db.get_tqotd_questions_count()
+        try:
+            q_tqotd_questions = self.db.get_tqotd_questions_count() or []
             for row in q_tqotd_questions:
                 self.sum_tqotd_questions.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            error_count += 1
 
-            q_tqotd_answers = self.db.get_tqotd_answers_count()
+        try:
+            q_tqotd_answers = self.db.get_tqotd_answers_count() or []
             for row in q_tqotd_answers:
                 self.sum_tqotd_answers.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count += 1
 
-            q_invited_users = self.db.get_invited_users_count()
+        try:
+            q_invited_users = self.db.get_invited_users_count() or []
             for row in q_invited_users:
                 self.sum_invited_users.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count += 1
 
-            q_live_platform = self.db.get_sum_live_by_platform()
+        try:
+            q_live_platform = self.db.get_sum_live_by_platform() or []
             for row in q_live_platform:
                 self.sum_live_platform.labels(guild_id=row['_id']['guild_id'], platform=row['_id']['platform']).set(
                     row['total']
                 )
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count += 1
 
-            q_wdyctw = self.db.get_wdyctw_questions_count()
+        try:
+            q_wdyctw = self.db.get_wdyctw_questions_count() or []
             for row in q_wdyctw:
                 self.sum_wdyctw.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count += 1
 
-            q_wdyctw_answers = self.db.get_wdyctw_answers_count()
+        try:
+            q_wdyctw_answers = self.db.get_wdyctw_answers_count() or []
             for row in q_wdyctw_answers:
                 self.sum_wdyctw_answers.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count += 1
 
-            # self.sum_techthurs.labels(**labels).set(guage_values['techthurs'])
-            q_techthurs = self.db.get_techthurs_questions_count()
+        try:
+            q_techthurs = self.db.get_techthurs_questions_count() or []
             for row in q_techthurs:
                 self.sum_techthurs.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count += 1
 
-            # self.sum_techthurs_answers.labels(**labels).set(guage_values['techthurs_answers'])
-            q_techthurs_answers = self.db.get_techthurs_answers_count()
+        try:
+            q_techthurs_answers = self.db.get_techthurs_answers_count() or []
             for row in q_techthurs_answers:
                 self.sum_techthurs_answers.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count += 1
 
-            # self.sum_mentalmondays.labels(**labels).set(guage_values['mentalmondays'])
-            q_mentalmondays = self.db.get_mentalmondays_questions_count()
+        try:
+            q_mentalmondays = self.db.get_mentalmondays_questions_count() or []
             for row in q_mentalmondays:
                 self.sum_mentalmondays.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            # self.sum_mentalmondays_answers.labels(**labels).set(guage_values['mentalmondays_answers'])
-            q_mentalmondays_answers = self.db.get_mentalmondays_answers_count()
+        try:
+            q_mentalmondays_answers = self.db.get_mentalmondays_answers_count() or []
             for row in q_mentalmondays_answers:
                 self.sum_mentalmondays_answers.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            # self.sum_tacotuesday.labels(**labels).set(guage_values['tacotuesday'])
-            q_tacotuesday = self.db.get_tacotuesday_questions_count()
+        try:
+            q_tacotuesday = self.db.get_tacotuesday_questions_count() or []
             for row in q_tacotuesday:
                 self.sum_tacotuesday.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            # self.sum_tacotuesday_answers.labels(**labels).set(guage_values['tacotuesday_answers'])
-            q_tacotuesday_answers = self.db.get_tacotuesday_answers_count()
+        try:
+            q_tacotuesday_answers = self.db.get_tacotuesday_answers_count() or []
             for row in q_tacotuesday_answers:
                 self.sum_tacotuesday_answers.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            q_game_keys_available = self.db.get_game_keys_available_count()
+        try:
+            q_game_keys_available = self.db.get_game_keys_available_count() or []
             for row in q_game_keys_available:
                 self.sum_game_keys_available.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            q_game_keys_claimed = self.db.get_game_keys_redeemed_count()
+        try:
+            q_game_keys_claimed = self.db.get_game_keys_redeemed_count() or []
             for row in q_game_keys_claimed:
                 self.sum_game_keys_claimed.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            q_minecraft_whitelisted = self.db.get_minecraft_whitelisted_count()
+        try:
+            q_minecraft_whitelisted = self.db.get_minecraft_whitelisted_count() or []
             for row in q_minecraft_whitelisted:
                 self.sum_minecraft_whitelist.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            q_stream_team_requests = self.db.get_team_requests_count()
+        try:
+            q_stream_team_requests = self.db.get_team_requests_count() or []
             for row in q_stream_team_requests:
                 self.sum_stream_team_requests.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            q_birthdays = self.db.get_birthdays_count()
+        try:
+            q_birthdays = self.db.get_birthdays_count() or []
             for row in q_birthdays:
                 self.sum_birthdays.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            q_first_messages_today = self.db.get_first_messages_today_count()
+        try:
+            q_first_messages_today = self.db.get_first_messages_today_count() or []
             for row in q_first_messages_today:
                 self.sum_first_messages.labels(guild_id=row['_id']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            logs = self.db.get_logs()
+        try:
+            logs = self.db.get_logs() or []
             for gid in known_guilds:
                 for level in ['INFO', 'WARNING', 'ERROR', 'DEBUG']:
                     t_labels = {"guild_id": gid, "level": level}
                     self.sum_logs.labels(**t_labels).set(0)
             for row in logs:
                 self.sum_logs.labels(guild_id=row['_id']['guild_id'], level=row['_id']['level']).set(row["total"])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            q_known_users = self.db.get_known_users()
+        try:
+            q_known_users = self.db.get_known_users() or []
             for row in q_known_users:
                 self.known_users.labels(guild_id=row['_id']['guild_id'], type=row['_id']['type']).set(row['total'])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
+        try:
             # loop top messages and add to histogram
-            q_top_messages = self.db.get_user_messages_tracked()
+            q_top_messages = self.db.get_user_messages_tracked() or []
             for u in q_top_messages:
                 user = {"user_id": u["_id"]['user_id'], "username": u["_id"]['user_id']}
                 if u["user"] is not None and len(u["user"]) > 0:
@@ -493,8 +610,12 @@ class TacoBotMetrics:
                     "username": user['username'],
                 }
                 self.top_messages.labels(**user_labels).set(u["total"])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            q_top_gifters = self.db.get_top_taco_gifters()
+        try:
+            q_top_gifters = self.db.get_top_taco_gifters() or []
             for u in q_top_gifters:
                 user = {"user_id": u["_id"]['user_id'], "username": u["_id"]['user_id']}
                 if u["user"] is not None and len(u["user"]) > 0:
@@ -506,8 +627,12 @@ class TacoBotMetrics:
                     "username": user['username'],
                 }
                 self.top_gifters.labels(**user_labels).set(u["total"])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            q_top_reactors = self.db.get_top_taco_reactors()
+        try:
+            q_top_reactors = self.db.get_top_taco_reactors() or []
             for u in q_top_reactors:
                 user = {"user_id": u["_id"]['user_id'], "username": u["_id"]['user_id']}
                 if u["user"] is not None and len(u["user"]) > 0:
@@ -519,8 +644,12 @@ class TacoBotMetrics:
                     "username": user['username'],
                 }
                 self.top_reactors.labels(**user_labels).set(u["total"])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            q_top_tacos = self.db.get_top_taco_receivers()
+        try:
+            q_top_tacos = self.db.get_top_taco_receivers() or []
             for u in q_top_tacos:
                 user = {"user_id": u["_id"]['user_id'], "username": u["_id"]['user_id']}
                 if u["user"] is not None and len(u["user"]) > 0:
@@ -532,8 +661,12 @@ class TacoBotMetrics:
                     "username": user['username'],
                 }
                 self.top_tacos.labels(**user_labels).set(u["total"])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            q_top_live = self.db.get_live_activity()
+        try:
+            q_top_live = self.db.get_live_activity() or []
             for u in q_top_live:
                 user = {"user_id": u["_id"]['user_id'], "username": u["_id"]['user_id']}
                 if u["user"] is not None and len(u["user"]) > 0:
@@ -546,8 +679,12 @@ class TacoBotMetrics:
                     "platform": u["_id"]['platform'],
                 }
                 self.top_live_activity.labels(**user_labels).set(u["total"])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            q_suggestions = self.db.get_suggestions()
+        try:
+            q_suggestions = self.db.get_suggestions() or []
             for gid in known_guilds:
                 for state in ["ACTIVE", "APPROVED", "REJECTED", "IMPLEMENTED", "CONSIDERED", "DELETED", "CLOSED"]:
                     suggestion_labels = {"guild_id": gid, "status": state}
@@ -555,8 +692,12 @@ class TacoBotMetrics:
             for row in q_suggestions:
                 suggestion_labels = {"guild_id": row['_id']['guild_id'], "status": row['_id']['state']}
                 self.suggestions.labels(**suggestion_labels).set(row["total"])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            q_join_leave = self.db.get_user_join_leave()
+        try:
+            q_join_leave = self.db.get_user_join_leave() or []
             for gid in known_guilds:
                 for state in ["JOIN", "LEAVE"]:
                     join_leave_labels = {"guild_id": gid, "action": state}
@@ -565,8 +706,12 @@ class TacoBotMetrics:
             for row in q_join_leave:
                 join_leave_labels = {"guild_id": row['_id']['guild_id'], "action": row['_id']['action']}
                 self.user_join_leave.labels(**join_leave_labels).set(row["total"])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            q_photo_post = self.db.get_photo_posts_count()
+        try:
+            q_photo_post = self.db.get_photo_posts_count() or []
             for u in q_photo_post:
                 user = {"user_id": u["_id"]['user_id'], "username": u["_id"]['user_id']}
                 if u["user"] is not None and len(u["user"]) > 0:
@@ -579,13 +724,21 @@ class TacoBotMetrics:
                     "channel": u["_id"]['channel'],
                 }
                 self.photo_posts.labels(**user_labels).set(u["total"])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            q_taco_logs = self.db.get_taco_logs_counts()
+        try:
+            q_taco_logs = self.db.get_taco_logs_counts() or []
             for t in q_taco_logs:
                 taco_labels = {"guild_id": t["_id"]['guild_id'], "type": t["_id"]['type'] or "UNKNOWN"}
                 self.taco_logs.labels(**taco_labels).set(t["total"])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            q_trivia = self.db.get_trivia_questions()
+        try:
+            q_trivia = self.db.get_trivia_questions() or []
             for t in q_trivia:
                 trivia_labels = {
                     "guild_id": t['_id']["guild_id"],
@@ -595,8 +748,12 @@ class TacoBotMetrics:
                     "starter_name": t['starter'][0]["username"],
                 }
                 self.trivia_questions.labels(**trivia_labels).set(t["total"])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            q_invites = self.db.get_invites_by_user()
+        try:
+            q_invites = self.db.get_invites_by_user() or []
             for row in q_invites:
                 user = {"user_id": row["_id"]['user_id'], "username": row["_id"]['user_id']}
                 if row["user"] is not None and len(row["user"]) > 0:
@@ -610,15 +767,23 @@ class TacoBotMetrics:
                 total_count = row["total"]
                 if total_count is not None and total_count > 0:
                     self.invites.labels(**invite_labels).set(row["total"])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            q_system_actions = self.db.get_system_action_counts()
+        try:
+            q_system_actions = self.db.get_system_action_counts() or []
             for row in q_system_actions:
                 action_labels = {"guild_id": row['_id']["guild_id"], "action": row['_id']["action"]}
                 total_count = row["total"]
                 if total_count is not None and total_count > 0:
                     self.system_actions.labels(**action_labels).set(row["total"])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            q_user_status = self.db.get_users_by_status()
+        try:
+            q_user_status = self.db.get_users_by_status() or []
             for gid in known_guilds:
                 for status in ["UNKNOWN", "ONLINE", "OFFLINE", "IDLE", "DND"]:
                     status_labels = {"guild_id": gid, "status": status}
@@ -628,8 +793,12 @@ class TacoBotMetrics:
                 total_count = row["total"]
                 if total_count is not None and total_count > 0:
                     self.user_status.labels(**status_labels).set(row["total"])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
 
-            q_introductions = self.db.get_introductions()
+        try:
+            q_introductions = self.db.get_introductions() or []
             for gid in known_guilds:
                 for approved in ["true", "false"]:
                     intro_labels = {"guild_id": gid, "approved": approved}
@@ -640,6 +809,6 @@ class TacoBotMetrics:
                 total_count = row["total"]
                 if total_count is not None and total_count > 0:
                     self.introductions.labels(**intro_labels).set(row["total"])
-
-        except Exception as e:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            error_count +=1
