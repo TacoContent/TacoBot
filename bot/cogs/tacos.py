@@ -363,9 +363,7 @@ class Tacos(commands.Cog):
                 return
 
             self.log.debug(
-                guild_id,
-                f"{self._module}.{self._class}.{_method}",
-                f"{payload.emoji} added to {payload.message_id}",
+                guild_id, f"{self._module}.{self._class}.{_method}", f"{payload.emoji} added to {payload.message_id}"
             )
 
             if str(payload.emoji) in reaction_emojis:

@@ -1,4 +1,3 @@
-
 class SuggestionStates:
     def __init__(self) -> None:
         self.ACTIVE = "ACTIVE"

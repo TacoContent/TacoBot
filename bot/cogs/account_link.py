@@ -121,9 +121,7 @@ class AccountLink(commands.Cog):
                 args=[{"type": "command"}, {"code": code}],
             )
         except Exception as e:
-            self.log.error(
-                guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc()
-            )
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:

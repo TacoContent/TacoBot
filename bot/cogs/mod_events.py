@@ -30,13 +30,17 @@ class ModEventsCog(commands.Cog):
     async def on_member_ban(self, guild: discord.Guild, user: typing.Union[discord.User, discord.Member]):
         _method = inspect.stack()[0][3]
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"User {user.name} was banned from {guild.name}")
-        self.tracking_db.track_system_action(guild_id=guild.id, action=SystemActions.USER_BAN, data={"user_id": user.id})
+        self.tracking_db.track_system_action(
+            guild_id=guild.id, action=SystemActions.USER_BAN, data={"user_id": user.id}
+        )
 
     @commands.Cog.listener()
     async def on_member_unban(self, guild: discord.Guild, user: discord.User):
         _method = inspect.stack()[0][3]
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"User {user.name} was unbanned from {guild.name}")
-        self.tracking_db.track_system_action(guild_id=guild.id, action=SystemActions.USER_UNBAN, data={"user_id": user.id})
+        self.tracking_db.track_system_action(
+            guild_id=guild.id, action=SystemActions.USER_UNBAN, data={"user_id": user.id}
+        )
 
     @commands.Cog.listener()
     async def on_automod_action(self, execution: discord.AutoModAction):

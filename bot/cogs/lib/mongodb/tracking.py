@@ -22,7 +22,8 @@ class TrackingDatabase(Database):
         pass
 
     def track_command_usage(
-        self, guildId: int,
+        self,
+        guildId: int,
         channelId: typing.Optional[int],
         userId: int,
         command: str,
