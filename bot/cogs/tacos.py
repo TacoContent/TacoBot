@@ -356,16 +356,19 @@ class Tacos(commands.Cog):
             taco_settings = self.get_tacos_settings(guild_id)
 
             reaction_emojis = taco_settings.get("reaction_emojis", ["🌮"])
-            if str(payload.emoji.name) not in reaction_emojis:
+            if str(payload.emoji) not in reaction_emojis:
+                self.log.debug(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"{payload.emoji} not in {reaction_emojis}"
+                )
                 return
 
             self.log.debug(
                 guild_id,
                 f"{self._module}.{self._class}.{_method}",
-                f"{payload.emoji.name} added to {payload.message_id}",
+                f"{payload.emoji} added to {payload.message_id}",
             )
 
-            if str(payload.emoji.name) in reaction_emojis:
+            if str(payload.emoji) in reaction_emojis:
                 user = await self.discord_helper.get_or_fetch_user(payload.user_id)
                 # ignore if the user is a bot or system
                 if not user or user.bot or user.system:
