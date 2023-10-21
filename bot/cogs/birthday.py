@@ -7,8 +7,11 @@ import typing
 from random import random
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from bot.cogs.lib import discordhelper, logger, settings
+from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.mongodb.birthdays import BirthdaysDatabase
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 from discord.ext.commands import Context
 
@@ -24,7 +27,8 @@ class Birthday(commands.Cog):
         self.SETTINGS_SECTION = "birthday"
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
-        self.db = mongo.MongoDatabase()
+        self.birthdays_db = BirthdaysDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -92,8 +96,8 @@ class Birthday(commands.Cog):
                     timeout=60,
                 )
 
-            user_bday_set = self.db.get_user_birthday(guild_id, ctx.author.id)
-            self.db.add_user_birthday(guild_id, ctx.author.id, month, day)
+            user_bday_set = self.birthdays_db.get_user_birthday(guild_id, ctx.author.id)
+            self.birthdays_db.add_user_birthday(guild_id, ctx.author.id, month, day)
 
             if not user_bday_set:
                 taco_settings = self.get_tacos_settings(guild_id)
@@ -119,7 +123,15 @@ class Birthday(commands.Cog):
                 fields=fields,
                 delete_after=10,
             )
-            pass
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="birthday",
+                subcommand=None,
+                args=[{"type": "command"}],
+            )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -138,7 +150,7 @@ class Birthday(commands.Cog):
             if self.was_checked_today(guild_id):
                 return
             # get if there are any birthdays today in the database
-            birthdays = self.get_todays_birthdays(guild_id)
+            birthdays = self.get_todays_birthdays(guild_id) or []
             # wish the users a happy birthday
             if len(birthdays) > 0:
                 self.log.debug(
@@ -148,7 +160,16 @@ class Birthday(commands.Cog):
                 )
                 await self.send_birthday_message(ctx, birthdays)
             # track the check
-            self.db.track_birthday_check(guild_id)
+            self.birthdays_db.track_birthday_check(guild_id)
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="birthday",
+                subcommand="check",
+                args=[{"type": "command"}],
+            )
             await asyncio.sleep(0.5)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -157,7 +178,7 @@ class Birthday(commands.Cog):
     def was_checked_today(self, guildId: int):
         _method = inspect.stack()[0][3]
         try:
-            return self.db.birthday_was_checked_today(guildId)
+            return self.birthdays_db.birthday_was_checked_today(guildId)
         except Exception as e:
             self.log.error(guildId, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return False
@@ -169,7 +190,7 @@ class Birthday(commands.Cog):
             date = datetime.datetime.now(tz=None)
             month = date.month
             day = date.day
-            birthdays = self.db.get_user_birthdays(guildId, month, day)
+            birthdays = self.birthdays_db.get_user_birthdays(guildId, month, day)
             return birthdays
         except Exception as e:
             self.log.error(guildId, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -260,7 +281,7 @@ class Birthday(commands.Cog):
                 return
             await asyncio.sleep(1)
             # get if there are any birthdays today in the database
-            birthdays = self.get_todays_birthdays(guild_id)
+            birthdays = self.get_todays_birthdays(guild_id) or []
             # wish the users a happy birthday
             if len(birthdays) > 0:
                 self.log.debug(
@@ -270,7 +291,7 @@ class Birthday(commands.Cog):
                 )
                 await self.send_birthday_message(message, birthdays)
             # track the check
-            self.db.track_birthday_check(guild_id)
+            self.birthdays_db.track_birthday_check(guild_id)
             await asyncio.sleep(0.5)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -288,7 +309,7 @@ class Birthday(commands.Cog):
                 return
             await asyncio.sleep(1)
             # get if there are any birthdays today in the database
-            birthdays = self.get_todays_birthdays(guild_id)
+            birthdays = self.get_todays_birthdays(guild_id) or []
             # wish the users a happy birthday
             if len(birthdays) > 0:
                 self.log.debug(
@@ -298,7 +319,7 @@ class Birthday(commands.Cog):
                 )
                 await self.send_birthday_message(after, birthdays)
             # track the check
-            self.db.track_birthday_check(guild_id)
+            self.birthdays_db.track_birthday_check(guild_id)
             await asyncio.sleep(0.5)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -316,7 +337,7 @@ class Birthday(commands.Cog):
                 return
             await asyncio.sleep(1)
             # get if there are any birthdays today in the database
-            birthdays = self.get_todays_birthdays(guild_id)
+            birthdays = self.get_todays_birthdays(guild_id) or []
             # wish the users a happy birthday
             if len(birthdays) > 0:
                 self.log.debug(
@@ -326,7 +347,7 @@ class Birthday(commands.Cog):
                 )
                 await self.send_birthday_message(member, birthdays)
             # track the check
-            self.db.track_birthday_check(guild_id)
+            self.birthdays_db.track_birthday_check(guild_id)
             await asyncio.sleep(0.5)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -354,19 +375,19 @@ class Birthday(commands.Cog):
         #             ctx = self.discord_helper.create_context(bot=self.bot, guild=guild)
         #             await self.send_birthday_message(ctx, birthdays)
         #         # track the check
-        #         self.db.track_birthday_check(guild_id)
+        #         self.birthdays_db.track_birthday_check(guild_id)
         #         await asyncio.sleep(0.5)
         # except Exception as e:
         #     self.log.error(guild_id, "birthday.on_member_join", str(e), traceback.format_exc())
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

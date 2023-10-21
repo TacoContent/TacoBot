@@ -3,8 +3,10 @@ import inspect
 import os
 import traceback
 
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
+from bot.cogs.lib import discordhelper, logger, settings
+from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.mongodb.tacos import TacosDatabase
 from discord.ext import commands
 
 
@@ -21,7 +23,7 @@ class TacoPost(commands.Cog):
         # pull from database instead of app.manifest
         self.SETTINGS_SECTION = 'tacopost'
 
-        self.db = mongo.MongoDatabase()
+        self.tacos_db = TacosDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -44,7 +46,7 @@ class TacoPost(commands.Cog):
                 return
 
             # get the settings for tacopost out of the settings
-            tacopost_settings = self.settings.get_settings(self.db, guild_id, self.SETTINGS_SECTION)
+            tacopost_settings = self.settings.get_settings(guild_id, self.SETTINGS_SECTION)
             if not tacopost_settings:
                 # raise exception if there are no suggestion settings
                 self.log.error(
@@ -91,7 +93,7 @@ class TacoPost(commands.Cog):
             # get required tacos cost for channel in CHANNELS[]
             taco_cost = [c for c in tacopost_channels if c['id'] == str(channel.id)][0]['cost']
             # get tacos count for user
-            taco_count = self.db.get_tacos_count(guild_id, user.id)
+            taco_count = self.tacos_db.get_tacos_count(guild_id, user.id)
             # if user has doesnt have enough tacos, send a message, and delete their message
             if taco_count is None or taco_count < taco_cost:
                 await self.messaging.send_embed(
@@ -106,7 +108,7 @@ class TacoPost(commands.Cog):
                 async def response_callback(response):
                     if response:
                         # remove the tacos from the user
-                        self.db.remove_tacos(guild_id, user.id, taco_cost)
+                        self.tacos_db.remove_tacos(guild_id, user.id, taco_cost)
                         # send the message that tacos have been removed
                         await self.messaging.send_embed(
                             channel=channel,

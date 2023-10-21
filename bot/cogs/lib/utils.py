@@ -4,7 +4,6 @@ import json
 import random
 import re
 import string
-import traceback
 import typing
 
 import discord
@@ -24,8 +23,6 @@ def get_scalar_result(conn, sql, default_value=None, *args) -> typing.Any:
         cursor.execute(sql, args)
         return cursor.fetchone()[0]
     except Exception as ex:
-        print(ex)
-        traceback.print_exc()
         return default_value
 
 
@@ -48,35 +45,31 @@ def get_random_string(length: int = 10) -> str:
 
 
 def get_random_name(noun_count=1, adjective_count=1) -> str:
+    fallback_nouns = ["Aardvark", "Albatross", "Alligator", "Alpaca"]
+    fallback_adjectives = ["Able", "Acidic", "Adorable", "Aggressive"]
     try:
         adjectives = load_from_gist("adjectives", adjective_count)
         nouns = load_from_gist("nouns", noun_count)
         results = adjectives + nouns
         return " ".join(w.title() for w in results)
     except Exception as ex:
-        print(ex)
-        traceback.print_exc()
         try:
             nouns = requests.get(f"https://random-word-form.herokuapp.com/random/noun?count={str(noun_count)}").json()
             adjectives = requests.get(
                 f"https://random-word-form.herokuapp.com/random/adjective?count={str(adjective_count)}"
             ).json()
             results = adjectives + nouns
-            print("FROM random-word-form")
             return " ".join(w.title() for w in results)
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
             try:
-                print("FROM random-word-api")
                 results = requests.get(
                     f"https://random-word-api.herokuapp.com/word?number={str(noun_count + adjective_count)}&swear=0"
                 ).json()
                 return " ".join(w.title() for w in results)
             except Exception as ex:
-                print(ex)
-                traceback.print_exc()
-                return "New Voice Channel"
+                return " ".join(
+                    random.sample(fallback_adjectives, adjective_count) + random.sample(fallback_nouns, noun_count)
+                )
 
 
 def get_user_display_name(user: typing.Union[discord.User, discord.Member]) -> str:
@@ -133,14 +126,6 @@ def str_replace(input_string: str, *args, **kwargs) -> str:
 
 
 def isAdmin(ctx, settings) -> bool:
-    _method = inspect.stack()[1][3]
-    # self.db.open()
-    # guild_settings = self.db.get_guild_settings(ctx.guild.id)
-    # is_in_guild_admin_role = False
-    # # see if there are guild settings for admin role
-    # if guild_settings:
-    #     guild_admin_role = self.get_by_name_or_id(ctx.guild.roles, guild_settings.admin_role)
-    #     is_in_guild_admin_role = guild_admin_role in ctx.author.roles
     is_bot_owner = str(ctx.author.id) == settings.bot_owner
     has_admin = ctx.author.guild_permissions.administrator or ctx.author.permission_in(ctx.channel).manage_guild
     return is_bot_owner or has_admin

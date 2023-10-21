@@ -3,7 +3,8 @@ import os
 import typing
 
 import discord
-from bot.cogs.lib import logger, loglevel, mongo, settings, utils
+from bot.cogs.lib import logger, settings, utils
+from bot.cogs.lib.enums import loglevel
 
 
 class Messaging:
@@ -13,7 +14,7 @@ class Messaging:
         self._module = os.path.basename(__file__)[:-3]
         self.settings = settings.Settings()
         self.bot = bot
-        self.db = mongo.MongoDatabase()
+
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -119,7 +120,7 @@ class Messaging:
                 description = embed.description
             else:
                 description = ""
-        updated_embed = discord.Embed(color=color, title=embed.title, description=f"{description}", view=view)
+        updated_embed = discord.Embed(color=color, title=embed.title, description=f"{description}")
         for f in embed.fields:
             updated_embed.add_field(name=f.name, value=f.value, inline=f.inline)
         if fields is not None:
@@ -149,7 +150,7 @@ class Messaging:
                 name=f"{utils.get_user_display_name(author)}", icon_url=author.avatar.url if author.avatar else None
             )
 
-        await message.edit(content=target_content, embed=updated_embed)
+        await message.edit(content=target_content, embed=updated_embed, view=view)
 
     async def notify_of_error(self, ctx):
         guild_id = 0

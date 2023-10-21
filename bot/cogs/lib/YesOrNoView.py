@@ -4,7 +4,8 @@ import traceback
 import typing
 
 import discord
-from bot.cogs.lib import logger, loglevel, settings
+from bot.cogs.lib import logger, settings
+from bot.cogs.lib.enums import loglevel
 
 
 class YesOrNoView(discord.ui.View):

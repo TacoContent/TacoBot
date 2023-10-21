@@ -4,8 +4,11 @@ import os
 import traceback
 import typing
 
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes, utils
-from bot.cogs.lib.system_actions import SystemActions
+from bot.cogs.lib import discordhelper, logger, settings, utils
+from bot.cogs.lib.enums import loglevel, tacotypes
+from bot.cogs.lib.enums.system_actions import SystemActions
+from bot.cogs.lib.mongodb.invites import InvitesDatabase
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 
 
@@ -18,7 +21,8 @@ class InviteTracker(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
-        self.db = mongo.MongoDatabase()
+        self.invites_db = InvitesDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -37,7 +41,7 @@ class InviteTracker(commands.Cog):
 
             for invite in self.invites[guild_id]:
                 invite_payload = self.get_payload_for_invite(invite)
-                self.db.track_invite_code(guild_id, invite.code, invite_payload, None)
+                self.invites_db.track_invite_code(guild_id, invite.code, invite_payload, None)
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "InviteTracker ready")
 
@@ -50,7 +54,7 @@ class InviteTracker(commands.Cog):
         for invite in self.invites[guild_id]:
             self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"adding invite: {invite.code}")
             invite_payload = self.get_payload_for_invite(invite)
-            self.db.track_invite_code(guild_id, invite.code, invite_payload, None)
+            self.invites_db.track_invite_code(guild_id, invite.code, invite_payload, None)
 
     @commands.Cog.listener()
     async def on_invite_delete(self, invite) -> None:
@@ -78,7 +82,7 @@ class InviteTracker(commands.Cog):
 
                         invite_use_payload = {"user_id": str(member.id), "timestamp": timestamp}
 
-                        self.db.track_invite_code(guild_id, invite.code, invite_payload, invite_use_payload)
+                        self.invites_db.track_invite_code(guild_id, invite.code, invite_payload, invite_use_payload)
                         await self.discord_helper.taco_give_user(
                             guild_id,
                             self.bot.user,
@@ -86,7 +90,7 @@ class InviteTracker(commands.Cog):
                             self.settings.get_string(guild_id, "taco_reason_invite", user=member.name),
                             tacotypes.TacoTypes.USER_INVITE,
                         )
-                        self.db.track_system_action(
+                        self.tracking_db.track_system_action(
                             guild_id=guild_id,
                             action=SystemActions.USER_INVITE,
                             data={

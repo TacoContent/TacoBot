@@ -1,13 +1,12 @@
 import typing
 
 import discord
-from bot.cogs.lib import discordhelper, mongo, settings
+from bot.cogs.lib import discordhelper, settings
 
 
 class Permissions:
     def __init__(self, bot) -> None:
         self.settings = settings.Settings()
-        self.db = mongo.MongoDatabase()
         self.discord_helper = discordhelper.DiscordHelper(bot)
 
     async def has_permission(

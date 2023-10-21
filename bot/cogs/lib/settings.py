@@ -7,6 +7,7 @@ import traceback
 import typing
 
 from bot.cogs.lib import utils  # pylint: disable=no-name-in-module
+from bot.cogs.lib.mongodb.settings import SettingsDatabase
 
 
 class Settings:
@@ -25,11 +26,13 @@ class Settings:
         self.strings = {}
         self.commands = {}
 
+        self.settings_db = SettingsDatabase()
+
         try:
             with open('app.manifest', encoding="UTF-8") as json_file:
                 self.__dict__.update(json.load(json_file))
         except Exception as e:
-            print(e, file=sys.stderr)
+            raise e
 
         self.bot_owner = utils.dict_get(os.environ, 'BOT_OWNER', default_value='262031734260891648')
         self.log_level = utils.dict_get(os.environ, 'LOG_LEVEL', default_value='DEBUG')
@@ -51,8 +54,8 @@ class Settings:
     def get(self, name, default_value=None) -> typing.Any:
         return utils.dict_get(self.__dict__, name, default_value)
 
-    def get_settings(self, db, guildId: int, name: str) -> typing.Any:
-        return db.get_settings(guildId, name)
+    def get_settings(self, guildId: int, name: str) -> typing.Any:
+        return self.settings_db.get_settings(guildId, name)
 
     def get_string(self, guildId: int, key: str, *args, **kwargs) -> str:
         _method = inspect.stack()[1][3]
@@ -77,7 +80,7 @@ class Settings:
 
     def set_guild_strings(self, guildId: int, lang: typing.Optional[str] = None) -> None:
         _method = inspect.stack()[1][3]
-        # guild_settings = self.db.get_guild_settings(guildId)
+        # guild_settings = self.settings_db.get_guild_settings(guildId)
         if not lang:
             lang = self.language
         # if guild_settings:
@@ -86,7 +89,7 @@ class Settings:
         # self.log.debug(guildId, f"settings.{_method}", f"Guild Language Set: {lang}")
 
     def get_language(self, guildId: int) -> str:
-        # guild_setting = self.db.get_guild_settings(guildId)
+        # guild_setting = self.settings_db.get_guild_settings(guildId)
         # if not guild_setting:
         return self.language
         # return guild_setting.language or self.settings.language
@@ -111,9 +114,7 @@ class Settings:
                 with open(lang_json, encoding="UTF-8") as lang_file:
                     self.strings[lang].update(json.load(lang_file))
             except Exception as e:
-                print(f"{e}", file=sys.stderr)
-                traceback.print_exc()
-                # self.log.error(0, "settings.load_strings", str(e), traceback.format_exc())
+                raise e
 
     def load_language_manifest(self) -> None:
         lang_manifest = os.path.join(os.path.dirname(__file__), "../../../languages/manifest.json")

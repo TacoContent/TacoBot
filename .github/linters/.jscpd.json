@@ -4,6 +4,7 @@
     "consoleFull"
   ],
   "ignore": [
+    "**/mongodb/**",
     "**/__snapshots__/**",
     "**/__pycache__/**",
     "**/.vscode/**",

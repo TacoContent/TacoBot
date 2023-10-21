@@ -2,11 +2,16 @@ from enum import Enum
 
 
 class LogLevel(Enum):
+    PRINT = -1
     DEBUG = 0
     INFO = 1
     WARNING = 2
     ERROR = 3
     FATAL = 99
+
+    @staticmethod
+    def names_to_list():
+        return [x.name for x in LogLevel]
 
     def __ge__(self, other) -> bool:
         if self.__class__ is other.__class__:

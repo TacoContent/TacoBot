@@ -1,82 +1,76 @@
 import datetime
+import inspect
 import os
+import sys
 import traceback
 import typing
 
-from metrics.lib import loglevel, utils
-from pymongo import MongoClient
+from bot.cogs.lib import utils
+from bot.cogs.lib.colors import Colors
+from bot.cogs.lib.enums import loglevel
+from bot.cogs.lib.mongodb.database import Database
 
 
-class MongoDatabase:
+class MetricsDatabase(Database):
     def __init__(self):
+        super().__init__()
+        self._module = os.path.basename(__file__)[:-3]
+        self._class = self.__class__.__name__
         self.client = None
         self.connection = None
         pass
 
-    def open(self):
-        if "MONGODB_URL" not in os.environ or os.environ["MONGODB_URL"] == "":
-            raise ValueError("MONGODB_URL is not set")
-        self.client = MongoClient(os.environ["MONGODB_URL"])
-        self.connection = self.client["tacobot"]
-
-    def close(self):
-        try:
-            if self.client:
-                self.client.close()
-                self.client = None
-                self.connection = None
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-
-    def insert_log(
-        self, guildId: int, level: loglevel.LogLevel, method: str, message: str, stack: typing.Optional[str] = None
-    ) -> None:
-        try:
-            if self.connection is None:
-                self.open()
-            payload = {
-                "guild_id": str(guildId),
-                "timestamp": utils.get_timestamp(),
-                "level": level.name,
-                "method": method,
-                "message": message,
-                "stack_trace": stack if stack else "",
-            }
-            self.connection.logs.insert_one(payload)
-        except Exception as ex:
-            print(ex)
-            traceback.print_exc()
-
-    def get_sum_all_tacos(self):
+    def get_sum_all_tacos(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
             return self.connection.tacos.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": "$count"}}}])
 
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_sum_all_gift_tacos(self):
+    def get_sum_all_gift_tacos(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
             return self.connection.taco_gifts.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": "$count"}}}])
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_sum_all_taco_reactions(self):
+    def get_sum_all_taco_reactions(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
             return self.connection.tacos_reactions.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_sum_all_twitch_tacos(self):
+    def get_sum_all_twitch_tacos(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -85,48 +79,83 @@ class MongoDatabase:
             )
 
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_live_now_count(self):
+    def get_live_now_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
             return self.connection.live_tracked.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_twitch_channel_bot_count(self):
+    def get_twitch_channel_bot_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
             return self.connection.twitch_channels.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_twitch_linked_accounts_count(self):
+    def get_twitch_linked_accounts_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
             # count all documents in twitch_users collection
-            return self.connection.twitch_users.aggregate([{"$group": {"_id": 1, "total": {"$sum": 1}}}])
+            return self.connection.twitch_user.aggregate([{"$group": {"_id": 1, "total": {"$sum": 1}}}])
 
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_tqotd_questions_count(self):
+    def get_tqotd_questions_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
             return self.connection.tqotd.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_tqotd_answers_count(self):
+    def get_tqotd_answers_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -134,10 +163,17 @@ class MongoDatabase:
                 [{"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$answered"}}}}]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_invited_users_count(self):
+    def get_invited_users_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -145,10 +181,17 @@ class MongoDatabase:
                 [{"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": {"$ifNull": ["$invites", []]}}}}}]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_sum_live_by_platform(self):
+    def get_sum_live_by_platform(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -159,19 +202,33 @@ class MongoDatabase:
                 ]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_wdyctw_questions_count(self):
+    def get_wdyctw_questions_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
             return self.connection.wdyctw.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_wdyctw_answers_count(self):
+    def get_wdyctw_answers_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -179,19 +236,33 @@ class MongoDatabase:
                 [{"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$answered"}}}}]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_techthurs_questions_count(self):
+    def get_techthurs_questions_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
             return self.connection.techthurs.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_techthurs_answers_count(self):
+    def get_techthurs_answers_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -199,19 +270,33 @@ class MongoDatabase:
                 [{"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$answered"}}}}]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_mentalmondays_questions_count(self):
+    def get_mentalmondays_questions_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
             return self.connection.mentalmondays.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_mentalmondays_answers_count(self):
+    def get_mentalmondays_answers_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -219,19 +304,33 @@ class MongoDatabase:
                 [{"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$answered"}}}}]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_tacotuesday_questions_count(self):
+    def get_tacotuesday_questions_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
             return self.connection.taco_tuesday.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_tacotuesday_answers_count(self):
+    def get_tacotuesday_answers_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -239,11 +338,18 @@ class MongoDatabase:
                 [{"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$answered"}}}}]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
     # need to update data here to include guild_id
-    def get_game_keys_available_count(self):
+    def get_game_keys_available_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -251,11 +357,18 @@ class MongoDatabase:
                 [{"$match": {"redeemed_by": {"$eq": None}}}, {"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
     # need to update data here to include guild_id
-    def get_game_keys_redeemed_count(self):
+    def get_game_keys_redeemed_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -263,11 +376,18 @@ class MongoDatabase:
                 [{"$match": {"redeemed_by": {"$ne": None}}}, {"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
     # need to update data here to include guild_id
-    def get_minecraft_whitelisted_count(self):
+    def get_minecraft_whitelisted_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -275,10 +395,17 @@ class MongoDatabase:
                 [{"$match": {"whitelist": {"$eq": True}}}, {"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_logs(self):
+    def get_logs(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -293,10 +420,17 @@ class MongoDatabase:
                 ]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_team_requests_count(self):
+    def get_team_requests_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -304,20 +438,34 @@ class MongoDatabase:
                 [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_birthdays_count(self):
+    def get_birthdays_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
             return self.connection.birthdays.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
 
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_first_messages_today_count(self):
+    def get_first_messages_today_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -333,10 +481,17 @@ class MongoDatabase:
                 ]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_messages_tracked_count(self):
+    def get_messages_tracked_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -344,10 +499,17 @@ class MongoDatabase:
                 [{"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$messages"}}}}]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_user_messages_tracked(self):
+    def get_user_messages_tracked(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -379,10 +541,17 @@ class MongoDatabase:
                 ]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_users_by_status(self):
+    def get_users_by_status(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -398,10 +567,17 @@ class MongoDatabase:
                 ]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_known_users(self):
+    def get_known_users(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -428,10 +604,17 @@ class MongoDatabase:
                 ]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_top_taco_gifters(self):
+    def get_top_taco_gifters(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -454,10 +637,17 @@ class MongoDatabase:
                 ]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_top_taco_reactors(self):
+    def get_top_taco_reactors(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -480,10 +670,17 @@ class MongoDatabase:
                 ]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_top_taco_receivers(self):
+    def get_top_taco_receivers(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -506,10 +703,17 @@ class MongoDatabase:
                 ]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_live_activity(self):
+    def get_live_activity(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -538,10 +742,17 @@ class MongoDatabase:
                 ]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_suggestions(self):
+    def get_suggestions(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -549,10 +760,17 @@ class MongoDatabase:
                 [{"$group": {"_id": {"guild_id": "$guild_id", "state": "$state"}, "total": {"$sum": 1}}}]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_user_join_leave(self):
+    def get_user_join_leave(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -560,10 +778,17 @@ class MongoDatabase:
                 [{"$group": {"_id": {"guild_id": "$guild_id", "action": "$action"}, "total": {"$sum": 1}}}]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_photo_posts_count(self):
+    def get_photo_posts_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -591,10 +816,17 @@ class MongoDatabase:
                 ]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_taco_logs_counts(self):
+    def get_taco_logs_counts(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -607,10 +839,17 @@ class MongoDatabase:
             )
             return logs
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_system_action_counts(self):
+    def get_system_action_counts(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -621,20 +860,34 @@ class MongoDatabase:
                 ]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_guilds(self):
+    def get_guilds(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
             return self.connection.guilds.find()
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
     # get trivia questions, expand the correct users and incorrect users into separate lists of user objects
-    def get_trivia_questions(self) -> list:
+    def get_trivia_questions(self) -> typing.Optional[typing.List[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -668,12 +921,18 @@ class MongoDatabase:
                 )
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
             return []
 
     # TODO: this is not working
-    def get_trivia_answer_status_per_user(self):
+    def get_trivia_answer_status_per_user(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -726,43 +985,17 @@ class MongoDatabase:
                 ]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_invites_by_user(self):
-        # invite model:
-        # {
-        #  code: 'RejCsPqBvn',
-        #  guild_id: '942532970613473293',
-        #  info: {
-        #      id: 'RejCsPqBvn',
-        #      code: 'RejCsPqBvn',
-        #      inviter_id: '262031734260891648',
-        #      uses: 3,
-        #      max_uses: 0,
-        #      max_age: 0,
-        #      temporary: false,
-        #      created_at: ISODate('2022-03-01T18:01:20.153Z'),
-        #      revoked: null,
-        #      channel_id: '948278701290840074',
-        #      url: 'https://discord.gg/RejCsPqBvn'
-        #  },
-        #  timestamp: 1686462431.127954,
-        #  invites: [
-        #      {
-        #          user_id: '905226717654822912',
-        #          timestamp: 1646402498.029469
-        #      },
-        #      {
-        #          user_id: '905226717654822912',
-        #          timestamp: 1646402737.964417
-        #      },
-        #      {
-        #          user_id: '905226717654822912',
-        #          timestamp: 1646402924.642139
-        #      }
-        #  ]
-        # }
+    def get_invites_by_user(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -793,10 +1026,17 @@ class MongoDatabase:
                 ]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
-    def get_introductions(self):
+    def get_introductions(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
@@ -804,5 +1044,11 @@ class MongoDatabase:
                 [{"$group": {"_id": {"guild_id": "$guild_id", "approved": "$approved"}, "total": {"$sum": 1}}}]
             )
         except Exception as ex:
-            print(ex)
-            traceback.print_exc()
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None

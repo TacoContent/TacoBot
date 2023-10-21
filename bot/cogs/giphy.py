@@ -7,8 +7,10 @@ import uuid
 from random import random
 from urllib import parse, request
 
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
+from bot.cogs.lib import discordhelper, logger, settings
+from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 
 
@@ -23,7 +25,7 @@ class Giphy(commands.Cog):
         self.SETTINGS_SECTION = "giphy"
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
-        self.db = mongo.MongoDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -71,18 +73,27 @@ class Giphy(commands.Cog):
                 # embed = discord.Embed(title=data['data'][random_index]['title'], url=data['data'][random_index]['url'], color=0x00ff00)
                 # embed.set_image(url=data['data'][random_index]['images']['original']['url'])
                 # await ctx.send(embed=embed)
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="giphy",
+                subcommand=None,
+                args=[{"type": "command"}, {"query": query}],
+            )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

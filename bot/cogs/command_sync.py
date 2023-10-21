@@ -4,7 +4,8 @@ import typing
 
 import discord
 from bot import tacobot  # pylint: disable=no-name-in-module
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
+from bot.cogs.lib import discordhelper, logger, settings
+from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 from discord.ext.commands import Context, Greedy
@@ -20,7 +21,6 @@ class CommandSyncCog(commands.Cog):
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
-        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG

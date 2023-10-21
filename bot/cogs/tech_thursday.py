@@ -4,8 +4,11 @@ import os
 import traceback
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from bot.cogs.lib import discordhelper, logger, settings
+from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.mongodb.techthurs import TechThursDatabase
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.permissions import Permissions
 from discord.ext import commands
 
@@ -23,7 +26,10 @@ class TechThursdays(commands.Cog):
         self.permissions = Permissions(bot)
         self.SETTINGS_SECTION = "techthurs"
         self.SELF_DESTRUCT_TIMEOUT = 30
-        self.db = mongo.MongoDatabase()
+
+        self.techthurs_db = TechThursDatabase()
+        self.tracking_db = TrackingDatabase()
+
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -125,13 +131,22 @@ class TechThursdays(commands.Cog):
             )
 
             # save the techthurs to the database
-            self.db.save_techthurs(
+            self.techthurs_db.save_techthurs(
                 guildId=guild_id,
                 message=twa.text,
                 image=twa.attachments[0].url,
                 author=ctx.author.id,
                 channel_id=out_channel.id,
                 message_id=techthurs_message.id,
+            )
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="techthurs",
+                subcommand=None,
+                args=[{"type": "command"}, {"message_id": str(techthurs_message.id)}],
             )
 
         except Exception as e:
@@ -178,6 +193,15 @@ class TechThursdays(commands.Cog):
 
             self._import_techthurs(message)
 
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="techthurs",
+                subcommand="import",
+                args=[{"type": "command"}, {"message_id": str(message.id)}],
+            )
+
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -191,6 +215,15 @@ class TechThursdays(commands.Cog):
             await ctx.message.delete()
 
             await self.give_user_techthurs_tacos(ctx.guild.id, member.id, ctx.channel.id, None)
+
+            self.tracking_db.track_command_usage(
+                guildId=ctx.guild.id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="techthurs",
+                subcommand="give",
+                args=[{"type": "command"}, {"member_id": str(member.id)}],
+            )
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -227,7 +260,7 @@ class TechThursdays(commands.Cog):
             )
             return
 
-        already_tracked = self.db.techthurs_user_message_tracked(guild_id, message_author.id, message.id)
+        already_tracked = self.techthurs_db.techthurs_user_message_tracked(guild_id, message_author.id, message.id)
         if not already_tracked:
             # log that we are giving tacos for this reaction
             self.log.info(
@@ -236,6 +269,28 @@ class TechThursdays(commands.Cog):
                 f"User {payload.user_id} reacted with {payload.emoji.name} to message {payload.message_id}",
             )
             await self.give_user_techthurs_tacos(guild_id, message_author.id, payload.channel_id, payload.message_id)
+
+            self.tracking_db.track_command_usage(
+                guildId=payload.guild_id,
+                channelId=payload.channel_id if payload.channel_id else None,
+                userId=payload.user_id,
+                command="techthurs",
+                subcommand="give",
+                args=[
+                    {"type": "reaction"},
+                    {
+                        "payload": {
+                            "message_id": str(payload.message_id),
+                            "channel_id": str(payload.channel_id),
+                            "guild_id": str(payload.guild_id),
+                            "user_id": str(payload.user_id),
+                            "emoji": payload.emoji.name,
+                            "event_type": payload.event_type,
+                            # "burst": payload.burst,
+                        }
+                    },
+                ],
+            )
         else:
             self.log.debug(
                 guild_id,
@@ -268,6 +323,28 @@ class TechThursdays(commands.Cog):
             return
 
         self._import_techthurs(message)
+
+        self.tracking_db.track_command_usage(
+            guildId=payload.guild_id,
+            channelId=payload.channel_id if payload.channel_id else None,
+            userId=payload.user_id,
+            command="techthurs",
+            subcommand="import",
+            args=[
+                {"type": "reaction"},
+                {
+                    "payload": {
+                        "message_id": str(payload.message_id),
+                        "channel_id": str(payload.channel_id),
+                        "guild_id": str(payload.guild_id),
+                        "user_id": str(payload.user_id),
+                        "emoji": payload.emoji.name,
+                        "event_type": payload.event_type,
+                        # "burst": payload.burst,
+                    }
+                },
+            ],
+        )
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -335,7 +412,7 @@ class TechThursdays(commands.Cog):
             f"{self._module}.{self._class}.{_method}",
             f"Importing techthurs message {message_id} from channel {channel_id} in guild {guild_id} for user {message_author.id} with text {text} and image {image_url}",
         )
-        self.db.save_techthurs(
+        self.techthurs_db.save_techthurs(
             guildId=guild_id,
             message=text or "",
             image=image_url,
@@ -376,7 +453,7 @@ class TechThursdays(commands.Cog):
             )
 
             # track that the user answered the question.
-            self.db.track_techthurs_answer(guild_id, member.id, message_id)
+            self.techthurs_db.track_techthurs_answer(guild_id, member.id, message_id)
 
             tacos_settings = self.get_tacos_settings(guild_id)
             amount = tacos_settings.get("tech_thursday_count", 5)
@@ -413,13 +490,13 @@ class TechThursdays(commands.Cog):
             await self.messaging.notify_of_error(ctx)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No techthurs settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

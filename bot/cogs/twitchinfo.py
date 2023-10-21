@@ -7,9 +7,12 @@ import typing
 
 import discord
 import requests
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes, utils
+from bot.cogs.lib import discordhelper, logger, settings, utils
+from bot.cogs.lib.enums import loglevel, tacotypes
+from bot.cogs.lib.enums.system_actions import SystemActions
 from bot.cogs.lib.messaging import Messaging
-from bot.cogs.lib.system_actions import SystemActions
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
+from bot.cogs.lib.mongodb.twitch import TwitchDatabase
 from discord.ext import commands
 
 
@@ -26,7 +29,8 @@ class TwitchInfo(commands.Cog):
         self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "twitchinfo"
 
-        self.db = mongo.MongoDatabase()
+        self.twitch_db = TwitchDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -42,28 +46,12 @@ class TwitchInfo(commands.Cog):
     async def twitch(self, ctx) -> None:
         pass
 
-    @twitch.command()
-    @commands.guild_only()
-    async def help(self, ctx) -> None:
-        guild_id = 0
-        if ctx.guild:
-            guild_id = ctx.guild.id
-            await ctx.message.delete()
-        await self.messaging.send_embed(
-            channel=ctx.channel,
-            title=self.settings.get_string(guild_id, "help_title", bot_name=self.settings.name),
-            message=self.settings.get_string(
-                guild_id, "help_module_message", bot_name=self.settings.name, command="twitch"
-            ),
-            footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
-            color=0xFF0000,
-            delete_after=30,
-        )
-
     @twitch.command(aliases=["invite-bot"])
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
-    async def invite_bot(self, ctx, *, user: typing.Union[discord.Member, discord.User, None] = None) -> None:
+    async def invite_bot(
+        self, ctx, *, user: typing.Optional[typing.Union[discord.Member, discord.User]] = None
+    ) -> None:
         guild_id = 0
         channel = None
         if ctx.guild:
@@ -77,7 +65,7 @@ class TwitchInfo(commands.Cog):
         if user == None or user == "":
             # specify channel
             return
-        twitch_info = self.db.get_user_twitch_info(user.id)
+        twitch_info = self.twitch_db.get_user_twitch_info(user.id)
         twitch_name = None
         if twitch_info:
             twitch_name = twitch_info["twitch_name"]
@@ -99,6 +87,15 @@ class TwitchInfo(commands.Cog):
                     footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=30),
                     color=0xFF0000,
                     delete_after=30,
+                )
+
+                self.tracking_db.track_command_usage(
+                    guildId=guild_id,
+                    channelId=ctx.channel.id if ctx.channel.id else None,
+                    userId=ctx.author.id,
+                    command="twitch",
+                    subcommand="invite-bot",
+                    args=[{"type": "command"}, {"user_id": str(user.id)}],
                 )
 
     @twitch.command()
@@ -125,7 +122,7 @@ class TwitchInfo(commands.Cog):
         alt_ctx = collections.namedtuple("Context", ctx_dict.keys())(*ctx_dict.values())
 
         twitch_name = None
-        twitch_info = self.db.get_user_twitch_info(member.id)
+        twitch_info = self.twitch_db.get_user_twitch_info(member.id)
         # if ctx.author is administrator, then we can get the twitch name from the database
         if twitch_info is None:
             if ctx.author.guild_permissions.administrator or check_member is None:
@@ -137,8 +134,8 @@ class TwitchInfo(commands.Cog):
                     60,
                 )
                 if not twitch_name is None:
-                    self.db.set_user_twitch_info(ctx.author.id, twitch_name.lower().strip())
-                    self.db.track_system_action(
+                    self.twitch_db.set_user_twitch_info(ctx.author.id, twitch_name.lower().strip())
+                    self.tracking_db.track_system_action(
                         guild_id=guild_id,
                         action=SystemActions.LINK_TWITCH_TO_DISCORD,
                         data={"user_id": str(ctx.author.id), "twitch_name": twitch_name.lower()},
@@ -153,10 +150,21 @@ class TwitchInfo(commands.Cog):
                 color=0x00FF00,
             )
 
+        self.tracking_db.track_command_usage(
+            guildId=guild_id,
+            channelId=ctx.channel.id if ctx.channel.id else None,
+            userId=ctx.author.id,
+            command="twitch",
+            subcommand="get",
+            args=[{"type": "command"}, {"member_id": str(member.id if member else "")}],
+        )
+
     @twitch.command(aliases=["set-user"])
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def set_user(self, ctx, user: discord.Member, twitch_name: typing.Optional[str] = None) -> None:
+    async def set_user(
+        self, ctx, user: discord.Member, twitch_name: typing.Optional[str] = None
+    ) -> typing.Optional[str]:
         guild_id = 0
         _method = inspect.stack()[0][3]
         try:
@@ -176,8 +184,8 @@ class TwitchInfo(commands.Cog):
 
             if twitch_name is not None and user is not None:
                 twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
-                self.db.set_user_twitch_info(user.id, twitch_name)
-                self.db.track_system_action(
+                self.twitch_db.set_user_twitch_info(user.id, twitch_name)
+                self.tracking_db.track_system_action(
                     guild_id=guild_id,
                     action=SystemActions.LINK_TWITCH_TO_DISCORD,
                     data={"user_id": str(user.id), "twitch_name": twitch_name.lower()},
@@ -189,10 +197,20 @@ class TwitchInfo(commands.Cog):
                     color=0x00FF00,
                     delete_after=30,
                 )
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel.id else None,
+                userId=ctx.author.id,
+                command="twitch",
+                subcommand="set-user",
+                args=[{"type": "command"}, {"user_id": str(user.id if user else "")}, {"twitch_name": twitch_name}],
+            )
             return twitch_name
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
+            return None
 
     @twitch.command()
     async def set(self, ctx, twitch_name: typing.Optional[str] = None) -> None:
@@ -229,7 +247,7 @@ class TwitchInfo(commands.Cog):
             self.log.debug(0, f"tqotd.{_method}", f"{ctx.author} requested to set twitch name {twitch_name}")
             if twitch_name is not None:
                 twitch_name = utils.get_last_section_in_url(twitch_name.lower().strip())
-                found_twitch = self.db.get_user_twitch_info(ctx.author.id)
+                found_twitch = self.twitch_db.get_user_twitch_info(ctx.author.id)
                 if found_twitch is None:
                     # only set if we haven't set it already.
                     taco_settings = self.get_tacos_settings(guild_id)
@@ -244,8 +262,8 @@ class TwitchInfo(commands.Cog):
                         taco_amount=taco_amount,
                     )
 
-                self.db.set_user_twitch_info(ctx.author.id, twitch_name)
-                self.db.track_system_action(
+                self.twitch_db.set_user_twitch_info(ctx.author.id, twitch_name)
+                self.tracking_db.track_system_action(
                     guild_id=guild_id,
                     action=SystemActions.LINK_TWITCH_TO_DISCORD,
                     data={"user_id": str(ctx.author.id), "twitch_name": twitch_name.lower()},
@@ -260,12 +278,25 @@ class TwitchInfo(commands.Cog):
                     color=0x00FF00,
                     delete_after=30,
                 )
+
+                self.tracking_db.track_command_usage(
+                    guildId=guild_id,
+                    channelId=ctx.channel.id if ctx.channel.id else None,
+                    userId=ctx.author.id,
+                    command="twitch",
+                    subcommand="set",
+                    args=[
+                        {"type": "command"},
+                        {"user_id": str(ctx.author.id if ctx.author else "")},
+                        {"twitch_name": twitch_name},
+                    ],
+                )
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
