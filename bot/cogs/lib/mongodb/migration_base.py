@@ -7,7 +7,6 @@ from bot.cogs.lib.enums import loglevel
 from pymongo import MongoClient
 
 
-
 class MigrationBase:
     def __init__(self) -> None:
         self._module = os.path.basename(__file__)[:-3]
