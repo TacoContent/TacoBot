@@ -357,9 +357,6 @@ class Tacos(commands.Cog):
 
             reaction_emojis = taco_settings.get("reaction_emojis", ["🌮"])
             if str(payload.emoji) not in reaction_emojis:
-                self.log.debug(
-                    guild_id, f"{self._module}.{self._class}.{_method}", f"{payload.emoji} not in {reaction_emojis}"
-                )
                 return
 
             self.log.debug(
@@ -415,7 +412,7 @@ class Tacos(commands.Cog):
                                 "channel_id": str(payload.channel_id),
                                 "guild_id": str(payload.guild_id),
                                 "user_id": str(payload.user_id),
-                                "emoji": payload.emoji.name,
+                                "emoji": str(payload.emoji),
                                 "event_type": payload.event_type,
                                 # "burst": payload.burst,
                             }
