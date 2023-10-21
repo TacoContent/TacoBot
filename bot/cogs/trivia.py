@@ -8,9 +8,11 @@ import traceback
 import typing
 
 import requests
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes, utils
+from bot.cogs.lib import discordhelper, logger, settings, utils
+from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.messaging import Messaging
-from bot.cogs.lib.models import TriviaQuestion
+from bot.cogs.lib.models.triviaquestion import TriviaQuestion
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 from discord.ext.commands import Context
 
@@ -30,7 +32,7 @@ class Trivia(commands.Cog):
         self.CHOICE_EMOJIS_DEFAULTS = ['🇦', '🇧', '🇨', '🇩']
         self.TRIVIA_TIMEOUT_DEFAULT = 60
 
-        self.db = mongo.MongoDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -62,6 +64,15 @@ class Trivia(commands.Cog):
                         guild_id, f"{self._module}.{self._class}.{_method}", "Cannot run trivia command in DM"
                     )
                     return
+
+                self.tracking_db.track_command_usage(
+                    guildId=guild_id,
+                    channelId=ctx.channel.id if ctx.channel.id else None,
+                    userId=ctx.author.id,
+                    command="trivia",
+                    subcommand=None,
+                    args=[{"type": "command"}],
+                )
 
                 channel_id = ctx.channel.id
 
@@ -253,7 +264,7 @@ class Trivia(commands.Cog):
                             }
 
                             trivia_question = TriviaQuestion(**trivia_item)
-                            self.db.track_trivia_question(trivia_question)
+                            self.tracking_db.track_trivia_question(trivia_question)
                             break
                 else:
                     self.log.error(
@@ -308,13 +319,13 @@ class Trivia(commands.Cog):
             return None
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

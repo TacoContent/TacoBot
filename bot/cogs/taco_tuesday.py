@@ -6,8 +6,11 @@ import traceback
 import typing
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes, utils
+from bot.cogs.lib import discordhelper, logger, settings, utils
+from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.mongodb.tacotuesdays import TacoTuesdaysDatabase
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.permissions import Permissions
 from discord.ext import commands
 
@@ -25,7 +28,8 @@ class TacoTuesday(commands.Cog):
         self.permissions = Permissions(bot)
         self.SETTINGS_SECTION = "tacotuesday"
         self.SELF_DESTRUCT_TIMEOUT = 30
-        self.db = mongo.MongoDatabase()
+        self.tacotuesdays_db = TacoTuesdaysDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -88,6 +92,15 @@ class TacoTuesday(commands.Cog):
 
             await self._set_taco_tuesday_user(ctx=ctx, member=member)
 
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="tuesday",
+                subcommand="new",
+                args=[{"type": "command"}, {"member_id": str(member.id)}, {"tweet": tweet}],
+            )
+
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -104,6 +117,15 @@ class TacoTuesday(commands.Cog):
 
             await self._set_taco_tuesday_user(ctx=ctx, member=member)
 
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="tuesday",
+                subcommand="set",
+                args=[{"type": "command"}, {"member_id": str(member.id)}],
+            )
+
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -114,11 +136,20 @@ class TacoTuesday(commands.Cog):
     async def give(self, ctx, member: discord.Member) -> None:
         """Gives the user tacos"""
         _method = inspect.stack()[0][3]
+        guild_id = 0
         try:
+            guild_id = ctx.guild.id
             await ctx.message.delete()
 
             await self.give_user_tacotuesday_tacos(ctx.guild.id, member.id, ctx.channel.id)
-
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="tuesday",
+                subcommand="give",
+                args=[{"type": "command"}, {"member_id": str(member.id)}],
+            )
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -148,6 +179,28 @@ class TacoTuesday(commands.Cog):
             return
 
         self._import_taco_tuesday(message)
+
+        self.tracking_db.track_command_usage(
+            guildId=guild_id,
+            channelId=payload.channel_id if payload.channel_id else None,
+            userId=payload.user_id,
+            command="tuesday",
+            subcommand="import",
+            args=[
+                {"type": "reaction"},
+                {
+                    "payload": {
+                        "message_id": str(payload.message_id),
+                        "channel_id": str(payload.channel_id),
+                        "guild_id": str(payload.guild_id),
+                        "user_id": str(payload.user_id),
+                        "emoji": payload.emoji.name,
+                        "event_type": payload.event_type,
+                        # "burst": payload.burst,
+                    }
+                },
+            ],
+        )
 
     async def _on_raw_reaction_add_archive(self, payload) -> None:
         _method = inspect.stack()[0][3]
@@ -190,6 +243,28 @@ class TacoTuesday(commands.Cog):
             return
 
         await self._archive_taco_tuesday(message, cog_settings)
+
+        self.tracking_db.track_command_usage(
+            guildId=guild_id,
+            channelId=payload.channel_id if payload.channel_id else None,
+            userId=payload.user_id,
+            command="tuesday",
+            subcommand="archive",
+            args=[
+                {"type": "reaction"},
+                {
+                    "payload": {
+                        "message_id": str(payload.message_id),
+                        "channel_id": str(payload.channel_id),
+                        "guild_id": str(payload.guild_id),
+                        "user_id": str(payload.user_id),
+                        "emoji": payload.emoji.name,
+                        "event_type": payload.event_type,
+                        # "burst": payload.burst,
+                    }
+                },
+            ],
+        )
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload) -> None:
@@ -278,7 +353,7 @@ class TacoTuesday(commands.Cog):
                 return
 
             # get taco tuesday info
-            taco_tuesday_info = self.db.taco_tuesday_get_by_message(
+            taco_tuesday_info = self.tacotuesdays_db.taco_tuesday_get_by_message(
                 guildId=guild_id, channelId=message.channel.id, messageId=message.id
             )
             if taco_tuesday_info:
@@ -320,7 +395,7 @@ class TacoTuesday(commands.Cog):
             )
 
             # Should Update the entry to the new channel and message id
-            self.db.taco_tuesday_update_message(
+            self.tacotuesdays_db.taco_tuesday_update_message(
                 guildId=guild_id,
                 channelId=message.channel.id,
                 messageId=message.id,
@@ -349,7 +424,7 @@ class TacoTuesday(commands.Cog):
 
         guild_id = ctx.guild.id
         cog_settings = self.get_cog_settings(guild_id)
-        self.db.taco_tuesday_set_user(guild_id, member.id)
+        self.tacotuesdays_db.taco_tuesday_set_user(guild_id, member.id)
 
         # get focus role id
         focus_role_id = cog_settings.get("focus_role", None)
@@ -398,7 +473,7 @@ class TacoTuesday(commands.Cog):
             f"{self._module}.{self._class}.{_method}",
             f"Importing TACO Tuesday message {message_id} from channel {channel_id} in guild {guild_id} for user {message_author.id} with text {text} and image {image_url}",
         )
-        self.db.save_taco_tuesday(
+        self.tacotuesdays_db.save_taco_tuesday(
             guildId=guild_id,
             message=text or "",
             image=image_url or "",
@@ -438,7 +513,7 @@ class TacoTuesday(commands.Cog):
             )
 
             # track that the user answered the question.
-            self.db.track_taco_tuesday(guild_id, member.id)
+            self.tacotuesdays_db.track_taco_tuesday(guild_id, member.id)
 
             tacos_settings = self.get_tacos_settings(guild_id)
             amount = tacos_settings.get("taco_tuesday_count", 250)
@@ -476,13 +551,13 @@ class TacoTuesday(commands.Cog):
                 await self.messaging.notify_of_error(ctx)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

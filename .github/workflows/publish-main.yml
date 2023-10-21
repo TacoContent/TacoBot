@@ -17,7 +17,7 @@ jobs:
       app_version: ${{ steps.semvers.outputs.patch }} # set the app_version to be the PATCH updated version
       tag: ${{ steps.semvers.outputs.v_patch }} # set the tag to be the PATCH updated version.
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       # Get the current tag
@@ -53,13 +53,13 @@ jobs:
           echo "BUILD_DATE=${BUILD_DATEZ}" >> "$GITHUB_ENV";
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to GHCR
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: "${{ env.CONTAINER_REGISTRY }}"
           username: "${{ secrets.GHCR_USERNAME }}"
@@ -67,15 +67,15 @@ jobs:
 
       - name: Build and Push GHCR
         id: docker_build
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           push: true
           build-args: |
-            PROJECT_NAME="${{ env.CONTAINER_NAME }}"
-            BUILD_VERSION="${{ needs.version.outputs.app_version }}"
-            BUILD_REF="${{ github.ref }}"
-            BUILD_SHA="${{ github.sha }}"
-            BUILD_DATE="${{ env.BUILD_DATE }}"
+            PROJECT_NAME=${{ env.CONTAINER_NAME }}
+            BUILD_VERSION=${{ needs.version.outputs.app_version }}
+            BUILD_REF=${{ github.ref }}
+            BUILD_SHA=${{ github.sha }}
+            BUILD_DATE=${{ env.BUILD_DATE }}
           tags: "${{ env.BUILD_TAGS }}"
   merge:
     runs-on: ubuntu-latest

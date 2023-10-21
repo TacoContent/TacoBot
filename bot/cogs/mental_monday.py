@@ -4,8 +4,11 @@ import os
 import traceback
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from bot.cogs.lib import discordhelper, logger, settings
+from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.mongodb.mentalmondays import MentalMondaysDatabase
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.permissions import Permissions
 from discord.ext import commands
 
@@ -23,7 +26,8 @@ class MentalMondays(commands.Cog):
         self.permissions = Permissions(bot)
         self.SETTINGS_SECTION = "mentalmondays"
         self.SELF_DESTRUCT_TIMEOUT = 30
-        self.db = mongo.MongoDatabase()
+        self.mentalmondays_db = MentalMondaysDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -127,13 +131,22 @@ class MentalMondays(commands.Cog):
             )
 
             # save the mentalmondays to the database
-            self.db.save_mentalmondays(
+            self.mentalmondays_db.save_mentalmondays(
                 guildId=guild_id,
                 message=twa.text,
                 image=twa.attachments[0].url,
                 author=ctx.author.id,
                 channel_id=out_channel.id,
                 message_id=mentalmondays_message.id,
+            )
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="mentalmondays",
+                subcommand=None,
+                args=[{"type": "command"}],
             )
 
         except Exception as e:
@@ -175,6 +188,15 @@ class MentalMondays(commands.Cog):
 
             self._import_mentalmondays(message)
 
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="mentalmondays",
+                subcommand="import",
+                args=[{"type": "command"}, {"message_id": message_id}],
+            )
+
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -184,10 +206,22 @@ class MentalMondays(commands.Cog):
     @commands.guild_only()
     async def give(self, ctx, member: discord.Member) -> None:
         _method = inspect.stack()[0][3]
+        guild_id = 0
         try:
-            await ctx.message.delete()
+            if ctx.guild:
+                guild_id = ctx.guild.id
+                await ctx.message.delete()
 
             await self.give_user_mentalmondays_tacos(ctx.guild.id, member.id, ctx.channel.id, None)
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="mentalmondays",
+                subcommand="give",
+                args=[{"type": "command"}, {"member": str(member.id)}],
+            )
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -221,7 +255,9 @@ class MentalMondays(commands.Cog):
             )
             return
 
-        already_tracked = self.db.mentalmondays_user_message_tracked(guild_id, message_author.id, message.id)
+        already_tracked = self.mentalmondays_db.mentalmondays_user_message_tracked(
+            guild_id, message_author.id, message.id
+        )
         if not already_tracked:
             # log that we are giving tacos for this reaction
             self.log.info(
@@ -296,6 +332,27 @@ class MentalMondays(commands.Cog):
 
             if str(payload.emoji.name) in reaction_emojis:
                 await self._on_raw_reaction_add_give(payload)
+                self.tracking_db.track_command_usage(
+                    guildId=guild_id,
+                    channelId=payload.channel_id,
+                    userId=payload.user_id,
+                    command="mentalmondays",
+                    subcommand="give",
+                    args=[
+                        {"type": "reaction"},
+                        {
+                            "payload": {
+                                "message_id": str(payload.message_id),
+                                "channel_id": str(payload.channel_id),
+                                "guild_id": str(payload.guild_id),
+                                "user_id": str(payload.user_id),
+                                "emoji": payload.emoji.name,
+                                "event_type": payload.event_type,
+                                # "burst": payload.burst,
+                            }
+                        },
+                    ],
+                )
                 return
 
             # is today mondays?
@@ -304,6 +361,27 @@ class MentalMondays(commands.Cog):
                 return
             if str(payload.emoji.name) in reaction_import_emojis:
                 await self._on_raw_reaction_add_import(payload)
+                self.tracking_db.track_command_usage(
+                    guildId=guild_id,
+                    channelId=payload.channel_id,
+                    userId=payload.user_id,
+                    command="mentalmondays",
+                    subcommand="import",
+                    args=[
+                        {"type": "reaction"},
+                        {
+                            "payload": {
+                                "message_id": str(payload.message_id),
+                                "channel_id": str(payload.channel_id),
+                                "guild_id": str(payload.guild_id),
+                                "user_id": str(payload.user_id),
+                                "emoji": payload.emoji.name,
+                                "event_type": payload.event_type,
+                                # "burst": payload.burst,
+                            }
+                        },
+                    ],
+                )
                 return
 
         except Exception as ex:
@@ -334,7 +412,7 @@ class MentalMondays(commands.Cog):
             "mentalmondays._import_mentalmondays",
             f"Importing mentalmondays message {message_id} from channel {channel_id} in guild {guild_id} for user {message_author.id} with text {text} and image {image_url}",
         )
-        self.db.save_mentalmondays(
+        self.mentalmondays_db.save_mentalmondays(
             guildId=guild_id,
             message=text or "",
             image=image_url,
@@ -385,7 +463,7 @@ class MentalMondays(commands.Cog):
             )
 
             # track that the user answered the question.
-            self.db.track_mentalmondays_answer(guild_id, member.id, message_id)
+            self.mentalmondays_db.track_mentalmondays_answer(guild_id, member.id, message_id)
 
             tacos_settings = self.get_tacos_settings(guild_id)
             amount = tacos_settings.get("mentalmondays_count", 5)
@@ -423,13 +501,13 @@ class MentalMondays(commands.Cog):
                 await self.messaging.notify_of_error(ctx)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

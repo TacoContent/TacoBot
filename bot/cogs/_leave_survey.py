@@ -6,7 +6,8 @@ import os
 import traceback
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, utils
+from bot.cogs.lib import discordhelper, logger, settings, utils
+from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.messaging import Messaging
 from discord.ext import commands
 
@@ -23,7 +24,6 @@ class LeaveSurvey(commands.Cog):
         self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "leave_survey"
 
-        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -161,13 +161,13 @@ Would you be willing to let us know why you are leaving?""",
         await self.ask_survey(member)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

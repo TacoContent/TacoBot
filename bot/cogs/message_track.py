@@ -2,7 +2,9 @@ import inspect
 import os
 import traceback
 
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from bot.cogs.lib import discordhelper, logger, settings
+from bot.cogs.lib.enums import loglevel, tacotypes
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 
 
@@ -16,7 +18,7 @@ class MessageTracker(commands.Cog):
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.SETTINGS_SECTION = "message_track"
-        self.db = mongo.MongoDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -43,11 +45,11 @@ class MessageTracker(commands.Cog):
                 if message.content.startswith(prefix):
                     return
 
-            if self.db.is_first_message_today(guild_id, message.author.id):
+            if self.tracking_db.is_first_message_today(guild_id, message.author.id):
                 await self.give_user_first_message_tacos(guild_id, message.author.id, message.channel.id, message.id)
 
             # track the message in the database
-            self.db.track_message(guild_id, message.author.id, message.channel.id, message.id)
+            self.tracking_db.track_message(guild_id, message.author.id, message.channel.id, message.id)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
@@ -71,7 +73,7 @@ class MessageTracker(commands.Cog):
             )
 
             # track that the user answered the question.
-            self.db.track_first_message(guild_id, member.id, channel_id, message_id)
+            self.tracking_db.track_first_message(guild_id, member.id, channel_id, message_id)
 
             tacos_settings = self.get_tacos_settings(guild_id)
             amount = tacos_settings.get("first_message_count", 5)
@@ -86,13 +88,13 @@ class MessageTracker(commands.Cog):
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

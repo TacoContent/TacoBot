@@ -5,8 +5,10 @@ import re
 import traceback
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
+from bot.cogs.lib import discordhelper, logger, settings
+from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 
 
@@ -21,8 +23,7 @@ class MessagePreview(commands.Cog):
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "message_preview"
-
-        self.db = mongo.MongoDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -76,6 +77,14 @@ class MessagePreview(commands.Cog):
                     f"{self._module}.{self._class}.{_method}",
                     f"Guild ({ref_guild_id}) does not match this guild ({guild_id})",
                 )
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=message.channel.id if message.channel else None,
+                userId=message.author.id,
+                command="message_preview",
+                args=[{"type": "event"}, {"event": "on_message"}, {"message_id": str(message.id)}],
+            )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
@@ -140,13 +149,13 @@ class MessagePreview(commands.Cog):
             raise e
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

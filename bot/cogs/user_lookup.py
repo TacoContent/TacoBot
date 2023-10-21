@@ -3,8 +3,10 @@ import os
 import traceback
 import typing
 
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
-from bot.cogs.lib.member_status import MemberStatus
+from bot.cogs.lib import discordhelper, logger, settings
+from bot.cogs.lib.enums import loglevel
+from bot.cogs.lib.enums.member_status import MemberStatus
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 
 
@@ -18,7 +20,8 @@ class UserLookup(commands.Cog):
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.SETTINGS_SECTION = "user_lookup"
-        self.db = mongo.MongoDatabase()
+
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -54,7 +57,7 @@ class UserLookup(commands.Cog):
                 avatar: typing.Union[str, None] = (
                     member.avatar.url if member.avatar is not None else member.default_avatar.url
                 )
-                self.db.track_user(
+                self.tracking_db.track_user(
                     guildId=guild.id,
                     userId=member.id,
                     username=member.name,
@@ -85,7 +88,7 @@ class UserLookup(commands.Cog):
                 f"{self._module}.{self._class}.{_method}",
                 f"User {member.id} joined guild {member.guild.id}",
             )
-            self.db.track_user(
+            self.tracking_db.track_user(
                 guildId=member.guild.id,
                 userId=member.id,
                 username=member.name,
@@ -112,7 +115,7 @@ class UserLookup(commands.Cog):
                 f"{self._module}.{self._class}.{_method}",
                 f"User {after.id} updated in guild {after.guild.id}",
             )
-            self.db.track_user(
+            self.tracking_db.track_user(
                 guildId=after.guild.id,
                 userId=after.id,
                 username=after.name,
@@ -128,13 +131,13 @@ class UserLookup(commands.Cog):
             self.log.error(after.guild.id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No wdyctw settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

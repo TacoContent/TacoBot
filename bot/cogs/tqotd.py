@@ -5,8 +5,11 @@ import traceback
 
 import aiohttp
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from bot.cogs.lib import discordhelper, logger, settings
+from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.mongodb.toqtd import TQOTDDatabase
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.permissions import Permissions
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -37,7 +40,9 @@ class TacoQuestionOfTheDay(commands.Cog):
         self.permissions = Permissions(bot)
         self.SETTINGS_SECTION = "tqotd"
         self.SELF_DESTRUCT_TIMEOUT = 30
-        self.db = mongo.MongoDatabase()
+
+        self.tqotd_db = TQOTDDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -147,8 +152,16 @@ class TacoQuestionOfTheDay(commands.Cog):
             )
 
             # save the TQOTD
-            self.db.save_tqotd(guild_id, qotd.text, ctx.author.id)
+            self.tqotd_db.save_tqotd(guild_id, qotd.text, ctx.author.id)
 
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="tqotd",
+                subcommand=None,
+                args=[{"type": "command"}],
+            )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -160,8 +173,18 @@ class TacoQuestionOfTheDay(commands.Cog):
         _method = inspect.stack()[0][3]
         try:
             await ctx.message.delete()
+            guild_id = ctx.guild.id
 
             await self.give_user_tqotd_tacos(ctx.guild.id, member.id, ctx.channel.id, None)
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="tqotd",
+                subcommand="give",
+                args=[{"type": "command"}, {"member_id": str(member.id)}],
+            )
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -201,7 +224,7 @@ class TacoQuestionOfTheDay(commands.Cog):
                 # self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Reaction {payload.emoji.name} has already been added to message {payload.message_id}")
                 return
 
-            already_tracked = self.db.tqotd_user_message_tracked(guild_id, message_author.id, message.id)
+            already_tracked = self.tqotd_db.tqotd_user_message_tracked(guild_id, message_author.id, message.id)
 
             if not already_tracked:
                 # log that we are giving tacos for this reaction
@@ -211,6 +234,28 @@ class TacoQuestionOfTheDay(commands.Cog):
                     f"User {payload.user_id} reacted with {payload.emoji.name} to message {payload.message_id}",
                 )
                 await self.give_user_tqotd_tacos(guild_id, message_author.id, payload.channel_id, payload.message_id)
+
+                self.tracking_db.track_command_usage(
+                    guildId=guild_id,
+                    channelId=payload.channel_id if payload.channel_id else None,
+                    userId=payload.user_id,
+                    command="tqotd",
+                    subcommand="give",
+                    args=[
+                        {"type": "reaction"},
+                        {
+                            "payload": {
+                                "message_id": str(payload.message_id),
+                                "channel_id": str(payload.channel_id),
+                                "guild_id": str(payload.guild_id),
+                                "user_id": str(payload.user_id),
+                                "emoji": payload.emoji.name,
+                                "event_type": payload.event_type,
+                                # "burst": payload.burst,
+                            }
+                        },
+                    ],
+                )
             else:
                 self.log.debug(
                     guild_id,
@@ -253,7 +298,7 @@ class TacoQuestionOfTheDay(commands.Cog):
                 bot=bot, guild=guild, author=member, channel=channel, message=message
             )
             # track that the user answered the question.
-            self.db.track_tqotd_answer(guild_id, member.id, message_id)
+            self.tqotd_db.track_tqotd_answer(guild_id, member.id, message_id)
 
             tacos_settings = self.get_tacos_settings(guild_id)
 
@@ -291,13 +336,13 @@ class TacoQuestionOfTheDay(commands.Cog):
             raise e
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No tqotd settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

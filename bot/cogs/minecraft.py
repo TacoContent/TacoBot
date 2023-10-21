@@ -8,8 +8,11 @@ import traceback
 
 import discord
 import requests
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings
+from bot.cogs.lib import discordhelper, logger, settings
+from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.mongodb.minecraft import MinecraftDatabase
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 from discord.ext.commands import Context
 
@@ -26,7 +29,8 @@ class Minecraft(commands.Cog):
         self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "minecraft"
         self.SELF_DESTRUCT_TIMEOUT = 30
-        self.db = mongo.MongoDatabase()
+        self.minecraft_db = MinecraftDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -43,14 +47,14 @@ class Minecraft(commands.Cog):
 
             if not self.is_user_whitelisted(guild_id=guild_id, user_id=member.id):
                 return
-            mc_user = self.db.get_minecraft_user(guildId=guild_id, userId=member.id)
+            mc_user = self.minecraft_db.get_minecraft_user(guildId=guild_id, userId=member.id)
             if not mc_user:
                 return
 
             self.log.debug(
                 member.guild.id, f"{self._module}.{self._class}.{_method}", f"Member {member.name} has left the server"
             )
-            self.db.whitelist_minecraft_user(
+            self.minecraft_db.whitelist_minecraft_user(
                 guildId=guild_id, userId=member.id, username=mc_user['username'], uuid=mc_user['uuid'], whitelist=False
             )
 
@@ -161,6 +165,15 @@ class Minecraft(commands.Cog):
                 delete_after=AUTO_DELETE_TIMEOUT,
             )
 
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="minecraft",
+                subcommand="status",
+                args=[{"type": "command"}],
+            )
+
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -246,6 +259,15 @@ class Minecraft(commands.Cog):
                 delete_after=AUTO_DELETE_TIMEOUT,
             )
 
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="minecraft",
+                subcommand="start",
+                args=[{"type": "command"}],
+            )
+
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -319,6 +341,15 @@ class Minecraft(commands.Cog):
                 title=self.settings.get_string(guild_id, "minecraft_control_title"),
                 message=self.settings.get_string(guild_id, "minecraft_control_stop_success"),
                 delete_after=AUTO_DELETE_TIMEOUT,
+            )
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="minecraft",
+                subcommand="stop",
+                args=[{"type": "command"}],
             )
 
         except Exception as e:
@@ -456,8 +487,8 @@ class Minecraft(commands.Cog):
                 else:
                     # if correct, add to whitelist
                     # check if user is in the whitelist
-                    # minecraft_user = self.db.get_minecraft_user(ctx.author.id)
-                    self.db.whitelist_minecraft_user(
+                    # minecraft_user = self.minecraft_db.get_minecraft_user(ctx.author.id)
+                    self.minecraft_db.whitelist_minecraft_user(
                         guildId=guild_id, userId=ctx.author.id, username=mc_username, uuid=mc_uuid, whitelist=True
                     )
                     await self.messaging.send_embed(
@@ -489,8 +520,8 @@ class Minecraft(commands.Cog):
 
             # if correct, add to whitelist
             # check if user is in the whitelist
-            # minecraft_user = self.db.get_minecraft_user(ctx.author.id)
-            self.db.whitelist_minecraft_user(
+            # minecraft_user = self.minecraft_db.get_minecraft_user(ctx.author.id)
+            self.minecraft_db.whitelist_minecraft_user(
                 guildId=guild_id, userId=ctx.author.id, username=mc_username, uuid=mc_uuid, whitelist=True
             )
             await self.messaging.send_embed(
@@ -503,13 +534,22 @@ class Minecraft(commands.Cog):
                 delete_after=30,
             )
 
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="minecraft",
+                subcommand="whitelist",
+                args=[{"type": "command"}],
+            )
+
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
     def is_user_whitelisted(self, guild_id: int, user_id: int):
         # check if user is in the whitelist
-        minecraft_user = self.db.get_minecraft_user(guildId=guild_id, userId=user_id)
+        minecraft_user = self.minecraft_db.get_minecraft_user(guildId=guild_id, userId=user_id)
         if not minecraft_user:
             return False
 
@@ -520,13 +560,13 @@ class Minecraft(commands.Cog):
         return True
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

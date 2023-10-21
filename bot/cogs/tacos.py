@@ -4,8 +4,11 @@ import traceback
 import typing
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
+from bot.cogs.lib import discordhelper, logger, settings
+from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.mongodb.tacos import TacosDatabase
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 
 
@@ -21,7 +24,9 @@ class Tacos(commands.Cog):
         self.messaging = Messaging(bot)
         self.SETTINGS_SECTION = "tacos"
         self.SELF_DESTRUCT_TIMEOUT = 30
-        self.db = mongo.MongoDatabase()
+
+        self.tacos_db = TacosDatabase()
+        self.tracking_db = TrackingDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -58,7 +63,7 @@ class Tacos(commands.Cog):
         try:
             guild_id = ctx.guild.id
             await ctx.message.delete()
-            self.db.remove_all_tacos(guild_id, user.id)
+            self.tacos_db.remove_all_tacos(guild_id, user.id)
             reason_msg = reason if reason else "No reason given."
             await self.messaging.send_embed(
                 channel=ctx.channel,
@@ -67,6 +72,15 @@ class Tacos(commands.Cog):
                 delete_after=self.SELF_DESTRUCT_TIMEOUT,
             )
             await self.discord_helper.taco_purge_log(ctx.guild.id, user, ctx.author, reason_msg)
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel.id else None,
+                userId=ctx.author.id,
+                command="tacos",
+                subcommand="purge",
+                args=[{"type": "command"}, {"user_id": user.id}, {"reason": reason_msg}],
+            )
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -123,6 +137,15 @@ class Tacos(commands.Cog):
                 guild_id, ctx.author, member, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount
             )
 
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel.id else None,
+                userId=ctx.author.id,
+                command="tacos",
+                subcommand="give",
+                args=[{"type": "command"}, {"user_id": member.id}, {"amount": amount}, {"reason": reason_msg}],
+            )
+
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -136,7 +159,7 @@ class Tacos(commands.Cog):
                 guild_id = ctx.guild.id
                 await ctx.message.delete()
             # get taco count for message author
-            taco_count = self.db.get_tacos_count(guild_id, ctx.author.id)
+            taco_count = self.tacos_db.get_tacos_count(guild_id, ctx.author.id)
             tacos_word = self.settings.get_string(guild_id, "taco_singular")
             if taco_count is None:
                 taco_count = 0
@@ -150,6 +173,15 @@ class Tacos(commands.Cog):
                 ),
                 footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT),
                 delete_after=self.SELF_DESTRUCT_TIMEOUT,
+            )
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel.id else None,
+                userId=ctx.author.id,
+                command="tacos",
+                subcommand="count",
+                args=[{"type": "command"}],
             )
         except Exception as e:
             await ctx.message.delete()
@@ -181,7 +213,9 @@ class Tacos(commands.Cog):
             max_gift_tacos: int = taco_settings.get("max_gift_tacos", 10)
             max_gift_taco_timespan = taco_settings.get("max_gift_taco_timespan", 86400)
             # get the total number of tacos the user has gifted in the last 24 hours
-            total_gifted: int = self.db.get_total_gifted_tacos(ctx.guild.id, ctx.author.id, max_gift_taco_timespan)
+            total_gifted: int = self.tacos_db.get_total_gifted_tacos(
+                ctx.guild.id, ctx.author.id, max_gift_taco_timespan
+            )
             remaining_gifts = max_gift_tacos - total_gifted
 
             tacos_word = self.settings.get_string(guild_id, "taco_plural")
@@ -220,7 +254,7 @@ class Tacos(commands.Cog):
             if reason:
                 reason_msg = f"{reason}"
 
-            self.db.add_taco_gift(ctx.guild.id, ctx.author.id, amount)
+            self.tacos_db.add_taco_gift(ctx.guild.id, ctx.author.id, amount)
             await self.messaging.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_gift_title"),
@@ -239,6 +273,15 @@ class Tacos(commands.Cog):
 
             await self.discord_helper.taco_give_user(
                 guild_id, ctx.author, member, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount
+            )
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel.id else None,
+                userId=ctx.author.id,
+                command="tacos",
+                subcommand="gift",
+                args=[{"type": "command"}, {"user_id": member.id}, {"amount": amount}, {"reason": reason_msg}],
             )
 
         except Exception as e:
@@ -312,14 +355,15 @@ class Tacos(commands.Cog):
 
             taco_settings = self.get_tacos_settings(guild_id)
 
-            reaction_emoji = taco_settings.get("reaction_emoji", "🌮")
+            reaction_emojis = taco_settings.get("reaction_emojis", ["🌮"])
+            if str(payload.emoji) not in reaction_emojis:
+                return
 
             self.log.debug(
-                guild_id,
-                f"{self._module}.{self._class}.{_method}",
-                f"{payload.emoji.name} added to {payload.message_id}",
+                guild_id, f"{self._module}.{self._class}.{_method}", f"{payload.emoji} added to {payload.message_id}"
             )
-            if str(payload.emoji) == reaction_emoji:
+
+            if str(payload.emoji) in reaction_emojis:
                 user = await self.discord_helper.get_or_fetch_user(payload.user_id)
                 # ignore if the user is a bot or system
                 if not user or user.bot or user.system:
@@ -330,16 +374,9 @@ class Tacos(commands.Cog):
                 if message.author.bot or message.author.id == user.id:
                     return
 
-                has_reacted = self.db.get_taco_reaction(guild_id, user.id, channel.id, message.id)
+                has_reacted = self.tacos_db.get_taco_reaction(guild_id, user.id, channel.id, message.id)
                 if has_reacted:
                     return
-
-                # if payload.type is None:
-                #     self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Regular reaction: No payload reaction type")
-                # elif payload.type == 0: # regular reaction
-                #     self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Regular reaction")
-                # elif payload.type == 1: # super reaction
-                #     self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Super reaction")
 
                 reaction_count = taco_settings.get("reaction_count", 1)
                 # reaction_reward_count = taco_settings["reaction_reward_count"]
@@ -347,11 +384,11 @@ class Tacos(commands.Cog):
                 max_gift_tacos = taco_settings.get("max_gift_tacos", 10)
                 max_gift_taco_timespan = taco_settings.get("max_gift_taco_timespan", 86400)
                 # get the total number of tacos the user has gifted in the last 24 hours
-                total_gifted = self.db.get_total_gifted_tacos(guild_id, user.id, max_gift_taco_timespan)
+                total_gifted = self.tacos_db.get_total_gifted_tacos(guild_id, user.id, max_gift_taco_timespan)
                 # log the total number of tacos the user has gifted
                 remaining_gifts = max_gift_tacos - total_gifted
                 # track the user's taco reaction
-                self.db.add_taco_reaction(guild_id, user.id, channel.id, message.id)
+                self.tacos_db.add_taco_reaction(guild_id, user.id, channel.id, message.id)
                 # # give the user the reaction reward tacos
                 await self.discord_helper.taco_give_user(
                     guild_id,
@@ -361,9 +398,31 @@ class Tacos(commands.Cog):
                     tacotypes.TacoTypes.REACT_REWARD,
                 )
 
+                self.tracking_db.track_command_usage(
+                    guildId=guild_id,
+                    channelId=payload.channel_id if payload.channel_id else None,
+                    userId=payload.user_id,
+                    command="tacos",
+                    subcommand="reaction",
+                    args=[
+                        {"type": "reaction"},
+                        {
+                            "payload": {
+                                "message_id": str(payload.message_id),
+                                "channel_id": str(payload.channel_id),
+                                "guild_id": str(payload.guild_id),
+                                "user_id": str(payload.user_id),
+                                "emoji": str(payload.emoji),
+                                "event_type": payload.event_type,
+                                # "burst": payload.burst,
+                            }
+                        },
+                    ],
+                )
+
                 if reaction_count <= remaining_gifts:
                     # track that the user has gifted tacos via reactions
-                    self.db.add_taco_gift(guild_id, user.id, reaction_count)
+                    self.tacos_db.add_taco_gift(guild_id, user.id, reaction_count)
                     # give taco giver tacos too
                     await self.discord_helper.taco_give_user(
                         guild_id,
@@ -379,13 +438,13 @@ class Tacos(commands.Cog):
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

@@ -8,8 +8,10 @@ import os
 import traceback
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, permissions, settings
+from bot.cogs.lib import discordhelper, logger, permissions, settings
+from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.messaging import Messaging
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 
 
@@ -24,10 +26,10 @@ class MoveMessage(commands.Cog):
         self.permissions = permissions.Permissions(bot)
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
+        self.tracking_db = TrackingDatabase()
 
         self.SETTINGS_SECTION = "move_message"
 
-        self.db = mongo.MongoDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -83,6 +85,28 @@ class MoveMessage(commands.Cog):
                         message=self.settings.get_string(guild_id, "move_choose_channel_message"),
                         timeout=60,
                         callback=callback,
+                    )
+
+                    self.tracking_db.track_command_usage(
+                        guildId=guild_id,
+                        channelId=ctx.channel.id if ctx.channel else None,
+                        userId=ctx.author.id,
+                        command="move-message",
+                        subcommand=None,
+                        args=[
+                            {"type": "reaction"},
+                            {
+                                "payload": {
+                                    "message_id": str(payload.message_id),
+                                    "channel_id": str(payload.channel_id),
+                                    "guild_id": str(payload.guild_id),
+                                    "user_id": str(payload.user_id),
+                                    "emoji": payload.emoji.name,
+                                    "event_type": payload.event_type,
+                                    # "burst": payload.burst,
+                                }
+                            },
+                        ],
                     )
 
         except Exception as e:
@@ -141,18 +165,27 @@ class MoveMessage(commands.Cog):
                 reason="Moved by admin",
             )
             await message.delete()
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="move-message",
+                subcommand="move",
+                args=[{"type": "command"}, {"message_id": messageId}],
+            )
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, self.SETTINGS_SECTION)
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
         if not cog_settings:
             raise Exception(f"No cog settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(self.db, guildId, "tacos")
+        cog_settings = self.settings.get_settings(guildId, "tacos")
         if not cog_settings:
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings

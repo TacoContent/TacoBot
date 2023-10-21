@@ -3,8 +3,11 @@ import os
 import traceback
 
 import discord
-from bot.cogs.lib import discordhelper, logger, loglevel, mongo, settings, tacotypes
-from bot.cogs.lib.system_actions import SystemActions
+from bot.cogs.lib import discordhelper, logger, settings
+from bot.cogs.lib.enums import loglevel, tacotypes
+from bot.cogs.lib.enums.system_actions import SystemActions
+from bot.cogs.lib.mongodb.tacos import TacosDatabase
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 
 
@@ -17,7 +20,8 @@ class JoinLeaveTracker(commands.Cog):
         self.bot = bot
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
-        self.db = mongo.MongoDatabase()
+        self.tracking_db = TrackingDatabase()
+        self.taco_db = TacosDatabase()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -36,8 +40,8 @@ class JoinLeaveTracker(commands.Cog):
 
             _method = inspect.stack()[0][3]
             self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"{member} left the server")
-            self.db.remove_all_tacos(guild_id, member.id)
-            self.db.track_tacos_log(
+            self.taco_db.remove_all_tacos(guild_id, member.id)
+            self.taco_db.track_tacos_log(
                 guildId=guild_id,
                 toUserId=member.id,
                 fromUserId=self.bot.user.id,
@@ -45,8 +49,8 @@ class JoinLeaveTracker(commands.Cog):
                 reason="leaving the server",
                 type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.LEAVE_SERVER),
             )
-            self.db.track_user_join_leave(guildId=guild_id, userId=member.id, join=False)
-            self.db.track_system_action(
+            self.tracking_db.track_user_join_leave(guildId=guild_id, userId=member.id, join=False)
+            self.tracking_db.track_system_action(
                 guild_id=guild_id, action=SystemActions.LEAVE_SERVER, data={"user_id": str(member.id)}
             )
         except Exception as ex:
@@ -68,8 +72,8 @@ class JoinLeaveTracker(commands.Cog):
                 tacotypes.TacoTypes.JOIN_SERVER,
             )
 
-            self.db.track_user_join_leave(guildId=guild_id, userId=member.id, join=True)
-            self.db.track_system_action(
+            self.tracking_db.track_user_join_leave(guildId=guild_id, userId=member.id, join=True)
+            self.tracking_db.track_system_action(
                 guild_id=guild_id, action=SystemActions.JOIN_SERVER, data={"user_id": str(member.id)}
             )
         except Exception as ex:
