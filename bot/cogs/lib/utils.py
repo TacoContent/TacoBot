@@ -45,18 +45,8 @@ def get_random_string(length: int = 10) -> str:
 
 
 def get_random_name(noun_count=1, adjective_count=1) -> str:
-    fallback_nouns = [
-        "Aardvark",
-        "Albatross",
-        "Alligator",
-        "Alpaca",
-    ]
-    fallback_adjectives = [
-        "Able",
-        "Acidic",
-        "Adorable",
-        "Aggressive",
-    ]
+    fallback_nouns = ["Aardvark", "Albatross", "Alligator", "Alpaca"]
+    fallback_adjectives = ["Able", "Acidic", "Adorable", "Aggressive"]
     try:
         adjectives = load_from_gist("adjectives", adjective_count)
         nouns = load_from_gist("nouns", noun_count)
@@ -80,7 +70,6 @@ def get_random_name(noun_count=1, adjective_count=1) -> str:
                 return " ".join(
                     random.sample(fallback_adjectives, adjective_count) + random.sample(fallback_nouns, noun_count)
                 )
-
 
 
 def get_user_display_name(user: typing.Union[discord.User, discord.Member]) -> str:

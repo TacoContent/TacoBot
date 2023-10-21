@@ -5,8 +5,8 @@ from concurrent.futures import ProcessPoolExecutor
 
 import bot.tacobot as bot
 import discord
-from bot.cogs.lib.mongodb.migration_runner import MigrationRunner
 from bot.cogs.lib.colors import Colors
+from bot.cogs.lib.mongodb.migration_runner import MigrationRunner
 from dotenv import find_dotenv, load_dotenv
 from metrics.exporter import MetricsExporter
 
@@ -14,7 +14,7 @@ load_dotenv(find_dotenv())
 
 
 def sighandler(signum, frame):
-    print(Colors.colorize(Colors.FGYELLOW,"<SIGTERM received>"))
+    print(Colors.colorize(Colors.FGYELLOW, "<SIGTERM received>"))
     exit(0)
 
 
@@ -37,7 +37,7 @@ def main():
         tacobot.remove_command('help')
         tacobot.run(DISCORD_TOKEN)
     except KeyboardInterrupt:
-        print(Colors.colorize(Colors.FGYELLOW,"<KeyboardInterrupt received>"))
+        print(Colors.colorize(Colors.FGYELLOW, "<KeyboardInterrupt received>"))
         exit(0)
 
 
@@ -47,7 +47,7 @@ def exporter():
         exporter = MetricsExporter()
         exporter.run()
     except KeyboardInterrupt:
-        print(Colors.colorize(Colors.FGYELLOW,"<KeyboardInterrupt received>"))
+        print(Colors.colorize(Colors.FGYELLOW, "<KeyboardInterrupt received>"))
         exit(0)
 
 

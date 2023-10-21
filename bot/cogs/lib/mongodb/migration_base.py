@@ -36,6 +36,7 @@ class MigrationBase:
                 message=f"Failed to close connection: {ex}",
                 stack=traceback.format_exc(),
             )
+
     def run(self) -> None:
         pass
 

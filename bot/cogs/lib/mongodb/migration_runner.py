@@ -34,12 +34,12 @@ class MigrationRunner:
                 migration_instance = migration_class()
                 if migration_instance.needs_run():
                     self.log.debug(
-                        0, f"{self._module}.{self._class}.start_migrations", f"Running migration {migration}"
+                        0, f"{self._module}.{self._class}.{_method}", f"Running migration {migration}"
                     )
                     migration_instance.run()
                 else:
                     self.log.debug(
-                        0, f"{self._module}.{self._class}.start_migrations", f"Migration {migration} has already been run"
+                        0, f"{self._module}.{self._class}.{_method}", f"Migration {migration} has already been run"
                     )
             except Exception as ex:
                 self.log.error(
