@@ -5,7 +5,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 import bot.tacobot as bot
 import discord
-from bot.cogs.lib.migration_runner import MigrationRunner
+from bot.cogs.lib.mongodb.migration_runner import MigrationRunner
 from bot.cogs.lib.colors import Colors
 from dotenv import find_dotenv, load_dotenv
 from metrics.exporter import MetricsExporter

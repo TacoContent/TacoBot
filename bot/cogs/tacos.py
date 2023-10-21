@@ -355,14 +355,17 @@ class Tacos(commands.Cog):
 
             taco_settings = self.get_tacos_settings(guild_id)
 
-            reaction_emoji = taco_settings.get("reaction_emoji", "🌮")
+            reaction_emojis = taco_settings.get("reaction_emojis", ["🌮"])
+            if str(payload.emoji.name) not in reaction_emojis:
+                return
 
             self.log.debug(
                 guild_id,
                 f"{self._module}.{self._class}.{_method}",
                 f"{payload.emoji.name} added to {payload.message_id}",
             )
-            if str(payload.emoji) == reaction_emoji:
+
+            if str(payload.emoji.name) in reaction_emojis:
                 user = await self.discord_helper.get_or_fetch_user(payload.user_id)
                 # ignore if the user is a bot or system
                 if not user or user.bot or user.system:
@@ -376,13 +379,6 @@ class Tacos(commands.Cog):
                 has_reacted = self.tacos_db.get_taco_reaction(guild_id, user.id, channel.id, message.id)
                 if has_reacted:
                     return
-
-                # if payload.type is None:
-                #     self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Regular reaction: No payload reaction type")
-                # elif payload.type == 0: # regular reaction
-                #     self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Regular reaction")
-                # elif payload.type == 1: # super reaction
-                #     self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Super reaction")
 
                 reaction_count = taco_settings.get("reaction_count", 1)
                 # reaction_reward_count = taco_settings["reaction_reward_count"]

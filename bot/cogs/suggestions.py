@@ -6,7 +6,7 @@ import typing
 import uuid
 
 import discord
-from bot.cogs.lib import discordhelper, logger, models, settings
+from bot.cogs.lib import discordhelper, logger, settings
 from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.models.suggestionstates import SuggestionStates

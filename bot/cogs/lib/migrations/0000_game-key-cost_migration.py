@@ -2,7 +2,7 @@ import inspect
 import os
 import traceback
 
-from bot.cogs.lib.migration_base import MigrationBase
+from bot.cogs.lib.mongodb.migration_base import MigrationBase
 
 
 class Migration(MigrationBase):

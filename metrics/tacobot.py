@@ -4,7 +4,7 @@ import time
 import traceback
 
 from bot.cogs.lib import logger
-from bot.cogs.lib.enums import loglevel
+from bot.cogs.lib.enums.loglevel import LogLevel
 from bot.cogs.lib.mongodb.metrics import MetricsDatabase
 from bot.cogs.lib.settings import Settings
 from bot.cogs.lib.utils import dict_get
@@ -20,9 +20,9 @@ class TacoBotMetrics:
 
         self.settings = Settings()
 
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        log_level = LogLevel[self.settings.log_level.upper()]
         if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
+            log_level = LogLevel.DEBUG
         self.log = logger.Log(log_level)
 
         self.namespace = "tacobot"
@@ -391,7 +391,7 @@ class TacoBotMetrics:
             self.errors.labels(source="tacos").set(1)
 
         try:
-            q_all_gift_tacos = self.db.get_sum_all_gift_tacos()
+            q_all_gift_tacos = self.db.get_sum_all_gift_tacos() or []
             for row in q_all_gift_tacos:
                 self.sum_taco_gifts.labels(guild_id=row['_id']).set(row['total'])
             self.errors.labels(source="gift_tacos").set(0)
@@ -400,7 +400,7 @@ class TacoBotMetrics:
             self.errors.labels(source="gift_tacos").set(1)
 
         try:
-            q_all_reaction_tacos = self.db.get_sum_all_taco_reactions()
+            q_all_reaction_tacos = self.db.get_sum_all_taco_reactions() or []
             for row in q_all_reaction_tacos:
                 self.sum_taco_reactions.labels(guild_id=row['_id']).set(row['total'])
             self.errors.labels(source="reaction_tacos").set(0)
@@ -409,7 +409,7 @@ class TacoBotMetrics:
             self.errors.labels(source="reaction_tacos").set(1)
 
         try:
-            q_live_now = self.db.get_live_now_count()
+            q_live_now = self.db.get_live_now_count() or []
             for row in q_live_now:
                 self.sum_live_now.labels(guild_id=row['_id']).set(row['total'])
             self.errors.labels(source="live_now").set(0)
@@ -611,7 +611,7 @@ class TacoBotMetrics:
         try:
             logs = self.db.get_logs() or []
             for gid in known_guilds:
-                for level in ['INFO', 'WARNING', 'ERROR', 'DEBUG']:
+                for level in LogLevel.names_to_list():
                     t_labels = {"guild_id": gid, "level": level}
                     self.sum_logs.labels(**t_labels).set(0)
             for row in logs:
@@ -806,11 +806,12 @@ class TacoBotMetrics:
                 invite_labels = {
                     "guild_id": row['_id']["guild_id"],
                     "user_id": row['_id']["user_id"],
-                    "username": row['user'][0]["username"],
+                    # "username": row['user'][0]["username"],
+                    "username": user["username"],
                 }
                 total_count = row["total"]
                 if total_count is not None and total_count > 0:
-                    self.invites.labels(**invite_labels).set(row["total"])
+                    self.invites.labels(**invite_labels).set(total_count)
             self.errors.labels("invites").set(0)
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
