@@ -33,9 +33,7 @@ class MigrationRunner:
                 migration_class = getattr(module, "Migration")
                 migration_instance = migration_class()
                 if migration_instance.needs_run():
-                    self.log.debug(
-                        0, f"{self._module}.{self._class}.{_method}", f"Running migration {migration}"
-                    )
+                    self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Running migration {migration}")
                     migration_instance.run()
                 else:
                     self.log.debug(

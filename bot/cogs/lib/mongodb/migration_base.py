@@ -3,9 +3,9 @@ import os
 import traceback
 
 from bot.cogs.lib import logger, settings
+from bot.cogs.lib.enums import loglevel
 from pymongo import MongoClient
 
-from bot.cogs.lib.enums import loglevel
 
 
 class MigrationBase:
