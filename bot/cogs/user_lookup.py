@@ -5,8 +5,8 @@ import typing
 
 from bot.cogs.lib import discordhelper, logger, settings
 from bot.cogs.lib.enums import loglevel
-from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.enums.member_status import MemberStatus
+from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 
 

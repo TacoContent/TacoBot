@@ -8,9 +8,9 @@ import discord
 from bot.cogs.lib import utils
 from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.enums.member_status import MemberStatus
+from bot.cogs.lib.enums.system_actions import SystemActions
 from bot.cogs.lib.models.triviaquestion import TriviaQuestion
 from bot.cogs.lib.mongodb.database import Database
-from bot.cogs.lib.enums.system_actions import SystemActions
 
 
 class TrackingDatabase(Database):

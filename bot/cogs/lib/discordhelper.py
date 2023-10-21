@@ -9,9 +9,9 @@ import discord
 from bot.cogs.lib import logger, settings, utils
 from bot.cogs.lib.ChannelSelect import ChannelSelectView
 from bot.cogs.lib.enums import loglevel, tacotypes
-from bot.cogs.lib.mongodb.tacos import TacosDatabase
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.models.textwithattachments import TextWithAttachments
+from bot.cogs.lib.mongodb.tacos import TacosDatabase
 from bot.cogs.lib.RoleSelectView import RoleSelect, RoleSelectView
 from bot.cogs.lib.YesOrNoView import YesOrNoView
 
