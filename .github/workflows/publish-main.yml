@@ -4,12 +4,16 @@ on:
   push:
     branches:
       - develop
-    #   - beta/*
+      - "!gh-pages" # Except gh-pages
+      - "!main" # Except main
+      - "!master" # Except master
 env:
   GITHUB_TOKEN: "${{ github.token }}"
-  CONTAINER_ORG: "${{ github.repository_owner }}"
-  CONTAINER_NAME: "${{ github.event.repository.name }}"
-  CONTAINER_REGISTRY: "ghcr.io"
+  IMAGE_ORG: "${{ github.repository_owner }}"
+  IMAGE_NAME: "${{ github.event.repository.name }}"
+  GH_IMAGE_REGISTRY: "ghcr.io"
+  BUILD_TAGS: ""
+  BUILD_DATE: ""
 jobs:
   version:
     runs-on: ubuntu-latest
@@ -43,10 +47,10 @@ jobs:
         id: prep
         run: |
           # lower case the container org
-          CONTAINER_ORG="${CONTAINER_ORG,,}";
+          IMAGE_ORG="${IMAGE_ORG,,}";
           # lower case the container name
-          CONTAINER_NAME="${CONTAINER_NAME,,}";
-          GHCR_IMAGE="${CONTAINER_REGISTRY}/${CONTAINER_ORG}/${CONTAINER_NAME}";
+          IMAGE_NAME="${IMAGE_NAME,,}";
+          GHCR_IMAGE="${GH_IMAGE_REGISTRY}/${IMAGE_ORG}/${IMAGE_NAME}";
           BUILD_DATEZ="$(date +'%Y-%m-%dT%TZ%z' -u)";
           TAGSZ="${GHCR_IMAGE}:latest,${GHCR_IMAGE}:${{ needs.version.outputs.app_version }}";
           echo "BUILD_TAGS=${TAGSZ}" >> "$GITHUB_ENV";
@@ -61,7 +65,7 @@ jobs:
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
-          registry: "${{ env.CONTAINER_REGISTRY }}"
+          registry: "${{ env.GH_IMAGE_REGISTRY }}"
           username: "${{ secrets.GHCR_USERNAME }}"
           password: "${{ github.token }}"
 
@@ -71,7 +75,7 @@ jobs:
         with:
           push: true
           build-args: |
-            PROJECT_NAME=${{ env.CONTAINER_NAME }}
+            PROJECT_NAME=${{ env.IMAGE_NAME }}
             BUILD_VERSION=${{ needs.version.outputs.app_version }}
             BUILD_REF=${{ github.ref }}
             BUILD_SHA=${{ github.sha }}

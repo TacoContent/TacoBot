@@ -7,6 +7,7 @@ import typing
 from random import random
 
 import discord
+import pytz
 from bot.cogs.lib import discordhelper, logger, settings
 from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.messaging import Messaging
@@ -186,8 +187,7 @@ class Birthday(commands.Cog):
     def get_todays_birthdays(self, guildId: int):
         _method = inspect.stack()[0][3]
         try:
-            # central_tz= pytz.timezone(self.settings.timezone)
-            date = datetime.datetime.now(tz=None)
+            date = datetime.datetime.now(tz=pytz.timezone(self.settings.timezone))
             month = date.month
             day = date.day
             birthdays = self.birthdays_db.get_user_birthdays(guildId, month, day)
