@@ -423,7 +423,7 @@ class Tacos(commands.Cog):
                 if reaction_count <= remaining_gifts:
                     # track that the user has gifted tacos via reactions
                     self.tacos_db.add_taco_gift(guild_id, user.id, reaction_count)
-                    # give taco giver tacos too
+                    # give taco giver tacos too 
                     await self.discord_helper.taco_give_user(
                         guild_id,
                         self.bot.user,

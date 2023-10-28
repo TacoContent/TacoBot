@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import inspect
 import os
+import pytz
 import traceback
 import typing
 from random import random
@@ -186,8 +187,7 @@ class Birthday(commands.Cog):
     def get_todays_birthdays(self, guildId: int):
         _method = inspect.stack()[0][3]
         try:
-            # central_tz= pytz.timezone(self.settings.timezone)
-            date = datetime.datetime.now(tz=None)
+            date = datetime.datetime.now(tz=pytz.timezone(self.settings.timezone))
             month = date.month
             day = date.day
             birthdays = self.birthdays_db.get_user_birthdays(guildId, month, day)
