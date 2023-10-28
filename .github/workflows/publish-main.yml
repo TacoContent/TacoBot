@@ -11,7 +11,7 @@ env:
   GITHUB_TOKEN: "${{ github.token }}"
   IMAGE_ORG: "${{ github.repository_owner }}"
   IMAGE_NAME: "${{ github.event.repository.name }}"
-  IMAGE_REGISTRY: "ghcr.io"
+  GH_IMAGE_REGISTRY: "ghcr.io"
   BUILD_TAGS: ""
   BUILD_DATE: ""
 jobs:
@@ -50,7 +50,7 @@ jobs:
           IMAGE_ORG="${IMAGE_ORG,,}";
           # lower case the container name
           IMAGE_NAME="${IMAGE_NAME,,}";
-          GHCR_IMAGE="${IMAGE_REGISTRY}/${IMAGE_ORG}/${IMAGE_NAME}";
+          GHCR_IMAGE="${GH_IMAGE_REGISTRY}/${IMAGE_ORG}/${IMAGE_NAME}";
           BUILD_DATEZ="$(date +'%Y-%m-%dT%TZ%z' -u)";
           TAGSZ="${GHCR_IMAGE}:latest,${GHCR_IMAGE}:${{ needs.version.outputs.app_version }}";
           echo "BUILD_TAGS=${TAGSZ}" >> "$GITHUB_ENV";
@@ -65,7 +65,7 @@ jobs:
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
-          registry: "${{ env.IMAGE_REGISTRY }}"
+          registry: "${{ env.GH_IMAGE_REGISTRY }}"
           username: "${{ secrets.GHCR_USERNAME }}"
           password: "${{ github.token }}"
 
