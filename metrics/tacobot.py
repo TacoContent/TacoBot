@@ -185,6 +185,20 @@ class TacoBotMetrics:
             labelnames=["guild_id"],
         )
 
+        self.sum_user_game_keys_claimed = Gauge(
+            namespace=self.namespace,
+            name=f"user_game_keys_redeemed",
+            documentation="The number of game keys claimed by a user",
+            labelnames=["guild_id", "user_id", "username"],
+        )
+
+        self.sum_user_game_keys_submitted = Gauge(
+            namespace=self.namespace,
+            name=f"user_game_keys_submitted",
+            documentation="The number of game keys submitted by a user",
+            labelnames=["guild_id", "user_id", "username"],
+        )
+
         self.sum_minecraft_whitelist = Gauge(
             namespace=self.namespace,
             name=f"minecraft_whitelist",
@@ -571,6 +585,42 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
             self.errors.labels("game_keys_claimed").set(1)
+
+        try:
+            q_user_game_keys_claimed = self.db.get_user_game_keys_redeemed_count() or []
+            for row in q_user_game_keys_claimed:
+                user = {"user_id": row["_id"]['user_id'], "username": row["_id"]['user_id']}
+                if row["user"] is not None and len(row["user"]) > 0:
+                    user = row["user"][0]
+
+                user_labels = {
+                    "guild_id": row['_id']['guild_id'],
+                    "user_id": user['user_id'],
+                    "username": user['username'],
+                }
+                self.sum_user_game_keys_claimed.labels(**user_labels).set(row['total'])
+            self.errors.labels("user_game_keys_claimed").set(0)
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", traceback.format_exc())
+            self.errors.labels("user_game_keys_claimed").set(1)
+
+        try:
+            q_user_game_keys_submitted = self.db.get_user_game_keys_submitted_count() or []
+            for row in q_user_game_keys_submitted:
+                user = {"user_id": row["_id"]['user_id'], "username": row["_id"]['user_id']}
+                if row["user"] is not None and len(row["user"]) > 0:
+                    user = row["user"][0]
+
+                user_labels = {
+                    "guild_id": row['_id']['guild_id'],
+                    "user_id": user['user_id'],
+                    "username": user['username'],
+                }
+                self.sum_user_game_keys_submitted.labels(**user_labels).set(row['total'])
+            self.errors.labels("user_game_keys_submitted").set(0)
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", traceback.format_exc())
+            self.errors.labels("user_game_keys_submitted").set(1)
 
         try:
             q_minecraft_whitelisted = self.db.get_minecraft_whitelisted_count() or []
