@@ -312,7 +312,7 @@ class GameKeys(commands.Cog):
                     pass
 
                 self.gamekeys_db.close_game_key_offer_by_message(guild_id, int(offer["message_id"]))
-
+                await self.bot.change_presence(activity=None)
             else:
                 self.log.debug(
                     guild_id,
