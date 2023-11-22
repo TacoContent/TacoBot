@@ -203,6 +203,8 @@ class GameKeys(commands.Cog):
                 view=claim_view,
             )
 
+            await self.bot.change_presence(activity=discord.Game(name=f"{game_data['title']} ({cost} {tacos_word})"))
+
             # record offer
             self.gamekeys_db.open_game_key_offer(game_data["id"], guild_id, offer_message.id, ctx.channel.id)
         except Exception as e:

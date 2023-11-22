@@ -84,9 +84,12 @@ class TacoTuesday(commands.Cog):
 
             result_message = await output_channel.send(content=message)
             # add import_emoji to message so we can archive it later
-            import_emoji = cog_settings.get("import_emoji", ["🇮"])
-            if len(import_emoji) > 0:
-                await result_message.add_reaction(import_emoji[0])
+            import_emoji: list = cog_settings.get("import_emoji", ["🇮"])
+            init_emoji = ["🌮"]
+            for emoji in import_emoji:
+                init_emoji.append(emoji)
+            if len(init_emoji) > 0:
+                await result_message.add_reaction(init_emoji[0])
 
             self._import_taco_tuesday(result_message, tweet)
 
