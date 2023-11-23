@@ -39,7 +39,34 @@ class GameKeys(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        pass
+        _method = inspect.stack()[0][3]
+        guild_id = 0
+        try:
+            guild_id = self.bot.guilds[0].id
+
+            cog_settings = self.get_cog_settings(guild_id)
+            if not cog_settings.get("enabled", False):
+                return
+
+            reward_channel_id = cog_settings.get("reward_channel_id", "0")
+            offer = self.gamekeys_db.find_open_game_key_offer(guild_id=guild_id, channel_id=int(reward_channel_id))
+
+            if offer:
+                game_data = self.gamekeys_db.get_game_key_data(str(offer["game_key_id"]))
+                if game_data:
+                    default_cost = cog_settings.get("cost", 500)
+                    cost = game_data.get("cost", default_cost)
+
+                    if cost == 1:
+                        tacos_word = self.settings.get_string(guild_id, "taco_singular")
+                    else:
+                        tacos_word = self.settings.get_string(guild_id, "taco_plural")
+
+                    await self.bot.change_presence(
+                        activity=discord.Game(name=f"{game_data['title']} ({cost} {tacos_word})")
+                    )
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_guild_available(self, guild):
