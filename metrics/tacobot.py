@@ -343,6 +343,13 @@ class TacoBotMetrics:
             labelnames=["guild_id", "approved"],
         )
 
+        self.twitch_stream_avatar_duel_winners = Gauge(
+            namespace=self.namespace,
+            name=f"twitch_stream_avatar_duel_winners",
+            documentation="The number of twitch stream avatar duel winners",
+            labelnames=["guild_id", "user_id", "username", "channel", "channel_user_id"],
+        )
+
         self.build_info = Gauge(
             namespace=self.namespace,
             name=f"build_info",
@@ -911,3 +918,25 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
             self.errors.labels("introductions").set(1)
+
+        try:
+            q_twitch_stream_avatar_duel_winners = self.db.get_stream_avatar_duel_winners() or []
+            # for gid in known_guilds:
+            for row in q_twitch_stream_avatar_duel_winners:
+                winner = {"user_id": row["_id"]['winner_user_id'], "username": row["_id"]['winner_user_id']}
+                if row["winner"] is not None and len(row["winner"]) > 0:
+                    winner = row["winner"][0]
+                channel = {"channel": row["_id"]['channel'], "channel_user_id": row["_id"]['channel_user_id']}
+                if row["channel"] is not None and len(row["channel"]) > 0:
+                    channel = row["channel"][0]
+                user_labels = {
+                    "guild_id": row['_id']['guild_id'],
+                    "user_id": winner['user_id'],
+                    "username": winner['username'],
+                    "channel": channel['username'],
+                    "channel_user_id": channel['user_id'],
+                }
+                self.twitch_stream_avatar_duel_winners.labels(**user_labels).set(row["total"])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.errors.labels("twitch_stream_avatar_duel_winners").set(1)

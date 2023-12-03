@@ -1118,3 +1118,61 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+
+    def get_stream_avatar_duel_winners(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
+        try:
+
+            if self.connection is None:
+                self.open()
+            return self.connection.twitch_stream_avatar_duel.aggregate(
+                [
+                    {
+                        "$group": {
+                            "_id": {
+                                "guild_id": "$guild_id",
+                                "channel": "$channel",
+                                "channel_user_id": "$channel_user_id",
+                                "winner": "$winner",
+                                "winner_user_id": "$winner_user_id",
+                            },
+                            "total": {"$sum": 1},
+                        }
+                    },
+                    {
+                        "$lookup": {
+                            "from": "users",
+                            "let": {"user_id": "$_id.winner_user_id", "guild_id": "$_id.guild_id"},
+                            "pipeline": [
+                                {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
+                                {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
+                                {"$project": {"username": 1, "user_id": 1, "guild_id": 1}},
+                            ],
+                            "as": "winner",
+                        }
+                    },
+                    {
+                        "$lookup": {
+                            "from": "users",
+                            "let": {"user_id": "$_id.channel_user_id", "guild_id": "$_id.guild_id"},
+                            "pipeline": [
+                                {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
+                                {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
+                                {"$project": {"username": 1, "user_id": 1, "guild_id": 1}},
+                            ],
+                            "as": "channel",
+                        }
+                    },
+                    {"$match": {"winner": {"$ne": []}}},
+                    {"$sort": {"total": -1}},
+                ]
+            )
+        except Exception as ex:
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
