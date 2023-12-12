@@ -38,7 +38,6 @@ class TwitterPreviewCog(commands.Cog):
                 return
             # if the message is from a bot, ignore
             if message.author.bot or message.author.system:
-                self.log.debug(guild_id, f"{self._module}.{_method}", "Message is from a bot or system")
                 return
             guild_id = message.guild.id
 
@@ -47,24 +46,19 @@ class TwitterPreviewCog(commands.Cog):
             command_prefix = await self.bot.get_prefix(message)
             for prefix in command_prefix:
                 if message.content.startswith(prefix):
-                    self.log.debug(guild_id, f"{self._module}.{_method}", "Message is a command")
                     return
 
             pattern = re.compile(r"(https://(?:(?:www)\.)?(twitter|x)\.com/(.*)?/status/(.*)?)", flags=re.IGNORECASE)
             match = pattern.search(message.content)
             if not match:
-                self.log.debug(guild_id, f"{self._module}.{_method}", "No match")
                 return
 
             # extract the full twitter link
             twitter_link = match.group(1)
             domain = match.group(2)
-            self.log.debug(guild_id, f"{self._module}.{_method}", f"Twitter link: {twitter_link}")
-            self.log.debug(guild_id, f"{self._module}.{_method}", f"Domain: {domain}")
 
             # if the link is already a vxtwitter link, ignore
             if twitter_link.startswith("https://vxtwitter.com"):
-                self.log.debug(guild_id, f"{self._module}.{_method}", "Link is already a vxtwitter link")
                 return
 
             # replace the twitter link with the vxtwitter link
