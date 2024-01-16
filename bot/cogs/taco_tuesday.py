@@ -231,6 +231,14 @@ class TacoTuesday(commands.Cog):
             )
             return
 
+        # get 🌮 reactions and the user that did that
+        taco_reactions = discord.utils.get(message.reactions, emoji="🌮")
+        if taco_reactions:
+            async for user in taco_reactions.users():
+                if user.bot or user.system:
+                    continue
+                await self.give_user_tacotuesday_tacos(guild_id, user.id, channel.id)
+
         # check if this reaction is the first one of this type on the message
         reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)
         if reactions and reactions.count > 1:
