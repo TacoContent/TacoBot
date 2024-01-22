@@ -713,7 +713,10 @@ class DiscordHelper:
     ) -> typing.Union[TextWithAttachments, None]:
         def check_user(m):
             same = m.author.id == ctx.author.id
-            return same
+            # check that the message is in the same channel as the command or the command was sent in a DM channel
+
+            channel_check = m.channel.id == targetChannel.id if targetChannel else True
+            return channel_check and same
 
         guild_id = 0
         if ctx.guild:
