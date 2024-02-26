@@ -4,6 +4,7 @@ import os
 import traceback
 import typing
 
+import asyncio
 import discord
 from bot.cogs.lib import discordhelper, logger, settings, utils
 from bot.cogs.lib.enums import loglevel, tacotypes
@@ -145,6 +146,9 @@ class GameKeys(commands.Cog):
             # then create a new offer
             await self._close_offer(ctx)
 
+            # wait 3 seconds before creating a new offer
+            await asyncio.sleep(3)
+
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings.get("enabled", False):
                 self.log.debug(
@@ -162,7 +166,7 @@ class GameKeys(commands.Cog):
 
             offer = self.gamekeys_db.find_open_game_key_offer(guild_id, reward_channel.id)
             if offer:
-                self.log.warn(
+                self.log.error(
                     guild_id,
                     f"{self._module}.{self._class}.{_method}",
                     f"An existing open offer was found for guild {guild_id} in channel {reward_channel.name}. Ignoring request to create a new offer.",
