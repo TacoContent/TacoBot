@@ -160,6 +160,15 @@ class GameKeys(commands.Cog):
                 )
                 return
 
+            offer = self.gamekeys_db.find_open_game_key_offer(guild_id, reward_channel.id)
+            if offer:
+                self.log.warn(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"An existing open offer was found for guild {guild_id} in channel {reward_channel.name}. Ignoring request to create a new offer.",
+                )
+                return
+
             game_data = self.gamekeys_db.get_random_game_key_data(guild_id=guild_id)
             if not game_data:
                 await reward_channel.send(
