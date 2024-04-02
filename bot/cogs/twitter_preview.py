@@ -87,5 +87,6 @@ class TwitterPreviewCog(commands.Cog):
             raise Exception(f"No tacos settings found for guild {guildId}")
         return cog_settings
 
+
 async def setup(bot):
     await bot.add_cog(TwitterPreviewCog(bot))
