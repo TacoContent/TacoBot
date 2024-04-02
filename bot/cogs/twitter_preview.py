@@ -21,6 +21,8 @@ class TwitterPreviewCog(commands.Cog):
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
+        self.SETTINGS_SECTION = "twitter_preview"
+
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -40,6 +42,10 @@ class TwitterPreviewCog(commands.Cog):
             if message.author.bot or message.author.system:
                 return
             guild_id = message.guild.id
+
+            cog_settings = self.get_cog_settings(guild_id)
+            if not cog_settings["enabled"]:
+                return
 
             # check if message is a command
             # get the command prefix
@@ -69,6 +75,17 @@ class TwitterPreviewCog(commands.Cog):
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{_method}", f"{e}", traceback.format_exc())
 
+    def get_cog_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
+        if not cog_settings:
+            raise Exception(f"No cog settings found for guild {guildId}")
+        return cog_settings
+
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
+        cog_settings = self.settings.get_settings(guildId, "tacos")
+        if not cog_settings:
+            raise Exception(f"No tacos settings found for guild {guildId}")
+        return cog_settings
 
 async def setup(bot):
     await bot.add_cog(TwitterPreviewCog(bot))
