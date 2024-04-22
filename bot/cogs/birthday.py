@@ -146,6 +146,8 @@ class Birthday(commands.Cog):
             if ctx.guild:
                 guild_id = ctx.guild.id
                 await ctx.message.delete()
+
+            await asyncio.sleep(3)
             # check if the birthday check is enabled
             # check if the birthday check has not ran today yet
             if self.was_checked_today(guild_id):
