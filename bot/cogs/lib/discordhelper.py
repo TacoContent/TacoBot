@@ -716,7 +716,9 @@ class DiscordHelper:
             # check that the message is in the same channel as the command or the command was sent in a DM channel
 
             # was it a DM response from the user?
-            dm_check = m.guild is None and ctx.author.dm_channel is not None and ctx.author.dm_channel.id == m.channel.id
+            dm_check = (
+                m.guild is None and ctx.author.dm_channel is not None and ctx.author.dm_channel.id == m.channel.id
+            )
             # check if the guild is none for the message, which means it was a DM, so we need to make sure the response is in the same DM
             channel_check = m.guild is not None and m.channel.id == ctx.channel.id
             # print(f"dm_check: {dm_check}")

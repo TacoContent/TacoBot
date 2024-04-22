@@ -1122,7 +1122,6 @@ class MetricsDatabase(Database):
     def get_stream_avatar_duel_winners(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
         try:
-
             if self.connection is None:
                 self.open()
             return self.connection.twitch_stream_avatar_duel.aggregate(
