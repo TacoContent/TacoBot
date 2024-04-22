@@ -185,6 +185,20 @@ class TacoBotMetrics:
             labelnames=["guild_id"],
         )
 
+        self.sum_user_game_keys_claimed = Gauge(
+            namespace=self.namespace,
+            name=f"user_game_keys_redeemed",
+            documentation="The number of game keys claimed by a user",
+            labelnames=["guild_id", "user_id", "username"],
+        )
+
+        self.sum_user_game_keys_submitted = Gauge(
+            namespace=self.namespace,
+            name=f"user_game_keys_submitted",
+            documentation="The number of game keys submitted by a user",
+            labelnames=["guild_id", "user_id", "username"],
+        )
+
         self.sum_minecraft_whitelist = Gauge(
             namespace=self.namespace,
             name=f"minecraft_whitelist",
@@ -327,6 +341,13 @@ class TacoBotMetrics:
             name=f"introductions",
             documentation="The number of introductions",
             labelnames=["guild_id", "approved"],
+        )
+
+        self.twitch_stream_avatar_duel_winners = Gauge(
+            namespace=self.namespace,
+            name=f"twitch_stream_avatar_duel_winners",
+            documentation="The number of twitch stream avatar duel winners",
+            labelnames=["guild_id", "user_id", "username", "channel", "channel_user_id"],
         )
 
         self.build_info = Gauge(
@@ -571,6 +592,42 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
             self.errors.labels("game_keys_claimed").set(1)
+
+        try:
+            q_user_game_keys_claimed = self.db.get_user_game_keys_redeemed_count() or []
+            for row in q_user_game_keys_claimed:
+                user = {"user_id": row["_id"]['user_id'], "username": row["_id"]['user_id']}
+                if row["user"] is not None and len(row["user"]) > 0:
+                    user = row["user"][0]
+
+                user_labels = {
+                    "guild_id": row['_id']['guild_id'],
+                    "user_id": user['user_id'],
+                    "username": user['username'],
+                }
+                self.sum_user_game_keys_claimed.labels(**user_labels).set(row['total'])
+            self.errors.labels("user_game_keys_claimed").set(0)
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", traceback.format_exc())
+            self.errors.labels("user_game_keys_claimed").set(1)
+
+        try:
+            q_user_game_keys_submitted = self.db.get_user_game_keys_submitted_count() or []
+            for row in q_user_game_keys_submitted:
+                user = {"user_id": row["_id"]['user_id'], "username": row["_id"]['user_id']}
+                if row["user"] is not None and len(row["user"]) > 0:
+                    user = row["user"][0]
+
+                user_labels = {
+                    "guild_id": row['_id']['guild_id'],
+                    "user_id": user['user_id'],
+                    "username": user['username'],
+                }
+                self.sum_user_game_keys_submitted.labels(**user_labels).set(row['total'])
+            self.errors.labels("user_game_keys_submitted").set(0)
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", traceback.format_exc())
+            self.errors.labels("user_game_keys_submitted").set(1)
 
         try:
             q_minecraft_whitelisted = self.db.get_minecraft_whitelisted_count() or []
@@ -861,3 +918,25 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
             self.errors.labels("introductions").set(1)
+
+        try:
+            q_twitch_stream_avatar_duel_winners = self.db.get_stream_avatar_duel_winners() or []
+            # for gid in known_guilds:
+            for row in q_twitch_stream_avatar_duel_winners:
+                winner = {"user_id": row["_id"]['winner_user_id'], "username": row["_id"]['winner_user_id']}
+                if row["winner"] is not None and len(row["winner"]) > 0:
+                    winner = row["winner"][0]
+                channel = {"channel": row["_id"]['channel'], "channel_user_id": row["_id"]['channel_user_id']}
+                if row["channel"] is not None and len(row["channel"]) > 0:
+                    channel = row["channel"][0]
+                user_labels = {
+                    "guild_id": row['_id']['guild_id'],
+                    "user_id": winner['user_id'],
+                    "username": winner['username'],
+                    "channel": channel['username'],
+                    "channel_user_id": channel['user_id'],
+                }
+                self.twitch_stream_avatar_duel_winners.labels(**user_labels).set(row["total"])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.errors.labels("twitch_stream_avatar_duel_winners").set(1)
