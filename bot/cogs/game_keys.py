@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import inspect
 import os
@@ -39,7 +40,34 @@ class GameKeys(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        pass
+        _method = inspect.stack()[0][3]
+        guild_id = 0
+        try:
+            guild_id = self.bot.guilds[0].id
+
+            cog_settings = self.get_cog_settings(guild_id)
+            if not cog_settings.get("enabled", False):
+                return
+
+            reward_channel_id = cog_settings.get("reward_channel_id", "0")
+            offer = self.gamekeys_db.find_open_game_key_offer(guild_id=guild_id, channel_id=int(reward_channel_id))
+
+            if offer:
+                game_data = self.gamekeys_db.get_game_key_data(str(offer["game_key_id"]))
+                if game_data:
+                    default_cost = cog_settings.get("cost", 500)
+                    cost = game_data.get("cost", default_cost)
+
+                    if cost == 1:
+                        tacos_word = self.settings.get_string(guild_id, "taco_singular")
+                    else:
+                        tacos_word = self.settings.get_string(guild_id, "taco_plural")
+
+                    await self.bot.change_presence(
+                        activity=discord.Game(name=f"{game_data['title']} ({cost} {tacos_word})")
+                    )
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_guild_available(self, guild):
@@ -118,6 +146,9 @@ class GameKeys(commands.Cog):
             # then create a new offer
             await self._close_offer(ctx)
 
+            # wait 3 seconds before creating a new offer
+            await asyncio.sleep(3)
+
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings.get("enabled", False):
                 self.log.debug(
@@ -130,6 +161,15 @@ class GameKeys(commands.Cog):
             if not reward_channel:
                 self.log.warn(
                     guild_id, f"{self._module}.{self._class}.{_method}", f"No reward channel found for guild {guild_id}"
+                )
+                return
+
+            offer = self.gamekeys_db.find_open_game_key_offer(guild_id, reward_channel.id)
+            if offer:
+                self.log.error(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"An existing open offer was found for guild {guild_id} in channel {reward_channel.name}. Ignoring request to create a new offer.",
                 )
                 return
 
@@ -202,6 +242,8 @@ class GameKeys(commands.Cog):
                 author=offered_by,
                 view=claim_view,
             )
+
+            await self.bot.change_presence(activity=discord.Game(name=f"{game_data['title']} ({cost} {tacos_word})"))
 
             # record offer
             self.gamekeys_db.open_game_key_offer(game_data["id"], guild_id, offer_message.id, ctx.channel.id)
@@ -310,7 +352,7 @@ class GameKeys(commands.Cog):
                     pass
 
                 self.gamekeys_db.close_game_key_offer_by_message(guild_id, int(offer["message_id"]))
-
+                await self.bot.change_presence(activity=None)
             else:
                 self.log.debug(
                     guild_id,

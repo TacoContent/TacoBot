@@ -30,11 +30,6 @@ class Events(commands.Cog):
         self.log.debug(
             0, f"{self._module}.{self._class}.{_method}", f"Logged in as {self.bot.user.name}:{self.bot.user.id}"
         )
-        # TODO: load this from the database
-        self.log.debug(
-            0, f"{self._module}.{self._class}.{_method}", "Setting Bot Presence '🌮 Taco; Not Just For Tuesday's 🌮'"
-        )
-        await self.bot.change_presence(activity=discord.Game(name="🌮 Taco; Not Just For Tuesday's 🌮"))
 
     @commands.Cog.listener()
     async def on_guild_available(self, guild):

@@ -83,10 +83,9 @@ class TacoTuesday(commands.Cog):
             )
 
             result_message = await output_channel.send(content=message)
-            # add import_emoji to message so we can archive it later
-            import_emoji = cog_settings.get("import_emoji", ["🇮"])
-            if len(import_emoji) > 0:
-                await result_message.add_reaction(import_emoji[0])
+            init_emoji: list = cog_settings.get("init_emoji", ["🌮", "🇮"])
+            for emoji in init_emoji:
+                await result_message.add_reaction(emoji)
 
             self._import_taco_tuesday(result_message, tweet)
 
@@ -231,6 +230,14 @@ class TacoTuesday(commands.Cog):
                 f"Message {payload.message_id} was not imported. No need to archive.",
             )
             return
+
+        # get 🌮 reactions and the user that did that
+        taco_reactions = discord.utils.get(message.reactions, emoji="🌮")
+        if taco_reactions:
+            async for user in taco_reactions.users():
+                if user.bot or user.system:
+                    continue
+                await self.give_user_tacotuesday_tacos(guild_id, user.id, channel.id)
 
         # check if this reaction is the first one of this type on the message
         reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)
