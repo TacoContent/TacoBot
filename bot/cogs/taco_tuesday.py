@@ -1,6 +1,7 @@
 import datetime
 import inspect
 import os
+import pytz
 import re
 import traceback
 import typing
@@ -323,7 +324,7 @@ class TacoTuesday(commands.Cog):
                     await self._on_raw_reaction_add_archive(payload)
                     return
 
-            today = datetime.datetime.now()
+            today = datetime.datetime.now(tz=pytz.timezone(self.settings.timezone))
             if today.weekday() != 1:  # 1 = Tuesday
                 return
 

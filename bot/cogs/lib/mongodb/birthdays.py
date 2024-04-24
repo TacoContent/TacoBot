@@ -1,6 +1,7 @@
 import datetime
 import inspect
 import os
+import pytz
 import traceback
 import typing
 
@@ -22,7 +23,7 @@ class BirthdaysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=pytz.timezone(self.settings.timezone)))
             payload = {
                 "guild_id": str(guildId),
                 "user_id": str(userId),
@@ -78,7 +79,7 @@ class BirthdaysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=pytz.timezone(self.settings.timezone)))
             payload = {"guild_id": str(guildId), "timestamp": timestamp}
             self.connection.birthday_checks.update_one({"guild_id": str(guildId)}, {"$set": payload}, upsert=True)
         except Exception as ex:
@@ -97,8 +98,8 @@ class BirthdaysDatabase(Database):
                 self.open()
             checks = list(self.connection.birthday_checks.find({"guild_id": str(guildId)}))
             if len(checks) > 0:
-                # central_tz= pytz.timezone(self.settings.timezone)
-                date = datetime.datetime.utcnow().date()
+                # set the tz to settings timezone
+                date = datetime.datetime.now(tz=pytz.timezone(self.settings.timezone)).date()
                 start_ts = utils.to_timestamp(datetime.datetime.combine(date, datetime.time.min))
                 end_ts = utils.to_timestamp(datetime.datetime.combine(date, datetime.time.max))
                 timestamp = checks[0]["timestamp"]
