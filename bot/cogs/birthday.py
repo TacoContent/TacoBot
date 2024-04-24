@@ -236,9 +236,7 @@ class Birthday(commands.Cog):
             role_id = cog_settings.get("role", None)
             if not role_id:
                 self.log.warn(
-                    guild_id,
-                    f"{self._module}.{self._class}.{_method}",
-                    f"No birthday role found for guild {guild_id}",
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No birthday role found for guild {guild_id}"
                 )
                 return
             birthday_role = discord.utils.get(ctx.guild.roles, id=int(role_id))
@@ -295,15 +293,8 @@ class Birthday(commands.Cog):
             # get the role from the settings
             role_id = cog_settings.get("role", None)
             if not role_id:
-                self.log.debug(
-                    guild_id,
-                    f"{self._module}.{self._class}.{_method}",
-                    f"No birthday role found for guild {guild_id}",
-                )
                 self.log.warn(
-                    guild_id,
-                    f"{self._module}.{self._class}.{_method}",
-                    f"No birthday role found for guild {guild_id}",
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No birthday role found for guild {guild_id}"
                 )
                 return
             birthday_role = discord.utils.get(ctx.guild.roles, id=int(role_id))
