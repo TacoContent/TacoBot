@@ -155,6 +155,7 @@ class Birthday(commands.Cog):
                 return
             # get if there are any birthdays today in the database
             birthdays = self.get_todays_birthdays(guild_id) or []
+            await self.clear_birthday_role(ctx)
             # wish the users a happy birthday
             if len(birthdays) > 0:
                 self.log.debug(
@@ -162,7 +163,6 @@ class Birthday(commands.Cog):
                     f"{self._module}.{self._class}.{_method}",
                     f"Sending birthday wishes from check_birthday for {guild_id}",
                 )
-                await self.clear_birthday_role(ctx)
                 await self.send_birthday_message(ctx, birthdays)
                 await self.add_user_to_birthday_role(ctx, birthdays)
             # track the check
@@ -412,6 +412,7 @@ class Birthday(commands.Cog):
                 return
             # get if there are any birthdays today in the database
             birthdays = self.get_todays_birthdays(guild_id) or []
+            await self.clear_birthday_role(message)
             # wish the users a happy birthday
             if len(birthdays) > 0:
                 self.log.debug(
@@ -419,7 +420,6 @@ class Birthday(commands.Cog):
                     f"{self._module}.{self._class}.{_method}",
                     f"Sending birthday wishes from on_message for {guild_id}",
                 )
-                await self.clear_birthday_role(message)
                 await self.send_birthday_message(message, birthdays)
                 await self.add_user_to_birthday_role(message, birthdays)
             # track the check
@@ -442,6 +442,7 @@ class Birthday(commands.Cog):
                 return
             # get if there are any birthdays today in the database
             birthdays = self.get_todays_birthdays(guild_id) or []
+            await self.clear_birthday_role(after)
             # wish the users a happy birthday
             if len(birthdays) > 0:
                 self.log.debug(
@@ -449,7 +450,6 @@ class Birthday(commands.Cog):
                     f"{self._module}.{self._class}.{_method}",
                     f"Sending birthday wishes from on_member_update for {guild_id}",
                 )
-                await self.clear_birthday_role(after)
                 await self.send_birthday_message(after, birthdays)
                 await self.add_user_to_birthday_role(after, birthdays)
             # track the check
@@ -472,6 +472,7 @@ class Birthday(commands.Cog):
                 return
             # get if there are any birthdays today in the database
             birthdays = self.get_todays_birthdays(guild_id) or []
+            await self.clear_birthday_role(member)
             # wish the users a happy birthday
             if len(birthdays) > 0:
                 self.log.debug(
@@ -479,7 +480,6 @@ class Birthday(commands.Cog):
                     f"{self._module}.{self._class}.{_method}",
                     f"Sending birthday wishes from on_member_join for {guild_id}",
                 )
-                await self.clear_birthday_role(member)
                 await self.send_birthday_message(member, birthdays)
                 await self.add_user_to_birthday_role(member, birthdays)
             # track the check
