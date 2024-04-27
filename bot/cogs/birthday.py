@@ -59,12 +59,7 @@ class Birthday(commands.Cog):
                 taco_amount = taco_settings.get("birthday_count", 25)
                 reason_msg = self.settings.get_string(guild_id, "taco_reason_birthday")
                 await self.discord_helper.taco_give_user(
-                    guild_id,
-                    self.bot.user,
-                    user,
-                    reason_msg,
-                    tacotypes.TacoTypes.BIRTHDAY,
-                    taco_amount=taco_amount,
+                    guild_id, self.bot.user, user, reason_msg, tacotypes.TacoTypes.BIRTHDAY, taco_amount=taco_amount
                 )
 
             fields = [
@@ -87,7 +82,6 @@ class Birthday(commands.Cog):
             #     ),
             #     ephemeral=True,
             # )
-
 
             # await self.messaging.send_embed(
             #     out_channel,
