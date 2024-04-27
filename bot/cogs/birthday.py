@@ -58,6 +58,7 @@ class Birthday(commands.Cog):
                 taco_settings = self.get_tacos_settings(guild_id)
                 taco_amount = taco_settings.get("birthday_count", 25)
                 reason_msg = self.settings.get_string(guild_id, "taco_reason_birthday")
+
                 await self.discord_helper.taco_give_user(
                     guild_id, self.bot.user, user, reason_msg, tacotypes.TacoTypes.BIRTHDAY, taco_amount=taco_amount
                 )
