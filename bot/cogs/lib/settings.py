@@ -25,6 +25,7 @@ class Settings:
         self.languages = {}
         self.strings = {}
         self.commands = {}
+        self.primary_guild_id = 0
 
         self.settings_db = SettingsDatabase()
 
@@ -41,6 +42,7 @@ class Settings:
         self.strawpoll_api_key = utils.dict_get(os.environ, "STRAWPOLL_API_KEY", default_value="")
         self.giphy_api_key = utils.dict_get(os.environ, "GIPHY_API_KEY", default_value="")
         self.timezone = utils.dict_get(os.environ, "TZ", default_value="America/Chicago")
+        self.primary_guild_id = int(utils.dict_get(os.environ, "PRIMARY_GUILD_ID", default_value=0))
 
         # log_level = loglevel.LogLevel[self.log_level.upper()]
         # if not log_level:

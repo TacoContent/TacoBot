@@ -8,6 +8,7 @@ import discord
 import discordhealthcheck
 from bot.cogs.lib import logger, settings
 from bot.cogs.lib.enums import loglevel
+from discord import app_commands
 from discord.ext import commands
 
 
@@ -29,6 +30,7 @@ class TacoBot(commands.Bot):
         # Note: When using commands.Bot instead of discord.Client, the bot will
         # maintain its own tree instead.
         # self.tree = app_commands.CommandTree(self)
+
         self.initDB()
 
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
@@ -64,6 +66,9 @@ class TacoBot(commands.Bot):
                 )
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Setting up bot")
+        guild = discord.Object(id=self.settings.primary_guild_id)
+        self.tree.copy_global_to(guild=guild)
+        await self.tree.sync(guild=guild)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Starting Healthcheck Server")
         self.healthcheck_server = await discordhealthcheck.start(self)
 

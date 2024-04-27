@@ -8,6 +8,7 @@ import typing
 from random import random
 
 import discord
+from discord import app_commands
 import pytz
 from bot.cogs.lib import discordhelper, logger, settings
 from bot.cogs.lib.enums import loglevel, tacotypes
@@ -37,6 +38,75 @@ class Birthday(commands.Cog):
 
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
+
+    @app_commands.guild_only()
+    @app_commands.command(name="birthday", description="Add your birthday")
+    async def birthday_app(self, interaction: discord.Interaction, month: int, day: int) -> None:
+        _method = inspect.stack()[0][3]
+        try:
+            guild_id = 0
+            if interaction.guild:
+                guild_id = interaction.guild.id
+            else:
+                return
+
+            user = interaction.user
+            user_bday_set = self.birthdays_db.get_user_birthday(guild_id, user.id)
+            self.birthdays_db.add_user_birthday(guild_id, user.id, month, day)
+
+            if not user_bday_set:
+                taco_settings = self.get_tacos_settings(guild_id)
+                taco_amount = taco_settings.get("birthday_count", 25)
+                reason_msg = self.settings.get_string(guild_id, "taco_reason_birthday")
+                await self.discord_helper.taco_give_user(
+                    guild_id,
+                    self.bot.user,
+                    user,
+                    reason_msg,
+                    tacotypes.TacoTypes.BIRTHDAY,
+                    taco_amount=taco_amount,
+                )
+
+            fields = [
+                {"name": self.settings.get_string(guild_id, "month"), "value": str(month), "inline": True},
+                {"name": self.settings.get_string(guild_id, "day"), "value": str(day), "inline": True},
+            ]
+
+            # TODO: change to full interaction response
+            await interaction.response.send_message(
+                content=f"I have set your birthday to {month}/{day}. Run the command again to change if this is incorrect.",
+                ephemeral=True,
+            )
+
+            # await interaction.response.send_message(
+            #     content=self.settings.get_string(guild_id, "birthday_set_confirm", user=user.mention),
+            #     embed=self.discord_helper.create_embed(
+            #         title=self.settings.get_string(guild_id, "birthday_set_title"),
+            #         description=self.settings.get_string(guild_id, "birthday_set_confirm", user=user.mention),
+            #         fields=fields,
+            #     ),
+            #     ephemeral=True,
+            # )
+
+
+            # await self.messaging.send_embed(
+            #     out_channel,
+            #     self.settings.get_string(guild_id, "birthday_set_title"),
+            #     self.settings.get_string(guild_id, "birthday_set_confirm", user=ctx.author.mention),
+            #     fields=fields,
+            #     delete_after=10,
+            # )
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=interaction.channel.id if interaction.channel else None,
+                userId=user.id,
+                command="birthday",
+                subcommand=None,
+                args=[{"type": "slash_command"}, {"month": month}, {"day": day}],
+            )
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     @commands.group(name="birthday", aliases=["bday"])
     @commands.guild_only()
@@ -415,7 +485,7 @@ class Birthday(commands.Cog):
                 await self.add_user_to_birthday_role(message, birthdays)
             # track the check
             self.birthdays_db.track_birthday_check(guild_id)
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(1)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
@@ -445,7 +515,7 @@ class Birthday(commands.Cog):
                 await self.add_user_to_birthday_role(after, birthdays)
             # track the check
             self.birthdays_db.track_birthday_check(guild_id)
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(1)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
@@ -475,7 +545,7 @@ class Birthday(commands.Cog):
                 await self.add_user_to_birthday_role(member, birthdays)
             # track the check
             self.birthdays_db.track_birthday_check(guild_id)
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(1)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
