@@ -386,7 +386,6 @@ class Tacos(commands.Cog):
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
-
     @tacos.command()
     @commands.guild_only()
     async def gift(self, ctx, member: discord.Member, amount: int, *, reason: typing.Optional[str] = None) -> None:
