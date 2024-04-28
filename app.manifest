@@ -383,7 +383,8 @@
           "description": "Retrieve the number of tacos you have.",
           "usage": "{{prefix}}tacos count",
           "examples": [
-            "{{prefix}}tacos count"
+            "{{prefix}}tacos count",
+            "/tacos count"
           ],
           "arguments": {},
           "fields": [],
@@ -426,7 +427,8 @@
           "usage": "{{prefix}}tacos give <@user#1234> <amount> [reason]",
           "examples": [
             "{{prefix}}tacos give @user#1234 10",
-            "{{prefix}}tacos give @user#1234 10 You are awesome!"
+            "{{prefix}}tacos give @user#1234 10 You are awesome!",
+            "/tacos give @user#1234 10 You are awesome!"
           ],
           "arguments": {
             "user": {
@@ -458,7 +460,8 @@
           "usage": "{{prefix}}tacos purge <@user#1234> [reason]",
           "examples": [
             "{{prefix}}tacos purge @user#1234",
-            "{{prefix}}tacos purge @user#1234 Exploited the taco system"
+            "{{prefix}}tacos purge @user#1234 Exploited the taco system",
+            "/tacos purge @user#1234 Exploited the taco system"
           ],
           "arguments": {
             "user": {

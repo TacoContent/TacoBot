@@ -20,6 +20,8 @@ from discord.ext.commands import Context
 
 
 class Birthday(commands.Cog):
+    group = app_commands.Group(name="birthday", description="Birthday commands")
+    
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
@@ -40,8 +42,8 @@ class Birthday(commands.Cog):
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @app_commands.guild_only()
-    @app_commands.command(name="birthday", description="Add your birthday")
-    async def birthday_app(self, interaction: discord.Interaction, month: int, day: int) -> None:
+    @group.command(name="add", description="Add your birthday")
+    async def birthday_add_app(self, interaction: discord.Interaction, month: int, day: int) -> None:
         _method = inspect.stack()[0][3]
         try:
             guild_id = 0
