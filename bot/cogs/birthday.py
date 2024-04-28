@@ -21,6 +21,7 @@ from discord.ext.commands import Context
 
 class Birthday(commands.Cog):
     group = app_commands.Group(name="birthday", description="Birthday commands")
+
     
     def __init__(self, bot):
         _method = inspect.stack()[0][3]

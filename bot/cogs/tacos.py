@@ -16,6 +16,7 @@ from discord.ext import commands
 class Tacos(commands.Cog):
     group = app_commands.Group(name="tacos", description="Tacos commands")
 
+
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
@@ -73,7 +74,9 @@ class Tacos(commands.Cog):
             await self.messaging.notify_of_error(ctx)
             await ctx.message.delete()
 
-    async def _remove_all_tacos_interaction(self, interaction: discord.Interaction, user: discord.Member, reason: typing.Union[str, None] = None) -> None:
+    async def _remove_all_tacos_interaction(
+        self, interaction: discord.Interaction, user: discord.Member, reason: typing.Union[str, None] = None
+    ) -> None:
         _method = inspect.stack()[0][3]
         if interaction.guild:
             guild_id = interaction.guild.id
@@ -105,7 +108,9 @@ class Tacos(commands.Cog):
     @group.command(name="purge", description="Remove all tacos from a user")
     @app_commands.describe(user="The user to remove all tacos from")
     @app_commands.describe(reason="The reason for removing all tacos")
-    async def remove_all_tacos_app_command(self, interaction: discord.Interaction, user: discord.Member, reason: typing.Union[str, None] = None) -> None:
+    async def remove_all_tacos_app_command(
+        self, interaction: discord.Interaction, user: discord.Member, reason: typing.Union[str, None] = None
+    ) -> None:
         await self._remove_all_tacos_interaction(interaction=interaction, user=user, reason=reason)
 
     @group.command(name="give", description="Give tacos to a user")
@@ -113,14 +118,20 @@ class Tacos(commands.Cog):
     @app_commands.describe(amount="The amount of tacos to give")
     @app_commands.describe(reason="The reason for giving tacos")
     @app_commands.default_permissions(administrator=True)
-    async def give_interaction(self, interaction: discord.Interaction, user: typing.Union[discord.Member,discord.User], amount: int, reason: typing.Optional[str] = None) -> None:
+    async def give_interaction(
+        self,
+        interaction: discord.Interaction,
+        user: typing.Union[discord.Member,discord.User],
+        amount: int,
+        reason: typing.Optional[str] = None
+    ) -> None:
         _method = inspect.stack()[0][3]
         guild_id = interaction.guild.id if interaction.guild else 0
         try:
             # if the user that ran the command is the same as member, then exit the function
             if interaction.user.id == user.id:
                 await interaction.response.send_message(
-                    f"{interaction.user.mention}, you cannot give tacos to yourself.",
+                    self.settings.get_string(guild_id, "taco_self_gift_message", user=interaction.user.mention),
                     ephemeral=True,
                 )
                 return
@@ -230,7 +241,13 @@ class Tacos(commands.Cog):
             if taco_count == 0 or taco_count > 1:
                 tacos_word = self.settings.get_string(guild_id, "taco_plural")
             await interaction.response.send_message(
-                f"{interaction.user.mention}, you have {taco_count} {tacos_word} 🌮.",
+                self.settings.get_string(
+                    guild_id,
+                    "taco_count_message",
+                    user=interaction.user.mention,
+                    count=taco_count,
+                    taco_word=tacos_word,
+                ),
                 ephemeral=True,
             )
 
@@ -288,7 +305,9 @@ class Tacos(commands.Cog):
     @app_commands.describe(user="The user to gift tacos to")
     @app_commands.describe(amount="The amount of tacos to gift. Max 10 per day")
     @app_commands.describe(reason="The reason for gifting tacos")
-    async def gift_interaction(self, interaction: discord.Interaction, user: discord.Member, amount: int, reason: typing.Optional[str] = None) -> None:
+    async def gift_interaction(
+        self, interaction: discord.Interaction, user: discord.Member, amount: int, reason: typing.Optional[str] = None
+    ) -> None:
         _method = inspect.stack()[0][3]
         if interaction.guild:
             guild_id = interaction.guild.id
@@ -331,7 +350,7 @@ class Tacos(commands.Cog):
                         "taco_gift_limit_exceeded",
                         user=interaction.user.mention,
                         remaining=remaining_gifts,
-                        taco_word=tacos_word
+                        taco_word=tacos_word,
                     ),
                     ephemeral=True,
                 )
