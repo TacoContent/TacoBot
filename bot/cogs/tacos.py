@@ -16,7 +16,6 @@ from discord.ext import commands
 class Tacos(commands.Cog):
     group = app_commands.Group(name="tacos", description="Tacos commands")
 
-
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
@@ -86,10 +85,7 @@ class Tacos(commands.Cog):
             self.tacos_db.remove_all_tacos(guild_id, user.id)
             reason_msg = reason if reason else "No reason given."
             if interaction.channel:
-                await interaction.response.send_message(
-                    f"{user.mention} has lost all their tacos.",
-                    ephemeral=True,
-                )
+                await interaction.response.send_message(f"{user.mention} has lost all their tacos.", ephemeral=True)
             await self.discord_helper.taco_purge_log(guild_id, user, interaction.user, reason_msg)
 
             self.tracking_db.track_command_usage(
@@ -121,9 +117,9 @@ class Tacos(commands.Cog):
     async def give_interaction(
         self,
         interaction: discord.Interaction,
-        user: typing.Union[discord.Member,discord.User],
+        user: typing.Union[discord.Member, discord.User],
         amount: int,
-        reason: typing.Optional[str] = None
+        reason: typing.Optional[str] = None,
     ) -> None:
         _method = inspect.stack()[0][3]
         guild_id = interaction.guild.id if interaction.guild else 0
