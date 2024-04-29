@@ -62,8 +62,7 @@ class AccountLink(commands.Cog):
                 )
             else:
                 await interaction.response.send_message(
-                    content=self.settings.get_string(guild_id, key="account_link_unknown_code_message"),
-                    ephemeral=True,
+                    content=self.settings.get_string(guild_id, key="account_link_unknown_code_message"), ephemeral=True
                 )
             self.tracking_db.track_command_usage(
                 guildId=guild_id,
@@ -76,7 +75,9 @@ class AccountLink(commands.Cog):
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
-    @group.command(name="request", description="Request a code to use to link your Twitch account to your Discord account")
+    @group.command(
+        name="request", description="Request a code to use to link your Twitch account to your Discord account"
+    )
     @app_commands.guild_only()
     async def request(self, interaction: discord.Interaction) -> None:
         _method = inspect.stack()[0][3]
@@ -94,8 +95,7 @@ class AccountLink(commands.Cog):
                 )
             else:
                 await interaction.response.send_message(
-                    content=self.settings.get_string(guild_id, key="account_link_save_error_message"),
-                    ephemeral=True,
+                    content=self.settings.get_string(guild_id, key="account_link_save_error_message"), ephemeral=True
                 )
             self.tracking_db.track_command_usage(
                 guildId=guild_id,
