@@ -101,7 +101,7 @@ class Tacos(commands.Cog):
 
     @app_commands.guild_only()
     @app_commands.default_permissions(administrator=True)
-    @group.command(name="purge", description="Remove all tacos from a user")
+    @group.command(name="purge", description="Remove all tacos from a user 🛡️")
     @app_commands.describe(user="The user to remove all tacos from")
     @app_commands.describe(reason="The reason for removing all tacos")
     async def remove_all_tacos_app_command(
@@ -109,7 +109,7 @@ class Tacos(commands.Cog):
     ) -> None:
         await self._remove_all_tacos_interaction(interaction=interaction, user=user, reason=reason)
 
-    @group.command(name="give", description="Give tacos to a user")
+    @group.command(name="give", description="Give tacos to a user 🛡️")
     @app_commands.describe(user="The user to give tacos to")
     @app_commands.describe(amount="The amount of tacos to give")
     @app_commands.describe(reason="The reason for giving tacos")
