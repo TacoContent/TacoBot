@@ -5,8 +5,7 @@ import json
 import os
 import traceback
 import typing
-from random import random
-from random import randrange
+from random import random, randrange
 
 import discord
 import pytz
