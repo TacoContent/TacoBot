@@ -91,6 +91,21 @@ class BirthdaysDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
 
+    def untrack_birthday_check(self, guildId: int) -> None:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            self.connection.birthday_checks.delete_one({"guild_id": str(guildId)})
+        except Exception as ex:
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+
     def birthday_was_checked_today(self, guildId: int) -> bool:
         _method = inspect.stack()[0][3]
         try:

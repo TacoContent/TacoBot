@@ -303,7 +303,10 @@ class StreamTeam(commands.Cog):
                 await self.discord_helper.notify_bot_not_initialized(ctx, "streamteam")
                 return
             unknown = self.settings.get_string(guild_id, "unknown")
-            twitch_name = twitchName.lower().strip()
+            if twitchName is not None:
+                twitch_name = twitchName.lower().strip()
+            else:
+                twitch_name = unknown
 
             log_channel_id = streamteam_settings["log_channel"]
             log_channel = None

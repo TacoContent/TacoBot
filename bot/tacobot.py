@@ -8,6 +8,7 @@ import discord
 import discordhealthcheck
 from bot.cogs.lib import logger, settings
 from bot.cogs.lib.enums import loglevel
+from bot.cogs.lib.mongodb.guilds import GuildsDatabase
 from discord import app_commands
 from discord.ext import commands
 
@@ -19,6 +20,7 @@ class TacoBot(commands.Bot):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.settings = settings.Settings()
+        self.guilds_db = GuildsDatabase()
         super().__init__(command_prefix=self.get_prefix, intents=intents, case_insensitive=True)
         self.remove_command("help")
         # self.command_prefix=self.get_prefix
@@ -66,9 +68,19 @@ class TacoBot(commands.Bot):
                 )
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Setting up bot")
-        guild = discord.Object(id=self.settings.primary_guild_id)
-        self.tree.copy_global_to(guild=guild)
-        await self.tree.sync(guild=guild)
+        guilds = [int(g) for g in self.guilds_db.get_guild_ids()]
+        for gid in guilds:
+            try:
+                # guild = discord.Object(id=self.settings.primary_guild_id)
+                guild = discord.Object(id=gid)
+                self.tree.clear_commands(guild=guild)
+                self.log.debug(gid, f"{self._module}.{self._class}.{_method}", f"Clearing app commands for guild {gid}")
+                self.tree.copy_global_to(guild=guild)
+                await self.tree.sync(guild=guild)
+                self.log.debug(gid, f"{self._module}.{self._class}.{_method}", f"Synced app commands for guild {gid}")
+            except discord.errors.Forbidden as fe:
+                self.log.debug(gid, f"{self._module}.{self._class}.{_method}", f"Failed to sync app commands for guild {gid}: {fe}")
+
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Starting Healthcheck Server")
         self.healthcheck_server = await discordhealthcheck.start(self)
 
