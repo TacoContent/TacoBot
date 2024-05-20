@@ -506,12 +506,16 @@ class Birthday(commands.Cog):
                 guild_id = after.guild.id
             # check if the birthday check is enabled
             # check if the birthday check has not ran today yet
-            await asyncio.sleep(1)
+            await asyncio.sleep(randrange(1,5,1))
             if self.was_checked_today(guild_id):
                 return
             # get if there are any birthdays today in the database
             birthdays = self.get_todays_birthdays(guild_id) or []
             await self.clear_birthday_role(after)
+
+            await asyncio.sleep(randrange(1,5,1))
+            if self.was_checked_today(guild_id):
+                return
             # wish the users a happy birthday
             if len(birthdays) > 0:
                 self.log.debug(
@@ -523,9 +527,9 @@ class Birthday(commands.Cog):
                 await self.add_user_to_birthday_role(after, birthdays)
             # track the check
             self.birthdays_db.track_birthday_check(guild_id)
-            await asyncio.sleep(1)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            self.birthdays_db.untrack_birthday_check(guild_id)
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -536,12 +540,18 @@ class Birthday(commands.Cog):
                 guild_id = member.guild.id
             # check if the birthday check is enabled
             # check if the birthday check has not ran today yet
-            await asyncio.sleep(1)
+            await asyncio.sleep(randrange(1,5,1))
             if self.was_checked_today(guild_id):
                 return
             # get if there are any birthdays today in the database
             birthdays = self.get_todays_birthdays(guild_id) or []
             await self.clear_birthday_role(member)
+
+            # check again
+            await asyncio.sleep(randrange(1,5,1))
+            if self.was_checked_today(guild_id):
+                return
+
             # wish the users a happy birthday
             if len(birthdays) > 0:
                 self.log.debug(
@@ -553,7 +563,6 @@ class Birthday(commands.Cog):
                 await self.add_user_to_birthday_role(member, birthdays)
             # track the check
             self.birthdays_db.track_birthday_check(guild_id)
-            await asyncio.sleep(1)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
