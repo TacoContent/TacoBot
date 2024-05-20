@@ -216,7 +216,7 @@ class Birthday(commands.Cog):
                 guild_id = ctx.guild.id
                 await ctx.message.delete()
 
-            await asyncio.sleep(randrange(1,5,1))
+            await asyncio.sleep(randrange(1, 5, 1))
             # check if the birthday check is enabled
             # check if the birthday check has not ran today yet
             if self.was_checked_today(guild_id):
@@ -225,7 +225,7 @@ class Birthday(commands.Cog):
             birthdays = self.get_todays_birthdays(guild_id) or []
             await self.clear_birthday_role(ctx)
 
-            await asyncio.sleep(randrange(1,5,1))
+            await asyncio.sleep(randrange(1, 5, 1))
             # double check
             if self.was_checked_today(guild_id):
                 return
@@ -471,14 +471,14 @@ class Birthday(commands.Cog):
                 guild_id = message.guild.id
             # check if the birthday check is enabled
             # check if the birthday check has not ran today yet
-            await asyncio.sleep(randrange(1,5,1))
+            await asyncio.sleep(randrange(1, 5, 1))
             if self.was_checked_today(guild_id):
                 return
             # get if there are any birthdays today in the database
             birthdays = self.get_todays_birthdays(guild_id) or []
             await self.clear_birthday_role(message)
             # sleep randomly to avoid rate limiting
-            await asyncio.sleep(randrange(1,5,1))
+            await asyncio.sleep(randrange(1, 5, 1))
             # double check
             if self.was_checked_today(guild_id):
                 return
@@ -506,14 +506,14 @@ class Birthday(commands.Cog):
                 guild_id = after.guild.id
             # check if the birthday check is enabled
             # check if the birthday check has not ran today yet
-            await asyncio.sleep(randrange(1,5,1))
+            await asyncio.sleep(randrange(1, 5, 1))
             if self.was_checked_today(guild_id):
                 return
             # get if there are any birthdays today in the database
             birthdays = self.get_todays_birthdays(guild_id) or []
             await self.clear_birthday_role(after)
 
-            await asyncio.sleep(randrange(1,5,1))
+            await asyncio.sleep(randrange(1, 5, 1))
             if self.was_checked_today(guild_id):
                 return
             # wish the users a happy birthday
@@ -540,7 +540,7 @@ class Birthday(commands.Cog):
                 guild_id = member.guild.id
             # check if the birthday check is enabled
             # check if the birthday check has not ran today yet
-            await asyncio.sleep(randrange(1,5,1))
+            await asyncio.sleep(randrange(1, 5, 1))
             if self.was_checked_today(guild_id):
                 return
             # get if there are any birthdays today in the database
@@ -548,7 +548,7 @@ class Birthday(commands.Cog):
             await self.clear_birthday_role(member)
 
             # check again
-            await asyncio.sleep(randrange(1,5,1))
+            await asyncio.sleep(randrange(1, 5, 1))
             if self.was_checked_today(guild_id):
                 return
 
