@@ -6,9 +6,7 @@ import typing
 
 import aiohttp
 import discord
-
 from openai import OpenAI
-
 from bot.cogs.lib import discordhelper, logger, settings, utils
 from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.messaging import Messaging
@@ -18,6 +16,7 @@ from bot.cogs.lib.permissions import Permissions
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Context
+
 
 class TacoQuestionOfTheDay(commands.Cog):
     group = app_commands.Group(name="tqotd", description="Commands for the Taco Question of the Day")
@@ -170,7 +169,11 @@ class TacoQuestionOfTheDay(commands.Cog):
         try:
 
             if not utils.isAdmin(ctx, self.settings):
-                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"User is not an admin ({ctx.user}). Command: ({ctx.command})")
+                self.log.warn(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"User is not an admin ({ctx.user}). Command: ({ctx.command})"
+                )
                 await ctx.response.send_message(content="You must be a bot admin to use this command", ephemeral=True)
                 return
 
@@ -273,14 +276,13 @@ class TacoQuestionOfTheDay(commands.Cog):
 
         ai_prompt = cog_settings.get("ai_prompt", {})
 
-
         openai = OpenAI()
         airesponse = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": utils.str_replace(ai_prompt.get("system", ""))},
                 {"role": "user", "content": utils.str_replace(ai_prompt.get("user", ""))},
-            ]
+            ],
         )
 
         aiquestion = airesponse.choices[0].message.content

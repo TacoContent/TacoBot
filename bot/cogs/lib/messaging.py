@@ -162,7 +162,7 @@ class Messaging:
             message=self.settings.get_string(
                 guild_id,
                 "error_ocurred",
-                user=ctx.author.mention if ctx.author else ctx.user.mention if ctx.user else ""
+                user=ctx.author.mention if ctx.author else ctx.user.mention if ctx.user else "",
             ),
             delete_after=30,
         )
