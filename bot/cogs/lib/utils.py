@@ -126,9 +126,17 @@ def str_replace(input_string: str, *args, **kwargs) -> str:
 
 
 def isAdmin(ctx, settings) -> bool:
-    is_bot_owner = str(ctx.author.id) == settings.bot_owner
-    has_admin = ctx.author.guild_permissions.administrator or ctx.author.permission_in(ctx.channel).manage_guild
-    return is_bot_owner or has_admin
+    is_in_guild_admin_role = False
+    user = ctx.author if hasattr(ctx, "author") else ctx.user
+    channel = ctx.channel if hasattr(ctx, "channel") else None
+    # see if there are guild settings for admin role
+    is_bot_owner = str(user.id) == settings.bot_owner
+    has_admin = user.guild_permissions.administrator or (user.permission_in(channel).manage_guild if channel else False)
+    return is_bot_owner or is_in_guild_admin_role or has_admin
+
+    # is_bot_owner = str(ctx.author.id) == settings.bot_owner
+    # has_admin = ctx.author.guild_permissions.administrator or ctx.author.permission_in(ctx.channel).manage_guild
+    # return is_bot_owner or has_admin
 
 
 def get_by_name_or_id(iterable, nameOrId: typing.Union[int, str]) -> typing.Optional[typing.Any]:

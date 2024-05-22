@@ -2,31 +2,26 @@ import inspect
 import io
 import os
 import traceback
+import typing
 
 import aiohttp
 import discord
-from bot.cogs.lib import discordhelper, logger, settings
+
+from openai import OpenAI
+
+from bot.cogs.lib import discordhelper, logger, settings, utils
 from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.mongodb.toqtd import TQOTDDatabase
 from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.permissions import Permissions
+from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Context
 
-
-def is_admin_check(interaction: discord.Interaction) -> bool:
-    if interaction.guild is None:
-        return False
-    if interaction.user is None:
-        return False
-    if isinstance(interaction.user, discord.Member):
-        if interaction.user.guild_permissions:
-            return interaction.user.guild_permissions.administrator
-    return False
-
-
 class TacoQuestionOfTheDay(commands.Cog):
+    group = app_commands.Group(name="tqotd", description="Commands for the Taco Question of the Day")
+
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
@@ -165,6 +160,147 @@ class TacoQuestionOfTheDay(commands.Cog):
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
+
+    @group.command(name="ai", description="Generate a question using AI")
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.guild_only()
+    async def openai_app_command(self, ctx: discord.Interaction) -> None:
+        _method = inspect.stack()[0][3]
+        guild_id = 0
+        try:
+
+            if not utils.isAdmin(ctx, self.settings):
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"User is not an admin ({ctx.user}). Command: ({ctx.command})")
+                await ctx.response.send_message(content="You must be a bot admin to use this command", ephemeral=True)
+                return
+
+            if ctx.guild:
+                guild_id = ctx.guild.id
+            else:
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No guild found for context")
+                return
+            await self._openai_generate(ctx)
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.user.id,
+                command="tqotd",
+                subcommand="ai",
+                args=[{"type": "slash_command"}],
+            )
+
+            await ctx.response.send_message(content="Question generated", ephemeral=True)
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            await self.messaging.notify_of_error(ctx)
+
+    @tqotd.command(name="openai", aliases=["ai"])
+    @commands.has_permissions(administrator=True)
+    @commands.guild_only()
+    async def openai(self, ctx: Context):
+        _method = inspect.stack()[0][3]
+        guild_id = 0
+        try:
+            if ctx.message:
+                await ctx.message.delete()
+
+            await self._openai_generate(ctx)
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="tqotd",
+                subcommand="openai",
+                args=[{"type": "command"}],
+            )
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            await self.messaging.notify_of_error(ctx)
+
+    async def _openai_generate(self, ctx: typing.Union[Context, discord.Interaction]) -> None:
+        _method = inspect.stack()[0][3]
+        guild_id = 0
+
+        if ctx.guild:
+            guild_id = ctx.guild.id
+        else:
+            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No guild found for context")
+            return
+        user: typing.Optional[typing.Union[discord.Member, discord.User]] = None
+        if ctx and hasattr(ctx, "author"):
+            user = ctx.author
+        elif ctx and hasattr(ctx, "user"):
+            user = ctx.user
+        else:
+            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No user found for context")
+            return
+
+        cog_settings = self.get_cog_settings(guild_id)
+        if not cog_settings.get("enabled", False):
+            self.log.debug(
+                guild_id, f"{self._module}.{self._class}.{_method}", f"tqotd is disabled for guild {guild_id}"
+            )
+            return
+
+        tacos_settings = self.get_tacos_settings(guild_id)
+
+        amount = tacos_settings.get("tqotd_amount", 5)
+
+        role_tag = ""
+        role = await self.discord_helper.get_or_fetch_role(ctx.guild, int(cog_settings.get("tag_role", 0)))
+        if role:
+            role_tag = f"{role.mention}"
+
+        out_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel_id", 0)))
+        if not out_channel:
+            self.log.warn(
+                guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
+            )
+            out_channel = ctx.channel
+
+        if not out_channel:
+            self.log.warn(
+                guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
+            )
+            return
+
+        # get role
+        taco_word = self.settings.get_string(guild_id, "taco_singular")
+        if amount != 1:
+            taco_word = self.settings.get_string(guild_id, "taco_plural")
+
+        ai_prompt = cog_settings.get("ai_prompt", {})
+
+
+        openai = OpenAI()
+        airesponse = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": utils.str_replace(ai_prompt.get("system", ""))},
+                {"role": "user", "content": utils.str_replace(ai_prompt.get("user", ""))},
+            ]
+        )
+
+        aiquestion = airesponse.choices[0].message.content
+        out_message = self.settings.get_string(
+            guild_id, "tqotd_out_message", question=aiquestion, taco_count=amount, taco_word=taco_word
+        )
+
+        if not aiquestion:
+            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No question generated")
+            return
+
+        await self.messaging.send_embed(
+            channel=out_channel,
+            title=self.settings.get_string(guild_id, "tqotd_out_title"),
+            message=out_message,
+            content=role_tag,
+            color=0x00FF00,
+        )
+
+        self.tqotd_db.save_tqotd(guild_id, aiquestion, user.id)
 
     @tqotd.command(name="give")
     @commands.has_permissions(administrator=True)

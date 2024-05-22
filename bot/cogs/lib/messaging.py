@@ -159,6 +159,10 @@ class Messaging:
         await self.send_embed(
             channel=ctx.channel,
             title=self.settings.get_string(guild_id, "error"),
-            message=self.settings.get_string(guild_id, "error_ocurred", user=ctx.author.mention),
+            message=self.settings.get_string(
+                guild_id,
+                "error_ocurred",
+                user=ctx.author.mention if ctx.author else ctx.user.mention if ctx.user else ""
+            ),
             delete_after=30,
         )
