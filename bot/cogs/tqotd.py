@@ -6,7 +6,6 @@ import typing
 
 import aiohttp
 import discord
-from openai import OpenAI
 from bot.cogs.lib import discordhelper, logger, settings, utils
 from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.messaging import Messaging
@@ -16,6 +15,7 @@ from bot.cogs.lib.permissions import Permissions
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Context
+from openai import OpenAI
 
 
 class TacoQuestionOfTheDay(commands.Cog):
@@ -172,7 +172,7 @@ class TacoQuestionOfTheDay(commands.Cog):
                 self.log.warn(
                     guild_id,
                     f"{self._module}.{self._class}.{_method}",
-                    f"User is not an admin ({ctx.user}). Command: ({ctx.command})"
+                    f"User is not an admin ({ctx.user}). Command: ({ctx.command})",
                 )
                 await ctx.response.send_message(content="You must be a bot admin to use this command", ephemeral=True)
                 return
