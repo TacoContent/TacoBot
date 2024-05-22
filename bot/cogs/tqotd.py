@@ -167,7 +167,6 @@ class TacoQuestionOfTheDay(commands.Cog):
         _method = inspect.stack()[0][3]
         guild_id = 0
         try:
-
             if not utils.isAdmin(ctx, self.settings):
                 self.log.warn(
                     guild_id,
