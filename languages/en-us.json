@@ -133,7 +133,7 @@
   "account_link_unknown_code_message": "I couldn't find a verification code with that value. Please try again.",
   "account_link_notice_message": "I've generated a verification code for you. Please use the command `!taco link {{code}}` in <https://www.twitch.tv/ourtaco> or <https://www.twitch.tv/ourtacobot> chat to link your discord account to your twitch account.",
   "account_link_save_error_message": "I couldn't save your verification code. Please try again.",
-  "techthurs_out_message": "This is the Tech Thursday topic.\n\n{{taco_count}} {{taco_word}} 🌮 for answering.",
+  "techthurs_out_message": "{{message}}.\n\n{{taco_count}} {{taco_word}} 🌮 for answering.",
   "techthurs_out_title": "Tech Thursday",
   "techthurs_ask_title": "What is the Tech Thursday Topic?",
   "techthurs_ask_message": "Please respond with the topic for Tech Thursday.\n\nRespond with `cancel` to cancel.",

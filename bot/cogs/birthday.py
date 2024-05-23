@@ -607,7 +607,7 @@ class Birthday(commands.Cog):
         if ctx.guild:
             guild_id = ctx.guild.id
         else:
-            raise Exception("No guild found")
+            return
 
         try:
             await asyncio.sleep(randrange(1, 5, 1))

@@ -2,18 +2,24 @@ import datetime
 import inspect
 import os
 import traceback
+import typing
 
 import discord
-from bot.cogs.lib import discordhelper, logger, settings
+from bot.cogs.lib import discordhelper, logger, settings, utils
 from bot.cogs.lib.enums import loglevel, tacotypes
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.mongodb.techthurs import TechThursDatabase
 from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.permissions import Permissions
+from discord import app_commands
 from discord.ext import commands
+from discord.ext.commands import Context
+from openai import OpenAI
 
 
 class TechThursdays(commands.Cog):
+    group = app_commands.Group(name="techthurs", description="Commands for the Tech Thursdays")
+
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
@@ -94,14 +100,17 @@ class TechThursdays(commands.Cog):
                 role_tag = f"{role.mention}"
 
             message_content = None
-            if twa.text is not None and twa.text != "":
-                if role_tag is not None:
-                    message_content = f"{role_tag}\n\n{twa.text}"
-                else:
-                    message_content = twa.text
-            else:
-                if role_tag is not None:
-                    message_content = role_tag
+            # if twa.text is not None and twa.text != "":
+            #     if role_tag is not None:
+            #         message_content = f"{role_tag}"
+            #     else:
+            #         message_content = ""
+            # else:
+            #     if role_tag is not None:
+            #         message_content = role_tag
+
+            if role_tag is not None:
+                message_content = role_tag
 
             out_channel = ctx.guild.get_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
@@ -114,7 +123,11 @@ class TechThursdays(commands.Cog):
             if amount != 1:
                 taco_word = self.settings.get_string(guild_id, "taco_plural")
             out_message = self.settings.get_string(
-                guild_id, "techthurs_out_message", taco_count=amount, taco_word=taco_word
+                guild_id,
+                "techthurs_out_message",
+                taco_count=amount,
+                taco_word=taco_word,
+                message=twa.text,
             )
             techthurs_message = await self.messaging.send_embed(
                 channel=out_channel,
@@ -152,6 +165,69 @@ class TechThursdays(commands.Cog):
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
+
+    @group.command(name="ai", description="Generate a question using AI")
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.guild_only()
+    async def openai_app_command(self, ctx: discord.Interaction) -> None:
+        _method = inspect.stack()[0][3]
+        guild_id = 0
+        try:
+            if not utils.isAdmin(ctx, self.settings):
+                self.log.warn(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"User is not an admin ({ctx.user}). Command: ({ctx.command})",
+                )
+                await ctx.response.send_message(content="You must be a bot admin to use this command", ephemeral=True)
+                return
+
+            if ctx.guild:
+                guild_id = ctx.guild.id
+            else:
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No guild found for context")
+                return
+            await self._openai_generate(ctx)
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.user.id,
+                command="techthurs",
+                subcommand="ai",
+                args=[{"type": "slash_command"}],
+            )
+
+            await ctx.response.send_message(content="Question generated", ephemeral=True)
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            await self.messaging.notify_of_error(ctx)
+
+    @techthurs.command(name="openai", aliases=["ai"])
+    @commands.has_permissions(administrator=True)
+    @commands.guild_only()
+    async def openai(self, ctx: Context):
+        _method = inspect.stack()[0][3]
+        guild_id = 0
+        try:
+            if ctx.message:
+                await ctx.message.delete()
+
+            await self._openai_generate(ctx)
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="tqotd",
+                subcommand="openai",
+                args=[{"type": "command"}],
+            )
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            await self.messaging.notify_of_error(ctx)
+
+
 
     @techthurs.command(name="import")
     @commands.has_permissions(administrator=True)
@@ -488,6 +564,101 @@ class TechThursdays(commands.Cog):
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
+
+    async def _openai_generate(self, ctx: typing.Union[Context, discord.Interaction]) -> None:
+        _method = inspect.stack()[0][3]
+        guild_id = 0
+
+        if ctx.guild:
+            guild_id = ctx.guild.id
+        else:
+            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No guild found for context")
+            return
+        user: typing.Optional[typing.Union[discord.Member, discord.User]] = None
+        if ctx and hasattr(ctx, "author"):
+            user = ctx.author
+        elif ctx and hasattr(ctx, "user"):
+            user = ctx.user
+        else:
+            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No user found for context")
+            return
+
+        cog_settings = self.get_cog_settings(guild_id)
+        if not cog_settings.get("enabled", False):
+            self.log.debug(
+                guild_id, f"{self._module}.{self._class}.{_method}", f"techthurs is disabled for guild {guild_id}"
+            )
+            return
+
+        tacos_settings = self.get_tacos_settings(guild_id)
+
+        amount = tacos_settings.get("techthurs_amount", 5)
+
+        message_content = ""
+        role = await self.discord_helper.get_or_fetch_role(ctx.guild, int(cog_settings.get("tag_role", 0)))
+        if role:
+            message_content = f"{role.mention}"
+
+        out_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel_id", 0)))
+        if not out_channel:
+            self.log.warn(
+                guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
+            )
+            out_channel = ctx.channel
+
+        if not out_channel:
+            self.log.warn(
+                guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
+            )
+            return
+
+        # get role
+        taco_word = self.settings.get_string(guild_id, "taco_singular")
+        if amount != 1:
+            taco_word = self.settings.get_string(guild_id, "taco_plural")
+
+        ai_prompt = cog_settings.get("ai_prompt", {})
+
+        openai = OpenAI()
+        airesponse = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": utils.str_replace(ai_prompt.get("system", ""))},
+                {"role": "user", "content": utils.str_replace(ai_prompt.get("user", ""))},
+            ],
+        )
+
+        aiquestion = airesponse.choices[0].message.content
+        out_message = self.settings.get_string(
+            guild_id, "techthurs_out_message", message=aiquestion, taco_count=amount, taco_word=taco_word
+        )
+
+        if not aiquestion:
+            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No tech thursday topic/question generated")
+            return
+
+        # message = await self.messaging.send_embed(
+        #     channel=out_channel,
+        #     title=self.settings.get_string(guild_id, "techthurs_out_title"),
+        #     message=out_message,
+        #     content=message_content,
+        #     color=0x00FF00,
+        #     image=None,
+        #     thumbnail=None,
+        #     footer=None,
+        #     author=None,
+        #     fields=None,
+        #     delete_after=None,
+        # )
+
+        # self.techthurs_db.save_techthurs(
+        #     guildId=guild_id,
+        #     message=aiquestion,
+        #     image=None,
+        #     author=user.id,
+        #     channel_id=message.channel.id,
+        #     message_id=message.id,
+        # )
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)

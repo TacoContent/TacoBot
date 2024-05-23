@@ -192,7 +192,7 @@ class TacoQuestionOfTheDay(commands.Cog):
                 args=[{"type": "slash_command"}],
             )
 
-            await ctx.response.send_message(content="Question generated", ephemeral=True)
+            # await ctx.response.send_message(content="Question generated", ephemeral=True)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -276,11 +276,18 @@ class TacoQuestionOfTheDay(commands.Cog):
         ai_prompt = cog_settings.get("ai_prompt", {})
 
         openai = OpenAI()
+        system_prompt = ai_prompt.get("system", "")
+        user_prompt = ai_prompt.get("user", "")
+
+        self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Generating question using AI")
+        self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"System Prompt: {system_prompt}")
+        self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User Prompt: {user_prompt}")
+
         airesponse = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": utils.str_replace(ai_prompt.get("system", ""))},
-                {"role": "user", "content": utils.str_replace(ai_prompt.get("user", ""))},
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
             ],
         )
 
@@ -293,15 +300,32 @@ class TacoQuestionOfTheDay(commands.Cog):
             self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No question generated")
             return
 
-        await self.messaging.send_embed(
-            channel=out_channel,
-            title=self.settings.get_string(guild_id, "tqotd_out_title"),
-            message=out_message,
-            content=role_tag,
-            color=0x00FF00,
-        )
+        allow_ai_publish = cog_settings.get("allow_ai_publish", False)
+        if allow_ai_publish:
+            await self.messaging.send_embed(
+                channel=out_channel,
+                title=self.settings.get_string(guild_id, "tqotd_out_title"),
+                message=out_message,
+                content=role_tag,
+                color=0x00FF00,
+            )
+            self.tqotd_db.save_tqotd(guild_id, aiquestion, user.id)
+            if isinstance(ctx, discord.Interaction):
+                # respond to the interaction
+                await ctx.response.send_message(content="Question generated", ephemeral=True)
+        else:
+            # get the interaction from the context
+            interaction = None
+            if isinstance(ctx, discord.Interaction):
+                interaction = ctx
 
-        self.tqotd_db.save_tqotd(guild_id, aiquestion, user.id)
+            if interaction:
+                await interaction.response.send_message(
+                    content=out_message, ephemeral=True
+                )
+            else:
+                # send the message in a DM to the user
+                await user.send(out_message)
 
     @tqotd.command(name="give")
     @commands.has_permissions(administrator=True)
