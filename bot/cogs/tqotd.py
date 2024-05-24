@@ -285,10 +285,7 @@ class TacoQuestionOfTheDay(commands.Cog):
 
         airesponse = openai.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
+            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
         )
 
         aiquestion = airesponse.choices[0].message.content
@@ -320,9 +317,7 @@ class TacoQuestionOfTheDay(commands.Cog):
                 interaction = ctx
 
             if interaction:
-                await interaction.response.send_message(
-                    content=out_message, ephemeral=True
-                )
+                await interaction.response.send_message(content=out_message, ephemeral=True)
             else:
                 # send the message in a DM to the user
                 await user.send(out_message)

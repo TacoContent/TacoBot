@@ -123,8 +123,8 @@ class TechThursdays(commands.Cog):
             if amount != 1:
                 taco_word = self.settings.get_string(guild_id, "taco_plural")
             out_message = self.settings.get_string(
-                guild_id,
-                "techthurs_out_message",
+                guildId=guild_id,
+                key="techthurs_out_message",
                 taco_count=amount,
                 taco_word=taco_word,
                 message=twa.text,
@@ -634,7 +634,9 @@ class TechThursdays(commands.Cog):
         )
 
         if not aiquestion:
-            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No tech thursday topic/question generated")
+            self.log.warn(
+                guild_id, f"{self._module}.{self._class}.{_method}", "No tech thursday topic/question generated"
+            )
             return
 
         # message = await self.messaging.send_embed(
