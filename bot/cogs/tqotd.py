@@ -287,15 +287,15 @@ class TacoQuestionOfTheDay(commands.Cog):
         self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"System Prompt: {system_prompt}")
         self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Previous Questions: {previous_questions}")
         self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User Prompt: {user_prompt}")
-
+        qprompt = "Here is a json array of previous questions that have been asked: " + previous_questions
         airesponse = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {
                     "role": "system",
-                    "content": f"{system_prompt}\nHere is a json array of previous questions that have been asked: {previous_questions}"
+                    "content": f"{system_prompt}\n{qprompt}"
                 },
-                {"role": "user", "content": user_prompt}
+                {"role": "user", "content": user_prompt},
             ],
         )
 
