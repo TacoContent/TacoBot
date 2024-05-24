@@ -291,10 +291,7 @@ class TacoQuestionOfTheDay(commands.Cog):
         airesponse = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {
-                    "role": "system",
-                    "content": f"{system_prompt}\n{qprompt}"
-                },
+                {"role": "system", "content": f"{system_prompt}\n{qprompt}"},
                 {"role": "user", "content": user_prompt},
             ],
         )
