@@ -126,3 +126,21 @@ class TQOTDDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             raise ex
+
+    def get_all_tqotd_questions(self, guildId: int):
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            # result = self.connection.tqotd.find({"guild_id": str(guildId)})
+            result = self.connection.tqotd.find({}).sort([("timestamp", -1)])
+            questions = [r['question'] for r in result]
+            return questions
+        except Exception as ex:
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )

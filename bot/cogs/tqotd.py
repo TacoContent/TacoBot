@@ -1,5 +1,6 @@
 import inspect
 import io
+import json
 import os
 import traceback
 import typing
@@ -191,8 +192,6 @@ class TacoQuestionOfTheDay(commands.Cog):
                 subcommand="ai",
                 args=[{"type": "slash_command"}],
             )
-
-            # await ctx.response.send_message(content="Question generated", ephemeral=True)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -272,20 +271,29 @@ class TacoQuestionOfTheDay(commands.Cog):
         taco_word = self.settings.get_string(guild_id, "taco_singular")
         if amount != 1:
             taco_word = self.settings.get_string(guild_id, "taco_plural")
+        ai_settings = cog_settings.get("ai", {})
+        self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"AI Settings: {ai_settings}")
 
-        ai_prompt = cog_settings.get("ai_prompt", {})
+        ai_prompt = ai_settings.get("prompt", {})
+        self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"AI Prompt: {ai_prompt}")
 
         openai = OpenAI()
         system_prompt = ai_prompt.get("system", "")
         user_prompt = ai_prompt.get("user", "")
 
+        previous_questions = json.dumps(self.tqotd_db.get_all_tqotd_questions(guild_id))
+
         self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Generating question using AI")
         self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"System Prompt: {system_prompt}")
+        self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Previous Questions: {previous_questions}")
         self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User Prompt: {user_prompt}")
 
         airesponse = openai.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
+            messages=[
+                {"role": "system", "content": f"{system_prompt}\nHere is a json array of previous questions that have been asked: {previous_questions}"},
+                {"role": "user", "content": user_prompt}
+            ],
         )
 
         aiquestion = airesponse.choices[0].message.content
@@ -297,8 +305,8 @@ class TacoQuestionOfTheDay(commands.Cog):
             self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No question generated")
             return
 
-        allow_ai_publish = cog_settings.get("allow_ai_publish", False)
-        if allow_ai_publish:
+        allow_publish = ai_settings.get("allow_publish", False)
+        if allow_publish:
             await self.messaging.send_embed(
                 channel=out_channel,
                 title=self.settings.get_string(guild_id, "tqotd_out_title"),

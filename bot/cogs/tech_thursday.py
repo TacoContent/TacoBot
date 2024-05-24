@@ -197,8 +197,6 @@ class TechThursdays(commands.Cog):
                 subcommand="ai",
                 args=[{"type": "slash_command"}],
             )
-
-            await ctx.response.send_message(content="Question generated", ephemeral=True)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -616,8 +614,8 @@ class TechThursdays(commands.Cog):
         taco_word = self.settings.get_string(guild_id, "taco_singular")
         if amount != 1:
             taco_word = self.settings.get_string(guild_id, "taco_plural")
-
-        ai_prompt = cog_settings.get("ai_prompt", {})
+        ai_settings = cog_settings.get("ai", {})
+        ai_prompt = ai_settings.get("prompt", {})
 
         openai = OpenAI()
         airesponse = openai.chat.completions.create(
@@ -639,28 +637,37 @@ class TechThursdays(commands.Cog):
             )
             return
 
-        # message = await self.messaging.send_embed(
-        #     channel=out_channel,
-        #     title=self.settings.get_string(guild_id, "techthurs_out_title"),
-        #     message=out_message,
-        #     content=message_content,
-        #     color=0x00FF00,
-        #     image=None,
-        #     thumbnail=None,
-        #     footer=None,
-        #     author=None,
-        #     fields=None,
-        #     delete_after=None,
-        # )
+        allow_publish = ai_settings.get("allow_publish", False)
+        if allow_publish:
+            message = await self.messaging.send_embed(
+                channel=out_channel,
+                title=self.settings.get_string(guild_id, "techthurs_out_title"),
+                message=out_message,
+                content=message_content,
+                color=0x00FF00,
+            )
+            self.techthurs_db.save_techthurs(
+                guildId=guild_id,
+                message=aiquestion,
+                image=None,
+                author=user.id,
+                channel_id=message.channel.id,
+                message_id=message.id,
+            )
+            if isinstance(ctx, discord.Interaction):
+                # respond to the interaction
+                await ctx.response.send_message(content="Question generated", ephemeral=True)
+        else:
+            # get the interaction from the context
+            interaction = None
+            if isinstance(ctx, discord.Interaction):
+                interaction = ctx
 
-        # self.techthurs_db.save_techthurs(
-        #     guildId=guild_id,
-        #     message=aiquestion,
-        #     image=None,
-        #     author=user.id,
-        #     channel_id=message.channel.id,
-        #     message_id=message.id,
-        # )
+            if interaction:
+                await interaction.response.send_message(content=out_message, ephemeral=True)
+            else:
+                # send the message in a DM to the user
+                await user.send(out_message)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
