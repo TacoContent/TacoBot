@@ -291,7 +291,10 @@ class TacoQuestionOfTheDay(commands.Cog):
         airesponse = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": f"{system_prompt}\nHere is a json array of previous questions that have been asked: {previous_questions}"},
+                {
+                    "role": "system",
+                    "content": f"{system_prompt}\nHere is a json array of previous questions that have been asked: {previous_questions}"
+                },
                 {"role": "user", "content": user_prompt}
             ],
         )

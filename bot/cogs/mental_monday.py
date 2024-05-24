@@ -19,6 +19,7 @@ from openai import OpenAI
 
 class MentalMondays(commands.Cog):
     group = app_commands.Group(name="mentalmondays", description="Commands for the Mental Monday's")
+
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
@@ -657,9 +658,7 @@ class MentalMondays(commands.Cog):
         )
 
         if not aiquestion:
-            self.log.warn(
-                guild_id, f"{self._module}.{self._class}.{_method}", "No mental monday generated"
-            )
+            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No mental monday generated")
             return
 
         allow_publish = ai_settings.get("allow_publish", False)

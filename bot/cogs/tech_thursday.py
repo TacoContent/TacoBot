@@ -123,11 +123,7 @@ class TechThursdays(commands.Cog):
             if amount != 1:
                 taco_word = self.settings.get_string(guild_id, "taco_plural")
             out_message = self.settings.get_string(
-                guildId=guild_id,
-                key="techthurs_out_message",
-                taco_count=amount,
-                taco_word=taco_word,
-                message=twa.text,
+                guildId=guild_id, key="techthurs_out_message", taco_count=amount, taco_word=taco_word, message=twa.text
             )
             techthurs_message = await self.messaging.send_embed(
                 channel=out_channel,
@@ -224,8 +220,6 @@ class TechThursdays(commands.Cog):
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
-
-
 
     @techthurs.command(name="import")
     @commands.has_permissions(administrator=True)
