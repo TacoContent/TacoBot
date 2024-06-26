@@ -10,6 +10,7 @@ from bot.cogs.lib.mongodb.tacos import TacosDatabase
 from discord.ext import commands
 from openai import OpenAI
 
+
 class Assistant(commands.Cog):
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
@@ -59,10 +60,16 @@ class Assistant(commands.Cog):
             user_json = self._get_user_json(guild_id, message.author)
             openai = OpenAI()
             airesponse = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
+                model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": f"{system}\FAQ: {faq}\nJSON of the Channels: {channels}\nAlways use the channels mention to link to the channel."},
-                    {"role": "user", "content": f"{user_prompt}\nJSON of my user info:\n{user_json}\nUse my mention to ping me in your response."},
+                    {
+                        "role": "system",
+                        "content": f"{system}\FAQ: {faq}\nJSON of the Channels: {channels}\nAlways use the channels mention to link to the channel.",
+                    },
+                    {
+                        "role": "user",
+                        "content": f"{user_prompt}\nJSON of my user info:\n{user_json}\nUse my mention to ping me in your response.",
+                    },
                 ],
             )
 
@@ -76,14 +83,7 @@ class Assistant(commands.Cog):
         try:
             # get_tacos_count(self, guildId: int, userId: int)
             taco_count = self.tacos_db.get_tacos_count(guildId=guildId, userId=user.id)
-            return json.dumps(
-                {
-                    "name": user.mention,
-                    "id": user.id,
-                    "mention": user.mention,
-                    "taco_count": taco_count,
-                }
-            )
+            return json.dumps({"name": user.mention, "id": user.id, "mention": user.mention, "taco_count": taco_count})
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(ex)}", traceback.format_exc())
             return ""
@@ -104,14 +104,15 @@ class Assistant(commands.Cog):
             channels = []
             for g in [x for x in self.bot.guilds if x.id == guildId]:
                 for c in [
-                    x for x in g.channels
+                    x
+                    for x in g.channels
                     if x.type == discord.ChannelType.text or
-                        x.type == discord.ChannelType.news or
-                        x.type == discord.ChannelType.forum or
-                        x.type == discord.ChannelType.public_thread or
-                        x.type == discord.ChannelType.private_thread or
-                        x.type == discord.ChannelType.news_thread
-                    ]:
+                    x.type == discord.ChannelType.news or
+                    x.type == discord.ChannelType.forum or
+                    x.type == discord.ChannelType.public_thread or
+                    x.type == discord.ChannelType.private_thread or
+                    x.type == discord.ChannelType.news_thread
+                ]:
                     channels.append(
                         {
                             "id": c.id,

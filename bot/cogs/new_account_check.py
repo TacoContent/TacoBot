@@ -181,7 +181,7 @@ class NewAccountCheck(commands.Cog):
                     system_channel = member.guild.system_channel
                     if system_channel:
                         async for message in await system_channel.history(limit=100):
-                             if message.author.id == member.id:
+                            if message.author.id == member.id:
                                 await message.delete()
                 else:
                     self.log.warn(

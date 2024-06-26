@@ -79,7 +79,9 @@ class TacoBot(commands.Bot):
                 await self.tree.sync(guild=guild)
                 self.log.debug(gid, f"{self._module}.{self._class}.{_method}", f"Synced app commands for guild {gid}")
             except discord.errors.Forbidden as fe:
-                self.log.debug(gid, f"{self._module}.{self._class}.{_method}", f"Failed to sync app commands for guild {gid}: {fe}")
+                self.log.debug(
+                    gid, f"{self._module}.{self._class}.{_method}", f"Failed to sync app commands for guild {gid}: {fe}"
+                )
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Starting Healthcheck Server")
         self.healthcheck_server = await discordhealthcheck.start(self)
