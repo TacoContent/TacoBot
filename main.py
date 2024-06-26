@@ -43,7 +43,6 @@ def main():
 
 def exporter():
     try:
-        pass
         exporter = MetricsExporter()
         exporter.run()
     except KeyboardInterrupt:

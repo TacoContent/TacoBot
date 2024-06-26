@@ -110,7 +110,8 @@ class TacoBot(commands.Bot):
                 prefixes = settings["command_prefixes"]
             # Allow users to @mention the bot instead of using a prefix when using a command. Also optional
             # Do `return prefixes` if you don't want to allow mentions instead of prefix.
-            return commands.when_mentioned_or(*prefixes)(self, message)
+            # return commands.when_mentioned_or(*prefixes)(self, message)
+            return prefixes
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"Failed to get prefixes: {e}")
             return commands.when_mentioned_or(*prefixes)(self, message)

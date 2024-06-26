@@ -180,10 +180,9 @@ class NewAccountCheck(commands.Cog):
                     # find messages by the user and delete them
                     system_channel = member.guild.system_channel
                     if system_channel:
-                        async for message in await system_channel.history(
-                            limit=100, check=lambda m: m.author.id == member.id
-                        ):
-                            await message.delete()
+                        async for message in await system_channel.history(limit=100):
+                             if message.author.id == member.id:
+                                await message.delete()
                 else:
                     self.log.warn(
                         guild_id,
