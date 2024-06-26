@@ -64,7 +64,7 @@ class Assistant(commands.Cog):
                 messages=[
                     {
                         "role": "system",
-                        "content": f"{system}\FAQ: {faq}\nJSON of the Channels: {channels}\nAlways use the channels mention to link to the channel.",
+                        "content": f"{system}\nFAQ: {faq}\nJSON of the Channels: {channels}\nAlways use the channels mention to link to the channel.",
                     },
                     {
                         "role": "user",
@@ -72,12 +72,11 @@ class Assistant(commands.Cog):
                     },
                 ],
             )
-
             aiquestion = airesponse.choices[0].message.content
-
             await message.channel.send(aiquestion)
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{str(ex)}", traceback.format_exc())
+
     def _get_user_json(self, guildId: int, user: discord.Member) -> str:
         _method = inspect.stack()[0][3]
         try:
@@ -87,6 +86,7 @@ class Assistant(commands.Cog):
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(ex)}", traceback.format_exc())
             return ""
+
     async def _get_message_content_for_prompt(self, guildId: int, channelId: int, messageId: int) -> str:
         _method = inspect.stack()[0][3]
         try:
