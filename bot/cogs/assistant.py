@@ -106,12 +106,12 @@ class Assistant(commands.Cog):
                 for c in [
                     x
                     for x in g.channels
-                    if x.type == discord.ChannelType.text or
-                    x.type == discord.ChannelType.news or
-                    x.type == discord.ChannelType.forum or
-                    x.type == discord.ChannelType.public_thread or
-                    x.type == discord.ChannelType.private_thread or
-                    x.type == discord.ChannelType.news_thread
+                    if x.type == discord.ChannelType.text
+                    or x.type == discord.ChannelType.news
+                    or x.type == discord.ChannelType.forum
+                    or x.type == discord.ChannelType.public_thread
+                    or x.type == discord.ChannelType.private_thread
+                    or x.type == discord.ChannelType.news_thread
                 ]:
                     channels.append(
                         {
