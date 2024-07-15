@@ -220,7 +220,8 @@ class GameKeys(commands.Cog):
                 },
                 {
                     "name": self.settings.get_string(guild_id, "expires"),
-                    "value": f"{expires.strftime('%Y-%m-%d %H:%M:%S')} UTC",
+                    # "value": f"{expires.strftime('%Y-%m-%d %H:%M:%S')} UTC",
+                    "value": f"<t:{int(expires.timestamp())}:R>",
                 },
             ]
             timeout = 60 * 60 * 24
@@ -235,9 +236,9 @@ class GameKeys(commands.Cog):
             )
 
             offer_message = await self.messaging.send_embed(
-                reward_channel,
-                self.settings.get_string(guild_id, "game_key_offer_title"),
-                self.settings.get_string(guild_id, "game_key_offer_message", cost=cost, tacos_word=tacos_word),
+                channel=reward_channel,
+                title=self.settings.get_string(guild_id, "game_key_offer_title"),
+                message=self.settings.get_string(guild_id, "game_key_offer_message", cost=cost, tacos_word=tacos_word),
                 fields=fields,
                 author=offered_by,
                 view=claim_view,

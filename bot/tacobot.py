@@ -23,15 +23,6 @@ class TacoBot(commands.Bot):
         self.guilds_db = GuildsDatabase()
         super().__init__(command_prefix=self.get_prefix, intents=intents, case_insensitive=True)
         self.remove_command("help")
-        # self.command_prefix=self.get_prefix
-        # A CommandTree is a special type that holds all the application command
-        # state required to make it work. This is a separate class because it
-        # allows all the extra state to be opt-in.
-        # Whenever you want to work with application commands, your tree is used
-        # to store and work with them.
-        # Note: When using commands.Bot instead of discord.Client, the bot will
-        # maintain its own tree instead.
-        # self.tree = app_commands.CommandTree(self)
 
         self.initDB()
 
@@ -43,9 +34,6 @@ class TacoBot(commands.Bot):
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"APP VERSION: {self.settings.APP_VERSION}")
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Logger initialized with level {log_level.name}")
 
-    # In this basic example, we just synchronize the app commands to one guild.
-    # Instead of specifying a guild to every command, we copy over our global commands instead.
-    # By doing so, we don't have to wait up to an hour until they are shown to the end-user.
     async def setup_hook(self) -> None:
         _method = inspect.stack()[0][3]
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Setup hook called")
