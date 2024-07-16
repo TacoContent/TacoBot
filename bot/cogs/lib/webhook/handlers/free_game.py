@@ -26,6 +26,7 @@ from httpserver import (
     uri_variable_mapping,
 )
 
+
 class FreeGameWebhookHandler(BaseWebhookHandler):
     def __init__(self, bot):
         super().__init__(bot)
