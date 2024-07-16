@@ -11,13 +11,13 @@ from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from httpserver import (
-  HttpHeaders,
-  HttpRequest,
-  HttpResponse,
-  HttpResponseException,
-  uri_mapping,
-  uri_variable_mapping,
-  uri_pattern_mapping,
+    HttpHeaders,
+    HttpRequest,
+    HttpResponse,
+    HttpResponseException,
+    uri_mapping,
+    uri_pattern_mapping,
+    uri_variable_mapping,
 )
 
 

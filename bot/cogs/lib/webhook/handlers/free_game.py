@@ -22,8 +22,8 @@ from httpserver import (
     HttpResponse,
     HttpResponseException,
     uri_mapping,
+    uri_pattern_mapping,
     uri_variable_mapping,
-    uri_pattern_mapping
 )
 
 class FreeGameWebhookHandler(BaseWebhookHandler):

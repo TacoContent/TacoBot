@@ -10,7 +10,7 @@ from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.webhook.handlers.free_game import FreeGameWebhookHandler
 from discord.ext import commands
-from httpserver import HttpServer, uri_mapping, uri_variable_mapping, uri_pattern_mapping
+from httpserver import HttpServer, uri_mapping, uri_pattern_mapping, uri_variable_mapping
 
 
 class WebhookCog(commands.Cog):
@@ -62,7 +62,7 @@ class WebhookCog(commands.Cog):
                 self.log.debug(
                     0,
                     f"{self._module}.{self._class}.{_method}",
-                    f'Webhook Listening on {self.http_server.bind_address_description()}'
+                    f'Webhook Listening on {self.http_server.bind_address_description()}',
                 )
                 # we dont need to call "serve_forever" because this task is already running in the background
 
