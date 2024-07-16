@@ -3,11 +3,6 @@ import os
 import traceback
 import typing
 
-import discord
-
-from httpserver import HttpServer
-from httpserver import uri_mapping, uri_variable_mapping, uri_pattern_mapping
-
 from bot.cogs.lib import discordhelper, logger, settings
 from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.enums.system_actions import SystemActions
@@ -15,6 +10,7 @@ from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.webhook.handlers.free_game import FreeGameWebhookHandler
 from discord.ext import commands
+from httpserver import HttpServer, uri_mapping, uri_variable_mapping, uri_pattern_mapping
 
 
 class WebhookCog(commands.Cog):
@@ -58,13 +54,16 @@ class WebhookCog(commands.Cog):
                 # dynamically add the handlers?
                 self.http_server.add_handler(FreeGameWebhookHandler(self.bot))
 
-                self.http_server.add_default_response_headers({
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': '*'
-                })
+                self.http_server.add_default_response_headers(
+                    {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': '*'}
+                )
 
                 await self.http_server.start('0.0.0.0', settings.get("port", 8090))
-                self.log.debug(0, f"{self._module}.{self._class}.{_method}", f'Webhook Listening on {self.http_server.bind_address_description()}')
+                self.log.debug(
+                    0,
+                    f"{self._module}.{self._class}.{_method}",
+                    f'Webhook Listening on {self.http_server.bind_address_description()}'
+                )
                 # we dont need to call "serve_forever" because this task is already running in the background
 
         except Exception as e:
@@ -84,6 +83,7 @@ class WebhookCog(commands.Cog):
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
         return self.get_settings(guildId=guildId, section="tacos")
+
 
 async def setup(bot):
     webhook = WebhookCog(bot)

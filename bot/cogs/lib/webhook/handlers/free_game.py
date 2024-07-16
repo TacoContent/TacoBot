@@ -7,19 +7,24 @@ import string
 import traceback
 import typing
 
-from httpserver import HttpHeaders, HttpRequest, HttpResponse, HttpResponseException
-from httpserver import uri_mapping, uri_variable_mapping, uri_pattern_mapping
-
 from bot.cogs.lib import discordhelper, logger, settings, utils
 from bot.cogs.lib.enums import loglevel
-from bot.cogs.lib.enums.system_actions import SystemActions
 from bot.cogs.lib.enums.free_game_platforms import FreeGamePlatforms
 from bot.cogs.lib.enums.free_game_types import FreeGameTypes
+from bot.cogs.lib.enums.system_actions import SystemActions
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.mongodb.tracking import TrackingDatabase
 from bot.cogs.lib.webhook.handlers.base_handler import BaseWebhookHandler
 from bot.ui.free_game_url_button_view import FreeGameUrlButtonView
-
+from httpserver import (
+    HttpHeaders,
+    HttpRequest,
+    HttpResponse,
+    HttpResponseException,
+    uri_mapping,
+    uri_variable_mapping,
+    uri_pattern_mapping
+)
 
 class FreeGameWebhookHandler(BaseWebhookHandler):
     def __init__(self, bot):
@@ -55,13 +60,17 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
                 fg_settings = self.get_settings(guild_id, self.SETTINGS_SECTION)
 
                 if not fg_settings.get("enabled", False):
-                    self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Free Games is disabled for guild {guild_id}")
+                    self.log.debug(
+                        0, f"{self._module}.{self._class}.{_method}", f"Free Games is disabled for guild {guild_id}"
+                    )
                     continue
 
                 # get channel ids
                 channel_ids = fg_settings.get("channel_ids", [])
                 if not channel_ids or len(channel_ids) == 0:
-                    self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"No channel ids found for guild {guild_id}")
+                    self.log.debug(
+                        0, f"{self._module}.{self._class}.{_method}", f"No channel ids found for guild {guild_id}"
+                    )
                     continue
 
                 channels = []
@@ -71,7 +80,9 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
                         channels.append(channel)
 
                 if len(channels) == 0:
-                    self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"No channels found for guild {guild_id}")
+                    self.log.debug(
+                        0, f"{self._module}.{self._class}.{_method}", f"No channels found for guild {guild_id}"
+                    )
                     continue
 
                 end_date = payload.get("end_date", None)
@@ -107,9 +118,7 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
                     # combine the role ids into a mention string that looks like <@&1234567890>
                     notify_message = " ".join([f"<@&{role_id}>" for role_id in notify_role_ids])
 
-                fields = [
-                    { "name": "Platforms", "value": platform_list, "inline": True },
-                ]
+                fields = [{"name": "Platforms", "value": platform_list, "inline": True}]
                 link_button = FreeGameUrlButtonView(f"Claim {offer_type_str}", url)
                 self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Sending message to channels: {channels}")
                 for channel in channels:

@@ -1,10 +1,10 @@
 import datetime
 import inspect
 import os
-import pytz
 import traceback
 import typing
 
+import pytz
 from bot.cogs.lib import utils
 from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.mongodb.database import Database
@@ -32,7 +32,12 @@ class FreeGameKeysDatabase(Database):
                 "timestamp": timestamp,
             }
             self.connection.track_free_game_keys.update_one(
-                {"guild_id": str(guildId), "channel_id": str(channelId), "message_id": str(messageId), "game_id": str(gameId)},
+                {
+                    "guild_id": str(guildId),
+                    "channel_id": str(channelId),
+                    "message_id": str(messageId),
+                    "game_id": str(gameId),
+                },
                 {"$set": payload},
                 upsert=True,
             )

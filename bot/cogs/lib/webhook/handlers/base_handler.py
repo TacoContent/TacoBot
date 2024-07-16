@@ -6,15 +6,22 @@ import random
 import string
 import traceback
 
-from httpserver import HttpHeaders, HttpRequest, HttpResponse, HttpResponseException
-from httpserver import uri_mapping, uri_variable_mapping, uri_pattern_mapping
-
 from bot.cogs.lib import discordhelper, logger, settings, utils
 from bot.cogs.lib.enums import loglevel
 from bot.cogs.lib.messaging import Messaging
 from bot.cogs.lib.mongodb.tracking import TrackingDatabase
+from httpserver import (
+  HttpHeaders,
+  HttpRequest,
+  HttpResponse,
+  HttpResponseException,
+  uri_mapping,
+  uri_variable_mapping,
+  uri_pattern_mapping,
+)
 
-class BaseWebhookHandler():
+
+class BaseWebhookHandler:
     def __init__(self, bot):
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
