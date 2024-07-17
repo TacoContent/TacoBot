@@ -12,9 +12,18 @@ class SteamApiClient:
     def get_app_id_from_url(self, url: str):
         if 'store.steampowered.com' not in url:
             return None
+
+        # if url ends with / then remove it
+        if url[-1] == '/':
+            url = url[:-1]
         if 'app' in url:
-            app_id = url.split('/')[-1]
-            return app_id
+            # if the url ends with an app id use index -1
+            if url.split('/')[-1].isnumeric():
+                return url.split('/')[-1]
+            # otherwise use index -2
+            else:
+                app_id = url.split('/')[-2]
+                return app_id
         return None
 
     def get_app_details(self, app_id: str):
