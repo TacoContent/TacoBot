@@ -101,7 +101,7 @@ class Settings:
         self.strings = {}
 
         lang_files = glob.glob(
-            os.path.join(os.path.dirname(__file__), "../../../languages", "[a-z][a-z]-[a-z][a-z].json")
+            os.path.join(os.path.dirname(__file__), "../../languages", "[a-z][a-z]-[a-z][a-z].json")
         )
         languages = [os.path.basename(f)[:-5] for f in lang_files if os.path.isfile(f)]
         for lang in languages:
@@ -119,7 +119,7 @@ class Settings:
                 raise e
 
     def load_language_manifest(self) -> None:
-        lang_manifest = os.path.join(os.path.dirname(__file__), "../../../languages/manifest.json")
+        lang_manifest = os.path.join(os.path.dirname(__file__), "../../languages/manifest.json")
         self.languages = {}
         if os.path.exists(lang_manifest):
             with open(lang_manifest, encoding="UTF-8") as manifest_file:
