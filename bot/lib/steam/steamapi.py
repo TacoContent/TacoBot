@@ -1,6 +1,6 @@
-import json
-import requests
 import traceback
+
+import requests
 
 
 class SteamApiClient:
