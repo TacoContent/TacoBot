@@ -27,10 +27,9 @@ class SteamApiClient:
 
     def get_app_details(self, app_id: str):
         try:
-            url = f'{self.base_url}/appdetails?appid={app_id}'
+            url = f'{self.base_url}/appdetails?appids={app_id}'
             response = requests.get(url, headers=self.headers)
             result = response.json()
-            print(json.dumps(result, indent=4))
             return result
         except Exception as e:
             print(e)

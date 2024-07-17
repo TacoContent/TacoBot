@@ -6,6 +6,7 @@ import typing
 import discord
 from bot.lib import logger, settings
 from bot.lib.enums import loglevel
+from bot.ui.ExternalUrlButtonView import ExternalUrlButton
 
 
 class GameRewardView(discord.ui.View):
@@ -17,6 +18,7 @@ class GameRewardView(discord.ui.View):
         timeout_callback: typing.Optional[typing.Callable] = None,
         cost: int = 500,
         timeout: int = 60 * 60 * 24,
+        external_link: typing.Optional[str] = None,
     ):
         super().__init__(timeout=timeout)
         _method = inspect.stack()[0][3]
@@ -45,6 +47,8 @@ class GameRewardView(discord.ui.View):
         self.claim_button_callback = claim_callback
         self.claim_button.callback = self.claim_callback
         self.add_item(self.claim_button)
+        if external_link is not None:
+            self.add_item(ExternalUrlButton(label="Open in Browser", url=external_link))
         pass
 
     async def claim_callback(self, interaction: discord.Interaction) -> None:

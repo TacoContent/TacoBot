@@ -42,12 +42,14 @@ class Assistant(commands.Cog):
             return
         try:
             if not message.content.startswith(self.bot.user.mention):
-                pass
+                return
+
 
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings.get("enabled", False):
                 return
 
+            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Assistant Triggered")
             # tacos_settings = self.get_tacos_settings(guild_id)
 
             faq = await self._get_message_content_for_prompt(

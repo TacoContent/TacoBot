@@ -61,12 +61,20 @@ class TacoBot(commands.Bot):
         for gid in guilds:
             try:
                 # gid = guild.id
-                guild = discord.Object(id=gid)
-                self.tree.clear_commands(guild=guild)
-                self.log.debug(gid, f"{self._module}.{self._class}.{_method}", f"Clearing app commands for guild {gid}")
-                self.tree.copy_global_to(guild=guild)
-                await self.tree.sync(guild=guild)
-                self.log.debug(gid, f"{self._module}.{self._class}.{_method}", f"Synced app commands for guild {gid}")
+                if self.settings.sync_app_commands:
+                    guild = discord.Object(id=gid)
+                    self.tree.clear_commands(guild=guild)
+                    self.log.debug(gid, f"{self._module}.{self._class}.{_method}", f"Clearing app commands for guild {gid}")
+                    self.tree.copy_global_to(guild=guild)
+
+                    await self.tree.sync(guild=guild)
+                    self.log.debug(gid, f"{self._module}.{self._class}.{_method}", f"Synced app commands for guild {gid}")
+                else:
+                    self.log.info(
+                        gid,
+                        f"{self._module}.{self._class}.{_method}",
+                        f"Skipping sync app commands for guild {gid} due to SYNC_APP_COMMANDS being false",
+                    )
             except discord.errors.Forbidden as fe:
                 self.log.debug(
                     gid, f"{self._module}.{self._class}.{_method}", f"Failed to sync app commands for guild {gid}: {fe}"

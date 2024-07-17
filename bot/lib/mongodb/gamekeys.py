@@ -160,6 +160,7 @@ class GameKeysDatabase(Database):
                     "platform": record["type"],
                     "info_url": record["info_link"] or "",
                     "offered_by": record["user_owner"],
+                    "cost": record["cost"],
                 }
             return None
         except Exception as ex:

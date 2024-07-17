@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import inspect
+import json
 import os
 import traceback
 import typing
@@ -8,7 +9,7 @@ import typing
 import discord
 from bot.lib import discordhelper, logger, settings, utils
 from bot.lib.enums import loglevel, tacotypes
-from bot.lib.GameRewardView import GameRewardView
+from bot.ui.GameRewardView import GameRewardView
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.gamekeys import GameKeysDatabase
 from bot.lib.mongodb.tacos import TacosDatabase
@@ -189,6 +190,7 @@ class GameKeys(commands.Cog):
                 return
 
             default_cost = cog_settings.get("cost", 500)
+            print(game_data)
             cost = game_data.get("cost", default_cost)
 
             if cost <= 0:
@@ -214,29 +216,30 @@ class GameKeys(commands.Cog):
             steam_info = ""
             formatted_price = ""
             image_url = None
-            thumbnail = None
+            # thumbnail = None
 
             if platform.lower() == "steam" and info_url != "UNAVAILABLE":
                 # extract the app_id from the info_url
-                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Getting steam app details")
-
                 app_id = self.steam_api.get_app_id_from_url(info_url)
-                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Steam App ID: {app_id}")
                 if app_id:
                     app_details = self.steam_api.get_app_details(app_id)
-                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Steam App Details: {app_details}")
                     if app_details:
-                        data = app_details[app_id].get("data", {})
-                        success = data.get("success", False)
+                        data = app_details[str(app_id)].get("data", {})
+                        success = app_details[str(app_id)].get("success", False)
                         if success:
                             price_overview = data.get("price_overview", {})
-                            formatted_price = price_overview.get('final_formatted', 'UNKNOWN')
+                            if price_overview.get("initial_formatted", "") != "":
+                                formatted_price = price_overview.get(
+                                    "final_formatted", price_overview.get('final_formatted', 'UNKNOWN')
+                                )
+                            else:
+                                formatted_price = price_overview.get('final_formatted', 'UNKNOWN')
                             if formatted_price and formatted_price != 'UNKNOWN' and formatted_price != '':
                                 formatted_price = f"~~{formatted_price}~~ "
                             description = data.get("short_description", "")
-                            steam_info = f"\n\nDescription: {description}"
+                            steam_info = f"\n\n{description}"
                             image_url = data.get("header_image", "")
-                            thumbnail = data.get("capsule_imagev5", "")
+                            # thumbnail = data.get("capsule_imagev5", "")
                         else:
                             self.log.warn(
                                 guild_id,
@@ -259,7 +262,7 @@ class GameKeys(commands.Cog):
             fields = [
                 {"name": self.settings.get_string(guild_id, "game"), "value": game_data.get("title", "UNKNOWN")},
                 {"name": self.settings.get_string(guild_id, "platform"), "value": platform},
-                {"name": self.settings.get_string(guild_id, "cost"), "value": f"{formatted_price}{cost} {tacos_word}🌮"},
+                {"name": self.settings.get_string(guild_id, "cost"), "value": f"{formatted_price}{cost} {tacos_word} 🌮"},
                 {"name": self.settings.get_string(guild_id, "expires"), "value": f"<t:{int(expires.timestamp())}:R>"},
                 {"name": self.settings.get_string(guild_id, "link"), "value": info_url},
             ]
@@ -272,6 +275,7 @@ class GameKeys(commands.Cog):
                 timeout_callback=self._claim_timeout_callback,
                 cost=cost,
                 timeout=timeout,
+                external_link=info_url,
             )
 
             notify_role_ids = cog_settings.get("notify_role_ids", [])
@@ -287,7 +291,8 @@ class GameKeys(commands.Cog):
                     guild_id, "game_key_offer_message", cost=cost, tacos_word=tacos_word, steam_info=steam_info
                 ),
                 image=image_url,
-                thumbnail=thumbnail,
+                # adding the thumbnail causes the layout of the embed to be weird
+                # thumbnail=thumbnail,
                 fields=fields,
                 content=f"{notify_message}",
                 author=offered_by,

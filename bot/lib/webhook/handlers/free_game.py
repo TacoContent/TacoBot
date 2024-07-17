@@ -15,7 +15,7 @@ from bot.lib.enums.system_actions import SystemActions
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.webhook.handlers.base_handler import BaseWebhookHandler
-from bot.ui.free_game_url_button_view import FreeGameUrlButtonView
+from bot.ui.ExternalUrlButtonView import ExternalUrlButtonView
 from httpserver import (
     HttpHeaders,
     HttpRequest,
@@ -120,7 +120,7 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
                     notify_message = " ".join([f"<@&{role_id}>" for role_id in notify_role_ids])
 
                 fields = [{"name": "Platforms", "value": platform_list, "inline": True}]
-                link_button = FreeGameUrlButtonView(f"Claim {offer_type_str}", url)
+                link_button = ExternalUrlButtonView(f"Claim {offer_type_str}", url)
                 self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Sending message to channels: {channels}")
                 for channel in channels:
                     message = await self.messaging.send_embed(
@@ -128,7 +128,8 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
                         title=f"{payload['title']} ↗️",
                         message=f"{price}**FREE**{end_date_msg}\n\n{desc}\n\n{instructions}\n\n{open_browser}",
                         url=url,
-                        thumbnail=payload['thumbnail'],
+                        # the thumbnail causes the layout of the embed to be weird
+                        # thumbnail=payload['thumbnail'],
                         image=payload['image'],
                         delete_after=None,
                         fields=fields,

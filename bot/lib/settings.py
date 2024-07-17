@@ -44,6 +44,8 @@ class Settings:
         self.timezone = utils.dict_get(os.environ, "TZ", default_value="America/Chicago")
         self.primary_guild_id = int(utils.dict_get(os.environ, "PRIMARY_GUILD_ID", default_value=0))
 
+        self.sync_app_commands = utils.dict_get(os.environ, "SYNC_APP_COMMANDS", default_value="true").lower() == "true"
+
         # log_level = loglevel.LogLevel[self.log_level.upper()]
         # if not log_level:
         #     log_level = loglevel.LogLevel.DEBUG
