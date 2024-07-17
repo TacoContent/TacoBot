@@ -224,6 +224,7 @@ class GameKeys(commands.Cog):
                 self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Steam App ID: {app_id}")
                 if app_id:
                     app_details = self.steam_api.get_app_details(app_id)
+                    self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Steam App Details: {app_details}")
                     if app_details:
                         data = app_details[app_id].get("data", {})
                         success = data.get("success", False)

@@ -1,4 +1,5 @@
 import requests
+import traceback
 
 class SteamApiClient:
 
@@ -30,5 +31,7 @@ class SteamApiClient:
             response = requests.get(url, headers=self.headers)
             return response.json()
         except Exception as e:
+            print(e)
+            print(traceback.format_exc())
             # todo: log error
             return None
