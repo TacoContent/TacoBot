@@ -44,7 +44,6 @@ class Assistant(commands.Cog):
             if not message.content.startswith(self.bot.user.mention):
                 return
 
-
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings.get("enabled", False):
                 return

@@ -9,12 +9,12 @@ import typing
 import discord
 from bot.lib import discordhelper, logger, settings, utils
 from bot.lib.enums import loglevel, tacotypes
-from bot.ui.GameRewardView import GameRewardView
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.gamekeys import GameKeysDatabase
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.steam.steamapi import SteamApiClient
+from bot.ui.GameRewardView import GameRewardView
 from discord.ext import commands
 
 
@@ -254,7 +254,9 @@ class GameKeys(commands.Cog):
                         )
                 else:
                     self.log.warn(
-                        guild_id, f"{self._module}.{self._class}.{_method}", f"Steam App Id not found in info_url: {info_url}"
+                        guild_id,
+                        f"{self._module}.{self._class}.{_method}",
+                        f"Steam App Id not found in info_url: {info_url}",
                     )
 
             offered_by = await self.discord_helper.get_or_fetch_user(int(game_data["offered_by"]))
@@ -262,7 +264,10 @@ class GameKeys(commands.Cog):
             fields = [
                 {"name": self.settings.get_string(guild_id, "game"), "value": game_data.get("title", "UNKNOWN")},
                 {"name": self.settings.get_string(guild_id, "platform"), "value": platform},
-                {"name": self.settings.get_string(guild_id, "cost"), "value": f"{formatted_price}{cost} {tacos_word} 🌮"},
+                {
+                    "name": self.settings.get_string(guild_id, "cost"),
+                    "value": f"{formatted_price}{cost} {tacos_word} 🌮",
+                },
                 {"name": self.settings.get_string(guild_id, "expires"), "value": f"<t:{int(expires.timestamp())}:R>"},
                 {"name": self.settings.get_string(guild_id, "link"), "value": info_url},
             ]

@@ -2,6 +2,7 @@ import json
 import requests
 import traceback
 
+
 class SteamApiClient:
     def __init__(self):
         # self.api_key = os.environ.get('STEAM_API_KEY')
