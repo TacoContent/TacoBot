@@ -57,9 +57,10 @@ class TacoBot(commands.Bot):
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Setting up bot")
         guilds = [int(g) for g in self.guilds_db.get_guild_ids()]
+        # guilds = [g for g in self.guilds]
         for gid in guilds:
             try:
-                # guild = discord.Object(id=self.settings.primary_guild_id)
+                # gid = guild.id
                 guild = discord.Object(id=gid)
                 self.tree.clear_commands(guild=guild)
                 self.log.debug(gid, f"{self._module}.{self._class}.{_method}", f"Clearing app commands for guild {gid}")

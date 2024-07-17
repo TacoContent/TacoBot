@@ -218,8 +218,10 @@ class GameKeys(commands.Cog):
 
             if platform.lower() == "steam" and info_url != "UNAVAILABLE":
                 # extract the app_id from the info_url
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Getting steam app details")
 
                 app_id = self.steam_api.get_app_id_from_url(info_url)
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Steam App ID: {app_id}")
                 if app_id:
                     app_details = self.steam_api.get_app_details(app_id)
                     if app_details:
@@ -234,6 +236,22 @@ class GameKeys(commands.Cog):
                             steam_info = f"\n\nDescription: {description}"
                             image_url = data.get("header_image", "")
                             thumbnail = data.get("capsule_imagev5", "")
+                        else:
+                            self.log.warn(
+                                guild_id,
+                                f"{self._module}.{self._class}.{_method}",
+                                f"Steam api call failed for App Id {app_id}",
+                            )
+                    else:
+                        self.log.warn(
+                            guild_id,
+                            f"{self._module}.{self._class}.{_method}",
+                            f"Steam App Details for App Id {app_id} not found",
+                        )
+                else:
+                    self.log.warn(
+                        guild_id, f"{self._module}.{self._class}.{_method}", f"Steam App Id not found in info_url: {info_url}"
+                    )
 
             offered_by = await self.discord_helper.get_or_fetch_user(int(game_data["offered_by"]))
             expires = datetime.datetime.now() + datetime.timedelta(days=1)
