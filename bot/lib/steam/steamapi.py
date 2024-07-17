@@ -18,6 +18,10 @@ class SteamApiClient:
         return None
 
     def get_app_details(self, app_id: str):
-        url = f'{self.base_url}/appdetails?appid={app_id}'
-        response = requests.get(url, headers=self.headers)
-        return response.json()
+        try:
+            url = f'{self.base_url}/appdetails?appid={app_id}'
+            response = requests.get(url, headers=self.headers)
+            return response.json()
+        except Exception as e:
+            # todo: log error
+            return None

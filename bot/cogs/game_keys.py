@@ -224,14 +224,16 @@ class GameKeys(commands.Cog):
                     app_details = self.steam_api.get_app_details(app_id)
                     if app_details:
                         data = app_details[app_id].get("data", {})
-                        price_overview = data.get("price_overview", {})
-                        formatted_price = price_overview.get('final_formatted', 'UNKNOWN')
-                        if formatted_price and formatted_price != 'UNKNOWN' and formatted_price != '':
-                            formatted_price = f"~~{formatted_price}~~ "
-                        description = data.get("short_description", "")
-                        steam_info = f"\n\nDescription: {description}"
-                        image_url = data.get("header_image", "")
-                        thumbnail = data.get("capsule_imagev5", "")
+                        success = data.get("success", False)
+                        if success:
+                            price_overview = data.get("price_overview", {})
+                            formatted_price = price_overview.get('final_formatted', 'UNKNOWN')
+                            if formatted_price and formatted_price != 'UNKNOWN' and formatted_price != '':
+                                formatted_price = f"~~{formatted_price}~~ "
+                            description = data.get("short_description", "")
+                            steam_info = f"\n\nDescription: {description}"
+                            image_url = data.get("header_image", "")
+                            thumbnail = data.get("capsule_imagev5", "")
 
             offered_by = await self.discord_helper.get_or_fetch_user(int(game_data["offered_by"]))
             expires = datetime.datetime.now() + datetime.timedelta(days=1)
