@@ -1,5 +1,5 @@
 ### NOTE: UPDATE THIS FILE WHEN CHANGING TACO TYPES ###
-### UPDATE TacoBot/cogs/lib/tacotypes.py WHEN CHANGING TACO TYPES ###
+### UPDATE TacoBot/lib/tacotypes.py WHEN CHANGING TACO TYPES ###
 ### UPDATE TacoBotTwitch/cogs/lib/tacotypes.py WHEN CHANGING TACO TYPES ###
 
 from enum import Enum
