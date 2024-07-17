@@ -28,7 +28,7 @@ class SteamApiClient:
 
     def get_app_details(self, app_id: str):
         try:
-            url = f'{self.base_url}/appdetails?appids={app_id}'
+            url = f'{self.base_url}/appdetails?appids={app_id}&cc=us&l=en'
             response = requests.get(url, headers=self.headers)
             result = response.json()
             return result
