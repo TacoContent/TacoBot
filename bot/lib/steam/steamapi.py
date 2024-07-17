@@ -1,8 +1,8 @@
+import json
 import requests
 import traceback
 
 class SteamApiClient:
-
     def __init__(self):
         # self.api_key = os.environ.get('STEAM_API_KEY')
         self.base_url = 'https://store.steampowered.com/api'
@@ -29,7 +29,9 @@ class SteamApiClient:
         try:
             url = f'{self.base_url}/appdetails?appid={app_id}'
             response = requests.get(url, headers=self.headers)
-            return response.json()
+            result = response.json()
+            print(json.dumps(result, indent=4))
+            return result
         except Exception as e:
             print(e)
             print(traceback.format_exc())
