@@ -238,15 +238,18 @@ class GameKeys(commands.Cog):
             fields = [
                 {"name": self.settings.get_string(guild_id, "game"), "value": game_data.get("title", "UNKNOWN")},
                 {"name": self.settings.get_string(guild_id, "platform"), "value": platform},
-                {"name": self.settings.get_string(guild_id, "cost"), "value": f"{formatted_price}{cost} {tacos_word}🌮"},
                 {
-                    "name": self.settings.get_string(guild_id, "link"),
-                    "value": info_url,
+                    "name": self.settings.get_string(guild_id, "cost"),
+                    "value": f"{formatted_price}{cost} {tacos_word}🌮"
                 },
                 {
                     "name": self.settings.get_string(guild_id, "expires"),
                     # "value": f"{expires.strftime('%Y-%m-%d %H:%M:%S')} UTC",
                     "value": f"<t:{int(expires.timestamp())}:R>",
+                },
+                {
+                    "name": self.settings.get_string(guild_id, "link"),
+                    "value": info_url,
                 },
             ]
             timeout = 60 * 60 * 24
