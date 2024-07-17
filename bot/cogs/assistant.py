@@ -4,9 +4,9 @@ import os
 import traceback
 
 import discord
-from bot.cogs.lib import logger, settings
-from bot.cogs.lib.enums import loglevel
-from bot.cogs.lib.mongodb.tacos import TacosDatabase
+from bot.lib import logger, settings
+from bot.lib.enums import loglevel
+from bot.lib.mongodb.tacos import TacosDatabase
 from discord.ext import commands
 from openai import OpenAI
 

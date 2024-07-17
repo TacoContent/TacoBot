@@ -6,13 +6,13 @@ import traceback
 import typing
 
 import discord
-from bot.cogs.lib import discordhelper, logger, settings, utils
-from bot.cogs.lib.enums import loglevel, tacotypes
-from bot.cogs.lib.GameRewardView import GameRewardView
-from bot.cogs.lib.messaging import Messaging
-from bot.cogs.lib.mongodb.gamekeys import GameKeysDatabase
-from bot.cogs.lib.mongodb.tacos import TacosDatabase
-from bot.cogs.lib.mongodb.tracking import TrackingDatabase
+from bot.lib import discordhelper, logger, settings, utils
+from bot.lib.enums import loglevel, tacotypes
+from bot.lib.GameRewardView import GameRewardView
+from bot.lib.messaging import Messaging
+from bot.lib.mongodb.gamekeys import GameKeysDatabase
+from bot.lib.mongodb.tacos import TacosDatabase
+from bot.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 
 

@@ -3,11 +3,11 @@ import os
 import traceback
 
 import discord
-from bot.cogs.lib import discordhelper, logger, settings
-from bot.cogs.lib.enums import loglevel, tacotypes
-from bot.cogs.lib.enums.system_actions import SystemActions
-from bot.cogs.lib.mongodb.tacos import TacosDatabase
-from bot.cogs.lib.mongodb.tracking import TrackingDatabase
+from bot.lib import discordhelper, logger, settings
+from bot.lib.enums import loglevel, tacotypes
+from bot.lib.enums.system_actions import SystemActions
+from bot.lib.mongodb.tacos import TacosDatabase
+from bot.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 
 

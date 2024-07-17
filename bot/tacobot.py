@@ -6,9 +6,9 @@ import typing
 
 import discord
 import discordhealthcheck
-from bot.cogs.lib import logger, settings
-from bot.cogs.lib.enums import loglevel
-from bot.cogs.lib.mongodb.guilds import GuildsDatabase
+from bot.lib import logger, settings
+from bot.lib.enums import loglevel
+from bot.lib.mongodb.guilds import GuildsDatabase
 from discord import app_commands
 from discord.ext import commands
 

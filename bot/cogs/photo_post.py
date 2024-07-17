@@ -3,9 +3,9 @@ import os
 import re
 import traceback
 
-from bot.cogs.lib import discordhelper, logger, settings
-from bot.cogs.lib.enums import loglevel, tacotypes
-from bot.cogs.lib.mongodb.tracking import TrackingDatabase
+from bot.lib import discordhelper, logger, settings
+from bot.lib.enums import loglevel, tacotypes
+from bot.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 
 

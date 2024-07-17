@@ -6,13 +6,13 @@ import typing
 
 import discord
 import requests
-from bot.cogs.lib import discordhelper, logger, settings, utils
-from bot.cogs.lib.enums import loglevel, tacotypes
-from bot.cogs.lib.enums.system_actions import SystemActions
-from bot.cogs.lib.messaging import Messaging
-from bot.cogs.lib.mongodb.live import LiveDatabase
-from bot.cogs.lib.mongodb.tracking import TrackingDatabase
-from bot.cogs.lib.mongodb.twitch import TwitchDatabase
+from bot.lib import discordhelper, logger, settings, utils
+from bot.lib.enums import loglevel, tacotypes
+from bot.lib.enums.system_actions import SystemActions
+from bot.lib.messaging import Messaging
+from bot.lib.mongodb.live import LiveDatabase
+from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.mongodb.twitch import TwitchDatabase
 from discord.ext import commands
 
 

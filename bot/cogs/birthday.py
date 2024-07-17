@@ -9,11 +9,11 @@ from random import random, randrange
 
 import discord
 import pytz
-from bot.cogs.lib import discordhelper, logger, settings
-from bot.cogs.lib.enums import loglevel, tacotypes
-from bot.cogs.lib.messaging import Messaging
-from bot.cogs.lib.mongodb.birthdays import BirthdaysDatabase
-from bot.cogs.lib.mongodb.tracking import TrackingDatabase
+from bot.lib import discordhelper, logger, settings
+from bot.lib.enums import loglevel, tacotypes
+from bot.lib.messaging import Messaging
+from bot.lib.mongodb.birthdays import BirthdaysDatabase
+from bot.lib.mongodb.tracking import TrackingDatabase
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Context

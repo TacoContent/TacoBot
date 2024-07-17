@@ -10,10 +10,9 @@ import asyncio
 
 import bot.tacobot as bot
 import discord
-from bot.cogs.lib.colors import Colors
-from bot.cogs.lib.mongodb.migration_runner import MigrationRunner
+from bot.lib.colors import Colors
+from bot.lib.mongodb.migration_runner import MigrationRunner
 from dotenv import find_dotenv, load_dotenv
-from webhook.listener import WebhookListener
 from metrics.exporter import MetricsExporter
 
 

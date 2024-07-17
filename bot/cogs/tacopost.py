@@ -3,10 +3,10 @@ import inspect
 import os
 import traceback
 
-from bot.cogs.lib import discordhelper, logger, settings
-from bot.cogs.lib.enums import loglevel
-from bot.cogs.lib.messaging import Messaging
-from bot.cogs.lib.mongodb.tacos import TacosDatabase
+from bot.lib import discordhelper, logger, settings
+from bot.lib.enums import loglevel
+from bot.lib.messaging import Messaging
+from bot.lib.mongodb.tacos import TacosDatabase
 from discord.ext import commands
 
 
