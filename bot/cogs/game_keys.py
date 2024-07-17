@@ -235,11 +235,18 @@ class GameKeys(commands.Cog):
                 timeout=timeout,
             )
 
+            notify_role_ids = cog_settings.get("notify_role_ids", [])
+            notify_message = ""
+            if notify_role_ids and len(notify_role_ids) > 0:
+                # combine the role ids into a mention string that looks like <@&1234567890>
+                notify_message = " ".join([f"<@&{role_id}>" for role_id in notify_role_ids])
+
             offer_message = await self.messaging.send_embed(
                 channel=reward_channel,
                 title=self.settings.get_string(guild_id, "game_key_offer_title"),
                 message=self.settings.get_string(guild_id, "game_key_offer_message", cost=cost, tacos_word=tacos_word),
                 fields=fields,
+                content=f"{notify_message}",
                 author=offered_by,
                 view=claim_view,
             )
