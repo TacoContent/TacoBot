@@ -100,9 +100,7 @@ class Settings:
         _method = inspect.stack()[1][3]
         self.strings = {}
 
-        lang_files = glob.glob(
-            os.path.join(os.path.dirname(__file__), "../../languages", "[a-z][a-z]-[a-z][a-z].json")
-        )
+        lang_files = glob.glob(os.path.join(os.path.dirname(__file__), "../../languages", "[a-z][a-z]-[a-z][a-z].json"))
         languages = [os.path.basename(f)[:-5] for f in lang_files if os.path.isfile(f)]
         for lang in languages:
             self.strings[lang] = {}
