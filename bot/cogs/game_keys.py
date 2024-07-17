@@ -13,6 +13,7 @@ from bot.lib.messaging import Messaging
 from bot.lib.mongodb.gamekeys import GameKeysDatabase
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.steam.steamapi import SteamApiClient
 from discord.ext import commands
 
 
@@ -30,6 +31,7 @@ class GameKeys(commands.Cog):
         self.tacos_db = TacosDatabase()
         self.gamekeys_db = GameKeysDatabase()
         self.tracking_db = TrackingDatabase()
+        self.steam_api = SteamApiClient()
 
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
@@ -207,16 +209,39 @@ class GameKeys(commands.Cog):
                     guild_id, f"{self._module}.{self._class}.{_method}", f"No log channel found for guild {guild_id}"
                 )
                 return
+            platform = game_data.get("platform", "UNKNOWN")
+            info_url = game_data.get("info_url", "UNAVAILABLE")
+            steam_info = ""
+            formatted_price = ""
+            image_url = None
+            thumbnail = None
+
+            if platform.lower() == "steam" and info_url != "UNAVAILABLE":
+                # extract the app_id from the info_url
+
+                app_id = self.steam_api.get_app_id_from_url(info_url)
+                if app_id:
+                    app_details = self.steam_api.get_app_details(app_id)
+                    if app_details:
+                        data = app_details[app_id].get("data", {})
+                        price_overview = data.get("price_overview", {})
+                        formatted_price = price_overview.get('final_formatted', 'UNKNOWN')
+                        if formatted_price and formatted_price != 'UNKNOWN' and formatted_price != '':
+                            formatted_price = f"~~{formatted_price}~~ "
+                        description = data.get("short_description", "")
+                        steam_info = f"\n\nDescription: {description}"
+                        image_url = data.get("header_image", "")
+                        thumbnail = data.get("capsule_imagev5", "")
 
             offered_by = await self.discord_helper.get_or_fetch_user(int(game_data["offered_by"]))
             expires = datetime.datetime.now() + datetime.timedelta(days=1)
             fields = [
                 {"name": self.settings.get_string(guild_id, "game"), "value": game_data.get("title", "UNKNOWN")},
-                {"name": self.settings.get_string(guild_id, "platform"), "value": game_data.get("platform", "UNKNOWN")},
-                {"name": self.settings.get_string(guild_id, "cost"), "value": f"{cost} {tacos_word}🌮"},
+                {"name": self.settings.get_string(guild_id, "platform"), "value": platform},
+                {"name": self.settings.get_string(guild_id, "cost"), "value": f"{formatted_price}{cost} {tacos_word}🌮"},
                 {
                     "name": self.settings.get_string(guild_id, "link"),
-                    "value": game_data.get("info_url", "[Unavailable]"),
+                    "value": info_url,
                 },
                 {
                     "name": self.settings.get_string(guild_id, "expires"),
@@ -244,7 +269,11 @@ class GameKeys(commands.Cog):
             offer_message = await self.messaging.send_embed(
                 channel=reward_channel,
                 title=self.settings.get_string(guild_id, "game_key_offer_title"),
-                message=self.settings.get_string(guild_id, "game_key_offer_message", cost=cost, tacos_word=tacos_word),
+                message=self.settings.get_string(
+                    guild_id, "game_key_offer_message", cost=cost, tacos_word=tacos_word, steam_info=steam_info
+                ),
+                image=image_url,
+                thumbnail=thumbnail,
                 fields=fields,
                 content=f"{notify_message}",
                 author=offered_by,
