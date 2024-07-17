@@ -5,9 +5,7 @@ class SteamApiClient:
     def __init__(self):
         # self.api_key = os.environ.get('STEAM_API_KEY')
         self.base_url = 'https://store.steampowered.com/api'
-        self.headers = {
-            'User-Agent': 'TacoBot/1.0.0-snapshot'
-        }
+        self.headers = {'User-Agent': 'TacoBot/1.0.0-snapshot'}
 
     def get_app_id_from_url(self, url: str):
         if 'store.steampowered.com' not in url:
