@@ -216,6 +216,7 @@ class DiscordHelper:
                 count=taco_count,
                 total_tacos=total_taco_count,
                 reason=reason_msg,
+                type=give_type,
             )
 
             self.tacos_db.track_tacos_log(
@@ -273,6 +274,7 @@ class DiscordHelper:
         count: int,
         total_tacos: int,
         reason: str,
+        type: tacotypes.TacoTypes = tacotypes.TacoTypes.CUSTOM,
     ):
         _method = inspect.stack()[0][3]
         try:
@@ -305,6 +307,7 @@ class DiscordHelper:
                     {"name": f"🎬 {action.upper()}", "value": f"{positive_count} {taco_word}"},
                     {"name": "🌮 TOTAL TACOS", "value": f"{total_tacos} {total_taco_word}"},
                     {"name": "ℹ REASON", "value": reason},
+                    {"name": "✨ TYPE", "value": type.name},
                 ]
 
                 await self.messaging.send_embed(

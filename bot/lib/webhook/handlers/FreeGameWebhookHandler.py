@@ -13,8 +13,9 @@ from bot.lib.enums.free_game_platforms import FreeGamePlatforms
 from bot.lib.enums.free_game_types import FreeGameTypes
 from bot.lib.enums.system_actions import SystemActions
 from bot.lib.messaging import Messaging
+from bot.lib.mongodb.free_game_keys import FreeGameKeysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
-from bot.lib.webhook.handlers.base_handler import BaseWebhookHandler
+from bot.lib.webhook.handlers.BaseWebhookHandler import BaseWebhookHandler
 from bot.ui.ExternalUrlButtonView import ExternalUrlButtonView
 from httpserver import (
     HttpHeaders,
@@ -35,6 +36,9 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
         self._module = os.path.basename(__file__)[:-3]
         self.SETTINGS_SECTION = "free_games"
 
+        self.tracking_db = TrackingDatabase()
+        self.freegame_db = FreeGameKeysDatabase()
+
     @uri_mapping("/webhook/game", method="POST")
     async def game(self, request: HttpRequest) -> HttpResponse:
         """Receive a free game payload from the webhook"""
@@ -52,6 +56,35 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
             payload = json.loads(request.body)
             self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"{json.dumps(payload, indent=4)}")
 
+            game_id = payload.get("game_id", "")
+
+            end_date = payload.get("end_date", None)
+            price = payload.get("worth", "").upper()
+
+            if not price or price == "N/A" or price == "FREE":
+                price = ""
+
+            if price and price != "":
+                price = f"~~{price}~~ "
+
+            if end_date:
+                seconds_remaining = utils.get_seconds_until(end_date)
+                if seconds_remaining <= 0:
+                    end_date_msg = f"\nEnded: <t:{end_date}:R>"
+                else:
+                    end_date_msg = f"\nEnds: <t:{end_date}:R>"
+            else:
+                self.log.debug(0, f"{self._module}.{self._class}.{_method}", "No end date found")
+                end_date_msg = ""
+
+            url = payload.get("open_giveaway_url", "")
+            offer_type = self._get_offer_type(payload.get("type", "OTHER"))
+            offer_type_str = self._get_offer_type_str(offer_type)
+            platform_list = self._get_offer_platform_list(payload.get("platforms", []))
+            open_browser = f"[Claim {offer_type_str} ↗️]({url})\n\n" if url else ""
+            desc = html.unescape(payload['description'])
+            instructions = html.unescape(payload['instructions'])
+
             # take the payload, formulate a message, and send it to the specific channel based on each guild.
             # for testing purposes, we will just send the message to the first guild we find
 
@@ -59,6 +92,14 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
             for guild in guilds:
                 guild_id = guild.id
                 fg_settings = self.get_settings(guild_id, self.SETTINGS_SECTION)
+
+                if self.freegame_db.is_game_tracked(guild_id, game_id):
+                    self.log.debug(
+                        0,
+                        f"{self._module}.{self._class}.{_method}",
+                        f"Game '{game_id}' for guild '{guild_id}' is already being tracked",
+                    )
+                    continue
 
                 if not fg_settings.get("enabled", False):
                     self.log.debug(
@@ -86,33 +127,6 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
                     )
                     continue
 
-                end_date = payload.get("end_date", None)
-                price = payload.get("worth", "").upper()
-
-                if not price or price == "N/A" or price == "FREE":
-                    price = ""
-
-                if price and price != "":
-                    price = f"~~{price}~~ "
-
-                if end_date:
-                    seconds_remaining = utils.get_seconds_until(end_date)
-                    if seconds_remaining <= 0:
-                        end_date_msg = f"\nEnded: <t:{end_date}:R>"
-                    else:
-                        end_date_msg = f"\nEnds: <t:{end_date}:R>"
-                else:
-                    self.log.debug(0, f"{self._module}.{self._class}.{_method}", "No end date found")
-                    end_date_msg = ""
-
-                url = payload.get("open_giveaway_url", "")
-                offer_type = self._get_offer_type(payload.get("type", "OTHER"))
-                offer_type_str = self._get_offer_type_str(offer_type)
-                platform_list = self._get_offer_platform_list(payload.get("platforms", []))
-                open_browser = f"[Claim {offer_type_str} ↗️]({url})\n\n" if url else ""
-                desc = html.unescape(payload['description'])
-                instructions = html.unescape(payload['instructions'])
-
                 notify_role_ids = fg_settings.get("notify_role_ids", [])
                 notify_message = ""
                 if notify_role_ids and len(notify_role_ids) > 0:
@@ -135,6 +149,13 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
                         fields=fields,
                         content=f"{notify_message}",
                         view=link_button,
+                    )
+
+                    self.tracking_db.track_free_game_key(
+                        guildId=guild_id,
+                        channelId=channel.id,
+                        messageId=message.id,
+                        gameId=game_id,
                     )
 
             return HttpResponse(200, headers, json.dumps(payload, indent=4).encode())

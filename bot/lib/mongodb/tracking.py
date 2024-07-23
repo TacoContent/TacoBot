@@ -11,6 +11,7 @@ from bot.lib.enums.member_status import MemberStatus
 from bot.lib.enums.system_actions import SystemActions
 from bot.lib.models.triviaquestion import TriviaQuestion
 from bot.lib.mongodb.database import Database
+import pytz
 
 
 class TrackingDatabase(Database):
@@ -369,6 +370,38 @@ class TrackingDatabase(Database):
         except Exception as ex:
             self.log(
                 guildId=guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+
+    def track_free_game_key(self, guildId: int, channelId: int, messageId: int, gameId: int):
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=pytz.timezone(self.settings.timezone)))
+            payload = {
+                "guild_id": str(guildId),
+                "channel_id": str(channelId),
+                "message_id": str(messageId),
+                "game_id": str(gameId),
+                "timestamp": timestamp,
+            }
+            self.connection.track_free_game_keys.update_one(
+                {
+                    "guild_id": str(guildId),
+                    "channel_id": str(channelId),
+                    "message_id": str(messageId),
+                    "game_id": str(gameId),
+                },
+                {"$set": payload},
+                upsert=True,
+            )
+        except Exception as ex:
+            self.log(
+                guildId=guildId,
                 level=loglevel.LogLevel.ERROR,
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"{ex}",

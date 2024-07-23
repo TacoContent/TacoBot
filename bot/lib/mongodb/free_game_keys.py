@@ -18,34 +18,13 @@ class FreeGameKeysDatabase(Database):
         self._class = self.__class__.__name__
         pass
 
-    def track_free_game_key(self, guildId: int, channelId: int, messageId: int, gameId: int):
+    def is_game_tracked(self, guild_id: int, game_id: int) -> bool:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.now(tz=pytz.timezone(self.settings.timezone)))
-            payload = {
-                "guild_id": str(guildId),
-                "channel_id": str(channelId),
-                "message_id": str(messageId),
-                "game_id": str(gameId),
-                "timestamp": timestamp,
-            }
-            self.connection.track_free_game_keys.update_one(
-                {
-                    "guild_id": str(guildId),
-                    "channel_id": str(channelId),
-                    "message_id": str(messageId),
-                    "game_id": str(gameId),
-                },
-                {"$set": payload},
-                upsert=True,
-            )
-        except Exception as ex:
-            self.log(
-                guildId=guildId,
-                level=loglevel.LogLevel.ERROR,
-                method=f"{self._module}.{self._class}.{_method}",
-                message=f"{ex}",
-                stackTrace=traceback.format_exc(),
-            )
+            result = self.connection.track_free_game_keys.find_one({"guild_id": str(guild_id), "game_id": str(game_id)})
+            return result is not None
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
+            return False

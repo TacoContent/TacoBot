@@ -1,5 +1,7 @@
+from importlib import import_module
 import inspect
 import os
+import sys
 import traceback
 import typing
 
@@ -8,7 +10,6 @@ from bot.lib.enums import loglevel
 from bot.lib.enums.system_actions import SystemActions
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
-from bot.lib.webhook.handlers.free_game import FreeGameWebhookHandler
 from discord.ext import commands
 from httpserver import HttpServer, uri_mapping, uri_pattern_mapping, uri_variable_mapping
 
@@ -51,8 +52,7 @@ class WebhookCog(commands.Cog):
                 self.http_server = HttpServer()
 
                 self.http_server.set_http_debug_enabled(True)
-                # dynamically add the handlers?
-                self.http_server.add_handler(FreeGameWebhookHandler(self.bot))
+                self.load_webhook_handlers()
 
                 self.http_server.add_default_response_headers(
                     {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': '*'}
@@ -69,6 +69,46 @@ class WebhookCog(commands.Cog):
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"Exception: {e}")
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"Traceback: {traceback.format_exc()}")
+
+    def load_webhook_handlers(self):
+        _method = inspect.stack()[0][3]
+        try:
+            if not os.path.exists("bot/lib/webhook/handlers"):
+                self.log.error(0, f"{self._module}.{self._class}.{_method}", "No handlers found")
+                return
+            if not self.http_server:
+                self.log.error(0, f"{self._module}.{self._class}.{_method}", "No http server found")
+                return
+
+            handlers = [
+                f"bot.lib.webhook.handlers.{os.path.splitext(f)[0]}"
+                for f in os.listdir("bot/lib/webhook/handlers")
+                if f.endswith(".py") and not f.startswith("_") and not f.startswith("BaseWebhookHandler")
+            ]
+
+            for handler in handlers:
+                try:
+                    module_path, class_name = handler.rsplit('.', 1)
+                    full_module_path = f"{module_path}.{class_name}"
+                    module = import_module(full_module_path)
+                    # create an instance of the handler
+                    handler_instance = getattr(module, class_name)
+                    self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Loading handler {handler}")
+                    self.http_server.add_handler(handler_instance(self.bot))
+                except Exception as e:
+                    self.log.error(
+                        0,
+                        f"{self._module}.{self._class}.{_method}",
+                        f"Failed to load extension {handler}: {e}",
+                        traceback.format_exc(),
+                    )
+        except Exception as e:
+            self.log.error(
+                0,
+                f"{self._module}.{self._class}.{_method}",
+                f"Failed to load handler {handler}: {e}",
+                traceback.format_exc(),
+            )
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         return self.get_settings(guildId=guildId, section=self.SETTINGS_SECTION)

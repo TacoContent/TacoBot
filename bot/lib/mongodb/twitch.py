@@ -17,6 +17,39 @@ class TwitchDatabase(Database):
         self._class = self.__class__.__name__
         pass
 
+    def get_twitch_user(self, userId: int) -> typing.Optional[dict]:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            return self.connection.twitch_user.find_one({"user_id": str(userId)})
+        except Exception as ex:
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+
+    def get_user_id_from_twitch_name(self, twitchName: str) -> typing.Optional[int]:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            result = self.connection.twitch_user.find_one({"twitch_name": twitchName})
+            if result:
+                return int(result["user_id"])
+            return None
+        except Exception as ex:
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+
     # twitchId: typing.Optional[str] = None,
     def set_user_twitch_info(self, userId: int, twitchName: typing.Optional[str] = None) -> None:
         _method = inspect.stack()[0][3]
