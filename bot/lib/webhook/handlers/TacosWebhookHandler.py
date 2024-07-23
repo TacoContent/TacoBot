@@ -8,13 +8,13 @@ import traceback
 import typing
 
 from bot.lib import discordhelper, logger, settings, utils
-from bot.lib.users_utils import UsersUtils
 from bot.lib.enums import loglevel
 from bot.lib.enums.system_actions import SystemActions
 from bot.lib.enums.tacotypes import TacoTypes
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.users_utils import UsersUtils
 from bot.lib.webhook.handlers.BaseWebhookHandler import BaseWebhookHandler
 from httpserver import (
     HttpHeaders,
@@ -95,17 +95,23 @@ class TacosWebhookHandler(BaseWebhookHandler):
                 )
                 raise HttpResponseException(404, headers, bytearray(err_msg, "utf-8"))
             if not from_user_id:
-                err_msg = f'{{"error": "No discord user found for from_user ({from_twitch_user}) when looking up in user table." }}'
+                err_msg = (
+                    f'{{"error": "No discord user found for from_user ({from_twitch_user}) when looking up in user table." }}'
+                )
                 raise HttpResponseException(404, headers, bytearray(err_msg, "utf-8"))
 
             to_user = await self.discord_helper.get_or_fetch_user(to_user_id)
             from_user = await self.discord_helper.get_or_fetch_user(from_user_id)
 
             if not to_user:
-                err_msg = f'{{"error": "No discord user found for to_user ({to_twitch_user}) when fetching from discord." }}'
+                err_msg = (
+                    f'{{"error": "No discord user found for to_user ({to_twitch_user}) when fetching from discord."}}'
+                )
                 raise HttpResponseException(404, headers, bytearray(err_msg, "utf-8"))
             if not from_user:
-                err_msg = f'{{"error": "No discord user found for from_user ({from_twitch_user}) when fetching from discord." }}'
+                err_msg = (
+                    f'{{"error": "No discord user found for from_user ({from_twitch_user}) when fetching from discord."}}'
+                )
                 raise HttpResponseException(404, headers, bytearray(err_msg, "utf-8"))
 
             if from_user.id == to_user.id:
@@ -129,7 +135,7 @@ class TacosWebhookHandler(BaseWebhookHandler):
                 )
                 remaining_gifts_to_user = max_give_per_user_per_ts - total_gifted_to_user
 
-                total_gifted_over_ts = self.tacos_db.get_total_gifted_tacos(
+                total_gifted_over_ts = self.tacos_db.get_total_gifted_tacos_for_channel(
                     guild_id, self.users_utils.clean_twitch_channel_name(from_twitch_user), max_give_timespan
                 )
                 remaining_gifts_over_ts = max_give_per_ts - total_gifted_over_ts
@@ -138,7 +144,9 @@ class TacosWebhookHandler(BaseWebhookHandler):
                     err_msg = f'{{"error": "You have given the maximum number of tacos today ({max_give_per_ts})" }}'
                     raise HttpResponseException(400, headers, bytearray(err_msg, "utf-8"))
                 if remaining_gifts_to_user <= 0:
-                    err_msg = f'{{"error": "You have given the maximum number of tacos to this user today ({max_give_per_user_per_ts})" }}'
+                    err_msg = (
+                        f'{{"error": "You have given the maximum number of tacos to this user today ({max_give_per_user_per_ts})" }}'
+                    )
                     raise HttpResponseException(400, headers, bytearray(err_msg, "utf-8"))
                 if amount > max_give_per_user:
                     err_msg = f'{{"error": "You can only give up to {str(max_give_per_user)} tacos at a time" }}'

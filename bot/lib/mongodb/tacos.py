@@ -297,6 +297,33 @@ class TacosDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
 
+    def get_total_gifted_tacos_for_channel(self, guild_id: int, channel: str, timespan_seconds: int = 86400) -> int:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            channel = utils.clean_channel_name(channel)
+            data = self.connection.twitch_tacos_gifts.find(
+                {"guild_id": str(guild_id), "channel": channel, "timestamp": {"$gt": timestamp - timespan_seconds}}
+            )
+            if data is None:
+                return 0
+            # add up all the gifts from the count column
+            total_gifts = 0
+            for gift in data:
+                total_gifts += gift["count"]
+            return total_gifts
+        except Exception as ex:
+            self.log(
+                guildId=guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return 0
+
     def get_total_gifted_tacos_to_user(
         self, guild_id: int, channel: str, user: str, timespan_seconds: int = 86400
     ) -> int:
