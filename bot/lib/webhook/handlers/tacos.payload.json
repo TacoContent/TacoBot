@@ -4,5 +4,5 @@
   "to_user": "darthminos",
   "amount": 5,
   "reason": "being awesome",
-  "type": "TWITCH_GIVE_TACOS"
+  "type": "twitch_give_tacos"
 }

@@ -468,28 +468,34 @@ class LiveNow(commands.Cog):
 
     def get_user_profile_image(self, twitch_user: typing.Union[str, None]) -> typing.Union[str, None]:
         _method = inspect.stack()[0][3]
-        if twitch_user:
-            result = requests.get(f"http://decapi.me/twitch/avatar/{twitch_user}")
-            if result.status_code == 200:
-                return result.text
-            else:
-                self.log.debug(
-                    0, f"{self._module}.{self._class}.{_method}", f"Failed to get profile image for {twitch_user}"
-                )
-                self.log.info(0, f"{self._module}.{self._class}.{_method}", f"{result.text}")
-        return None
+        try:
+            if twitch_user:
+                result = requests.get(f"http://decapi.me/twitch/avatar/{twitch_user}")
+                if result.status_code == 200:
+                    return result.text
+                else:
+                    self.log.debug(
+                        0, f"{self._module}.{self._class}.{_method}", f"Failed to get profile image for {twitch_user}"
+                    )
+                    self.log.info(0, f"{self._module}.{self._class}.{_method}", f"{result.text}")
+            return None
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return None
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
+        return self.get_settings(guildId=guildId, section=self.SETTINGS_SECTION)
+
+    def get_settings(self, guildId: int, section: str) -> dict:
+        if not section or section == "":
+            raise Exception("No section provided")
+        cog_settings = self.settings.get_settings(guildId, section)
         if not cog_settings:
-            raise Exception(f"No cog settings found for guild {guildId}")
+            raise Exception(f"No '{section}' settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, "tacos")
-        if not cog_settings:
-            raise Exception(f"No tacos settings found for guild {guildId}")
-        return cog_settings
+        return self.get_settings(guildId=guildId, section="tacos")
 
 
 async def setup(bot):
