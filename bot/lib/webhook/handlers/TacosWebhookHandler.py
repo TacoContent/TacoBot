@@ -26,6 +26,7 @@ from httpserver import (
     uri_variable_mapping,
 )
 
+
 class TacosWebhookHandler(BaseWebhookHandler):
     def __init__(self, bot):
         super().__init__(bot)
@@ -84,12 +85,14 @@ class TacosWebhookHandler(BaseWebhookHandler):
             taco_type = TacoTypes.str_to_enum(type_name.lower())
 
             limit_immune = False
-             # look up the to_user and from_user and get their discord user ids
+            # look up the to_user and from_user and get their discord user ids
             to_user_id = self.users_utils.twitch_user_to_discord_user(to_twitch_user)
             from_user_id = self.users_utils.twitch_user_to_discord_user(from_twitch_user)
 
             if not to_user_id:
-                err_msg = f'{{"error": "No discord user found for to_user ({to_twitch_user}) when looking up in user table." }}'
+                err_msg = (
+                    f'{{"error": "No discord user found for to_user ({to_twitch_user}) when looking up in user table." }}'
+                )
                 raise HttpResponseException(404, headers, bytearray(err_msg, "utf-8"))
             if not from_user_id:
                 err_msg = f'{{"error": "No discord user found for from_user ({from_twitch_user}) when looking up in user table." }}'
@@ -127,9 +130,7 @@ class TacosWebhookHandler(BaseWebhookHandler):
                 remaining_gifts_to_user = max_give_per_user_per_ts - total_gifted_to_user
 
                 total_gifted_over_ts = self.tacos_db.get_total_gifted_tacos(
-                    guild_id,
-                    self.users_utils.clean_twitch_channel_name(from_twitch_user),
-                    max_give_timespan,
+                    guild_id, self.users_utils.clean_twitch_channel_name(from_twitch_user), max_give_timespan
                 )
                 remaining_gifts_over_ts = max_give_per_ts - total_gifted_over_ts
 
@@ -149,10 +150,7 @@ class TacosWebhookHandler(BaseWebhookHandler):
             await self.discord_helper.taco_give_user(
                 guild_id, from_user, to_user, reason_msg, taco_type, taco_amount=amount
             )
-            response_payload = {
-                "success": True,
-                "payload": payload
-            }
+            response_payload = {"success": True, "payload": payload}
             return HttpResponse(200, headers, bytearray(json.dumps(response_payload, indent=4), "utf-8"))
 
         except HttpResponseException as e:

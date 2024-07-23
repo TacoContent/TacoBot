@@ -152,10 +152,7 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
                     )
 
                     self.tracking_db.track_free_game_key(
-                        guildId=guild_id,
-                        channelId=channel.id,
-                        messageId=message.id,
-                        gameId=game_id,
+                        guildId=guild_id, channelId=channel.id, messageId=message.id, gameId=game_id
                     )
 
             return HttpResponse(200, headers, json.dumps(payload, indent=4).encode())

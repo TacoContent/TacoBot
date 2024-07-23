@@ -1,9 +1,9 @@
-from importlib import import_module
 import inspect
 import os
 import sys
 import traceback
 import typing
+from importlib import import_module
 
 from bot.lib import discordhelper, logger, settings
 from bot.lib.enums import loglevel

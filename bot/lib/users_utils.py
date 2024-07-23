@@ -7,6 +7,7 @@ from bot.lib import logger, settings
 from bot.lib.enums import loglevel
 from bot.lib.mongodb.twitch import TwitchDatabase
 
+
 class UsersUtils:
     def __init__(self):
         _method = inspect.stack()[0][3]
@@ -21,7 +22,6 @@ class UsersUtils:
         self.log = logger.Log(minimumLogLevel=log_level)
 
         self.twitch_db = TwitchDatabase()
-
 
     def twitch_user_to_discord_user(self, twitch_user: str) -> typing.Optional[int]:
         _method = inspect.stack()[0][3]

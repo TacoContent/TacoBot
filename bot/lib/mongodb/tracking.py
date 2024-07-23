@@ -5,13 +5,13 @@ import traceback
 import typing
 
 import discord
+import pytz
 from bot.lib import utils
 from bot.lib.enums import loglevel
 from bot.lib.enums.member_status import MemberStatus
 from bot.lib.enums.system_actions import SystemActions
 from bot.lib.models.triviaquestion import TriviaQuestion
 from bot.lib.mongodb.database import Database
-import pytz
 
 
 class TrackingDatabase(Database):
