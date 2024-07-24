@@ -67,8 +67,9 @@ class WebhookCog(commands.Cog):
                 # we dont need to call "serve_forever" because this task is already running in the background
 
         except Exception as e:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", f"Exception: {e}")
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", f"Traceback: {traceback.format_exc()}")
+            self.log.error(
+                0, f"{self._module}.{self._class}.{_method}", "{e}", traceback.format_exc()
+            )
 
     def load_webhook_handlers(self):
         _method = inspect.stack()[0][3]

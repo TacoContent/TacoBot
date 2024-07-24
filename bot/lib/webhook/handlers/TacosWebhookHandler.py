@@ -150,7 +150,8 @@ class TacosWebhookHandler(BaseWebhookHandler):
             await self.discord_helper.taco_give_user(
                 guild_id, from_user, to_user, reason_msg, taco_type, taco_amount=amount
             )
-            response_payload = {"success": True, "payload": payload}
+            total_tacos = self.tacos_db.get_tacos_count(guild_id, to_user_id)
+            response_payload = {"success": True, "payload": payload, "total_tacos": total_tacos}
             return HttpResponse(200, headers, bytearray(json.dumps(response_payload, indent=4), "utf-8"))
 
         except HttpResponseException as e:

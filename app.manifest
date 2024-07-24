@@ -18,6 +18,28 @@
       "enabled": true,
       "description": "Webhook for taco transactions.",
       "arguments": {},
+      "response": {
+        "2xx": {
+          "success": true,
+          "payload": {
+            "guild_id": "942532970613473293",
+            "from_user": "ourtacobot",
+            "to_user": "darthminos",
+            "amount": 5,
+            "reason": "being awesome",
+            "type": "twitch_give_tacos"
+          },
+          "total_tacos": 100
+        },
+        "4xx": {
+          "success": false,
+          "error": "Invalid token"
+        },
+        "5xx": {
+          "success": false,
+          "error": "Internal server error"
+        }
+      },
       "sample": {
         "guild_id": "942532970613473293",
         "from_channel": "ourtacobot",
