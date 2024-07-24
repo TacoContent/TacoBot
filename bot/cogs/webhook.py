@@ -58,18 +58,19 @@ class WebhookCog(commands.Cog):
                     {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': '*'}
                 )
 
-                await self.http_server.start('0.0.0.0', settings.get("port", 8090))
-                self.log.debug(
+                listen_address = "0.0.0.0"
+                listen_port = settings.get("port", 8090)
+
+                await self.http_server.start(listen_address, listen_port)
+                self.log.info(
                     0,
                     f"{self._module}.{self._class}.{_method}",
-                    f'Webhook Listening on {self.http_server.bind_address_description()}',
+                    f'Webhook Started Listening => :{listen_port}',
                 )
                 # we dont need to call "serve_forever" because this task is already running in the background
 
         except Exception as e:
-            self.log.error(
-                0, f"{self._module}.{self._class}.{_method}", "{e}", traceback.format_exc()
-            )
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", "{e}", traceback.format_exc())
 
     def load_webhook_handlers(self):
         _method = inspect.stack()[0][3]
