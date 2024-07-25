@@ -15,20 +15,20 @@
 # limitations under the License.
 #
 from __future__ import annotations
-from collections.abc import Generator
-from dataclasses import dataclass
 import asyncio
 import inspect
-import types
 import json
 import os
 import re
 import traceback
+import types
 import typing
+from collections.abc import Generator
+from dataclasses import dataclass
 
 from bot.lib import logger, settings
 from bot.lib.enums import loglevel
-from httpserver.http_util import HttpRequest, HttpResponse, HttpHeaders, http_parser, http_send_response
+from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse, http_parser, http_send_response
 
 
 @dataclass
@@ -293,9 +293,7 @@ class HttpServer:
                     response = HttpResponse(200, resp_headers, body)
             await self._send_response(writer, request, response)
         except HttpResponseException as e:
-            self.log.warn(
-                0, f"{self._module}.{self._class}.{_method}", f"Failure during execution of request => {e}"
-            )
+            self.log.warn(0, f"{self._module}.{self._class}.{_method}", f"Failure during execution of request => {e}")
             await self._send_response(writer, request, e.response)
         except Exception as e:
             self.log.error(

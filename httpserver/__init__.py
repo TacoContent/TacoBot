@@ -14,5 +14,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from httpserver.http_util import HttpRequest, HttpResponse, HttpHeaders
-from httpserver.server import HttpServer, HttpResponseException, uri_mapping, uri_variable_mapping, uri_pattern_mapping
+from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
+from httpserver.server import HttpResponseException, HttpServer, uri_mapping, uri_pattern_mapping, uri_variable_mapping

@@ -15,15 +15,19 @@
 # limitations under the License.
 #
 from __future__ import annotations
-from collections.abc import Generator, KeysView
+
+import asyncio
+import inspect
+import os
+import typing
 from dataclasses import dataclass
 from urllib.parse import parse_qs
 from time import monotonic
 from http import HTTPStatus
+from collections.abc import Generator, KeysView
 
-import logging
-import asyncio
-import os
+from bot.lib import logger, settings
+from bot.lib.enums import loglevel
 
 
 class HttpHeaders:
@@ -72,6 +76,9 @@ class HttpHeaders:
             for v in l:
                 yield k, v
 
+    def __dict__(self) -> dict[str, str]:
+        return {k: v[0] for k, v in self._headers.items()}
+
     def __len__(self) -> int:
         return sum(len(l) for l in self._headers.values())
 
@@ -116,11 +123,14 @@ def _parse_path(path):
         return path, {}
     return path[:index], parse_qs(path[index+1:])
 
-async def http_parser(reader: asyncio.StreamReader, timeout: float, http_trace: bool = True) -> HttpRequest:
+async def http_parser(
+    reader: asyncio.StreamReader, timeout: float, http_trace: bool = False
+) -> typing.Optional[HttpRequest]:
     line = await asyncio.wait_for(reader.readuntil(b'\r\n'), timeout)
     if not line:
         return None
 
+    http_dump = HttpDebugDump()
     words = line.decode().split()
 
     method, path, version = (words[0], words[1], words[2])
@@ -138,20 +148,32 @@ async def http_parser(reader: asyncio.StreamReader, timeout: float, http_trace: 
 
     content_length = headers.get('content-length', -1, int)
 
-    if content_length > 0:
+    if content_length and content_length > 0:
         body = await asyncio.wait_for(reader.readexactly(content_length), timeout)
     else:
         body = None
 
     request = HttpRequest(monotonic(), method, path, query_params, version, headers, body)
     if http_trace:
-        dump_http_request(request)
+        http_dump.dump_http_request(request)
     return request
 
 
-async def http_send_response(writer: asyncio.StreamWriter, request: HttpRequest, response: HttpResponse, http_trace: bool = True) -> HttpRequest:
+async def http_send_response(
+    writer: asyncio.StreamWriter,
+    request: HttpRequest,
+    response: HttpResponse,
+    http_trace: bool = False,
+) -> HttpRequest:
     http_status = HTTPStatus(response.status_code)
-    headers = response.headers if response.headers else HttpHeaders()
+    http_dump = HttpDebugDump()
+
+    if response.headers and isinstance(response.headers, dict):
+        headers: HttpHeaders = HttpHeaders.from_dict(response.headers)
+    elif response.headers and isinstance(response.headers, HttpHeaders):
+        headers: HttpHeaders = response.headers
+    else:
+        headers: HttpHeaders = HttpHeaders()
 
     content_length = 0
     if response.body:
@@ -161,7 +183,7 @@ async def http_send_response(writer: asyncio.StreamWriter, request: HttpRequest,
     headers.set('content-length', content_length)
 
     if http_trace:
-        dump_http_response(request, response)
+        http_dump.dump_http_response(request, response)
 
     writer.write(f'HTTP/1.1 {http_status.value} {http_status.phrase}\r\n'.encode('utf-8'))
     for key, value in headers.items():
@@ -174,25 +196,55 @@ async def http_send_response(writer: asyncio.StreamWriter, request: HttpRequest,
         with open(response.file_path, 'rb') as fd:
             await asyncio.get_event_loop().sendfile(writer.transport, fd, 0, fallback=True)
     await writer.drain()
+    return request
 
-http_logger = logging.getLogger('http_trace')
 
-def _dump_http_body(tag: str, headers: HttpHeaders, body: bytes | None):
-    content_type = headers.get('content-type')
-    if body:
-        if content_type and content_type.startswith('text/') or content_type == 'application/json':
-            http_logger.debug('%s: length:%s: %s', tag, len(body), body)
+class HttpDebugDump:
+    def __init__(self):
+        self._class = self.__class__.__name__
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
+
+        self.settings = settings.Settings()
+        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        if not log_level:
+            log_level = loglevel.LogLevel.DEBUG
+
+        self.log = logger.Log(minimumLogLevel=log_level)
+
+    def _dump_http_body(
+        self,
+        tag: str,
+        headers: typing.Optional[typing.Union[HttpHeaders, dict[str,str]]],
+        body: typing.Optional[bytes],
+    ):
+        _method = inspect.stack()[0][3]
+        content_type = headers.get('content-type', None) if headers else None
+        if body:
+            if content_type and content_type.startswith('text/') or content_type == 'application/json':
+                self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"{tag}: length:{len(body)}: {body}")
+            else:
+                self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"{tag}: length:{len(body)}")
         else:
-            http_logger.debug('%s: length:%s', tag, len(body))
-    else:
-        http_logger.debug('%s: length:0 NO-BODY', tag)
+            self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"{tag}: length:0 NO-BODY")
 
-def dump_http_request(request: HttpRequest):
-    http_logger.debug('REQ: %s %s', request.method, request.path)
-    http_logger.debug('REQ-HEADERS: %s', dict(request.headers.items()))
-    _dump_http_body('REQ-BODY', request.headers, request.body)
+    def dump_http_request(self, request: HttpRequest):
+        _method = inspect.stack()[0][3]
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f'REQUEST: {request.method} {request.path}')
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f'REQUEST-HEADERS: {dict(request.headers.items())}')
+        self._dump_http_body('REQUEST-HEADERS', request.headers, request.body)
 
-def dump_http_response(request: HttpRequest, response: HttpResponse):
-    http_logger.debug('RESP: %s %s %s execTime:%s', response.status_code, request.method, request.path, monotonic() - request.stamp)
-    http_logger.debug('RESP-HEADERS: %s', dict(response.headers.items()))
-    _dump_http_body('RESP-BODY', response.headers, response.body)
+    def dump_http_response(self, request: HttpRequest, response: HttpResponse):
+        _method = inspect.stack()[0][3]
+        self.log.debug(
+            0,
+            f"{self._module}.{self._class}.{_method}",
+            f"RESPONSE: {response.status_code} {request.method} {request.path} execTime:{monotonic() - request.stamp}"
+        )
+        if response.headers:
+            self.log.debug(
+                0, f"{self._module}.{self._class}.{_method}", f'RESPONSE-HEADERS: {response.headers}'
+            )
+        else:
+            self.log.debug(0, f"{self._module}.{self._class}.{_method}", f'RESPONSE-HEADERS: NONE')
+        self._dump_http_body('RESPONSE-BODY', response.headers, response.body)
