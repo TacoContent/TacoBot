@@ -17,17 +17,18 @@
 from __future__ import annotations
 from collections.abc import Generator
 from dataclasses import dataclass
-from inspect import getfullargspec
-import logging
 import asyncio
+import inspect
 import types
 import json
+import os
 import re
+import traceback
 import typing
 
-from .http_util import HttpRequest, HttpResponse, HttpHeaders, http_parser, http_send_response
-
-logger = logging.getLogger('http_server')
+from bot.lib import logger, settings
+from bot.lib.enums import loglevel
+from httpserver.http_util import HttpRequest, HttpResponse, HttpHeaders, http_parser, http_send_response
 
 
 @dataclass
@@ -46,7 +47,6 @@ class UriRoute:
         else:
             for m in self.http_method:
                 yield m
-
 
     def match(self, http_method: str, path: str) -> bool:
         for m in self.http_methods():
@@ -108,9 +108,10 @@ def _uri_variable_to_pattern(uri):
     return uri_variables, re.compile(''.join(uri_parts))
 
 
-def _uri_route_decorator(f, path: str | re.Pattern, http_method: str | list[str],
-                         uri_variables: list[str] | None = None):
-    args_specs = getfullargspec(f)
+def _uri_route_decorator(
+    f, path: str | re.Pattern, http_method: str | list[str], uri_variables: list[str] | None = None
+):
+    args_specs = inspect.getfullargspec(f)
     route = UriRoute(path, http_method, uri_variables, args_specs.args)
 
     routes = getattr(f, '_http_routes', [])
@@ -118,11 +119,13 @@ def _uri_route_decorator(f, path: str | re.Pattern, http_method: str | list[str]
     f._http_routes = routes
     return f
 
+
 def _scan_handler_for_uri_routes(handler: object) -> Generator[tuple[object, UriRoute]]:
     for attr in dir(handler):
         method = getattr(handler, attr)
         for route in getattr(method, '_http_routes', []):
             yield method, route
+
 
 def uri_mapping(path: str, method: str | list[str] = 'GET'):
     return lambda f: _uri_route_decorator(f, path, method)
@@ -136,6 +139,7 @@ def uri_variable_mapping(path: str, method: str | list[str] = 'GET'):
     uri_variables, uri_regex = _uri_variable_to_pattern(path)
     return lambda f: _uri_route_decorator(f, uri_regex, method, uri_variables)
 
+
 class HttpResponseException(Exception):
     response: HttpResponse
 
@@ -146,14 +150,26 @@ class HttpResponseException(Exception):
         self.body = body
         self.response = HttpResponse(status_code, headers, body)
 
+
 class HttpServer:
     def __init__(self) -> None:
+        self._class = self.__class__.__name__
+        # get the file name without the extension and without the directory
+        self._module = os.path.basename(__file__)[:-3]
+
         self.read_timeout = 10.0
         self._default_response_headers = HttpHeaders()
         self._static_routes = {}
         self._regex_routes = []
         self._server = None
         self._debug_http = True
+
+        self.settings = settings.Settings()
+        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        if not log_level:
+            log_level = loglevel.LogLevel.DEBUG
+
+        self.log = logger.Log(minimumLogLevel=log_level)
 
     async def __aenter__(self):
         pass
@@ -168,15 +184,24 @@ class HttpServer:
         self._default_response_headers.merge(headers)
 
     def add_handler(self, handler):
-        logger.debug('Register handler %s', handler)
+        _method = inspect.stack()[0][3]
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f'Register handler {handler}')
         for method, route in _scan_handler_for_uri_routes(handler):
             if route.is_static():
                 for http_method in route.http_methods():
                     self._static_routes[f'{http_method}:{route.path}'] = (route, method)
-                    logger.debug('Register static route %s %s to %s', http_method, route.path, method)
+                    self.log.debug(
+                        0,
+                        f"{self._module}.{self._class}.{_method}",
+                        f'Register static route {http_method} {route.path} to {method}',
+                    )
             else:
                 self._regex_routes.append((route, method))
-                logger.debug('Register regex route %s %s to %s', route.http_method, route.path, method)
+                self.log.debug(
+                    0,
+                    f"{self._module}.{self._class}.{_method}",
+                    f'Register regex route {route.http_method} {route.path} to {method}',
+                )
 
     async def is_running(self):
         return self._server is not None
@@ -203,30 +228,43 @@ class HttpServer:
             self._server = None
 
     def bind_address_description(self):
+        if self._server is None:
+            return ""
         return ', '.join(str(sock.getsockname()) for sock in self._server.sockets)
 
     async def _handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+        _method = inspect.stack()[0][3]
         try:
             while True:
                 request = await http_parser(reader, self.read_timeout, self._debug_http)
                 if request is None:
                     break
-                logger.debug('received request %s %s', request.method, request.path)
+                self.log.debug(
+                    0, f"{self._module}.{self._class}.{_method}", f'received request {request.method} {request.path}'
+                )
 
                 route, method = self._find_route(request)
                 if method:
-                    logger.debug('found matching route %s calling method %s', route, method)
+                    self.log.debug(
+                        0,
+                        f"{self._module}.{self._class}.{_method}",
+                        f"found matching route: '{route}'. calling method: '{method}'",
+                    )
                     await self._process_request(writer, route, method, request)
                 else:
-                    logger.warning('unable to find any matching route for %s %s', request.method, request.path)
+                    self.log.warn(
+                        0,
+                        f"{self._module}.{self._class}.{_method}",
+                        f"unable to find any matching route for {request.method} {request.path}",
+                    )
                     response = self.build_http_404_response(request.method, request.path)
                     await self._send_response(writer, request, response)
         except (ConnectionResetError, asyncio.IncompleteReadError) as e:
             pass
         except (TimeoutError, asyncio.TimeoutError) as e:
-            logger.warning('got a failure %s. disconnecting the client', type(e))
+            self.log.warn(0, f"{self._module}.{self._class}.{_method}", str(e))
         except Exception as e:
-            logger.exception('got a failure %s. disconnecting the client: %s', type(e), e)
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
         finally:
             writer.close()
 
@@ -237,6 +275,7 @@ class HttpServer:
         return HttpResponse(500)
 
     async def _process_request(self, writer, route, method, request: HttpRequest):
+        _method = inspect.stack()[0][3]
         try:
             args = _convert_params(request, route, method)
             response = method(*args)
@@ -247,21 +286,37 @@ class HttpServer:
                 if response is None:
                     response = HttpResponse(204)
                 else:
-                    # TODO: by default we convert to json
                     body = json.dumps(response).encode('utf-8')
-                    response = HttpResponse(200, None, body)
+                    # set the content type to json
+                    resp_headers = HttpHeaders()
+                    resp_headers.set('Content-Type', 'application/json')
+                    response = HttpResponse(200, resp_headers, body)
             await self._send_response(writer, request, response)
         except HttpResponseException as e:
+            self.log.warn(
+                0, f"{self._module}.{self._class}.{_method}", f"Failure during execution of request => {e}"
+            )
             await self._send_response(writer, request, e.response)
         except Exception as e:
-            logger.exception('got a %s failure during the execution of the request %s %s',
-                             type(e), request.method, request.path)
+            self.log.error(
+                0,
+                f"{self._module}.{self._class}.{_method}",
+                f"Failure during execution of request => {request.method} {request.path} => {e}",
+                traceback.format_exc(),
+            )
             response = self.build_http_500_response(e)
             await self._send_response(writer, request, response)
 
     async def _send_response(self, writer, request: HttpRequest, response: HttpResponse):
         if response.headers:
-            response.headers.merge(self._default_response_headers)
+            # if headers are HttpHeaders object, merge with default headers
+            if isinstance(response.headers, HttpHeaders):
+                response.headers.merge(self._default_response_headers)
+            # if headers are dict, convert to HttpHeaders object and merge with default headers
+            elif isinstance(response.headers, dict):
+                r_headers = HttpHeaders.from_dict(response.headers)
+                r_headers.merge(self._default_response_headers)
+                response.headers = r_headers
         else:
             response.headers = self._default_response_headers
         await http_send_response(writer, request, response, self._debug_http)

@@ -45,6 +45,13 @@ class HttpHeaders:
         v = self.get_list(key)
         return transform(v[0]) if v else default
 
+    @staticmethod
+    def from_dict(d: dict[str, str]) -> HttpHeaders:
+        headers = HttpHeaders()
+        for k, v in d.items():
+            headers.set(k, v)
+        return headers
+
     def merge(self, other):
         if isinstance(other, HttpHeaders):
             for k, l in other._headers.items():
