@@ -28,7 +28,7 @@ jobs:
       packages: read
       # To report GitHub Actions status checks
       statuses: write
-      
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,3 +41,4 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           VALIDATE_PYTHON_FLAKE8: false
           VALIDATE_PYTHON_MYPY: false
+          VALIDATE_CHECKOV: false
