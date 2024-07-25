@@ -20,11 +20,11 @@ import asyncio
 import inspect
 import os
 import typing
-from dataclasses import dataclass
-from urllib.parse import parse_qs
-from time import monotonic
-from http import HTTPStatus
 from collections.abc import Generator, KeysView
+from dataclasses import dataclass
+from http import HTTPStatus
+from time import monotonic
+from urllib.parse import parse_qs
 
 from bot.lib import logger, settings
 from bot.lib.enums import loglevel
@@ -103,7 +103,7 @@ class HttpRequest:
 @dataclass
 class HttpResponse:
     status_code: int
-    headers: HttpHeaders | None | dict[str,str] = None
+    headers: HttpHeaders | None | dict[str, str] = None
     body: bytes | None = None
     file_path: str | None = None
 
@@ -117,11 +117,13 @@ def _clean_path(path):
         path = '/' + path.lstrip('/')  # Reduce to a single /
     return path
 
+
 def _parse_path(path):
     index = path.find('?')
     if index < 0:
         return path, {}
-    return path[:index], parse_qs(path[index+1:])
+    return path[:index], parse_qs(path[index + 1 :])
+
 
 async def http_parser(
     reader: asyncio.StreamReader, timeout: float, http_trace: bool = False
@@ -160,10 +162,7 @@ async def http_parser(
 
 
 async def http_send_response(
-    writer: asyncio.StreamWriter,
-    request: HttpRequest,
-    response: HttpResponse,
-    http_trace: bool = False,
+    writer: asyncio.StreamWriter, request: HttpRequest, response: HttpResponse, http_trace: bool = False
 ) -> HttpRequest:
     http_status = HTTPStatus(response.status_code)
     http_dump = HttpDebugDump()
@@ -215,7 +214,7 @@ class HttpDebugDump:
     def _dump_http_body(
         self,
         tag: str,
-        headers: typing.Optional[typing.Union[HttpHeaders, dict[str,str]]],
+        headers: typing.Optional[typing.Union[HttpHeaders, dict[str, str]]],
         body: typing.Optional[bytes],
     ):
         _method = inspect.stack()[0][3]
@@ -231,7 +230,9 @@ class HttpDebugDump:
     def dump_http_request(self, request: HttpRequest):
         _method = inspect.stack()[0][3]
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", f'REQUEST: {request.method} {request.path}')
-        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f'REQUEST-HEADERS: {dict(request.headers.items())}')
+        self.log.debug(
+            0, f"{self._module}.{self._class}.{_method}", f'REQUEST-HEADERS: {dict(request.headers.items())}'
+        )
         self._dump_http_body('REQUEST-HEADERS', request.headers, request.body)
 
     def dump_http_response(self, request: HttpRequest, response: HttpResponse):
@@ -239,12 +240,10 @@ class HttpDebugDump:
         self.log.debug(
             0,
             f"{self._module}.{self._class}.{_method}",
-            f"RESPONSE: {response.status_code} {request.method} {request.path} execTime:{monotonic() - request.stamp}"
+            f"RESPONSE: {response.status_code} {request.method} {request.path} execTime:{monotonic() - request.stamp}",
         )
         if response.headers:
-            self.log.debug(
-                0, f"{self._module}.{self._class}.{_method}", f'RESPONSE-HEADERS: {response.headers}'
-            )
+            self.log.debug(0, f"{self._module}.{self._class}.{_method}", f'RESPONSE-HEADERS: {response.headers}')
         else:
             self.log.debug(0, f"{self._module}.{self._class}.{_method}", f'RESPONSE-HEADERS: NONE')
         self._dump_http_body('RESPONSE-BODY', response.headers, response.body)
