@@ -148,7 +148,7 @@ def get_by_name_or_id(iterable, nameOrId: typing.Union[int, str]) -> typing.Opti
         return discord.utils.get(iterable, name=str(nameOrId))
     elif isinstance(nameOrId, int):
         return discord.utils.get(iterable, id=int(nameOrId))
-    
+
 
 def get_last_section_in_url(name) -> str:
     if "/" in name:
