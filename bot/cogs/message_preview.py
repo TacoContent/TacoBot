@@ -5,10 +5,10 @@ import re
 import traceback
 
 import discord
-from bot.cogs.lib import discordhelper, logger, settings
-from bot.cogs.lib.enums import loglevel
-from bot.cogs.lib.messaging import Messaging
-from bot.cogs.lib.mongodb.tracking import TrackingDatabase
+from bot.lib import discordhelper, logger, settings
+from bot.lib.enums import loglevel
+from bot.lib.messaging import Messaging
+from bot.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 
 

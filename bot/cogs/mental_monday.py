@@ -2,18 +2,24 @@ import datetime
 import inspect
 import os
 import traceback
+import typing
 
 import discord
-from bot.cogs.lib import discordhelper, logger, settings
-from bot.cogs.lib.enums import loglevel, tacotypes
-from bot.cogs.lib.messaging import Messaging
-from bot.cogs.lib.mongodb.mentalmondays import MentalMondaysDatabase
-from bot.cogs.lib.mongodb.tracking import TrackingDatabase
-from bot.cogs.lib.permissions import Permissions
+from bot.lib import discordhelper, logger, settings, utils
+from bot.lib.enums import loglevel, tacotypes
+from bot.lib.messaging import Messaging
+from bot.lib.mongodb.mentalmondays import MentalMondaysDatabase
+from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.permissions import Permissions
+from discord import app_commands
 from discord.ext import commands
+from discord.ext.commands import Context
+from openai import OpenAI
 
 
 class MentalMondays(commands.Cog):
+    group = app_commands.Group(name="mentalmondays", description="Commands for the Mental Monday's")
+
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
@@ -149,6 +155,65 @@ class MentalMondays(commands.Cog):
                 args=[{"type": "command"}],
             )
 
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            await self.messaging.notify_of_error(ctx)
+
+    @group.command(name="ai", description="Generate a question using AI")
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.guild_only()
+    async def openai_app_command(self, ctx: discord.Interaction) -> None:
+        _method = inspect.stack()[0][3]
+        guild_id = 0
+        try:
+            if not utils.isAdmin(ctx, self.settings):
+                self.log.warn(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"User is not an admin ({ctx.user}). Command: ({ctx.command})",
+                )
+                await ctx.response.send_message(content="You must be a bot admin to use this command", ephemeral=True)
+                return
+
+            if ctx.guild:
+                guild_id = ctx.guild.id
+            else:
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No guild found for context")
+                return
+            await self._openai_generate(ctx)
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.user.id,
+                command="mentalmondays",
+                subcommand="ai",
+                args=[{"type": "slash_command"}],
+            )
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            await self.messaging.notify_of_error(ctx)
+
+    @mentalmondays.command(name="openai", aliases=["ai"])
+    @commands.has_permissions(administrator=True)
+    @commands.guild_only()
+    async def openai(self, ctx: Context):
+        _method = inspect.stack()[0][3]
+        guild_id = 0
+        try:
+            if ctx.message:
+                await ctx.message.delete()
+
+            await self._openai_generate(ctx)
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=ctx.channel.id if ctx.channel else None,
+                userId=ctx.author.id,
+                command="mentalmondays",
+                subcommand="openai",
+                args=[{"type": "command"}],
+            )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
@@ -499,6 +564,134 @@ class MentalMondays(commands.Cog):
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             if ctx:
                 await self.messaging.notify_of_error(ctx)
+
+    async def _openai_generate(self, ctx: typing.Union[Context, discord.Interaction]) -> None:
+        _method = inspect.stack()[0][3]
+        guild_id = 0
+
+        if ctx.guild:
+            guild_id = ctx.guild.id
+        else:
+            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No guild found for context")
+            return
+        user: typing.Optional[typing.Union[discord.Member, discord.User]] = None
+        if ctx and hasattr(ctx, "author"):
+            user = ctx.author
+        elif ctx and hasattr(ctx, "user"):
+            user = ctx.user
+        else:
+            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No user found for context")
+            return
+
+        cog_settings = self.get_cog_settings(guild_id)
+        if not cog_settings.get("enabled", False):
+            self.log.debug(
+                guild_id, f"{self._module}.{self._class}.{_method}", f"mental mondays is disabled for guild {guild_id}"
+            )
+            return
+
+        tacos_settings = self.get_tacos_settings(guild_id)
+
+        amount = tacos_settings.get("mentalmondays_amount", 5)
+
+        message_content = ""
+        role = await self.discord_helper.get_or_fetch_role(ctx.guild, int(cog_settings.get("tag_role", 0)))
+        if role:
+            message_content = f"{role.mention}"
+
+        out_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel_id", 0)))
+        if not out_channel:
+            self.log.warn(
+                guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
+            )
+            out_channel = ctx.channel
+
+        if not out_channel:
+            self.log.warn(
+                guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
+            )
+            return
+
+        # determine which week of the month it is
+        today = datetime.datetime.now()
+        # get the month
+        month = today.month
+        # floor the value
+        week = int(today.isocalendar()[1] / month)
+        week_name = "first"
+        if week == 5:
+            week_name = "fifth"
+        elif week == 4:
+            week_name = "fourth"
+        elif week == 3:
+            week_name = "third"
+        elif week == 2:
+            week_name = "second"
+        else:
+            week_name = "first"
+
+        self.log.debug(
+            guild_id,
+            f"{self._module}.{self._class}.{_method}",
+            f"Generating mental monday for guild {guild_id} for week {week_name}",
+        )
+
+        # get role
+        taco_word = self.settings.get_string(guild_id, "taco_singular")
+        if amount != 1:
+            taco_word = self.settings.get_string(guild_id, "taco_plural")
+        ai_settings = cog_settings.get("ai", {})
+        ai_prompt = ai_settings.get("prompt", {})
+
+        openai = OpenAI()
+        airesponse = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": utils.str_replace(ai_prompt.get("system", ""))},
+                {"role": "user", "content": utils.str_replace(ai_prompt.get("user", ""), week=week_name)},
+            ],
+        )
+
+        aiquestion = airesponse.choices[0].message.content
+        out_message = self.settings.get_string(
+            guild_id, "mentalmondays_out_message", message=aiquestion, taco_count=amount, taco_word=taco_word
+        )
+
+        if not aiquestion:
+            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No mental monday generated")
+            return
+
+        allow_publish = ai_settings.get("allow_publish", False)
+        if allow_publish:
+            message = await self.messaging.send_embed(
+                channel=out_channel,
+                title=self.settings.get_string(guild_id, "mentalmondays_out_title"),
+                message=out_message,
+                content=message_content,
+                color=0x00FF00,
+            )
+            self.mentalmondays_db.save_mentalmondays(
+                guildId=guild_id,
+                message=aiquestion,
+                image=None,
+                author=user.id,
+                channel_id=out_channel.id,
+                message_id=message.id,
+            )
+            if isinstance(ctx, discord.Interaction):
+                # respond to the interaction
+                await ctx.response.send_message(content="Question generated", ephemeral=True)
+        else:
+            # get the interaction from the context
+            interaction = None
+            if isinstance(ctx, discord.Interaction):
+                interaction = ctx
+
+            if interaction:
+                await interaction.response.send_message(content=out_message, ephemeral=True)
+            else:
+                # send the message in a DM to the user
+                await user.send(out_message)
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
         cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)

@@ -4,12 +4,12 @@ import os
 import traceback
 
 import discord
-from bot.cogs.lib import discordhelper, logger, settings
-from bot.cogs.lib.enums import loglevel, tacotypes
-from bot.cogs.lib.messaging import Messaging
-from bot.cogs.lib.mongodb.tracking import TrackingDatabase
-from bot.cogs.lib.mongodb.wdyctw import WDYCTWDatabase
-from bot.cogs.lib.permissions import Permissions
+from bot.lib import discordhelper, logger, settings
+from bot.lib.enums import loglevel, tacotypes
+from bot.lib.messaging import Messaging
+from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.mongodb.wdyctw import WDYCTWDatabase
+from bot.lib.permissions import Permissions
 from discord.ext import commands
 from discord.ext.commands import Context
 

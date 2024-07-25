@@ -4,10 +4,7 @@ ARG BRANCH="develop"
 ARG BUILD_VERSION="1.0.0-snapshot"
 ARG PROJECT_NAME=
 
-ENV VCB_BRANCH=${BRANCH}
-ENV DISCORD_TOKEN=
 ENV PYTHONUNBUFFERED=0
-ENV VCB_DB_CONNECTION_STRING=
 ENV APP_VERSION=${BUILD_VERSION}
 
 LABEL VERSION="${BUILD_VERSION}"
@@ -21,7 +18,7 @@ RUN \
     mkdir -p /app /data && \
     pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r /app/setup/requirements.txt && \
-    sed -i "s/APP_VERSION = \"1.0.0-snapshot\"/APP_VERSION = \"${APP_VERSION}\"/g" "/app/bot/cogs/lib/settings.py" && \
+    sed -i "s/APP_VERSION = \"1.0.0-snapshot\"/APP_VERSION = \"${APP_VERSION}\"/g" "/app/bot/lib/settings.py" && \
     sed -i "s/\"version\": \"1.0.0-snapshot\"/\"version\": \"${APP_VERSION}\"/g" "/app/app.manifest" && \
     apk del git build-base && \
     rm -rf /app/setup

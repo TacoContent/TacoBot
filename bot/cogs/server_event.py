@@ -4,8 +4,8 @@ import os
 import traceback
 
 import discord
-from bot.cogs.lib import discordhelper, logger, settings
-from bot.cogs.lib.enums import loglevel, tacotypes
+from bot.lib import discordhelper, logger, settings
+from bot.lib.enums import loglevel, tacotypes
 from discord.ext import commands
 
 

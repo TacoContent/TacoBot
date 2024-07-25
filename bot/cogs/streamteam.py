@@ -4,12 +4,12 @@ import traceback
 import typing
 
 import discord
-from bot.cogs.lib import discordhelper, logger, settings, utils
-from bot.cogs.lib.enums import loglevel
-from bot.cogs.lib.enums.system_actions import SystemActions
-from bot.cogs.lib.messaging import Messaging
-from bot.cogs.lib.mongodb.tracking import TrackingDatabase
-from bot.cogs.lib.mongodb.twitch import TwitchDatabase
+from bot.lib import discordhelper, logger, settings, utils
+from bot.lib.enums import loglevel
+from bot.lib.enums.system_actions import SystemActions
+from bot.lib.messaging import Messaging
+from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.mongodb.twitch import TwitchDatabase
 from discord.ext import commands
 
 
@@ -303,7 +303,10 @@ class StreamTeam(commands.Cog):
                 await self.discord_helper.notify_bot_not_initialized(ctx, "streamteam")
                 return
             unknown = self.settings.get_string(guild_id, "unknown")
-            twitch_name = twitchName.lower().strip()
+            if twitchName is not None:
+                twitch_name = twitchName.lower().strip()
+            else:
+                twitch_name = unknown
 
             log_channel_id = streamteam_settings["log_channel"]
             log_channel = None

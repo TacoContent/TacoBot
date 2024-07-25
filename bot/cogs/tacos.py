@@ -4,15 +4,18 @@ import traceback
 import typing
 
 import discord
-from bot.cogs.lib import discordhelper, logger, settings
-from bot.cogs.lib.enums import loglevel, tacotypes
-from bot.cogs.lib.messaging import Messaging
-from bot.cogs.lib.mongodb.tacos import TacosDatabase
-from bot.cogs.lib.mongodb.tracking import TrackingDatabase
+from bot.lib import discordhelper, logger, settings
+from bot.lib.enums import loglevel, tacotypes
+from bot.lib.messaging import Messaging
+from bot.lib.mongodb.tacos import TacosDatabase
+from bot.lib.mongodb.tracking import TrackingDatabase
+from discord import app_commands
 from discord.ext import commands
 
 
 class Tacos(commands.Cog):
+    group = app_commands.Group(name="tacos", description="Tacos commands")
+
     def __init__(self, bot) -> None:
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
@@ -33,23 +36,6 @@ class Tacos(commands.Cog):
 
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
-
-    # @app_commands.command(name="tacos", description="Taco related commands")
-    # @app_commands.guild_only()
-    # async def ac_tacos(self, interaction: discord.Interaction) -> None:
-    #     _method = inspect.stack()[0][3]
-    #     guild_id = interaction.guild.id if interaction.guild else 0
-
-    #     try:
-    #         pass
-    #     except Exception as e:
-    #         self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"Exception: {e}", traceback.format_exc())
-
-    # @app_commands.command(name="count", description="Help for the tacos module")
-    # @app_commands
-    # @app_commands.guild_only()
-    # async def ac_tacos_count(self, interaction: discord.Interaction) -> None:
-    #     pass
 
     @commands.group()
     async def tacos(self, ctx) -> None:
@@ -86,6 +72,94 @@ class Tacos(commands.Cog):
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
             await ctx.message.delete()
+
+    async def _remove_all_tacos_interaction(
+        self, interaction: discord.Interaction, user: discord.Member, reason: typing.Union[str, None] = None
+    ) -> None:
+        _method = inspect.stack()[0][3]
+        if interaction.guild:
+            guild_id = interaction.guild.id
+        else:
+            return
+        try:
+            self.tacos_db.remove_all_tacos(guild_id, user.id)
+            reason_msg = reason if reason else "No reason given."
+            if interaction.channel:
+                await interaction.response.send_message(f"{user.mention} has lost all their tacos.", ephemeral=True)
+            await self.discord_helper.taco_purge_log(guild_id, user, interaction.user, reason_msg)
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=interaction.channel.id if interaction.channel else None,
+                userId=interaction.user.id,
+                command="tacos",
+                subcommand="purge",
+                args=[{"type": "slash_command"}, {"user_id": user.id}, {"reason": reason_msg}],
+            )
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+
+    @app_commands.guild_only()
+    @app_commands.default_permissions(administrator=True)
+    @group.command(name="purge", description="Remove all tacos from a user 🛡️")
+    @app_commands.describe(user="The user to remove all tacos from")
+    @app_commands.describe(reason="The reason for removing all tacos")
+    async def remove_all_tacos_app_command(
+        self, interaction: discord.Interaction, user: discord.Member, reason: typing.Union[str, None] = None
+    ) -> None:
+        await self._remove_all_tacos_interaction(interaction=interaction, user=user, reason=reason)
+
+    @group.command(name="give", description="Give tacos to a user 🛡️")
+    @app_commands.describe(user="The user to give tacos to")
+    @app_commands.describe(amount="The amount of tacos to give")
+    @app_commands.describe(reason="The reason for giving tacos")
+    @app_commands.default_permissions(administrator=True)
+    async def give_interaction(
+        self,
+        interaction: discord.Interaction,
+        user: typing.Union[discord.Member, discord.User],
+        amount: int,
+        reason: typing.Optional[str] = None,
+    ) -> None:
+        _method = inspect.stack()[0][3]
+        guild_id = interaction.guild.id if interaction.guild else 0
+        try:
+            # if the user that ran the command is the same as member, then exit the function
+            if interaction.user.id == user.id:
+                await interaction.response.send_message(
+                    self.settings.get_string(guild_id, "taco_self_gift_message", user=interaction.user.mention),
+                    ephemeral=True,
+                )
+                return
+
+            tacos_word = self.settings.get_string(guild_id, "taco_singular")
+            if amount > 1:
+                tacos_word = self.settings.get_string(guild_id, "taco_plural")
+
+            reason_msg = self.settings.get_string(guild_id, "taco_reason_default")
+            if reason:
+                reason_msg = f"{reason}"
+
+            await interaction.response.send_message(
+                f"{interaction.user.mention}, you gave {user.mention} {amount} {tacos_word} 🌮.\n\n{reason_msg}",
+                ephemeral=True,
+            )
+
+            await self.discord_helper.taco_give_user(
+                guild_id, interaction.user, user, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount
+            )
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=interaction.channel.id if interaction.channel else None,
+                userId=interaction.user.id,
+                command="tacos",
+                subcommand="give",
+                args=[{"type": "slash_command"}, {"user_id": user.id}, {"amount": amount}, {"reason": reason_msg}],
+            )
+
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     @tacos.command()
     @commands.has_permissions(administrator=True)
@@ -150,6 +224,40 @@ class Tacos(commands.Cog):
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
+    @group.command(name="count", description="Get the number of tacos you have")
+    async def count_interaction(self, interaction: discord.Interaction) -> None:
+        _method = inspect.stack()[0][3]
+        guild_id = interaction.guild.id if interaction.guild else 0
+        try:
+            # get taco count for message author
+            taco_count = self.tacos_db.get_tacos_count(guild_id, interaction.user.id)
+            tacos_word = self.settings.get_string(guild_id, "taco_singular")
+            if taco_count is None:
+                taco_count = 0
+            if taco_count == 0 or taco_count > 1:
+                tacos_word = self.settings.get_string(guild_id, "taco_plural")
+            await interaction.response.send_message(
+                self.settings.get_string(
+                    guild_id,
+                    "taco_count_message",
+                    user=interaction.user.mention,
+                    count=taco_count,
+                    taco_word=tacos_word,
+                ),
+                ephemeral=True,
+            )
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=interaction.channel.id if interaction.channel else None,
+                userId=interaction.user.id,
+                command="tacos",
+                subcommand="count",
+                args=[{"type": "slash_command"}],
+            )
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+
     @tacos.command()
     async def count(self, ctx) -> None:
         _method = inspect.stack()[0][3]
@@ -187,6 +295,96 @@ class Tacos(commands.Cog):
             await ctx.message.delete()
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
+
+    @group.command(name="gift", description="Gift tacos to a user")
+    @app_commands.guild_only()
+    @app_commands.describe(user="The user to gift tacos to")
+    @app_commands.describe(amount="The amount of tacos to gift. Max 10 per day")
+    @app_commands.describe(reason="The reason for gifting tacos")
+    async def gift_interaction(
+        self, interaction: discord.Interaction, user: discord.Member, amount: int, reason: typing.Optional[str] = None
+    ) -> None:
+        _method = inspect.stack()[0][3]
+        if interaction.guild:
+            guild_id = interaction.guild.id
+        else:
+            return
+
+        try:
+            # get taco count for message author
+            taco_settings = self.get_tacos_settings(guild_id)
+
+            # if the user that ran the command is the same as member, then exit the function
+            if interaction.user.id == user.id:
+                await interaction.response.send_message(
+                    self.settings.get_string(guild_id, "taco_self_gift_message", user=interaction.user.mention),
+                    ephemeral=True,
+                )
+                return
+            max_gift_tacos: int = taco_settings.get("max_gift_tacos", 10)
+            max_gift_taco_timespan = taco_settings.get("max_gift_taco_timespan", 86400)
+            # get the total number of tacos the user has gifted in the last 24 hours
+            total_gifted: int = self.tacos_db.get_total_gifted_tacos(
+                guild_id, interaction.user.id, max_gift_taco_timespan
+            )
+            remaining_gifts = max_gift_tacos - total_gifted
+
+            tacos_word = self.settings.get_string(guild_id, "taco_plural")
+            if amount > 1:
+                tacos_word = self.settings.get_string(guild_id, "taco_singular")
+
+            if remaining_gifts <= 0:
+                await interaction.response.send_message(
+                    self.settings.get_string(guild_id, "taco_gift_maximum", max=max_gift_tacos, taco_word=tacos_word),
+                    ephemeral=True,
+                )
+                return
+            if amount <= 0 or amount > remaining_gifts:
+                await interaction.response.send_message(
+                    self.settings.get_string(
+                        guild_id,
+                        "taco_gift_limit_exceeded",
+                        user=interaction.user.mention,
+                        remaining=remaining_gifts,
+                        taco_word=tacos_word,
+                    ),
+                    ephemeral=True,
+                )
+                return
+
+            reason_msg = self.settings.get_string(guild_id, "taco_reason_default")
+            if reason:
+                reason_msg = f"{reason}"
+
+            self.tacos_db.add_taco_gift(guild_id, interaction.user.id, amount)
+            await interaction.response.send_message(
+                self.settings.get_string(
+                    guild_id,
+                    "taco_gift_success",
+                    user=interaction.user.mention,
+                    touser=user.mention,
+                    amount=amount,
+                    taco_word=tacos_word,
+                    reason=reason_msg,
+                ),
+                ephemeral=True,
+            )
+
+            await self.discord_helper.taco_give_user(
+                guild_id, interaction.user, user, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount
+            )
+
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=interaction.channel.id if interaction.channel else None,
+                userId=interaction.user.id,
+                command="tacos",
+                subcommand="gift",
+                args=[{"type": "slash_command"}, {"user_id": user.id}, {"amount": amount}, {"reason": reason_msg}],
+            )
+
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     @tacos.command()
     @commands.guild_only()

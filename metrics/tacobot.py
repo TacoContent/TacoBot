@@ -3,11 +3,11 @@ import os
 import time
 import traceback
 
-from bot.cogs.lib import logger
-from bot.cogs.lib.enums.loglevel import LogLevel
-from bot.cogs.lib.mongodb.metrics import MetricsDatabase
-from bot.cogs.lib.settings import Settings
-from bot.cogs.lib.utils import dict_get
+from bot.lib import logger
+from bot.lib.enums.loglevel import LogLevel
+from bot.lib.mongodb.metrics import MetricsDatabase
+from bot.lib.settings import Settings
+from bot.lib.utils import dict_get
 from prometheus_client import Gauge
 
 
@@ -348,6 +348,13 @@ class TacoBotMetrics:
             name=f"twitch_stream_avatar_duel_winners",
             documentation="The number of twitch stream avatar duel winners",
             labelnames=["guild_id", "user_id", "username", "channel", "channel_user_id"],
+        )
+
+        self.free_game_keys = Gauge(
+            namespace=self.namespace,
+            name=f"free_game_keys",
+            documentation="The number of free game keys",
+            labelnames=["state"],
         )
 
         self.build_info = Gauge(
@@ -940,3 +947,15 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
             self.errors.labels("twitch_stream_avatar_duel_winners").set(1)
+
+        try:
+            q_free_game_keys = self.db.get_free_game_keys() or []
+            for state in ["ACTIVE", "EXPIRED"]:
+                state_label = {"state": state}
+                self.free_game_keys.labels(**state_label).set(0)
+            for row in q_free_game_keys:
+                self.free_game_keys.labels(state=row["_id"]['state']).set(row["total"])
+            self.errors.labels("free_game_keys").set(0)
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            self.errors.labels("free_game_keys").set(1)
