@@ -10,6 +10,185 @@
     "!taco ",
     "?taco "
   ],
+  "metrics": {
+    "enabled": true
+  },
+  "webhooks": {
+    "/webhooks/tacos": {
+      "enabled": true,
+      "description": "Webhook for taco transactions.",
+      "arguments": {},
+      "response": {
+        "2xx": {
+          "success": true,
+          "payload": {
+            "guild_id": "942532970613473293",
+            "from_user": "ourtacobot",
+            "to_user": "darthminos",
+            "amount": 5,
+            "reason": "being awesome",
+            "type": "twitch_give_tacos"
+          },
+          "total_tacos": 100
+        },
+        "4xx": {
+          "success": false,
+          "error": "Invalid token"
+        },
+        "5xx": {
+          "success": false,
+          "error": "Internal server error"
+        }
+      },
+      "sample": {
+        "guild_id": "942532970613473293",
+        "from_channel": "ourtacobot",
+        "to_user": "darthminos",
+        "amount": 5,
+        "reason": "being awesome",
+        "type": "twitch_give_tacos"
+      },
+      "payload": {
+        "guild_id": {
+          "description": "The id of the guild the transaction happened in.",
+          "type": "string",
+          "required": true
+        },
+        "from_user": {
+          "description": "The twitch user name of the channel/user that gave the tacos.",
+          "type": "string",
+          "required": true
+        },
+        "to_user": {
+          "description": "The twitch user name of the user that is receiving the tacos.",
+          "type": "string",
+          "required": true
+        },
+        "amount": {
+          "description": "The amount of tacos that are being given. This can be negative to take tacos.",
+          "type": "number",
+          "required": true
+        },
+        "reason": {
+          "description": "The reason for the transaction.",
+          "type": "string",
+          "required": false
+        },
+        "type": {
+          "description": "The type of transaction. This is a tacotypes enum value.",
+          "type": "string",
+          "required": true
+        }
+      },
+      "headers": {
+        "X-TACOBOT-TOKEN": {
+          "description": "The token to auth for the webhook",
+          "required": true
+        }
+      }
+    },
+    "/webhooks/game": {
+      "enabled": true,
+      "description": "Webhook for new incoming free games.",
+      "arguments": {},
+      "payload": {
+        "title": {
+          "description": "The title of the game",
+          "type": "string",
+          "required": true
+        },
+        "worth": {
+          "description": "The worth of the game",
+          "type": "string",
+          "required": true
+        },
+        "thumbnail": {
+          "description": "The thumbnail of the game",
+          "type": "string",
+          "required": true
+        },
+        "image": {
+          "description": "The image of the game",
+          "type": "string",
+          "required": true
+        },
+        "description": {
+          "description": "The description of the game",
+          "type": "string",
+          "required": true
+        },
+        "instructions": {
+          "description": "The instructions to get the game",
+          "type": "string",
+          "required": true
+        },
+        "open_giveaway_url": {
+          "description": "The url to the giveaway",
+          "type": "string",
+          "required": true
+        },
+        "published_date": {
+          "description": "The date the game was published",
+          "type": "number",
+          "required": true
+        },
+        "type": {
+          "description": "The type of game",
+          "type": "string",
+          "required": true
+        },
+        "platforms": {
+          "description": "The platforms the game is available on",
+          "type": "array",
+          "required": true
+        },
+        "end_date": {
+          "description": "The end date of the giveaway",
+          "type": "number",
+          "required": false
+        },
+        "game_id": {
+          "description": "The id of the game",
+          "type": "number",
+          "required": true
+        },
+        "formatted_published_date": {
+          "description": "The formatted published date",
+          "type": "string",
+          "required": true
+        },
+        "formatted_end_date": {
+          "description": "The formatted end date",
+          "type": "string",
+          "required": false
+        }
+      },
+      "sample": {
+        "title": "Collective Free Hero Skin Key",
+        "worth": "$9.99",
+        "thumbnail": "https://www.gamerpower.com/offers/1/5ec614b0bde18.jpg",
+        "image": "https://www.gamerpower.com/offers/1b/5ec614b0bde18.jpg",
+        "description": "Grab your Collective Hero Skin key now before it's too late!",
+        "instructions": "1. Login into your Alienwarearena account, scroll down and click the button to unlock your key.\r\n2. Follow the giveaway instructions to redeem your key.",
+        "open_giveaway_url": "https://www.gamerpower.com/open/collective-free-hero-skin-key",
+        "published_date": 1579632128,
+        "type": "DLC",
+        "platforms": [
+          "PC"
+        ],
+        "end_date": null,
+        "game_id": 16,
+        "formatted_published_date": "2020-01-21 12:42:08",
+        "formatted_end_date": "N/A"
+      },
+      "headers": {
+        "X-TACOBOT-TOKEN": {
+          "description": "The token to auth for the webhook",
+          "required": true
+        }
+      }
+    }
+  },
   "commands": {
     "new-account": {
       "title": "New Accounts",
@@ -222,6 +401,18 @@
       "arguments": {},
       "fields": [],
       "subcommands": {
+        "ai": {
+          "title": "Generate a Tech Thursday topic using AI",
+          "description": "Generates a Tech Thursday topic using AI.",
+          "usage": "{{prefix}}techthurs ai",
+          "examples": [
+            "{{prefix}}techthurs ai",
+            "/techthurs ai"
+          ],
+          "arguments": {},
+          "fields": [],
+          "admin": true
+        },
         "give": {
           "title": "Give Tech Thursday Tacos",
           "description": "Gives Tech Thursday tacos to the user who answered the question. The preferred way to give tacos is to use the '💻' emoji reaction on their message.",
@@ -352,6 +543,18 @@
       "arguments": {},
       "fields": [],
       "subcommands": {
+        "ai": {
+          "title": "Generate a question of the day using AI",
+          "description": "Generates a question of the day using AI.",
+          "usage": "{{prefix}}tqotd ai",
+          "examples": [
+            "{{prefix}}tqotd ai",
+            "/tqotd ai"
+          ],
+          "arguments": {},
+          "fields": [],
+          "admin": true
+        },
         "give": {
           "title": "Give TQotD Tacos",
           "description": "Gives TQotD tacos to the user who answered the question. The preferred way to give tacos is to use the 'T' emoji reaction on their message.",
@@ -383,7 +586,8 @@
           "description": "Retrieve the number of tacos you have.",
           "usage": "{{prefix}}tacos count",
           "examples": [
-            "{{prefix}}tacos count"
+            "{{prefix}}tacos count",
+            "/tacos count"
           ],
           "arguments": {},
           "fields": [],
@@ -426,7 +630,8 @@
           "usage": "{{prefix}}tacos give <@user#1234> <amount> [reason]",
           "examples": [
             "{{prefix}}tacos give @user#1234 10",
-            "{{prefix}}tacos give @user#1234 10 You are awesome!"
+            "{{prefix}}tacos give @user#1234 10 You are awesome!",
+            "/tacos give @user#1234 10 You are awesome!"
           ],
           "arguments": {
             "user": {
@@ -458,7 +663,8 @@
           "usage": "{{prefix}}tacos purge <@user#1234> [reason]",
           "examples": [
             "{{prefix}}tacos purge @user#1234",
-            "{{prefix}}tacos purge @user#1234 Exploited the taco system"
+            "{{prefix}}tacos purge @user#1234 Exploited the taco system",
+            "/tacos purge @user#1234 Exploited the taco system"
           ],
           "arguments": {
             "user": {

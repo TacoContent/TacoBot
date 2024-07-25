@@ -6,12 +6,13 @@ import traceback
 import typing
 
 import discord
-from bot.cogs.lib import discordhelper, logger, settings, utils
-from bot.cogs.lib.enums import loglevel, tacotypes
-from bot.cogs.lib.messaging import Messaging
-from bot.cogs.lib.mongodb.tacotuesdays import TacoTuesdaysDatabase
-from bot.cogs.lib.mongodb.tracking import TrackingDatabase
-from bot.cogs.lib.permissions import Permissions
+import pytz
+from bot.lib import discordhelper, logger, settings, utils
+from bot.lib.enums import loglevel, tacotypes
+from bot.lib.messaging import Messaging
+from bot.lib.mongodb.tacotuesdays import TacoTuesdaysDatabase
+from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.permissions import Permissions
 from discord.ext import commands
 
 
@@ -323,7 +324,7 @@ class TacoTuesday(commands.Cog):
                     await self._on_raw_reaction_add_archive(payload)
                     return
 
-            today = datetime.datetime.now()
+            today = datetime.datetime.now(tz=pytz.timezone(self.settings.timezone))
             if today.weekday() != 1:  # 1 = Tuesday
                 return
 

@@ -1,0 +1,8 @@
+{
+  "guild_id": "942532970613473293",
+  "from_channel": "ourtacobot",
+  "to_user": "darthminos",
+  "amount": 5,
+  "reason": "being awesome",
+  "type": "twitch_give_tacos"
+}

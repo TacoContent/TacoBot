@@ -1,6 +1,6 @@
 ---
 name: TacoBot Publish
-on:
+"on": # quoted to avoid YAML lint 'truthy' warning
   push:
     branches:
       - develop

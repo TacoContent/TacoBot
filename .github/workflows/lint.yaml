@@ -1,6 +1,6 @@
 ---
-name: Lint Helm Chart
-on:
+name: Lint Project
+"on": # quoted to avoid YAML lint 'truthy' warning
   push:
     branches:
       - "**" # All branches

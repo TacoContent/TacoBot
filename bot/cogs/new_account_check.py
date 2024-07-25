@@ -4,13 +4,13 @@ import math
 import os
 import traceback
 
-from bot.cogs.lib import discordhelper, logger, settings, utils
-from bot.cogs.lib.enums import loglevel
-from bot.cogs.lib.enums.system_actions import SystemActions
-from bot.cogs.lib.messaging import Messaging
-from bot.cogs.lib.mongodb.settings import SettingsDatabase
-from bot.cogs.lib.mongodb.tracking import TrackingDatabase
-from bot.cogs.lib.mongodb.whitelist import WhitelistDatabase
+from bot.lib import discordhelper, logger, settings, utils
+from bot.lib.enums import loglevel
+from bot.lib.enums.system_actions import SystemActions
+from bot.lib.messaging import Messaging
+from bot.lib.mongodb.settings import SettingsDatabase
+from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.mongodb.whitelist import WhitelistDatabase
 from discord.ext import commands
 
 
@@ -180,10 +180,9 @@ class NewAccountCheck(commands.Cog):
                     # find messages by the user and delete them
                     system_channel = member.guild.system_channel
                     if system_channel:
-                        async for message in await system_channel.history(
-                            limit=100, check=lambda m: m.author.id == member.id
-                        ):
-                            await message.delete()
+                        async for message in await system_channel.history(limit=100):
+                            if message.author.id == member.id:
+                                await message.delete()
                 else:
                     self.log.warn(
                         guild_id,

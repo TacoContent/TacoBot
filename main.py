@@ -5,8 +5,8 @@ from concurrent.futures import ProcessPoolExecutor
 
 import bot.tacobot as bot
 import discord
-from bot.cogs.lib.colors import Colors
-from bot.cogs.lib.mongodb.migration_runner import MigrationRunner
+from bot.lib.colors import Colors
+from bot.lib.mongodb.migration_runner import MigrationRunner
 from dotenv import find_dotenv, load_dotenv
 from metrics.exporter import MetricsExporter
 
@@ -18,23 +18,27 @@ def sighandler(signum, frame):
     exit(0)
 
 
-def main():
+def init_tacobot() -> bot.TacoBot:
+    intents = discord.Intents.all()
+    intents.message_content = True
+    intents.members = True
+    intents.presences = True
+    intents.guilds = True
+    intents.guild_messages = True
+    intents.guild_reactions = True
+    tbot = bot.TacoBot(intents=intents)
+    return tbot
+
+
+def start_tacobot():
     try:
         DISCORD_TOKEN = os.environ["DISCORD_TOKEN"]
 
         migrations = MigrationRunner()
         migrations.start_migrations()
 
-        intents = discord.Intents.all()
-        intents.message_content = True
-        intents.members = True
-        intents.presences = True
-        intents.guilds = True
-        intents.guild_messages = True
-        intents.guild_reactions = True
+        tacobot = init_tacobot()
 
-        tacobot = bot.TacoBot(intents=intents)
-        tacobot.remove_command('help')
         tacobot.run(DISCORD_TOKEN)
     except KeyboardInterrupt:
         print(Colors.colorize(Colors.FGYELLOW, "<KeyboardInterrupt received>"))
@@ -43,7 +47,6 @@ def main():
 
 def exporter():
     try:
-        pass
         exporter = MetricsExporter()
         exporter.run()
     except KeyboardInterrupt:
@@ -56,8 +59,10 @@ if __name__ == '__main__':
     signal.signal(signal.SIGTERM, sighandler)
     try:
         executor = ProcessPoolExecutor(2)
-        loop.run_in_executor(executor, main)
+
+        loop.run_in_executor(executor, start_tacobot)
         loop.run_in_executor(executor, exporter)
+
         loop.run_forever()
     except KeyboardInterrupt:
         pass

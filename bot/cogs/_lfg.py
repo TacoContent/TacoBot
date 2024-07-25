@@ -3,8 +3,8 @@ import os
 
 import discord
 from bot import tacobot  # pylint: disable=relative-beyond-top-level
-from bot.cogs.lib import discordhelper, logger, settings
-from bot.cogs.lib.enums import loglevel
+from bot.lib import discordhelper, logger, settings
+from bot.lib.enums import loglevel
 from discord.ext import commands
 
 

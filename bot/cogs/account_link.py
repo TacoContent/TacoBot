@@ -4,16 +4,19 @@ import traceback
 import typing
 
 import discord
-from bot.cogs.lib import discordhelper, logger, settings, utils
-from bot.cogs.lib.enums import loglevel
-from bot.cogs.lib.enums.system_actions import SystemActions
-from bot.cogs.lib.messaging import Messaging
-from bot.cogs.lib.mongodb.tracking import TrackingDatabase
-from bot.cogs.lib.mongodb.twitch import TwitchDatabase
+from bot.lib import discordhelper, logger, settings, utils
+from bot.lib.enums import loglevel
+from bot.lib.enums.system_actions import SystemActions
+from bot.lib.messaging import Messaging
+from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.mongodb.twitch import TwitchDatabase
+from discord import app_commands
 from discord.ext import commands
 
 
 class AccountLink(commands.Cog):
+    group = app_commands.Group(name="link", description="Link your Twitch account to your Discord account")
+
     def __init__(self, bot):
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
@@ -35,6 +38,75 @@ class AccountLink(commands.Cog):
 
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
+
+    @group.command(name="verify", description="Verify your Twitch account by entering the code you received.")
+    @app_commands.guild_only()
+    @app_commands.describe(code="The code you received to verify your Twitch account.")
+    async def verify(self, interaction: discord.Interaction, code: str) -> None:
+        _method = inspect.stack()[0][3]
+        if interaction.guild:
+            guild_id = interaction.guild.id
+        else:
+            return
+        try:
+            result = self.twitch_db.link_twitch_to_discord_from_code(interaction.user.id, code)
+            self.tracking_db.track_system_action(
+                guild_id=guild_id,
+                action=SystemActions.LINK_TWITCH_TO_DISCORD,
+                data={"user_id": str(interaction.user.id), "code": code},
+            )
+            if result:
+                await interaction.response.send_message(
+                    content=self.settings.get_string(guild_id, key="account_link_success_message", code=code),
+                    ephemeral=True,
+                )
+            else:
+                await interaction.response.send_message(
+                    content=self.settings.get_string(guild_id, key="account_link_unknown_code_message"), ephemeral=True
+                )
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=interaction.channel.id if interaction.channel else None,
+                userId=interaction.user.id,
+                command="link",
+                subcommand="verify",
+                args=[{"type": "slash_command"}, {"code": code}],
+            )
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+
+    @group.command(
+        name="request", description="Request a code to use to link your Twitch account to your Discord account"
+    )
+    @app_commands.guild_only()
+    async def request(self, interaction: discord.Interaction) -> None:
+        _method = inspect.stack()[0][3]
+        if interaction.guild:
+            guild_id = interaction.guild.id
+        else:
+            return
+        try:
+            code = utils.get_random_string(length=6)
+            result = self.twitch_db.set_twitch_discord_link_code(interaction.user.id, code)
+            if result:
+                await interaction.response.send_message(
+                    content=self.settings.get_string(guild_id, key="account_link_notice_message", code=code),
+                    ephemeral=True,
+                )
+            else:
+                await interaction.response.send_message(
+                    content=self.settings.get_string(guild_id, key="account_link_save_error_message"), ephemeral=True
+                )
+            self.tracking_db.track_command_usage(
+                guildId=guild_id,
+                channelId=interaction.channel.id if interaction.channel else None,
+                userId=interaction.user.id,
+                command="link",
+                subcommand="request",
+                args=[{"type": "slash_command"}],
+            )
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     @commands.command()
     @commands.guild_only()

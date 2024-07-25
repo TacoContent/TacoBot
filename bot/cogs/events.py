@@ -3,8 +3,8 @@ import os
 import traceback
 
 import discord
-from bot.cogs.lib import logger, settings
-from bot.cogs.lib.enums import loglevel
+from bot.lib import logger, settings
+from bot.lib.enums import loglevel
 from discord.ext import commands
 
 

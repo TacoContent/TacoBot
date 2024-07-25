@@ -8,11 +8,11 @@ import traceback
 import typing
 
 import requests
-from bot.cogs.lib import discordhelper, logger, settings, utils
-from bot.cogs.lib.enums import loglevel, tacotypes
-from bot.cogs.lib.messaging import Messaging
-from bot.cogs.lib.models.triviaquestion import TriviaQuestion
-from bot.cogs.lib.mongodb.tracking import TrackingDatabase
+from bot.lib import discordhelper, logger, settings, utils
+from bot.lib.enums import loglevel, tacotypes
+from bot.lib.messaging import Messaging
+from bot.lib.models.triviaquestion import TriviaQuestion
+from bot.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
 from discord.ext.commands import Context
 
