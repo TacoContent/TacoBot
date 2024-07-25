@@ -1,12 +1,7 @@
 import asyncio
-import functools
-import time
 import os
 import signal
 from concurrent.futures import ProcessPoolExecutor
-
-from httpserver import HttpServer
-import asyncio
 
 import bot.tacobot as bot
 import discord
@@ -15,12 +10,13 @@ from bot.lib.mongodb.migration_runner import MigrationRunner
 from dotenv import find_dotenv, load_dotenv
 from metrics.exporter import MetricsExporter
 
-
 load_dotenv(find_dotenv())
+
 
 def sighandler(signum, frame):
     print(Colors.colorize(Colors.FGYELLOW, "<SIGTERM received>"))
     exit(0)
+
 
 def init_tacobot() -> bot.TacoBot:
     intents = discord.Intents.all()
@@ -33,6 +29,7 @@ def init_tacobot() -> bot.TacoBot:
     tbot = bot.TacoBot(intents=intents)
     return tbot
 
+
 def start_tacobot():
     try:
         DISCORD_TOKEN = os.environ["DISCORD_TOKEN"]
@@ -43,8 +40,6 @@ def start_tacobot():
         tacobot = init_tacobot()
 
         tacobot.run(DISCORD_TOKEN)
-
-
     except KeyboardInterrupt:
         print(Colors.colorize(Colors.FGYELLOW, "<KeyboardInterrupt received>"))
         exit(0)

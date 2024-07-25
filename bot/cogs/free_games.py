@@ -13,6 +13,7 @@ from bot.lib.mongodb.twitch import TwitchDatabase
 from discord import app_commands
 from discord.ext import commands
 
+
 class FreeGamesCog(commands.Cog):
     # group = app_commands.Group(name="webhook", description="Webhook Handler")
 
