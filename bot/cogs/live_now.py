@@ -94,7 +94,7 @@ class LiveNow(commands.Cog):
                 await asyncio.sleep(1)
 
                 tracked = self.live_db.get_tracked_live(guild_id, after.id, asa.platform)
-                is_tracked = tracked != None and len(tracked) > 0
+                is_tracked = tracked is not None and len(tracked) > 0
                 # if it is already tracked, then we don't need to do anything
                 if is_tracked:
                     self.log.debug(
@@ -279,8 +279,6 @@ class LiveNow(commands.Cog):
                 f"{user.display_name} has no youtube streaming activity",
             )
             return None
-
-        activity = youtube_activities[0]
 
         self.log.info(
             guild_id, f"{self._module}.{self._class}.{_method}", f"{user.display_name} started streaming on youtube"

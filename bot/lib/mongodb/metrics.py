@@ -1,12 +1,10 @@
 import datetime
 import inspect
 import os
-import sys
 import traceback
 import typing
 
 from bot.lib import utils
-from bot.lib.colors import Colors
 from bot.lib.enums import loglevel
 from bot.lib.mongodb.database import Database
 

@@ -1,23 +1,15 @@
-import html
 import inspect
-import json
 import os
 import random
 import string
 import traceback
 
-from bot.lib import discordhelper, logger, settings, utils
+from bot.lib import discordhelper, logger, settings
 from bot.lib.enums import loglevel
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
-from httpserver import (
-    HttpHeaders,
+from httpserver.http_util import (
     HttpRequest,
-    HttpResponse,
-    HttpResponseException,
-    uri_mapping,
-    uri_pattern_mapping,
-    uri_variable_mapping,
 )
 
 

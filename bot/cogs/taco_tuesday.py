@@ -56,7 +56,7 @@ class TacoTuesday(commands.Cog):
 
             message_template = cog_settings.get("message_template", None)
             if not message_template:
-                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Message template not set")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", "Message template not set")
                 return
 
             tag_role_id = cog_settings.get("tag_role", None)
@@ -66,12 +66,12 @@ class TacoTuesday(commands.Cog):
 
             output_channel_id = cog_settings.get("output_channel_id", None)
             if not output_channel_id:
-                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Output channel not set")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", "Output channel not set")
                 return
 
             output_channel = await self.discord_helper.get_or_fetch_channel(int(output_channel_id))
             if not output_channel:
-                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Output channel not found")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", "Output channel not found")
                 return
 
             message = utils.str_replace(
@@ -296,7 +296,7 @@ class TacoTuesday(commands.Cog):
             cog_settings = self.get_cog_settings(guild_id)
 
             if not cog_settings.get("enabled", False):
-                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Taco Tuesday not enabled")
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", "Taco Tuesday not enabled")
                 return
 
             # get the reaction user
@@ -319,7 +319,7 @@ class TacoTuesday(commands.Cog):
             if str(payload.emoji.name) in reaction_archive_emojis:
                 if cog_settings.get("archive_enabled", False):
                     self.log.debug(
-                        guild_id, f"{self._module}.{self._class}.{_method}", f"Archive is enabled. Archiving message"
+                        guild_id, f"{self._module}.{self._class}.{_method}", "Archive is enabled. Archiving message"
                     )
                     await self._on_raw_reaction_add_archive(payload)
                     return
@@ -390,7 +390,7 @@ class TacoTuesday(commands.Cog):
 
             fields = []
             if len(temp_reactions) > 0:
-                fields = [{"name": "Reactions", "value": f"------------------", "inline": False}]
+                fields = [{"name": "Reactions", "value": "------------------", "inline": False}]
                 for r in message.reactions:
                     fields.append({"name": str(r.emoji), "value": f"{r.count}", "inline": True})
 
@@ -437,7 +437,7 @@ class TacoTuesday(commands.Cog):
         # get focus role id
         focus_role_id = cog_settings.get("focus_role", None)
         if not focus_role_id:
-            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Focus role not set")
+            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", "Focus role not set")
             return
 
         self.log.debug(

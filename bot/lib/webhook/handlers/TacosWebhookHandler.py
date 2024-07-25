@@ -1,29 +1,21 @@
-import html
 import inspect
 import json
 import os
-import random
-import string
 import traceback
-import typing
 
-from bot.lib import discordhelper, logger, settings, utils
-from bot.lib.enums import loglevel
-from bot.lib.enums.system_actions import SystemActions
 from bot.lib.enums.tacotypes import TacoTypes
-from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.users_utils import UsersUtils
 from bot.lib.webhook.handlers.BaseWebhookHandler import BaseWebhookHandler
-from httpserver import (
+from httpserver.http_util import (
     HttpHeaders,
     HttpRequest,
     HttpResponse,
+)
+from httpserver.server import (
     HttpResponseException,
     uri_mapping,
-    uri_pattern_mapping,
-    uri_variable_mapping,
 )
 
 
