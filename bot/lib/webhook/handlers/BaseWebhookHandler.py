@@ -8,9 +8,7 @@ from bot.lib import discordhelper, logger, settings
 from bot.lib.enums import loglevel
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
-from httpserver.http_util import (
-    HttpRequest,
-)
+from httpserver.http_util import HttpRequest
 
 
 class BaseWebhookHandler:

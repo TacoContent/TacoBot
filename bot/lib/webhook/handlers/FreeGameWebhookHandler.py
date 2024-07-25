@@ -11,15 +11,8 @@ from bot.lib.mongodb.free_game_keys import FreeGameKeysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.webhook.handlers.BaseWebhookHandler import BaseWebhookHandler
 from bot.ui.ExternalUrlButtonView import ExternalUrlButtonView
-from httpserver.http_util import (
-    HttpHeaders,
-    HttpRequest,
-    HttpResponse,
-)
-from httpserver.server import (
-    HttpResponseException,
-    uri_mapping,
-)
+from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
+from httpserver.server import HttpResponseException, uri_mapping
 
 
 class FreeGameWebhookHandler(BaseWebhookHandler):
