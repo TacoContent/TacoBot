@@ -1,5 +1,6 @@
 ---
 name: TacoBot Publish Beta
+# yamlint disable-line rule:truthy
 on:
   push:
     branches:

@@ -95,9 +95,9 @@ def from_timestamp(timestamp: float) -> datetime.datetime:
 def get_timestamp() -> float:
     return to_timestamp(datetime.datetime.now(datetime.UTC))
 
+
 def get_seconds_until(end_ts: float) -> int:
     now = get_timestamp()
-    
     return int(end_ts - now) if end_ts > now else 0
 
 
