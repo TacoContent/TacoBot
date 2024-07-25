@@ -27,7 +27,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const targetBranch = context.payload.pull_request.base.ref;
-            const message = `This PR is targeting the ${targetBranch} branch. Please target the \`${{ env.REQUIRED_BRANCH }}\` branch.`;
+            const message = `This PR is targeting the ${targetBranch} branch. Please target the \`${{ env.REQUIRED_BRANCH }}\` branch.`; # yamllint disable-line rule:line-length
             const labels = ['invalid target'];
             if (targetBranch === 'main' || targetBranch === 'master') {
               github.rest.issues.addLabels({

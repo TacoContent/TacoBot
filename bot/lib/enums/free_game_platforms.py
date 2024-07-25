@@ -61,7 +61,6 @@ class FreeGamePlatforms(Enum):
         else:
             return "Other"
 
-
     @staticmethod
     def str_to_enum(value: str):
         if value.lower() == "pc":
