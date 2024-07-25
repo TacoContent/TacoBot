@@ -1,6 +1,6 @@
 ---
 name: Lint Project
-on: # yamlint disable-line rule:truthy
+"on": # quoted to avoid YAML lint 'truthy' warning
   push:
     branches:
       - "**" # All branches
