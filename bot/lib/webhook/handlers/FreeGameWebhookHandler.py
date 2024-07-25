@@ -2,30 +2,17 @@ import html
 import inspect
 import json
 import os
-import random
-import string
 import traceback
-import typing
 
-from bot.lib import discordhelper, logger, settings, utils
-from bot.lib.enums import loglevel
+from bot.lib import utils
 from bot.lib.enums.free_game_platforms import FreeGamePlatforms
 from bot.lib.enums.free_game_types import FreeGameTypes
-from bot.lib.enums.system_actions import SystemActions
-from bot.lib.messaging import Messaging
 from bot.lib.mongodb.free_game_keys import FreeGameKeysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.webhook.handlers.BaseWebhookHandler import BaseWebhookHandler
 from bot.ui.ExternalUrlButtonView import ExternalUrlButtonView
-from httpserver import (
-    HttpHeaders,
-    HttpRequest,
-    HttpResponse,
-    HttpResponseException,
-    uri_mapping,
-    uri_pattern_mapping,
-    uri_variable_mapping,
-)
+from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
+from httpserver.server import HttpResponseException, uri_mapping
 
 
 class FreeGameWebhookHandler(BaseWebhookHandler):

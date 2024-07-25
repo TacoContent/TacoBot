@@ -1,16 +1,10 @@
 import inspect
-import json
 import os
-import traceback
-import typing
 
-from bot.lib import discordhelper, logger, settings, utils
+from bot.lib import discordhelper, logger, settings
 from bot.lib.enums import loglevel
-from bot.lib.enums.system_actions import SystemActions
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
-from bot.lib.mongodb.twitch import TwitchDatabase
-from discord import app_commands
 from discord.ext import commands
 
 
