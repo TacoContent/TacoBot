@@ -1,30 +1,15 @@
-import html
 import inspect
 import json
 import os
-import random
-import string
 import traceback
-import typing
 
-from bot.lib import discordhelper, logger, settings, utils
-from bot.lib.enums import loglevel
-from bot.lib.enums.system_actions import SystemActions
 from bot.lib.enums.tacotypes import TacoTypes
-from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.users_utils import UsersUtils
 from bot.lib.webhook.handlers.BaseWebhookHandler import BaseWebhookHandler
-from httpserver import (
-    HttpHeaders,
-    HttpRequest,
-    HttpResponse,
-    HttpResponseException,
-    uri_mapping,
-    uri_pattern_mapping,
-    uri_variable_mapping,
-)
+from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
+from httpserver.server import HttpResponseException, uri_mapping
 
 
 class TacosWebhookHandler(BaseWebhookHandler):
@@ -109,14 +94,14 @@ class TacosWebhookHandler(BaseWebhookHandler):
                 raise HttpResponseException(404, headers, bytearray(err_msg, "utf-8"))
 
             if from_user.id == to_user.id:
-                err_msg = f'{{"error": "You can not give tacos to yourself." }}'
+                err_msg = '{{"error": "You can not give tacos to yourself." }}'
                 raise HttpResponseException(400, headers, bytearray(err_msg, "utf-8"))
 
             if from_user.id == self.bot.user.id:
                 limit_immune = True
 
             if to_user.bot:
-                err_msg = f'{{"error": "You can not give tacos to a bot." }}'
+                err_msg = '{{"error": "You can not give tacos to a bot." }}'
                 raise HttpResponseException(400, headers, bytearray(err_msg, "utf-8"))
 
             # check if immune to limits

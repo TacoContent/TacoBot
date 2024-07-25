@@ -1,5 +1,4 @@
 import datetime
-import inspect
 import json
 import random
 import re
@@ -22,7 +21,7 @@ def get_scalar_result(conn, sql, default_value=None, *args) -> typing.Any:
     try:
         cursor.execute(sql, args)
         return cursor.fetchone()[0]
-    except Exception as ex:
+    except Exception:
         return default_value
 
 
@@ -52,7 +51,7 @@ def get_random_name(noun_count=1, adjective_count=1) -> str:
         nouns = load_from_gist("nouns", noun_count)
         results = adjectives + nouns
         return " ".join(w.title() for w in results)
-    except Exception as ex:
+    except Exception:
         try:
             nouns = requests.get(f"https://random-word-form.herokuapp.com/random/noun?count={str(noun_count)}").json()
             adjectives = requests.get(
@@ -60,13 +59,13 @@ def get_random_name(noun_count=1, adjective_count=1) -> str:
             ).json()
             results = adjectives + nouns
             return " ".join(w.title() for w in results)
-        except Exception as ex:
+        except Exception:
             try:
                 results = requests.get(
                     f"https://random-word-api.herokuapp.com/word?number={str(noun_count + adjective_count)}&swear=0"
                 ).json()
                 return " ".join(w.title() for w in results)
-            except Exception as ex:
+            except Exception:
                 return " ".join(
                     random.sample(fallback_adjectives, adjective_count) + random.sample(fallback_nouns, noun_count)
                 )
@@ -149,8 +148,6 @@ def get_by_name_or_id(iterable, nameOrId: typing.Union[int, str]) -> typing.Opti
         return discord.utils.get(iterable, name=str(nameOrId))
     elif isinstance(nameOrId, int):
         return discord.utils.get(iterable, id=int(nameOrId))
-    else:
-        return None
 
 
 def get_last_section_in_url(name) -> str:

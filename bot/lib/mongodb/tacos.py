@@ -4,7 +4,7 @@ import os
 import traceback
 import typing
 
-from bot.lib import settings, utils
+from bot.lib import utils
 from bot.lib.enums import loglevel
 from bot.lib.mongodb.database import Database
 
@@ -92,7 +92,7 @@ class TacosDatabase(Database):
                     guildId=guildId,
                     level=loglevel.LogLevel.DEBUG,
                     method=f"{self._module}.{self._class}.{_method}",
-                    message=f"Count is less than 0",
+                    message="Count is less than 0",
                 )
                 return 0
             if self.connection is None or self.client is None:

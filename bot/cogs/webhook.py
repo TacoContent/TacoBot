@@ -1,17 +1,14 @@
 import inspect
 import os
-import sys
 import traceback
-import typing
 from importlib import import_module
 
 from bot.lib import discordhelper, logger, settings
 from bot.lib.enums import loglevel
-from bot.lib.enums.system_actions import SystemActions
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
 from discord.ext import commands
-from httpserver import HttpServer, uri_mapping, uri_pattern_mapping, uri_variable_mapping
+from httpserver.server import HttpServer
 
 
 class WebhookCog(commands.Cog):
@@ -68,7 +65,7 @@ class WebhookCog(commands.Cog):
                 # we dont need to call "serve_forever" because this task is already running in the background
 
         except Exception as e:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", "{e}", traceback.format_exc())
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
     def load_webhook_handlers(self):
         _method = inspect.stack()[0][3]
