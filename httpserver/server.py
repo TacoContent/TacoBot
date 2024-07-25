@@ -221,8 +221,9 @@ class HttpServer:
                     logger.warning('unable to find any matching route for %s %s', request.method, request.path)
                     response = self.build_http_404_response(request.method, request.path)
                     await self._send_response(writer, request, response)
-
-        except (TimeoutError, asyncio.TimeoutError, asyncio.exceptions.IncompleteReadError) as e:
+        except (ConnectionResetError, asyncio.IncompleteReadError) as e:
+            pass
+        except (TimeoutError, asyncio.TimeoutError) as e:
             logger.warning('got a failure %s. disconnecting the client', type(e))
         except Exception as e:
             logger.exception('got a failure %s. disconnecting the client: %s', type(e), e)

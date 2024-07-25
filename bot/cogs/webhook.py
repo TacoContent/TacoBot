@@ -63,9 +63,7 @@ class WebhookCog(commands.Cog):
 
                 await self.http_server.start(listen_address, listen_port)
                 self.log.info(
-                    0,
-                    f"{self._module}.{self._class}.{_method}",
-                    f'Webhook Started Listening => :{listen_port}',
+                    0, f"{self._module}.{self._class}.{_method}", f'Webhook Started Listening => :{listen_port}'
                 )
                 # we dont need to call "serve_forever" because this task is already running in the background
 
