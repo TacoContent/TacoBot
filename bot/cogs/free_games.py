@@ -39,7 +39,6 @@ class FreeGamesCog(commands.Cog):
         self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
-
     def get_cog_settings(self, guildId: int = 0) -> dict:
         return self.get_settings(guildId=guildId, section=self.SETTINGS_SECTION)
 
