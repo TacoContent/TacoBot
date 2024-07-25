@@ -1,7 +1,6 @@
 ---
 name: TacoBot Publish
-# yamlint disable-line rule:truthy
-on:
+on: # yamlint disable-line rule:truthy
   push:
     branches:
       - develop

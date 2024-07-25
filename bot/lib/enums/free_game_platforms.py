@@ -60,7 +60,8 @@ class FreeGamePlatforms(Enum):
             return "Xbox Series X|S"
         else:
             return "Other"
-        
+
+
     @staticmethod
     def str_to_enum(value: str):
         if value.lower() == "pc":

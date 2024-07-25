@@ -1186,7 +1186,9 @@ class MetricsDatabase(Database):
                 [
                     {
                         "$group": {
-                            "_id": {"state": {"$cond": [{"$lt": ["$end_date", utils.get_timestamp()]}, "EXPIRED", "ACTIVE"]}},
+                            "_id": {
+                                "state": {"$cond": [{"$lt": ["$end_date", utils.get_timestamp()]}, "EXPIRED", "ACTIVE"]}
+                            },
                             "total": {"$sum": 1},
                         }
                     },
