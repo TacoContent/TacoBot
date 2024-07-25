@@ -295,11 +295,19 @@ class TwitchInfo(commands.Cog):
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
-    def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, "tacos")
+    def get_cog_settings(self, guildId: int = 0) -> dict:
+        return self.get_settings(guildId=guildId, section=self.SETTINGS_SECTION)
+
+    def get_settings(self, guildId: int, section: str) -> dict:
+        if not section or section == "":
+            raise Exception("No section provided")
+        cog_settings = self.settings.get_settings(guildId, section)
         if not cog_settings:
-            raise Exception(f"No tacos settings found for guild {guildId}")
+            raise Exception(f"No '{section}' settings found for guild {guildId}")
         return cog_settings
+
+    def get_tacos_settings(self, guildId: int = 0) -> dict:
+        return self.get_settings(guildId=guildId, section="tacos")
 
 
 async def setup(bot):

@@ -572,7 +572,7 @@ class Suggestions(commands.Cog):
 
                     # add fields with the votes
                     # get the votes from the database
-                    votes = self.suggestions_db.get_suggestion_votes_by_id(suggestion['id'])
+                    votes = self.suggestions_db.get_suggestion_votes_by_id(suggestion['id']) or []
                     # get count of each type of vote. either -1, 0, or 1
                     up_votes = [vote for vote in votes if vote['vote'] == 1] or []
                     up_word = "Vote" if len(up_votes) == 1 else "Votes"
@@ -957,16 +957,18 @@ class Suggestions(commands.Cog):
             return None
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
+        return self.get_settings(guildId=guildId, section=self.SETTINGS_SECTION)
+
+    def get_settings(self, guildId: int, section: str) -> dict:
+        if not section or section == "":
+            raise Exception("No section provided")
+        cog_settings = self.settings.get_settings(guildId, section)
         if not cog_settings:
-            raise Exception(f"No cog settings found for guild {guildId}")
+            raise Exception(f"No '{section}' settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, "tacos")
-        if not cog_settings:
-            raise Exception(f"No tacos settings found for guild {guildId}")
-        return cog_settings
+        return self.get_settings(guildId=guildId, section="tacos")
 
 
 async def setup(bot):

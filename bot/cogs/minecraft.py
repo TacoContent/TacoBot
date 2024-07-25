@@ -560,16 +560,18 @@ class Minecraft(commands.Cog):
         return True
 
     def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
+        return self.get_settings(guildId=guildId, section=self.SETTINGS_SECTION)
+
+    def get_settings(self, guildId: int, section: str) -> dict:
+        if not section or section == "":
+            raise Exception("No section provided")
+        cog_settings = self.settings.get_settings(guildId, section)
         if not cog_settings:
-            raise Exception(f"No cog settings found for guild {guildId}")
+            raise Exception(f"No '{section}' settings found for guild {guildId}")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, "tacos")
-        if not cog_settings:
-            raise Exception(f"No tacos settings found for guild {guildId}")
-        return cog_settings
+        return self.get_settings(guildId=guildId, section="tacos")
 
     def get_minecraft_status(self, guild_id: int = 0) -> dict:
         _method = inspect.stack()[0][3]
