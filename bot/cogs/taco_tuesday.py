@@ -19,7 +19,7 @@ from discord.ext import commands
 
 
 class TacoTuesdayCog(TacobotCog):
-    def __init__(self, bo: TacoBot) -> None:
+    def __init__(self, bot: TacoBot) -> None:
         super().__init__(bot, "tacotuesday")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
