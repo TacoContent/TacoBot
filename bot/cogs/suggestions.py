@@ -340,7 +340,7 @@ class SuggestionsCog(TacobotCog):
 
             log_channel = None
             if 'log_channel_id' in channel_settings and channel_settings['log_channel_id'] != "":
-                if channel_settings['log_channel_id'] == "0" or channel_settings['log_channel_id'] == None:
+                if channel_settings['log_channel_id'] == "0" or channel_settings['log_channel_id'] is None:
                     log_channel = None
                 else:
                     log_channel = await self.discord_helper.get_or_fetch_channel(
@@ -387,7 +387,7 @@ class SuggestionsCog(TacobotCog):
                     await self.messaging.send_embed(
                         channel=user,
                         title="Can only vote once",
-                        message=f"You have already voted on this suggestion.",
+                        message="You have already voted on this suggestion.",
                         color=0xFF0000,
                         delete_after=30,
                     )
@@ -562,7 +562,7 @@ class SuggestionsCog(TacobotCog):
                         self.log.debug(
                             guild_id,
                             f"{self._module}.{self._class}.{_method}",
-                            f"No log suggestion channel. Will use message suggestion channel instead.",
+                            "No log suggestion channel. Will use message suggestion channel instead.",
                         )
                         log_channel = message.channel
 

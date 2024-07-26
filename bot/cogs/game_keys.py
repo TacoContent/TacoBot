@@ -7,8 +7,8 @@ import typing
 
 import discord
 from bot.lib import discordhelper, utils
-from bot.lib.enums import tacotypes
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
+from bot.lib.enums import tacotypes
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.gamekeys import GameKeysDatabase
 from bot.lib.mongodb.tacos import TacosDatabase

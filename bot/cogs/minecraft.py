@@ -92,7 +92,7 @@ class MinecraftCog(TacobotCog):
                 self.log.debug(
                     guild_id,
                     f"{self._module}.{self._class}.{_method}",
-                    f"output_channel is not set or is not the same as the command channel",
+                    "output_channel is not set or is not the same as the command channel",
                 )
                 output_channel = ctx.author
                 AUTO_DELETE_TIMEOUT = None
@@ -131,18 +131,18 @@ class MinecraftCog(TacobotCog):
                 },
                 {
                     "name": self.settings.get_string(guild_id, "minecraft_status_mods"),
-                    "value": f"------------------",
+                    "value": "------------------",
                     "inline": False,
                 },
             ]
 
-            if status['online'] == False:
+            if not status['online']:
                 # add field to tell user how to start the server
 
                 fields.append(
                     {
                         "name": self.settings.get_string(guild_id, "minecraft_status_server_status"),
-                        "value": f"Server is offline. Run `.taco minecraft start` to start the server.",
+                        "value": "Server is offline. Run `.taco minecraft start` to start the server.",
                         "inline": False,
                     }
                 )
@@ -203,7 +203,7 @@ class MinecraftCog(TacobotCog):
 
             status = self.get_minecraft_status(guild_id)
 
-            if status['online'] == True:
+            if status['online']:
                 await self.messaging.send_embed(
                     channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
@@ -218,7 +218,7 @@ class MinecraftCog(TacobotCog):
 
             # send message to start the server
             # TODO: store url in settings
-            resp = requests.post(f"http://andeddu.bit13.local:10070/taco/minecraft/server/start")
+            resp = requests.post("http://andeddu.bit13.local:10070/taco/minecraft/server/start")
             if resp.status_code != 200:
                 await self.messaging.send_embed(
                     channel=output_channel,
@@ -289,7 +289,7 @@ class MinecraftCog(TacobotCog):
 
             status = self.get_minecraft_status(guild_id)
 
-            if status['online'] == False:
+            if not status['online']:
                 await self.messaging.send_embed(
                     channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
@@ -304,7 +304,7 @@ class MinecraftCog(TacobotCog):
 
             # send message to stop the server
             # TODO: store url in settings
-            resp = requests.post(f"http://andeddu.bit13.local:10070/taco/minecraft/server/stop")
+            resp = requests.post("http://andeddu.bit13.local:10070/taco/minecraft/server/stop")
             if resp.status_code != 200:
                 await self.messaging.send_embed(
                     channel=output_channel,
@@ -423,7 +423,7 @@ class MinecraftCog(TacobotCog):
             #     "success": true,
             # }
             # TODO: store url in settings
-            result = requests.get(f"https://playerdb.co/api/player/minecraft/{mc_username}")
+            result = requests.get("https://playerdb.co/api/player/minecraft/{mc_username}")
             if result.status_code != 200:
                 # Need to notify of an error
                 self.log.warn(
@@ -557,7 +557,7 @@ class MinecraftCog(TacobotCog):
     def get_minecraft_status(self, guild_id: int = 0) -> dict:
         _method = inspect.stack()[0][3]
         # TODO: store url in settings
-        result = requests.get(f"http://andeddu.bit13.local:10070/tacobot/minecraft/status")
+        result = requests.get("http://andeddu.bit13.local:10070/tacobot/minecraft/status")
         if result.status_code != 200:
             # Need to notify of an error
             self.log.warn(
@@ -570,7 +570,7 @@ class MinecraftCog(TacobotCog):
         data = result.json()
         # get users uuid for minecraft username
         if not data["success"]:
-            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"Failed to get minecraft status")
+            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "Failed to get minecraft status")
         return data
 
 

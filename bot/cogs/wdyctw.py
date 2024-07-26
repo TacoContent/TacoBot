@@ -224,7 +224,7 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
         channel = self.bot.get_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)
         message_author = message.author
-        react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+        # react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
 
         # check if this reaction is the first one of this type on the message
         reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)

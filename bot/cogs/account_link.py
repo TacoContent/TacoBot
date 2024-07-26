@@ -6,7 +6,6 @@ import typing
 import discord
 from bot.lib import discordhelper, utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
-from bot.lib.enums import loglevel
 from bot.lib.enums.system_actions import SystemActions
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase

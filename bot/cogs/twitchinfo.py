@@ -58,7 +58,7 @@ class TwitchInfoCog(TacobotCog):
         if channel is None:
             return
 
-        if user == None or user == "":
+        if user is None or user == "":
             # specify channel
             return
         twitch_info = self.twitch_db.get_user_twitch_info(user.id)
@@ -108,9 +108,9 @@ class TwitchInfoCog(TacobotCog):
             who = utils.get_user_display_name(member)
 
         guild_id = 0
-        channel = ctx.author
+        # channel = ctx.author
         if ctx.guild:
-            channel = ctx.channel
+            # channel = ctx.channel
             guild_id = ctx.guild.id
             await ctx.message.delete()
 
@@ -126,10 +126,10 @@ class TwitchInfoCog(TacobotCog):
                     alt_ctx,
                     ctx.author,
                     "Twitch Name",
-                    "I do not have a twitch name set for {who}, please respond with the twitch name.",
+                    f"I do not have a twitch name set for {who}, please respond with the twitch name.",
                     60,
                 )
-                if not twitch_name is None:
+                if twitch_name is not None:
                     self.twitch_db.set_user_twitch_info(ctx.author.id, twitch_name.lower().strip())
                     self.tracking_db.track_system_action(
                         guild_id=guild_id,
@@ -138,7 +138,7 @@ class TwitchInfoCog(TacobotCog):
                     )
         else:
             twitch_name = twitch_info["twitch_name"]
-        if not twitch_name is None:
+        if twitch_name is not None:
             await self.messaging.send_embed(
                 channel=ctx.author,
                 title="Twitch Name",

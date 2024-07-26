@@ -136,7 +136,7 @@ class TacoQuestionOfTheDayCog(TacobotCog):
             await self.messaging.send_embed(
                 channel=out_channel,
                 title=self.settings.get_string(guild_id, "tqotd_out_title"),
-                message=out_message,
+                message=save_message,
                 content=role_tag,
                 files=files,
                 color=0x00FF00,
@@ -279,11 +279,11 @@ class TacoQuestionOfTheDayCog(TacobotCog):
 
         previous_questions = json.dumps(self.tqotd_db.get_all_tqotd_questions(guild_id))
 
-        self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Generating question using AI")
+        self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", "Generating question using AI")
         self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"System Prompt: {system_prompt}")
         self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Previous Questions: {previous_questions}")
         self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User Prompt: {user_prompt}")
-        qprompt = "Here is a json array of previous questions that have been asked: " + previous_questions
+        qprompt = f"Here is a json array of previous questions that have been asked: {previous_questions}"
         airesponse = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -376,7 +376,7 @@ class TacoQuestionOfTheDayCog(TacobotCog):
             channel = self.bot.get_channel(payload.channel_id)
             message = await channel.fetch_message(payload.message_id)
             message_author = message.author
-            react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+            # react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
 
             # check if this reaction is the first one of this type on the message
             reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)

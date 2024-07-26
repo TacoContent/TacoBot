@@ -1,7 +1,6 @@
 import asyncio
 import datetime
 import inspect
-import json
 import os
 import traceback
 import typing
@@ -60,11 +59,6 @@ class Birthday(TacobotCog):
                 await self.discord_helper.taco_give_user(
                     guild_id, self.bot.user, user, reason_msg, tacotypes.TacoTypes.BIRTHDAY, taco_amount=taco_amount
                 )
-
-            fields = [
-                {"name": self.settings.get_string(guild_id, "month"), "value": str(month), "inline": True},
-                {"name": self.settings.get_string(guild_id, "day"), "value": str(day), "inline": True},
-            ]
 
             # TODO: change to full interaction response
             await interaction.response.send_message(
