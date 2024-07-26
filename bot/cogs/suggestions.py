@@ -233,7 +233,7 @@ class SuggestionsCog(TacobotCog):
             await s_message.add_reaction(r)
 
         await self.discord_helper.taco_give_user(
-            guild_id, self.bot.user, ctx.author, f"creating a new suggestion", tacotypes.TacoTypes.SUGGEST
+            guild_id, self.bot.user, ctx.author, "creating a new suggestion", tacotypes.TacoTypes.SUGGEST
         )
 
         suggestion_data = {

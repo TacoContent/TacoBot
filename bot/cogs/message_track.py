@@ -59,11 +59,9 @@ class MessageTracker(TacobotCog):
             # fetch member from id
             member = guild.get_member(user_id)
             # get channel
-            channel = None
-            message = None
+            # channel = None
+            # message = None
 
-            # get bot
-            bot = self.bot
             # ctx = self.discord_helper.create_context(
             #     bot=bot, guild=guild, author=member, channel=channel, message=message
             # )
