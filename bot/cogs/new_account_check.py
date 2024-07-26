@@ -4,8 +4,8 @@ import math
 import os
 import traceback
 
-from bot.lib import discordhelper, logger, settings, utils
-from bot.lib.enums import loglevel
+from bot.lib import discordhelper, utils
+from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums.system_actions import SystemActions
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.settings import SettingsDatabase
@@ -14,26 +14,22 @@ from bot.lib.mongodb.whitelist import WhitelistDatabase
 from discord.ext import commands
 
 
-class NewAccountCheck(commands.Cog):
+class NewAccountCheckCog(TacobotCog):
     def __init__(self, bot) -> None:
+        super().__init__(bot, "account_age_check")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.bot = bot
-        self.settings = settings.Settings()
+
         self.discord_helper = discordhelper.DiscordHelper(self.bot)
         self.messaging = Messaging(self.bot)
-        self.SETTINGS_SECTION = "account_age_check"
+
         self.MINIMUM_ACCOUNT_AGE = 30  # days
         self.settings_db = SettingsDatabase()
         self.tracking_db = TrackingDatabase()
         self.whitelist_db = WhitelistDatabase()
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
-        if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
 
-        self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.group(name="new-account", aliases=["new-account-check", "nac"], invoke_without_command=True)
@@ -195,20 +191,6 @@ class NewAccountCheck(commands.Cog):
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
-    def get_cog_settings(self, guildId: int = 0) -> dict:
-        return self.get_settings(guildId=guildId, section=self.SETTINGS_SECTION)
-
-    def get_settings(self, guildId: int, section: str) -> dict:
-        if not section or section == "":
-            raise Exception("No section provided")
-        cog_settings = self.settings.get_settings(guildId, section)
-        if not cog_settings:
-            raise Exception(f"No '{section}' settings found for guild {guildId}")
-        return cog_settings
-
-    def get_tacos_settings(self, guildId: int = 0) -> dict:
-        return self.get_settings(guildId=guildId, section="tacos")
-
 
 async def setup(bot):
-    await bot.add_cog(NewAccountCheck(bot))
+    await bot.add_cog(NewAccountCheckCog(bot))

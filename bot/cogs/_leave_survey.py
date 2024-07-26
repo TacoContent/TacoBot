@@ -6,29 +6,24 @@ import os
 import traceback
 
 import discord
-from bot.lib import discordhelper, logger, settings, utils
-from bot.lib.enums import loglevel
+from bot.lib import discordhelper, utils
+from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
+from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
-class LeaveSurvey(commands.Cog):
-    def __init__(self, bot):
+class LeaveSurveyCog(TacobotCog):
+    def __init__(self, bot: TacoBot):
+        super().__init__(bot, "leave_survey")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.bot = bot
-        self.settings = settings.Settings()
+
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
-        self.SETTINGS_SECTION = "leave_survey"
 
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
-        if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
-
-        self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.group()
@@ -160,18 +155,6 @@ Would you be willing to let us know why you are leaving?""",
     async def on_member_remove(self, member):
         await self.ask_survey(member)
 
-    def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
-        if not cog_settings:
-            raise Exception(f"No cog settings found for guild {guildId}")
-        return cog_settings
-
-    def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, "tacos")
-        if not cog_settings:
-            raise Exception(f"No tacos settings found for guild {guildId}")
-        return cog_settings
-
 
 async def setup(bot):
-    await bot.add_cog(LeaveSurvey(bot))
+    await bot.add_cog(LeaveSurveyCog(bot))

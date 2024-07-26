@@ -6,8 +6,9 @@ import traceback
 import typing
 
 import discord
-from bot.lib import discordhelper, logger, settings, utils
-from bot.lib.enums import loglevel, tacotypes
+from bot.lib import discordhelper, utils
+from bot.lib.enums import tacotypes
+from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.gamekeys import GameKeysDatabase
 from bot.lib.mongodb.tacos import TacosDatabase
@@ -17,27 +18,21 @@ from bot.ui.GameRewardView import GameRewardView
 from discord.ext import commands
 
 
-class GameKeys(commands.Cog):
+class GameKeys(TacobotCog):
     def __init__(self, bot):
+        super().__init__(bot, "game_keys")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.bot = bot
-        self.settings = settings.Settings()
+
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
-        self.SETTINGS_SECTION = "game_keys"
         self.tacos_db = TacosDatabase()
         self.gamekeys_db = GameKeysDatabase()
         self.tracking_db = TrackingDatabase()
         self.steam_api = SteamApiClient()
 
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
-        if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
-
-        self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
@@ -757,20 +752,6 @@ class GameKeys(commands.Cog):
             self.log.error(
                 interaction.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc()
             )
-
-    def get_cog_settings(self, guildId: int = 0) -> dict:
-        return self.get_settings(guildId=guildId, section=self.SETTINGS_SECTION)
-
-    def get_settings(self, guildId: int, section: str) -> dict:
-        if not section or section == "":
-            raise Exception("No section provided")
-        cog_settings = self.settings.get_settings(guildId, section)
-        if not cog_settings:
-            raise Exception(f"No '{section}' settings found for guild {guildId}")
-        return cog_settings
-
-    def get_tacos_settings(self, guildId: int = 0) -> dict:
-        return self.get_settings(guildId=guildId, section="tacos")
 
 
 async def setup(bot):

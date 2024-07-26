@@ -4,25 +4,22 @@ import os
 import traceback
 
 import discord
-from bot.lib import discordhelper, logger, settings
-from bot.lib.enums import loglevel, tacotypes
+from bot.lib import discordhelper
+from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
+from bot.lib.enums import tacotypes
 from discord.ext import commands
 
 
-class ServerEvent(commands.Cog):
+class ServerEventCog(TacobotCog):
     def __init__(self, bot) -> None:
+        super().__init__(bot, "tacobot")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.bot = bot
-        self.settings = settings.Settings()
-        self.discord_helper = discordhelper.DiscordHelper(bot)
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
-        if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
 
-        self.log = logger.Log(minimumLogLevel=log_level)
+        self.discord_helper = discordhelper.DiscordHelper(bot)
+
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
@@ -150,4 +147,4 @@ class ServerEvent(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(ServerEvent(bot))
+    await bot.add_cog(ServerEventCog(bot))

@@ -3,32 +3,26 @@ import inspect
 import os
 import traceback
 
-from bot.lib import discordhelper, logger, settings
-from bot.lib.enums import loglevel
+from bot.lib import discordhelper
+from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tacos import TacosDatabase
 from discord.ext import commands
 
 
-class TacoPost(commands.Cog):
+class TacoPostCog(TacobotCog):
     def __init__(self, bot) -> None:
+        super().__init__(bot, "tacopost")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.bot = bot
-        self.settings = settings.Settings()
+
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
-        # pull from database instead of app.manifest
-        self.SETTINGS_SECTION = 'tacopost'
 
         self.tacos_db = TacosDatabase()
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
-        if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
 
-        self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
@@ -137,4 +131,4 @@ class TacoPost(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(TacoPost(bot))
+    await bot.add_cog(TacoPostCog(bot))
