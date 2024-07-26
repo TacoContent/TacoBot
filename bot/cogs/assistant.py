@@ -6,12 +6,13 @@ import traceback
 import discord
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.mongodb.tacos import TacosDatabase
+from bot.tacobot import TacoBot
 from discord.ext import commands
 from openai import OpenAI
 
 
 class Assistant(TacobotCog):
-    def __init__(self, bot):
+    def __init__(self, bot: TacoBot):
         super().__init__(bot, "assistant")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__

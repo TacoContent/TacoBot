@@ -12,6 +12,7 @@ from bot.lib.messaging import Messaging
 from bot.lib.mongodb.mentalmondays import MentalMondaysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
+from bot.tacobot import TacoBot
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -21,7 +22,7 @@ from openai import OpenAI
 class MentalMondays(TacobotCog):
     group = app_commands.Group(name="mentalmondays", description="Commands for the Mental Monday's")
 
-    def __init__(self, bot) -> None:
+    def __init__(self, bot: TacoBot) -> None:
         super().__init__(bot, "mentalmondays")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__

@@ -14,6 +14,7 @@ from bot.lib.messaging import Messaging
 from bot.lib.mongodb.toqtd import TQOTDDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
+from bot.tacobot import TacoBot
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -23,7 +24,7 @@ from openai import OpenAI
 class TacoQuestionOfTheDayCog(TacobotCog):
     group = app_commands.Group(name="tqotd", description="Commands for the Taco Question of the Day")
 
-    def __init__(self, bot) -> None:
+    def __init__(self, bot: TacoBot) -> None:
         super().__init__(bot, "tqotd")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__

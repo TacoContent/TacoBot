@@ -15,11 +15,12 @@ from bot.lib.mongodb.settings import SettingsDatabase
 from bot.lib.mongodb.suggestions import SuggestionsDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
+from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class SuggestionsCog(TacobotCog):
-    def __init__(self, bot) -> None:
+    def __init__(self, bot: TacoBot) -> None:
         super().__init__(bot, "suggestions")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__

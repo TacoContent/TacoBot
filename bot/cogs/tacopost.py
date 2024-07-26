@@ -7,11 +7,12 @@ from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tacos import TacosDatabase
+from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class TacoPostCog(TacobotCog):
-    def __init__(self, bot) -> None:
+    def __init__(self, bot: TacoBot) -> None:
         super().__init__(bot, "tacopost")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__

@@ -10,6 +10,7 @@ from bot.lib.enums.system_actions import SystemActions
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.twitch import TwitchDatabase
+from bot.tacobot import TacoBot
 from discord import app_commands
 from discord.ext import commands
 
@@ -17,7 +18,7 @@ from discord.ext import commands
 class AccountLink(TacobotCog):
     group = app_commands.Group(name="link", description="Link your Twitch account to your Discord account")
 
-    def __init__(self, bot):
+    def __init__(self, bot: TacoBot):
         super().__init__(bot, "account_link")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__

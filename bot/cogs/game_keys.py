@@ -14,12 +14,13 @@ from bot.lib.mongodb.gamekeys import GameKeysDatabase
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.steam.steamapi import SteamApiClient
+from bot.tacobot import TacoBot
 from bot.ui.GameRewardView import GameRewardView
 from discord.ext import commands
 
 
 class GameKeys(TacobotCog):
-    def __init__(self, bot):
+    def __init__(self, bot: TacoBot):
         super().__init__(bot, "game_keys")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__

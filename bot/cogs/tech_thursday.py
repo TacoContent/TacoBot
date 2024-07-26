@@ -12,6 +12,7 @@ from bot.lib.messaging import Messaging
 from bot.lib.mongodb.techthurs import TechThursDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
+from bot.tacobot import TacoBot
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -21,7 +22,7 @@ from openai import OpenAI
 class TechThursdaysCog(TacobotCog):
     group = app_commands.Group(name="techthurs", description="Commands for the Tech Thursdays")
 
-    def __init__(self, bot) -> None:
+    def __init__(self, bot: TacoBot) -> None:
         super().__init__(bot, "techthurs")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__

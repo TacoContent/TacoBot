@@ -10,11 +10,12 @@ from bot.lib.enums import tacotypes
 from bot.lib.enums.system_actions import SystemActions
 from bot.lib.mongodb.invites import InvitesDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class InviteTracker(TacobotCog):
-    def __init__(self, bot):
+    def __init__(self, bot: TacoBot):
         super().__init__(bot, "tacobot")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__

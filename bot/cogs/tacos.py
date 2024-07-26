@@ -10,6 +10,7 @@ from bot.lib.enums import tacotypes
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.tacobot import TacoBot
 from discord import app_commands
 from discord.ext import commands
 
@@ -17,7 +18,7 @@ from discord.ext import commands
 class TacosCog(TacobotCog):
     group = app_commands.Group(name="tacos", description="Tacos commands")
 
-    def __init__(self, bot) -> None:
+    def __init__(self, bot: TacoBot) -> None:
         super().__init__(bot, "tacos")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__

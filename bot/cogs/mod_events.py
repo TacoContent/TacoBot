@@ -6,11 +6,12 @@ import discord
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums.system_actions import SystemActions
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class ModEventsCog(TacobotCog):
-    def __init__(self, bot):
+    def __init__(self, bot: TacoBot):
         super().__init__(bot, "mod_events")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__

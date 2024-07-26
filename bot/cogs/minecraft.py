@@ -13,12 +13,13 @@ from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.minecraft import MinecraftDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.tacobot import TacoBot
 from discord.ext import commands
 from discord.ext.commands import Context
 
 
 class MinecraftCog(TacobotCog):
-    def __init__(self, bot):
+    def __init__(self, bot: TacoBot):
         super().__init__(bot, "minecraft")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__

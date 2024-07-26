@@ -5,12 +5,13 @@ from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.tacobot import TacoBot
 
 
 class FreeGamesCog(TacobotCog):
     # group = app_commands.Group(name="webhook", description="Webhook Handler")
 
-    def __init__(self, bot):
+    def __init__(self, bot: TacoBot):
         super().__init__(bot, "free_games")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__

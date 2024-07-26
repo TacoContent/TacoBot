@@ -5,11 +5,12 @@ import traceback
 from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class GuildTrack(TacobotCog):
-    def __init__(self, bot):
+    def __init__(self, bot: TacoBot):
         super().__init__(bot, "guild_track")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__

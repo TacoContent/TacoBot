@@ -14,11 +14,12 @@ from bot.lib.messaging import Messaging
 from bot.lib.mongodb.live import LiveDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.twitch import TwitchDatabase
+from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class LiveNow(TacobotCog):
-    def __init__(self, bot):
+    def __init__(self, bot: TacoBot):
         super().__init__(bot, "live_now")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__

@@ -10,11 +10,12 @@ from bot.lib.messaging import Messaging
 from bot.lib.mongodb.introductions import IntroductionsDatabase
 from bot.lib.mongodb.settings import SettingsDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class IntroductionCog(TacobotCog):
-    def __init__(self, bot) -> None:
+    def __init__(self, bot: TacoBot) -> None:
         super().__init__(bot, "introduction")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__

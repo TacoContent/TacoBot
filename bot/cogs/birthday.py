@@ -14,6 +14,7 @@ from bot.lib.enums import tacotypes
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.birthdays import BirthdaysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.tacobot import TacoBot
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -22,7 +23,7 @@ from discord.ext.commands import Context
 class Birthday(TacobotCog):
     group = app_commands.Group(name="birthday", description="Birthday commands")
 
-    def __init__(self, bot):
+    def __init__(self, bot: TacoBot):
         super().__init__(bot, "birthday")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
