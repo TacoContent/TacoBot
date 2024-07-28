@@ -19,7 +19,7 @@ from bot.ui.GameRewardView import GameRewardView
 from discord.ext import commands
 
 
-class GameKeys(TacobotCog):
+class GameKeysCog(TacobotCog):
     def __init__(self, bot: TacoBot):
         super().__init__(bot, "game_keys")
         _method = inspect.stack()[0][3]
@@ -34,7 +34,7 @@ class GameKeys(TacobotCog):
         self.tracking_db = TrackingDatabase()
         self.steam_api = SteamApiClient()
 
-        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Initialized settings: {self.SETTINGS_SECTION}")
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -43,6 +43,11 @@ class GameKeys(TacobotCog):
         try:
             guild_id = self.bot.guilds[0].id
 
+            self.log.debug(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"GameKeysCog is ready and loading cog settings: {self.SETTINGS_SECTION}",
+            )
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings.get("enabled", False):
                 return
@@ -803,4 +808,4 @@ class GameKeys(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(GameKeys(bot))
+    await bot.add_cog(GameKeysCog(bot))
