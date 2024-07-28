@@ -185,7 +185,6 @@ class GameKeys(TacobotCog):
                 return
 
             default_cost = cog_settings.get("cost", 500)
-            print(game_data)
             cost = game_data.get("cost", default_cost)
 
             if cost <= 0:
@@ -268,15 +267,7 @@ class GameKeys(TacobotCog):
             ]
             timeout = 60 * 60 * 24
 
-            claim_view = GameRewardView(
-                ctx,
-                game_id=str(game_data["id"]),
-                claim_callback=self._claim_offer_callback,
-                timeout_callback=self._claim_timeout_callback,
-                cost=cost,
-                timeout=timeout,
-                external_link=info_url,
-            )
+            claim_view = self._create_claim_view(ctx, game_data, cost, timeout, info_url)
 
             notify_role_ids = cog_settings.get("notify_role_ids", [])
             notify_message = ""
@@ -307,6 +298,17 @@ class GameKeys(TacobotCog):
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
+    def _create_claim_view(self, ctx, game_data, cost, timeout, info_url):
+        return GameRewardView(
+                ctx,
+                game_id=str(game_data["_id"]),
+                claim_callback=self._claim_offer_callback,
+                timeout_callback=self._claim_timeout_callback,
+                cost=cost,
+                timeout=timeout,
+                external_link=info_url,
+            )
+
     async def _claim_offer_callback(self, interaction: discord.Interaction):
         _method = inspect.stack()[0][3]
         if interaction.response.is_done():
@@ -336,9 +338,28 @@ class GameKeys(TacobotCog):
             self.log.debug(
                 guild_id, f"{self._module}.{self._class}.{_method}", f"Claiming offer {interaction.data['custom_id']}"
             )
-            await self._claim_offer(ctx, interaction.data["custom_id"])
-            await self._create_offer(ctx)
-
+            claim_result = await self._claim_offer(ctx, interaction.data["custom_id"])
+            # if false, the claim failed and we need to re-enable the view
+            if not claim_result:
+                # create a claim view
+                game_data = self.gamekeys_db.get_game_key_data(interaction.data["custom_id"])
+                if game_data:
+                    cog_settings = self.get_cog_settings(guild_id)
+                    default_cost =cog_settings.get("cost", 500)
+                    cost = game_data.get("cost", default_cost)
+                    timeout = 60 * 60 * 24
+                    info_url = game_data.get("info_link", "UNAVAILABLE")
+                    claim_view = self._create_claim_view(ctx, game_data, cost, timeout, info_url)
+                    await interaction.message.edit(view=claim_view)
+                else:
+                    self.log.warn(
+                        guild_id,
+                        f"{self._module}.{self._class}.{_method}",
+                        f"Game data not found for game id '{interaction.data['custom_id']}'",
+                    )
+                    await self._create_offer(ctx)
+            else:
+                await self._create_offer(ctx)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
@@ -433,6 +454,33 @@ class GameKeys(TacobotCog):
                     guild_id, f"{self._module}.{self._class}.{_method}", f"game_keys is disabled for guild {guild_id}"
                 )
                 return False
+
+
+            # limit: {
+            #   time_period: 3600,
+            #   count: 1
+            # },
+            # get limits from settings
+            limits = cog_settings.get("limit", {"time_period": 3600, "count": 0})
+            claim_limit = limits.get("count", 0)
+            claim_time_period = limits.get("time_period", 3600)
+            if claim_limit >= 1:
+                # get the number of redemptions in time_period
+                claim_count = self.gamekeys_db.get_claimed_key_count_in_timeframe(
+                    guild_id, ctx.author.id, claim_time_period
+                )
+                if claim_count >= claim_limit:
+                    await ctx.channel.send(
+                        self.settings.get_string(
+                            guild_id,
+                            "game_key_claim_limit_reached_message",
+                            user=ctx.author.mention,
+                            claim_limit=claim_limit,
+                            time_frame=utils.human_time_duration(claim_time_period),
+                        ),
+                        delete_after=10,
+                    )
+                    return False
 
             reward_channel_id = cog_settings.get("reward_channel_id", "0")
             reward_channel: typing.Union[discord.TextChannel, None] = await self.discord_helper.get_or_fetch_channel(

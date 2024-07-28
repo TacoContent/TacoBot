@@ -47,7 +47,7 @@ class GameRewardView(discord.ui.View):
         self.claim_button_callback = claim_callback
         self.claim_button.callback = self.claim_callback
         self.add_item(self.claim_button)
-        if external_link is not None:
+        if external_link is not None and external_link.lower() != "unavailable":
             self.add_item(ExternalUrlButton(label="Open in Browser", url=external_link))
         pass
 

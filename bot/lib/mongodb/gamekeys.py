@@ -171,3 +171,23 @@ class GameKeysDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+
+    def get_claimed_key_count_in_timeframe(self, guild_id: int, user_id: int, timeframe: int) -> int:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            result = self.connection.game_keys.count_documents(
+                {"guild_id": str(guild_id), "redeemed_by": str(user_id), "redeemed_timestamp": {"$gt": timestamp - timeframe}}
+            )
+            return result
+        except Exception as ex:
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return 0
