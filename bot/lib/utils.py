@@ -8,23 +8,26 @@ import typing
 import discord
 import requests
 
+
 def human_time_duration(seconds: int) -> str:
     TIME_DURATION_UNITS = (
-        ('week', 60*60*24*7),
-        ('day', 60*60*24),
-        ('hour', 60*60),
-        ('min', 60),
+        ('year', 60 * 60 * 24 * 365),
+        ('week', 60 * 60 * 24 * 7),
+        ('day', 60 * 60 * 24),
+        ('hour', 60 * 60),
+        ('minute', 60),
         ('second', 1)
     )
     if seconds == 0:
         return 'now'
 
     parts = []
-    for unit, durration in TIME_DURATION_UNITS:
-        amount, seconds = divmod(seconds, durration)
+    for unit, duration in TIME_DURATION_UNITS:
+        amount, seconds = divmod(seconds, duration)
         if amount > 0:
             parts.append(f"{amount} {unit}{'s' if amount > 1 else ''}")
     return ', '.join(parts)
+
 
 def dict_get(dictionary, key, default_value=None) -> typing.Any:
     if key in dictionary.keys():

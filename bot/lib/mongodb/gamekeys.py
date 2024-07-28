@@ -179,7 +179,11 @@ class GameKeysDatabase(Database):
                 self.open()
             timestamp = utils.to_timestamp(datetime.datetime.utcnow())
             result = self.connection.game_keys.count_documents(
-                {"guild_id": str(guild_id), "redeemed_by": str(user_id), "redeemed_timestamp": {"$gt": timestamp - timeframe}}
+                {
+                    "guild_id": str(guild_id),
+                    "redeemed_by": str(user_id),
+                    "redeemed_timestamp": {"$gt": timestamp - timeframe}
+                }
             )
             return result
         except Exception as ex:

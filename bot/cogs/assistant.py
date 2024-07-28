@@ -36,7 +36,7 @@ class Assistant(TacobotCog):
         try:
             if not self.bot or not self.bot.user:
                 return
-            
+
             if not message.content.startswith(self.bot.user.mention):
                 return
 

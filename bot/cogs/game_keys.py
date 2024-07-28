@@ -300,14 +300,14 @@ class GameKeys(TacobotCog):
 
     def _create_claim_view(self, ctx, game_data, cost, timeout, info_url):
         return GameRewardView(
-                ctx,
-                game_id=str(game_data["_id"]),
-                claim_callback=self._claim_offer_callback,
-                timeout_callback=self._claim_timeout_callback,
-                cost=cost,
-                timeout=timeout,
-                external_link=info_url,
-            )
+            ctx,
+            game_id=str(game_data["_id"]),
+            claim_callback=self._claim_offer_callback,
+            timeout_callback=self._claim_timeout_callback,
+            cost=cost,
+            timeout=timeout,
+            external_link=info_url,
+        )
 
     async def _claim_offer_callback(self, interaction: discord.Interaction):
         _method = inspect.stack()[0][3]
@@ -345,7 +345,7 @@ class GameKeys(TacobotCog):
                 game_data = self.gamekeys_db.get_game_key_data(interaction.data["custom_id"])
                 if game_data:
                     cog_settings = self.get_cog_settings(guild_id)
-                    default_cost =cog_settings.get("cost", 500)
+                    default_cost  = cog_settings.get("cost", 500)
                     cost = game_data.get("cost", default_cost)
                     timeout = 60 * 60 * 24
                     info_url = game_data.get("info_link", "UNAVAILABLE")
@@ -454,7 +454,6 @@ class GameKeys(TacobotCog):
                     guild_id, f"{self._module}.{self._class}.{_method}", f"game_keys is disabled for guild {guild_id}"
                 )
                 return False
-
 
             # limit: {
             #   time_period: 3600,
