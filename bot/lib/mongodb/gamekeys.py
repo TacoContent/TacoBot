@@ -182,8 +182,8 @@ class GameKeysDatabase(Database):
                 {
                     "guild_id": str(guild_id),
                     "redeemed_by": str(user_id),
-                    "redeemed_timestamp": {"$gt": timestamp - timeframe}
-                }
+                    "redeemed_timestamp": {"$gt": timestamp - timeframe},
+                    }
             )
             return result
         except Exception as ex:

@@ -16,7 +16,7 @@ def human_time_duration(seconds: int) -> str:
         ('day', 60 * 60 * 24),
         ('hour', 60 * 60),
         ('minute', 60),
-        ('second', 1)
+        ('second', 1),
     )
     if seconds == 0:
         return 'now'

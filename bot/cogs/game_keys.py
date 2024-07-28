@@ -345,7 +345,7 @@ class GameKeys(TacobotCog):
                 game_data = self.gamekeys_db.get_game_key_data(interaction.data["custom_id"])
                 if game_data:
                     cog_settings = self.get_cog_settings(guild_id)
-                    default_cost  = cog_settings.get("cost", 500)
+                    default_cost = cog_settings.get("cost", 500)
                     cost = game_data.get("cost", default_cost)
                     timeout = 60 * 60 * 24
                     info_url = game_data.get("info_link", "UNAVAILABLE")
