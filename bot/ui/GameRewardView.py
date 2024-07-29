@@ -52,7 +52,9 @@ class GameRewardView(discord.ui.View):
 
         self.reset_button = discord.ui.Button(
             custom_id="reset",
-            label=self.settings.get_string(ctx.guild.id, "game_key_reset_button", tacos=reset_cost, tacos_word=tacos_word),
+            label=self.settings.get_string(
+                ctx.guild.id, "game_key_reset_button", tacos=reset_cost, tacos_word=tacos_word
+            ),
             style=discord.ButtonStyle.blurple,
         )
         self.reset_button.callback = self.reset_callback

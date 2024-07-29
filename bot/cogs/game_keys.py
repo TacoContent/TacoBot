@@ -274,12 +274,7 @@ class GameKeysCog(TacobotCog):
             timeout = 60 * 60 * 24
 
             claim_view = self._create_claim_view(
-                ctx=ctx,
-                game_data=game_data,
-                cost=cost,
-                reset_cost=reset_cost,
-                timeout=timeout,
-                info_url=info_url,
+                ctx=ctx, game_data=game_data, cost=cost, reset_cost=reset_cost, timeout=timeout, info_url=info_url
             )
 
             notify_role_ids = cog_settings.get("notify_role_ids", [])
