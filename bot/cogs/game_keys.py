@@ -393,6 +393,16 @@ class GameKeysCog(TacobotCog):
             # charge the user the reset cost
             self.tacos_db.remove_tacos(guild_id, ctx.author.id, reset_cost)
 
+            await self.discord_helper.tacos_log(
+                guild_id=guild_id,
+                fromMember=ctx.author,
+                toMember=self.bot.user,
+                count=reset_cost * -1,
+                reason="New game key offer",
+                type=tacotypes.TacoTypes.GAME_KEY_RESET,
+                total_tacos=taco_count - reset_cost,
+            )
+
             self.tacos_db.track_tacos_log(
                 guildId=guild_id,
                 fromUserId=ctx.author.id,
