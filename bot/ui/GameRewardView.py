@@ -16,7 +16,9 @@ class GameRewardView(discord.ui.View):
         game_id: str,
         claim_callback: typing.Optional[typing.Callable] = None,
         timeout_callback: typing.Optional[typing.Callable] = None,
+        reset_callback: typing.Optional[typing.Callable] = None,
         cost: int = 500,
+        reset_cost: int = 100,
         timeout: int = 60 * 60 * 24,
         external_link: typing.Optional[str] = None,
     ):
@@ -47,9 +49,32 @@ class GameRewardView(discord.ui.View):
         self.claim_button_callback = claim_callback
         self.claim_button.callback = self.claim_callback
         self.add_item(self.claim_button)
+
+        self.reset_button = discord.ui.Button(
+            custom_id="reset",
+            label=self.settings.get_string(ctx.guild.id, "game_key_reset_button", tacos=reset_cost, tacos_word=tacos_word),
+            style=discord.ButtonStyle.blurple,
+        )
+        self.reset_button.callback = self.reset_callback
+        self.reset_button_callback = reset_callback
+        self.add_item(self.reset_button)
+
         if external_link is not None and external_link.lower() != "unavailable":
             self.add_item(ExternalUrlButton(label="Open in Browser", url=external_link))
         pass
+
+    async def reset_callback(self, interaction: discord.Interaction) -> None:
+        _method = inspect.stack()[0][3]
+        # check if the user who clicked the button is the same as the user who started the command
+        if interaction.user.id != self.ctx.author.id:
+            return
+
+        self.log.debug(self.ctx.guild.id, f"{self._module}.{_method}", "reset_callback")
+        # await interaction.response.defer()
+        if self.reset_button_callback is not None:
+            self.log.debug(self.ctx.guild.id, f"{self._module}.{_method}", "trigger reset_button_callback")
+            await self.reset_button_callback(interaction)
+            self.stop()
 
     async def claim_callback(self, interaction: discord.Interaction) -> None:
         _method = inspect.stack()[0][3]

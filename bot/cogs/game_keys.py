@@ -191,6 +191,7 @@ class GameKeysCog(TacobotCog):
 
             default_cost = cog_settings.get("cost", 500)
             cost = game_data.get("cost", default_cost)
+            reset_cost = cog_settings.get("reset_cost", 100)
 
             if cost <= 0:
                 self.log.warn(
@@ -272,7 +273,14 @@ class GameKeysCog(TacobotCog):
             ]
             timeout = 60 * 60 * 24
 
-            claim_view = self._create_claim_view(ctx, game_data, cost, timeout, info_url)
+            claim_view = self._create_claim_view(
+                ctx=ctx,
+                game_data=game_data,
+                cost=cost,
+                reset_cost=reset_cost,
+                timeout=timeout,
+                info_url=info_url,
+            )
 
             notify_role_ids = cog_settings.get("notify_role_ids", [])
             notify_message = ""
@@ -303,16 +311,100 @@ class GameKeysCog(TacobotCog):
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
-    def _create_claim_view(self, ctx, game_data, cost, timeout, info_url):
+    def _create_claim_view(self, ctx, game_data, cost, reset_cost, timeout, info_url):
         return GameRewardView(
             ctx,
             game_id=str(game_data["id"]),
             claim_callback=self._claim_offer_callback,
             timeout_callback=self._claim_timeout_callback,
+            reset_callback=self._reset_offer_callback,
             cost=cost,
+            reset_cost=reset_cost,
             timeout=timeout,
             external_link=info_url,
         )
+
+    async def _reset_offer_callback(self, interaction: discord.Interaction):
+        _method = inspect.stack()[0][3]
+        if interaction.response.is_done():
+            self.log.debug(
+                interaction.guild.id,
+                f"{self._module}.{self._class}.{_method}",
+                "Reset offer cancelled because it was already responded to.",
+            )
+            return
+
+        cog_settings = self.get_cog_settings(interaction.guild.id)
+        guild_id = interaction.guild.id if interaction.guild else 0
+        ctx = None
+
+        if interaction.data["custom_id"] != "reset":
+            self.log.warn(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"Reset offer callback called with invalid custom_id: {interaction.data['custom_id']}",
+            )
+            return
+
+        try:
+            await interaction.response.defer()
+        except Exception:
+            # if the defer fails, we can't respond to the interaction
+            return
+
+        reset_cost = cog_settings.get("reset_cost", 100)
+        reset_tacos_word = self.settings.get_string(guild_id, "taco_plural")
+        if reset_cost == 1:
+            reset_tacos_word = self.settings.get_string(guild_id, "taco_singular")
+
+        try:
+            # get the total taco count for the user
+            taco_count = self.tacos_db.get_tacos_count(guild_id, interaction.user.id) or 0
+            tacos_word = self.settings.get_string(guild_id, "taco_plural")
+            if taco_count == 1:
+                tacos_word = self.settings.get_string(guild_id, "taco_singular")
+
+            if taco_count < reset_cost:
+                await interaction.followup.send(
+                    self.settings.get_string(
+                        guild_id,
+                        "game_key_reset_not_enough_tacos_message",
+                        user=interaction.user.mention,
+                        cost=reset_cost,
+                        cost_tacos_word=reset_tacos_word,
+                        taco_count=taco_count,
+                        tacos_word=tacos_word,
+                    ),
+                    ephemeral=True,
+                )
+                return
+            # create context from interaction
+            ctx = self.discord_helper.create_context(
+                self.bot,
+                author=interaction.user,
+                channel=interaction.channel,
+                message=interaction.message,
+                guild=interaction.guild,
+                custom_id=interaction.data["custom_id"],
+            )
+            self.log.debug(
+                guild_id, f"{self._module}.{self._class}.{_method}", f"Claiming offer {interaction.data['custom_id']}"
+            )
+            # charge the user the reset cost
+            self.tacos_db.remove_tacos(guild_id, ctx.author.id, reset_cost)
+
+            self.tacos_db.track_tacos_log(
+                guildId=guild_id,
+                fromUserId=ctx.author.id,
+                toUserId=self.bot.user.id,
+                count=reset_cost * -1,
+                reason="New game key offer",
+                type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.GAME_KEY_RESET),
+            )
+            # create a new offer
+            await self._create_offer(ctx)
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     async def _claim_offer_callback(self, interaction: discord.Interaction):
         _method = inspect.stack()[0][3]
@@ -352,9 +444,17 @@ class GameKeysCog(TacobotCog):
                     cog_settings = self.get_cog_settings(guild_id)
                     default_cost = cog_settings.get("cost", 500)
                     cost = game_data.get("cost", default_cost)
+                    reset_cost = cog_settings.get("reset_cost", 100)
                     timeout = 60 * 60 * 24
                     info_url = game_data.get("info_link", "UNAVAILABLE")
-                    claim_view = self._create_claim_view(ctx, game_data, cost, timeout, info_url)
+                    claim_view = self._create_claim_view(
+                        ctx=ctx,
+                        game_data=game_data,
+                        cost=cost,
+                        reset_cost=reset_cost,
+                        timeout=timeout,
+                        info_url=info_url,
+                    )
                     await interaction.message.edit(view=claim_view)
                 else:
                     self.log.warn(
@@ -779,6 +879,10 @@ class GameKeysCog(TacobotCog):
                 return
 
             game_id = interaction.data["custom_id"]
+
+            if game_id == "reset":
+                await self._reset_offer_callback(interaction)
+                return
 
             if not game_id:
                 self.log.debug(

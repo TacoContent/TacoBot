@@ -36,6 +36,7 @@ class TacoTypes(Enum):
     POST_INTRODUCTION = 28
     APPROVE_INTRODUCTION = 29
     GAME_DONATE_REDEEM = 30
+    GAME_KEY_RESET = 31
 
     TWITCH_BOT_INVITE = 1000  # Invite @OurTacoBot to your Twitch channel
     TWITCH_RAID = 1001
