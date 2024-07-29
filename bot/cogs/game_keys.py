@@ -409,9 +409,7 @@ class GameKeysCog(TacobotCog):
             )
 
             self.tracking_db.track_system_action(
-                guild_id=guild_id,
-                action=SystemActions.GAME_KEY_RESET,
-                data={"user_id": str(ctx.author.id)},
+                guild_id=guild_id, action=SystemActions.GAME_KEY_RESET, data={"user_id": str(ctx.author.id)}
             )
             # create a new offer
             await self._create_offer(ctx)
