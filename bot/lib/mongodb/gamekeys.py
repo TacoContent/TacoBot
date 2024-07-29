@@ -132,7 +132,14 @@ class GameKeysDatabase(Database):
                 self.open()
             result = self.connection.game_keys.find_one({"_id": ObjectId(game_key_id)})
             if result:
-                return result
+                return {
+                    "id": result["_id"],
+                    "title": result["title"],
+                    "platform": result["type"],
+                    "info_url": result["info_link"] or "",
+                    "offered_by": result["user_owner"],
+                    "cost": result["cost"],
+                }
             return None
         except Exception as ex:
             self.log(

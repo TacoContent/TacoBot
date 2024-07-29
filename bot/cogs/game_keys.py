@@ -306,7 +306,7 @@ class GameKeysCog(TacobotCog):
     def _create_claim_view(self, ctx, game_data, cost, timeout, info_url):
         return GameRewardView(
             ctx,
-            game_id=str(game_data["_id"]),
+            game_id=str(game_data["id"]),
             claim_callback=self._claim_offer_callback,
             timeout_callback=self._claim_timeout_callback,
             cost=cost,
