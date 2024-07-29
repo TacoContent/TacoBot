@@ -9,6 +9,7 @@ import discord
 from bot.lib import discordhelper, utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
+from bot.lib.enums.system_actions import SystemActions
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.gamekeys import GameKeysDatabase
 from bot.lib.mongodb.tacos import TacosDatabase
@@ -406,6 +407,12 @@ class GameKeysCog(TacobotCog):
                 reason="New game key offer",
                 type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.GAME_KEY_RESET),
             )
+
+            self.tracking_db.track_system_action(
+                guild_id=guild_id,
+                action=SystemActions.GAME_KEY_RESET
+                data={"user_id": str(ctx.author.id)},
+            )
             # create a new offer
             await self._create_offer(ctx)
         except Exception as e:
@@ -470,6 +477,12 @@ class GameKeysCog(TacobotCog):
                     await self._create_offer(ctx)
             else:
                 await self._create_offer(ctx)
+
+            self.tracking_db.track_system_action(
+                guild_id=guild_id,
+                action=SystemActions.GAME_KEY_CLAIM,
+                data={"user_id": str(ctx.author.id), "game_key_id": interaction.data["custom_id"]},
+            )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 

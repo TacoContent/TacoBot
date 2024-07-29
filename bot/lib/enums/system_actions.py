@@ -22,3 +22,6 @@ class SystemActions(Enum):
     AUTOMOD_ACTION = 13
 
     USER_INVITE = 14
+
+    GAME_KEY_RESET = 15
+    GAME_KEY_CLAIM = 16
