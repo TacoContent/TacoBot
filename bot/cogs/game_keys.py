@@ -765,7 +765,9 @@ class GameKeysCog(TacobotCog):
                 type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.GAME_REDEEM),
             )
             # get the user that offered the game key
-            offer_user = await self.discord_helper.get_or_fetch_user(int(game_data.get("user_owner", str(self.bot.user.id))))
+            offer_user = await self.discord_helper.get_or_fetch_user(
+                int(game_data.get("user_owner", str(self.bot.user.id)))
+            )
             if offer_user:
                 await self.discord_helper.taco_give_user(
                     guildId=guild_id,

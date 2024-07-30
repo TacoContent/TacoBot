@@ -144,7 +144,6 @@ class GameKeysDatabase(Database):
                     "key": result["key"],
                     "redeemed_by": result["redeemed_by"],
                     "redeemed_timestamp": result["redeemed_timestamp"],
-
                 }
             print(f"Game key not found: {game_key_id}")
             return None
@@ -170,7 +169,7 @@ class GameKeysDatabase(Database):
                     "platform": result["type"],
                     "info_url": result["info_link"] or "",
                     "offered_by": result["user_owner"],
-                    "cost": result["cost"]
+                    "cost": result["cost"],
                 }
             print(f"Game key not found: {game_key_id}")
             return None
