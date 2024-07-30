@@ -631,7 +631,9 @@ class GameKeysCog(TacobotCog):
                 return False
 
             # get the game data from the offer game_key_id
-            game_data = self.gamekeys_db.get_game_key_data(str(offer["game_key_id"]))
+            game_data = self.gamekeys_db.get_game_key_offer_data(
+                guild_id=guild_id, game_key_id=str(offer["game_key_id"])
+            )
             if not game_data:
                 self.log.warn(
                     guild_id,
@@ -652,8 +654,8 @@ class GameKeysCog(TacobotCog):
                 tacos_word = self.settings.get_string(guild_id, "taco_plural")
 
             # does the user have enough tacos?
-            taco_count: int = self.tacos_db.get_tacos_count(guild_id, ctx.author.id)
-            if taco_count < cost:
+            taco_count: typing.Optional[int] = self.tacos_db.get_tacos_count(guild_id, ctx.author.id)
+            if taco_count and taco_count < cost:
                 await ctx.channel.send(
                     self.settings.get_string(
                         guild_id,
@@ -678,20 +680,20 @@ class GameKeysCog(TacobotCog):
             #         self.settings.get_string(guild_id, "game_key_offer_expired_message", user=ctx.author.mention), delete_after=10
             #     )
             #     return False
-
-            if game_data["redeemed_by"] is not None:
+            redeemed_by = game_data["redeemed_by"]
+            if redeemed_by is not None:
                 # already redeemed
                 self.log.debug(
                     guild_id,
                     f"{self._module}.{self._class}.{_method}",
-                    f"Game key {game_data['_id']} already redeemed by {game_data['redeemed_by']}",
+                    f"Game key {game_data['id']} already redeemed by {redeemed_by}",
                 )
                 await ctx.channel.send(
                     self.settings.get_string(guild_id, "game_key_already_redeemed_message", user=ctx.author.mention),
                     delete_after=10,
                 )
                 return False
-            if str(game_id) != str(offer["game_key_id"]) or str(game_data["_id"]) != str(game_id):
+            if str(game_id) != str(offer["game_key_id"]) or str(game_data["id"]) != str(game_id):
                 self.log.warn(
                     guild_id,
                     f"{self._module}.{self._class}.{_method}",
@@ -704,7 +706,7 @@ class GameKeysCog(TacobotCog):
                 self.log.warn(
                     guild_id,
                     f"{self._module}.{self._class}.{_method}",
-                    f"No game key found for game '{game_data['title']}' ({str(game_data['_id'])})",
+                    f"No game key found for game '{game_data['title']}' ({str(game_data['id'])})",
                 )
                 await ctx.channel.send(
                     self.settings.get_string(guild_id, "game_key_unable_to_claim_message", user=ctx.author.mention),
@@ -716,23 +718,24 @@ class GameKeysCog(TacobotCog):
                 # await self._create_offer(new_ctx)
                 raise Exception(f"No game key found for game '{game_data['title']}' ({str(game_data['_id'])})")
             try:
-                download_link = game_data["download_link"]
+                download_link = game_data.get("download_link", None)
                 if download_link:
                     download_link = f"\n\n{download_link}"
                 else:
                     download_link = ""
-                help_link = game_data["help_link"]
+                help_link = game_data.get("help_link", None)
                 if help_link:
                     help_link = f"\n\n{help_link}"
                 else:
                     help_link = ""
+
                 await ctx.author.send(
                     self.settings.get_string(
                         guild_id,
                         "game_key_claim_message",
-                        game=game_data["title"],
-                        game_key=game_data["key"],
-                        platform=game_data["type"],
+                        game=game_data.get("title", "UNKNOWN"),
+                        game_key=game_data.get("key", "UNKNOWN"),
+                        platform=game_data.get("platform", "UNKNOWN"),
                         download_link=download_link,
                         help_link=help_link,
                     )
@@ -762,13 +765,13 @@ class GameKeysCog(TacobotCog):
                 type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.GAME_REDEEM),
             )
             # get the user that offered the game key
-            offer_user = await self.discord_helper.get_or_fetch_user(int(game_data["user_owner"]))
+            offer_user = await self.discord_helper.get_or_fetch_user(int(game_data.get("user_owner", str(self.bot.user.id))))
             if offer_user:
                 await self.discord_helper.taco_give_user(
                     guildId=guild_id,
                     fromUser=self.bot.user,
                     toUser=offer_user,
-                    reason=f"Donated game key {game_data['title']} was claimed by {ctx.author.name}",
+                    reason=f"Donated game key {game_data.get('title', 'UNKNOWN')} was claimed by {ctx.author.name}",
                     taco_amount=cost,
                     give_type=tacotypes.TacoTypes.GAME_DONATE_REDEEM,
                 )

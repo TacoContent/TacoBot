@@ -125,6 +125,38 @@ class GameKeysDatabase(Database):
             )
             raise ex
 
+    def get_game_key_offer_data(self, guild_id: int, game_key_id: str) -> typing.Optional[dict]:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            result = self.connection.game_keys.find_one({"_id": ObjectId(game_key_id), "guild_id": str(guild_id)})
+            if result:
+                return {
+                    "id": str(result["_id"]),
+                    "title": result["title"],
+                    "platform": result["type"],
+                    "info_link": result["info_link"] or "",
+                    "help_link": result["help_link"] or "",
+                    "download_link": result["download_link"] or "",
+                    "offered_by": result["user_owner"],
+                    "cost": result["cost"],
+                    "key": result["key"],
+                    "redeemed_by": result["redeemed_by"],
+                    "redeemed_timestamp": result["redeemed_timestamp"],
+
+                }
+            print(f"Game key not found: {game_key_id}")
+            return None
+        except Exception as ex:
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+
     def get_game_key_data(self, game_key_id: str) -> typing.Optional[dict]:
         _method = inspect.stack()[0][3]
         try:
@@ -133,13 +165,14 @@ class GameKeysDatabase(Database):
             result = self.connection.game_keys.find_one({"_id": ObjectId(game_key_id)})
             if result:
                 return {
-                    "id": result["_id"],
+                    "id": str(result["_id"]),
                     "title": result["title"],
                     "platform": result["type"],
                     "info_url": result["info_link"] or "",
                     "offered_by": result["user_owner"],
-                    "cost": result["cost"],
+                    "cost": result["cost"]
                 }
+            print(f"Game key not found: {game_key_id}")
             return None
         except Exception as ex:
             self.log(
