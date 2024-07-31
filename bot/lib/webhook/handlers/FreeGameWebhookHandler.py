@@ -4,12 +4,14 @@ import json
 import os
 import traceback
 
+import requests
 from bot.lib import utils
 from bot.lib.enums.free_game_platforms import FreeGamePlatforms
 from bot.lib.enums.free_game_types import FreeGameTypes
 from bot.lib.mongodb.free_game_keys import FreeGameKeysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.webhook.handlers.BaseWebhookHandler import BaseWebhookHandler
+from bot.lib.UrlShortener import UrlShortener
 from bot.ui.ExternalUrlButtonView import ExternalUrlButtonView
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException, uri_mapping
@@ -25,6 +27,10 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
 
         self.tracking_db = TrackingDatabase()
         self.freegame_db = FreeGameKeysDatabase()
+
+        self.url_shortener = UrlShortener(
+            api_url=os.getenv("BITLY_API_URL", None), access_token=os.getenv("BITLY_ACCESS_TOKEN", None)
+        )
 
     @uri_mapping("/webhook/game", method="POST")
     async def game(self, request: HttpRequest) -> HttpResponse:
@@ -65,10 +71,41 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
                 end_date_msg = ""
 
             url = payload.get("open_giveaway_url", "")
+            open_in_app_url = ""
+            open_in_app_name = ""
+            # get final url
+            if url and url != "":
+                try:
+
+                    r = requests.get(url, allow_redirects=True, headers={"Referer": url, "User-Agent": "Tacobot/1.0"})
+                    url = r.url
+                    # get open_in_app url
+                    # discord does not allow custom url schemes to be opened in the app
+
+                    open_in_app_name, open_in_app_url = self._get_open_in_app_url(url)
+
+                    # this will get the steam short link if the url is a steam store link
+                    url = self._get_open_url(url)
+
+                    # disable the open_in_app_url for now
+                    open_in_app_name = ""
+                    open_in_app_url = ""
+
+                    # cannot use bitly to shorten non-http(s) urls :(
+                    # open_in_app_url = self.url_shortener.shorten(
+                    #     long_url=open_in_app_url
+                    # ).get("link", open_in_app_url)
+                    # url = self.url_shortener.shorten(long_url=url).get("link", url)
+                except Exception as e:
+                    self.log.warn(0, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
+                    open_in_app_url = ""
+                    open_in_app_name = ""
+
             offer_type = self._get_offer_type(payload.get("type", "OTHER"))
             offer_type_str = self._get_offer_type_str(offer_type)
             platform_list = self._get_offer_platform_list(payload.get("platforms", []))
-            open_browser = f"[Claim {offer_type_str} ↗️]({url})\n\n" if url else ""
+            open_browser = f"[Claim {offer_type_str} ↗️]({url})" if url else ""
+            open_app = f"        [Open in {open_in_app_name} ↗️]({open_in_app_url})\n\n" if open_in_app_url else ""
             desc = html.unescape(payload['description'])
             instructions = html.unescape(payload['instructions'])
 
@@ -80,17 +117,17 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
                 guild_id = guild.id
                 fg_settings = self.get_settings(guild_id, self.SETTINGS_SECTION)
 
+                if not fg_settings.get("enabled", False):
+                    self.log.debug(
+                        0, f"{self._module}.{self._class}.{_method}", f"Free Games is disabled for guild {guild_id}"
+                    )
+                    continue
+
                 if self.freegame_db.is_game_tracked(guild_id, game_id):
                     self.log.debug(
                         0,
                         f"{self._module}.{self._class}.{_method}",
                         f"Game '{game_id}' for guild '{guild_id}' is already being tracked",
-                    )
-                    continue
-
-                if not fg_settings.get("enabled", False):
-                    self.log.debug(
-                        0, f"{self._module}.{self._class}.{_method}", f"Free Games is disabled for guild {guild_id}"
                     )
                     continue
 
@@ -127,7 +164,7 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
                     message = await self.messaging.send_embed(
                         channel=channel,
                         title=f"{payload['title']} ↗️",
-                        message=f"{price}**FREE**{end_date_msg}\n\n{desc}\n\n{instructions}\n\n{open_browser}",
+                        message=f"{price}**FREE**{end_date_msg}\n\n{desc}\n\n{instructions}\n\n{open_browser}{open_app}",
                         url=url,
                         # the thumbnail causes the layout of the embed to be weird
                         # thumbnail=payload['thumbnail'],
@@ -149,6 +186,34 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
             return HttpResponse(500)
+
+    def _get_open_in_app_url(self, url: str) -> tuple[str, str]:
+        if not url or url == "":
+            return "", ""
+
+        if "store.steampowered.com" in url:
+            return "Steam", f"steam://openurl/{url}"
+
+        if "epicgames.com" in url:
+            # trim off the query string or anchors, and remove trailing slashes before getting the slug
+            slug = url.split("?")[0].split("#")[0].rstrip("/").split("/")[-1]
+            return "Epic Games Launcher", f"com.epicgames.launcher://store/p/{slug}"
+
+        return "", ""
+
+    def _get_open_url(self, url: str) -> str:
+        if not url or url == "":
+            return ""
+
+        if "store.steampowered.com" in url:
+            # remove the query string, anchors, and trailing slashes
+            url = url.split("?")[0].split("#")[0].rstrip("/")
+            # get app id from the url
+            app_id = url.split("/")[-2]
+            return f"https://s.team/a/{app_id}"
+
+        return url
+
 
     def _get_offer_type_str(self, offer_type: FreeGameTypes) -> str:
         if offer_type == FreeGameTypes.GAME:
