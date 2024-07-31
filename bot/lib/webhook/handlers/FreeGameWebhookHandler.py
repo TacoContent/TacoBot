@@ -10,8 +10,8 @@ from bot.lib.enums.free_game_platforms import FreeGamePlatforms
 from bot.lib.enums.free_game_types import FreeGameTypes
 from bot.lib.mongodb.free_game_keys import FreeGameKeysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
-from bot.lib.webhook.handlers.BaseWebhookHandler import BaseWebhookHandler
 from bot.lib.UrlShortener import UrlShortener
+from bot.lib.webhook.handlers.BaseWebhookHandler import BaseWebhookHandler
 from bot.ui.ExternalUrlButtonView import ExternalUrlButtonView
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException, uri_mapping
@@ -213,7 +213,6 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
             return f"https://s.team/a/{app_id}"
 
         return url
-
 
     def _get_offer_type_str(self, offer_type: FreeGameTypes) -> str:
         if offer_type == FreeGameTypes.GAME:
