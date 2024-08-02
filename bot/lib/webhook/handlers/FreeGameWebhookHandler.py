@@ -29,7 +29,7 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
         self.freegame_db = FreeGameKeysDatabase()
 
         self.url_shortener = UrlShortener(
-            api_url=os.getenv("BITLY_API_URL", None), access_token=os.getenv("BITLY_ACCESS_TOKEN", None)
+            api_url=os.getenv("SHORTENER_API_URL", None), access_token=os.getenv("SHORTENER_ACCESS_TOKEN", None)
         )
 
     @uri_mapping("/webhook/game", method="POST")
@@ -79,33 +79,42 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
 
                     r = requests.get(url, allow_redirects=True, headers={"Referer": url, "User-Agent": "Tacobot/1.0"})
                     url = r.url
+                    short_url = self.url_shortener.shorten(
+                        url=url
+                    ).get("url", url)
                     # get open_in_app url
                     # discord does not allow custom url schemes to be opened in the app
 
                     open_in_app_name, open_in_app_url = self._get_open_in_app_url(url)
 
                     # this will get the steam short link if the url is a steam store link
-                    url = self._get_open_url(url)
+                    # url = self._get_open_url(url)
 
                     # disable the open_in_app_url for now
-                    open_in_app_name = ""
-                    open_in_app_url = ""
+                    # open_in_app_name = ""
+                    # open_in_app_url = ""
 
                     # cannot use bitly to shorten non-http(s) urls :(
-                    # open_in_app_url = self.url_shortener.shorten(
-                    #     long_url=open_in_app_url
-                    # ).get("link", open_in_app_url)
+                    open_in_app_url = self.url_shortener.shorten(
+                        url=open_in_app_url
+                    ).get("url", open_in_app_url)
                     # url = self.url_shortener.shorten(long_url=url).get("link", url)
                 except Exception as e:
                     self.log.warn(0, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
                     open_in_app_url = ""
                     open_in_app_name = ""
 
+            # print(f"open_in_app_url: {open_in_app_url}")
+            # print(f"open_in_app_name: {open_in_app_name}")
+            # print(f"url: {url}")
+
+            # return HttpResponse(200, headers, json.dumps(payload, indent=4).encode())
+
             offer_type = self._get_offer_type(payload.get("type", "OTHER"))
             offer_type_str = self._get_offer_type_str(offer_type)
             platform_list = self._get_offer_platform_list(payload.get("platforms", []))
-            open_browser = f"[Claim {offer_type_str} ↗️]({url})" if url else ""
-            open_app = f"        [Open in {open_in_app_name} ↗️]({open_in_app_url})\n\n" if open_in_app_url else ""
+            open_browser = f"[Claim {offer_type_str} ↗️]({short_url})" if short_url else ""
+            open_app = f" / [Open in {open_in_app_name} ↗️]({open_in_app_url})\n\n" if open_in_app_url else ""
             desc = html.unescape(payload['description'])
             instructions = html.unescape(payload['instructions'])
 
@@ -205,12 +214,12 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
         if not url or url == "":
             return ""
 
-        if "store.steampowered.com" in url:
-            # remove the query string, anchors, and trailing slashes
-            url = url.split("?")[0].split("#")[0].rstrip("/")
-            # get app id from the url
-            app_id = url.split("/")[-2]
-            return f"https://s.team/a/{app_id}"
+        # if "store.steampowered.com" in url:
+        #     # remove the query string, anchors, and trailing slashes
+        #     url = url.split("?")[0].split("#")[0].rstrip("/")
+        #     # get app id from the url
+        #     app_id = url.split("/")[-2]
+        #     return f"https://s.team/a/{app_id}"
 
         return url
 
