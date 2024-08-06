@@ -231,11 +231,11 @@ class GameKeysCog(TacobotCog):
                             price_overview = data.get("price_overview", {})
                             if price_overview.get("initial_formatted", "") != "":
                                 formatted_price = price_overview.get(
-                                    "final_formatted", price_overview.get('final_formatted', 'UNKNOWN')
+                                    "final_formatted", price_overview.get('final_formatted', ' ')
                                 )
                             else:
-                                formatted_price = price_overview.get('final_formatted', 'UNKNOWN')
-                            if formatted_price and formatted_price != 'UNKNOWN' and formatted_price != '':
+                                formatted_price = price_overview.get('final_formatted', ' ')
+                            if formatted_price and formatted_price != ' ' and formatted_price != '':
                                 formatted_price = f"~~{formatted_price}~~ "
                             description = data.get("short_description", "")
                             steam_info = f"\n\n{description}"
