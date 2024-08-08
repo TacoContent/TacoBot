@@ -175,7 +175,7 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
                         channel=channel,
                         title=f"{payload['title']} ↗️",
                         message=f"{price}**FREE**{end_date_msg}\n\n{desc}\n\n{instructions}\n\n{open_browser}{open_app}",
-                        url=url,
+                        url=short_url,
                         # the thumbnail causes the layout of the embed to be weird
                         # thumbnail=payload['thumbnail'],
                         image=payload['image'],
