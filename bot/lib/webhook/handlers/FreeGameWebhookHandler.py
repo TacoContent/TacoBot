@@ -71,6 +71,7 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
                 end_date_msg = ""
 
             url = payload.get("open_giveaway_url", "")
+            short_url = url
             open_in_app_url = ""
             open_in_app_name = ""
             # get final url
