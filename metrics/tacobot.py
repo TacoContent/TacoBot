@@ -1,5 +1,6 @@
 import inspect
 import os
+import socket
 import time
 import traceback
 
@@ -357,6 +358,13 @@ class TacoBotMetrics:
             labelnames=["state"],
         )
 
+        self.healthy = Gauge(
+            namespace=self.namespace,
+            name=f"healthy",
+            documentation="The health of the bot",
+            labelnames=[],
+        )
+
         self.build_info = Gauge(
             namespace=self.namespace,
             name=f"build_info",
@@ -378,6 +386,25 @@ class TacoBotMetrics:
         self.build_info.labels(version=ver, ref=ref, build_date=build_date, sha=sha).set(1)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Metrics initialized")
 
+    def check_health(self):
+        """Check the health of the bot"""
+        _method = inspect.stack()[1][3]
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                try:
+                    s.settimeout(10)
+                    s.connect(("127.0.0.1", 40404))
+                    data = s.recv(1024)
+                except (ConnectionError, socket.timeout, ConnectionRefusedError) as ex:
+                    data = b""
+
+            self.healthy.set(1 if data == b"healthy" else 0)
+            self.errors.labels(source="healthy").set(0)
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            self.healthy.set(0)
+            self.errors.labels(source="healthy").set(1)
+
     def run_metrics_loop(self):
         """Metrics fetching loop"""
         _method = inspect.stack()[1][3]
@@ -398,6 +425,9 @@ class TacoBotMetrics:
     def fetch(self):
         """Fetch metrics from the database"""
         _method = inspect.stack()[1][3]
+
+        self.check_health()
+
         known_guilds = []
         try:
             q_guilds = self.db.get_guilds() or []

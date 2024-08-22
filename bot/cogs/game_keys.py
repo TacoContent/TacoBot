@@ -778,6 +778,12 @@ class GameKeysCog(TacobotCog):
                     taco_amount=cost,
                     give_type=tacotypes.TacoTypes.GAME_DONATE_REDEEM,
                 )
+            else:
+                self.log.warn(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Offer user not found for game '{game_data['title']}' (game_id: {game_id}) (user_owner: {game_data['user_owner']})",
+                )
 
             # log that the offer was claimed
             if log_channel:
