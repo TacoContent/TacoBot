@@ -697,7 +697,7 @@ class GameKeysCog(TacobotCog):
                 self.log.warn(
                     guild_id,
                     f"{self._module}.{self._class}.{_method}",
-                    f"Requested game_id ('{str(game_id)}') with offer game_key_id ('{str(offer['game_key_id'])}') does not match offer game id '{str(game_data['_id'])}'",
+                    f"Requested game_id ('{str(game_id)}') with offer game_key_id ('{str(offer['game_key_id'])}') does not match offer game id '{str(game_data['id'])}'",
                 )
                 return False
 
@@ -716,7 +716,7 @@ class GameKeysCog(TacobotCog):
                 # bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
                 # new_ctx = self.discord_helper.create_context(self.bot, author=ctx.bot.user, guild=ctx.guild, channel=reward_channel, message=None, invoked_subcommand=None)
                 # await self._create_offer(new_ctx)
-                raise Exception(f"No game key found for game '{game_data['title']}' ({str(game_data['_id'])})")
+                raise Exception(f"No game key found for game '{game_data['title']}' ({str(game_data['id'])})")
             try:
                 download_link = game_data.get("download_link", None)
                 if download_link:
@@ -765,9 +765,9 @@ class GameKeysCog(TacobotCog):
                 type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.GAME_REDEEM),
             )
             # get the user that offered the game key
-            # int(game_data.get("user_owner", str(self.bot.user.id)))
+            # int(game_data.get("offered_by", str(self.bot.user.id)))
             offer_user = await self.discord_helper.get_or_fetch_user(
-                int(game_data['user_owner']) if 'user_owner' in game_data else self.bot.user.id
+                int(game_data['offered_by']) if 'offered_by' in game_data else self.bot.user.id
             )
             if offer_user and offer_user.id != self.bot.user.id:
                 await self.discord_helper.taco_give_user(
@@ -782,7 +782,7 @@ class GameKeysCog(TacobotCog):
                 self.log.warn(
                     guild_id,
                     f"{self._module}.{self._class}.{_method}",
-                    f"Offer user not found for game '{game_data['title']}' (game_id: {game_id}) (user_owner: {game_data['user_owner']})",
+                    f"Offer user not found for game '{game_data['title']}' (game_id: {game_id}) (offered_by: {game_data['offered_by']})",
                 )
 
             # log that the offer was claimed
