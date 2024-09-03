@@ -80,9 +80,7 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
 
                     r = requests.get(url, allow_redirects=True, headers={"Referer": url, "User-Agent": "Tacobot/1.0"})
                     url = r.url
-                    short_url = self.url_shortener.shorten(
-                        url=url
-                    ).get("url", url)
+                    short_url = self.url_shortener.shorten(url=url).get("url", url)
                     # get open_in_app url
                     # discord does not allow custom url schemes to be opened in the app
 
@@ -96,9 +94,7 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
                     # open_in_app_url = ""
 
                     # cannot use bitly to shorten non-http(s) urls :(
-                    open_in_app_url = self.url_shortener.shorten(
-                        url=open_in_app_url
-                    ).get("url", open_in_app_url)
+                    open_in_app_url = self.url_shortener.shorten(url=open_in_app_url).get("url", open_in_app_url)
                     # url = self.url_shortener.shorten(long_url=url).get("link", url)
                 except Exception as e:
                     self.log.warn(0, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
@@ -205,12 +201,15 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
         # https://apps.microsoft.com/detail/9p83lmp6gdpk?hl=en-us&gl=US
         # ms-windows-store://pdp?hl=en-us&gl=us&productid=9p83lmp6gdpk&mode=mini&pos=0%2C-1083%2C1920%2C1032&referrer=storeforweb
 
-        if ".microsoft.com" in url :
+        if ".microsoft.com" in url:
             # get the product id from the url. it is the value after the last slash and before the query string
             # make sure to remove the query string and anchors before getting the slug
             # if there is a / before the query string marker, remove it
             slug = url.replace("/?", "?").split("/")[-1].split("?")[0]
-            return "Microsoft Store", f"ms-windows-store://pdp?productid={slug}&mode=mini&hl=en-us&gl=US&referrer=storeforweb"
+            return (
+                "Microsoft Store",
+                f"ms-windows-store://pdp?productid={slug}&mode=mini&hl=en-us&gl=US&referrer=storeforweb",
+            )
 
         if "store.steampowered.com" in url:
             return "Steam", f"steam://openurl/{url}"
