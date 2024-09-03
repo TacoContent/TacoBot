@@ -201,6 +201,17 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
         if not url or url == "":
             return "", ""
 
+        # https://www.microsoft.com/en-us/p/hero-of-the-kingdom/9pgp1snbrc4j
+        # https://apps.microsoft.com/detail/9p83lmp6gdpk?hl=en-us&gl=US
+        # ms-windows-store://pdp?hl=en-us&gl=us&productid=9p83lmp6gdpk&mode=mini&pos=0%2C-1083%2C1920%2C1032&referrer=storeforweb
+
+        if ".microsoft.com" in url :
+            # get the product id from the url. it is the value after the last slash and before the query string
+            # make sure to remove the query string and anchors before getting the slug
+            # if there is a / before the query string marker, remove it
+            slug = url.replace("/?", "?").split("/")[-1].split("?")[0]
+            return "Microsoft Store", f"ms-windows-store://pdp?productid={slug}&mode=mini&hl=en-us&gl=US&referrer=storeforweb"
+
         if "store.steampowered.com" in url:
             return "Steam", f"steam://openurl/{url}"
 
