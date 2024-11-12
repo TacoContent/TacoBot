@@ -1,0 +1,470 @@
+openapi: 3.0.1
+info:
+  title: TacoBot
+  description: ""
+  version: 1.0.1
+servers:
+  - url: '{host}' # NODE RED
+    variables:
+      host:
+        enum:
+          - 'https://nodered.bit13.local'
+          - 'http://localhost:8931'
+          - 'http://lb.bit13.local:8931'
+        default: 'nodered.bit13.local'
+paths:
+  '/tacobot/minecraft/whitelist.json':
+    get:
+      tags:
+        - minecraft
+      summary: Get the whitelist JSON
+      description: |
+        Gets JSON formatted whitelist configuration
+      parameters: []
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/MinecrafWhiteListUser"
+
+  '/tacobot/minecraft/ops.json':
+    get:
+      tags:
+        - minecraft
+      summary: Get the ops list JSON
+      description: |
+        Gets JSON formatted OPS configuration
+      parameters: []
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/MinecrafOpUser"
+
+  '/tacobot/minecraft/uuid/{username}':
+    get:
+      tags:
+        - minecraft
+      summary: Get userid from username
+      description: |
+        Gets JSON payload of userid from username
+      parameters:
+        - name: username
+          description: Minecraft username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/MinecraftUser'
+        "500":
+          description: Server Error
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+
+  '/tacobot/minecraft/status':
+    get:
+      tags:
+        - minecraft
+      summary: Get the server status information
+      description: |
+        Gets information on the server.
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MinecraftServerStatus"
+
+  '/tacobot/minecraft/version':
+    get:
+      tags:
+        - minecraft
+      summary: Get the minecraft server version information
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/TacoMinecraftServerSettings"
+
+  '/tacobot/minecraft/player/{uuid}/stats':
+    parameters:
+      - name: uuid
+        description: The users minecraft uuid
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - minecraft
+      responses:
+        "200":
+          description: Successful operation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/MinecraftUserStatsPayload"
+
+  '/tacobot/minecraft/player/{username}/stats':
+    parameters:
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - minecraft
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MinecraftDiscordUserStatsInfo"
+
+  '/tacobot/minecraft/player/{username}/stats/{world}':
+    parameters:
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: world
+        in: path
+        required: true
+        schema:
+          "$ref": "#/components/schemas/TacoMinecraftWorlds"
+    get:
+      tags:
+        - minecraft
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MinecraftDiscordUserStatsInfo"
+
+  '/tacobot/minecraft/world':
+    get:
+      tags:
+        - minecraft
+      summary: Get the active minecraft server world information
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/TacoMinecraftWorldInfo"
+    post:
+      tags:
+        - minecraft
+      summary: Set the active minecraft server world
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                guild_id:
+                  type: string
+                  description: Discord Guild ID
+                world:
+                  "$ref": "#/components/schemas/TacoMinecraftWorlds"
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/TacoMinecraftWorldInfo"
+
+  '/tacobot/minecraft/worlds':
+    get:
+      tags:
+        - minecraft
+      summary: Get the active minecraft server world information
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/TacoMinecraftWorldInfo"
+
+  '/tacobot/guild/{guild}/invite/{channel}':
+    post:
+      security:
+        - X-AUTH-TOKEN: []
+      tags:
+        - twitch
+      summary: Invite Bot to twitch channel
+      description: ''
+      parameters:
+        - name: guild
+          in: path
+          description: The GUILD ID
+          required: true
+          schema:
+            type: string
+            format: ''
+        - name: channel
+          in: path
+          description: The name of the twitch channel
+          required: true
+          schema:
+            type: string
+            format: ''
+
+      responses:
+        "200":
+          description: Successful operation
+
+
+  '/webhook/game':
+    post:
+      security:
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - webhook
+      summary: Submit Free Game Webhook
+      description: ''
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/TacoWebhookGamePayload"
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/TacoWebhookGamePayload"
+components:
+  schemas:
+    ErrorStatusCodePayload:
+      type: object
+      properties:
+        error:
+          type: integer
+    TacoWebhookGamePayload:
+      type: object
+      properties:
+        game_id:
+          type: integer
+        end_date:
+          type: number
+        worth:
+          type: string
+        open_giveaway_url:
+          type: string
+        title:
+          type: string
+        thumbnail:
+          type: string
+        image:
+          type: string
+        description:
+          type: string
+        instructions:
+          type: string
+        published_date:
+          type: number
+        type:
+          type: string
+        platforms:
+          type: array
+          items:
+            type: string
+        formatted_published_date:
+          type: string
+        formatted_end_date:
+          type: string
+    TacoMinecraftWorlds:
+      enum:
+        - taco_atm8
+        - taco_atm9
+        - taco_atm10
+    TacoMinecraftWorldInfo:
+      type: object
+      properties:
+        world:
+          "$ref": "#/components/schemas/TacoMinecraftWorlds"
+        name:
+          type: string
+        active:
+          description: Indicates if the world is the active world
+          type: boolean
+        guild_id:
+          description: Discord Guild ID
+          type: string
+    MinecraftUserStatsPayload:
+      type: object
+      properties:
+        stats:
+          "$ref": "#/components/schemas/MinecraftUserStats"
+        world_name:
+          "$ref": "#/components/schemas/TacoMinecraftWorlds"
+    MinecraftUserStats:
+      type: object
+      properties:
+        minecraft:crafted:
+          type: object
+          properties:
+            minecraft:smooth_stone:
+              type: integer
+        minecraft:broken:
+          properties:
+            minecraft:stone_pickaxe:
+              type: integer
+
+    MinecraftDiscordUserStatsInfo:
+      type: object
+      properties:
+        world:
+          "$ref": "#/components/schemas/TacoMinecraftWorlds"
+        uuid:
+          type: string
+        username:
+          type: string
+        user_id:
+          type: string
+          description: Discord User ID
+        modified:
+          type: number
+        stats:
+          "$ref": "#/components/schemas/MinecraftUserStats"
+    MinecraftServerSettings:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        output_channel:
+          type: string
+        server:
+          type: string
+        forge_version:
+          type: string
+        version:
+          type: string
+        help:
+          type: string
+        mods:
+          type: array
+          items:
+            "$ref": "#/components/schemas/TacoMinecraftServerSettingsMod"
+    TacoMinecraftServerSettingsMod:
+      type: object
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+    TacoMinecraftServerSettings:
+      type: object
+      properties:
+        guild_id:
+          type: string
+        name:
+          type: string
+        settings:
+          "$ref": "#/components/schemas/MinecraftServerSettings"
+        timestamp:
+          type: number
+    MinecraftServerStatus:
+      type: object
+      properties:
+        success:
+          type: boolean
+        host:
+          type: string
+        status:
+          enum:
+            - online
+            - offline
+          type: string
+        title:
+          type: string
+          description: The server description message
+        online:
+          type: boolean
+          description: Indicates if the server is online
+        players:
+          type: object
+          properties:
+            max:
+              description: Maximum number of players that can connect
+              type: integer
+            online:
+              description: Total number of players currently connected
+              type: integer
+        version:
+          type: string
+          description: The server version or 'OFFLINE'.
+    MinecraftUser:
+      type: object
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+    MinecrafOpUser:
+      type: object
+      properties:
+        uuid:
+          type: string
+        username:
+          type: string
+        level:
+          type: integer
+        bypassPlayerLimit:
+          type: boolean
+    MinecrafWhiteListUser:
+      type: object
+      properties:
+        uuid:
+          type: string
+        username:
+          type: string
+      required:
+        - uuid
+        - username
+  securitySchemes:
+    X-AUTH-TOKEN:
+      type: apiKey
+      description: Authentication Token passed as header
+      name: X-AUTH-TOKEN
+      in: header
+    X-TACOBOT-TOKEN:
+      type: apiKey
+      description: Authentication Token passed as header
+      name: X-TACOBOT-TOKEN
+      in: header
+security:
+  - X-AUTH-TOKEN: []
+  - X-TACOBOT-TOKEN: []

@@ -216,6 +216,8 @@ class GameKeysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
+
+            # this returns a count for people that have not redeemed recently. 
             timestamp = utils.to_timestamp(datetime.datetime.utcnow())
             result = self.connection.game_keys.count_documents(
                 {
