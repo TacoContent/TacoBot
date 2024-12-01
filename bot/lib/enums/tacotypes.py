@@ -63,11 +63,9 @@ class TacoTypes(Enum):
     def __str__(self):
         return TacoTypes.get_string_from_taco_type(self)
 
-
     @staticmethod
     def str_to_enum(type: str):
         return TacoTypes.get_from_string(type)
-
 
     @staticmethod
     def get_from_string(taco_type_string):
@@ -165,11 +163,9 @@ class TacoTypes(Enum):
         else:
             return TacoTypes.CUSTOM
 
-
     @staticmethod
     def get_db_type_from_taco_type(taco_type):
         return taco_type.name.upper()
-
 
     @staticmethod
     def get_string_from_taco_type(taco_type):

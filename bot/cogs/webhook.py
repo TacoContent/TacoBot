@@ -75,7 +75,10 @@ class WebhookCog(TacobotCog):
             handlers = [
                 f"bot.lib.http.handlers.{os.path.splitext(f)[0]}"
                 for f in os.listdir("bot/lib/http/handlers")
-                if f.endswith(".py") and not f.startswith("_") and not f.startswith("BaseWebhookHandler") and not f.startswith("BaseHttpHandler")
+                if f.endswith(".py")
+                and not f.startswith("_")
+                and not f.startswith("BaseWebhookHandler")
+                and not f.startswith("BaseHttpHandler")
             ]
 
             for handler in handlers:

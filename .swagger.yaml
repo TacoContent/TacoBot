@@ -11,7 +11,7 @@ servers:
           - 'https://nodered.bit13.local'
           - 'http://localhost:8931'
           - 'http://lb.bit13.local:8931'
-        default: 'nodered.bit13.local'
+        default: 'http://lb.bit13.local:8931'
 paths:
   '/tacobot/minecraft/whitelist.json':
     get:
@@ -105,15 +105,33 @@ paths:
               schema:
                 "$ref": "#/components/schemas/TacoMinecraftServerSettings"
 
-  '/tacobot/minecraft/player/{uuid}/stats':
-    parameters:
-      - name: uuid
-        description: The users minecraft uuid
-        in: path
-        required: true
-        schema:
-          type: string
+  '/tacobot/minecraft/player/{user}/stats':
+    get:
+      parameters:
+        - name: user
+          description: The users minecraft username
+          in: path
+          required: true
+          schema:
+            type: string
+
+      tags:
+        - minecraft
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MinecraftDiscordUserStatsInfo"
     post:
+      parameters:
+        - name: user
+          description: The users minecraft uuid
+          in: path
+          required: true
+          schema:
+            type: string
       tags:
         - minecraft
       responses:
@@ -132,16 +150,7 @@ paths:
         required: true
         schema:
           type: string
-    get:
-      tags:
-        - minecraft
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/MinecraftDiscordUserStatsInfo"
+
 
   '/tacobot/minecraft/player/{username}/stats/{world}':
     parameters:
@@ -245,6 +254,16 @@ paths:
           description: Successful operation
 
   '/webhook/minecraft/tacos/{action}':
+    parameters:
+      - name: action
+        in: path
+        required: true
+        description: What action was taken
+        schema:
+          type: string
+          enum:
+            - login
+            - custom
     post:
       security:
         - X-TACOBOT-TOKEN: []

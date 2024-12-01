@@ -1,6 +1,5 @@
 import os
 
-
 from bot.lib import discordhelper, logger, settings
 from bot.lib.enums import loglevel
 from bot.lib.messaging import Messaging

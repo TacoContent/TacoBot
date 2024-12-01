@@ -21,7 +21,9 @@ class ApiHttpHandler(BaseHttpHandler):
 
         self.tracking_db = TrackingDatabase()
 
-    def _nodered_request(self, endpoint: str, method: str, headers: typing.Optional[dict] = None, data: typing.Optional[dict] = None) -> requests.Response:
+    def _nodered_request(
+        self, endpoint: str, method: str, headers: typing.Optional[dict] = None, data: typing.Optional[dict] = None
+    ) -> requests.Response:
         try:
             url = f"{self.NODERED_URL}{endpoint}"
             if method == "GET":
