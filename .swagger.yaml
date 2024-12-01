@@ -244,6 +244,45 @@ paths:
         "200":
           description: Successful operation
 
+  '/webhook/minecraft/tacos/{action}':
+    post:
+      security:
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - webhook
+      summary: Minecraft Webhook to give tacos to a user
+      description: ''
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/TacoWebhookMinecraftTacosPayload"
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/TacoWebhookMinecraftTacosResponsePayload"
+    delete:
+      security:
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - webhook
+      summary: Minecraft Webhook to remove tacos from a user
+      description: ''
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/TacoWebhookMinecraftTacosPayload"
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/TacoWebhookMinecraftTacosResponsePayload"
 
   '/webhook/game':
     post:
@@ -272,6 +311,33 @@ components:
       properties:
         error:
           type: integer
+    TacoWebhookMinecraftTacosResponsePayload:
+      type: object
+      properties:
+        success:
+          type: boolean
+        payload:
+          "$ref": "#/components/schemas/TacoWebhookMinecraftTacosPayload"
+        total_tacos:
+          type: integer
+    TacoWebhookMinecraftTacosPayload:
+      type: object
+      properties:
+        guild_id:
+          type: string
+        from_user:
+          type: string
+        to_user_id:
+          type: string
+        amount:
+          type: integer
+        reason:
+          type: string
+        type:
+          type: string
+          enum:
+            - login
+            - custom
     TacoWebhookGamePayload:
       type: object
       properties:

@@ -65,7 +65,7 @@ class WebhookCog(TacobotCog):
     def load_webhook_handlers(self):
         _method = inspect.stack()[0][3]
         try:
-            if not os.path.exists("bot/lib/webhook/handlers"):
+            if not os.path.exists("bot/lib/http/handlers"):
                 self.log.error(0, f"{self._module}.{self._class}.{_method}", "No handlers found")
                 return
             if not self.http_server:
@@ -73,9 +73,9 @@ class WebhookCog(TacobotCog):
                 return
 
             handlers = [
-                f"bot.lib.webhook.handlers.{os.path.splitext(f)[0]}"
-                for f in os.listdir("bot/lib/webhook/handlers")
-                if f.endswith(".py") and not f.startswith("_") and not f.startswith("BaseWebhookHandler")
+                f"bot.lib.http.handlers.{os.path.splitext(f)[0]}"
+                for f in os.listdir("bot/lib/http/handlers")
+                if f.endswith(".py") and not f.startswith("_") and not f.startswith("BaseWebhookHandler") and not f.startswith("BaseHttpHandler")
             ]
 
             for handler in handlers:

@@ -4,10 +4,10 @@ import os
 import traceback
 
 from bot.lib.enums.tacotypes import TacoTypes
+from bot.lib.http.handlers.BaseWebhookHandler import BaseWebhookHandler
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.users_utils import UsersUtils
-from bot.lib.webhook.handlers.BaseWebhookHandler import BaseWebhookHandler
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException, uri_mapping
 
@@ -23,6 +23,10 @@ class TacosWebhookHandler(BaseWebhookHandler):
         self.tracking_db = TrackingDatabase()
         self.tacos_db = TacosDatabase()
         self.users_utils = UsersUtils()
+
+    @uri_mapping("/webhook/minecraft/tacos", method="POST")
+    async def minecraft_give_tacos(self, request: HttpRequest) -> HttpResponse:
+        return await self.give_tacos(request)
 
     @uri_mapping("/webhook/tacos", method="POST")
     async def give_tacos(self, request: HttpRequest) -> HttpResponse:
@@ -44,7 +48,9 @@ class TacosWebhookHandler(BaseWebhookHandler):
             if not payload.get("guild_id", None):
                 raise HttpResponseException(404, headers, b'{ "error": "No guild_id found in the payload" }')
             if not payload.get("to_user", None):
-                raise HttpResponseException(404, headers, b'{ "error": "No to_user found in the payload" }')
+                if not payload.get("to_user_id", None):
+                    raise HttpResponseException(404, headers, b'{ "error": "No to_user found in the payload" }')
+
             if not payload.get("from_user", None):
                 raise HttpResponseException(404, headers, b'{ "error": "No from_user found in the payload" }')
 
@@ -62,7 +68,14 @@ class TacosWebhookHandler(BaseWebhookHandler):
 
             max_give_timespan = cog_settings.get("api_max_give_timespan", 86400)
 
-            to_twitch_user = str(payload.get("to_user", None))
+            # if to_user_id is not in the payload, look it up from the to_user
+            to_twitch_user = None
+            to_user_id = 0
+            if not payload.get("to_user_id", None):
+                to_twitch_user = str(payload.get("to_user", None))
+            else:
+                to_user_id = int(payload.get("to_user_id", 0))
+
             from_twitch_user = str(payload.get("from_user", None))
             amount = int(payload.get("amount", 0))
             reason_msg = str(payload.get("reason", ""))
@@ -71,10 +84,11 @@ class TacosWebhookHandler(BaseWebhookHandler):
 
             limit_immune = False
             # look up the to_user and from_user and get their discord user ids
-            to_user_id = self.users_utils.twitch_user_to_discord_user(to_twitch_user)
+            if to_twitch_user is not None and to_twitch_user != "" and to_user_id == 0:
+                to_user_id = self.users_utils.twitch_user_to_discord_user(to_twitch_user)
             from_user_id = self.users_utils.twitch_user_to_discord_user(from_twitch_user)
 
-            if not to_user_id:
+            if not to_user_id or to_user_id == 0:
                 err_msg = f'{{"error": "No discord user found for to_user ({to_twitch_user}) when looking up in user table." }}'
                 raise HttpResponseException(404, headers, bytearray(err_msg, "utf-8"))
             if not from_user_id:

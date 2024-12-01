@@ -1,0 +1,1784 @@
+[
+  {
+    "id": "46f750dd0c884772",
+    "type": "tab",
+    "label": "OurTacoBot",
+    "disabled": false,
+    "info": ""
+  },
+  {
+    "id": "a1086a4ec9e7afb7",
+    "type": "split",
+    "z": "46f750dd0c884772",
+    "name": "",
+    "splt": "\\n",
+    "spltType": "str",
+    "arraySplt": 1,
+    "arraySpltType": "len",
+    "stream": false,
+    "addname": "",
+    "x": 930,
+    "y": 20,
+    "wires": [
+      [
+        "872337111ee46aba"
+      ]
+    ]
+  },
+  {
+    "id": "55cbd0c68d78eca6",
+    "type": "debug",
+    "z": "46f750dd0c884772",
+    "name": "",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "false",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 2070,
+    "y": 240,
+    "wires": []
+  },
+  {
+    "id": "1234a5552197c0f7",
+    "type": "tmi-event-connected",
+    "z": "46f750dd0c884772",
+    "config": "",
+    "name": "",
+    "x": 100,
+    "y": 20,
+    "wires": [
+      [
+        "b7fe330fc6fde8b4"
+      ]
+    ]
+  },
+  {
+    "id": "872337111ee46aba",
+    "type": "function",
+    "z": "46f750dd0c884772",
+    "name": "format data",
+    "func": "msg.payload = {\n    channel: msg.payload.channel\n};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1070,
+    "y": 20,
+    "wires": [
+      [
+        "8d07fe0812b084a8"
+      ]
+    ]
+  },
+  {
+    "id": "8d07fe0812b084a8",
+    "type": "tmi-command-join",
+    "z": "46f750dd0c884772",
+    "config": "",
+    "name": "",
+    "x": 1210,
+    "y": 20,
+    "wires": [
+      [],
+      []
+    ]
+  },
+  {
+    "id": "46229fbb87d2ac60",
+    "type": "tmi-event-hosted",
+    "z": "46f750dd0c884772",
+    "config": "",
+    "name": "",
+    "x": 90,
+    "y": 140,
+    "wires": [
+      [
+        "a736b6720f4061a3"
+      ]
+    ]
+  },
+  {
+    "id": "a49a3465e499a7bb",
+    "type": "tmi-event-raided",
+    "z": "46f750dd0c884772",
+    "config": "",
+    "name": "",
+    "x": 90,
+    "y": 240,
+    "wires": [
+      [
+        "35e9fdb59d20e549"
+      ]
+    ]
+  },
+  {
+    "id": "dfc1e527623c72e7",
+    "type": "tmi-event-cheer",
+    "z": "46f750dd0c884772",
+    "config": "",
+    "name": "",
+    "x": 90,
+    "y": 340,
+    "wires": [
+      [
+        "baf5258ea64c5e0b"
+      ]
+    ]
+  },
+  {
+    "id": "565c5f87b5816dcb",
+    "type": "tmi-event-subscription",
+    "z": "46f750dd0c884772",
+    "config": "",
+    "name": "",
+    "x": 110,
+    "y": 500,
+    "wires": [
+      [
+        "e6fd12deccdd2307"
+      ]
+    ]
+  },
+  {
+    "id": "e663ae9e85d5209d",
+    "type": "tmi-event-resub",
+    "z": "46f750dd0c884772",
+    "config": "",
+    "name": "",
+    "x": 90,
+    "y": 600,
+    "wires": [
+      [
+        "e6fd12deccdd2307"
+      ]
+    ]
+  },
+  {
+    "id": "d50a9ca967187113",
+    "type": "tmi-event-primepaidupgrade",
+    "z": "46f750dd0c884772",
+    "config": "",
+    "name": "",
+    "x": 130,
+    "y": 700,
+    "wires": [
+      [
+        "e6fd12deccdd2307"
+      ]
+    ]
+  },
+  {
+    "id": "3b1c7d52e3dbbe4d",
+    "type": "tmi-event-subgift",
+    "z": "46f750dd0c884772",
+    "config": "",
+    "name": "",
+    "x": 90,
+    "y": 800,
+    "wires": [
+      [
+        "e6fd12deccdd2307"
+      ]
+    ]
+  },
+  {
+    "id": "1eaf8485e3fb09da",
+    "type": "tmi-event-giftpaidupgrade",
+    "z": "46f750dd0c884772",
+    "config": "",
+    "name": "",
+    "x": 120,
+    "y": 900,
+    "wires": [
+      [
+        "e6fd12deccdd2307"
+      ]
+    ]
+  },
+  {
+    "id": "a736b6720f4061a3",
+    "type": "function",
+    "z": "46f750dd0c884772",
+    "name": "Create Action",
+    "func": "msg.payload = {\n    action: \"host\",\n    channel: msg.payload.channel.toLowerCase().replace(\"#\", \"\").replace(\"@\", \"\"),\n    user: msg.payload.username.toLowerCase().replace(\"#\", \"\").replace(\"@\", \"\"),\n    count: msg.payload.viewers\n};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 300,
+    "y": 140,
+    "wires": [
+      [
+        "9ca901b9e40d2f55"
+      ]
+    ]
+  },
+  {
+    "id": "ef440c7ac39f0f66",
+    "type": "tmi-command-say",
+    "z": "46f750dd0c884772",
+    "config": "",
+    "name": "",
+    "x": 1910,
+    "y": 280,
+    "wires": [
+      [],
+      []
+    ]
+  },
+  {
+    "id": "30b5f389976ccad1",
+    "type": "mongodb in",
+    "z": "46f750dd0c884772",
+    "mongodb": "cca90e0ad48e5446",
+    "name": "",
+    "collection": "",
+    "operation": "find",
+    "x": 800,
+    "y": 20,
+    "wires": [
+      [
+        "a1086a4ec9e7afb7"
+      ]
+    ]
+  },
+  {
+    "id": "b7a48f10569cc161",
+    "type": "function",
+    "z": "46f750dd0c884772",
+    "name": "Get Bot Channels Query",
+    "func": "msg.payload = {\n    \"guild_id\": \"935294040386183228\"\n};\nmsg.collection = \"twitch_channels\";\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 610,
+    "y": 20,
+    "wires": [
+      [
+        "30b5f389976ccad1"
+      ]
+    ]
+  },
+  {
+    "id": "35e9fdb59d20e549",
+    "type": "function",
+    "z": "46f750dd0c884772",
+    "name": "Create Action",
+    "func": "msg.payload = {\n    action: \"raid\",\n    channel: msg.payload.channel.toLowerCase().replace(\"#\", \"\").replace(\"@\", \"\"),\n    user: msg.payload.username.toLowerCase().replace(\"#\", \"\").replace(\"@\", \"\"),\n    count: msg.payload.viewers\n};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 300,
+    "y": 240,
+    "wires": [
+      [
+        "9ca901b9e40d2f55"
+      ]
+    ]
+  },
+  {
+    "id": "9ca901b9e40d2f55",
+    "type": "function",
+    "z": "46f750dd0c884772",
+    "name": "Build Command",
+    "func": "msg.payload = {\n    channel: \"ourtacobot\",\n    message: `!taco ${msg.payload.action} ${msg.payload.user} ${msg.payload.channel}`    \n}\n\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1100,
+    "y": 240,
+    "wires": [
+      [
+        "ffaaaab41b41a887",
+        "fbd7aed491c06946"
+      ]
+    ]
+  },
+  {
+    "id": "33fc045ae186aa3f",
+    "type": "inject",
+    "z": "46f750dd0c884772",
+    "name": "TEST RAID",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "test",
+        "v": "true",
+        "vt": "jsonata"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{\"channel\":\"guynamemike\",\"username\":\"darthminos\",\"viewers\":5}",
+    "payloadType": "json",
+    "x": 110,
+    "y": 280,
+    "wires": [
+      [
+        "35e9fdb59d20e549"
+      ]
+    ]
+  },
+  {
+    "id": "58fd5a01580c6e98",
+    "type": "inject",
+    "z": "46f750dd0c884772",
+    "name": "TEST HOST",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "test",
+        "v": "true",
+        "vt": "jsonata"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{\"channel\":\"guynamemike\",\"username\":\"darthminos\",\"viewers\":5}",
+    "payloadType": "json",
+    "x": 110,
+    "y": 180,
+    "wires": [
+      [
+        "a736b6720f4061a3"
+      ]
+    ]
+  },
+  {
+    "id": "e6fd12deccdd2307",
+    "type": "function",
+    "z": "46f750dd0c884772",
+    "name": "Create SUB Action",
+    "func": "msg.payload = {\n    action: \"subscribe\",\n    channel: msg.payload.channel.toLowerCase().replace(\"#\", \"\").replace(\"@\", \"\"),\n    user: msg.payload.username.toLowerCase().replace(\"#\", \"\").replace(\"@\", \"\")\n};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 870,
+    "y": 720,
+    "wires": [
+      [
+        "9ca901b9e40d2f55"
+      ]
+    ]
+  },
+  {
+    "id": "baf5258ea64c5e0b",
+    "type": "function",
+    "z": "46f750dd0c884772",
+    "name": "Format Payload",
+    "func": "msg.payload = {\n  channel: msg.payload.channel,\n  username: msg.payload.userstate['display-name'].toLowerCase().replace(\"@\", \"\").replace(\"#\", \"\"),\n  amount: msg.payload.userstate.bits || 1\n};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 400,
+    "wires": [
+      [
+        "e3f5771cb4dff405",
+        "5d5147cb9cd2625e"
+      ]
+    ]
+  },
+  {
+    "id": "40497c7d9234c271",
+    "type": "inject",
+    "z": "46f750dd0c884772",
+    "name": "TEST CHEER < 100",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "test",
+        "v": "true",
+        "vt": "jsonata"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{\"channel\":\"guynamemike\",\"userstate\":{\"display-name\":\"DarthMinos\",\"bits\":10}}",
+    "payloadType": "json",
+    "x": 130,
+    "y": 380,
+    "wires": [
+      [
+        "baf5258ea64c5e0b"
+      ]
+    ]
+  },
+  {
+    "id": "81cc523992ad7633",
+    "type": "inject",
+    "z": "46f750dd0c884772",
+    "name": "TEST SUBSCRIPTION",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "test",
+        "v": "true",
+        "vt": "jsonata"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{\"channel\":\"guynamemike\",\"username\":\"darthminos\"}",
+    "payloadType": "json",
+    "x": 140,
+    "y": 540,
+    "wires": [
+      [
+        "e6fd12deccdd2307"
+      ]
+    ]
+  },
+  {
+    "id": "5b60394a7ab365c7",
+    "type": "inject",
+    "z": "46f750dd0c884772",
+    "name": "TEST RESUB",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "test",
+        "v": "true",
+        "vt": "jsonata"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{\"channel\":\"guynamemike\",\"username\":\"darthminos\",\"streakMonths\":5}",
+    "payloadType": "json",
+    "x": 110,
+    "y": 640,
+    "wires": [
+      [
+        "e6fd12deccdd2307"
+      ]
+    ]
+  },
+  {
+    "id": "e9a418e2ded6fa78",
+    "type": "inject",
+    "z": "46f750dd0c884772",
+    "name": "TEST PRIME UPGRADE",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "test",
+        "v": "true",
+        "vt": "jsonata"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{\"channel\":\"guynamemike\",\"username\":\"darthminos\"}",
+    "payloadType": "json",
+    "x": 150,
+    "y": 740,
+    "wires": [
+      [
+        "e6fd12deccdd2307"
+      ]
+    ]
+  },
+  {
+    "id": "fcc3e0a062c5b788",
+    "type": "inject",
+    "z": "46f750dd0c884772",
+    "name": "TEST SUBGIFT",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "test",
+        "v": "true",
+        "vt": "jsonata"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{\"channel\":\"guynamemike\",\"username\":\"darthminos\"}",
+    "payloadType": "json",
+    "x": 120,
+    "y": 840,
+    "wires": [
+      [
+        "e6fd12deccdd2307"
+      ]
+    ]
+  },
+  {
+    "id": "c1f88b165672acaa",
+    "type": "inject",
+    "z": "46f750dd0c884772",
+    "name": "TEST GIFT UPGRADE",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "test",
+        "v": "true",
+        "vt": "jsonata"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{\"channel\":\"guynamemike\",\"username\":\"darthminos\"}",
+    "payloadType": "json",
+    "x": 140,
+    "y": 940,
+    "wires": [
+      [
+        "e6fd12deccdd2307"
+      ]
+    ]
+  },
+  {
+    "id": "ffaaaab41b41a887",
+    "type": "switch",
+    "z": "46f750dd0c884772",
+    "name": "Is TEST",
+    "property": "test",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "true",
+        "vt": "jsonata"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 1540,
+    "y": 240,
+    "wires": [
+      [
+        "55cbd0c68d78eca6"
+      ]
+    ]
+  },
+  {
+    "id": "fbd7aed491c06946",
+    "type": "switch",
+    "z": "46f750dd0c884772",
+    "name": "Is ACTION",
+    "property": "test",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "neq",
+        "v": "true",
+        "vt": "jsonata"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 1550,
+    "y": 280,
+    "wires": [
+      [
+        "f1bb52da63e95672",
+        "9bb875c9ece15ae0"
+      ]
+    ]
+  },
+  {
+    "id": "f1bb52da63e95672",
+    "type": "delay",
+    "z": "46f750dd0c884772",
+    "name": "",
+    "pauseType": "rate",
+    "timeout": "5",
+    "timeoutUnits": "seconds",
+    "rate": "10",
+    "nbRateUnits": "1",
+    "rateUnits": "second",
+    "randomFirst": "1",
+    "randomLast": "5",
+    "randomUnits": "seconds",
+    "drop": false,
+    "allowrate": false,
+    "outputs": 1,
+    "x": 1760,
+    "y": 280,
+    "wires": [
+      [
+        "ef440c7ac39f0f66"
+      ]
+    ]
+  },
+  {
+    "id": "27accf06d04c7f46",
+    "type": "inject",
+    "z": "46f750dd0c884772",
+    "name": "TEST CHEER 100+",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "test",
+        "v": "true",
+        "vt": "jsonata"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{\"channel\":\"guynamemike\",\"userstate\":{\"display-name\":\"DarthMinos\",\"bits\":500}}",
+    "payloadType": "json",
+    "x": 130,
+    "y": 420,
+    "wires": [
+      [
+        "baf5258ea64c5e0b"
+      ]
+    ]
+  },
+  {
+    "id": "5d5147cb9cd2625e",
+    "type": "switch",
+    "z": "46f750dd0c884772",
+    "name": "Bits >= 100",
+    "property": "payload.amount",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "gte",
+        "v": "100",
+        "vt": "num"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 590,
+    "y": 500,
+    "wires": [
+      [
+        "9220fc289d8ce45f"
+      ]
+    ]
+  },
+  {
+    "id": "e3f5771cb4dff405",
+    "type": "switch",
+    "z": "46f750dd0c884772",
+    "name": "Bits < 100",
+    "property": "payload.amount",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "lt",
+        "v": "100",
+        "vt": "num"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 580,
+    "y": 300,
+    "wires": [
+      [
+        "f08aafad55e13bcd"
+      ]
+    ]
+  },
+  {
+    "id": "f08aafad55e13bcd",
+    "type": "function",
+    "z": "46f750dd0c884772",
+    "name": "Log Message",
+    "func": "msg.payload = { message: \"Ignoring Cheer: Fewer than 100 bits.\" }\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 760,
+    "y": 300,
+    "wires": [
+      [
+        "2e48570e2813eab2"
+      ]
+    ]
+  },
+  {
+    "id": "2e48570e2813eab2",
+    "type": "debug",
+    "z": "46f750dd0c884772",
+    "name": "",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "false",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 750,
+    "y": 340,
+    "wires": []
+  },
+  {
+    "id": "617d105d8db46f55",
+    "type": "http in",
+    "z": "46f750dd0c884772",
+    "name": "Invite To Channel",
+    "url": "/tacobot/guild/:guild/invite/:channel",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 120,
+    "y": 1020,
+    "wires": [
+      [
+        "b0f8aee21e010557",
+        "8ca13e0f98f994e7"
+      ]
+    ]
+  },
+  {
+    "id": "6f8a5950184f2997",
+    "type": "function",
+    "z": "46f750dd0c884772",
+    "name": "Format Payload",
+    "func": "msg.payload = {\n    action: \"invite\",\n    channel: msg.req.params.channel,\n    guild: msg.req.params.guild\n}\nmsg.statusCode = 200;\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1120,
+    "y": 880,
+    "wires": [
+      [
+        "f961d1de47b5d3fa",
+        "5c632a06a9e4e5f7"
+      ]
+    ]
+  },
+  {
+    "id": "f961d1de47b5d3fa",
+    "type": "function",
+    "z": "46f750dd0c884772",
+    "name": "Build Command",
+    "func": "let _action = msg.payload.action;\nlet _channel = msg.payload.channel;\n\n\nmsg.payload = {\n    channel: \"ourtacobot\",\n    message: `!taco ${_action} ${_channel}`    \n}\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1360,
+    "y": 880,
+    "wires": [
+      [
+        "ffaaaab41b41a887",
+        "fbd7aed491c06946"
+      ]
+    ]
+  },
+  {
+    "id": "0e7bb96a38d4110c",
+    "type": "inject",
+    "z": "46f750dd0c884772",
+    "name": "TEST HTTP INVITE",
+    "props": [
+      {
+        "p": "req",
+        "v": "{\"params\":{\"channel\":\"darthminos\",\"guild\":\"935294040386183228\"},\"headers\":{\"X-AUTH-TOKEN\":\"935665133957566525\"}}",
+        "vt": "json"
+      },
+      {
+        "p": "test",
+        "v": "true",
+        "vt": "jsonata"
+      },
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{}",
+    "payloadType": "json",
+    "x": 130,
+    "y": 1060,
+    "wires": [
+      [
+        "b0f8aee21e010557",
+        "8ca13e0f98f994e7"
+      ]
+    ]
+  },
+  {
+    "id": "82d83ce5e40b7360",
+    "type": "inject",
+    "z": "46f750dd0c884772",
+    "name": "TEST HTTP INVITE [NOT AUTHORIZED]",
+    "props": [
+      {
+        "p": "req",
+        "v": "{\"params\":{\"channel\":\"darthminos\",\"guild\":\"935294040386183228\"},\"headers\":{\"X-AUTH-TOKEN\":\"262031734260891648\"}}",
+        "vt": "json"
+      },
+      {
+        "p": "test",
+        "v": "true",
+        "vt": "jsonata"
+      },
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{}",
+    "payloadType": "json",
+    "x": 200,
+    "y": 1100,
+    "wires": [
+      [
+        "b0f8aee21e010557",
+        "8ca13e0f98f994e7"
+      ]
+    ]
+  },
+  {
+    "id": "b0f8aee21e010557",
+    "type": "switch",
+    "z": "46f750dd0c884772",
+    "name": "Is Valid X-AUTH-TOKEN",
+    "property": "req.headers['X-AUTH-TOKEN']",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "935665133957566525",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 610,
+    "y": 920,
+    "wires": [
+      [
+        "43d5df8a1a51a83c",
+        "bd583d68bb5f6bc4"
+      ]
+    ]
+  },
+  {
+    "id": "43d5df8a1a51a83c",
+    "type": "switch",
+    "z": "46f750dd0c884772",
+    "name": "Is Valid Guild",
+    "property": "req.params.guild",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "935294040386183228",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 890,
+    "y": 880,
+    "wires": [
+      [
+        "6f8a5950184f2997"
+      ]
+    ]
+  },
+  {
+    "id": "8ca13e0f98f994e7",
+    "type": "switch",
+    "z": "46f750dd0c884772",
+    "name": "Is NOT Valid X-AUTH-TOKEN",
+    "property": "req.headers['X-AUTH-TOKEN']",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "neq",
+        "v": "935665133957566525",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 630,
+    "y": 1020,
+    "wires": [
+      [
+        "bfb71e71ad1ce767"
+      ]
+    ]
+  },
+  {
+    "id": "bd583d68bb5f6bc4",
+    "type": "switch",
+    "z": "46f750dd0c884772",
+    "name": "Is NOT Valid Guild",
+    "property": "req.params.guild",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "neq",
+        "v": "935294040386183228",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 910,
+    "y": 960,
+    "wires": [
+      [
+        "3e47e6fb49235e3e"
+      ]
+    ]
+  },
+  {
+    "id": "42ecfa1e206ce3ee",
+    "type": "inject",
+    "z": "46f750dd0c884772",
+    "name": "TEST HTTP INVITE [BAD GUILD]",
+    "props": [
+      {
+        "p": "req",
+        "v": "{\"params\":{\"channel\":\"darthminos\",\"guild\":\"262036511665422336\"},\"headers\":{\"X-AUTH-TOKEN\":\"935665133957566525\"}}",
+        "vt": "json"
+      },
+      {
+        "p": "test",
+        "v": "true",
+        "vt": "jsonata"
+      },
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "{}",
+    "payloadType": "json",
+    "x": 180,
+    "y": 1140,
+    "wires": [
+      [
+        "b0f8aee21e010557",
+        "8ca13e0f98f994e7"
+      ]
+    ]
+  },
+  {
+    "id": "3e47e6fb49235e3e",
+    "type": "function",
+    "z": "46f750dd0c884772",
+    "name": "Message Output",
+    "func": "msg.payload = {\n    message: \"Invalid GUILD ID\",\n    req: msg.req\n}\nmsg.req = msg.req;\nmsg.statusCode = 403;\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1120,
+    "y": 960,
+    "wires": [
+      [
+        "5c632a06a9e4e5f7"
+      ]
+    ]
+  },
+  {
+    "id": "bfb71e71ad1ce767",
+    "type": "function",
+    "z": "46f750dd0c884772",
+    "name": "Message Output",
+    "func": "msg.payload = {\n    message: \"Invalid X-AUTH-TOKEN\",\n    req: msg.req\n}\nmsg.statusCode = 403;\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1120,
+    "y": 1020,
+    "wires": [
+      [
+        "5c632a06a9e4e5f7"
+      ]
+    ]
+  },
+  {
+    "id": "5c632a06a9e4e5f7",
+    "type": "debug",
+    "z": "46f750dd0c884772",
+    "name": "",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "false",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1350,
+    "y": 1020,
+    "wires": []
+  },
+  {
+    "id": "d61d003709dca254",
+    "type": "http response",
+    "z": "46f750dd0c884772",
+    "name": "Return Status Code",
+    "statusCode": "",
+    "headers": {},
+    "x": 1950,
+    "y": 380,
+    "wires": []
+  },
+  {
+    "id": "9bb875c9ece15ae0",
+    "type": "switch",
+    "z": "46f750dd0c884772",
+    "name": "Check HTTP",
+    "property": "req",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "nnull"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 1750,
+    "y": 340,
+    "wires": [
+      [
+        "d61d003709dca254",
+        "8f3551e5552c98b7"
+      ]
+    ]
+  },
+  {
+    "id": "8f3551e5552c98b7",
+    "type": "function",
+    "z": "46f750dd0c884772",
+    "name": "",
+    "func": "msg.payload = {\n    message: \"IS HTTP REQUEST\"\n}\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1920,
+    "y": 340,
+    "wires": [
+      [
+        "55cbd0c68d78eca6"
+      ]
+    ]
+  },
+  {
+    "id": "b56dbe3bdf0e2cf4",
+    "type": "comment",
+    "z": "46f750dd0c884772",
+    "name": "Invite To Channel",
+    "info": "This is https://nodered.bit13.local/ request to trigger a command",
+    "x": 100,
+    "y": 980,
+    "wires": []
+  },
+  {
+    "id": "b7fe330fc6fde8b4",
+    "type": "trigger",
+    "z": "46f750dd0c884772",
+    "name": "",
+    "op1": "{\"message\":\"Trigger Join Channels\"}",
+    "op2": "0",
+    "op1type": "json",
+    "op2type": "str",
+    "duration": "-1",
+    "extend": false,
+    "overrideDelay": false,
+    "units": "hr",
+    "reset": "",
+    "bytopic": "all",
+    "topic": "topic",
+    "outputs": 1,
+    "x": 310,
+    "y": 20,
+    "wires": [
+      [
+        "b7a48f10569cc161",
+        "f3275be8e60ea5b0"
+      ]
+    ]
+  },
+  {
+    "id": "f3275be8e60ea5b0",
+    "type": "debug",
+    "z": "46f750dd0c884772",
+    "name": "Get Bot Channels",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 590,
+    "y": 60,
+    "wires": []
+  },
+  {
+    "id": "9220fc289d8ce45f",
+    "type": "function",
+    "z": "46f750dd0c884772",
+    "name": "Create Cheer Action",
+    "func": "msg.payload = {\n    action: \"cheer\",\n    channel: msg.payload.channel.toLowerCase().replace(\"#\", \"\").replace(\"@\", \"\"),\n    user: msg.payload.username.toLowerCase().replace(\"#\", \"\").replace(\"@\", \"\")\n};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 880,
+    "y": 500,
+    "wires": [
+      [
+        "9ca901b9e40d2f55"
+      ]
+    ]
+  },
+  {
+    "id": "befdf892ceb26d77",
+    "type": "function",
+    "z": "46f750dd0c884772",
+    "name": "Create Follow Action",
+    "func": "msg.payload = {\n    action: \"follow\",\n    channel: msg.payload.channel.toLowerCase().replace(\"#\", \"\").replace(\"@\", \"\"),\n    user: msg.payload.username.toLowerCase().replace(\"#\", \"\").replace(\"@\", \"\")\n};\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 880,
+    "y": 140,
+    "wires": [
+      [
+        "9ca901b9e40d2f55"
+      ]
+    ]
+  },
+  {
+    "id": "d90cd1d702a59016",
+    "type": "inject",
+    "z": "46f750dd0c884772",
+    "name": "PRODUCTION Manual Trigger",
+    "props": [
+      {
+        "p": "payload.post_url",
+        "v": "http://lb.bit13.local:8931/webhook/game",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 190,
+    "y": 1360,
+    "wires": [
+      [
+        "3db47b900e76d324",
+        "fc49ae6a618806e9"
+      ]
+    ]
+  },
+  {
+    "id": "a9e9560d17d2de50",
+    "type": "trigger",
+    "z": "46f750dd0c884772",
+    "name": "1 Hour Trigger",
+    "op1": "{\"post_url\":\"http://lb.bit13.local:8931/webhook/game\"}",
+    "op2": "0",
+    "op1type": "json",
+    "op2type": "str",
+    "duration": "-1",
+    "extend": false,
+    "overrideDelay": false,
+    "units": "hr",
+    "reset": "",
+    "bytopic": "all",
+    "topic": "topic",
+    "outputs": 1,
+    "x": 140,
+    "y": 1320,
+    "wires": [
+      [
+        "fc49ae6a618806e9",
+        "3db47b900e76d324"
+      ]
+    ]
+  },
+  {
+    "id": "0828258bd3f2db4a",
+    "type": "http request",
+    "z": "46f750dd0c884772",
+    "name": "gamerpower.com/api/giveaways",
+    "method": "GET",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://www.gamerpower.com/api/giveaways",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "headers": [],
+    "x": 770,
+    "y": 1320,
+    "wires": [
+      [
+        "8a34ae17a641b0cd",
+        "d667d2807768b6b3"
+      ]
+    ]
+  },
+  {
+    "id": "890ce78b0abea93e",
+    "type": "function",
+    "z": "46f750dd0c884772",
+    "name": "Format Entry",
+    "func": "function reformat_title(s) {\n    // var re = /(\\:$|\\sPack\\sSteam$|\\sSteam$|\\sfree\\s?|\\sfree\\sgift\\s?|\\s?\\(.*?\\)\\s?|\\s?gift\\s?$|\\s?giveaway\\s?|PackGiveaway|(gift|(in-)?game)? packs? keys?$|\\skey$|\\sfor FREE!$|:\\sFree\\s$|\\-Gift)/gi;\n    var re = /^free\\s|(\\s?\\(.*?\\)\\s?|steam|(for\\s|on\\s)?xbox(\\s(360|One|x\\|s))|giveaway)/gsi;\n    return s.replace(re, \"\").replace(\"  \", \" \");\n}\n\nvar ignore_ids = [\n    1531,\n    2409\n];\n\n\nvar entry = msg.payload;\nif (ignore_ids.includes(entry.id)) {\n    msg.payload = null;\n    return msg;\n}\nif (entry.status != \"Active\") {\n    // inactive. leave now\n    msg.payload = null;\n    return msg;\n}\n\nentry.title = reformat_title(reformat_title(entry.title)).trim();\nentry.game_id = entry.id;\ndelete entry.id;\ndelete entry.status;\ndelete entry.gamerpower_url;\ndelete entry.open_giveaway;\ndelete entry.users;\nentry.platforms = entry.platforms.split(\", \").map(item => item.trim());\nentry.formatted_published_date = entry.published_date;\nentry.published_date =  new Date(entry.published_date).getTime() / 1000;\nentry.formatted_end_date = entry.end_date;\n\nif (entry.end_date == \"N/A\") {\n    entry.end_date = null;\n} else {\n    entry.end_date = new Date(entry.end_date).getTime() / 1000;\n}\n\n// if (entry.end_date !== null && new Date(entry.end_date) < new Date()) {\n//     msg.payload = null;\n//     // skip expired\n//     return msg;\n// }\n\nmsg.payload = entry;\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 1210,
+    "y": 1320,
+    "wires": [
+      [
+        "8bcf83b488da7ad4"
+      ]
+    ]
+  },
+  {
+    "id": "41cefddbe52b21cc",
+    "type": "catch",
+    "z": "46f750dd0c884772",
+    "name": "",
+    "scope": [
+      "d90cd1d702a59016",
+      "a9e9560d17d2de50",
+      "0828258bd3f2db4a",
+      "890ce78b0abea93e",
+      "8a34ae17a641b0cd",
+      "5a908a7ec7ab8002",
+      "8bcf83b488da7ad4",
+      "b847438fe9da980a",
+      "c65243ee89b7ee76",
+      "8eddfae3478194d5",
+      "987d7c325cae46ce",
+      "34c3879e34032d05",
+      "ba5104ca0bf3ebbe",
+      "108c997bfb2362d2",
+      "76bd62e1f71697fc",
+      "834fce834f9f43fb",
+      "3db47b900e76d324",
+      "0b36be2dc5bd1912"
+    ],
+    "uncaught": false,
+    "x": 360,
+    "y": 1220,
+    "wires": [
+      [
+        "580a78a6ba9760a5"
+      ]
+    ]
+  },
+  {
+    "id": "8a34ae17a641b0cd",
+    "type": "split",
+    "z": "46f750dd0c884772",
+    "name": "Split / Process API",
+    "splt": "\\n",
+    "spltType": "str",
+    "arraySplt": 1,
+    "arraySpltType": "len",
+    "stream": false,
+    "addname": "",
+    "property": "payload",
+    "x": 1030,
+    "y": 1320,
+    "wires": [
+      [
+        "890ce78b0abea93e"
+      ]
+    ]
+  },
+  {
+    "id": "5a908a7ec7ab8002",
+    "type": "mongodb in",
+    "z": "46f750dd0c884772",
+    "mongodb": "cca90e0ad48e5446",
+    "name": "Find Game",
+    "collection": "free_game_keys",
+    "operation": "find",
+    "x": 710,
+    "y": 1360,
+    "wires": [
+      [
+        "b847438fe9da980a"
+      ]
+    ]
+  },
+  {
+    "id": "580a78a6ba9760a5",
+    "type": "debug",
+    "z": "46f750dd0c884772",
+    "name": "ERROR",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 520,
+    "y": 1220,
+    "wires": []
+  },
+  {
+    "id": "8bcf83b488da7ad4",
+    "type": "function",
+    "z": "46f750dd0c884772",
+    "name": "Find Query",
+    "func": "msg.collection = \"free_game_keys\";\nmsg.entry = msg.payload;\n\nif (msg.entry === null) { \n  msg.payload = {\n    \"game_id\": -1   \n  }\n  return msg;\n}\n\nmsg.payload = {\n    \"game_id\": msg.entry.game_id\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 550,
+    "y": 1360,
+    "wires": [
+      [
+        "5a908a7ec7ab8002"
+      ]
+    ]
+  },
+  {
+    "id": "b847438fe9da980a",
+    "type": "function",
+    "z": "46f750dd0c884772",
+    "name": "Ignore Items Found",
+    "func": "\nif (msg.entry === null) {\n    msg.payload = null;\n    return msg;\n}\n\nif ((msg.payload && msg.payload.length > 0)) {\n    msg.payload = null;\n    return msg;\n} else {\n    msg.payload = msg.entry;\n    return msg;\n}",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 890,
+    "y": 1360,
+    "wires": [
+      [
+        "c65243ee89b7ee76"
+      ]
+    ]
+  },
+  {
+    "id": "c65243ee89b7ee76",
+    "type": "switch",
+    "z": "46f750dd0c884772",
+    "name": "Filter Found Games",
+    "property": "payload",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "null",
+        "vt": "jsonata"
+      },
+      {
+        "t": "neq",
+        "v": "null",
+        "vt": "jsonata"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 2,
+    "x": 1100,
+    "y": 1360,
+    "wires": [
+      [
+        "9057fb0a0f8125f2"
+      ],
+      [
+        "60aa9d78642fa184",
+        "0b36be2dc5bd1912"
+      ]
+    ]
+  },
+  {
+    "id": "8eddfae3478194d5",
+    "type": "mongodb out",
+    "z": "46f750dd0c884772",
+    "mongodb": "cca90e0ad48e5446",
+    "name": "",
+    "collection": "free_game_keys",
+    "payonly": true,
+    "upsert": false,
+    "multi": false,
+    "operation": "insert",
+    "x": 1370,
+    "y": 1440,
+    "wires": []
+  },
+  {
+    "id": "9057fb0a0f8125f2",
+    "type": "debug",
+    "z": "46f750dd0c884772",
+    "name": "IGNORE EXISTING",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "entry",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1360,
+    "y": 1360,
+    "wires": []
+  },
+  {
+    "id": "60aa9d78642fa184",
+    "type": "debug",
+    "z": "46f750dd0c884772",
+    "name": "NEW GAME",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1330,
+    "y": 1400,
+    "wires": []
+  },
+  {
+    "id": "987d7c325cae46ce",
+    "type": "http request",
+    "z": "46f750dd0c884772",
+    "name": "Send Payload",
+    "method": "POST",
+    "ret": "obj",
+    "paytoqs": "body",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": true,
+    "headers": [
+      {
+        "keyType": "other",
+        "keyValue": "X-TACOBOT-TOKEN",
+        "valueType": "other",
+        "valueValue": "jR5mf5FaUthvJR9uXofNbjmhpoxjU5ATyPHPpQHH5H"
+      }
+    ],
+    "x": 720,
+    "y": 1400,
+    "wires": [
+      [
+        "34c3879e34032d05"
+      ]
+    ]
+  },
+  {
+    "id": "34c3879e34032d05",
+    "type": "function",
+    "z": "46f750dd0c884772",
+    "name": "Process Response",
+    "func": "if (msg.payload.error) {\n    msg.payload = null;\n    return msg;\n}\n\nif (msg.payload === '') {\n    msg.payload = null;\n    return msg;\n}\n\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 910,
+    "y": 1400,
+    "wires": [
+      [
+        "ba5104ca0bf3ebbe"
+      ]
+    ]
+  },
+  {
+    "id": "ba5104ca0bf3ebbe",
+    "type": "switch",
+    "z": "46f750dd0c884772",
+    "name": "Ignore Empty Payload",
+    "property": "payload",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "null",
+        "vt": "jsonata"
+      },
+      {
+        "t": "neq",
+        "v": "null",
+        "vt": "jsonata"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 2,
+    "x": 1120,
+    "y": 1400,
+    "wires": [
+      [],
+      [
+        "8eddfae3478194d5"
+      ]
+    ]
+  },
+  {
+    "id": "108c997bfb2362d2",
+    "type": "status",
+    "z": "46f750dd0c884772",
+    "name": "MONGODB CONNECTED",
+    "scope": [
+      "5a908a7ec7ab8002"
+    ],
+    "x": 170,
+    "y": 1260,
+    "wires": [
+      [
+        "76bd62e1f71697fc"
+      ]
+    ]
+  },
+  {
+    "id": "76bd62e1f71697fc",
+    "type": "switch",
+    "z": "46f750dd0c884772",
+    "name": "WAIT FOR MONGODB CONNECTED",
+    "property": "status.text",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "eq",
+        "v": "connected",
+        "vt": "str"
+      }
+    ],
+    "checkall": "true",
+    "repair": false,
+    "outputs": 1,
+    "x": 450,
+    "y": 1260,
+    "wires": [
+      [
+        "a9e9560d17d2de50"
+      ]
+    ]
+  },
+  {
+    "id": "834fce834f9f43fb",
+    "type": "inject",
+    "z": "46f750dd0c884772",
+    "name": "BETA Manual Trigger",
+    "props": [
+      {
+        "p": "payload.post_url",
+        "v": "http://bane.bit13.local:8931/webhook/game",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 160,
+    "y": 1400,
+    "wires": [
+      [
+        "3db47b900e76d324",
+        "fc49ae6a618806e9"
+      ]
+    ]
+  },
+  {
+    "id": "3db47b900e76d324",
+    "type": "function",
+    "z": "46f750dd0c884772",
+    "name": "Global Set GP_POST_URL",
+    "func": "if (!msg.payload) {\n    msg.payload = {};\n}\n\nif (!msg.payload.post_url) {\n    msg.payload.post_url = \"http://lb.bit13.local:8931/webhook/game\";\n}\n\nglobal.set(\"GP_POST_URL\", msg.payload.post_url);\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 500,
+    "y": 1320,
+    "wires": [
+      [
+        "0828258bd3f2db4a"
+      ]
+    ]
+  },
+  {
+    "id": "0b36be2dc5bd1912",
+    "type": "function",
+    "z": "46f750dd0c884772",
+    "name": "Set Post Url",
+    "func": "var post_url = global.get(\"GP_POST_URL\");\nmsg.url = post_url;\n//msg.method = \"POST\";\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 550,
+    "y": 1400,
+    "wires": [
+      [
+        "987d7c325cae46ce"
+      ]
+    ]
+  },
+  {
+    "id": "fc49ae6a618806e9",
+    "type": "debug",
+    "z": "46f750dd0c884772",
+    "name": "GamerPower POLL TRIGGER",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 610,
+    "y": 1440,
+    "wires": []
+  },
+  {
+    "id": "d667d2807768b6b3",
+    "type": "debug",
+    "z": "46f750dd0c884772",
+    "name": "debug 6",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "false",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1000,
+    "y": 1240,
+    "wires": []
+  },
+  {
+    "id": "cca90e0ad48e5446",
+    "type": "mongodb",
+    "hostname": "andeddu.bit13.local",
+    "topology": "direct",
+    "connectOptions": "authSource=admin",
+    "port": "27017",
+    "db": "tacobot",
+    "name": "Tacobot"
+  }
+]

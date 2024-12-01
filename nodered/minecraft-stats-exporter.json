@@ -1,0 +1,825 @@
+[
+  {
+    "id": "c95c41241d6a403b",
+    "type": "tab",
+    "label": "Minecraft Stats Exporter",
+    "disabled": false,
+    "info": "",
+    "env": []
+  },
+  {
+    "id": "8320255ab0f5fec3",
+    "type": "http in",
+    "z": "c95c41241d6a403b",
+    "name": "",
+    "url": "/taco/minecraft/stats/metrics",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 170,
+    "y": 80,
+    "wires": [
+      [
+        "2e8937bf239cabf4",
+        "2556d85d5a662107"
+      ]
+    ]
+  },
+  {
+    "id": "2e8937bf239cabf4",
+    "type": "mongodb in",
+    "z": "c95c41241d6a403b",
+    "mongodb": "cca90e0ad48e5446",
+    "name": "",
+    "collection": "minecraft_stats",
+    "operation": "find",
+    "x": 450,
+    "y": 80,
+    "wires": [
+      [
+        "382b7685188426ee"
+      ]
+    ]
+  },
+  {
+    "id": "382b7685188426ee",
+    "type": "function",
+    "z": "c95c41241d6a403b",
+    "name": "Collect Metrics",
+    "func": "function safe_name(n) {\n    return n.replace(/\\:/gmi, \"_\");\n}\nfunction metric_name(group,metric,labels) {\n    labels[\"metric\"] = metric\n    split_item = metric.split(\":\");\n    if (split_item && split_item.length == 2) {\n        labels[\"source\"] = split_item[0];\n        labels[\"item\"] = split_item[1];\n    }\n    return `mcstats_${safe_name(group)}{${labels_out(labels)}}`.toLowerCase();\n}\nfunction labels_out(labels) {\n    let outValue = \"\";\n    for (let l in labels) {\n        outValue += `${l}=\"${labels[l]}\",`;\n    }\n    if (outValue.length >= 1) {\n        outValue = outValue.slice(0, -1);\n    }\n    return outValue;\n}\nlet metrics = {};\n\nfor (let x = 0; x < msg.payload.length; ++x) {\n    var labels = {};\n    var stats = msg.payload[x].stats;\n    \n    labels[\"uuid\"] = msg.payload[x].uuid;\n    labels[\"username\"] = msg.payload[x].username;\n    labels['user_id'] = msg.payload[x].user_id;\n    labels['world'] = msg.payload[x].world;\n    for (let group in stats) {\n        for (let metric in stats[group]) {\n            metrics[metric_name(group,metric,labels)] = stats[group][metric];\n        }\n    }   \n}\nglobal.set(\"mc_stats_metrics\", metrics);\nmsg.payload = metrics;\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 680,
+    "y": 80,
+    "wires": [
+      [
+        "3cc0de7b4b469330",
+        "2556d85d5a662107"
+      ]
+    ]
+  },
+  {
+    "id": "ddcaebed6ea1c23c",
+    "type": "http response",
+    "z": "c95c41241d6a403b",
+    "name": "",
+    "statusCode": "",
+    "headers": {
+      "content-type": "text/plain"
+    },
+    "x": 1190,
+    "y": 200,
+    "wires": []
+  },
+  {
+    "id": "23653e7e59ba4dbe",
+    "type": "function",
+    "z": "c95c41241d6a403b",
+    "name": "Build Data Metrics",
+    "func": "data_payload = global.get(\"mc_stats_metrics\");\nlet online = 0;\nlet max = 0;\nlet up = 0;\nif (msg.payload && msg.payload.players) {\n    online = msg.payload.players.online;\n    max = msg.payload.players.max;\n    up = 1;\n}\n\nlet data = `mcstats_players_online ${online}\\n`;\ndata += `mcstats_players_max ${max}\\n`;\ndata += `mcstats_server_up ${up}\\n`;\n\nfor (let m in data_payload) {\n    data += `${m} ${data_payload[m]}\\n`;\n}\n\nmsg.payload = data;\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 430,
+    "y": 320,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "18b16b6aa450d409",
+    "type": "minecraft-ping",
+    "z": "c95c41241d6a403b",
+    "server": "c35c7083d8eba0bf",
+    "x": 190,
+    "y": 320,
+    "wires": [
+      [
+        "23653e7e59ba4dbe"
+      ]
+    ]
+  },
+  {
+    "id": "36f923300ce4aae0",
+    "type": "mongodb in",
+    "z": "c95c41241d6a403b",
+    "mongodb": "cca90e0ad48e5446",
+    "name": "Tacobot minecraft.settings",
+    "collection": "",
+    "operation": "find",
+    "x": 450,
+    "y": 140,
+    "wires": [
+      [
+        "637316db1fa1167b"
+      ]
+    ]
+  },
+  {
+    "id": "3cc0de7b4b469330",
+    "type": "function",
+    "z": "c95c41241d6a403b",
+    "name": "Query",
+    "func": "msg.collection = \"settings\";\nmsg.payload = {\n    guild_id: \"935294040386183228\", // TACO\n    name: \"minecraft\"\n}\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 250,
+    "y": 140,
+    "wires": [
+      [
+        "36f923300ce4aae0"
+      ]
+    ]
+  },
+  {
+    "id": "637316db1fa1167b",
+    "type": "function",
+    "z": "c95c41241d6a403b",
+    "name": "Add Metrics",
+    "func": "function slugify (s) {\n    return s\n        .toLowerCase()\n        .trim()\n        .replace(/[^\\w\\s-]/g, '')\n        .replace(/[\\s_-]+/g, '-')\n        .replace(/^-+|-+$/g, '');\n}\n\nfunction safe_name(n) {\n    return n.toLowerCase()\n    .trim()\n    .replace(/-/g,'_');\n}\n\nfunction metric_name(group,labels) {\n    return `mcstats_${safe_name(group)}{${labels_out(labels)}}`.toLowerCase();\n}\n\nfunction labels_out(labels) {\n    let outValue = \"\";\n    for (let l in labels) {\n        outValue += `${l}=\"${labels[l]}\",`;\n    }\n    if (outValue.length >= 1) {\n        outValue = outValue.slice(0, -1);\n    }\n    return outValue;\n}\n\nlet labels = {};\nlet metrics = global.get(\"mc_stats_metrics\");\nif (msg.payload && msg.payload.length > 0 && msg.payload[0].settings && msg.payload[0].settings.mods) {\n    \n    for (let x = 0; x < msg.payload[0].settings.mods.length; ++x) {\n        let mod = msg.payload[0].settings.mods[x];\n        let slug = slugify(mod.name);\n        labels[\"mod\"] = slug;\n        labels[\"guild_id\"] = msg.payload[0].guild_id;\n        labels[\"file_id\"] = mod.file_id;\n        labels[\"mod_id\"] = mod.mod_id;\n        labels[\"name\"] = mod.name;\n        labels[\"version\"] = `${mod.version}`;\n        metrics[metric_name('minecraft_mod',labels)] = 1;\n        \n    }\n    \n\n}\nglobal.set(\"mc_stats_metrics\", metrics);\nmsg.payload = metrics;\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 670,
+    "y": 140,
+    "wires": [
+      [
+        "1d09d3290578b5d1",
+        "2556d85d5a662107"
+      ]
+    ]
+  },
+  {
+    "id": "eb1925eab6bde318",
+    "type": "docker-container-actions",
+    "z": "c95c41241d6a403b",
+    "name": "START MC Server",
+    "config": "b8c418284af7befb",
+    "container": "minecraft-curseforge",
+    "containertype": "str",
+    "action": "start",
+    "options": "",
+    "optionstype": "str",
+    "image": "",
+    "imagetype": "str",
+    "pullimage": false,
+    "deletecontainer": false,
+    "stream": false,
+    "createOptions": "",
+    "startOptions": "",
+    "createOptionsType": "json",
+    "startOptionsType": "json",
+    "x": 530,
+    "y": 480,
+    "wires": [
+      [
+        "c071055c3c0654ff"
+      ]
+    ]
+  },
+  {
+    "id": "cfc892a337697ed1",
+    "type": "docker-container-actions",
+    "z": "c95c41241d6a403b",
+    "name": "STOP MC Server",
+    "config": "b8c418284af7befb",
+    "container": "minecraft-curseforge",
+    "containertype": "str",
+    "action": "stop",
+    "options": "",
+    "optionstype": "str",
+    "image": "",
+    "imagetype": "str",
+    "pullimage": false,
+    "deletecontainer": false,
+    "stream": false,
+    "createOptions": "",
+    "startOptions": "",
+    "createOptionsType": "json",
+    "startOptionsType": "json",
+    "x": 530,
+    "y": 580,
+    "wires": [
+      [
+        "c071055c3c0654ff"
+      ]
+    ]
+  },
+  {
+    "id": "8a3589cfb8724cf2",
+    "type": "http in",
+    "z": "c95c41241d6a403b",
+    "name": "",
+    "url": "/taco/minecraft/server/start",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 190,
+    "y": 480,
+    "wires": [
+      [
+        "eb1925eab6bde318"
+      ]
+    ]
+  },
+  {
+    "id": "4f6bd3cea23ee70f",
+    "type": "http in",
+    "z": "c95c41241d6a403b",
+    "name": "",
+    "url": "/taco/minecraft/server/stop",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 190,
+    "y": 580,
+    "wires": [
+      [
+        "cfc892a337697ed1"
+      ]
+    ]
+  },
+  {
+    "id": "eb886bdb607773a1",
+    "type": "http response",
+    "z": "c95c41241d6a403b",
+    "name": "",
+    "statusCode": "",
+    "headers": {},
+    "x": 930,
+    "y": 600,
+    "wires": []
+  },
+  {
+    "id": "c071055c3c0654ff",
+    "type": "function",
+    "z": "c95c41241d6a403b",
+    "name": "Format Result",
+    "func": "msg.payload = {\n    success: true,\n    status: \"success\"\n}\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 780,
+    "y": 500,
+    "wires": [
+      [
+        "eb886bdb607773a1",
+        "cac832508eda5045"
+      ]
+    ]
+  },
+  {
+    "id": "cac832508eda5045",
+    "type": "debug",
+    "z": "c95c41241d6a403b",
+    "name": "DOCKER CONTROL",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1100,
+    "y": 600,
+    "wires": []
+  },
+  {
+    "id": "8e710807952fcbf9",
+    "type": "catch",
+    "z": "c95c41241d6a403b",
+    "name": "CATCH START/STOP Error",
+    "scope": [
+      "eb1925eab6bde318",
+      "cfc892a337697ed1",
+      "466b830ca81043b1"
+    ],
+    "uncaught": false,
+    "x": 180,
+    "y": 740,
+    "wires": [
+      [
+        "cbbb58b5b59adfe0"
+      ]
+    ]
+  },
+  {
+    "id": "cbbb58b5b59adfe0",
+    "type": "function",
+    "z": "c95c41241d6a403b",
+    "name": "Format Error",
+    "func": "msg.payload = {\n    success: false,\n    message: msg.error.message,\n    status: \"error\"\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 570,
+    "y": 740,
+    "wires": [
+      [
+        "eb886bdb607773a1",
+        "cac832508eda5045"
+      ]
+    ]
+  },
+  {
+    "id": "40420c557e11e7ab",
+    "type": "http in",
+    "z": "c95c41241d6a403b",
+    "name": "",
+    "url": "/taco/minecraft/server/restart",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 200,
+    "y": 680,
+    "wires": [
+      [
+        "466b830ca81043b1"
+      ]
+    ]
+  },
+  {
+    "id": "466b830ca81043b1",
+    "type": "docker-container-actions",
+    "z": "c95c41241d6a403b",
+    "name": "RESTART MC Server",
+    "config": "b8c418284af7befb",
+    "container": "minecraft-curseforge",
+    "containertype": "str",
+    "action": "restart",
+    "options": "",
+    "optionstype": "str",
+    "image": "",
+    "imagetype": "str",
+    "pullimage": false,
+    "deletecontainer": false,
+    "stream": false,
+    "createOptions": "",
+    "startOptions": "",
+    "createOptionsType": "json",
+    "startOptionsType": "json",
+    "x": 540,
+    "y": 680,
+    "wires": [
+      [
+        "c071055c3c0654ff"
+      ]
+    ]
+  },
+  {
+    "id": "1d09d3290578b5d1",
+    "type": "function",
+    "z": "c95c41241d6a403b",
+    "name": "Query",
+    "func": "msg.collection = \"minecraft_worlds\";\nmsg.payload = {\n    guild_id: \"935294040386183228\" // TACO\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 250,
+    "y": 200,
+    "wires": [
+      [
+        "9acb6a06165e21cf"
+      ]
+    ]
+  },
+  {
+    "id": "9acb6a06165e21cf",
+    "type": "mongodb in",
+    "z": "c95c41241d6a403b",
+    "mongodb": "cca90e0ad48e5446",
+    "name": "Tacobot minecraft_worlds",
+    "collection": "",
+    "operation": "find",
+    "x": 450,
+    "y": 200,
+    "wires": [
+      [
+        "f2ddb075b4ed1624"
+      ]
+    ]
+  },
+  {
+    "id": "f2ddb075b4ed1624",
+    "type": "function",
+    "z": "c95c41241d6a403b",
+    "name": "Add Metrics",
+    "func": "function safe_name(n) {\n    return n.toLowerCase()\n    .trim()\n    .replace(/-/g,'_');\n}\n\nfunction metric_name(group,labels) {\n    return `mcstats_${safe_name(group)}{${labels_out(labels)}}`;\n}\n\nfunction labels_out(labels) {\n    let outValue = \"\";\n    for (let l in labels) {\n        outValue += `${l.toLowerCase()}=\"${labels[l.toLowerCase()]}\",`;\n    }\n    if (outValue.length >= 1) {\n        outValue = outValue.slice(0, -1);\n    }\n    return outValue;\n}\n\nlet metrics = global.get(\"mc_stats_metrics\");\n\nfor (let x = 0; x < msg.payload.length; ++x) {\n    let world = msg.payload[x];\n    labels = {};\n    labels['guild_id'] = world.guild_id;\n    labels['name'] = world.name;\n    labels['world'] = world.world;\n    labels['active'] = world.active;\n    // metrics[metric_name('minecraft_world',labels)] = world.active ? 1 : 0;\n    metrics[metric_name('minecraft_world',labels)] = 1;\n}\n\nglobal.set(\"mc_stats_metrics\", metrics);\nmsg.payload = metrics;\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 670,
+    "y": 200,
+    "wires": [
+      [
+        "2556d85d5a662107",
+        "9f9b9dbd57d71a95"
+      ]
+    ]
+  },
+  {
+    "id": "93af4b21669059c4",
+    "type": "http in",
+    "z": "c95c41241d6a403b",
+    "name": "",
+    "url": "/tacobot/minecraft/stats/metrics",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 180,
+    "y": 40,
+    "wires": [
+      [
+        "2e8937bf239cabf4",
+        "2556d85d5a662107"
+      ]
+    ]
+  },
+  {
+    "id": "6b6a95450db15cb4",
+    "type": "http in",
+    "z": "c95c41241d6a403b",
+    "name": "",
+    "url": "/tacobot/minecraft/server/start",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 200,
+    "y": 440,
+    "wires": [
+      [
+        "eb1925eab6bde318"
+      ]
+    ]
+  },
+  {
+    "id": "446d0be0e58c1c19",
+    "type": "http in",
+    "z": "c95c41241d6a403b",
+    "name": "",
+    "url": "/tacobot/minecraft/server/stop",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 200,
+    "y": 540,
+    "wires": [
+      [
+        "cfc892a337697ed1"
+      ]
+    ]
+  },
+  {
+    "id": "6f938c1e10b197b3",
+    "type": "http in",
+    "z": "c95c41241d6a403b",
+    "name": "",
+    "url": "/tacobot/minecraft/server/restart",
+    "method": "post",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 210,
+    "y": 640,
+    "wires": [
+      [
+        "466b830ca81043b1"
+      ]
+    ]
+  },
+  {
+    "id": "1bd0d1b9dd02cf70",
+    "type": "catch",
+    "z": "c95c41241d6a403b",
+    "name": "",
+    "scope": [
+      "2e8937bf239cabf4",
+      "382b7685188426ee",
+      "23653e7e59ba4dbe",
+      "18b16b6aa450d409",
+      "36f923300ce4aae0",
+      "3cc0de7b4b469330",
+      "637316db1fa1167b",
+      "93af4b21669059c4",
+      "9acb6a06165e21cf",
+      "1d09d3290578b5d1",
+      "f2ddb075b4ed1624",
+      "8320255ab0f5fec3"
+    ],
+    "uncaught": false,
+    "x": 100,
+    "y": 360,
+    "wires": [
+      [
+        "38317e84dbd95676"
+      ]
+    ]
+  },
+  {
+    "id": "38317e84dbd95676",
+    "type": "function",
+    "z": "c95c41241d6a403b",
+    "name": "Format Error",
+    "func": "msg.payload = {\n    success: false,\n    message: msg.error.message,\n    status: \"error\"\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 330,
+    "y": 360,
+    "wires": [
+      [
+        "5ea9b6064aed81aa",
+        "cc37b0f519187eb2"
+      ]
+    ]
+  },
+  {
+    "id": "5ea9b6064aed81aa",
+    "type": "debug",
+    "z": "c95c41241d6a403b",
+    "name": "METRICS ERROR",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 690,
+    "y": 340,
+    "wires": []
+  },
+  {
+    "id": "cc37b0f519187eb2",
+    "type": "http response",
+    "z": "c95c41241d6a403b",
+    "name": "",
+    "statusCode": "200",
+    "headers": {},
+    "x": 660,
+    "y": 380,
+    "wires": []
+  },
+  {
+    "id": "b520a7852ab47daa",
+    "type": "function",
+    "z": "c95c41241d6a403b",
+    "name": "Build Data Metrics",
+    "func": "let data_payload = global.get(\"mc_stats_metrics\");\n// let online = 0;\n// let max = 0;\n// let up = 1;\n\n// if (msg.payload && msg.payload.players) {\n//     online = msg.payload.players.online;\n//     max = msg.payload.players.max;\n//     up = 1;\n// }\n\n// let data = `mcstats_players_online ${online}\\n`;\n// data += `mcstats_players_max ${max}\\n`;\n// data += `mcstats_server_up ${up}\\n`;\nlet data = '';\n\nfor (let m in data_payload) {\n    data += `${m} ${data_payload[m]}\\n`;\n}\n\nmsg.payload = data;\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 930,
+    "y": 200,
+    "wires": [
+      [
+        "ddcaebed6ea1c23c",
+        "2556d85d5a662107"
+      ]
+    ]
+  },
+  {
+    "id": "2556d85d5a662107",
+    "type": "debug",
+    "z": "c95c41241d6a403b",
+    "name": "debug 5",
+    "active": false,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "false",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 940,
+    "y": 20,
+    "wires": []
+  },
+  {
+    "id": "64e33ad5b06450a7",
+    "type": "minecraft-ping",
+    "z": "c95c41241d6a403b",
+    "server": "c35c7083d8eba0bf",
+    "x": 370,
+    "y": 820,
+    "wires": [
+      [
+        "f7a548b2a5c24b5c"
+      ]
+    ]
+  },
+  {
+    "id": "f7a548b2a5c24b5c",
+    "type": "function",
+    "z": "c95c41241d6a403b",
+    "name": "Format Ping Data",
+    "func": "let payload = msg.payload;\nlet guild_id = \"935294040386183228\";\n\nlet max = 0;\nlet online = 0;\nlet up = 0;\nif (payload && payload.players) {\n    max = payload.players.max;\n    online = payload.players.online;\n    up = 1;\n}\n\nmsg.query = {\n    guild_id: guild_id\n};\n\nmsg.payload = {\n    guild_id: guild_id,\n    players: {\n        max: max,\n        online: online\n    },\n    up: up\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 650,
+    "y": 820,
+    "wires": [
+      [
+        "236f6d9b7b0469f5",
+        "1855635c028cebf9"
+      ]
+    ]
+  },
+  {
+    "id": "1855635c028cebf9",
+    "type": "mongodb out",
+    "z": "c95c41241d6a403b",
+    "mongodb": "cca90e0ad48e5446",
+    "name": "Tacobot minecraft_ping",
+    "collection": "minecraft_ping",
+    "payonly": true,
+    "upsert": true,
+    "multi": false,
+    "operation": "update",
+    "x": 970,
+    "y": 820,
+    "wires": []
+  },
+  {
+    "id": "a3b6356630bd22ac",
+    "type": "inject",
+    "z": "c95c41241d6a403b",
+    "name": "",
+    "props": [
+      {
+        "p": "payload"
+      },
+      {
+        "p": "topic",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "payload": "",
+    "payloadType": "date",
+    "x": 120,
+    "y": 880,
+    "wires": [
+      [
+        "64e33ad5b06450a7"
+      ]
+    ]
+  },
+  {
+    "id": "236f6d9b7b0469f5",
+    "type": "debug",
+    "z": "c95c41241d6a403b",
+    "name": "debug 9",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "false",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 800,
+    "y": 900,
+    "wires": []
+  },
+  {
+    "id": "fd6a42dfd8463f32",
+    "type": "trigger",
+    "z": "c95c41241d6a403b",
+    "name": "5 MINUTES",
+    "op1": "",
+    "op2": "0",
+    "op1type": "nul",
+    "op2type": "str",
+    "duration": "-5",
+    "extend": false,
+    "overrideDelay": true,
+    "units": "min",
+    "reset": "",
+    "bytopic": "all",
+    "topic": "topic",
+    "outputs": 1,
+    "x": 90,
+    "y": 820,
+    "wires": [
+      [
+        "64e33ad5b06450a7"
+      ]
+    ]
+  },
+  {
+    "id": "9f9b9dbd57d71a95",
+    "type": "function",
+    "z": "c95c41241d6a403b",
+    "name": "Query",
+    "func": "msg.collection = \"minecraft_ping\";\nmsg.payload = {\n    guild_id: \"935294040386183228\" // TACO\n}\nreturn msg;",
+    "outputs": 1,
+    "timeout": "",
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 250,
+    "y": 260,
+    "wires": [
+      [
+        "b02a2f61b7d1b4a6"
+      ]
+    ]
+  },
+  {
+    "id": "b02a2f61b7d1b4a6",
+    "type": "mongodb in",
+    "z": "c95c41241d6a403b",
+    "mongodb": "cca90e0ad48e5446",
+    "name": "Tacobot minecraft_ping",
+    "collection": "",
+    "operation": "find",
+    "x": 450,
+    "y": 260,
+    "wires": [
+      [
+        "cf6ef5875798ecf4"
+      ]
+    ]
+  },
+  {
+    "id": "cf6ef5875798ecf4",
+    "type": "function",
+    "z": "c95c41241d6a403b",
+    "name": "Add Metrics",
+    "func": "function safe_name(n) {\n    return n.toLowerCase()\n    .trim()\n    .replace(/-/g,'_');\n}\n\nfunction metric_name(group,labels) {\n    return `mcstats_${safe_name(group)}{${labels_out(labels)}}`;\n}\n\nfunction labels_out(labels) {\n    let outValue = \"\";\n    for (let l in labels) {\n        outValue += `${l.toLowerCase()}=\"${labels[l.toLowerCase()]}\",`;\n    }\n    if (outValue.length >= 1) {\n        outValue = outValue.slice(0, -1);\n    }\n    return outValue;\n}\n\nlet metrics = global.get(\"mc_stats_metrics\");\n\nlet up = 0;\nlet max = 20;\nlet online = 0;\nlet guild_id = '';\n\nif (msg.payload && msg.payload.length > 0 && msg.payload[0].players) {\n    online = msg.payload[0].players.online;\n    max = msg.payload[0].players.max;\n    up = msg.payload[0].up;\n    guild_id = msg.payload[0].guild_id;\n}\n\n\nlet labels = {};\nlabels[\"guild_id\"] = guild_id;\nmetrics[metric_name('players_online', labels)] = online;\nmetrics[metric_name('players_max', labels)] = max;\nmetrics[metric_name('server_up', labels)] = up;\n\n\n// let data = `mcstats_players_online ${online}\\n`;\n// data += `mcstats_players_max ${max}\\n`;\n// data += `mcstats_server_up ${up}\\n`;\n\n// for (let x = 0; x < msg.payload.length; ++x) {\n//     let world = msg.payload[x];\n//     labels = {};\n//     labels['guild_id'] = world.guild_id;\n//     labels['name'] = world.name;\n//     labels['world'] = world.world;\n//     labels['active'] = world.active;\n//     // metrics[metric_name('minecraft_world',labels)] = world.active ? 1 : 0;\n//     metrics[metric_name('minecraft_world',labels)] = 1;\n// }\n\nglobal.set(\"mc_stats_metrics\", metrics);\nmsg.payload = metrics;\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 670,
+    "y": 260,
+    "wires": [
+      [
+        "b520a7852ab47daa"
+      ]
+    ]
+  },
+  {
+    "id": "cca90e0ad48e5446",
+    "type": "mongodb",
+    "hostname": "andeddu.bit13.local",
+    "topology": "direct",
+    "connectOptions": "authSource=admin",
+    "port": "27017",
+    "db": "tacobot",
+    "name": "Tacobot"
+  },
+  {
+    "id": "c35c7083d8eba0bf",
+    "type": "minecraft-ping-server",
+    "host": "vader.bit13.local",
+    "port": "25565"
+  },
+  {
+    "id": "b8c418284af7befb",
+    "type": "docker-configuration",
+    "host": "vader.bit13.local",
+    "port": "2375"
+  }
+]
