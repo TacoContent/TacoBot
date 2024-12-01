@@ -186,7 +186,7 @@ class DiscordHelper:
         guildId: int,
         fromUser: typing.Union[discord.User, discord.Member],
         toUser: typing.Union[discord.User, discord.Member],
-        reason: str = None,
+        reason: typing.Optional[str],
         give_type: tacotypes.TacoTypes = tacotypes.TacoTypes.CUSTOM,
         taco_amount: int = 1,
     ):
@@ -390,6 +390,8 @@ class DiscordHelper:
             self.log.warn(0, f"{self._module}.{self._class}.{_method}", str(nf), traceback.format_exc())
             return None
         except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", f"Channel ID: '{channelId}'")
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", f"Bot: '{self.bot.id}' - {self.bot.name}", traceback.format_exc())
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             return None
 
