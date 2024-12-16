@@ -5,7 +5,6 @@ import traceback
 from bot.lib import discordhelper
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
 from bot.lib.http.handlers.BaseWebhookHandler import BaseWebhookHandler
-from bot.lib.mongodb.tracking import TrackingDatabase
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException, uri_mapping
 
@@ -109,7 +108,7 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
                     "guild_id": guild.id,
                     "event": str(MinecraftPlayerEvents.LOGIN),
                     "payload": data_payload,
-                }
+                },
             }
 
             return HttpResponse(200, headers, bytearray(json.dumps(result, indent=4), "utf-8"))
@@ -136,7 +135,7 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
                     "guild_id": guild.id,
                     "event": str(MinecraftPlayerEvents.LOGOUT),
                     "payload": data_payload,
-                }
+                },
             }
             return HttpResponse(200, headers, bytearray(json.dumps(result, indent=4), "utf-8"))
         except Exception as e:
@@ -163,7 +162,7 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
                     "guild_id": guild.id,
                     "event": str(MinecraftPlayerEvents.DEATH),
                     "payload": data_payload,
-                }
+                },
             }
             return HttpResponse(200, headers, bytearray(json.dumps(result, indent=4), "utf-8"))
         except Exception as e:
