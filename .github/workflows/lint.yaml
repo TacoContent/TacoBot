@@ -42,3 +42,4 @@ jobs:
           VALIDATE_PYTHON_FLAKE8: false
           VALIDATE_PYTHON_MYPY: false
           VALIDATE_CHECKOV: false
+          FIX_YAML_PRETTIER: false
