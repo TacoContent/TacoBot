@@ -151,7 +151,6 @@ paths:
         schema:
           type: string
 
-
   '/tacobot/minecraft/player/{username}/stats/{world}':
     parameters:
       - name: username
@@ -253,6 +252,46 @@ paths:
         "200":
           description: Successful operation
 
+  '/tacobot/minecraft/player/events':
+    get:
+      tags:
+        - minecraft
+      summary: Get the minecraft player events
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/MinecraftPlayerEvent"
+
+  '/tacobot/minecraft/player/event/{event}':
+    get:
+      tags:
+        - minecraft
+      summary: Get the minecraft player event
+      parameters:
+        - name: event
+          in: path
+          required: true
+          description: The event type. Values can be pulled from the /tacobot/minecraft/player/events endpoint
+          schema:
+            type: string
+            enum:
+              - login
+              - logout
+              - death
+
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MinecraftPlayerEventPayload"
+
   '/webhook/minecraft/tacos/{action}':
     parameters:
       - name: action
@@ -302,6 +341,27 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/TacoWebhookMinecraftTacosResponsePayload"
+
+  '/webhook/minecraft/player/event':
+    post:
+      security:
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - webhook
+      summary: Minecraft Webhook to send player events
+      description: ''
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/MinecraftPlayerEventPayload"
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/MinecraftPlayerEventPayload"
 
   '/webhook/game':
     post:
@@ -427,6 +487,21 @@ components:
           properties:
             minecraft:stone_pickaxe:
               type: integer
+    MinecraftPlayerEvent:
+      type: object
+      properties:
+        event:
+          type: string
+    MinecraftPlayerEventPayload:
+      type: object
+      properties:
+        event:
+          type: string
+        guild_id:
+          type: string
+        payload:
+          type: object
+          description: The event payload. This can be different depending on the event type
 
     MinecraftDiscordUserStatsInfo:
       type: object

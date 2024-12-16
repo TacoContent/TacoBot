@@ -279,6 +279,7 @@ class HttpServer:
         _method = inspect.stack()[0][3]
         try:
             args = _convert_params(request, route, method)
+
             response = method(*args)
             if asyncio.iscoroutine(response):
                 response = await response
