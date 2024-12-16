@@ -1,17 +1,14 @@
 import inspect
 import json
-import os
 import traceback
 
 from bot.lib import discordhelper
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
-from bot.lib.enums.tacotypes import TacoTypes
 from bot.lib.http.handlers.BaseWebhookHandler import BaseWebhookHandler
-from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
-from bot.lib.users_utils import UsersUtils
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException, uri_mapping
+
 
 class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
     def __init__(self, bot):
@@ -19,7 +16,6 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
         self._class = self.__class__.__name__
         self.SETTINGS_SECTION = "webhook/minecraft/player"
         self.discord_helper = discordhelper.DiscordHelper(bot)
-
 
     @uri_mapping("/webhook/minecraft/player/event", method="POST")
     async def event(self, request: HttpRequest, **kwargs) -> HttpResponse:
@@ -57,7 +53,11 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
             data_payload = payload.get("payload", {})
             user_id = data_payload.get("user_id", 0)
 
-            self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"guild_id: {guild_id}, user_id: {user_id}, event: {event}")
+            self.log.debug(
+                0,
+                f"{self._module}.{self._class}.{_method}",
+                f"guild_id: {guild_id}, user_id: {user_id}, event: {event}",
+            )
 
             # get discord user from user_id
             discord_user = await self.discord_helper.get_or_fetch_user(user_id)
@@ -73,7 +73,6 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
             member = await guild.fetch_member(user_id)
             if not member:
                 raise HttpResponseException(404, headers, b'{ "error": "Member not found in the specified guild." }')
-
 
             if event == MinecraftPlayerEvents.LOGIN:
                 return await self._handle_login_event(guild, member, discord_user, data_payload, headers)
@@ -95,10 +94,12 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
         _method = inspect.stack()[0][3]
 
         try:
-            self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Handling login event for {discord_user.name}")
+            self.log.debug(
+                0, f"{self._module}.{self._class}.{_method}", f"Handling login event for {discord_user.name}"
+            )
 
             # get the tracking database
-            tracking_db = TrackingDatabase()
+            # tracking_db = TrackingDatabase()
             # tracking_db.track_minecraft_event(guild.id, member.id, data_payload)
 
             result = {
@@ -107,7 +108,7 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
                     "user_id": discord_user.id,
                     "guild_id": guild.id,
                     "event": str(MinecraftPlayerEvents.LOGIN),
-                    "payload": data_payload
+                    "payload": data_payload,
                 }
             }
 
@@ -121,10 +122,12 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
         _method = inspect.stack()[0][3]
 
         try:
-            self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Handling logout event for {discord_user.name}")
+            self.log.debug(
+                0, f"{self._module}.{self._class}.{_method}", f"Handling logout event for {discord_user.name}"
+            )
 
             # get the tracking database
-            tracking_db = TrackingDatabase()
+            # tracking_db = TrackingDatabase()
             # tracking_db.track_minecraft_event(guild.id, member.id, data_payload)
             result = {
                 "status": "ok",
@@ -132,7 +135,7 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
                     "user_id": discord_user.id,
                     "guild_id": guild.id,
                     "event": str(MinecraftPlayerEvents.LOGOUT),
-                    "payload": data_payload
+                    "payload": data_payload,
                 }
             }
             return HttpResponse(200, headers, bytearray(json.dumps(result, indent=4), "utf-8"))
@@ -145,10 +148,12 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
         _method = inspect.stack()[0][3]
 
         try:
-            self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Handling death event for {discord_user.name}")
+            self.log.debug(
+                0, f"{self._module}.{self._class}.{_method}", f"Handling death event for {discord_user.name}"
+            )
 
             # get the tracking database
-            tracking_db = TrackingDatabase()
+            # tracking_db = TrackingDatabase()
             # tracking_db.track_minecraft_event(guild.id, member.id, data_payload)
 
             result = {
@@ -157,7 +162,7 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
                     "user_id": discord_user.id,
                     "guild_id": guild.id,
                     "event": str(MinecraftPlayerEvents.DEATH),
-                    "payload": data_payload
+                    "payload": data_payload,
                 }
             }
             return HttpResponse(200, headers, bytearray(json.dumps(result, indent=4), "utf-8"))

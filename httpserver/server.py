@@ -260,7 +260,7 @@ class HttpServer:
                     )
                     response = self.build_http_404_response(request.method, request.path)
                     await self._send_response(writer, request, response)
-        except (ConnectionResetError, asyncio.IncompleteReadError) as e:
+        except (ConnectionResetError, asyncio.IncompleteReadError):
             pass
         except (TimeoutError, asyncio.TimeoutError) as e:
             self.log.warn(0, f"{self._module}.{self._class}.{_method}", str(e))

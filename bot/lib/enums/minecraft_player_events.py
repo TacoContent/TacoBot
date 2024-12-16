@@ -1,7 +1,5 @@
 from enum import Enum
 
-import discord
-
 
 class MinecraftPlayerEvents(Enum):
     UNKNOWN = 0

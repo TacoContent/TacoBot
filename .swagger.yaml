@@ -143,14 +143,6 @@ paths:
             schema:
               "$ref": "#/components/schemas/MinecraftUserStatsPayload"
 
-  '/tacobot/minecraft/player/{username}/stats':
-    parameters:
-      - name: username
-        in: path
-        required: true
-        schema:
-          type: string
-
   '/tacobot/minecraft/player/{username}/stats/{world}':
     parameters:
       - name: username
@@ -451,6 +443,8 @@ components:
         formatted_end_date:
           type: string
     TacoMinecraftWorlds:
+      default: taco_atm10
+      type: string
       enum:
         - taco_atm8
         - taco_atm9
