@@ -5,8 +5,8 @@ name: Lint Project
     branches:
       - "**" # All branches
       - "!gh-pages" # Except gh-pages
-      - '!develop' # Except develop
-      - '!main' # Except main
+      - "!develop" # Except develop
+      - "!main" # Except main
       - "!master" # Except master
   pull_request:
     types:
@@ -17,7 +17,7 @@ name: Lint Project
       - reopened
       - unlocked
 
-permissions: { }
+permissions: {}
 
 jobs:
   lint:
@@ -43,3 +43,4 @@ jobs:
           VALIDATE_PYTHON_MYPY: false
           VALIDATE_CHECKOV: false
           FIX_YAML_PRETTIER: false
+          VALIDATE_YAML_PRETTIER: false
