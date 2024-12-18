@@ -5,6 +5,7 @@ import typing
 
 from bot.lib.enums import loglevel
 from bot.lib.enums.minecraft_op import MinecraftOpLevel
+from bot.lib.models.minecraft.whitelist_user import MinecraftWhitelistUser
 from bot.lib.mongodb.database import Database
 
 
@@ -14,6 +15,7 @@ class MinecraftDatabase(Database):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self._class = self.__class__.__name__
+        self.SETTINGS_SECTION = "minecraft"
         pass
 
     def get_minecraft_user(self, guildId: int, userId: int) -> typing.Union[dict, None]:
@@ -89,3 +91,45 @@ class MinecraftDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+
+    def get_whitelist(self, guildId: int, status: bool = True) -> typing.List[MinecraftWhitelistUser]:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            results = self.connection.minecraft_users.find({"guild_id": str(guildId), "whitelist": status})
+            whitelist = []
+            for result in results:
+                whitelist.append(MinecraftWhitelistUser(**result))
+            return whitelist
+        except Exception as ex:
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return []
+
+    def get_oplist(self, guildId: int, status: bool = True) -> typing.List[MinecraftWhitelistUser]:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            results = self.connection.minecraft_users.find(
+                {"guild_id": str(guildId), "whitelist": status, "op": {"$exists": True}, "op.enabled": True}
+            )
+            whitelist = []
+            for result in results:
+                whitelist.append(MinecraftWhitelistUser(**result))
+            return whitelist
+        except Exception as ex:
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return []

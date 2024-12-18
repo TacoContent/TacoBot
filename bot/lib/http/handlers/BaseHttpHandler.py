@@ -1,9 +1,13 @@
+import inspect
 import os
+import random
+import string
 
 from bot.lib import discordhelper, logger, settings
 from bot.lib.enums import loglevel
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
+from httpserver.http_util import HttpRequest
 
 
 class BaseHttpHandler:
@@ -13,6 +17,7 @@ class BaseHttpHandler:
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.SETTINGS_SECTION = "http"
+        self.WEBHOOK_SETTINGS_SECTION = "webhook"
         self.settings = settings.Settings()
 
         self.discord_helper = discordhelper.DiscordHelper(bot)
@@ -38,3 +43,28 @@ class BaseHttpHandler:
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
         return self.get_settings(guildId=guildId, section="tacos")
+
+    def validate_auth_token(self, request: HttpRequest) -> bool:
+        _method = inspect.stack()[0][3]
+        try:
+            settings = self.settings.get_settings(0, self.WEBHOOK_SETTINGS_SECTION)
+            if not settings:
+                self.log.error(0, f"{self._module}.{self._class}.{_method}", "No settings found")
+                return False
+
+            token = request.headers.get("X-TACOBOT-TOKEN")
+            if not token:
+                # try to check X-AUTH-TOKEN
+                token = request.headers.get("X-AUTH-TOKEN")
+                if not token:
+                    self.log.error(0, f"{self._module}.{self._class}.{_method}", "No token found in payload")
+                    return False
+
+            if token != settings.get("token", ''.join(random.choices(string.ascii_uppercase + string.digits, k=24))):
+                self.log.error(0, f"{self._module}.{self._class}.{_method}", "Invalid authentication token")
+                return False
+
+            return True
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
+            return False

@@ -38,6 +38,7 @@ class UriRoute:
     http_method: str | list[str]
     uri_variables: list[str] | None
     call_args: list[str]
+    auth_callback: types.FunctionType | None = None
 
     def is_static(self) -> bool:
         return not isinstance(self.path, re.Pattern)

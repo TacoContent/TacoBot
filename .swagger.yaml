@@ -244,6 +244,8 @@ paths:
         "200":
           description: Successful operation
 
+  
+
   '/tacobot/minecraft/player/events':
     get:
       tags:
