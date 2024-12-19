@@ -4,16 +4,15 @@ info:
   description: ""
   version: 1.0.1
 servers:
-  - url: '{host}' # NODE RED
+  - url: '{host}'
     variables:
       host:
         enum:
-          - 'https://nodered.bit13.local'
           - 'http://localhost:8931'
           - 'http://lb.bit13.local:8931'
         default: 'http://lb.bit13.local:8931'
 paths:
-  '/tacobot/minecraft/whitelist.json':
+  '/api/v1/minecraft/whitelist.json':
     get:
       tags:
         - minecraft
@@ -31,7 +30,7 @@ paths:
                 items:
                   "$ref": "#/components/schemas/MinecrafWhiteListUser"
 
-  '/tacobot/minecraft/ops.json':
+  '/api/v1/minecraft/ops.json':
     get:
       tags:
         - minecraft
@@ -49,7 +48,7 @@ paths:
                 items:
                   "$ref": "#/components/schemas/MinecrafOpUser"
 
-  '/tacobot/minecraft/uuid/{username}':
+  '/api/v1/minecraft/uuid/{username}':
     get:
       tags:
         - minecraft
@@ -77,7 +76,7 @@ paths:
               schema:
                 "$ref": '#/components/schemas/ErrorStatusCodePayload'
 
-  '/tacobot/minecraft/status':
+  '/api/v1/minecraft/status':
     get:
       tags:
         - minecraft
@@ -92,7 +91,7 @@ paths:
               schema:
                 "$ref": "#/components/schemas/MinecraftServerStatus"
 
-  '/tacobot/minecraft/version':
+  '/api/v1/minecraft/version':
     get:
       tags:
         - minecraft
@@ -104,8 +103,27 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/TacoMinecraftServerSettings"
+    post:
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - minecraft
+      summary: Set the minecraft server version information
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/TacoMinecraftServerSettings"
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/TacoMinecraftServerSettings"
 
-  '/tacobot/minecraft/player/{user}/stats':
+  '/api/v1/minecraft/player/{user}/stats':
     get:
       parameters:
         - name: user
@@ -143,7 +161,7 @@ paths:
             schema:
               "$ref": "#/components/schemas/MinecraftUserStatsPayload"
 
-  '/tacobot/minecraft/player/{username}/stats/{world}':
+  '/api/v1/minecraft/player/{username}/stats/{world}':
     parameters:
       - name: username
         in: path
@@ -166,7 +184,7 @@ paths:
               schema:
                 "$ref": "#/components/schemas/MinecraftDiscordUserStatsInfo"
 
-  '/tacobot/minecraft/world':
+  '/api/v1/minecraft/world':
     get:
       tags:
         - minecraft
@@ -201,7 +219,7 @@ paths:
               schema:
                 "$ref": "#/components/schemas/TacoMinecraftWorldInfo"
 
-  '/tacobot/minecraft/worlds':
+  '/api/v1/minecraft/worlds':
     get:
       tags:
         - minecraft
@@ -244,9 +262,7 @@ paths:
         "200":
           description: Successful operation
 
-  
-
-  '/tacobot/minecraft/player/events':
+  '/api/v1/minecraft/player/events':
     get:
       tags:
         - minecraft
@@ -261,7 +277,7 @@ paths:
                 items:
                   "$ref": "#/components/schemas/MinecraftPlayerEvent"
 
-  '/tacobot/minecraft/player/event/{event}':
+  '/api/v1/minecraft/player/event/{event}':
     get:
       tags:
         - minecraft
@@ -564,12 +580,32 @@ components:
             - online
             - offline
           type: string
-        title:
+        description:
           type: string
           description: The server description message
+        motd:
+          type: object
+          properties:
+            plain:
+              type: string
+            ansi:
+              type: string
+            html:
+              type: string
+            raw:
+              type: string
         online:
           type: boolean
           description: Indicates if the server is online
+        latency:
+          type: number
+          description: The latency to the server
+        enforces_secure_chat:
+          type: boolean
+          description: Indicates if the server enforces secure chat
+        icon:
+          type: string
+          description: The server icon data URI
         players:
           type: object
           properties:
@@ -580,8 +616,12 @@ components:
               description: Total number of players currently connected
               type: integer
         version:
-          type: string
-          description: The server version or 'OFFLINE'.
+          type: object
+          properties:
+            name:
+              type: string
+            protocol:
+              type: integer
     MinecraftUser:
       type: object
       properties:

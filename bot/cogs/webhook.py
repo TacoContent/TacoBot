@@ -45,6 +45,7 @@ class WebhookCog(TacobotCog):
 
                 self.http_server.set_http_debug_enabled(True)
                 self.load_webhook_handlers()
+                self.recursive_load_handlers("bot/lib/http/handlers/api")
 
                 self.http_server.add_default_response_headers(
                     {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': '*'}
@@ -104,6 +105,42 @@ class WebhookCog(TacobotCog):
                 f"Failed to load handler {handler}: {e}",
                 traceback.format_exc(),
             )
+
+    def recursive_load_handlers(self, path: str):
+        _method = inspect.stack()[0][3]
+        try:
+            if not self.http_server:
+                self.log.error(0, f"{self._module}.{self._class}.{_method}", "No http server found")
+                return
+
+            for root, dirs, files in os.walk(path):
+                for file in files:
+                    full_path = os.path.join(root, file)
+                    if (
+                            file.endswith(".py")
+                            and not file.startswith("_")
+                            and not file.startswith("Base")
+                            and file.endswith("Handler.py")
+                        ):
+                        # convert the file path to a module path by replacing the path separator with a dot
+                        # and removing the file extension
+                        mod_path, class_name = full_path.replace(os.sep, ".").replace('/', '.').replace('\\', '.').replace(".py", "").rsplit('.', 1)
+                        print(mod_path)
+                        print(class_name)
+
+                        full_module_path = f"{mod_path}.{class_name}"
+                        print(full_module_path)
+                        module = import_module(full_module_path)
+
+                        handler_instance = getattr(module, class_name)
+                        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Loading handler {full_module_path}")
+                        self.http_server.add_handler(handler_instance(self.bot))
+
+                for dir in dirs:
+                    self.recursive_load_handlers(dir)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
+
 
     # def get_cog_settings(self, guildId: int = 0) -> dict:
     #     return self.get_settings(guildId=guildId, section=self.SETTINGS_SECTION)

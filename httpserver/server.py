@@ -76,6 +76,8 @@ def _convert_params(request: HttpRequest, route: UriRoute, method):
             args.append(request.query_params)
         elif param_name == 'headers':
             args.append(request.headers)
+        elif param_name == 'auth_callback':
+            args.append(route.auth_callback)
         elif param_name == 'uri_variables':
             if len(route.uri_variables) == 1:
                 uri_variables = dict(zip(route.uri_variables, re.findall(route.path, request.path)))
@@ -111,10 +113,14 @@ def _uri_variable_to_pattern(uri):
 
 
 def _uri_route_decorator(
-    f, path: str | re.Pattern, http_method: str | list[str], uri_variables: list[str] | None = None
+    f,
+    path: str | re.Pattern,
+    http_method: str | list[str],
+    uri_variables: list[str] | None = None,
+    auth_callback: types.FunctionType | None = None,
 ):
     args_specs = inspect.getfullargspec(f)
-    route = UriRoute(path, http_method, uri_variables, args_specs.args)
+    route = UriRoute(path, http_method, uri_variables, args_specs.args, auth_callback)
 
     routes = getattr(f, '_http_routes', [])
     routes.append(route)
@@ -129,8 +135,8 @@ def _scan_handler_for_uri_routes(handler: object) -> Generator[tuple[object, Uri
             yield method, route
 
 
-def uri_mapping(path: str, method: str | list[str] = 'GET'):
-    return lambda f: _uri_route_decorator(f, path, method)
+def uri_mapping(path: str, method: str | list[str] = 'GET', auth_callback: types.FunctionType | None = None):
+    return lambda f: _uri_route_decorator(f, path, method, auth_callback=auth_callback)
 
 
 def uri_pattern_mapping(path: str, method: str | list[str] = 'GET'):
@@ -279,8 +285,13 @@ class HttpServer:
     async def _process_request(self, writer, route, method, request: HttpRequest):
         _method = inspect.stack()[0][3]
         try:
-            args = _convert_params(request, route, method)
+            if route.auth_callback:
+                if not route.auth_callback(request):
+                    response = HttpResponse(401)
+                    await self._send_response(writer, request, response)
+                    return
 
+            args = _convert_params(request, route, method)
             response = method(*args)
             if asyncio.iscoroutine(response):
                 response = await response

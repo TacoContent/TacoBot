@@ -6,6 +6,7 @@ import typing
 from bot.lib.enums import loglevel
 from bot.lib.enums.minecraft_op import MinecraftOpLevel
 from bot.lib.models.minecraft.whitelist_user import MinecraftWhitelistUser
+from bot.lib.models.minecraft.world import MinecraftWorld
 from bot.lib.mongodb.database import Database
 
 
@@ -133,3 +134,61 @@ class MinecraftDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return []
+
+    def get_worlds(self, guildId: int, active: typing.Optional[bool] = None):
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            query = {"guild_id": str(guildId)}
+            if active is not None:
+                query["active"] = active
+            results = self.connection.minecraft_worlds.find(query)
+            worlds = []
+            for result in results:
+                world = MinecraftWorld(
+                    guildId=result.get("guild_id", 0),
+                    name=result.get("name", ""),
+                    worldId=result.get("world", ""),
+                    active=result.get("active", False),
+                )
+                worlds.append(world)
+            return worlds
+        except Exception as ex:
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return []
+
+    def set_active_world(self, guildId: int, worldId: str, name: str, active: bool) -> bool:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+
+            if not worldId:
+                raise ValueError("worldId is required")
+            if not name:
+                raise ValueError("name is required")
+
+            payload = {"active": active, "name": name, "world": worldId, "guild_id": str(guildId)}
+            # set all other worlds to inactive
+            self.connection.minecraft_worlds.update({"guild_id": str(guildId), "world": worldId}, {"$set": {"active": False}})
+            # set the selected world to active
+            self.connection.minecraft_worlds.update_one(
+                {"guild_id": str(guildId), "world": worldId}, {"$set": payload}, upsert=True
+            )
+            return True
+        except Exception as ex:
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return False
