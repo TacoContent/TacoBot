@@ -2,22 +2,21 @@ import inspect
 import json
 import os
 import traceback
-import typing
-import requests
-
 
 import requests
-from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
+from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
+from bot.lib.minecraft.status import MinecraftStatus
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.minecraft import MinecraftDatabase
 from bot.lib.settings import Settings
-from bot.lib.minecraft.status import MinecraftStatus
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException, uri_mapping, uri_variable_mapping
 
+
 class MinecraftApiHandler(BaseHttpHandler):
+
     def __init__(self, bot):
         super().__init__(bot)
         self._class = self.__class__.__name__
@@ -29,7 +28,6 @@ class MinecraftApiHandler(BaseHttpHandler):
 
         self.minecraft_db = MinecraftDatabase()
         self.tracking_db = TrackingDatabase()
-
 
     # eventually this will be rewritten to do the work instead of pass on to NodeRED
     @uri_mapping(f"/api/{API_VERSION}/minecraft/whitelist.json", method="GET")
@@ -46,7 +44,6 @@ class MinecraftApiHandler(BaseHttpHandler):
             payload = []
             for user in whitelist:
                 payload.append({"uuid": user.uuid, "name": user.username})
-
 
             return HttpResponse(200, headers, bytearray(json.dumps(payload, indent=4), "utf-8"))
         except HttpResponseException as e:
@@ -68,12 +65,14 @@ class MinecraftApiHandler(BaseHttpHandler):
             payload = []
             for user in oplist:
                 if user.op is not None and user.op.get('enabled', False):
-                    payload.append({
-                        "uuid": user.uuid,
-                        "name": user.username,
-                        "level": user.op.get('level', 0),
-                        "bypassPlayerLimit": user.op.get('bypassPlayerLimit', False),
-                    })
+                    payload.append(
+                        {
+                            "uuid": user.uuid,
+                            "name": user.username,
+                            "level": user.op.get('level', 0),
+                            "bypassPlayerLimit": user.op.get('bypassPlayerLimit', False),
+                        }
+                    )
 
             return HttpResponse(200, headers, bytearray(json.dumps(payload, indent=4), "utf-8"))
         except HttpResponseException as e:
@@ -101,14 +100,8 @@ class MinecraftApiHandler(BaseHttpHandler):
                     "online": True,
                     "status": "online",
                     "host": minecraft_host_external,
-                    "version": {
-                        "name": result.version.name,
-                        "protocol": result.version.protocol,
-                    },
-                    "players": {
-                        "online": result.players.online,
-                        "max": result.players.max,
-                    },
+                    "version": {"name": result.version.name, "protocol": result.version.protocol},
+                    "players": {"online": result.players.online, "max": result.players.max},
                     "description": result.motd.to_plain(),
                     "motd": {
                         "plain": result.motd.to_plain(),
@@ -151,7 +144,9 @@ class MinecraftApiHandler(BaseHttpHandler):
             if not payload:
                 raise HttpResponseException(404, headers, b'{ "error": "No settings found in the payload" }')
 
-            self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Updating settings for guild {target_guild_id}")
+            self.log.debug(
+                0, f"{self._module}.{self._class}.{_method}", f"Updating settings for guild {target_guild_id}"
+            )
             self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"{json.dumps(payload, indent=4)}")
             # self.minecraft_db.update_version({"guild_id": target_guild_id, "name": SETTINGS_SECTION}, payload=payload)
 
@@ -172,7 +167,6 @@ class MinecraftApiHandler(BaseHttpHandler):
             headers = HttpHeaders()
             headers.add("Content-Type", "application/json")
 
-
             target_guild_id = self.settings.primary_guild_id
             SETTINGS_SECTION = "minecraft"
 
@@ -180,11 +174,11 @@ class MinecraftApiHandler(BaseHttpHandler):
             if data and data.get("_id", None):
                 del data["_id"]
 
-            payload = {
-                "guild_id": target_guild_id,
-                "name": SETTINGS_SECTION,
-                "settings": data,
-            }
+            # payload = {
+            #     "guild_id": target_guild_id,
+            #     "name": SETTINGS_SECTION,
+            #     "settings": data,
+            # }
 
             return HttpResponse(200, headers, bytearray(json.dumps(data, indent=4), "utf-8"))
         except HttpResponseException as e:
@@ -313,10 +307,7 @@ class MinecraftApiHandler(BaseHttpHandler):
             response = requests.get(url)
             if response.status_code == 200:
                 data = response.json()
-                payload = {
-                    "uuid": data.get("id", ""),
-                    "name": data.get("name", ""),
-                }
+                payload = {"uuid": data.get("id", ""), "name": data.get("name", "")}
                 return HttpResponse(200, headers, bytearray(json.dumps(payload, indent=4), "utf-8"))
             else:
                 raise HttpResponseException(404, headers, b'{ "error": "No user found" }')

@@ -1,18 +1,11 @@
-import inspect
-import json
 import os
-import traceback
 import typing
 
 import requests
-from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
-from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.minecraft import MinecraftDatabase
+from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
-from bot.lib.minecraft.status import MinecraftStatus
-from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException, uri_mapping
 
 
 class ApiHttpHandler(BaseHttpHandler):

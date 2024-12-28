@@ -12,7 +12,7 @@ from discord.ext import commands
 from httpserver.server import HttpServer
 
 
-class WebhookCog(TacobotCog):
+class HttpHandlerCog(TacobotCog):
     # group = app_commands.Group(name="webhook", description="Webhook Handler")
 
     def __init__(self, bot: TacoBot):
@@ -44,8 +44,10 @@ class WebhookCog(TacobotCog):
                 self.http_server = HttpServer()
 
                 self.http_server.set_http_debug_enabled(True)
-                self.load_webhook_handlers()
-                self.recursive_load_handlers("bot/lib/http/handlers/api")
+                # self.load_webhook_handlers()
+                # self.recursive_load_handlers("bot/lib/http/handlers/api")
+                # self.recursive_load_handlers("bot/lib/http/handlers/webhook")
+                self.recursive_load_handlers("bot/lib/http/handlers")
 
                 self.http_server.add_default_response_headers(
                     {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': '*'}
@@ -117,30 +119,33 @@ class WebhookCog(TacobotCog):
                 for file in files:
                     full_path = os.path.join(root, file)
                     if (
-                            file.endswith(".py")
-                            and not file.startswith("_")
-                            and not file.startswith("Base")
-                            and file.endswith("Handler.py")
-                        ):
+                        file.endswith(".py")
+                        and not file.startswith("_")
+                        and not file.startswith("Base")
+                        and file.endswith("Handler.py")
+                    ):
                         # convert the file path to a module path by replacing the path separator with a dot
                         # and removing the file extension
-                        mod_path, class_name = full_path.replace(os.sep, ".").replace('/', '.').replace('\\', '.').replace(".py", "").rsplit('.', 1)
-                        print(mod_path)
-                        print(class_name)
-
+                        mod_path, class_name = (
+                            full_path.replace(os.sep, ".")
+                            .replace('/', '.')
+                            .replace('\\', '.')
+                            .replace(".py", "")
+                            .rsplit('.', 1)
+                        )
                         full_module_path = f"{mod_path}.{class_name}"
-                        print(full_module_path)
                         module = import_module(full_module_path)
 
                         handler_instance = getattr(module, class_name)
-                        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Loading handler {full_module_path}")
+                        self.log.debug(
+                            0, f"{self._module}.{self._class}.{_method}", f"Loading handler {full_module_path}"
+                        )
                         self.http_server.add_handler(handler_instance(self.bot))
 
                 for dir in dirs:
                     self.recursive_load_handlers(dir)
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
-
 
     # def get_cog_settings(self, guildId: int = 0) -> dict:
     #     return self.get_settings(guildId=guildId, section=self.SETTINGS_SECTION)
@@ -158,5 +163,5 @@ class WebhookCog(TacobotCog):
 
 
 async def setup(bot):
-    webhook = WebhookCog(bot)
-    await bot.add_cog(webhook)
+    httphanlder = HttpHandlerCog(bot)
+    await bot.add_cog(httphanlder)
