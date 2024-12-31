@@ -12,6 +12,22 @@ servers:
           - 'http://lb.bit13.local:8931'
         default: 'http://lb.bit13.local:8931'
 paths:
+  'api/swagger.yaml':
+    get:
+      tags:
+        - swagger
+      summary: Get the swagger file
+      description: |
+        Gets the swagger file
+      parameters: []
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/yaml:
+              schema:
+                type: string
+
   '/api/v1/minecraft/whitelist.json':
     get:
       tags:
