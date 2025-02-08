@@ -89,6 +89,8 @@ class Assistant(TacobotCog):
         try:
             guild = await self.bot.fetch_guild(guildId)
             channel = await guild.fetch_channel(channelId)
+            if not channel:
+                return ""
             message = await channel.fetch_message(messageId)
             return message.content
         except Exception as ex:
