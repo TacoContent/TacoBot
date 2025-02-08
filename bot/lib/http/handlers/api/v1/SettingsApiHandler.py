@@ -4,11 +4,11 @@ import os
 
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
-from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.minecraft import MinecraftDatabase
+from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException, uri_mapping, uri_variable_mapping
+from httpserver.server import uri_variable_mapping
 
 
 class SettingsApiHandler(BaseHttpHandler):

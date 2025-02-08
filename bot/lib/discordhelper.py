@@ -349,7 +349,7 @@ class DiscordHelper:
                     user = await guild.fetch_member(userId)
                 return user
             return None
-        except discord.errors.NotFound as nf:
+        except discord.errors.NotFound:
             return None
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
@@ -508,10 +508,8 @@ class DiscordHelper:
     ):
         _method = inspect.stack()[1][3]
         guild_id = ctx.guild.id
-        options = []
         channels = [c for c in ctx.guild.channels if c.type == discord.ChannelType.text]
         channels.sort(key=lambda c: c.position)
-        sub_message = ""
 
         async def select_callback(select: discord.ui.Select, interaction: discord.Interaction):
             # if not the user that triggered the interaction, ignore
@@ -617,7 +615,7 @@ class DiscordHelper:
         if ctx.guild:
             guild_id = ctx.guild.id
 
-        channel = ctx.channel if ctx.channel else ctx.author
+        # channel = ctx.channel if ctx.channel else ctx.author
 
         number_ask = await self.messaging.send_embed(
             ctx.channel,
@@ -637,31 +635,31 @@ class DiscordHelper:
             numberValue = int(numberResp.content)
             try:
                 await numberResp.delete()
-            except discord.NotFound as e:
+            except discord.NotFound:
                 self.log.debug(
                     guild_id,
                     f"{self._module}.{self._class}.{_method}",
-                    f"Tried to clean up, but the messages were not found.",
+                    "Tried to clean up, but the messages were not found.",
                 )
-            except discord.Forbidden as f:
+            except discord.Forbidden:
                 self.log.debug(
                     guild_id,
                     f"{self._module}.{self._class}.{_method}",
-                    f"Tried to clean up, but the bot does not have permissions to delete messages.",
+                    "Tried to clean up, but the bot does not have permissions to delete messages.",
                 )
             try:
                 await number_ask.delete()
-            except discord.NotFound as e:
+            except discord.NotFound:
                 self.log.debug(
                     guild_id,
                     f"{self._module}.{self._class}.{_method}",
-                    f"Tried to clean up, but the messages were not found.",
+                    "Tried to clean up, but the messages were not found.",
                 )
-            except discord.Forbidden as f:
+            except discord.Forbidden:
                 self.log.debug(
                     guild_id,
                     f"{self._module}.{self._class}.{_method}",
-                    f"Tried to clean up, but the bot does not have permissions to delete messages.",
+                    "Tried to clean up, but the bot does not have permissions to delete messages.",
                 )
         return numberValue
 
@@ -707,7 +705,7 @@ class DiscordHelper:
             if delete_user_message:
                 try:
                     await textResp.delete()
-                except:
+                except Exception:
                     pass
             await text_ask.delete()
         return textResp.content
@@ -767,12 +765,11 @@ class DiscordHelper:
             if delete_user_message:
                 try:
                     await textResp.delete()
-                except:
+                except Exception:
                     pass
             await ask_image_or_text.delete()
         return TextWithAttachments(textResp.content, textResp.attachments)
 
-        pass
 
     async def ask_role_list(
         self,
