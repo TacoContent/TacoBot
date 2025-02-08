@@ -161,25 +161,30 @@ class NewAccountCheckCog(TacobotCog):
             age_days = math.floor(age / 86400)
             cog_settings = self.get_cog_settings(guildId=guild_id)
             minimum_account_age = cog_settings.get("minimum_account_age", self.MINIMUM_ACCOUNT_AGE)
+            notify_channel_id = cog_settings.get("notify_channel_id", None)
+            notify_channel = None
             if age_days < minimum_account_age:
                 self.log.warn(
                     guild_id,
                     f"{self._module}.{self._class}.{_method}",
                     f"Member {utils.get_user_display_name(member)} (ID: {member.id}) account age ({age_days} days) is less than {minimum_account_age} days.",
                 )
-                message = f"New Account: account age ({age_days} days) is less than required minimum of {minimum_account_age} days."
+                message = f"⚠️New Account⚠️: {member.name} account age ({age_days} days) is less than required minimum of {minimum_account_age} days."
                 self.tracking_db.track_system_action(
                     guild_id=guild_id,
                     action=SystemActions.NEW_ACCOUNT_KICK,
                     data={"user_id": str(member.id), "reason": message, "account_age": age_days},
                 )
                 if member.guild:
-                    # find messages by the user and delete them
-                    system_channel = member.guild.system_channel
-                    if system_channel:
-                        async for message in await system_channel.history(limit=100):
-                            if message.author.id == member.id:
-                                await message.delete()
+                    try:
+                        # find messages by the user and delete them
+                        system_channel = member.guild.system_channel
+                        if system_channel:
+                            for message in system_channel.history(limit=100):
+                                if message.author.id == member.id:
+                                    await message.delete()
+                    except Exception as e:
+                        self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
                 else:
                     self.log.warn(
                         guild_id,
@@ -188,6 +193,11 @@ class NewAccountCheckCog(TacobotCog):
                     )
                 # kick the member
                 await member.kick(reason=message, delete_message_days=0)
+                if notify_channel_id:
+                    notify_channel = await self.discord_helper.get_or_fetch_channel(notify_channel_id)
+                    if notify_channel:
+                        await notify_channel.send(message)
+
             return
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())

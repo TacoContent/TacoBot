@@ -2,6 +2,7 @@ import inspect
 import os
 import traceback
 
+from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.mongodb.tracking import TrackingDatabase
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
@@ -18,7 +19,7 @@ class SwaggerHttpHandler(BaseHttpHandler):
 
         self.tracking_db = TrackingDatabase()
 
-    @uri_mapping("/api/swagger.yaml", method="GET")
+    @uri_mapping("/api/{API_VERSION}/swagger.yaml", method="GET")
     async def swagger(self, request: HttpRequest) -> HttpResponse:
         _method = inspect.stack()[0][3]
 
@@ -29,7 +30,7 @@ class SwaggerHttpHandler(BaseHttpHandler):
             # headers.add("Content-Disposition", "attachment; filename=swagger.yaml")
 
             # load .swagger.yaml yaml file from module root directory
-            with open(".swagger.yaml", "r") as file:
+            with open(".swagger.{API_VERSION}.yaml", "r") as file:
                 swagger = file.read()
             return HttpResponse(200, headers, bytearray(swagger, "utf-8"))
         except HttpResponseException as e:

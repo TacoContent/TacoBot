@@ -16,8 +16,6 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
         self.SETTINGS_SECTION = "webhook/minecraft/player"
         self.discord_helper = discordhelper.DiscordHelper(bot)
 
-
-
     @uri_mapping("/webhook/minecraft/player/event", method="POST")
     async def event(self, request: HttpRequest, **kwargs) -> HttpResponse:
         """Receive a Minecraft player event payload from the webhook"""

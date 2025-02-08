@@ -12,7 +12,7 @@ servers:
           - 'http://lb.bit13.local:8931'
         default: 'http://lb.bit13.local:8931'
 paths:
-  'api/swagger.yaml':
+  '/api/v1/swagger.yaml':
     get:
       tags:
         - swagger
