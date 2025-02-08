@@ -7,35 +7,31 @@ import typing
 
 import discord
 import requests
-from bot.lib import discordhelper, logger, settings, utils
-from bot.lib.enums import loglevel, tacotypes
+from bot.lib import discordhelper, utils
+from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
+from bot.lib.enums import tacotypes
 from bot.lib.enums.system_actions import SystemActions
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.twitch import TwitchDatabase
+from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
-class TwitchInfo(commands.Cog):
-    def __init__(self, bot) -> None:
+class TwitchInfoCog(TacobotCog):
+    def __init__(self, bot: TacoBot) -> None:
+        super().__init__(bot, "twitchinfo")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.bot = bot
-        self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
-        self.SETTINGS_SECTION = "twitchinfo"
 
         self.twitch_db = TwitchDatabase()
         self.tracking_db = TrackingDatabase()
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
-        if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
 
-        self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
@@ -62,7 +58,7 @@ class TwitchInfo(commands.Cog):
         if channel is None:
             return
 
-        if user == None or user == "":
+        if user is None or user == "":
             # specify channel
             return
         twitch_info = self.twitch_db.get_user_twitch_info(user.id)
@@ -112,9 +108,9 @@ class TwitchInfo(commands.Cog):
             who = utils.get_user_display_name(member)
 
         guild_id = 0
-        channel = ctx.author
+        # channel = ctx.author
         if ctx.guild:
-            channel = ctx.channel
+            # channel = ctx.channel
             guild_id = ctx.guild.id
             await ctx.message.delete()
 
@@ -130,10 +126,10 @@ class TwitchInfo(commands.Cog):
                     alt_ctx,
                     ctx.author,
                     "Twitch Name",
-                    "I do not have a twitch name set for {who}, please respond with the twitch name.",
+                    f"I do not have a twitch name set for {who}, please respond with the twitch name.",
                     60,
                 )
-                if not twitch_name is None:
+                if twitch_name is not None:
                     self.twitch_db.set_user_twitch_info(ctx.author.id, twitch_name.lower().strip())
                     self.tracking_db.track_system_action(
                         guild_id=guild_id,
@@ -142,7 +138,7 @@ class TwitchInfo(commands.Cog):
                     )
         else:
             twitch_name = twitch_info["twitch_name"]
-        if not twitch_name is None:
+        if twitch_name is not None:
             await self.messaging.send_embed(
                 channel=ctx.author,
                 title="Twitch Name",
@@ -295,12 +291,6 @@ class TwitchInfo(commands.Cog):
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
-    def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, "tacos")
-        if not cog_settings:
-            raise Exception(f"No tacos settings found for guild {guildId}")
-        return cog_settings
-
 
 async def setup(bot):
-    await bot.add_cog(TwitchInfo(bot))
+    await bot.add_cog(TwitchInfoCog(bot))

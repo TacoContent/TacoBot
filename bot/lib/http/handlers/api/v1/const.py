@@ -1,0 +1,2 @@
+API_VERSION = "v1"
+API_VERSION_PATH = f"/api/{API_VERSION}"

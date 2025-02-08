@@ -7,42 +7,39 @@ import typing
 
 import aiohttp
 import discord
-from bot.lib import discordhelper, logger, settings, utils
-from bot.lib.enums import loglevel, tacotypes
+from bot.lib import discordhelper, utils
+from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
+from bot.lib.enums import tacotypes
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.toqtd import TQOTDDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
+from bot.tacobot import TacoBot
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Context
 from openai import OpenAI
 
 
-class TacoQuestionOfTheDay(commands.Cog):
+class TacoQuestionOfTheDayCog(TacobotCog):
     group = app_commands.Group(name="tqotd", description="Commands for the Taco Question of the Day")
 
-    def __init__(self, bot) -> None:
+    def __init__(self, bot: TacoBot) -> None:
+        super().__init__(bot, "tqotd")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.bot = bot
-        self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.permissions = Permissions(bot)
-        self.SETTINGS_SECTION = "tqotd"
+
         self.SELF_DESTRUCT_TIMEOUT = 30
 
         self.tqotd_db = TQOTDDatabase()
         self.tracking_db = TrackingDatabase()
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
-        if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
 
-        self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.group(name="tqotd", invoke_without_command=True)
@@ -140,7 +137,7 @@ class TacoQuestionOfTheDay(commands.Cog):
             await self.messaging.send_embed(
                 channel=out_channel,
                 title=self.settings.get_string(guild_id, "tqotd_out_title"),
-                message=out_message,
+                message=save_message,
                 content=role_tag,
                 files=files,
                 color=0x00FF00,
@@ -283,11 +280,11 @@ class TacoQuestionOfTheDay(commands.Cog):
 
         previous_questions = json.dumps(self.tqotd_db.get_all_tqotd_questions(guild_id))
 
-        self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Generating question using AI")
+        self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", "Generating question using AI")
         self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"System Prompt: {system_prompt}")
         self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Previous Questions: {previous_questions}")
         self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"User Prompt: {user_prompt}")
-        qprompt = "Here is a json array of previous questions that have been asked: " + previous_questions
+        qprompt = f"Here is a json array of previous questions that have been asked: {previous_questions}"
         airesponse = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -380,7 +377,7 @@ class TacoQuestionOfTheDay(commands.Cog):
             channel = self.bot.get_channel(payload.channel_id)
             message = await channel.fetch_message(payload.message_id)
             message_author = message.author
-            react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+            # react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
 
             # check if this reaction is the first one of this type on the message
             reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)
@@ -499,18 +496,6 @@ class TacoQuestionOfTheDay(commands.Cog):
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             raise e
 
-    def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
-        if not cog_settings:
-            raise Exception(f"No tqotd settings found for guild {guildId}")
-        return cog_settings
-
-    def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, "tacos")
-        if not cog_settings:
-            raise Exception(f"No tacos settings found for guild {guildId}")
-        return cog_settings
-
 
 async def setup(bot):
-    await bot.add_cog(TacoQuestionOfTheDay(bot))
+    await bot.add_cog(TacoQuestionOfTheDayCog(bot))

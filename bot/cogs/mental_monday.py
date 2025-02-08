@@ -5,40 +5,37 @@ import traceback
 import typing
 
 import discord
-from bot.lib import discordhelper, logger, settings, utils
-from bot.lib.enums import loglevel, tacotypes
+from bot.lib import discordhelper, utils
+from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
+from bot.lib.enums import tacotypes
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.mentalmondays import MentalMondaysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
+from bot.tacobot import TacoBot
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Context
 from openai import OpenAI
 
 
-class MentalMondays(commands.Cog):
+class MentalMondays(TacobotCog):
     group = app_commands.Group(name="mentalmondays", description="Commands for the Mental Monday's")
 
-    def __init__(self, bot) -> None:
+    def __init__(self, bot: TacoBot) -> None:
+        super().__init__(bot, "mentalmondays")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.bot = bot
-        self.settings = settings.Settings()
+
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.permissions = Permissions(bot)
-        self.SETTINGS_SECTION = "mentalmondays"
+
         self.SELF_DESTRUCT_TIMEOUT = 30
         self.mentalmondays_db = MentalMondaysDatabase()
         self.tracking_db = TrackingDatabase()
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
-        if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
-
-        self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.group(name="mentalmondays", invoke_without_command=True)
@@ -308,7 +305,7 @@ class MentalMondays(commands.Cog):
         channel = self.bot.get_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)
         message_author = message.author
-        react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+        # react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
 
         # check if this reaction is the first one of this type on the message
         reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)
@@ -692,18 +689,6 @@ class MentalMondays(commands.Cog):
             else:
                 # send the message in a DM to the user
                 await user.send(out_message)
-
-    def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
-        if not cog_settings:
-            raise Exception(f"No cog settings found for guild {guildId}")
-        return cog_settings
-
-    def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, "tacos")
-        if not cog_settings:
-            raise Exception(f"No tacos settings found for guild {guildId}")
-        return cog_settings
 
 
 async def setup(bot):

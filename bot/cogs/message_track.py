@@ -2,28 +2,25 @@ import inspect
 import os
 import traceback
 
-from bot.lib import discordhelper, logger, settings
-from bot.lib.enums import loglevel, tacotypes
+from bot.lib import discordhelper
+from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
+from bot.lib.enums import tacotypes
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
-class MessageTracker(commands.Cog):
-    def __init__(self, bot):
+class MessageTracker(TacobotCog):
+    def __init__(self, bot: TacoBot):
+        super().__init__(bot, "message_track")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.bot = bot
-        self.settings = settings.Settings()
-        self.discord_helper = discordhelper.DiscordHelper(bot)
-        self.SETTINGS_SECTION = "message_track"
-        self.tracking_db = TrackingDatabase()
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
-        if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
 
-        self.log = logger.Log(minimumLogLevel=log_level)
+        self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.tracking_db = TrackingDatabase()
+
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
@@ -63,14 +60,12 @@ class MessageTracker(commands.Cog):
             # fetch member from id
             member = guild.get_member(user_id)
             # get channel
-            channel = None
-            message = None
+            # channel = None
+            # message = None
 
-            # get bot
-            bot = self.bot
-            ctx = self.discord_helper.create_context(
-                bot=bot, guild=guild, author=member, channel=channel, message=message
-            )
+            # ctx = self.discord_helper.create_context(
+            #     bot=bot, guild=guild, author=member, channel=channel, message=message
+            # )
 
             # track that the user answered the question.
             self.tracking_db.track_first_message(guild_id, member.id, channel_id, message_id)
@@ -86,18 +81,6 @@ class MessageTracker(commands.Cog):
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-
-    def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
-        if not cog_settings:
-            raise Exception(f"No cog settings found for guild {guildId}")
-        return cog_settings
-
-    def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, "tacos")
-        if not cog_settings:
-            raise Exception(f"No tacos settings found for guild {guildId}")
-        return cog_settings
 
 
 async def setup(bot):

@@ -3,25 +3,25 @@ import os
 import traceback
 from importlib import import_module
 
-from bot.lib import discordhelper, logger, settings
-from bot.lib.enums import loglevel
+from bot.lib import discordhelper
+from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.tacobot import TacoBot
 from discord.ext import commands
 from httpserver.server import HttpServer
 
 
-class WebhookCog(commands.Cog):
+class HttpHandlerCog(TacobotCog):
     # group = app_commands.Group(name="webhook", description="Webhook Handler")
 
-    def __init__(self, bot):
+    def __init__(self, bot: TacoBot):
+        super().__init__(bot, "webhook")
+
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.bot = bot
-        self.SETTINGS_SECTION = "webhook"
-        self.settings = settings.Settings()
 
         self.http_server = None
 
@@ -29,11 +29,6 @@ class WebhookCog(commands.Cog):
         self.messaging = Messaging(bot)
         self.tracking_db = TrackingDatabase()
 
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
-        if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
-
-        self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener("on_ready")
@@ -49,7 +44,10 @@ class WebhookCog(commands.Cog):
                 self.http_server = HttpServer()
 
                 self.http_server.set_http_debug_enabled(True)
-                self.load_webhook_handlers()
+                # self.load_webhook_handlers()
+                # self.recursive_load_handlers("bot/lib/http/handlers/api")
+                # self.recursive_load_handlers("bot/lib/http/handlers/webhook")
+                self.recursive_load_handlers("bot/lib/http/handlers")
 
                 self.http_server.add_default_response_headers(
                     {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': '*'}
@@ -70,7 +68,7 @@ class WebhookCog(commands.Cog):
     def load_webhook_handlers(self):
         _method = inspect.stack()[0][3]
         try:
-            if not os.path.exists("bot/lib/webhook/handlers"):
+            if not os.path.exists("bot/lib/http/handlers"):
                 self.log.error(0, f"{self._module}.{self._class}.{_method}", "No handlers found")
                 return
             if not self.http_server:
@@ -78,9 +76,12 @@ class WebhookCog(commands.Cog):
                 return
 
             handlers = [
-                f"bot.lib.webhook.handlers.{os.path.splitext(f)[0]}"
-                for f in os.listdir("bot/lib/webhook/handlers")
-                if f.endswith(".py") and not f.startswith("_") and not f.startswith("BaseWebhookHandler")
+                f"bot.lib.http.handlers.{os.path.splitext(f)[0]}"
+                for f in os.listdir("bot/lib/http/handlers")
+                if f.endswith(".py")
+                and not f.startswith("_")
+                and not f.startswith("BaseWebhookHandler")
+                and not f.startswith("BaseHttpHandler")
             ]
 
             for handler in handlers:
@@ -107,21 +108,60 @@ class WebhookCog(commands.Cog):
                 traceback.format_exc(),
             )
 
-    def get_cog_settings(self, guildId: int = 0) -> dict:
-        return self.get_settings(guildId=guildId, section=self.SETTINGS_SECTION)
+    def recursive_load_handlers(self, path: str):
+        _method = inspect.stack()[0][3]
+        try:
+            if not self.http_server:
+                self.log.error(0, f"{self._module}.{self._class}.{_method}", "No http server found")
+                return
 
-    def get_settings(self, guildId: int, section: str) -> dict:
-        if not section or section == "":
-            raise Exception("No section provided")
-        cog_settings = self.settings.get_settings(guildId, section)
-        if not cog_settings:
-            raise Exception(f"No '{section}' settings found for guild {guildId}")
-        return cog_settings
+            for root, dirs, files in os.walk(path):
+                for file in files:
+                    full_path = os.path.join(root, file)
+                    if (
+                        file.endswith(".py")
+                        and not file.startswith("_")
+                        and not file.startswith("Base")
+                        and file.endswith("Handler.py")
+                    ):
+                        # convert the file path to a module path by replacing the path separator with a dot
+                        # and removing the file extension
+                        mod_path, class_name = (
+                            full_path.replace(os.sep, ".")
+                            .replace('/', '.')
+                            .replace('\\', '.')
+                            .replace(".py", "")
+                            .rsplit('.', 1)
+                        )
+                        full_module_path = f"{mod_path}.{class_name}"
+                        module = import_module(full_module_path)
 
-    def get_tacos_settings(self, guildId: int = 0) -> dict:
-        return self.get_settings(guildId=guildId, section="tacos")
+                        handler_instance = getattr(module, class_name)
+                        self.log.debug(
+                            0, f"{self._module}.{self._class}.{_method}", f"Loading handler {full_module_path}"
+                        )
+                        self.http_server.add_handler(handler_instance(self.bot))
+
+                for dir in dirs:
+                    self.recursive_load_handlers(dir)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
+
+    # def get_cog_settings(self, guildId: int = 0) -> dict:
+    #     return self.get_settings(guildId=guildId, section=self.SETTINGS_SECTION)
+
+    # def get_settings(self, guildId: int, section: str) -> dict:
+    #     if not section or section == "":
+    #         raise Exception("No section provided")
+    #     cog_settings = self.settings.get_settings(guildId, section)
+    #     if not cog_settings:
+    #         raise Exception(f"No '{section}' settings found for guild {guildId}")
+    #     return cog_settings
+
+    # def get_tacos_settings(self, guildId: int = 0) -> dict:
+    #     return self.get_settings(guildId=guildId, section="tacos")
 
 
 async def setup(bot):
-    webhook = WebhookCog(bot)
-    await bot.add_cog(webhook)
+    httphanlder = HttpHandlerCog(bot)
+    await bot.add_cog(httphanlder)
