@@ -770,7 +770,6 @@ class DiscordHelper:
             await ask_image_or_text.delete()
         return TextWithAttachments(textResp.content, textResp.attachments)
 
-
     async def ask_role_list(
         self,
         ctx,

@@ -1,5 +1,4 @@
 import mcstatus
-
 from mcstatus.status_response import JavaStatusResponse
 
 

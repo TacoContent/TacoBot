@@ -40,10 +40,7 @@ class TacoBotMetrics:
         self.db = MetricsDatabase()
 
         self.sum_tacos = Gauge(
-            namespace=self.namespace,
-            name="tacos",
-            documentation="The number of tacos give to users",
-            labelnames=labels,
+            namespace=self.namespace, name="tacos", documentation="The number of tacos give to users", labelnames=labels
         )
 
         self.sum_taco_gifts = Gauge(
@@ -381,7 +378,7 @@ class TacoBotMetrics:
         build_date = dict_get(os.environ, "APP_BUILD_DATE", "unknown")
         sha = dict_get(os.environ, "APP_BUILD_SHA", "unknown")
         self.build_info.labels(version=ver, ref=ref, build_date=build_date, sha=sha).set(1)
-        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Metrics initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Metrics initialized")
 
     def check_health(self):
         """Check the health of the bot"""
@@ -392,7 +389,7 @@ class TacoBotMetrics:
                     s.settimeout(10)
                     s.connect(("127.0.0.1", 40404))
                     data = s.recv(1024)
-                except (ConnectionError, socket.timeout, ConnectionRefusedError) as ex:
+                except (ConnectionError, socket.timeout, ConnectionRefusedError):
                     data = b""
 
             self.healthy.set(1 if data == b"healthy" else 0)
@@ -407,9 +404,9 @@ class TacoBotMetrics:
         _method = inspect.stack()[1][3]
         try:
             while True:
-                self.log.info(0, f"{self._module}.{self._class}.{_method}", f"Begin metrics fetch")
+                self.log.info(0, f"{self._module}.{self._class}.{_method}", "Begin metrics fetch")
                 self.fetch()
-                self.log.info(0, f"{self._module}.{self._class}.{_method}", f"End metrics fetch")
+                self.log.info(0, f"{self._module}.{self._class}.{_method}", "End metrics fetch")
                 self.log.debug(
                     0,
                     f"{self._module}.{self._class}.{_method}",

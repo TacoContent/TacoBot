@@ -2,6 +2,7 @@ import inspect
 import os
 import random
 import string
+import traceback
 
 from bot.lib import discordhelper, logger, settings
 from bot.lib.enums import loglevel

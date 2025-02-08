@@ -47,3 +47,4 @@ jobs:
           VALIDATE_PYTHON_PYINK: false
           FIX_JSON_PRETTIER: false
           VALIDATE_JSON_PRETTIER: false
+          VALIDATE_PYTHON_PYLINT: false

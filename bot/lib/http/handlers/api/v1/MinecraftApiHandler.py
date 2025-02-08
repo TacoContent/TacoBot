@@ -8,8 +8,8 @@ from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.minecraft.status import MinecraftStatus
-from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.minecraft import MinecraftDatabase
+from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException, uri_mapping, uri_variable_mapping
@@ -139,7 +139,7 @@ class MinecraftApiHandler(BaseHttpHandler):
                 raise HttpResponseException(404, headers, b'{ "error": "No guild_id found in the payload" }')
 
             target_guild_id = int(data.get("guild_id", 0))
-            SETTINGS_SECTION = "minecraft"
+            # MINECRAFT_SETTINGS_SECTION = "minecraft"
             payload = data.get("settings", None)
             if not payload:
                 raise HttpResponseException(404, headers, b'{ "error": "No settings found in the payload" }')
@@ -148,7 +148,7 @@ class MinecraftApiHandler(BaseHttpHandler):
                 0, f"{self._module}.{self._class}.{_method}", f"Updating settings for guild {target_guild_id}"
             )
             self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"{json.dumps(payload, indent=4)}")
-            # self.minecraft_db.update_version({"guild_id": target_guild_id, "name": SETTINGS_SECTION}, payload=payload)
+            # self.minecraft_db.update_version({"guild_id": target_guild_id, "name": MINECRAFT_SETTINGS_SECTION}, payload=payload)
 
             return HttpResponse(200, headers, b'{ "status": "ok" }')
         except HttpResponseException as e:
