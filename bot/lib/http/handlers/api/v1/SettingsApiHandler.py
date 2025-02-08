@@ -37,9 +37,7 @@ class SettingsApiHandler(BaseHttpHandler):
             headers = HttpHeaders()
             headers.add("Content-Type", "application/json")
             return HttpResponse(
-                200,
-                headers,
-                bytearray(json.dumps(self.settings.get_settings(guild_id, section), indent=4), "utf-8"),
+                200, headers, bytearray(json.dumps(self.settings.get_settings(guild_id, section), indent=4), "utf-8")
             )
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{ex}")

@@ -391,7 +391,12 @@ class DiscordHelper:
             return None
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"Channel ID: '{channelId}'")
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", f"Bot: '{self.bot.id}' - {self.bot.name}", traceback.format_exc())
+            self.log.error(
+                0,
+                f"{self._module}.{self._class}.{_method}",
+                f"Bot: '{self.bot.id}' - {self.bot.name}",
+                traceback.format_exc(),
+            )
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             return None
 

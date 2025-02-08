@@ -8,5 +8,3 @@ class MinecraftWhitelistUser:
         self.whitelist = kwargs.get("whitelist", False)
 
         self.op = kwargs.get("op", None)
-
-    

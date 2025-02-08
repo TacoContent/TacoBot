@@ -177,7 +177,9 @@ class MinecraftDatabase(Database):
 
             payload = {"active": active, "name": name, "world": worldId, "guild_id": str(guildId)}
             # set all other worlds to inactive
-            self.connection.minecraft_worlds.update({"guild_id": str(guildId), "world": worldId}, {"$set": {"active": False}})
+            self.connection.minecraft_worlds.update(
+                {"guild_id": str(guildId), "world": worldId}, {"$set": {"active": False}}
+            )
             # set the selected world to active
             self.connection.minecraft_worlds.update_one(
                 {"guild_id": str(guildId), "world": worldId}, {"$set": payload}, upsert=True

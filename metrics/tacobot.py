@@ -359,10 +359,7 @@ class TacoBotMetrics:
         )
 
         self.healthy = Gauge(
-            namespace=self.namespace,
-            name=f"healthy",
-            documentation="The health of the bot",
-            labelnames=[],
+            namespace=self.namespace, name=f"healthy", documentation="The health of the bot", labelnames=[]
         )
 
         self.build_info = Gauge(
