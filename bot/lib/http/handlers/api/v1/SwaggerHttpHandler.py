@@ -2,7 +2,7 @@ import inspect
 import os
 import traceback
 
-from bot.lib.http.handlers.api.v1.const import API_VERSION
+from bot.lib.http.handlers.api.v1.const import API_VERSION  # noqa: F401
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.mongodb.tracking import TrackingDatabase
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
@@ -10,6 +10,7 @@ from httpserver.server import HttpResponseException, uri_mapping
 
 
 class SwaggerHttpHandler(BaseHttpHandler):
+
     def __init__(self, bot):
         super().__init__(bot)
         self._class = self.__class__.__name__

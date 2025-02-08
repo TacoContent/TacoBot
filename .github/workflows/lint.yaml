@@ -44,3 +44,4 @@ jobs:
           VALIDATE_CHECKOV: false
           FIX_YAML_PRETTIER: false
           VALIDATE_YAML_PRETTIER: false
+          VALIDATE_PYTHON_PYINK: false

@@ -184,7 +184,9 @@ class NewAccountCheckCog(TacobotCog):
                                 if message.author.id == member.id:
                                     await message.delete()
                     except Exception as e:
-                        self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+                        self.log.error(
+                            guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc()
+                        )
                 else:
                     self.log.warn(
                         guild_id,
