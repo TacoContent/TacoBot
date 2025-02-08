@@ -36,6 +36,7 @@ class TacoTypes(Enum):
     POST_INTRODUCTION = 28
     APPROVE_INTRODUCTION = 29
     GAME_DONATE_REDEEM = 30
+    GAME_KEY_RESET = 31
 
     TWITCH_BOT_INVITE = 1000  # Invite @OurTacoBot to your Twitch channel
     TWITCH_RAID = 1001
@@ -48,6 +49,11 @@ class TacoTypes(Enum):
     TWITCH_FOLLOW = 1007  # not yet implemented until i can figure out how to get the event from eventsub
 
     TWITCH_STREAM_AVATARS = 1008
+
+    MINECRAFT_LOGIN = 2000
+
+    MINECRAFT_CUSTOM = 2999
+
     PURGE = 9996
     LEAVE_SERVER = 9997
 
@@ -55,96 +61,7 @@ class TacoTypes(Enum):
     CUSTOM = 9999
 
     def __str__(self):
-        if self == TacoTypes.JOIN_SERVER:
-            return "join_count"
-        elif self == TacoTypes.BOOST:
-            return "boost_count"
-        elif self == TacoTypes.REACT_REWARD:
-            return "reaction_reward_count"
-        elif self == TacoTypes.SUGGEST:
-            return "suggest_count"
-        elif self == TacoTypes.USER_INVITE:
-            return "invite_count"
-        elif self == TacoTypes.REACTION:
-            return "reaction_count"
-        elif self == TacoTypes.REPLY:
-            return "reply_count"
-        elif self == TacoTypes.TQOTD:
-            return "tqotd_count"
-        elif self == TacoTypes.BIRTHDAY:
-            return "birthday_count"
-        elif self == TacoTypes.TWITCH_LINK:
-            return "twitch_count"
-        elif self == TacoTypes.STREAM:
-            return "stream_count"
-        elif self == TacoTypes.PHOTO_POST:
-            return "photo_post_count"
-        elif self == TacoTypes.WDYCTW:
-            return "wdyctw_count"
-        elif self == TacoTypes.TECH_THURSDAY:
-            return "tech_thursday_count"
-        elif self == TacoTypes.TACO_TUESDAY:
-            return "taco_tuesday_count"
-        elif self == TacoTypes.MENTAL_MONDAY:
-            return "mental_monday_count"
-        elif self == TacoTypes.FIRST_MESSAGE:
-            return "first_message_count"
-        elif self == TacoTypes.EVENT_CREATE:
-            return "event_create_count"
-        elif self == TacoTypes.EVENT_JOIN:
-            return "event_join_count"
-        elif self == TacoTypes.EVENT_LEAVE:
-            return "event_leave_count"
-        elif self == TacoTypes.EVENT_CANCEL:
-            return "event_cancel_count"
-        elif self == TacoTypes.EVENT_COMPLETE:
-            return "event_complete_count"
-        elif self == TacoTypes.PURGE:
-            return "purge_custom"
-        elif self == TacoTypes.LEAVE_SERVER:
-            return "leave_server_custom"
-        elif self == TacoTypes.GAME_REDEEM:
-            return "game_key_cost"
-        elif self == TacoTypes.GAME_DONATE_REDEEM:
-            return "game_donate_count"
-        elif self == TacoTypes.TRIVIA_CORRECT:
-            return "trivia_correct_count"
-        elif self == TacoTypes.TRIVIA_INCORRECT:
-            return "trivia_incorrect_count"
-        elif self == TacoTypes.FOLLOW_CHANNEL:  # this can't be triggered by events
-            return "follow_channel_count"
-        elif self == TacoTypes.CREATE_VOICE_CHANNEL:
-            return "create_voice_channel_count"
-        elif self == TacoTypes.POST_INTRODUCTION:
-            return "post_introduction_count"
-        elif self == TacoTypes.APPROVE_INTRODUCTION:
-            return "approve_introduction_count"
-        elif self == TacoTypes.TWITCH_BOT_INVITE:
-            return "twitch_bot_invite_count"
-        elif self == TacoTypes.TWITCH_RAID:
-            return "twitch_raid_count"
-        elif self == TacoTypes.TWITCH_SUB:
-            return "twitch_sub_count"
-        elif self == TacoTypes.TWITCH_BITS:
-            return "twitch_bits_count"
-        elif self == TacoTypes.TWITCH_FIRST_MESSAGE:
-            return "twitch_first_message_count"
-        elif self == TacoTypes.TWITCH_PROMOTE:
-            return "twitch_promote_count"
-        elif self == TacoTypes.TWITCH_GIVE_TACOS:
-            return "twitch_give_tacos"
-            # this property is not saved in settings, as it should be the amount they give
-        elif self == TacoTypes.TWITCH_RECEIVE_TACOS:
-            return "twitch_receive_tacos"
-            # this property is not saved in settings, as it should be the amount they give
-        elif self == TacoTypes.TWITCH_FOLLOW:
-            return "twitch_follow_count"
-        elif self == TacoTypes.TWITCH_STREAM_AVATARS:
-            return "twitch_stream_avatars"
-        elif self == TacoTypes.TWITCH_CUSTOM:
-            return "twitch_custom"
-        else:
-            return "custom"
+        return TacoTypes.get_string_from_taco_type(self)
 
     @staticmethod
     def str_to_enum(type: str):
@@ -241,6 +158,8 @@ class TacoTypes(Enum):
             return TacoTypes.TWITCH_STREAM_AVATARS
         elif taco_type_string == "twitch_custom":
             return TacoTypes.TWITCH_CUSTOM
+        elif taco_type_string == "minecraft_login":
+            return TacoTypes.MINECRAFT_LOGIN
         else:
             return TacoTypes.CUSTOM
 
@@ -338,5 +257,9 @@ class TacoTypes(Enum):
             return "twitch_stream_avatars"
         elif taco_type == TacoTypes.TWITCH_CUSTOM:
             return "twitch_custom"
+        elif taco_type == TacoTypes.MINECRAFT_LOGIN:
+            return "minecraft_login"
+        elif taco_type == TacoTypes.MINECRAFT_CUSTOM:
+            return "minecraft_custom"
         else:
             return "custom"

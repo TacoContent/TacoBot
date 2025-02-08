@@ -6,39 +6,36 @@ import traceback
 import typing
 
 import discord
-from bot.lib import discordhelper, logger, settings, utils
-from bot.lib.enums import loglevel, tacotypes
+from bot.lib import discordhelper, utils
+from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
+from bot.lib.enums import tacotypes
+from bot.lib.enums.system_actions import SystemActions
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.gamekeys import GameKeysDatabase
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.steam.steamapi import SteamApiClient
+from bot.tacobot import TacoBot
 from bot.ui.GameRewardView import GameRewardView
 from discord.ext import commands
 
 
-class GameKeys(commands.Cog):
-    def __init__(self, bot):
+class GameKeysCog(TacobotCog):
+    def __init__(self, bot: TacoBot):
+        super().__init__(bot, "game_keys")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.bot = bot
-        self.settings = settings.Settings()
+
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
-        self.SETTINGS_SECTION = "game_keys"
         self.tacos_db = TacosDatabase()
         self.gamekeys_db = GameKeysDatabase()
         self.tracking_db = TrackingDatabase()
         self.steam_api = SteamApiClient()
 
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
-        if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
-
-        self.log = logger.Log(minimumLogLevel=log_level)
-        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Initialized settings: {self.SETTINGS_SECTION}")
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -47,6 +44,11 @@ class GameKeys(commands.Cog):
         try:
             guild_id = self.bot.guilds[0].id
 
+            self.log.debug(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"GameKeysCog is ready and loading cog settings: {self.SETTINGS_SECTION}",
+            )
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings.get("enabled", False):
                 return
@@ -189,8 +191,8 @@ class GameKeys(commands.Cog):
                 return
 
             default_cost = cog_settings.get("cost", 500)
-            print(game_data)
             cost = game_data.get("cost", default_cost)
+            reset_cost = cog_settings.get("reset_cost", 100)
 
             if cost <= 0:
                 self.log.warn(
@@ -229,11 +231,11 @@ class GameKeys(commands.Cog):
                             price_overview = data.get("price_overview", {})
                             if price_overview.get("initial_formatted", "") != "":
                                 formatted_price = price_overview.get(
-                                    "final_formatted", price_overview.get('final_formatted', 'UNKNOWN')
+                                    "final_formatted", price_overview.get('final_formatted', ' ')
                                 )
                             else:
-                                formatted_price = price_overview.get('final_formatted', 'UNKNOWN')
-                            if formatted_price and formatted_price != 'UNKNOWN' and formatted_price != '':
+                                formatted_price = price_overview.get('final_formatted', ' ')
+                            if formatted_price and formatted_price != ' ' and formatted_price != '':
                                 formatted_price = f"~~{formatted_price}~~ "
                             description = data.get("short_description", "")
                             steam_info = f"\n\n{description}"
@@ -272,14 +274,8 @@ class GameKeys(commands.Cog):
             ]
             timeout = 60 * 60 * 24
 
-            claim_view = GameRewardView(
-                ctx,
-                game_id=str(game_data["id"]),
-                claim_callback=self._claim_offer_callback,
-                timeout_callback=self._claim_timeout_callback,
-                cost=cost,
-                timeout=timeout,
-                external_link=info_url,
+            claim_view = self._create_claim_view(
+                ctx=ctx, game_data=game_data, cost=cost, reset_cost=reset_cost, timeout=timeout, info_url=info_url
             )
 
             notify_role_ids = cog_settings.get("notify_role_ids", [])
@@ -311,6 +307,115 @@ class GameKeys(commands.Cog):
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
+    def _create_claim_view(self, ctx, game_data, cost, reset_cost, timeout, info_url):
+        return GameRewardView(
+            ctx,
+            game_id=str(game_data["id"]),
+            claim_callback=self._claim_offer_callback,
+            timeout_callback=self._claim_timeout_callback,
+            reset_callback=self._reset_offer_callback,
+            cost=cost,
+            reset_cost=reset_cost,
+            timeout=timeout,
+            external_link=info_url,
+        )
+
+    async def _reset_offer_callback(self, interaction: discord.Interaction):
+        _method = inspect.stack()[0][3]
+        if interaction.response.is_done():
+            self.log.debug(
+                interaction.guild.id,
+                f"{self._module}.{self._class}.{_method}",
+                "Reset offer cancelled because it was already responded to.",
+            )
+            return
+
+        cog_settings = self.get_cog_settings(interaction.guild.id)
+        guild_id = interaction.guild.id if interaction.guild else 0
+        ctx = None
+
+        if interaction.data["custom_id"] != "reset":
+            self.log.warn(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"Reset offer callback called with invalid custom_id: {interaction.data['custom_id']}",
+            )
+            return
+
+        try:
+            await interaction.response.defer()
+        except Exception:
+            # if the defer fails, we can't respond to the interaction
+            return
+
+        reset_cost = cog_settings.get("reset_cost", 100)
+        reset_tacos_word = self.settings.get_string(guild_id, "taco_plural")
+        if reset_cost == 1:
+            reset_tacos_word = self.settings.get_string(guild_id, "taco_singular")
+
+        try:
+            # get the total taco count for the user
+            taco_count = self.tacos_db.get_tacos_count(guild_id, interaction.user.id) or 0
+            tacos_word = self.settings.get_string(guild_id, "taco_plural")
+            if taco_count == 1:
+                tacos_word = self.settings.get_string(guild_id, "taco_singular")
+
+            if taco_count < reset_cost:
+                await interaction.followup.send(
+                    self.settings.get_string(
+                        guild_id,
+                        "game_key_reset_not_enough_tacos_message",
+                        user=interaction.user.mention,
+                        cost=reset_cost,
+                        cost_tacos_word=reset_tacos_word,
+                        taco_count=taco_count,
+                        tacos_word=tacos_word,
+                    ),
+                    ephemeral=True,
+                )
+                return
+            # create context from interaction
+            ctx = self.discord_helper.create_context(
+                self.bot,
+                author=interaction.user,
+                channel=interaction.channel,
+                message=interaction.message,
+                guild=interaction.guild,
+                custom_id=interaction.data["custom_id"],
+            )
+            self.log.debug(
+                guild_id, f"{self._module}.{self._class}.{_method}", f"Claiming offer {interaction.data['custom_id']}"
+            )
+            # charge the user the reset cost
+            self.tacos_db.remove_tacos(guild_id, ctx.author.id, reset_cost)
+
+            await self.discord_helper.tacos_log(
+                guild_id=guild_id,
+                fromMember=ctx.author,
+                toMember=self.bot.user,
+                count=reset_cost * -1,
+                reason="New game key offer",
+                type=tacotypes.TacoTypes.GAME_KEY_RESET,
+                total_tacos=taco_count - reset_cost,
+            )
+
+            self.tacos_db.track_tacos_log(
+                guildId=guild_id,
+                fromUserId=ctx.author.id,
+                toUserId=self.bot.user.id,
+                count=reset_cost * -1,
+                reason="New game key offer",
+                type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.GAME_KEY_RESET),
+            )
+
+            self.tracking_db.track_system_action(
+                guild_id=guild_id, action=SystemActions.GAME_KEY_RESET, data={"user_id": str(ctx.author.id)}
+            )
+            # create a new offer
+            await self._create_offer(ctx)
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+
     async def _claim_offer_callback(self, interaction: discord.Interaction):
         _method = inspect.stack()[0][3]
         if interaction.response.is_done():
@@ -340,9 +445,42 @@ class GameKeys(commands.Cog):
             self.log.debug(
                 guild_id, f"{self._module}.{self._class}.{_method}", f"Claiming offer {interaction.data['custom_id']}"
             )
-            await self._claim_offer(ctx, interaction.data["custom_id"])
-            await self._create_offer(ctx)
+            claim_result = await self._claim_offer(ctx, interaction.data["custom_id"])
+            # if false, the claim failed and we need to re-enable the view
+            if not claim_result:
+                # create a claim view
+                game_data = self.gamekeys_db.get_game_key_data(interaction.data["custom_id"])
+                if game_data:
+                    cog_settings = self.get_cog_settings(guild_id)
+                    default_cost = cog_settings.get("cost", 500)
+                    cost = game_data.get("cost", default_cost)
+                    reset_cost = cog_settings.get("reset_cost", 100)
+                    timeout = 60 * 60 * 24
+                    info_url = game_data.get("info_link", "UNAVAILABLE")
+                    claim_view = self._create_claim_view(
+                        ctx=ctx,
+                        game_data=game_data,
+                        cost=cost,
+                        reset_cost=reset_cost,
+                        timeout=timeout,
+                        info_url=info_url,
+                    )
+                    await interaction.message.edit(view=claim_view)
+                else:
+                    self.log.warn(
+                        guild_id,
+                        f"{self._module}.{self._class}.{_method}",
+                        f"Game data not found for game id '{interaction.data['custom_id']}'",
+                    )
+                    await self._create_offer(ctx)
+            else:
+                await self._create_offer(ctx)
 
+            self.tracking_db.track_system_action(
+                guild_id=guild_id,
+                action=SystemActions.GAME_KEY_CLAIM,
+                data={"user_id": str(ctx.author.id), "game_key_id": interaction.data["custom_id"]},
+            )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
@@ -438,6 +576,32 @@ class GameKeys(commands.Cog):
                 )
                 return False
 
+            # limit: {
+            #   time_period: 3600,
+            #   count: 1
+            # },
+            # get limits from settings
+            limits = cog_settings.get("limit", {"time_period": 3600, "count": 0})
+            claim_limit = limits.get("count", 0)
+            claim_time_period = limits.get("time_period", 3600)
+            if claim_limit >= 1:
+                # get the number of redemptions in time_period
+                claim_count = self.gamekeys_db.get_claimed_key_count_in_timeframe(
+                    guild_id, ctx.author.id, claim_time_period
+                )
+                if claim_count >= claim_limit:
+                    await ctx.channel.send(
+                        self.settings.get_string(
+                            guild_id,
+                            "game_key_claim_limit_reached_message",
+                            user=ctx.author.mention,
+                            claim_limit=claim_limit,
+                            time_frame=utils.human_time_duration(claim_time_period),
+                        ),
+                        delete_after=10,
+                    )
+                    return False
+
             reward_channel_id = cog_settings.get("reward_channel_id", "0")
             reward_channel: typing.Union[discord.TextChannel, None] = await self.discord_helper.get_or_fetch_channel(
                 int(reward_channel_id)
@@ -467,7 +631,9 @@ class GameKeys(commands.Cog):
                 return False
 
             # get the game data from the offer game_key_id
-            game_data = self.gamekeys_db.get_game_key_data(str(offer["game_key_id"]))
+            game_data = self.gamekeys_db.get_game_key_offer_data(
+                guild_id=guild_id, game_key_id=str(offer["game_key_id"])
+            )
             if not game_data:
                 self.log.warn(
                     guild_id,
@@ -488,8 +654,8 @@ class GameKeys(commands.Cog):
                 tacos_word = self.settings.get_string(guild_id, "taco_plural")
 
             # does the user have enough tacos?
-            taco_count: int = self.tacos_db.get_tacos_count(guild_id, ctx.author.id)
-            if taco_count < cost:
+            taco_count: typing.Optional[int] = self.tacos_db.get_tacos_count(guild_id, ctx.author.id)
+            if taco_count and taco_count < cost:
                 await ctx.channel.send(
                     self.settings.get_string(
                         guild_id,
@@ -514,24 +680,24 @@ class GameKeys(commands.Cog):
             #         self.settings.get_string(guild_id, "game_key_offer_expired_message", user=ctx.author.mention), delete_after=10
             #     )
             #     return False
-
-            if game_data["redeemed_by"] is not None:
+            redeemed_by = game_data["redeemed_by"]
+            if redeemed_by is not None:
                 # already redeemed
                 self.log.debug(
                     guild_id,
                     f"{self._module}.{self._class}.{_method}",
-                    f"Game key {game_data['_id']} already redeemed by {game_data['redeemed_by']}",
+                    f"Game key {game_data['id']} already redeemed by {redeemed_by}",
                 )
                 await ctx.channel.send(
                     self.settings.get_string(guild_id, "game_key_already_redeemed_message", user=ctx.author.mention),
                     delete_after=10,
                 )
                 return False
-            if str(game_id) != str(offer["game_key_id"]) or str(game_data["_id"]) != str(game_id):
+            if str(game_id) != str(offer["game_key_id"]) or str(game_data["id"]) != str(game_id):
                 self.log.warn(
                     guild_id,
                     f"{self._module}.{self._class}.{_method}",
-                    f"Requested game_id ('{str(game_id)}') with offer game_key_id ('{str(offer['game_key_id'])}') does not match offer game id '{str(game_data['_id'])}'",
+                    f"Requested game_id ('{str(game_id)}') with offer game_key_id ('{str(offer['game_key_id'])}') does not match offer game id '{str(game_data['id'])}'",
                 )
                 return False
 
@@ -540,7 +706,7 @@ class GameKeys(commands.Cog):
                 self.log.warn(
                     guild_id,
                     f"{self._module}.{self._class}.{_method}",
-                    f"No game key found for game '{game_data['title']}' ({str(game_data['_id'])})",
+                    f"No game key found for game '{game_data['title']}' ({str(game_data['id'])})",
                 )
                 await ctx.channel.send(
                     self.settings.get_string(guild_id, "game_key_unable_to_claim_message", user=ctx.author.mention),
@@ -550,25 +716,26 @@ class GameKeys(commands.Cog):
                 # bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
                 # new_ctx = self.discord_helper.create_context(self.bot, author=ctx.bot.user, guild=ctx.guild, channel=reward_channel, message=None, invoked_subcommand=None)
                 # await self._create_offer(new_ctx)
-                raise Exception(f"No game key found for game '{game_data['title']}' ({str(game_data['_id'])})")
+                raise Exception(f"No game key found for game '{game_data['title']}' ({str(game_data['id'])})")
             try:
-                download_link = game_data["download_link"]
+                download_link = game_data.get("download_link", None)
                 if download_link:
                     download_link = f"\n\n{download_link}"
                 else:
                     download_link = ""
-                help_link = game_data["help_link"]
+                help_link = game_data.get("help_link", None)
                 if help_link:
                     help_link = f"\n\n{help_link}"
                 else:
                     help_link = ""
+
                 await ctx.author.send(
                     self.settings.get_string(
                         guild_id,
                         "game_key_claim_message",
-                        game=game_data["title"],
-                        game_key=game_data["key"],
-                        platform=game_data["type"],
+                        game=game_data.get("title", "UNKNOWN"),
+                        game_key=game_data.get("key", "UNKNOWN"),
+                        platform=game_data.get("platform", "UNKNOWN"),
                         download_link=download_link,
                         help_link=help_link,
                     )
@@ -598,15 +765,24 @@ class GameKeys(commands.Cog):
                 type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.GAME_REDEEM),
             )
             # get the user that offered the game key
-            offer_user = await self.discord_helper.get_or_fetch_user(int(game_data["user_owner"]))
-            if offer_user:
+            # int(game_data.get("offered_by", str(self.bot.user.id)))
+            offer_user = await self.discord_helper.get_or_fetch_user(
+                int(game_data['offered_by']) if 'offered_by' in game_data else self.bot.user.id
+            )
+            if offer_user and offer_user.id != self.bot.user.id:
                 await self.discord_helper.taco_give_user(
                     guildId=guild_id,
                     fromUser=self.bot.user,
                     toUser=offer_user,
-                    reason=f"Donated game key {game_data['title']} was claimed by {ctx.author.name}",
+                    reason=f"Donated game key {game_data.get('title', 'UNKNOWN')} was claimed by {ctx.author.name}",
                     taco_amount=cost,
                     give_type=tacotypes.TacoTypes.GAME_DONATE_REDEEM,
+                )
+            else:
+                self.log.warn(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Offer user not found for game '{game_data['title']}' (game_id: {game_id}) (offered_by: {game_data['offered_by']})",
                 )
 
             # log that the offer was claimed
@@ -732,6 +908,10 @@ class GameKeys(commands.Cog):
 
             game_id = interaction.data["custom_id"]
 
+            if game_id == "reset":
+                await self._reset_offer_callback(interaction)
+                return
+
             if not game_id:
                 self.log.debug(
                     interaction.guild.id,
@@ -758,20 +938,6 @@ class GameKeys(commands.Cog):
                 interaction.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc()
             )
 
-    def get_cog_settings(self, guildId: int = 0) -> dict:
-        return self.get_settings(guildId=guildId, section=self.SETTINGS_SECTION)
-
-    def get_settings(self, guildId: int, section: str) -> dict:
-        if not section or section == "":
-            raise Exception("No section provided")
-        cog_settings = self.settings.get_settings(guildId, section)
-        if not cog_settings:
-            raise Exception(f"No '{section}' settings found for guild {guildId}")
-        return cog_settings
-
-    def get_tacos_settings(self, guildId: int = 0) -> dict:
-        return self.get_settings(guildId=guildId, section="tacos")
-
 
 async def setup(bot):
-    await bot.add_cog(GameKeys(bot))
+    await bot.add_cog(GameKeysCog(bot))

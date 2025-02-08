@@ -55,8 +55,11 @@ class BaseWebhookHandler:
 
             token = request.headers.get("X-TACOBOT-TOKEN")
             if not token:
-                self.log.error(0, f"{self._module}.{self._class}.{_method}", "No token found in payload")
-                return False
+                # try to check X-AUTH-TOKEN
+                token = request.headers.get("X-AUTH-TOKEN")
+                if not token:
+                    self.log.error(0, f"{self._module}.{self._class}.{_method}", "No token found in payload")
+                    return False
 
             if token != settings.get("token", ''.join(random.choices(string.ascii_uppercase + string.digits, k=24))):
                 self.log.error(0, f"{self._module}.{self._class}.{_method}", "Invalid webhook token")

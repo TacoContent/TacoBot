@@ -6,38 +6,35 @@ import typing
 import uuid
 
 import discord
-from bot.lib import discordhelper, logger, settings
-from bot.lib.enums import loglevel, tacotypes
+from bot.lib import discordhelper
+from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
+from bot.lib.enums import tacotypes
 from bot.lib.messaging import Messaging
 from bot.lib.models.suggestionstates import SuggestionStates
 from bot.lib.mongodb.settings import SettingsDatabase
 from bot.lib.mongodb.suggestions import SuggestionsDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
+from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
-class Suggestions(commands.Cog):
-    def __init__(self, bot) -> None:
+class SuggestionsCog(TacobotCog):
+    def __init__(self, bot: TacoBot) -> None:
+        super().__init__(bot, "suggestions")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.bot = bot
-        self.settings = settings.Settings()
+
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.permissions = Permissions(bot)
-        self.SETTINGS_SECTION = "suggestions"
 
         self.settings_db = SettingsDatabase()
         self.suggestions_db = SuggestionsDatabase()
         self.tracking_db = TrackingDatabase()
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
-        if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
 
-        self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
@@ -237,7 +234,7 @@ class Suggestions(commands.Cog):
             await s_message.add_reaction(r)
 
         await self.discord_helper.taco_give_user(
-            guild_id, self.bot.user, ctx.author, f"creating a new suggestion", tacotypes.TacoTypes.SUGGEST
+            guild_id, self.bot.user, ctx.author, "creating a new suggestion", tacotypes.TacoTypes.SUGGEST
         )
 
         suggestion_data = {
@@ -344,7 +341,7 @@ class Suggestions(commands.Cog):
 
             log_channel = None
             if 'log_channel_id' in channel_settings and channel_settings['log_channel_id'] != "":
-                if channel_settings['log_channel_id'] == "0" or channel_settings['log_channel_id'] == None:
+                if channel_settings['log_channel_id'] == "0" or channel_settings['log_channel_id'] is None:
                     log_channel = None
                 else:
                     log_channel = await self.discord_helper.get_or_fetch_channel(
@@ -391,7 +388,7 @@ class Suggestions(commands.Cog):
                     await self.messaging.send_embed(
                         channel=user,
                         title="Can only vote once",
-                        message=f"You have already voted on this suggestion.",
+                        message="You have already voted on this suggestion.",
                         color=0xFF0000,
                         delete_after=30,
                     )
@@ -566,13 +563,13 @@ class Suggestions(commands.Cog):
                         self.log.debug(
                             guild_id,
                             f"{self._module}.{self._class}.{_method}",
-                            f"No log suggestion channel. Will use message suggestion channel instead.",
+                            "No log suggestion channel. Will use message suggestion channel instead.",
                         )
                         log_channel = message.channel
 
                     # add fields with the votes
                     # get the votes from the database
-                    votes = self.suggestions_db.get_suggestion_votes_by_id(suggestion['id'])
+                    votes = self.suggestions_db.get_suggestion_votes_by_id(suggestion['id']) or []
                     # get count of each type of vote. either -1, 0, or 1
                     up_votes = [vote for vote in votes if vote['vote'] == 1] or []
                     up_word = "Vote" if len(up_votes) == 1 else "Votes"
@@ -956,18 +953,6 @@ class Suggestions(commands.Cog):
             self.log.debug(0, "get_color_for_state", f"The state matches {states.CLOSED}")
             return None
 
-    def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
-        if not cog_settings:
-            raise Exception(f"No cog settings found for guild {guildId}")
-        return cog_settings
-
-    def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, "tacos")
-        if not cog_settings:
-            raise Exception(f"No tacos settings found for guild {guildId}")
-        return cog_settings
-
 
 async def setup(bot):
-    await bot.add_cog(Suggestions(bot))
+    await bot.add_cog(SuggestionsCog(bot))

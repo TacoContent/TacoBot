@@ -3,26 +3,20 @@ import os
 
 import discord
 from bot import tacobot  # pylint: disable=relative-beyond-top-level
-from bot.lib import discordhelper, logger, settings
-from bot.lib.enums import loglevel
+from bot.lib import discordhelper
+from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from discord.ext import commands
 
 
-class LookingForGamers(commands.Cog):
+class LookingForGamersCog(TacobotCog):
     def __init__(self, bot: tacobot.TacoBot) -> None:
+        super().__init__(bot, "lfg")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.bot = bot
-        self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
-        self.SETTINGS_SECTION = "lfg"
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
-        if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
 
-        self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     # @commands.group(name="lfg", aliases=["looking-for-gamers"], invoke_without_command=True)
@@ -42,4 +36,4 @@ class LookingForGamers(commands.Cog):
 
 
 async def setup(bot) -> None:
-    await bot.add_cog(LookingForGamers(bot))
+    await bot.add_cog(LookingForGamersCog(bot))

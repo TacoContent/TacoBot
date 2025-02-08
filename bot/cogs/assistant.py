@@ -4,28 +4,21 @@ import os
 import traceback
 
 import discord
-from bot.lib import logger, settings
-from bot.lib.enums import loglevel
+from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.mongodb.tacos import TacosDatabase
+from bot.tacobot import TacoBot
 from discord.ext import commands
 from openai import OpenAI
 
 
-class Assistant(commands.Cog):
-    def __init__(self, bot):
+class Assistant(TacobotCog):
+    def __init__(self, bot: TacoBot):
+        super().__init__(bot, "assistant")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.bot = bot
         self.tacos_db = TacosDatabase()
-        self.settings = settings.Settings()
-        self.SETTINGS_SECTION = "assistant"
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
-        if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
-
-        self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
@@ -41,6 +34,9 @@ class Assistant(commands.Cog):
         if message.author == self.bot.user:
             return
         try:
+            if not self.bot or not self.bot.user:
+                return
+
             if not message.content.startswith(self.bot.user.mention):
                 return
 
@@ -48,7 +44,7 @@ class Assistant(commands.Cog):
             if not cog_settings.get("enabled", False):
                 return
 
-            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Assistant Triggered")
+            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", "Assistant Triggered")
             # tacos_settings = self.get_tacos_settings(guild_id)
 
             faq = await self._get_message_content_for_prompt(
@@ -93,6 +89,8 @@ class Assistant(commands.Cog):
         try:
             guild = await self.bot.fetch_guild(guildId)
             channel = await guild.fetch_channel(channelId)
+            if not channel:
+                return ""
             message = await channel.fetch_message(messageId)
             return message.content
         except Exception as ex:
@@ -128,18 +126,6 @@ class Assistant(commands.Cog):
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(ex)}", traceback.format_exc())
             return []
-
-    def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
-        if not cog_settings:
-            raise Exception(f"No cog settings found for guild {guildId}")
-        return cog_settings
-
-    def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, "tacos")
-        if not cog_settings:
-            raise Exception(f"No tacos settings found for guild {guildId}")
-        return cog_settings
 
 
 async def setup(bot):

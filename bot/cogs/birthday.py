@@ -1,7 +1,6 @@
 import asyncio
 import datetime
 import inspect
-import json
 import os
 import traceback
 import typing
@@ -9,36 +8,33 @@ from random import random, randrange
 
 import discord
 import pytz
-from bot.lib import discordhelper, logger, settings
-from bot.lib.enums import loglevel, tacotypes
+from bot.lib import discordhelper
+from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
+from bot.lib.enums import tacotypes
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.birthdays import BirthdaysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.tacobot import TacoBot
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Context
 
 
-class Birthday(commands.Cog):
+class Birthday(TacobotCog):
     group = app_commands.Group(name="birthday", description="Birthday commands")
 
-    def __init__(self, bot):
+    def __init__(self, bot: TacoBot):
+        super().__init__(bot, "birthday")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.bot = bot
-        self.settings = settings.Settings()
-        self.SETTINGS_SECTION = "birthday"
+
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.birthdays_db = BirthdaysDatabase()
         self.tracking_db = TrackingDatabase()
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
-        if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
 
-        self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @app_commands.guild_only()
@@ -65,34 +61,11 @@ class Birthday(commands.Cog):
                     guild_id, self.bot.user, user, reason_msg, tacotypes.TacoTypes.BIRTHDAY, taco_amount=taco_amount
                 )
 
-            fields = [
-                {"name": self.settings.get_string(guild_id, "month"), "value": str(month), "inline": True},
-                {"name": self.settings.get_string(guild_id, "day"), "value": str(day), "inline": True},
-            ]
-
             # TODO: change to full interaction response
             await interaction.response.send_message(
                 content=f"I have set your birthday to {month}/{day}. Run the command again to change if this is incorrect.",
                 ephemeral=True,
             )
-
-            # await interaction.response.send_message(
-            #     content=self.settings.get_string(guild_id, "birthday_set_confirm", user=user.mention),
-            #     embed=self.discord_helper.create_embed(
-            #         title=self.settings.get_string(guild_id, "birthday_set_title"),
-            #         description=self.settings.get_string(guild_id, "birthday_set_confirm", user=user.mention),
-            #         fields=fields,
-            #     ),
-            #     ephemeral=True,
-            # )
-
-            # await self.messaging.send_embed(
-            #     out_channel,
-            #     self.settings.get_string(guild_id, "birthday_set_title"),
-            #     self.settings.get_string(guild_id, "birthday_set_confirm", user=ctx.author.mention),
-            #     fields=fields,
-            #     delete_after=10,
-            # )
 
             self.tracking_db.track_command_usage(
                 guildId=guild_id,
@@ -216,31 +189,6 @@ class Birthday(commands.Cog):
                 await ctx.message.delete()
 
             await self._birthday_event_process(ctx)
-
-            # await asyncio.sleep(randrange(1, 5, 1))
-            # # check if the birthday check is enabled
-            # # check if the birthday check has not ran today yet
-            # if self.was_checked_today(guild_id):
-            #     return
-            # # get if there are any birthdays today in the database
-            # birthdays = self.get_todays_birthdays(guild_id) or []
-            # await self.clear_birthday_role(ctx)
-
-            # await asyncio.sleep(randrange(1, 5, 1))
-            # # double check
-            # if self.was_checked_today(guild_id):
-            #     return
-            # # wish the users a happy birthday
-            # if len(birthdays) > 0:
-            #     self.log.debug(
-            #         guild_id,
-            #         f"{self._module}.{self._class}.{_method}",
-            #         f"Sending birthday wishes from check_birthday for {guild_id}",
-            #     )
-            #     await self.send_birthday_message(ctx, birthdays)
-            #     await self.add_user_to_birthday_role(ctx, birthdays)
-            # # track the check
-            # self.birthdays_db.track_birthday_check(guild_id)
 
             self.tracking_db.track_command_usage(
                 guildId=guild_id,
@@ -472,30 +420,6 @@ class Birthday(commands.Cog):
                 guild_id = message.guild.id
 
             await self._birthday_event_process(message)
-            # # check if the birthday check is enabled
-            # # check if the birthday check has not ran today yet
-            # await asyncio.sleep(randrange(1, 5, 1))
-            # if self.was_checked_today(guild_id):
-            #     return
-            # # get if there are any birthdays today in the database
-            # birthdays = self.get_todays_birthdays(guild_id) or []
-            # await self.clear_birthday_role(message)
-            # # sleep randomly to avoid rate limiting
-            # await asyncio.sleep(randrange(1, 5, 1))
-            # # double check
-            # if self.was_checked_today(guild_id):
-            #     return
-            # # wish the users a happy birthday
-            # if len(birthdays) > 0:
-            #     self.log.debug(
-            #         guild_id,
-            #         f"{self._module}.{self._class}.{_method}",
-            #         f"Sending birthday wishes from on_message for {guild_id}",
-            #     )
-            #     await self.send_birthday_message(message, birthdays)
-            #     await self.add_user_to_birthday_role(message, birthdays)
-            # # track the check
-            # self.birthdays_db.track_birthday_check(guild_id)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             self.birthdays_db.untrack_birthday_check(guild_id)
@@ -509,29 +433,6 @@ class Birthday(commands.Cog):
                 guild_id = after.guild.id
 
             await self._birthday_event_process(after)
-            # # check if the birthday check is enabled
-            # # check if the birthday check has not ran today yet
-            # await asyncio.sleep(randrange(1, 5, 1))
-            # if self.was_checked_today(guild_id):
-            #     return
-            # # get if there are any birthdays today in the database
-            # birthdays = self.get_todays_birthdays(guild_id) or []
-            # await self.clear_birthday_role(after)
-
-            # await asyncio.sleep(randrange(1, 5, 1))
-            # if self.was_checked_today(guild_id):
-            #     return
-            # # wish the users a happy birthday
-            # if len(birthdays) > 0:
-            #     self.log.debug(
-            #         guild_id,
-            #         f"{self._module}.{self._class}.{_method}",
-            #         f"Sending birthday wishes from on_member_update for {guild_id}",
-            #     )
-            #     await self.send_birthday_message(after, birthdays)
-            #     await self.add_user_to_birthday_role(after, birthdays)
-            # # track the check
-            # self.birthdays_db.track_birthday_check(guild_id)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             self.birthdays_db.untrack_birthday_check(guild_id)
@@ -545,61 +446,12 @@ class Birthday(commands.Cog):
                 guild_id = member.guild.id
 
             await self._birthday_event_process(member)
-            # # check if the birthday check is enabled
-            # # check if the birthday check has not ran today yet
-            # await asyncio.sleep(randrange(1, 5, 1))
-            # if self.was_checked_today(guild_id):
-            #     return
-            # # get if there are any birthdays today in the database
-            # birthdays = self.get_todays_birthdays(guild_id) or []
-            # await self.clear_birthday_role(member)
-
-            # # check again
-            # await asyncio.sleep(randrange(1, 5, 1))
-            # if self.was_checked_today(guild_id):
-            #     return
-
-            # # wish the users a happy birthday
-            # if len(birthdays) > 0:
-            #     self.log.debug(
-            #         guild_id,
-            #         f"{self._module}.{self._class}.{_method}",
-            #         f"Sending birthday wishes from on_member_join for {guild_id}",
-            #     )
-            #     await self.send_birthday_message(member, birthdays)
-            #     await self.add_user_to_birthday_role(member, birthdays)
-            # # track the check
-            # self.birthdays_db.track_birthday_check(guild_id)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     @commands.Cog.listener()
     async def on_ready(self):
         pass
-        # guild_id = 0
-        # try:
-        #     for guild in self.bot.guilds:
-        #         if guild:
-        #             guild_id = guild.id
-        #         # check if the birthday check is enabled
-        #         # check if the birthday check has not ran today yet
-        #         if self.was_checked_today(guild_id):
-        #             return
-        #         await asyncio.sleep(1)
-        #         # get if there are any birthdays today in the database
-        #         birthdays = self.get_todays_birthdays(guild_id)
-        #         # wish the users a happy birthday
-        #         if len(birthdays) > 0:
-        #             self.log.debug(
-        #                 guild_id, "birthday.on_ready", f"Sending birthday wishes from on_ready for {guild_id}"
-        #             )
-        #             ctx = self.discord_helper.create_context(bot=self.bot, guild=guild)
-        #             await self.send_birthday_message(ctx, birthdays)
-        #         # track the check
-        #         self.birthdays_db.track_birthday_check(guild_id)
-        #         await asyncio.sleep(0.5)
-        # except Exception as e:
-        #     self.log.error(guild_id, "birthday.on_member_join", str(e), traceback.format_exc())
 
     async def _birthday_event_process(self, ctx: Context):
         _method = inspect.stack()[0][3]
@@ -636,18 +488,6 @@ class Birthday(commands.Cog):
             self.birthdays_db.track_birthday_check(guild_id)
         except Exception as e:
             raise e
-
-    def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
-        if not cog_settings:
-            raise Exception(f"No cog settings found for guild {guildId}")
-        return cog_settings
-
-    def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, "tacos")
-        if not cog_settings:
-            raise Exception(f"No tacos settings found for guild {guildId}")
-        return cog_settings
 
 
 async def setup(bot):

@@ -1,5 +1,6 @@
 import inspect
 import os
+import socket
 import time
 import traceback
 
@@ -39,262 +40,259 @@ class TacoBotMetrics:
         self.db = MetricsDatabase()
 
         self.sum_tacos = Gauge(
-            namespace=self.namespace,
-            name=f"tacos",
-            documentation="The number of tacos give to users",
-            labelnames=labels,
+            namespace=self.namespace, name="tacos", documentation="The number of tacos give to users", labelnames=labels
         )
 
         self.sum_taco_gifts = Gauge(
             namespace=self.namespace,
-            name=f"taco_gifts",
+            name="taco_gifts",
             documentation="The number of tacos gifted to users",
             labelnames=labels,
         )
 
         self.sum_taco_reactions = Gauge(
             namespace=self.namespace,
-            name=f"taco_reactions",
+            name="taco_reactions",
             documentation="The number of tacos given to users via reactions",
             labelnames=labels,
         )
 
         self.sum_live_now = Gauge(
             namespace=self.namespace,
-            name=f"live_now",
+            name="live_now",
             documentation="The number of people currently live",
             labelnames=labels,
         )
 
         self.sum_twitch_channels = Gauge(
             namespace=self.namespace,
-            name=f"twitch_channels",
+            name="twitch_channels",
             documentation="The number of twitch channels the bot is watching",
             labelnames=labels,
         )
 
         self.sum_twitch_tacos = Gauge(
             namespace=self.namespace,
-            name=f"twitch_tacos",
+            name="twitch_tacos",
             documentation="The number of tacos given to twitch users",
             labelnames=labels,
         )
 
         self.sum_twitch_linked_accounts = Gauge(
             namespace=self.namespace,
-            name=f"twitch_linked_accounts",
+            name="twitch_linked_accounts",
             documentation="The number of twitch accounts linked to discord accounts",
             labelnames=[],
         )
 
         self.sum_tqotd_questions = Gauge(
             namespace=self.namespace,
-            name=f"tqotd",
+            name="tqotd",
             documentation="The number of questions in the TQOTD database",
             labelnames=labels,
         )
 
         self.sum_tqotd_answers = Gauge(
             namespace=self.namespace,
-            name=f"tqotd_answers",
+            name="tqotd_answers",
             documentation="The number of answers in the TQOTD database",
             labelnames=labels,
         )
 
         self.sum_invited_users = Gauge(
             namespace=self.namespace,
-            name=f"invited_users",
+            name="invited_users",
             documentation="The number of users invited to the server",
             labelnames=labels,
         )
 
         self.sum_live_platform = Gauge(
             namespace=self.namespace,
-            name=f"live_platform",
+            name="live_platform",
             documentation="The number of users that have gone live on a platform",
             labelnames=["guild_id", "platform"],
         )
 
         self.sum_wdyctw = Gauge(
             namespace=self.namespace,
-            name=f"wdyctw_questions",
+            name="wdyctw_questions",
             documentation="The number of questions in the WDYCTW database",
             labelnames=labels,
         )
 
         self.sum_wdyctw_answers = Gauge(
             namespace=self.namespace,
-            name=f"wdyctw_answers",
+            name="wdyctw_answers",
             documentation="The number of answers in the WDYCTW database",
             labelnames=labels,
         )
 
         self.sum_techthurs = Gauge(
             namespace=self.namespace,
-            name=f"techthurs",
+            name="techthurs",
             documentation="The number of questions in the TechThurs database",
             labelnames=labels,
         )
 
         self.sum_techthurs_answers = Gauge(
             namespace=self.namespace,
-            name=f"techthurs_answers",
+            name="techthurs_answers",
             documentation="The number of answers in the TechThurs database",
             labelnames=labels,
         )
 
         self.sum_mentalmondays = Gauge(
             namespace=self.namespace,
-            name=f"mentalmondays",
+            name="mentalmondays",
             documentation="The number of questions in the MentalMondays database",
             labelnames=labels,
         )
 
         self.sum_mentalmondays_answers = Gauge(
             namespace=self.namespace,
-            name=f"mentalmondays_answers",
+            name="mentalmondays_answers",
             documentation="The number of answers in the MentalMondays database",
             labelnames=labels,
         )
 
         self.sum_tacotuesday = Gauge(
             namespace=self.namespace,
-            name=f"tacotuesday",
+            name="tacotuesday",
             documentation="The number of featured posts for TacoTuesday",
             labelnames=labels,
         )
 
         self.sum_tacotuesday_answers = Gauge(
             namespace=self.namespace,
-            name=f"tacotuesday_answers",
+            name="tacotuesday_answers",
             documentation="The number of interactions in the TacoTuesday database",
             labelnames=labels,
         )
 
         self.sum_game_keys_available = Gauge(
             namespace=self.namespace,
-            name=f"game_keys_available",
+            name="game_keys_available",
             documentation="The number of game keys available",
             labelnames=["guild_id"],
         )
 
         self.sum_game_keys_claimed = Gauge(
             namespace=self.namespace,
-            name=f"game_keys_redeemed",
+            name="game_keys_redeemed",
             documentation="The number of game keys claimed",
             labelnames=["guild_id"],
         )
 
         self.sum_user_game_keys_claimed = Gauge(
             namespace=self.namespace,
-            name=f"user_game_keys_redeemed",
+            name="user_game_keys_redeemed",
             documentation="The number of game keys claimed by a user",
             labelnames=["guild_id", "user_id", "username"],
         )
 
         self.sum_user_game_keys_submitted = Gauge(
             namespace=self.namespace,
-            name=f"user_game_keys_submitted",
+            name="user_game_keys_submitted",
             documentation="The number of game keys submitted by a user",
             labelnames=["guild_id", "user_id", "username"],
         )
 
         self.sum_minecraft_whitelist = Gauge(
             namespace=self.namespace,
-            name=f"minecraft_whitelist",
+            name="minecraft_whitelist",
             documentation="The number of users on the minecraft whitelist",
             labelnames=["guild_id"],
         )
 
         self.sum_logs = Gauge(
-            namespace=self.namespace, name=f"logs", documentation="The number of logs", labelnames=["guild_id", "level"]
+            namespace=self.namespace, name="logs", documentation="The number of logs", labelnames=["guild_id", "level"]
         )
 
         self.sum_stream_team_requests = Gauge(
             namespace=self.namespace,
-            name=f"team_requests",
+            name="team_requests",
             documentation="The number of stream team requests",
             labelnames=labels,
         )
 
         self.sum_birthdays = Gauge(
-            namespace=self.namespace, name=f"birthdays", documentation="The number of birthdays", labelnames=labels
+            namespace=self.namespace, name="birthdays", documentation="The number of birthdays", labelnames=labels
         )
 
         self.sum_first_messages = Gauge(
             namespace=self.namespace,
-            name=f"first_messages_today",
+            name="first_messages_today",
             documentation="The number of first messages today",
             labelnames=labels,
         )
 
         self.known_users = Gauge(
             namespace=self.namespace,
-            name=f"known_users",
+            name="known_users",
             documentation="The number of known users",
             labelnames=["guild_id", "type"],
         )
 
         self.top_messages = Gauge(
             namespace=self.namespace,
-            name=f"messages",
+            name="messages",
             documentation="The number of top messages",
             labelnames=user_labels,
         )
 
         self.top_gifters = Gauge(
-            namespace=self.namespace, name=f"gifters", documentation="The number of top gifters", labelnames=user_labels
+            namespace=self.namespace, name="gifters", documentation="The number of top gifters", labelnames=user_labels
         )
 
         self.top_reactors = Gauge(
             namespace=self.namespace,
-            name=f"reactors",
+            name="reactors",
             documentation="The number of top reactors",
             labelnames=user_labels,
         )
 
         self.top_tacos = Gauge(
-            namespace=self.namespace, name=f"top_tacos", documentation="The number of top tacos", labelnames=user_labels
+            namespace=self.namespace, name="top_tacos", documentation="The number of top tacos", labelnames=user_labels
         )
 
         self.taco_logs = Gauge(
             namespace=self.namespace,
-            name=f"taco_logs",
+            name="taco_logs",
             documentation="The number of taco logs",
             labelnames=["guild_id", "type"],
         )
 
         self.top_live_activity = Gauge(
             namespace=self.namespace,
-            name=f"live_activity",
+            name="live_activity",
             documentation="The number of top live activity",
             labelnames=live_labels,
         )
 
         self.suggestions = Gauge(
             namespace=self.namespace,
-            name=f"suggestions",
+            name="suggestions",
             documentation="The number of suggestions",
             labelnames=["guild_id", "status"],
         )
 
         self.user_join_leave = Gauge(
             namespace=self.namespace,
-            name=f"user_join_leave",
+            name="user_join_leave",
             documentation="The number of users that have joined or left",
             labelnames=["guild_id", "action"],
         )
 
         self.photo_posts = Gauge(
             namespace=self.namespace,
-            name=f"photo_posts",
+            name="photo_posts",
             documentation="The number of photo posts",
             labelnames=photo_post_labels,
         )
 
         self.guilds = Gauge(
             namespace=self.namespace,
-            name=f"guilds",
+            name="guilds",
             documentation="The number of guilds",
             labelnames=["guild_id", "name"],
         )
@@ -303,70 +301,74 @@ class TacoBotMetrics:
         trivia_labels = ["guild_id", "difficulty", "category", "starter_id", "starter_name"]
         self.trivia_questions = Gauge(
             namespace=self.namespace,
-            name=f"trivia_questions",
+            name="trivia_questions",
             documentation="The number of trivia questions",
             labelnames=trivia_labels,
         )
 
         self.trivia_answers = Gauge(
             namespace=self.namespace,
-            name=f"trivia_answers",
+            name="trivia_answers",
             documentation="The number of trivia answers",
             labelnames=["guild_id", "user_id", "username", "state"],
         )
 
         self.invites = Gauge(
             namespace=self.namespace,
-            name=f"invites",
+            name="invites",
             documentation="The number of invites",
             labelnames=["guild_id", "user_id", "username"],
         )
 
         self.system_actions = Gauge(
             namespace=self.namespace,
-            name=f"system_actions",
+            name="system_actions",
             documentation="The number of system actions",
             labelnames=["guild_id", "action"],
         )
 
         self.user_status = Gauge(
             namespace=self.namespace,
-            name=f"user_status",
+            name="user_status",
             documentation="The number of users with a status",
             labelnames=["guild_id", "status"],
         )
 
         self.introductions = Gauge(
             namespace=self.namespace,
-            name=f"introductions",
+            name="introductions",
             documentation="The number of introductions",
             labelnames=["guild_id", "approved"],
         )
 
         self.twitch_stream_avatar_duel_winners = Gauge(
             namespace=self.namespace,
-            name=f"twitch_stream_avatar_duel_winners",
+            name="twitch_stream_avatar_duel_winners",
             documentation="The number of twitch stream avatar duel winners",
             labelnames=["guild_id", "user_id", "username", "channel", "channel_user_id"],
         )
 
         self.free_game_keys = Gauge(
             namespace=self.namespace,
-            name=f"free_game_keys",
+            name="free_game_keys",
             documentation="The number of free game keys",
             labelnames=["state"],
         )
 
+        self.healthy = Gauge(
+            namespace=self.namespace, name="healthy", documentation="The health of the bot", labelnames=[]
+        )
+
         self.build_info = Gauge(
             namespace=self.namespace,
-            name=f"build_info",
+            name="build_info",
             documentation="A metric with a constant '1' value labeled with version",
             labelnames=["version", "ref", "build_date", "sha"],
         )
 
         self.errors = Gauge(
             namespace=self.namespace,
-            name=f"exporter_errors",
+            name="exporter_errors",
             documentation="The number of errors encountered",
             labelnames=["source"],
         )
@@ -376,16 +378,35 @@ class TacoBotMetrics:
         build_date = dict_get(os.environ, "APP_BUILD_DATE", "unknown")
         sha = dict_get(os.environ, "APP_BUILD_SHA", "unknown")
         self.build_info.labels(version=ver, ref=ref, build_date=build_date, sha=sha).set(1)
-        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Metrics initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Metrics initialized")
+
+    def check_health(self):
+        """Check the health of the bot"""
+        _method = inspect.stack()[1][3]
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                try:
+                    s.settimeout(10)
+                    s.connect(("127.0.0.1", 40404))
+                    data = s.recv(1024)
+                except (ConnectionError, socket.timeout, ConnectionRefusedError):
+                    data = b""
+
+            self.healthy.set(1 if data == b"healthy" else 0)
+            self.errors.labels(source="healthy").set(0)
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            self.healthy.set(0)
+            self.errors.labels(source="healthy").set(1)
 
     def run_metrics_loop(self):
         """Metrics fetching loop"""
         _method = inspect.stack()[1][3]
         try:
             while True:
-                self.log.info(0, f"{self._module}.{self._class}.{_method}", f"Begin metrics fetch")
+                self.log.info(0, f"{self._module}.{self._class}.{_method}", "Begin metrics fetch")
                 self.fetch()
-                self.log.info(0, f"{self._module}.{self._class}.{_method}", f"End metrics fetch")
+                self.log.info(0, f"{self._module}.{self._class}.{_method}", "End metrics fetch")
                 self.log.debug(
                     0,
                     f"{self._module}.{self._class}.{_method}",
@@ -398,6 +419,9 @@ class TacoBotMetrics:
     def fetch(self):
         """Fetch metrics from the database"""
         _method = inspect.stack()[1][3]
+
+        self.check_health()
+
         known_guilds = []
         try:
             q_guilds = self.db.get_guilds() or []
@@ -487,7 +511,7 @@ class TacoBotMetrics:
                 self.sum_tqotd_answers.labels(guild_id=row['_id']).set(row['total'])
             self.errors.labels(source="tqotd_answers").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="tqotd_answers").set(1)
 
         try:
@@ -496,7 +520,7 @@ class TacoBotMetrics:
                 self.sum_invited_users.labels(guild_id=row['_id']).set(row['total'])
             self.errors.labels(source="invited_users").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="invited_users").set(1)
 
         try:
@@ -507,7 +531,7 @@ class TacoBotMetrics:
                 )
             self.errors.labels(source="live_platform").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="live_platform").set(1)
 
         try:
@@ -516,7 +540,7 @@ class TacoBotMetrics:
                 self.sum_wdyctw.labels(guild_id=row['_id']).set(row['total'])
             self.errors.labels(source="wdyctw").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="wdyctw").set(1)
 
         try:
@@ -525,7 +549,7 @@ class TacoBotMetrics:
                 self.sum_wdyctw_answers.labels(guild_id=row['_id']).set(row['total'])
             self.errors.labels(source="wdyctw_answers").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="wdyctw_answers").set(1)
 
         try:
@@ -534,7 +558,7 @@ class TacoBotMetrics:
                 self.sum_techthurs.labels(guild_id=row['_id']).set(row['total'])
             self.errors.labels(source="techthurs").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="techthurs").set(1)
 
         try:
@@ -543,7 +567,7 @@ class TacoBotMetrics:
                 self.sum_techthurs_answers.labels(guild_id=row['_id']).set(row['total'])
             self.errors.labels(source="techthurs_answers").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="techthurs_answers").set(1)
 
         try:
@@ -552,7 +576,7 @@ class TacoBotMetrics:
                 self.sum_mentalmondays.labels(guild_id=row['_id']).set(row['total'])
             self.errors.labels(source="mentalmondays").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="mentalmondays").set(1)
 
         try:
@@ -561,7 +585,7 @@ class TacoBotMetrics:
                 self.sum_mentalmondays_answers.labels(guild_id=row['_id']).set(row['total'])
             self.errors.labels(source="mentalmondays_answers").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="mentalmondays_answers").set(1)
 
         try:
@@ -570,7 +594,7 @@ class TacoBotMetrics:
                 self.sum_tacotuesday.labels(guild_id=row['_id']).set(row['total'])
             self.errors.labels(source="tacotuesday").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="tacotuesday").set(1)
 
         try:
@@ -579,7 +603,7 @@ class TacoBotMetrics:
                 self.sum_tacotuesday_answers.labels(guild_id=row['_id']).set(row['total'])
             self.errors.labels(source="tacotuesday_answers").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="tacotuesday_answers").set(1)
 
         try:
@@ -588,7 +612,7 @@ class TacoBotMetrics:
                 self.sum_game_keys_available.labels(guild_id=row['_id']).set(row['total'])
             self.errors.labels(source="game_keys_available").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="game_keys_available").set(1)
 
         try:
@@ -597,7 +621,7 @@ class TacoBotMetrics:
                 self.sum_game_keys_claimed.labels(guild_id=row['_id']).set(row['total'])
             self.errors.labels(source="game_keys_claimed").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("game_keys_claimed").set(1)
 
         try:
@@ -615,7 +639,7 @@ class TacoBotMetrics:
                 self.sum_user_game_keys_claimed.labels(**user_labels).set(row['total'])
             self.errors.labels("user_game_keys_claimed").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", traceback.format_exc())
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("user_game_keys_claimed").set(1)
 
         try:
@@ -633,7 +657,7 @@ class TacoBotMetrics:
                 self.sum_user_game_keys_submitted.labels(**user_labels).set(row['total'])
             self.errors.labels("user_game_keys_submitted").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", traceback.format_exc())
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("user_game_keys_submitted").set(1)
 
         try:
@@ -642,7 +666,7 @@ class TacoBotMetrics:
                 self.sum_minecraft_whitelist.labels(guild_id=row['_id']).set(row['total'])
             self.errors.labels("minecraft_whitelisted").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("minecraft_whitelisted").set(1)
 
         try:
@@ -651,7 +675,7 @@ class TacoBotMetrics:
                 self.sum_stream_team_requests.labels(guild_id=row['_id']).set(row['total'])
             self.errors.labels("stream_team_requests").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("stream_team_requests").set(1)
 
         try:
@@ -660,7 +684,7 @@ class TacoBotMetrics:
                 self.sum_birthdays.labels(guild_id=row['_id']).set(row['total'])
             self.errors.labels("birthdays").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("birthdays").set(1)
 
         try:
@@ -669,7 +693,7 @@ class TacoBotMetrics:
                 self.sum_first_messages.labels(guild_id=row['_id']).set(row['total'])
             self.errors.labels("first_messages_today").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("first_messages_today").set(1)
 
         try:
@@ -682,7 +706,7 @@ class TacoBotMetrics:
                 self.sum_logs.labels(guild_id=row['_id']['guild_id'], level=row['_id']['level']).set(row["total"])
             self.errors.labels("logs").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("logs").set(1)
 
         try:
@@ -691,7 +715,7 @@ class TacoBotMetrics:
                 self.known_users.labels(guild_id=row['_id']['guild_id'], type=row['_id']['type']).set(row['total'])
             self.errors.labels("known_users").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("known_users").set(1)
 
         try:
@@ -710,7 +734,7 @@ class TacoBotMetrics:
                 self.top_messages.labels(**user_labels).set(u["total"])
             self.errors.labels("top_messages").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("top_messages").set(1)
 
         try:
@@ -728,7 +752,7 @@ class TacoBotMetrics:
                 self.top_gifters.labels(**user_labels).set(u["total"])
             self.errors.labels("top_gifters").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("top_gifters").set(1)
 
         try:
@@ -746,7 +770,7 @@ class TacoBotMetrics:
                 self.top_reactors.labels(**user_labels).set(u["total"])
             self.errors.labels("top_reactors").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("top_reactors").set(1)
 
         try:
@@ -764,7 +788,7 @@ class TacoBotMetrics:
                 self.top_tacos.labels(**user_labels).set(u["total"])
             self.errors.labels("top_tacos").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("top_tacos").set(1)
 
         try:
@@ -783,7 +807,7 @@ class TacoBotMetrics:
                 self.top_live_activity.labels(**user_labels).set(u["total"])
             self.errors.labels("top_live_activity").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("top_live").set(1)
 
         try:
@@ -797,7 +821,7 @@ class TacoBotMetrics:
                 self.suggestions.labels(**suggestion_labels).set(row["total"])
             self.errors.labels("suggestions").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("suggestions").set(1)
 
         try:
@@ -812,7 +836,7 @@ class TacoBotMetrics:
                 self.user_join_leave.labels(**join_leave_labels).set(row["total"])
             self.errors.labels("join_leave").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("join_leave").set(1)
 
         try:
@@ -831,7 +855,7 @@ class TacoBotMetrics:
                 self.photo_posts.labels(**user_labels).set(u["total"])
             self.errors.labels("photo_posts").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("photo_posts").set(1)
 
         try:
@@ -857,7 +881,7 @@ class TacoBotMetrics:
                 self.trivia_questions.labels(**trivia_labels).set(t["total"])
             self.errors.labels("trivia_questions").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("trivia_questions").set(1)
 
         try:
@@ -878,7 +902,7 @@ class TacoBotMetrics:
                     self.invites.labels(**invite_labels).set(total_count)
             self.errors.labels("invites").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("invites").set(1)
 
         try:
@@ -890,7 +914,7 @@ class TacoBotMetrics:
                     self.system_actions.labels(**action_labels).set(row["total"])
             self.errors.labels("system_actions").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("system_actions").set(1)
 
         try:
@@ -906,7 +930,7 @@ class TacoBotMetrics:
                     self.user_status.labels(**status_labels).set(row["total"])
             self.errors.labels("user_status").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("user_status").set(1)
 
         try:
@@ -923,7 +947,7 @@ class TacoBotMetrics:
                     self.introductions.labels(**intro_labels).set(row["total"])
             self.errors.labels("introductions").set(0)
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("introductions").set(1)
 
         try:
@@ -945,7 +969,7 @@ class TacoBotMetrics:
                 }
                 self.twitch_stream_avatar_duel_winners.labels(**user_labels).set(row["total"])
         except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("twitch_stream_avatar_duel_winners").set(1)
 
         try:

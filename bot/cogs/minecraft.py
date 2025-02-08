@@ -8,34 +8,30 @@ import traceback
 
 import discord
 import requests
-from bot.lib import discordhelper, logger, settings
-from bot.lib.enums import loglevel
+from bot.lib import discordhelper
+from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.minecraft import MinecraftDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.tacobot import TacoBot
 from discord.ext import commands
 from discord.ext.commands import Context
 
 
-class Minecraft(commands.Cog):
-    def __init__(self, bot):
+class MinecraftCog(TacobotCog):
+    def __init__(self, bot: TacoBot):
+        super().__init__(bot, "minecraft")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.bot = bot
-        self.settings = settings.Settings()
+
         self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
-        self.SETTINGS_SECTION = "minecraft"
         self.SELF_DESTRUCT_TIMEOUT = 30
         self.minecraft_db = MinecraftDatabase()
         self.tracking_db = TrackingDatabase()
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
-        if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
 
-        self.log = logger.Log(minimumLogLevel=log_level)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     # disable user from whitelist if they leave the discord
@@ -97,7 +93,7 @@ class Minecraft(commands.Cog):
                 self.log.debug(
                     guild_id,
                     f"{self._module}.{self._class}.{_method}",
-                    f"output_channel is not set or is not the same as the command channel",
+                    "output_channel is not set or is not the same as the command channel",
                 )
                 output_channel = ctx.author
                 AUTO_DELETE_TIMEOUT = None
@@ -136,18 +132,18 @@ class Minecraft(commands.Cog):
                 },
                 {
                     "name": self.settings.get_string(guild_id, "minecraft_status_mods"),
-                    "value": f"------------------",
+                    "value": "------------------",
                     "inline": False,
                 },
             ]
 
-            if status['online'] == False:
+            if not status['online']:
                 # add field to tell user how to start the server
 
                 fields.append(
                     {
                         "name": self.settings.get_string(guild_id, "minecraft_status_server_status"),
-                        "value": f"Server is offline. Run `.taco minecraft start` to start the server.",
+                        "value": "Server is offline. Run `.taco minecraft start` to start the server.",
                         "inline": False,
                     }
                 )
@@ -208,7 +204,7 @@ class Minecraft(commands.Cog):
 
             status = self.get_minecraft_status(guild_id)
 
-            if status['online'] == True:
+            if status['online']:
                 await self.messaging.send_embed(
                     channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
@@ -223,7 +219,7 @@ class Minecraft(commands.Cog):
 
             # send message to start the server
             # TODO: store url in settings
-            resp = requests.post(f"http://andeddu.bit13.local:10070/taco/minecraft/server/start")
+            resp = requests.post("http://andeddu.bit13.local:10070/taco/minecraft/server/start")
             if resp.status_code != 200:
                 await self.messaging.send_embed(
                     channel=output_channel,
@@ -294,7 +290,7 @@ class Minecraft(commands.Cog):
 
             status = self.get_minecraft_status(guild_id)
 
-            if status['online'] == False:
+            if not status['online']:
                 await self.messaging.send_embed(
                     channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
@@ -309,7 +305,7 @@ class Minecraft(commands.Cog):
 
             # send message to stop the server
             # TODO: store url in settings
-            resp = requests.post(f"http://andeddu.bit13.local:10070/taco/minecraft/server/stop")
+            resp = requests.post("http://andeddu.bit13.local:10070/taco/minecraft/server/stop")
             if resp.status_code != 200:
                 await self.messaging.send_embed(
                     channel=output_channel,
@@ -428,7 +424,7 @@ class Minecraft(commands.Cog):
             #     "success": true,
             # }
             # TODO: store url in settings
-            result = requests.get(f"https://playerdb.co/api/player/minecraft/{mc_username}")
+            result = requests.get("https://playerdb.co/api/player/minecraft/{mc_username}")
             if result.status_code != 200:
                 # Need to notify of an error
                 self.log.warn(
@@ -559,22 +555,10 @@ class Minecraft(commands.Cog):
 
         return True
 
-    def get_cog_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, self.SETTINGS_SECTION)
-        if not cog_settings:
-            raise Exception(f"No cog settings found for guild {guildId}")
-        return cog_settings
-
-    def get_tacos_settings(self, guildId: int = 0) -> dict:
-        cog_settings = self.settings.get_settings(guildId, "tacos")
-        if not cog_settings:
-            raise Exception(f"No tacos settings found for guild {guildId}")
-        return cog_settings
-
     def get_minecraft_status(self, guild_id: int = 0) -> dict:
         _method = inspect.stack()[0][3]
         # TODO: store url in settings
-        result = requests.get(f"http://andeddu.bit13.local:10070/tacobot/minecraft/status")
+        result = requests.get("http://andeddu.bit13.local:10070/tacobot/minecraft/status")
         if result.status_code != 200:
             # Need to notify of an error
             self.log.warn(
@@ -587,9 +571,9 @@ class Minecraft(commands.Cog):
         data = result.json()
         # get users uuid for minecraft username
         if not data["success"]:
-            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"Failed to get minecraft status")
+            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "Failed to get minecraft status")
         return data
 
 
 async def setup(bot):
-    await bot.add_cog(Minecraft(bot))
+    await bot.add_cog(MinecraftCog(bot))
