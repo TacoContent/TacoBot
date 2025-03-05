@@ -1,4 +1,4 @@
-discord.py==2.4
+discord.py==2.5.2
 validators==0.34
 pymongo==4.11
 python-dotenv==1.0.1
