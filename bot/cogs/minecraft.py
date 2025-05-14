@@ -424,11 +424,11 @@ class MinecraftCog(TacobotCog):
             #     "success": true,
             # }
             # TODO: store url in settings
-            result = requests.get("https://playerdb.co/api/player/minecraft/{mc_username}")
+            result = requests.get(f"https://playerdb.co/api/player/minecraft/{mc_username.strip()}")
             if result.status_code != 200:
                 # Need to notify of an error
                 self.log.warn(
-                    guild_id, f"{self._module}.{self._class}.{_method}", f"Failed to find player {mc_username}"
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"Failed to find player {mc_username}. (status_code: {result.status_code}) {result.text})"
                 )
                 await self.messaging.send_embed(
                     channel=_ctx.channel,
