@@ -20,7 +20,7 @@ class SwaggerHttpHandler(BaseHttpHandler):
 
         self.tracking_db = TrackingDatabase()
 
-    @uri_mapping("/api/{API_VERSION}/swagger.yaml", method="GET")
+    @uri_mapping(f"/api/{API_VERSION}/swagger.yaml", method="GET")
     async def swagger(self, request: HttpRequest) -> HttpResponse:
         _method = inspect.stack()[0][3]
 
@@ -31,7 +31,7 @@ class SwaggerHttpHandler(BaseHttpHandler):
             # headers.add("Content-Disposition", "attachment; filename=swagger.yaml")
 
             # load .swagger.yaml yaml file from module root directory
-            with open(".swagger.{API_VERSION}.yaml", "r") as file:
+            with open(f".swagger.{API_VERSION}.yaml", "r") as file:
                 swagger = file.read()
             return HttpResponse(200, headers, bytearray(swagger, "utf-8"))
         except HttpResponseException as e:

@@ -1,9 +1,9 @@
-discord.py==2.4
+discord.py==2.5.2
 validators==0.34
-pymongo==4.10
-python-dotenv==1.0.1
+pymongo==4.12.1
+python-dotenv==1.1.0
 requests~=2.32.3
-pytz~=2024.2
+pytz~=2025.2
 aiohttp~=3.11
 discordhealthcheck~=0.1.1
 prometheus_client~=0.21
