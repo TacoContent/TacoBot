@@ -34,6 +34,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_sum_all_gift_tacos(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -50,6 +53,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_sum_all_taco_reactions(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -66,6 +72,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_sum_all_twitch_tacos(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -85,6 +94,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_live_now_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -101,6 +113,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_twitch_channel_bot_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -117,6 +132,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_twitch_linked_accounts_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -135,6 +153,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_tqotd_questions_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -151,6 +172,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_tqotd_answers_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -169,6 +193,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_invited_users_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -187,6 +214,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_sum_live_by_platform(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -208,6 +238,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_wdyctw_questions_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -224,6 +257,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_wdyctw_answers_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -242,6 +278,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_techthurs_questions_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -258,6 +297,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_techthurs_answers_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -276,6 +318,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_mentalmondays_questions_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -292,6 +337,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_mentalmondays_answers_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -310,6 +358,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_tacotuesday_questions_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -326,6 +377,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_tacotuesday_answers_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -344,6 +398,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     # need to update data here to include guild_id
     def get_game_keys_available_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
@@ -363,6 +420,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     # need to update data here to include guild_id
     def get_game_keys_redeemed_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
@@ -382,6 +442,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_user_game_keys_redeemed_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -415,6 +478,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_user_game_keys_submitted_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -448,6 +514,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     # need to update data here to include guild_id
     def get_minecraft_whitelisted_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
@@ -467,6 +536,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_logs(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -492,6 +564,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_team_requests_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -510,6 +585,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_birthdays_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -527,6 +605,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_first_messages_today_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -553,6 +634,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_messages_tracked_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -571,6 +655,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_user_messages_tracked(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -613,6 +700,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_users_by_status(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -639,6 +729,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_known_users(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -676,6 +769,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_top_taco_gifters(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -709,6 +805,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_top_taco_reactors(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -742,6 +841,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_top_taco_receivers(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -775,6 +877,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_live_activity(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -814,6 +919,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_suggestions(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -832,6 +940,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_user_join_leave(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -850,6 +961,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_photo_posts_count(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -888,6 +1002,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_taco_logs_counts(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -911,6 +1028,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_system_action_counts(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -932,6 +1052,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_guilds(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -948,6 +1071,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     # get trivia questions, expand the correct users and incorrect users into separate lists of user objects
     def get_trivia_questions(self) -> typing.Optional[typing.List[dict[str, typing.Any]]]:
@@ -993,6 +1119,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return []
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     # TODO: this is not working
     def get_trivia_answer_status_per_user(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
@@ -1057,6 +1186,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_invites_by_user(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -1098,6 +1230,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_introductions(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -1116,6 +1251,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_stream_avatar_duel_winners(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -1173,6 +1311,9 @@ class MetricsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_free_game_keys(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
@@ -1202,3 +1343,6 @@ class MetricsDatabase(Database):
                 message=f"{ex}",
             )
             return None
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()

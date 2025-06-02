@@ -36,6 +36,9 @@ class MinecraftDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def whitelist_minecraft_user(
         self, guildId: int, userId: int, username: str, uuid: str, whitelist: bool = True
@@ -62,6 +65,9 @@ class MinecraftDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     # unused
     def op_minecraft_user(
@@ -92,6 +98,9 @@ class MinecraftDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_whitelist(self, guildId: int, status: bool = True) -> typing.List[MinecraftWhitelistUser]:
         _method = inspect.stack()[0][3]
@@ -112,6 +121,9 @@ class MinecraftDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return []
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_oplist(self, guildId: int, status: bool = True) -> typing.List[MinecraftWhitelistUser]:
         _method = inspect.stack()[0][3]
@@ -134,6 +146,9 @@ class MinecraftDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return []
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_worlds(self, guildId: int, active: typing.Optional[bool] = None):
         _method = inspect.stack()[0][3]
@@ -163,6 +178,9 @@ class MinecraftDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return []
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def set_active_world(self, guildId: int, worldId: str, name: str, active: bool) -> bool:
         _method = inspect.stack()[0][3]
@@ -194,3 +212,6 @@ class MinecraftDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return False
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
