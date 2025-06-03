@@ -73,6 +73,8 @@ class TacosDatabase(Database):
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"User {userId} has {user_tacos} tacos",
             )
+            if self.connection is None or self.client is None:
+                self.open()
             self.connection.tacos.update_one(
                 {"guild_id": str(guildId), "user_id": str(userId)}, {"$set": {"count": user_tacos}}, upsert=True
             )
@@ -132,6 +134,9 @@ class TacosDatabase(Database):
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"User {userId} now has {user_tacos} tacos",
             )
+            if self.connection is None or self.client is None:
+                self.open()
+
             self.connection.tacos.update_one(
                 {"guild_id": str(guildId), "user_id": str(userId)}, {"$set": {"count": user_tacos}}, upsert=True
             )
