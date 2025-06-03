@@ -62,7 +62,6 @@ class MigrationBase:
             if self.connection is not None and self.client is not None:
                 self.close()
 
-
     def track_run(self, success: bool) -> None:
         _method = inspect.stack()[0][3]
         if self.connection is None:
