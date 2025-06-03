@@ -75,6 +75,9 @@ class MentalMondaysDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def save_mentalmondays(
         self,
@@ -113,6 +116,9 @@ class MentalMondaysDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def mentalmondays_user_message_tracked(self, guildId: int, userId: int, messageId: int) -> bool:
         _method = inspect.stack()[0][3]
@@ -152,3 +158,6 @@ class MentalMondaysDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             raise ex
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()

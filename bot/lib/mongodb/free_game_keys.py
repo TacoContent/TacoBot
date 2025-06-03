@@ -1,12 +1,7 @@
-import datetime
 import inspect
 import os
 import traceback
-import typing
 
-import pytz
-from bot.lib import utils
-from bot.lib.enums import loglevel
 from bot.lib.mongodb.database import Database
 
 
@@ -28,3 +23,6 @@ class FreeGameKeysDatabase(Database):
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
             return False
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()

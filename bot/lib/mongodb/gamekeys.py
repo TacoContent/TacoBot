@@ -37,6 +37,9 @@ class GameKeysDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def open_game_key_offer(
         self,
@@ -76,6 +79,9 @@ class GameKeysDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def close_game_key_offer_by_message(self, guild_id: int, message_id: int) -> None:
         _method = inspect.stack()[0][3]
@@ -91,6 +97,9 @@ class GameKeysDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def close_game_key_offer(self, guild_id: int, game_key_id: str) -> None:
         _method = inspect.stack()[0][3]
@@ -106,6 +115,9 @@ class GameKeysDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def claim_game_key_offer(self, game_key_id: str, user_id: int) -> None:
         _method = inspect.stack()[0][3]
@@ -124,6 +136,9 @@ class GameKeysDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             raise ex
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_game_key_offer_data(self, guild_id: int, game_key_id: str) -> typing.Optional[dict]:
         _method = inspect.stack()[0][3]
@@ -155,6 +170,9 @@ class GameKeysDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_game_key_data(self, game_key_id: str) -> typing.Optional[dict]:
         _method = inspect.stack()[0][3]
@@ -181,6 +199,9 @@ class GameKeysDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_random_game_key_data(self, guild_id: int) -> typing.Optional[dict]:
         _method = inspect.stack()[0][3]
@@ -210,6 +231,9 @@ class GameKeysDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_claimed_key_count_in_timeframe(self, guild_id: int, user_id: int, timeframe: int) -> int:
         _method = inspect.stack()[0][3]
@@ -236,3 +260,6 @@ class GameKeysDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return 0
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()

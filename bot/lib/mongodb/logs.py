@@ -2,7 +2,6 @@ import inspect
 import os
 import traceback
 
-from bot.lib import utils
 from bot.lib.enums import loglevel
 from bot.lib.mongodb.database import Database
 
@@ -29,3 +28,6 @@ class LogsDatabase(Database):
                 message=f"Failed to clear log: {ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()

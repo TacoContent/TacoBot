@@ -42,6 +42,9 @@ class WhitelistDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_user_join_whitelist(self, guild_id: int) -> list:
         """Get the join whitelist for a guild."""
@@ -59,6 +62,9 @@ class WhitelistDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return []
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def remove_user_from_join_whitelist(self, guild_id: int, user_id: int) -> None:
         """Remove a user from the join whitelist for a guild."""
@@ -75,3 +81,6 @@ class WhitelistDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()

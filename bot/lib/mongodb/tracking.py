@@ -55,6 +55,9 @@ class TrackingDatabase(Database):
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"{ex}",
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def track_first_message(self, guildId: int, userId: int, channelId: int, messageId: int) -> None:
         _method = inspect.stack()[0][3]
@@ -86,6 +89,9 @@ class TrackingDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def track_message(self, guildId: int, userId: int, channelId: int, messageId: int) -> None:
         _method = inspect.stack()[0][3]
@@ -129,6 +135,9 @@ class TrackingDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def is_first_message_today(self, guildId: int, userId: int) -> bool:
         _method = inspect.stack()[0][3]
@@ -153,6 +162,9 @@ class TrackingDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return False
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def track_user(
         self,
@@ -199,6 +211,9 @@ class TrackingDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def track_photo_post(
         self, guildId: int, userId: int, channelId: int, messageId: int, message: str, image: str, channelName: str
@@ -229,6 +244,9 @@ class TrackingDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def track_user_join_leave(self, guildId: int, userId: int, join: bool) -> None:
         _method = inspect.stack()[0][3]
@@ -253,6 +271,9 @@ class TrackingDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def track_guild(self, guild: discord.Guild) -> None:
         _method = inspect.stack()[0][3]
@@ -281,6 +302,9 @@ class TrackingDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def track_trivia_question(self, triviaQuestion: TriviaQuestion) -> None:
         _method = inspect.stack()[0][3]
@@ -316,6 +340,9 @@ class TrackingDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def track_system_action(
         self, guild_id: int, action: typing.Union[SystemActions, str], data: typing.Optional[dict] = None
@@ -343,6 +370,9 @@ class TrackingDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def track_user_introduction(
         self, guild_id: int, user_id: int, message_id: int, channel_id: int, approved: bool
@@ -375,6 +405,9 @@ class TrackingDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def track_free_game_key(self, guildId: int, channelId: int, messageId: int, gameId: int):
         _method = inspect.stack()[0][3]
@@ -407,3 +440,6 @@ class TrackingDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
