@@ -2,7 +2,6 @@ import inspect
 import os
 import traceback
 
-from bot.lib import utils
 from bot.lib.enums import loglevel
 from bot.lib.mongodb.database import Database
 
@@ -32,3 +31,6 @@ class GuildsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return []
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()

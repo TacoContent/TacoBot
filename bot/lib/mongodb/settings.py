@@ -34,6 +34,9 @@ class SettingsDatabase(BaseDatabase):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     # add or update a setting value in the settings collection, under the settings property
     def set_setting(self, guildId: int, name: str, key: str, value: typing.Any) -> None:
@@ -41,7 +44,7 @@ class SettingsDatabase(BaseDatabase):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+
             # get the settings object
             settings = self.get_settings(guildId, name)
             # if the settings object is None, create a new one
@@ -59,6 +62,9 @@ class SettingsDatabase(BaseDatabase):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_settings(self, guildId: int, name: str) -> typing.Union[dict, None]:
         _method = inspect.stack()[0][3]
@@ -79,3 +85,6 @@ class SettingsDatabase(BaseDatabase):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
