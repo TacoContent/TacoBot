@@ -433,8 +433,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="guilds").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -445,8 +443,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="tacos").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open
@@ -457,8 +453,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="gift_tacos").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -469,8 +463,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="reaction_tacos").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -481,8 +473,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="live_now").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -493,8 +483,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="twitch_channels").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -505,8 +493,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="twitch_tacos").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -517,8 +503,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="twitch_linked_accounts").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -529,8 +513,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="tqotd").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -541,8 +523,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="tqotd_answers").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -553,8 +533,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="invited_users").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -567,8 +545,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="live_platform").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -579,8 +555,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="wdyctw").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -591,8 +565,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="wdyctw_answers").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -603,8 +575,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="techthurs").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -615,8 +585,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="techthurs_answers").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -627,8 +595,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="mentalmondays").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -639,8 +605,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="mentalmondays_answers").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -651,8 +615,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="tacotuesday").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -663,8 +625,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="tacotuesday_answers").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -675,8 +635,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels(source="game_keys_available").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -687,8 +645,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("game_keys_claimed").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -708,8 +664,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("user_game_keys_claimed").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -729,8 +683,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("user_game_keys_submitted").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -741,8 +693,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("minecraft_whitelisted").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -753,8 +703,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("stream_team_requests").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -765,8 +713,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("birthdays").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -777,8 +723,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("first_messages_today").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -793,8 +737,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("logs").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -805,8 +747,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("known_users").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -827,8 +767,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("top_messages").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -848,8 +786,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("top_gifters").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -869,8 +805,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("top_reactors").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -890,8 +824,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("top_tacos").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -912,8 +844,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("top_live").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -929,8 +859,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("suggestions").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -947,8 +875,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("join_leave").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -969,8 +895,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("photo_posts").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -982,8 +906,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex))
             self.errors.labels("taco_logs").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -1001,8 +923,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("trivia_questions").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -1025,8 +945,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("invites").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -1040,8 +958,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("system_actions").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -1059,8 +975,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("user_status").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -1079,8 +993,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("introductions").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -1104,8 +1016,6 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("twitch_stream_avatar_duel_winners").set(1)
-        finally:
-            self.db.close()
 
         try:
             self.db.open()
@@ -1119,5 +1029,9 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("free_game_keys").set(1)
-        finally:
+
+        try:
             self.db.close()
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            self.errors.labels("db_close").set(1)
