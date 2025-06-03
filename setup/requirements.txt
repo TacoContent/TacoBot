@@ -1,13 +1,13 @@
 discord.py==2.5.2
-validators==0.34
+validators~=0.35.0
 pymongo==4.13.0
 python-dotenv==1.1.0
 requests~=2.32.3
 pytz~=2025.2
-aiohttp~=3.11
+aiohttp~=3.12.7
 discordhealthcheck~=0.1.1
-prometheus_client~=0.21
+prometheus_client~=0.22.1
 pyyaml~=6.0
-openai~=1.78
-mcstatus~=11.1
+openai~=1.83
+mcstatus~=12
 # webhook_listener~=1.2.0
