@@ -1,8 +1,10 @@
 import os
 import threading
 import typing
+
 from bot.lib import utils
 from pymongo import MongoClient
+
 
 class MongoClientSingleton:
     _instance = None
