@@ -78,7 +78,7 @@ if __name__ == '__main__':
         loop.close()
         try:
             from bot.lib.mongodb.mongo_singleton import MongoClientSingleton
-            
+
             MongoClientSingleton.close_client()
         except ImportError:
             pass

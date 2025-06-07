@@ -18,7 +18,7 @@ class MongoClientSingleton:
                     if db_url is None:
                         # If no db_url is provided, use the environment variable or default value
                         db_url = utils.dict_get(
-                            os.environ, "MONGODB_URL", default_value=f"mongodb://localhost:27017/tacobot"
+                            os.environ, "MONGODB_URL", default_value="mongodb://localhost:27017/tacobot"
                         )
                     cls._instance = MongoClient(db_url)
         return cls._instance
