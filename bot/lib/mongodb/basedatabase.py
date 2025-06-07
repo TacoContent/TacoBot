@@ -25,7 +25,8 @@ class BaseDatabase:
     def open(self) -> None:
         if not self.db_url:
             raise ValueError("MONGODB_URL is not set")
-
+        if self.client is not None and self.connection is not None:
+            return
         self.client = MongoClient(self.db_url)
         self.connection = self.client[self.database_name]
 
