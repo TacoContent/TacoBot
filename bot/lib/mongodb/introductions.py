@@ -30,9 +30,6 @@ class IntroductionsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return []
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def get_user_introduction(self, guild_id: int, user_id: int) -> typing.Optional[dict]:
         _method = inspect.stack()[0][3]
@@ -49,6 +46,3 @@ class IntroductionsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()

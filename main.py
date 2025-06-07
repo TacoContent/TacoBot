@@ -3,6 +3,9 @@ import os
 import signal
 from concurrent.futures import ProcessPoolExecutor
 
+if os.name == 'nt':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 import bot.tacobot as bot
 import discord
 from bot.lib.colors import Colors
@@ -15,7 +18,6 @@ load_dotenv(find_dotenv())
 
 def sighandler(signum, frame):
     print(Colors.colorize(Colors.FGYELLOW, "<SIGTERM received>"))
-    exit(0)
 
 
 def init_tacobot() -> bot.TacoBot:
@@ -42,7 +44,6 @@ def start_tacobot():
         tacobot.run(DISCORD_TOKEN)
     except KeyboardInterrupt:
         print(Colors.colorize(Colors.FGYELLOW, "<KeyboardInterrupt received>"))
-        exit(0)
 
 
 def exporter():
@@ -51,15 +52,13 @@ def exporter():
         exporter.run()
     except KeyboardInterrupt:
         print(Colors.colorize(Colors.FGYELLOW, "<KeyboardInterrupt received>"))
-        exit(0)
 
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     signal.signal(signal.SIGTERM, sighandler)
+    executor = ProcessPoolExecutor(2)
     try:
-        executor = ProcessPoolExecutor(2)
-
         loop.run_in_executor(executor, start_tacobot)
         loop.run_in_executor(executor, exporter)
 
@@ -67,4 +66,18 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         pass
     finally:
+        executor.shutdown(wait=True)  # Ensure all processes are cleaned up
+        try:
+            loop.run_until_complete(loop.shutdown_asyncgens())
+        except Exception:
+            pass
+        try:
+            loop.run_until_complete(loop.shutdown_default_executor())
+        except Exception:
+            pass
         loop.close()
+        try:
+            from bot.lib.mongodb.mongo_singleton import MongoClientSingleton
+            MongoClientSingleton.close_client()
+        except ImportError:
+            pass

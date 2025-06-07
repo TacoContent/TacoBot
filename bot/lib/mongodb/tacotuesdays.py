@@ -56,9 +56,6 @@ class TacoTuesdaysDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def track_taco_tuesday(self, guild_id: int, user_id: int) -> None:
         _method = inspect.stack()[0][3]
@@ -110,9 +107,6 @@ class TacoTuesdaysDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     # unused
     def taco_tuesday_user_tracked(self, guildId: int, userId: int) -> bool:
@@ -153,9 +147,6 @@ class TacoTuesdaysDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             raise ex
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def taco_tuesday_set_user(self, guildId: int, userId: int) -> None:
         _method = inspect.stack()[0][3]
@@ -204,9 +195,6 @@ class TacoTuesdaysDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             raise ex
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def taco_tuesday_get_by_message(self, guildId: int, channelId: int, messageId: int) -> typing.Optional[dict]:
         _method = inspect.stack()[0][3]
@@ -226,9 +214,6 @@ class TacoTuesdaysDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             raise ex
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def taco_tuesday_update_message(
         self, guildId: int, channelId: int, messageId: int, newChannelId: int, newMessageId: int
@@ -251,6 +236,3 @@ class TacoTuesdaysDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             raise ex
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()

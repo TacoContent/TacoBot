@@ -46,9 +46,6 @@ class TQOTDDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def track_tqotd_answer(self, guildId: int, userId: int, message_id: int):
         _method = inspect.stack()[0][3]
@@ -94,9 +91,6 @@ class TQOTDDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def tqotd_user_message_tracked(self, guildId: int, userId: int, messageId: int):
         _method = inspect.stack()[0][3]
@@ -132,9 +126,6 @@ class TQOTDDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             raise ex
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def get_all_tqotd_questions(self, guildId: int):
         _method = inspect.stack()[0][3]
@@ -153,6 +144,3 @@ class TQOTDDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
