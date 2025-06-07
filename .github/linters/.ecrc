@@ -5,8 +5,8 @@
   "SpacesAfterTabs": false,
   "NoColor": false,
   "exclude": [
-	".git",
-	".vscode"
+    ".git",
+    ".vscode"
   ],
   "AllowedContentTypes": [],
   "PassedFiles": [],
