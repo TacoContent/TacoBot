@@ -1,0 +1,84 @@
+# taco_tuesday
+
+This document describes the structure of the `taco_tuesday` collection used in TacoBot. Each document in this collection represents a Taco Tuesday event or message in a Discord guild.
+
+## Document Structure
+
+- **_id**: *(ObjectId)*  
+  The unique identifier for the document.
+- **guild_id**: *(string)*  
+  The Discord guild (server) ID.
+- **timestamp**: *(number)*  
+  The time the event/message was created (epoch).
+- **answered**: *(array of objects)*  
+  List of users who answered, each with:
+  - **user_id**: *(string)*
+  - **timestamp**: *(number)*
+- **author**: *(string)*  
+  The author of the message/event.
+- **channel_id**: *(string)*  
+  The Discord channel ID.
+- **user_id**: *(string)*  
+  The user ID associated with the event/message.
+- **image**: *(string)*  
+  URL or path to an image.
+- **tweet**: *(string)*  
+  Tweet content or ID.
+- **message**: *(string)*  
+  The message content.
+- **message_id**: *(string)*  
+  The Discord message ID.
+
+## Example
+
+```json
+{
+  "_id": "ObjectId('...')",
+  "guild_id": "123456789012345678",
+  "timestamp": 1693459200,
+  "answered": [
+    {"user_id": "987654321098765432", "timestamp": 1693459300}
+  ],
+  "author": "TacoBot",
+  "channel_id": "234567890123456789",
+  "user_id": "987654321098765432",
+  "image": "https://...",
+  "tweet": "...",
+  "message": "Happy Taco Tuesday!",
+  "message_id": "345678901234567890"
+}
+```
+
+## Schema
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TacoTuesday",
+  "type": "object",
+  "properties": {
+    "_id": { "type": "string", "description": "MongoDB ObjectId as a string" },
+    "guild_id": { "type": "string", "description": "Discord guild/server ID" },
+    "timestamp": { "type": "number", "description": "Epoch timestamp" },
+    "answered": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "user_id": { "type": "string" },
+          "timestamp": { "type": "number" }
+        },
+        "required": ["user_id", "timestamp"]
+      }
+    },
+    "author": { "type": "string" },
+    "channel_id": { "type": "string" },
+    "user_id": { "type": "string" },
+    "image": { "type": "string" },
+    "tweet": { "type": "string" },
+    "message": { "type": "string" },
+    "message_id": { "type": "string" }
+  },
+  "required": ["_id", "guild_id", "timestamp"]
+}
+```
