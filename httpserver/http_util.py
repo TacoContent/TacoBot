@@ -58,8 +58,8 @@ class HttpHeaders:
 
     def merge(self, other):
         if isinstance(other, HttpHeaders):
-            for k, l in other._headers.items():
-                self._headers.setdefault(k, []).extend(l)
+            for k, _l in other._headers.items():
+                self._headers.setdefault(k, []).extend(_l)
         else:
             for k, v in other.items():
                 hlist = self._headers.setdefault(k, [])
@@ -72,15 +72,15 @@ class HttpHeaders:
         return self._headers.keys()
 
     def items(self) -> Generator[tuple[str, str]]:
-        for k, l in self._headers.items():
-            for v in l:
+        for k, _l in self._headers.items():
+            for v in _l:
                 yield k, v
 
     def __dict__(self) -> dict[str, str]:
         return {k: v[0] for k, v in self._headers.items()}
 
     def __len__(self) -> int:
-        return sum(len(l) for l in self._headers.values())
+        return sum(len(_l) for _l in self._headers.values())
 
     def __getitem__(self, key):
         return self._headers[key.lower()]
@@ -245,5 +245,5 @@ class HttpDebugDump:
         if response.headers:
             self.log.debug(0, f"{self._module}.{self._class}.{_method}", f'RESPONSE-HEADERS: {response.headers}')
         else:
-            self.log.debug(0, f"{self._module}.{self._class}.{_method}", f'RESPONSE-HEADERS: NONE')
+            self.log.debug(0, f"{self._module}.{self._class}.{_method}", 'RESPONSE-HEADERS: NONE')
         self._dump_http_body('RESPONSE-BODY', response.headers, response.body)
