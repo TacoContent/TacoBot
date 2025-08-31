@@ -23,6 +23,16 @@ RUN \
     apk del git build-base && \
     rm -rf /app/setup
 
+
+RUN addgroup -S tacobot && adduser -S tacobot -G tacobot
+
+# Set permissions for /app, /data, and /config
+RUN chown -R tacobot:tacobot /app /data && \
+    mkdir -p /config && \
+    chown -R tacobot:tacobot /config
+
+USER tacobot
+
 VOLUME ["/data"]
 VOLUME ["/config"]
 WORKDIR /app

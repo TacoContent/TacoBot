@@ -21,14 +21,14 @@ class TacosDatabase(Database):
     def remove_all_tacos(self, guildId: int, userId: int) -> None:
         _method = inspect.stack()[0][3]
         try:
-            if self.connection is None or self.client is None:
-                self.open()
             self.log(
                 guildId=guildId,
                 level=loglevel.LogLevel.DEBUG,
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"Removing tacos for user {userId}",
             )
+            if self.connection is None or self.client is None or self.connection.tacos is None:
+                self.open()
             self.connection.tacos.delete_many({"guild_id": str(guildId), "user_id": str(userId)})
         except Exception as ex:
             self.log(
@@ -73,6 +73,8 @@ class TacosDatabase(Database):
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"User {userId} has {user_tacos} tacos",
             )
+            if self.connection is None or self.client is None:
+                self.open()
             self.connection.tacos.update_one(
                 {"guild_id": str(guildId), "user_id": str(userId)}, {"$set": {"count": user_tacos}}, upsert=True
             )
@@ -132,6 +134,9 @@ class TacosDatabase(Database):
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"User {userId} now has {user_tacos} tacos",
             )
+            if self.connection is None or self.client is None:
+                self.open()
+
             self.connection.tacos.update_one(
                 {"guild_id": str(guildId), "user_id": str(userId)}, {"$set": {"count": user_tacos}}, upsert=True
             )

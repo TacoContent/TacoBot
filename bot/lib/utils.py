@@ -112,7 +112,9 @@ def from_timestamp(timestamp: float) -> datetime.datetime:
 
 
 def get_timestamp() -> float:
-    return to_timestamp(datetime.datetime.now(datetime.UTC))
+    # Get the current datetime in UTC and convert it to a timestamp
+    return to_timestamp(datetime.datetime.now(datetime.timezone.utc))
+    # return to_timestamp(datetime.datetime.now(datetime.UTC))
 
 
 def get_seconds_until(end_ts: float) -> int:

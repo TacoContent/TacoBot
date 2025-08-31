@@ -194,7 +194,7 @@ class NewAccountCheckCog(TacobotCog):
                         f"Member {utils.get_user_display_name(member)} (ID: {member.id}) has no guild.",
                     )
                 # kick the member
-                await member.kick(reason=message, delete_message_days=0)
+                await member.kick(reason=message)
                 if notify_channel_id:
                     notify_channel = await self.discord_helper.get_or_fetch_channel(notify_channel_id)
                     if notify_channel:

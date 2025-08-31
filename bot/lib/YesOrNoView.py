@@ -23,7 +23,7 @@ class YesOrNoView(discord.ui.View):
         self.settings = settings.Settings()
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         self.ctx = ctx
-        guild_id = ctx.guild.id if ctx.guild is not None else 0
+        # guild_id = ctx.guild.id if ctx.guild is not None else 0
 
         self.log = logger.Log(minimumLogLevel=log_level)
 

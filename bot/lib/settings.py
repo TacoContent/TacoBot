@@ -2,8 +2,6 @@ import glob
 import inspect
 import json
 import os
-import sys
-import traceback
 import typing
 
 from bot.lib import utils  # pylint: disable=no-name-in-module

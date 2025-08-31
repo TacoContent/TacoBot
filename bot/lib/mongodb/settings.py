@@ -44,7 +44,6 @@ class SettingsDatabase(BaseDatabase):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-
             # get the settings object
             settings = self.get_settings(guildId, name)
             # if the settings object is None, create a new one

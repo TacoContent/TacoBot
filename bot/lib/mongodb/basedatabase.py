@@ -7,7 +7,7 @@ import typing
 from bot.lib import utils
 from bot.lib.colors import Colors
 from bot.lib.enums import loglevel
-from pymongo import MongoClient
+from bot.lib.mongodb.mongo_singleton import MongoClientSingleton
 
 
 class BaseDatabase:
@@ -25,8 +25,9 @@ class BaseDatabase:
     def open(self) -> None:
         if not self.db_url:
             raise ValueError("MONGODB_URL is not set")
-
-        self.client = MongoClient(self.db_url)
+        if self.client is not None and self.connection is not None:
+            return
+        self.client = MongoClientSingleton.get_client(self.db_url)
         self.connection = self.client[self.database_name]
 
     def close(self) -> None:
