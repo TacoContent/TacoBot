@@ -19,11 +19,7 @@
     "addname": "",
     "x": 930,
     "y": 20,
-    "wires": [
-      [
-        "872337111ee46aba"
-      ]
-    ]
+    "wires": [["872337111ee46aba"]]
   },
   {
     "id": "55cbd0c68d78eca6",
@@ -49,11 +45,7 @@
     "name": "",
     "x": 100,
     "y": 20,
-    "wires": [
-      [
-        "b7fe330fc6fde8b4"
-      ]
-    ]
+    "wires": [["b7fe330fc6fde8b4"]]
   },
   {
     "id": "872337111ee46aba",
@@ -68,11 +60,7 @@
     "libs": [],
     "x": 1070,
     "y": 20,
-    "wires": [
-      [
-        "8d07fe0812b084a8"
-      ]
-    ]
+    "wires": [["8d07fe0812b084a8"]]
   },
   {
     "id": "8d07fe0812b084a8",
@@ -82,10 +70,7 @@
     "name": "",
     "x": 1210,
     "y": 20,
-    "wires": [
-      [],
-      []
-    ]
+    "wires": [[], []]
   },
   {
     "id": "46229fbb87d2ac60",
@@ -95,11 +80,7 @@
     "name": "",
     "x": 90,
     "y": 140,
-    "wires": [
-      [
-        "a736b6720f4061a3"
-      ]
-    ]
+    "wires": [["a736b6720f4061a3"]]
   },
   {
     "id": "a49a3465e499a7bb",
@@ -109,11 +90,7 @@
     "name": "",
     "x": 90,
     "y": 240,
-    "wires": [
-      [
-        "35e9fdb59d20e549"
-      ]
-    ]
+    "wires": [["35e9fdb59d20e549"]]
   },
   {
     "id": "dfc1e527623c72e7",
@@ -123,11 +100,7 @@
     "name": "",
     "x": 90,
     "y": 340,
-    "wires": [
-      [
-        "baf5258ea64c5e0b"
-      ]
-    ]
+    "wires": [["baf5258ea64c5e0b"]]
   },
   {
     "id": "565c5f87b5816dcb",
@@ -137,11 +110,7 @@
     "name": "",
     "x": 110,
     "y": 500,
-    "wires": [
-      [
-        "e6fd12deccdd2307"
-      ]
-    ]
+    "wires": [["e6fd12deccdd2307"]]
   },
   {
     "id": "e663ae9e85d5209d",
@@ -151,11 +120,7 @@
     "name": "",
     "x": 90,
     "y": 600,
-    "wires": [
-      [
-        "e6fd12deccdd2307"
-      ]
-    ]
+    "wires": [["e6fd12deccdd2307"]]
   },
   {
     "id": "d50a9ca967187113",
@@ -165,11 +130,7 @@
     "name": "",
     "x": 130,
     "y": 700,
-    "wires": [
-      [
-        "e6fd12deccdd2307"
-      ]
-    ]
+    "wires": [["e6fd12deccdd2307"]]
   },
   {
     "id": "3b1c7d52e3dbbe4d",
@@ -179,11 +140,7 @@
     "name": "",
     "x": 90,
     "y": 800,
-    "wires": [
-      [
-        "e6fd12deccdd2307"
-      ]
-    ]
+    "wires": [["e6fd12deccdd2307"]]
   },
   {
     "id": "1eaf8485e3fb09da",
@@ -193,11 +150,7 @@
     "name": "",
     "x": 120,
     "y": 900,
-    "wires": [
-      [
-        "e6fd12deccdd2307"
-      ]
-    ]
+    "wires": [["e6fd12deccdd2307"]]
   },
   {
     "id": "a736b6720f4061a3",
@@ -212,11 +165,7 @@
     "libs": [],
     "x": 300,
     "y": 140,
-    "wires": [
-      [
-        "9ca901b9e40d2f55"
-      ]
-    ]
+    "wires": [["9ca901b9e40d2f55"]]
   },
   {
     "id": "ef440c7ac39f0f66",
@@ -226,10 +175,7 @@
     "name": "",
     "x": 1910,
     "y": 280,
-    "wires": [
-      [],
-      []
-    ]
+    "wires": [[], []]
   },
   {
     "id": "30b5f389976ccad1",
@@ -241,11 +187,7 @@
     "operation": "find",
     "x": 800,
     "y": 20,
-    "wires": [
-      [
-        "a1086a4ec9e7afb7"
-      ]
-    ]
+    "wires": [["a1086a4ec9e7afb7"]]
   },
   {
     "id": "b7a48f10569cc161",
@@ -260,11 +202,7 @@
     "libs": [],
     "x": 610,
     "y": 20,
-    "wires": [
-      [
-        "30b5f389976ccad1"
-      ]
-    ]
+    "wires": [["30b5f389976ccad1"]]
   },
   {
     "id": "35e9fdb59d20e549",
@@ -279,11 +217,7 @@
     "libs": [],
     "x": 300,
     "y": 240,
-    "wires": [
-      [
-        "9ca901b9e40d2f55"
-      ]
-    ]
+    "wires": [["9ca901b9e40d2f55"]]
   },
   {
     "id": "9ca901b9e40d2f55",
@@ -298,12 +232,7 @@
     "libs": [],
     "x": 1100,
     "y": 240,
-    "wires": [
-      [
-        "ffaaaab41b41a887",
-        "fbd7aed491c06946"
-      ]
-    ]
+    "wires": [["ffaaaab41b41a887", "fbd7aed491c06946"]]
   },
   {
     "id": "33fc045ae186aa3f",
@@ -329,11 +258,7 @@
     "payloadType": "json",
     "x": 110,
     "y": 280,
-    "wires": [
-      [
-        "35e9fdb59d20e549"
-      ]
-    ]
+    "wires": [["35e9fdb59d20e549"]]
   },
   {
     "id": "58fd5a01580c6e98",
@@ -359,11 +284,7 @@
     "payloadType": "json",
     "x": 110,
     "y": 180,
-    "wires": [
-      [
-        "a736b6720f4061a3"
-      ]
-    ]
+    "wires": [["a736b6720f4061a3"]]
   },
   {
     "id": "e6fd12deccdd2307",
@@ -378,11 +299,7 @@
     "libs": [],
     "x": 870,
     "y": 720,
-    "wires": [
-      [
-        "9ca901b9e40d2f55"
-      ]
-    ]
+    "wires": [["9ca901b9e40d2f55"]]
   },
   {
     "id": "baf5258ea64c5e0b",
@@ -397,12 +314,7 @@
     "libs": [],
     "x": 380,
     "y": 400,
-    "wires": [
-      [
-        "e3f5771cb4dff405",
-        "5d5147cb9cd2625e"
-      ]
-    ]
+    "wires": [["e3f5771cb4dff405", "5d5147cb9cd2625e"]]
   },
   {
     "id": "40497c7d9234c271",
@@ -428,11 +340,7 @@
     "payloadType": "json",
     "x": 130,
     "y": 380,
-    "wires": [
-      [
-        "baf5258ea64c5e0b"
-      ]
-    ]
+    "wires": [["baf5258ea64c5e0b"]]
   },
   {
     "id": "81cc523992ad7633",
@@ -458,11 +366,7 @@
     "payloadType": "json",
     "x": 140,
     "y": 540,
-    "wires": [
-      [
-        "e6fd12deccdd2307"
-      ]
-    ]
+    "wires": [["e6fd12deccdd2307"]]
   },
   {
     "id": "5b60394a7ab365c7",
@@ -488,11 +392,7 @@
     "payloadType": "json",
     "x": 110,
     "y": 640,
-    "wires": [
-      [
-        "e6fd12deccdd2307"
-      ]
-    ]
+    "wires": [["e6fd12deccdd2307"]]
   },
   {
     "id": "e9a418e2ded6fa78",
@@ -518,11 +418,7 @@
     "payloadType": "json",
     "x": 150,
     "y": 740,
-    "wires": [
-      [
-        "e6fd12deccdd2307"
-      ]
-    ]
+    "wires": [["e6fd12deccdd2307"]]
   },
   {
     "id": "fcc3e0a062c5b788",
@@ -548,11 +444,7 @@
     "payloadType": "json",
     "x": 120,
     "y": 840,
-    "wires": [
-      [
-        "e6fd12deccdd2307"
-      ]
-    ]
+    "wires": [["e6fd12deccdd2307"]]
   },
   {
     "id": "c1f88b165672acaa",
@@ -578,11 +470,7 @@
     "payloadType": "json",
     "x": 140,
     "y": 940,
-    "wires": [
-      [
-        "e6fd12deccdd2307"
-      ]
-    ]
+    "wires": [["e6fd12deccdd2307"]]
   },
   {
     "id": "ffaaaab41b41a887",
@@ -603,11 +491,7 @@
     "outputs": 1,
     "x": 1540,
     "y": 240,
-    "wires": [
-      [
-        "55cbd0c68d78eca6"
-      ]
-    ]
+    "wires": [["55cbd0c68d78eca6"]]
   },
   {
     "id": "fbd7aed491c06946",
@@ -628,12 +512,7 @@
     "outputs": 1,
     "x": 1550,
     "y": 280,
-    "wires": [
-      [
-        "f1bb52da63e95672",
-        "9bb875c9ece15ae0"
-      ]
-    ]
+    "wires": [["f1bb52da63e95672", "9bb875c9ece15ae0"]]
   },
   {
     "id": "f1bb52da63e95672",
@@ -654,11 +533,7 @@
     "outputs": 1,
     "x": 1760,
     "y": 280,
-    "wires": [
-      [
-        "ef440c7ac39f0f66"
-      ]
-    ]
+    "wires": [["ef440c7ac39f0f66"]]
   },
   {
     "id": "27accf06d04c7f46",
@@ -684,11 +559,7 @@
     "payloadType": "json",
     "x": 130,
     "y": 420,
-    "wires": [
-      [
-        "baf5258ea64c5e0b"
-      ]
-    ]
+    "wires": [["baf5258ea64c5e0b"]]
   },
   {
     "id": "5d5147cb9cd2625e",
@@ -709,11 +580,7 @@
     "outputs": 1,
     "x": 590,
     "y": 500,
-    "wires": [
-      [
-        "9220fc289d8ce45f"
-      ]
-    ]
+    "wires": [["9220fc289d8ce45f"]]
   },
   {
     "id": "e3f5771cb4dff405",
@@ -734,11 +601,7 @@
     "outputs": 1,
     "x": 580,
     "y": 300,
-    "wires": [
-      [
-        "f08aafad55e13bcd"
-      ]
-    ]
+    "wires": [["f08aafad55e13bcd"]]
   },
   {
     "id": "f08aafad55e13bcd",
@@ -753,11 +616,7 @@
     "libs": [],
     "x": 760,
     "y": 300,
-    "wires": [
-      [
-        "2e48570e2813eab2"
-      ]
-    ]
+    "wires": [["2e48570e2813eab2"]]
   },
   {
     "id": "2e48570e2813eab2",
@@ -786,12 +645,7 @@
     "swaggerDoc": "",
     "x": 120,
     "y": 1020,
-    "wires": [
-      [
-        "b0f8aee21e010557",
-        "8ca13e0f98f994e7"
-      ]
-    ]
+    "wires": [["b0f8aee21e010557", "8ca13e0f98f994e7"]]
   },
   {
     "id": "6f8a5950184f2997",
@@ -806,12 +660,7 @@
     "libs": [],
     "x": 1120,
     "y": 880,
-    "wires": [
-      [
-        "f961d1de47b5d3fa",
-        "5c632a06a9e4e5f7"
-      ]
-    ]
+    "wires": [["f961d1de47b5d3fa", "5c632a06a9e4e5f7"]]
   },
   {
     "id": "f961d1de47b5d3fa",
@@ -826,12 +675,7 @@
     "libs": [],
     "x": 1360,
     "y": 880,
-    "wires": [
-      [
-        "ffaaaab41b41a887",
-        "fbd7aed491c06946"
-      ]
-    ]
+    "wires": [["ffaaaab41b41a887", "fbd7aed491c06946"]]
   },
   {
     "id": "0e7bb96a38d4110c",
@@ -862,12 +706,7 @@
     "payloadType": "json",
     "x": 130,
     "y": 1060,
-    "wires": [
-      [
-        "b0f8aee21e010557",
-        "8ca13e0f98f994e7"
-      ]
-    ]
+    "wires": [["b0f8aee21e010557", "8ca13e0f98f994e7"]]
   },
   {
     "id": "82d83ce5e40b7360",
@@ -898,12 +737,7 @@
     "payloadType": "json",
     "x": 200,
     "y": 1100,
-    "wires": [
-      [
-        "b0f8aee21e010557",
-        "8ca13e0f98f994e7"
-      ]
-    ]
+    "wires": [["b0f8aee21e010557", "8ca13e0f98f994e7"]]
   },
   {
     "id": "b0f8aee21e010557",
@@ -924,12 +758,7 @@
     "outputs": 1,
     "x": 610,
     "y": 920,
-    "wires": [
-      [
-        "43d5df8a1a51a83c",
-        "bd583d68bb5f6bc4"
-      ]
-    ]
+    "wires": [["43d5df8a1a51a83c", "bd583d68bb5f6bc4"]]
   },
   {
     "id": "43d5df8a1a51a83c",
@@ -950,11 +779,7 @@
     "outputs": 1,
     "x": 890,
     "y": 880,
-    "wires": [
-      [
-        "6f8a5950184f2997"
-      ]
-    ]
+    "wires": [["6f8a5950184f2997"]]
   },
   {
     "id": "8ca13e0f98f994e7",
@@ -975,11 +800,7 @@
     "outputs": 1,
     "x": 630,
     "y": 1020,
-    "wires": [
-      [
-        "bfb71e71ad1ce767"
-      ]
-    ]
+    "wires": [["bfb71e71ad1ce767"]]
   },
   {
     "id": "bd583d68bb5f6bc4",
@@ -1000,11 +821,7 @@
     "outputs": 1,
     "x": 910,
     "y": 960,
-    "wires": [
-      [
-        "3e47e6fb49235e3e"
-      ]
-    ]
+    "wires": [["3e47e6fb49235e3e"]]
   },
   {
     "id": "42ecfa1e206ce3ee",
@@ -1035,12 +852,7 @@
     "payloadType": "json",
     "x": 180,
     "y": 1140,
-    "wires": [
-      [
-        "b0f8aee21e010557",
-        "8ca13e0f98f994e7"
-      ]
-    ]
+    "wires": [["b0f8aee21e010557", "8ca13e0f98f994e7"]]
   },
   {
     "id": "3e47e6fb49235e3e",
@@ -1055,11 +867,7 @@
     "libs": [],
     "x": 1120,
     "y": 960,
-    "wires": [
-      [
-        "5c632a06a9e4e5f7"
-      ]
-    ]
+    "wires": [["5c632a06a9e4e5f7"]]
   },
   {
     "id": "bfb71e71ad1ce767",
@@ -1075,11 +883,7 @@
     "libs": [],
     "x": 1120,
     "y": 1020,
-    "wires": [
-      [
-        "5c632a06a9e4e5f7"
-      ]
-    ]
+    "wires": [["5c632a06a9e4e5f7"]]
   },
   {
     "id": "5c632a06a9e4e5f7",
@@ -1125,12 +929,7 @@
     "outputs": 1,
     "x": 1750,
     "y": 340,
-    "wires": [
-      [
-        "d61d003709dca254",
-        "8f3551e5552c98b7"
-      ]
-    ]
+    "wires": [["d61d003709dca254", "8f3551e5552c98b7"]]
   },
   {
     "id": "8f3551e5552c98b7",
@@ -1145,11 +944,7 @@
     "libs": [],
     "x": 1920,
     "y": 340,
-    "wires": [
-      [
-        "55cbd0c68d78eca6"
-      ]
-    ]
+    "wires": [["55cbd0c68d78eca6"]]
   },
   {
     "id": "b56dbe3bdf0e2cf4",
@@ -1180,12 +975,7 @@
     "outputs": 1,
     "x": 310,
     "y": 20,
-    "wires": [
-      [
-        "b7a48f10569cc161",
-        "f3275be8e60ea5b0"
-      ]
-    ]
+    "wires": [["b7a48f10569cc161", "f3275be8e60ea5b0"]]
   },
   {
     "id": "f3275be8e60ea5b0",
@@ -1217,11 +1007,7 @@
     "libs": [],
     "x": 880,
     "y": 500,
-    "wires": [
-      [
-        "9ca901b9e40d2f55"
-      ]
-    ]
+    "wires": [["9ca901b9e40d2f55"]]
   },
   {
     "id": "befdf892ceb26d77",
@@ -1236,11 +1022,7 @@
     "libs": [],
     "x": 880,
     "y": 140,
-    "wires": [
-      [
-        "9ca901b9e40d2f55"
-      ]
-    ]
+    "wires": [["9ca901b9e40d2f55"]]
   },
   {
     "id": "d90cd1d702a59016",
@@ -1261,12 +1043,7 @@
     "topic": "",
     "x": 190,
     "y": 1360,
-    "wires": [
-      [
-        "3db47b900e76d324",
-        "fc49ae6a618806e9"
-      ]
-    ]
+    "wires": [["3db47b900e76d324", "fc49ae6a618806e9"]]
   },
   {
     "id": "a9e9560d17d2de50",
@@ -1287,12 +1064,7 @@
     "outputs": 1,
     "x": 140,
     "y": 1320,
-    "wires": [
-      [
-        "fc49ae6a618806e9",
-        "3db47b900e76d324"
-      ]
-    ]
+    "wires": [["fc49ae6a618806e9", "3db47b900e76d324"]]
   },
   {
     "id": "0828258bd3f2db4a",
@@ -1312,12 +1084,7 @@
     "headers": [],
     "x": 770,
     "y": 1320,
-    "wires": [
-      [
-        "8a34ae17a641b0cd",
-        "d667d2807768b6b3"
-      ]
-    ]
+    "wires": [["8a34ae17a641b0cd", "d667d2807768b6b3"]]
   },
   {
     "id": "890ce78b0abea93e",
@@ -1333,11 +1100,7 @@
     "libs": [],
     "x": 1210,
     "y": 1320,
-    "wires": [
-      [
-        "8bcf83b488da7ad4"
-      ]
-    ]
+    "wires": [["8bcf83b488da7ad4"]]
   },
   {
     "id": "41cefddbe52b21cc",
@@ -1367,11 +1130,7 @@
     "uncaught": false,
     "x": 360,
     "y": 1220,
-    "wires": [
-      [
-        "580a78a6ba9760a5"
-      ]
-    ]
+    "wires": [["580a78a6ba9760a5"]]
   },
   {
     "id": "8a34ae17a641b0cd",
@@ -1387,11 +1146,7 @@
     "property": "payload",
     "x": 1030,
     "y": 1320,
-    "wires": [
-      [
-        "890ce78b0abea93e"
-      ]
-    ]
+    "wires": [["890ce78b0abea93e"]]
   },
   {
     "id": "5a908a7ec7ab8002",
@@ -1403,11 +1158,7 @@
     "operation": "find",
     "x": 710,
     "y": 1360,
-    "wires": [
-      [
-        "b847438fe9da980a"
-      ]
-    ]
+    "wires": [["b847438fe9da980a"]]
   },
   {
     "id": "580a78a6ba9760a5",
@@ -1440,11 +1191,7 @@
     "libs": [],
     "x": 550,
     "y": 1360,
-    "wires": [
-      [
-        "5a908a7ec7ab8002"
-      ]
-    ]
+    "wires": [["5a908a7ec7ab8002"]]
   },
   {
     "id": "b847438fe9da980a",
@@ -1460,11 +1207,7 @@
     "libs": [],
     "x": 890,
     "y": 1360,
-    "wires": [
-      [
-        "c65243ee89b7ee76"
-      ]
-    ]
+    "wires": [["c65243ee89b7ee76"]]
   },
   {
     "id": "c65243ee89b7ee76",
@@ -1490,15 +1233,7 @@
     "outputs": 2,
     "x": 1100,
     "y": 1360,
-    "wires": [
-      [
-        "9057fb0a0f8125f2"
-      ],
-      [
-        "60aa9d78642fa184",
-        "0b36be2dc5bd1912"
-      ]
-    ]
+    "wires": [["9057fb0a0f8125f2"], ["60aa9d78642fa184", "0b36be2dc5bd1912"]]
   },
   {
     "id": "8eddfae3478194d5",
@@ -1574,11 +1309,7 @@
     ],
     "x": 720,
     "y": 1400,
-    "wires": [
-      [
-        "34c3879e34032d05"
-      ]
-    ]
+    "wires": [["34c3879e34032d05"]]
   },
   {
     "id": "34c3879e34032d05",
@@ -1594,11 +1325,7 @@
     "libs": [],
     "x": 910,
     "y": 1400,
-    "wires": [
-      [
-        "ba5104ca0bf3ebbe"
-      ]
-    ]
+    "wires": [["ba5104ca0bf3ebbe"]]
   },
   {
     "id": "ba5104ca0bf3ebbe",
@@ -1624,28 +1351,17 @@
     "outputs": 2,
     "x": 1120,
     "y": 1400,
-    "wires": [
-      [],
-      [
-        "8eddfae3478194d5"
-      ]
-    ]
+    "wires": [[], ["8eddfae3478194d5"]]
   },
   {
     "id": "108c997bfb2362d2",
     "type": "status",
     "z": "46f750dd0c884772",
     "name": "MONGODB CONNECTED",
-    "scope": [
-      "5a908a7ec7ab8002"
-    ],
+    "scope": ["5a908a7ec7ab8002"],
     "x": 170,
     "y": 1260,
-    "wires": [
-      [
-        "76bd62e1f71697fc"
-      ]
-    ]
+    "wires": [["76bd62e1f71697fc"]]
   },
   {
     "id": "76bd62e1f71697fc",
@@ -1666,11 +1382,7 @@
     "outputs": 1,
     "x": 450,
     "y": 1260,
-    "wires": [
-      [
-        "a9e9560d17d2de50"
-      ]
-    ]
+    "wires": [["a9e9560d17d2de50"]]
   },
   {
     "id": "834fce834f9f43fb",
@@ -1691,12 +1403,7 @@
     "topic": "",
     "x": 160,
     "y": 1400,
-    "wires": [
-      [
-        "3db47b900e76d324",
-        "fc49ae6a618806e9"
-      ]
-    ]
+    "wires": [["3db47b900e76d324", "fc49ae6a618806e9"]]
   },
   {
     "id": "3db47b900e76d324",
@@ -1712,11 +1419,7 @@
     "libs": [],
     "x": 500,
     "y": 1320,
-    "wires": [
-      [
-        "0828258bd3f2db4a"
-      ]
-    ]
+    "wires": [["0828258bd3f2db4a"]]
   },
   {
     "id": "0b36be2dc5bd1912",
@@ -1732,11 +1435,7 @@
     "libs": [],
     "x": 550,
     "y": 1400,
-    "wires": [
-      [
-        "987d7c325cae46ce"
-      ]
-    ]
+    "wires": [["987d7c325cae46ce"]]
   },
   {
     "id": "fc49ae6a618806e9",
@@ -1780,5 +1479,15 @@
     "port": "27017",
     "db": "tacobot",
     "name": "Tacobot"
+  },
+  {
+    "id": "0cbc13cc4641a5c3",
+    "type": "global-config",
+    "env": [],
+    "modules": {
+      "node-red-contrib-twitch-chat": "1.1.1",
+      "node-red-node-mongodb": "0.2.5"
+    }
   }
 ]
+

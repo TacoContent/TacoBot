@@ -18,12 +18,7 @@
     "swaggerDoc": "",
     "x": 170,
     "y": 80,
-    "wires": [
-      [
-        "2e8937bf239cabf4",
-        "2556d85d5a662107"
-      ]
-    ]
+    "wires": [["2e8937bf239cabf4"]]
   },
   {
     "id": "2e8937bf239cabf4",
@@ -35,11 +30,7 @@
     "operation": "find",
     "x": 450,
     "y": 80,
-    "wires": [
-      [
-        "382b7685188426ee"
-      ]
-    ]
+    "wires": [["382b7685188426ee"]]
   },
   {
     "id": "382b7685188426ee",
@@ -55,12 +46,7 @@
     "libs": [],
     "x": 680,
     "y": 80,
-    "wires": [
-      [
-        "3cc0de7b4b469330",
-        "2556d85d5a662107"
-      ]
-    ]
+    "wires": [["3cc0de7b4b469330"]]
   },
   {
     "id": "ddcaebed6ea1c23c",
@@ -76,37 +62,6 @@
     "wires": []
   },
   {
-    "id": "23653e7e59ba4dbe",
-    "type": "function",
-    "z": "c95c41241d6a403b",
-    "name": "Build Data Metrics",
-    "func": "data_payload = global.get(\"mc_stats_metrics\");\nlet online = 0;\nlet max = 0;\nlet up = 0;\nif (msg.payload && msg.payload.players) {\n    online = msg.payload.players.online;\n    max = msg.payload.players.max;\n    up = 1;\n}\n\nlet data = `mcstats_players_online ${online}\\n`;\ndata += `mcstats_players_max ${max}\\n`;\ndata += `mcstats_server_up ${up}\\n`;\n\nfor (let m in data_payload) {\n    data += `${m} ${data_payload[m]}\\n`;\n}\n\nmsg.payload = data;\nreturn msg;",
-    "outputs": 1,
-    "timeout": "",
-    "noerr": 0,
-    "initialize": "",
-    "finalize": "",
-    "libs": [],
-    "x": 430,
-    "y": 320,
-    "wires": [
-      []
-    ]
-  },
-  {
-    "id": "18b16b6aa450d409",
-    "type": "minecraft-ping",
-    "z": "c95c41241d6a403b",
-    "server": "c35c7083d8eba0bf",
-    "x": 190,
-    "y": 320,
-    "wires": [
-      [
-        "23653e7e59ba4dbe"
-      ]
-    ]
-  },
-  {
     "id": "36f923300ce4aae0",
     "type": "mongodb in",
     "z": "c95c41241d6a403b",
@@ -116,11 +71,7 @@
     "operation": "find",
     "x": 450,
     "y": 140,
-    "wires": [
-      [
-        "637316db1fa1167b"
-      ]
-    ]
+    "wires": [["637316db1fa1167b"]]
   },
   {
     "id": "3cc0de7b4b469330",
@@ -135,11 +86,7 @@
     "libs": [],
     "x": 250,
     "y": 140,
-    "wires": [
-      [
-        "36f923300ce4aae0"
-      ]
-    ]
+    "wires": [["36f923300ce4aae0"]]
   },
   {
     "id": "637316db1fa1167b",
@@ -155,12 +102,7 @@
     "libs": [],
     "x": 670,
     "y": 140,
-    "wires": [
-      [
-        "1d09d3290578b5d1",
-        "2556d85d5a662107"
-      ]
-    ]
+    "wires": [["1d09d3290578b5d1"]]
   },
   {
     "id": "eb1925eab6bde318",
@@ -184,11 +126,7 @@
     "startOptionsType": "json",
     "x": 530,
     "y": 480,
-    "wires": [
-      [
-        "c071055c3c0654ff"
-      ]
-    ]
+    "wires": [["c071055c3c0654ff"]]
   },
   {
     "id": "cfc892a337697ed1",
@@ -212,11 +150,7 @@
     "startOptionsType": "json",
     "x": 530,
     "y": 580,
-    "wires": [
-      [
-        "c071055c3c0654ff"
-      ]
-    ]
+    "wires": [["c071055c3c0654ff"]]
   },
   {
     "id": "8a3589cfb8724cf2",
@@ -229,11 +163,7 @@
     "swaggerDoc": "",
     "x": 190,
     "y": 480,
-    "wires": [
-      [
-        "eb1925eab6bde318"
-      ]
-    ]
+    "wires": [["eb1925eab6bde318"]]
   },
   {
     "id": "4f6bd3cea23ee70f",
@@ -246,11 +176,7 @@
     "swaggerDoc": "",
     "x": 190,
     "y": 580,
-    "wires": [
-      [
-        "cfc892a337697ed1"
-      ]
-    ]
+    "wires": [["cfc892a337697ed1"]]
   },
   {
     "id": "eb886bdb607773a1",
@@ -276,12 +202,7 @@
     "libs": [],
     "x": 780,
     "y": 500,
-    "wires": [
-      [
-        "eb886bdb607773a1",
-        "cac832508eda5045"
-      ]
-    ]
+    "wires": [["eb886bdb607773a1", "cac832508eda5045"]]
   },
   {
     "id": "cac832508eda5045",
@@ -305,19 +226,11 @@
     "type": "catch",
     "z": "c95c41241d6a403b",
     "name": "CATCH START/STOP Error",
-    "scope": [
-      "eb1925eab6bde318",
-      "cfc892a337697ed1",
-      "466b830ca81043b1"
-    ],
+    "scope": ["eb1925eab6bde318", "cfc892a337697ed1", "466b830ca81043b1"],
     "uncaught": false,
     "x": 180,
     "y": 740,
-    "wires": [
-      [
-        "cbbb58b5b59adfe0"
-      ]
-    ]
+    "wires": [["cbbb58b5b59adfe0"]]
   },
   {
     "id": "cbbb58b5b59adfe0",
@@ -333,12 +246,7 @@
     "libs": [],
     "x": 570,
     "y": 740,
-    "wires": [
-      [
-        "eb886bdb607773a1",
-        "cac832508eda5045"
-      ]
-    ]
+    "wires": [["eb886bdb607773a1", "cac832508eda5045"]]
   },
   {
     "id": "40420c557e11e7ab",
@@ -351,11 +259,7 @@
     "swaggerDoc": "",
     "x": 200,
     "y": 680,
-    "wires": [
-      [
-        "466b830ca81043b1"
-      ]
-    ]
+    "wires": [["466b830ca81043b1"]]
   },
   {
     "id": "466b830ca81043b1",
@@ -379,11 +283,7 @@
     "startOptionsType": "json",
     "x": 540,
     "y": 680,
-    "wires": [
-      [
-        "c071055c3c0654ff"
-      ]
-    ]
+    "wires": [["c071055c3c0654ff"]]
   },
   {
     "id": "1d09d3290578b5d1",
@@ -399,11 +299,7 @@
     "libs": [],
     "x": 250,
     "y": 200,
-    "wires": [
-      [
-        "9acb6a06165e21cf"
-      ]
-    ]
+    "wires": [["9acb6a06165e21cf"]]
   },
   {
     "id": "9acb6a06165e21cf",
@@ -415,11 +311,7 @@
     "operation": "find",
     "x": 450,
     "y": 200,
-    "wires": [
-      [
-        "f2ddb075b4ed1624"
-      ]
-    ]
+    "wires": [["f2ddb075b4ed1624"]]
   },
   {
     "id": "f2ddb075b4ed1624",
@@ -435,12 +327,7 @@
     "libs": [],
     "x": 670,
     "y": 200,
-    "wires": [
-      [
-        "2556d85d5a662107",
-        "9f9b9dbd57d71a95"
-      ]
-    ]
+    "wires": [["9f9b9dbd57d71a95"]]
   },
   {
     "id": "93af4b21669059c4",
@@ -453,12 +340,7 @@
     "swaggerDoc": "",
     "x": 180,
     "y": 40,
-    "wires": [
-      [
-        "2e8937bf239cabf4",
-        "2556d85d5a662107"
-      ]
-    ]
+    "wires": [["2e8937bf239cabf4"]]
   },
   {
     "id": "6b6a95450db15cb4",
@@ -471,11 +353,7 @@
     "swaggerDoc": "",
     "x": 200,
     "y": 440,
-    "wires": [
-      [
-        "eb1925eab6bde318"
-      ]
-    ]
+    "wires": [["eb1925eab6bde318"]]
   },
   {
     "id": "446d0be0e58c1c19",
@@ -488,11 +366,7 @@
     "swaggerDoc": "",
     "x": 200,
     "y": 540,
-    "wires": [
-      [
-        "cfc892a337697ed1"
-      ]
-    ]
+    "wires": [["cfc892a337697ed1"]]
   },
   {
     "id": "6f938c1e10b197b3",
@@ -505,11 +379,7 @@
     "swaggerDoc": "",
     "x": 210,
     "y": 640,
-    "wires": [
-      [
-        "466b830ca81043b1"
-      ]
-    ]
+    "wires": [["466b830ca81043b1"]]
   },
   {
     "id": "1bd0d1b9dd02cf70",
@@ -533,11 +403,7 @@
     "uncaught": false,
     "x": 100,
     "y": 360,
-    "wires": [
-      [
-        "38317e84dbd95676"
-      ]
-    ]
+    "wires": [["38317e84dbd95676"]]
   },
   {
     "id": "38317e84dbd95676",
@@ -553,12 +419,7 @@
     "libs": [],
     "x": 330,
     "y": 360,
-    "wires": [
-      [
-        "5ea9b6064aed81aa",
-        "cc37b0f519187eb2"
-      ]
-    ]
+    "wires": [["5ea9b6064aed81aa", "cc37b0f519187eb2"]]
   },
   {
     "id": "5ea9b6064aed81aa",
@@ -602,41 +463,16 @@
     "libs": [],
     "x": 930,
     "y": 200,
-    "wires": [
-      [
-        "ddcaebed6ea1c23c",
-        "2556d85d5a662107"
-      ]
-    ]
-  },
-  {
-    "id": "2556d85d5a662107",
-    "type": "debug",
-    "z": "c95c41241d6a403b",
-    "name": "debug 5",
-    "active": false,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "false",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 940,
-    "y": 20,
-    "wires": []
+    "wires": [["ddcaebed6ea1c23c"]]
   },
   {
     "id": "64e33ad5b06450a7",
     "type": "minecraft-ping",
     "z": "c95c41241d6a403b",
     "server": "c35c7083d8eba0bf",
-    "x": 370,
+    "x": 390,
     "y": 820,
-    "wires": [
-      [
-        "f7a548b2a5c24b5c"
-      ]
-    ]
+    "wires": [["f7a548b2a5c24b5c"]]
   },
   {
     "id": "f7a548b2a5c24b5c",
@@ -652,12 +488,7 @@
     "libs": [],
     "x": 650,
     "y": 820,
-    "wires": [
-      [
-        "236f6d9b7b0469f5",
-        "1855635c028cebf9"
-      ]
-    ]
+    "wires": [["1855635c028cebf9"]]
   },
   {
     "id": "1855635c028cebf9",
@@ -670,7 +501,7 @@
     "upsert": true,
     "multi": false,
     "operation": "update",
-    "x": 970,
+    "x": 890,
     "y": 820,
     "wires": []
   },
@@ -678,7 +509,7 @@
     "id": "a3b6356630bd22ac",
     "type": "inject",
     "z": "c95c41241d6a403b",
-    "name": "",
+    "name": "MANUAL TRIGGER",
     "props": [
       {
         "p": "payload"
@@ -695,29 +526,9 @@
     "topic": "",
     "payload": "",
     "payloadType": "date",
-    "x": 120,
-    "y": 880,
-    "wires": [
-      [
-        "64e33ad5b06450a7"
-      ]
-    ]
-  },
-  {
-    "id": "236f6d9b7b0469f5",
-    "type": "debug",
-    "z": "c95c41241d6a403b",
-    "name": "debug 9",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "false",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 800,
-    "y": 900,
-    "wires": []
+    "x": 130,
+    "y": 860,
+    "wires": [["64e33ad5b06450a7"]]
   },
   {
     "id": "fd6a42dfd8463f32",
@@ -726,7 +537,7 @@
     "name": "5 MINUTES",
     "op1": "",
     "op2": "0",
-    "op1type": "nul",
+    "op1type": "date",
     "op2type": "str",
     "duration": "-5",
     "extend": false,
@@ -736,13 +547,9 @@
     "bytopic": "all",
     "topic": "topic",
     "outputs": 1,
-    "x": 90,
+    "x": 110,
     "y": 820,
-    "wires": [
-      [
-        "64e33ad5b06450a7"
-      ]
-    ]
+    "wires": [["64e33ad5b06450a7"]]
   },
   {
     "id": "9f9b9dbd57d71a95",
@@ -758,11 +565,7 @@
     "libs": [],
     "x": 250,
     "y": 260,
-    "wires": [
-      [
-        "b02a2f61b7d1b4a6"
-      ]
-    ]
+    "wires": [["b02a2f61b7d1b4a6"]]
   },
   {
     "id": "b02a2f61b7d1b4a6",
@@ -774,11 +577,7 @@
     "operation": "find",
     "x": 450,
     "y": 260,
-    "wires": [
-      [
-        "cf6ef5875798ecf4"
-      ]
-    ]
+    "wires": [["cf6ef5875798ecf4"]]
   },
   {
     "id": "cf6ef5875798ecf4",
@@ -794,11 +593,7 @@
     "libs": [],
     "x": 670,
     "y": 260,
-    "wires": [
-      [
-        "b520a7852ab47daa"
-      ]
-    ]
+    "wires": [["b520a7852ab47daa"]]
   },
   {
     "id": "cca90e0ad48e5446",
@@ -811,15 +606,25 @@
     "name": "Tacobot"
   },
   {
+    "id": "b8c418284af7befb",
+    "type": "docker-configuration",
+    "host": "vader.bit13.local",
+    "port": "2375"
+  },
+  {
     "id": "c35c7083d8eba0bf",
     "type": "minecraft-ping-server",
     "host": "vader.bit13.local",
     "port": "25565"
   },
   {
-    "id": "b8c418284af7befb",
-    "type": "docker-configuration",
-    "host": "vader.bit13.local",
-    "port": "2375"
+    "id": "38cf3f247f544f8e",
+    "type": "global-config",
+    "env": [],
+    "modules": {
+      "node-red-node-mongodb": "0.2.5",
+      "node-red-contrib-dockerode": "0.13.1",
+      "node-red-contrib-minecraft-ping": "0.1.0"
+    }
   }
 ]
