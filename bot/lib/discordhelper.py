@@ -36,8 +36,13 @@ class DiscordHelper:
 
 
     def has_permission(self, guild: int, user: typing.Union[discord.User, discord.Member], permission: str) -> bool:
-        # check the database if the user has the permission defined.
-        return self.permissions_db.has_user_permission(guild, user.id, permission)
+        _method = inspect.stack()[0][3]
+        try:
+            # check the database if the user has the permission defined.
+            return self.permissions_db.has_user_permission(guild, user.id, permission)
+        except Exception as e:
+            self.log.error(guild, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return False
 
     def create_context(
         self, bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
