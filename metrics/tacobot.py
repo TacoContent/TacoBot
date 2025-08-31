@@ -445,7 +445,7 @@ class TacoBotMetrics:
             self.errors.labels(source="tacos").set(1)
 
         try:
-            self.db.open
+            self.db.open()
             q_all_gift_tacos = self.db.get_sum_all_gift_tacos() or []
             for row in q_all_gift_tacos:
                 self.sum_taco_gifts.labels(guild_id=row['_id']).set(row['total'])
