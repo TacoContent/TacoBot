@@ -9,11 +9,13 @@ import discord
 from bot.lib import discordhelper, utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
+from bot.lib.enums.permissions import TacoPermissions
 from bot.lib.enums.system_actions import SystemActions
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.gamekeys import GameKeysDatabase
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.permissions import Permissions
 from bot.lib.steam.steamapi import SteamApiClient
 from bot.tacobot import TacoBot
 from bot.ui.GameRewardView import GameRewardView
@@ -33,6 +35,7 @@ class GameKeysCog(TacobotCog):
         self.tacos_db = TacosDatabase()
         self.gamekeys_db = GameKeysDatabase()
         self.tracking_db = TrackingDatabase()
+        self.permissions = Permissions(bot)
         self.steam_api = SteamApiClient()
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Initialized settings: {self.SETTINGS_SECTION}")
@@ -429,7 +432,7 @@ class GameKeysCog(TacobotCog):
         ctx = None
 
         # does user have permission to claim game?
-        if self.discord_helper.has_permission(guild_id, interaction.user, "claim_game_disabled"):
+        if self.permissions.has_taco_permission(guild_id, interaction.user, TacoPermissions.CLAIM_GAME_DISABLED):
             await interaction.response.send_message("You do not have permission to claim this game.", ephemeral=True)
             return
 
