@@ -33,9 +33,9 @@ class PermissionsDatabase(BaseDatabase):
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
-                    self.open()
+                self.open()
             permissions = self.connection.permissions.find_one(  # type: ignore
-                 {"user_id": str(user_id), "guild_id": str(guild_id)}
+                {"user_id": str(user_id), "guild_id": str(guild_id)}
             )
             if permissions:
                 return [TacoPermissions.from_str(perm) for perm in permissions.get("permissions", [])]
@@ -57,11 +57,11 @@ class PermissionsDatabase(BaseDatabase):
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
-                    self.open()
+                self.open()
             self.connection.permissions.update_one(  # type: ignore
                 {"user_id": str(user_id), "guild_id": str(guild_id)},
                 {"$addToSet": {"permissions": str(permission)}},
-                upsert=True
+                upsert=True,
             )
         except Exception as ex:
             self.log(
@@ -80,10 +80,9 @@ class PermissionsDatabase(BaseDatabase):
 
         try:
             if self.connection is None or self.client is None:
-                    self.open()
+                self.open()
             self.connection.permissions.update_one(  # type: ignore
-                {"user_id": str(user_id), "guild_id": str(guild_id)},
-                {"$pull": {"permissions": str(permission)}}
+                {"user_id": str(user_id), "guild_id": str(guild_id)}, {"$pull": {"permissions": str(permission)}}
             )
         except Exception as ex:
             self.log(

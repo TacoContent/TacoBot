@@ -16,7 +16,7 @@ class Permissions:
         self,
         guild_id: int,
         user: typing.Union[discord.Member, discord.User, int],
-        permission: typing.Union[TacoPermissions, str]
+        permission: typing.Union[TacoPermissions, str],
     ) -> bool:
         guild_id = guild_id
         if isinstance(user, int):
