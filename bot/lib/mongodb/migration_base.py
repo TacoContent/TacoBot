@@ -4,7 +4,7 @@ import traceback
 
 from bot.lib import logger, settings
 from bot.lib.enums import loglevel
-from pymongo import MongoClient
+from bot.lib.mongodb.mongo_singleton import MongoClientSingleton
 
 
 class MigrationBase:
@@ -20,7 +20,8 @@ class MigrationBase:
     def open(self) -> None:
         if not self.settings.db_url:
             raise ValueError("MONGODB_URL is not set")
-        self.client = MongoClient(self.settings.db_url)
+        self.client = MongoClientSingleton.get_client(self.settings.db_url)
+        # self.client = MongoClient(self.settings.db_url)
         self.connection = self.client.tacobot
 
     def close(self) -> None:

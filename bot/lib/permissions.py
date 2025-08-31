@@ -2,12 +2,33 @@ import typing
 
 import discord
 from bot.lib import discordhelper, settings
+from bot.lib.enums.permissions import TacoPermissions
+from bot.lib.mongodb.permissions import PermissionsDatabase
 
 
 class Permissions:
     def __init__(self, bot) -> None:
         self.settings = settings.Settings()
         self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.permissions_db = PermissionsDatabase()
+
+    def has_taco_permission(
+        self,
+        guild_id: int,
+        user: typing.Union[discord.Member, discord.User, int],
+        permission: typing.Union[TacoPermissions, str],
+    ) -> bool:
+        guild_id = guild_id
+        if isinstance(user, int):
+            user_id = user
+        else:
+            user_id = user.id
+
+        if self.permissions_db is None:
+            return False
+        if isinstance(permission, str):
+            permission = TacoPermissions.from_str(permission)
+        return self.permissions_db.has_user_permission(guild_id, user_id, permission)
 
     async def has_permission(
         self,

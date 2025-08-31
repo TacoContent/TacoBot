@@ -14,16 +14,22 @@ env:
   GH_IMAGE_REGISTRY: "ghcr.io"
   BUILD_TAGS: ""
   BUILD_DATE: ""
+
+permissions: {}
 jobs:
   version:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
     outputs:
       app_version: ${{ steps.semvers.outputs.patch }} # set the app_version to be the PATCH updated version
       tag: ${{ steps.semvers.outputs.v_patch }} # set the tag to be the PATCH updated version.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          persist-credentials: false
       # Get the current tag
       - name: 'Get Previous tag'
         id: previoustag
@@ -36,9 +42,17 @@ jobs:
         uses: "WyriHaximus/github-action-next-semvers@v1"
         with:
           version: ${{ steps.previoustag.outputs.tag }}
-      - run: echo "app_version ${{ steps.semvers.outputs.patch }}"
+      - run: |
+          echo "app_version: $patch_version"
+        env:
+          patch_version: ${{ steps.semvers.outputs.patch }}
   docker:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      # To report GitHub Actions status checks
+      statuses: write
     needs: version
     # env:
     #   DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
@@ -52,12 +66,13 @@ jobs:
           IMAGE_NAME="${IMAGE_NAME,,}";
           GHCR_IMAGE="${GH_IMAGE_REGISTRY}/${IMAGE_ORG}/${IMAGE_NAME}";
           BUILD_DATEZ="$(date +'%Y-%m-%dT%TZ%z' -u)";
-          TAGSZ="${GHCR_IMAGE}:latest,${GHCR_IMAGE}:${{ needs.version.outputs.app_version }}";
+          TAGSZ="${GHCR_IMAGE}:latest,${GHCR_IMAGE}:${app_version}";
           {
             echo "BUILD_TAGS=${TAGSZ}"
             echo "BUILD_DATE=${BUILD_DATEZ}"
           } >> "$GITHUB_ENV";
-
+        env:
+          app_version: ${{ needs.version.outputs.app_version }}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -88,9 +103,17 @@ jobs:
     needs:
       - docker
       - version
+    permissions:
+      contents: write
+      packages: write
+      # To report GitHub Actions status checks
+      statuses: write
     steps:
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - name: Merge develop -> main
         uses: devmasx/merge-branch@1.4.0
         with:
@@ -117,6 +140,9 @@ jobs:
 
   dispatch_documentation:
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      statuses: write
     needs:
       - merge
     steps:

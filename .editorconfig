@@ -7,11 +7,14 @@ indent_style = space
 end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
-indent_size = 4
+indent_size = 2
 
 [*.{json,yml,yaml,manifest}]
 indent_style = space
 indent_size = 2
+
+[.vscode/settings.json]
+indent_style = tab
 
 [*.py]
 indent_style = space
@@ -19,4 +22,4 @@ indent_size = 4
 
 [*.md]
 trim_trailing_whitespace = false
-insert_final_newline = false
+insert_final_newline = true

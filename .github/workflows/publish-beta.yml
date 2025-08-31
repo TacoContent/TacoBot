@@ -15,13 +15,22 @@ env:
   GH_IMAGE_REGISTRY: "ghcr.io"
   BUILD_TAGS: ""
   BUILD_DATE: ""
+
+permissions: {}
+
 jobs:
   docker:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      # To report GitHub Actions status checks
+      statuses: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Prepare
         id: prep
         run: |

@@ -22,7 +22,7 @@ class MetricsExporter:
             log_level = LogLevel.DEBUG
         self.log = Log(log_level)
 
-        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Exporter initialized")
+        self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Exporter initialized")
 
     def run(self):
         _method = inspect.stack()[1][3]
