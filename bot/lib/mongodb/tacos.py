@@ -38,6 +38,9 @@ class TacosDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def add_tacos(self, guildId: int, userId: int, count: int) -> int:
         _method = inspect.stack()[0][3]
@@ -85,6 +88,9 @@ class TacosDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return 0
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def remove_tacos(self, guildId: int, userId: int, count: int):
         _method = inspect.stack()[0][3]
@@ -143,6 +149,9 @@ class TacosDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_tacos_count(self, guildId: int, userId: int) -> typing.Union[int, None]:
         _method = inspect.stack()[0][3]
@@ -167,6 +176,9 @@ class TacosDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_total_gifted_tacos(self, guildId: int, userId: int, timespan_seconds: int = 86400) -> int:
         _method = inspect.stack()[0][3]
@@ -194,6 +206,9 @@ class TacosDatabase(Database):
             )
 
             return 0
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def add_taco_gift(self, guildId: int, userId: int, count: int) -> bool:
         _method = inspect.stack()[0][3]
@@ -215,6 +230,9 @@ class TacosDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return False
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def add_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int) -> None:
         _method = inspect.stack()[0][3]
@@ -249,6 +267,9 @@ class TacosDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_taco_reaction(self, guildId: int, userId: int, channelId: int, messageId: int) -> typing.Union[dict, None]:
         _method = inspect.stack()[0][3]
@@ -274,6 +295,9 @@ class TacosDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def track_tacos_log(self, guildId: int, fromUserId: int, toUserId: int, count: int, type: str, reason: str) -> None:
         _method = inspect.stack()[0][3]
@@ -301,6 +325,9 @@ class TacosDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_total_gifted_tacos_for_channel(self, guild_id: int, channel: str, timespan_seconds: int = 86400) -> int:
         _method = inspect.stack()[0][3]
@@ -328,6 +355,9 @@ class TacosDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return 0
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def get_total_gifted_tacos_to_user(
         self, guild_id: int, channel: str, user: str, timespan_seconds: int = 86400
@@ -364,3 +394,6 @@ class TacosDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return 0
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()

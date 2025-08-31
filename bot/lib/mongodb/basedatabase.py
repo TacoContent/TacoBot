@@ -91,6 +91,9 @@ class BaseDatabase:
                 outIO=sys.stderr,
                 colorOverride=Colors.FAIL,
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
 
     def insert_log(
         self, guildId: int, level: loglevel.LogLevel, method: str, message: str, stack: typing.Optional[str] = None
@@ -118,3 +121,6 @@ class BaseDatabase:
                 outIO=sys.stderr,
                 colorOverride=Colors.FAIL,
             )
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()

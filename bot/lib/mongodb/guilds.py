@@ -31,3 +31,6 @@ class GuildsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return []
+        finally:
+            if self.connection is not None and self.client is not None:
+                self.close()
