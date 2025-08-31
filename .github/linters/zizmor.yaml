@@ -3,4 +3,8 @@ rules:
   unpinned-uses:
     config:
       policies:
-        actions/*: any
+        '*': any
+  excessive-permissions:
+    config:
+      policies:
+        '*': deny

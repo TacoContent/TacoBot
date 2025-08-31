@@ -12,6 +12,8 @@ name: Correct PR Branch Check
       - ready_for_review
       - reopened
       - unlocked
+
+permissions: {}
 jobs:
   target-branch-check:
     runs-on: ubuntu-latest
