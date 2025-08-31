@@ -11,6 +11,7 @@ from bot.lib.ChannelSelect import ChannelSelectView
 from bot.lib.enums import loglevel, tacotypes
 from bot.lib.messaging import Messaging
 from bot.lib.models.textwithattachments import TextWithAttachments
+from bot.lib.mongodb.permissions import PermissionsDatabase
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.RoleSelectView import RoleSelect, RoleSelectView
 from bot.lib.YesOrNoView import YesOrNoView
@@ -26,11 +27,17 @@ class DiscordHelper:
         self.bot = bot
 
         self.tacos_db = TacosDatabase()
+        self.permissions_db = PermissionsDatabase()
         self.messaging = Messaging(bot=self.bot)
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
         self.log = logger.Log(minimumLogLevel=log_level)
+
+
+    def has_permission(self, guild: int, user: typing.Union[discord.User, discord.Member], permission: str) -> bool:
+        # check the database if the user has the permission defined.
+        return self.permissions_db.has_user_permission(guild, user.id, permission)
 
     def create_context(
         self, bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs

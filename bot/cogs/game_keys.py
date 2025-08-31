@@ -427,6 +427,12 @@ class GameKeysCog(TacobotCog):
             return
         guild_id = interaction.guild.id if interaction.guild else 0
         ctx = None
+
+        # does user have permission to claim game?
+        if self.discord_helper.has_permission(guild_id, interaction.user, "claim_game_disabled"):
+            await interaction.response.send_message("You do not have permission to claim this game.", ephemeral=True)
+            return
+
         try:
             await interaction.response.defer()
         except Exception:
