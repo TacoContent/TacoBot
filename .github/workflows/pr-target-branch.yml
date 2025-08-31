@@ -17,6 +17,11 @@ permissions: {}
 jobs:
   target-branch-check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # To report GitHub Actions status checks
+      statuses: write
+      
     env:
       REQUIRED_BRANCH: "develop"
     steps:
