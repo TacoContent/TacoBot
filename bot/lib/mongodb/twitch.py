@@ -31,9 +31,6 @@ class TwitchDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def get_user_id_from_twitch_name(self, twitchName: str) -> typing.Optional[int]:
         _method = inspect.stack()[0][3]
@@ -52,9 +49,6 @@ class TwitchDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     # twitchId: typing.Optional[str] = None,
     def set_user_twitch_info(self, userId: int, twitchName: typing.Optional[str] = None) -> None:
@@ -73,9 +67,6 @@ class TwitchDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def get_user_twitch_info(self, userId: int) -> typing.Optional[dict]:
         _method = inspect.stack()[0][3]
@@ -91,9 +82,6 @@ class TwitchDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def add_stream_team_request(self, guildId: int, userId: int, twitchName: typing.Optional[str] = None) -> None:
         _method = inspect.stack()[0][3]
@@ -125,9 +113,6 @@ class TwitchDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def remove_stream_team_request(self, guildId: int, userId: int) -> None:
         _method = inspect.stack()[0][3]
@@ -143,9 +128,6 @@ class TwitchDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def add_twitchbot_to_channel(self, guildId: int, twitch_channel: str) -> bool:
         _method = inspect.stack()[0][3]
@@ -171,9 +153,6 @@ class TwitchDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             raise ex
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def set_twitch_discord_link_code(self, userId: int, code: str):
         _method = inspect.stack()[0][3]
@@ -196,9 +175,6 @@ class TwitchDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             raise ex
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def link_twitch_to_discord_from_code(self, userId: int, code: str):
         _method = inspect.stack()[0][3]
@@ -226,9 +202,6 @@ class TwitchDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             raise ex
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def _get_twitch_name(self, userId: int) -> typing.Union[str, None]:
         _method = inspect.stack()[0][3]
@@ -248,6 +221,3 @@ class TwitchDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return None
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()

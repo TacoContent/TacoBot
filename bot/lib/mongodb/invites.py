@@ -42,9 +42,6 @@ class InvitesDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     # unused?
     def get_invite_code(self, guildId: int, inviteCode: str) -> typing.Any:
@@ -61,6 +58,3 @@ class InvitesDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()

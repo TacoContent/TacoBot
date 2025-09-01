@@ -52,9 +52,6 @@ class SuggestionsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     # unused?
     def remove_suggestion_create_message(self, guildId: int, channelId: int, messageId: int) -> None:
@@ -79,9 +76,6 @@ class SuggestionsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def get_suggestion(self, guildId: int, messageId: int) -> typing.Union[dict, None]:
         _method = inspect.stack()[0][3]
@@ -102,9 +96,6 @@ class SuggestionsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     # unused?
     def get_suggestion_by_id(self, guildId: int, suggestionId: str) -> typing.Union[dict, None]:
@@ -126,9 +117,6 @@ class SuggestionsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def set_state_suggestion_by_id(self, guildId: int, suggestionId: str, state: str, userId: int, reason: str) -> None:
         _method = inspect.stack()[0][3]
@@ -158,9 +146,6 @@ class SuggestionsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     # unused?
     def set_state_suggestion(self, guildId: int, messageId: int, state: str, userId: int, reason: str) -> None:
@@ -190,9 +175,6 @@ class SuggestionsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def has_user_voted_on_suggestion(self, suggestionId: str, userId: int) -> bool:
         _method = inspect.stack()[0][3]
@@ -216,9 +198,6 @@ class SuggestionsDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return False
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def unvote_suggestion_by_id(self, guildId: int, suggestionId: str, userId: int) -> None:
         _method = inspect.stack()[0][3]
@@ -239,9 +218,6 @@ class SuggestionsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     # unused?
     def unvote_suggestion(self, guildId: int, messageId: int, userId: int) -> None:
@@ -263,9 +239,6 @@ class SuggestionsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def get_suggestion_votes_by_id(self, suggestionId: str) -> typing.Union[dict, None]:
         _method = inspect.stack()[0][3]
@@ -284,9 +257,6 @@ class SuggestionsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     # unused?
     def vote_suggestion(self, guildId: int, messageId: int, userId: int, vote: int) -> None:
@@ -309,9 +279,6 @@ class SuggestionsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def vote_suggestion_by_id(self, suggestionId: str, userId: int, vote: int) -> None:
         _method = inspect.stack()[0][3]
@@ -331,9 +298,6 @@ class SuggestionsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def add_suggestion(self, guildId: int, messageId: int, suggestion: dict) -> None:
         _method = inspect.stack()[0][3]
@@ -363,9 +327,6 @@ class SuggestionsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def delete_suggestion_by_id(self, guildId: int, suggestionId: str, userId: int, reason: str) -> None:
         _method = inspect.stack()[0][3]
@@ -395,6 +356,3 @@ class SuggestionsDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()

@@ -1104,7 +1104,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.introductions.aggregate(
+            return self.connection.introductions.aggregate( # type: ignore
                 [{"$group": {"_id": {"guild_id": "$guild_id", "approved": "$approved"}, "total": {"$sum": 1}}}]
             )
         except Exception as ex:
