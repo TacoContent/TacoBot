@@ -1029,9 +1029,3 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("free_game_keys").set(1)
-
-        try:
-            self.db.close()
-        except Exception as ex:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
-            self.errors.labels("db_close").set(1)

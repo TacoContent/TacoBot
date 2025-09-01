@@ -24,19 +24,6 @@ class MigrationBase:
         # self.client = MongoClient(self.settings.db_url)
         self.connection = self.client.tacobot
 
-    def close(self) -> None:
-        _method = inspect.stack()[0][3]
-        try:
-            if self.client:
-                self.client.close()
-        except Exception as ex:
-            self.log.error(
-                guildId=0,
-                method=f"{self._module}.{self._class}.{_method}",
-                message=f"Failed to close connection: {ex}",
-                stack=traceback.format_exc(),
-            )
-
     def run(self) -> None:
         pass
 
