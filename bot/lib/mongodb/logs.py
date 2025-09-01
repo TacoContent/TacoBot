@@ -28,6 +28,3 @@ class LogsDatabase(Database):
                 message=f"Failed to clear log: {ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
