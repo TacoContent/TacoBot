@@ -10,13 +10,14 @@ if os.name == 'nt':
 import bot.tacobot as bot
 import discord
 from bot.lib.colors import Colors
-from bot.lib.mongodb.mongo_singleton import MongoClientSingleton
 from bot.lib.mongodb.migration_runner import MigrationRunner
+from bot.lib.mongodb.mongo_singleton import MongoClientSingleton
 from dotenv import find_dotenv, load_dotenv
 from metrics.exporter import MetricsExporter
 
 load_dotenv(find_dotenv())
 atexit.register(MongoClientSingleton.close_client)
+
 
 def sighandler(signum, frame):
     print(Colors.colorize(Colors.FGYELLOW, "<SIGTERM received>"))
