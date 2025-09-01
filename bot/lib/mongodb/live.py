@@ -40,9 +40,6 @@ class LiveDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def track_live(
         self,
@@ -88,9 +85,6 @@ class LiveDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def get_tracked_live(self, guildId: int, userId: int, platform: str):
         _method = inspect.stack()[0][3]
@@ -110,9 +104,6 @@ class LiveDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def get_tracked_live_by_url(self, guildId: int, url: str):
         _method = inspect.stack()[0][3]
@@ -128,9 +119,6 @@ class LiveDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def get_tracked_live_by_user(self, guildId: int, userId: int):
         _method = inspect.stack()[0][3]
@@ -146,9 +134,6 @@ class LiveDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def untrack_live(self, guildId: int, userId: int, platform: str):
         _method = inspect.stack()[0][3]
@@ -166,6 +151,3 @@ class LiveDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()

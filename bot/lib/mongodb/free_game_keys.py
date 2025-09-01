@@ -23,6 +23,3 @@ class FreeGameKeysDatabase(Database):
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
             return False
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()

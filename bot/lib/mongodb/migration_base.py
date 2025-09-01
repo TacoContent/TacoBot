@@ -24,19 +24,6 @@ class MigrationBase:
         # self.client = MongoClient(self.settings.db_url)
         self.connection = self.client.tacobot
 
-    def close(self) -> None:
-        _method = inspect.stack()[0][3]
-        try:
-            if self.client:
-                self.client.close()
-        except Exception as ex:
-            self.log.error(
-                guildId=0,
-                method=f"{self._module}.{self._class}.{_method}",
-                message=f"Failed to close connection: {ex}",
-                stack=traceback.format_exc(),
-            )
-
     def run(self) -> None:
         pass
 
@@ -59,9 +46,6 @@ class MigrationBase:
                 stack=traceback.format_exc(),
             )
             return False
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def track_run(self, success: bool) -> None:
         _method = inspect.stack()[0][3]
@@ -79,6 +63,3 @@ class MigrationBase:
                 message=f"Failed to track migration run: {ex}",
                 stack=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()

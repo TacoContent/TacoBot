@@ -42,9 +42,6 @@ class BirthdaysDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def get_user_birthday(self, guildId: int, userId: int) -> typing.Optional[dict]:
         _method = inspect.stack()[0][3]

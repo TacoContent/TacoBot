@@ -8,11 +8,12 @@ from bot.lib import discordhelper, logger, settings
 from bot.lib.enums import loglevel
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.tacobot import TacoBot
 from httpserver.http_util import HttpRequest
 
 
 class BaseHttpHandler:
-    def __init__(self, bot):
+    def __init__(self, bot: TacoBot):
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]

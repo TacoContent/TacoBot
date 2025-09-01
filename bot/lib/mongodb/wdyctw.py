@@ -74,9 +74,6 @@ class WDYCTWDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def save_wdyctw(
         self, guildId: int, message: str, image: str, author: int, channel_id: int = None, message_id: int = None
@@ -109,9 +106,6 @@ class WDYCTWDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
 
     def wdyctw_user_message_tracked(self, guildId: int, userId: int, messageId: int) -> bool:
         _method = inspect.stack()[0][3]
@@ -149,6 +143,3 @@ class WDYCTWDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             raise ex
-        finally:
-            if self.connection is not None and self.client is not None:
-                self.close()
