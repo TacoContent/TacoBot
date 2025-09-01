@@ -39,6 +39,6 @@ WORKDIR /app
 
 # perform health check using both discordhealthcheck and a curl to localhost:8931/healthz
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD discordhealthcheck && curl -f http://localhost:8931/healthz || exit 1
+  CMD discordhealthcheck && curl --fail-with-body --silent --show-error -X GET http://localhost:8931/healthz || exit 1
 
 CMD ["python", "-u", "/app/main.py"]

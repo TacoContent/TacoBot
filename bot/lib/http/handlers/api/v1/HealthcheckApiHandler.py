@@ -1,5 +1,4 @@
 import inspect
-import json
 import os
 import traceback
 
@@ -39,9 +38,9 @@ class HealthcheckApiHandler(BaseHttpHandler):
             success = whitelist is not None and len(list(whitelist)) > 0 and self.bot.is_ready()
 
             if success:
-                return HttpResponse(200, headers, None)
+                return HttpResponse(200, headers, bytearray("Healthy!", "utf-8"))
 
-            return HttpResponse(500, headers, None)
+            return HttpResponse(500, headers, bytearray("Unhealthy!", "utf-8"))
         except HttpResponseException as e:
             return HttpResponse(e.status_code, e.headers, e.body)
         except Exception as e:
