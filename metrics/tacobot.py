@@ -6,6 +6,7 @@ import traceback
 
 from bot.lib import logger
 from bot.lib.enums.loglevel import LogLevel
+from bot.lib.enums.permissions import TacoPermissions
 from bot.lib.mongodb.metrics import MetricsDatabase
 from bot.lib.settings import Settings
 from bot.lib.utils import dict_get
@@ -353,6 +354,13 @@ class TacoBotMetrics:
             name="free_game_keys",
             documentation="The number of free game keys",
             labelnames=["state"],
+        )
+
+        self.permission_count = Gauge(
+            namespace=self.namespace,
+            name="permission",
+            documentation="The number of permission counts",
+            labelnames=["guild_id", "permission"],
         )
 
         self.healthy = Gauge(
@@ -984,3 +992,17 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("free_game_keys").set(1)
+
+        try:
+            q_permission_counts = self.db.get_permission_counts() or []
+            for gid in known_guilds:
+                # loop all where not TacoPermissions.UNKNOWN
+                for p in TacoPermissions.all_permissions():
+                    if p != TacoPermissions.UNKNOWN:
+                        self.permission_count.labels(guild_id=gid, permission=p).set(0)
+                for row in q_permission_counts:
+                    if row["_id"]["guild_id"] == gid:
+                        self.permission_count.labels(guild_id=gid, permission=row["_id"]["permission"]).set(row["total"])
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            self.errors.labels("permission").set(1)

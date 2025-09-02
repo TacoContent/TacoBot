@@ -183,15 +183,49 @@ This document describes the HTTP API endpoints exposed by TacoBot under `/api/v1
 - **Status Codes:**
   - 200: Success
 
-### `/tacobot/guild/{guild}/invite/{channel}`
+
+### `/api/v1/permissions/{guildId}/{userId}`
+
+- **Method:** GET
+- **Description:** Get all permissions for a user in a guild.
+- **Input:**
+  - Path parameters:
+    - `guildId` (string): Discord Guild ID
+    - `userId` (string): Discord User ID
+- **Output:**
+  - 200: Array of permission strings
+
+### `/api/v1/permissions/{guildId}/{userId}/{permission}`
 
 - **Method:** POST
+- **Description:** Add a permission to a user in a guild.
+- **Input:**
+  - Path parameters:
+    - `guildId` (string): Discord Guild ID
+    - `userId` (string): Discord User ID
+    - `permission` (string): Permission name
+- **Output:**
+  - 200: OK
 
-- **Description:** Invite bot to a Twitch channel.
+- **Method:** PUT
+- **Description:** Add (or update) a permission for a user in a guild.
+- **Input:**
+  - Path parameters:
+    - `guildId` (string): Discord Guild ID
+    - `userId` (string): Discord User ID
+    - `permission` (string): Permission name
+- **Output:**
+  - 200: OK
 
-- **Input:** Path parameters `guild` (string), `channel` (string)
-
-- **Output:** 200 OK
+- **Method:** DELETE
+- **Description:** Remove a permission from a user in a guild.
+- **Input:**
+  - Path parameters:
+    - `guildId` (string): Discord Guild ID
+    - `userId` (string): Discord User ID
+    - `permission` (string): Permission name
+- **Output:**
+  - 200: OK
 
 ---
 

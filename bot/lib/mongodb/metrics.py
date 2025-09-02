@@ -18,12 +18,63 @@ class MetricsDatabase(Database):
         self.connection = None
         pass
 
+    def get_permission_counts(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
+        try:
+            # read the permissions collection
+            # get the permissions for each user
+            # group the count per permission
+
+            # sample document for a user:
+            # {
+            #     _id: ObjectId('68b3a380ec1278ceac086e55'),
+            #     guild_id: '935294040386183228',
+            #     user_id: '1118940940384600094',
+            #     permissions: [
+            #         'claim_game_disabled'
+            #     ]
+            # }
+
+            # Example resulting object from this aggregation:
+            # {
+            #     "_id": {
+            #         "permission": "claim_game_disabled",
+            #         "guild_id": "935294040386183228"
+            #     },
+            #     "total": 42
+            # }
+
+            if self.connection is None:
+                self.open()
+
+            # permissions will contain 0 or more permission keys
+            # group the count by the unique keys
+
+            return self.connection.permissions.aggregate(  # type: ignore
+                [
+                    {"$unwind": "$permissions"},
+                    {"$group": {"_id": {"permission": "$permissions", "guild_id": "$guild_id"}, "total": {"$sum": 1}}},
+                    {"$sort": {"total": -1}},
+                ]
+            )
+        except Exception as ex:
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
+
     def get_sum_all_tacos(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.tacos.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": "$count"}}}])
+            return self.connection.tacos.aggregate(  # type: ignore
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": "$count"}}}]
+            )
 
         except Exception as ex:
             self.log(
@@ -40,7 +91,9 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.taco_gifts.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": "$count"}}}])
+            return self.connection.taco_gifts.aggregate(  # type: ignore
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": "$count"}}}]
+            )
         except Exception as ex:
             self.log(
                 guildId=0,
@@ -56,7 +109,9 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.tacos_reactions.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
+            return self.connection.tacos_reactions.aggregate(  # type: ignore
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
+            )
         except Exception as ex:
             self.log(
                 guildId=0,
@@ -72,7 +127,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.twitch_tacos_gifts.aggregate(
+            return self.connection.twitch_tacos_gifts.aggregate(  # type: ignore
                 [{"$group": {"_id": "$guild_id", "total": {"$sum": "$count"}}}]
             )
 
@@ -91,7 +146,9 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.live_tracked.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
+            return self.connection.live_tracked.aggregate(  # type: ignore
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
+            )
         except Exception as ex:
             self.log(
                 guildId=0,
@@ -107,7 +164,9 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.twitch_channels.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
+            return self.connection.twitch_channels.aggregate(  # type: ignore
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
+            )
         except Exception as ex:
             self.log(
                 guildId=0,
@@ -124,7 +183,9 @@ class MetricsDatabase(Database):
             if self.connection is None:
                 self.open()
             # count all documents in twitch_users collection
-            return self.connection.twitch_user.aggregate([{"$group": {"_id": 1, "total": {"$sum": 1}}}])
+            return self.connection.twitch_users.aggregate(  # type: ignore
+                [{"$group": {"_id": 1, "total": {"$sum": 1}}}]
+            )
 
         except Exception as ex:
             self.log(
@@ -141,7 +202,9 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.tqotd.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
+            return self.connection.tqotd.aggregate(  # type: ignore
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
+            )
         except Exception as ex:
             self.log(
                 guildId=0,
@@ -157,7 +220,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.tqotd.aggregate(
+            return self.connection.tqotd.aggregate(  # type: ignore
                 [{"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$answered"}}}}]
             )
         except Exception as ex:
@@ -175,7 +238,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.invite_codes.aggregate(
+            return self.connection.invite_codes.aggregate(  # type: ignore
                 [{"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": {"$ifNull": ["$invites", []]}}}}}]
             )
         except Exception as ex:
@@ -193,7 +256,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.live_activity.aggregate(
+            return self.connection.live_activity.aggregate(  # type: ignore
                 [
                     {"$match": {"status": {"$eq": "ONLINE"}}},
                     {"$group": {"_id": {"platform": "$platform", "guild_id": "$guild_id"}, "total": {"$sum": 1}}},
@@ -214,7 +277,9 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.wdyctw.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
+            return self.connection.wdyctw.aggregate(  # type: ignore
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
+            )
         except Exception as ex:
             self.log(
                 guildId=0,
@@ -230,7 +295,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.wdyctw.aggregate(
+            return self.connection.wdyctw.aggregate(  # type: ignore
                 [{"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$answered"}}}}]
             )
         except Exception as ex:
@@ -248,7 +313,9 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.techthurs.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
+            return self.connection.techthurs.aggregate(  # type: ignore
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
+            )
         except Exception as ex:
             self.log(
                 guildId=0,
@@ -264,7 +331,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.techthurs.aggregate(
+            return self.connection.techthurs.aggregate(  # type: ignore
                 [{"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$answered"}}}}]
             )
         except Exception as ex:
@@ -282,7 +349,9 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.mentalmondays.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
+            return self.connection.mentalmondays.aggregate(  # type: ignore
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
+            )
         except Exception as ex:
             self.log(
                 guildId=0,
@@ -298,7 +367,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.mentalmondays.aggregate(
+            return self.connection.mentalmondays.aggregate(  # type: ignore
                 [{"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$answered"}}}}]
             )
         except Exception as ex:
@@ -316,7 +385,9 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.taco_tuesday.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
+            return self.connection.taco_tuesday.aggregate(  # type: ignore
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
+            )
         except Exception as ex:
             self.log(
                 guildId=0,
@@ -332,7 +403,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.taco_tuesday.aggregate(
+            return self.connection.taco_tuesday.aggregate(  # type: ignore
                 [{"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$answered"}}}}]
             )
         except Exception as ex:
@@ -351,7 +422,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.game_keys.aggregate(
+            return self.connection.game_keys.aggregate(  # type: ignore
                 [{"$match": {"redeemed_by": {"$eq": None}}}, {"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
             )
         except Exception as ex:
@@ -370,7 +441,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.game_keys.aggregate(
+            return self.connection.game_keys.aggregate(  # type: ignore
                 [{"$match": {"redeemed_by": {"$ne": None}}}, {"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
             )
         except Exception as ex:
@@ -388,7 +459,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.game_keys.aggregate(
+            return self.connection.game_keys.aggregate(  # type: ignore
                 [
                     {"$match": {"redeemed_by": {"$ne": None}}},
                     {"$group": {"_id": {"guild_id": "$guild_id", "user_id": "$redeemed_by"}, "total": {"$sum": 1}}},
@@ -421,7 +492,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.game_keys.aggregate(
+            return self.connection.game_keys.aggregate(  # type: ignore
                 [
                     {"$match": {"user_owner": {"$ne": None}}},
                     {"$group": {"_id": {"guild_id": "$guild_id", "user_id": "$user_owner"}, "total": {"$sum": 1}}},
@@ -455,7 +526,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.minecraft_users.aggregate(
+            return self.connection.minecraft_users.aggregate(  # type: ignore
                 [{"$match": {"whitelist": {"$eq": True}}}, {"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
             )
         except Exception as ex:
@@ -473,7 +544,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.logs.aggregate(
+            return self.connection.logs.aggregate(  # type: ignore
                 [
                     {
                         "$group": {
@@ -498,7 +569,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.stream_team_requests.aggregate(
+            return self.connection.stream_team_requests.aggregate(  # type: ignore
                 [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
             )
         except Exception as ex:
@@ -516,7 +587,9 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.birthdays.aggregate([{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}])
+            return self.connection.birthdays.aggregate(  # type: ignore
+                [{"$group": {"_id": "$guild_id", "total": {"$sum": 1}}}]
+            )
 
         except Exception as ex:
             self.log(
@@ -538,7 +611,7 @@ class MetricsDatabase(Database):
             # convert utc_today to unix timestamp
             utc_today_ts = int((utc_today - datetime.datetime(1970, 1, 1)).total_seconds())
 
-            return self.connection.first_message.aggregate(
+            return self.connection.first_message.aggregate(  # type: ignore
                 [
                     {"$match": {"timestamp": {"$gte": utc_today_ts}}},
                     {"$group": {"_id": "$guild_id", "total": {"$sum": 1}}},
@@ -559,7 +632,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.messages.aggregate(
+            return self.connection.messages.aggregate(  # type: ignore
                 [{"$group": {"_id": "$guild_id", "total": {"$sum": {"$size": "$messages"}}}}]
             )
         except Exception as ex:
@@ -581,7 +654,7 @@ class MetricsDatabase(Database):
             # join the users collection to get the username
             # sort by count descending
 
-            return self.connection.messages.aggregate(
+            return self.connection.messages.aggregate(  # type: ignore
                 [
                     {
                         "$group": {
@@ -619,7 +692,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.users.aggregate(
+            return self.connection.users.aggregate(  # type: ignore
                 [
                     {
                         "$group": {
@@ -645,7 +718,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.users.aggregate(
+            return self.connection.users.aggregate(  # type: ignore
                 [
                     {
                         "$group": {
@@ -682,7 +755,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.taco_gifts.aggregate(
+            return self.connection.taco_gifts.aggregate(  # type: ignore
                 [
                     {"$group": {"_id": {"user_id": "$user_id", "guild_id": "$guild_id"}, "total": {"$sum": "$count"}}},
                     {
@@ -715,7 +788,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.tacos_reactions.aggregate(
+            return self.connection.tacos_reactions.aggregate(  # type: ignore
                 [
                     {"$group": {"_id": {"user_id": "$user_id", "guild_id": "$guild_id"}, "total": {"$sum": 1}}},
                     {
@@ -748,7 +821,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.tacos.aggregate(
+            return self.connection.tacos.aggregate(  # type: ignore
                 [
                     {"$group": {"_id": {"user_id": "$user_id", "guild_id": "$guild_id"}, "total": {"$sum": "$count"}}},
                     {
@@ -781,7 +854,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.live_activity.aggregate(
+            return self.connection.live_activity.aggregate(  # type: ignore
                 [
                     {"$match": {"status": "ONLINE"}},
                     {
@@ -820,7 +893,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.suggestions.aggregate(
+            return self.connection.suggestions.aggregate(  # type: ignore
                 [{"$group": {"_id": {"guild_id": "$guild_id", "state": "$state"}, "total": {"$sum": 1}}}]
             )
         except Exception as ex:
@@ -838,7 +911,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.user_join_leave.aggregate(
+            return self.connection.user_join_leave.aggregate(  # type: ignore
                 [{"$group": {"_id": {"guild_id": "$guild_id", "action": "$action"}, "total": {"$sum": 1}}}]
             )
         except Exception as ex:
@@ -856,7 +929,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.photo_posts.aggregate(
+            return self.connection.photo_posts.aggregate(  # type: ignore
                 [
                     {
                         "$group": {
@@ -895,7 +968,7 @@ class MetricsDatabase(Database):
             if self.connection is None:
                 self.open()
             # aggregate all tacos_log entries for a guild, grouped by type, and sum the count
-            logs = self.connection.tacos_log.aggregate(
+            logs = self.connection.tacos_log.aggregate(  # type: ignore
                 [
                     {"$group": {"_id": {"type": "$type", "guild_id": "$guild_id"}, "total": {"$sum": "$count"}}},
                     {"$sort": {"total": -1}},
@@ -917,7 +990,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.system_actions.aggregate(
+            return self.connection.system_actions.aggregate(  # type: ignore
                 [
                     {"$group": {"_id": {"action": "$action", "guild_id": "$guild_id"}, "total": {"$sum": 1}}},
                     {"$sort": {"total": -1}},
@@ -938,7 +1011,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.guilds.find()
+            return self.connection.guilds.find()  # type: ignore
         except Exception as ex:
             self.log(
                 guildId=0,
@@ -956,7 +1029,7 @@ class MetricsDatabase(Database):
             if self.connection is None:
                 self.open()
             return list(
-                self.connection.trivia_questions.aggregate(
+                self.connection.trivia_questions.aggregate(  # type: ignore
                     [
                         {
                             "$group": {
@@ -1000,7 +1073,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.trivia_questions.aggregate(
+            return self.connection.trivia_questions.aggregate(  # type: ignore
                 [
                     # unwind correct and incorrect users id.
                     # look up the user document for each user id
@@ -1066,7 +1139,7 @@ class MetricsDatabase(Database):
             # info.inviter_id is the user who created the invite
             # info.uses is the number of times the invite was used
 
-            return self.connection.invite_codes.aggregate(
+            return self.connection.invite_codes.aggregate(  # type: ignore
                 [
                     {
                         "$group": {
@@ -1122,7 +1195,7 @@ class MetricsDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            return self.connection.twitch_stream_avatar_duel.aggregate(
+            return self.connection.twitch_stream_avatar_duel.aggregate(  # type: ignore
                 [
                     {
                         "$group": {
@@ -1180,7 +1253,7 @@ class MetricsDatabase(Database):
             if self.connection is None:
                 self.open()
             # aggregate all game keys grouped by expired and active based on end_date
-            return self.connection.free_game_keys.aggregate(
+            return self.connection.free_game_keys.aggregate(  # type: ignore
                 [
                     {
                         "$group": {

@@ -318,6 +318,103 @@ paths:
               schema:
                 "$ref": "#/components/schemas/MinecraftPlayerEventPayload"
 
+  '/api/v1/permissions/{guildId}/{userId}':
+    get:
+      tags:
+        - permissions
+      summary: Get user permissions
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+  '/api/v1/permissions/{guildId}/{userId}/{permission}':
+    post:
+      tags:
+        - permissions
+      summary: Add permission to user
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: permission
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+    put:
+      tags:
+        - permissions
+      summary: Add permission to user
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: permission
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+    delete:
+      tags:
+        - permissions
+      summary: Remove permission from user
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: permission
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+
   '/webhook/minecraft/tacos/{action}':
     parameters:
       - name: action
