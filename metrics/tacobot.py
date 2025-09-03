@@ -1002,7 +1002,9 @@ class TacoBotMetrics:
                         self.permission_count.labels(guild_id=gid, permission=p).set(0)
                 for row in q_permission_counts:
                     if row["_id"]["guild_id"] == gid:
-                        self.permission_count.labels(guild_id=gid, permission=row["_id"]["permission"]).set(row["total"])
+                        self.permission_count.labels(guild_id=gid, permission=row["_id"]["permission"]).set(
+                            row["total"]
+                        )
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("permission").set(1)

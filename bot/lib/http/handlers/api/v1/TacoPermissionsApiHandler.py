@@ -12,6 +12,7 @@ from bot.lib.settings import Settings
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import uri_variable_mapping
 
+
 class TacoPermissionsApiHandler(BaseHttpHandler):
     def __init__(self, bot):
         super().__init__(bot)
@@ -45,10 +46,7 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
         try:
             headers = HttpHeaders()
             headers.add("Content-Type", "application/json")
-            result = await self._list_permissions(
-                uri_variables.get("guildId", "0"),
-                uri_variables.get("userId", "0")
-            )
+            result = await self._list_permissions(uri_variables.get("guildId", "0"),uri_variables.get("userId", "0"))
             return HttpResponse(200, headers=headers, body=bytearray(json.dumps(result), "utf-8"))
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{ex}")
@@ -106,9 +104,7 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
         _method = inspect.stack()[0][3]
         try:
             result = await self._add_permission(
-                uri_variables.get("guildId", "0"),
-                uri_variables.get("userId", "0"),
-                uri_variables.get("permission", "")
+                uri_variables.get("guildId", "0"), uri_variables.get("userId", "0"), uri_variables.get("permission", "")
             )
             return HttpResponse(200) if result else HttpResponse(404)
         except Exception as ex:
@@ -120,9 +116,7 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
         _method = inspect.stack()[0][3]
         try:
             result = await self._add_permission(
-                uri_variables.get("guildId", "0"),
-                uri_variables.get("userId", "0"),
-                uri_variables.get("permission", "")
+                uri_variables.get("guildId", "0"), uri_variables.get("userId", "0"), uri_variables.get("permission", "")
             )
             return HttpResponse(200) if result else HttpResponse(404)
         except Exception as ex:
