@@ -46,7 +46,7 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
         try:
             headers = HttpHeaders()
             headers.add("Content-Type", "application/json")
-            result = await self._list_permissions(uri_variables.get("guildId", "0"),uri_variables.get("userId", "0"))
+            result = await self._list_permissions(uri_variables.get("guildId", "0"), uri_variables.get("userId", "0"))
             return HttpResponse(200, headers=headers, body=bytearray(json.dumps(result), "utf-8"))
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{ex}")
@@ -76,9 +76,7 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
             headers = HttpHeaders()
             headers.add("Content-Type", "application/json")
             result = await self._remove_permission(
-                uri_variables.get("guildId", "0"),
-                uri_variables.get("userId", "0"),
-                uri_variables.get("permission", "")
+                uri_variables.get("guildId", "0"), uri_variables.get("userId", "0"), uri_variables.get("permission", "")
             )
             return HttpResponse(200, headers) if result else HttpResponse(404, headers)
         except Exception as ex:
