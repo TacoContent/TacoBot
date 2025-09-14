@@ -20,7 +20,7 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.SETTINGS_SECTION = "shift_codes"
-        self.REDEEM_URL = "https://shift.gearbox.com/redeem"
+        self.REDEEM_URL = "https://shift.gearbox.com/rewards"
 
         self.tracking_db = TrackingDatabase()
         self.shift_codes_db = ShiftCodesDatabase()
