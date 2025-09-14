@@ -415,7 +415,11 @@ class TrackingDatabase(Database):
                 self.open()
             timestamp = utils.to_timestamp(datetime.datetime.now(tz=pytz.timezone(self.settings.timezone)))
 
-            payload = {"guild_id": str(guildId), "channel_id": str(channelId), "message_id": str(messageId), "code": str(code), "timestamp": timestamp}
+            payload = {
+                "guild_id": str(guildId),
+                "channel_id": str(channelId),
+                "message_id": str(messageId)
+            }
 
             # {
             #   _id: ObjectId("..."),

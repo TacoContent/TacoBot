@@ -4,7 +4,6 @@ import json
 import os
 import traceback
 
-import requests
 from bot.lib import utils
 from bot.lib.http.handlers.BaseWebhookHandler import BaseWebhookHandler
 from bot.lib.mongodb.shift_codes import ShiftCodesDatabase
@@ -127,7 +126,7 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
                         continue
                     fields.append({"name": game_name, "value": f"**{code}**", "inline": False})
 
-                link_button = ExternalUrlButtonView(f"Redeem", self.REDEEM_URL) if self.REDEEM_URL else None
+                link_button = ExternalUrlButtonView("Redeem", self.REDEEM_URL) if self.REDEEM_URL else None
 
                 redeem_link = f"[Redeem ↗️]({self.REDEEM_URL}) " if self.REDEEM_URL else ""
                 open_source = f"[Open Source ↗️]({source}) " if source else ""
@@ -135,7 +134,7 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
                 for channel in channels:
                     message = await self.messaging.send_embed(
                         channel=channel,
-                        title=f"SHiFT CODE ↗️",
+                        title="SHiFT CODE ↗️",
                         message=f"{end_date_msg}\n\n{desc}\n\n{redeem_link}{open_source}",
                         url=self.REDEEM_URL,
                         image=None,
