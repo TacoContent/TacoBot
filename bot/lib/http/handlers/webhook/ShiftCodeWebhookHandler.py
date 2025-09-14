@@ -151,8 +151,7 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
                         await message.add_reaction("❌")
 
                     self.shift_codes_db.add_shift_code(
-                        payload,
-                        {"guildId": guild_id, "channelId": channel.id, "messageId": message. id },
+                        payload, {"guildId": guild_id, "channelId": channel.id, "messageId": message.id}
                     )
 
             return HttpResponse(200, headers, json.dumps(payload, indent=4).encode())

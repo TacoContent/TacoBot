@@ -51,3 +51,6 @@ jobs:
           VALIDATE_PYTHON_PYLINT: false
           VALIDATE_MARKDOWN_PRETTIER: false
           FIX_MARKDOWN_PRETTIER: false
+          VALIDATE_JAVASCRIPT_ES: false
+          VALIDATE_JAVASCRIPT_PRETTIER: false
+          FIX_JAVASCRIPT_PRETTIER: false

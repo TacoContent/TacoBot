@@ -34,12 +34,7 @@ class ShiftCodesDatabase(Database):
             }
 
             self.connection.shift_codes.update_one(  # type: ignore
-                {"code": code},
-                {
-                    "$setOnInsert": payload,
-                    "$addToSet": {"tracked_in": track_payload},
-                },
-                upsert=True,
+                {"code": code}, {"$setOnInsert": payload, "$addToSet": {"tracked_in": track_payload}}, upsert=True
             )
         except Exception as e:
             self.log(0, LogLevel.ERROR, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
@@ -69,8 +64,7 @@ class ShiftCodesDatabase(Database):
                 self.open()
 
             results = self.connection.shift_codes.find(  # type: ignore
-                {"tracked_in": {"$not": {"$elemMatch": {"guild_id": str(guild_id)}}}},
-                limit=limit,
+                {"tracked_in": {"$not": {"$elemMatch": {"guild_id": str(guild_id)}}}}, limit=limit
             )
             return list(results)
         except Exception as e:

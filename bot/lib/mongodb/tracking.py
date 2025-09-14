@@ -414,12 +414,8 @@ class TrackingDatabase(Database):
             if self.connection is None or self.client is None:
                 self.open()
             timestamp = utils.to_timestamp(datetime.datetime.now(tz=pytz.timezone(self.settings.timezone)))
-            payload = {
-                "guild_id": str(guildId),
-                "channel_id": str(channelId),
-                "message_id": str(messageId),
-            }
 
+            payload = {"guild_id": str(guildId), "channel_id": str(channelId), "message_id": str(messageId), "code": str(code), "timestamp": timestamp}
 
             # {
             #   _id: ObjectId("..."),
@@ -439,9 +435,7 @@ class TrackingDatabase(Database):
 
             # payload should exist in document as array element in the shift_codes collection
             self.connection.shift_codes.update_one(  # type: ignore
-                {"code": code},
-                {"$addToSet": {"tracked_in": payload}},
-                upsert=True,
+                {"code": code}, {"$addToSet": {"tracked_in": payload}}, upsert=True
             )
 
         except Exception as ex:
