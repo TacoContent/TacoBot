@@ -389,7 +389,7 @@ class TrackingDatabase(Database):
                 "game_id": str(gameId),
                 "timestamp": timestamp,
             }
-            self.connection.track_free_game_keys.update_one(
+            self.connection.track_free_game_keys.update_one(  # type: ignore
                 {
                     "guild_id": str(guildId),
                     "channel_id": str(channelId),
@@ -399,6 +399,51 @@ class TrackingDatabase(Database):
                 {"$set": payload},
                 upsert=True,
             )
+        except Exception as ex:
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+
+    def track_shift_code(self, guildId: int, channelId: int, messageId: int, code: str):
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=pytz.timezone(self.settings.timezone)))
+            payload = {
+                "guild_id": str(guildId),
+                "channel_id": str(channelId),
+                "message_id": str(messageId),
+            }
+
+
+            # {
+            #   _id: ObjectId("..."),
+            #   code: "SHIFT-CODE-1234",
+            #   ...
+            #   tracked_in: [
+            #     {
+            #       guild_id: "123456789012345678",
+            #       channel_id: "123456789012345678",
+            #       message_id: "123456789012345678",
+            #     },
+            #     ...
+            #   ]
+            # }
+
+            code = str(code).strip().upper().replace(" ", "")
+
+            # payload should exist in document as array element in the shift_codes collection
+            self.connection.shift_codes.update_one(  # type: ignore
+                {"code": code},
+                {"$addToSet": {"tracked_in": payload}},
+                upsert=True,
+            )
+
         except Exception as ex:
             self.log(
                 guildId=guildId,

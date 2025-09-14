@@ -2,6 +2,7 @@ import inspect
 import os
 import traceback
 
+from bot.lib.enums.loglevel import LogLevel
 from bot.lib.mongodb.database import Database
 
 
@@ -18,8 +19,10 @@ class FreeGameKeysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            result = self.connection.track_free_game_keys.find_one({"guild_id": str(guild_id), "game_id": str(game_id)})
+            result = self.connection.track_free_game_keys.find_one(  # type: ignore
+                {"guild_id": str(guild_id), "game_id": str(game_id)}
+            )
             return result is not None
         except Exception as e:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
+            self.log(0, LogLevel.ERROR, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
             return False
