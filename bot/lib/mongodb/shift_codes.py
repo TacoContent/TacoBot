@@ -33,6 +33,9 @@ class ShiftCodesDatabase(Database):
                 "message_id": str(track.get("messageId")),
             }
 
+            # remove tracked_in from payload if present
+            payload = {k: v for k, v in payload.items() if k != "tracked_in"}
+
             self.connection.shift_codes.update_one(  # type: ignore
                 {"code": code}, {"$setOnInsert": payload, "$addToSet": {"tracked_in": track_payload}}, upsert=True
             )
