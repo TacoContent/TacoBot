@@ -413,13 +413,8 @@ class TrackingDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.now(tz=pytz.timezone(self.settings.timezone)))
 
-            payload = {
-                "guild_id": str(guildId),
-                "channel_id": str(channelId),
-                "message_id": str(messageId)
-            }
+            payload = {"guild_id": str(guildId), "channel_id": str(channelId), "message_id": str(messageId)}
 
             # {
             #   _id: ObjectId("..."),
