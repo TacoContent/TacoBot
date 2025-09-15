@@ -31,6 +31,157 @@ paths:
               schema:
                 type: string
 
+  '/swagger.yaml':
+    get:
+      tags:
+        - swagger
+      summary: Get the swagger file
+      description: |
+        Gets the swagger file
+      parameters: []
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/yaml:
+              schema:
+                type: string
+
+  '/api/v1/health':
+    get:
+      tags:
+        - health
+      summary: Get the health status of the service
+      description: |
+        Gets the health status of the service
+      parameters: []
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  '/api/v1/guilds':
+    get:
+      tags:
+        - guilds
+      summary: Get the list of guilds the bot is in
+      description: |
+        Gets the list of guilds the bot is in
+      parameters: []
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+
+  '/api/v1/guild/{guild_id}/categories':
+    get:
+      tags:
+        - guilds
+      summary: Get the list of categories and channels for a guild
+      description: |
+        Gets the list of categories and channels for a guild
+      parameters:
+        - name: guild_id
+          description: The guild ID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/DiscordGuildChannels"
+        "404":
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+
+  '/api/v1/guild/{guild_id}/category/{category_id}':
+    get:
+      tags:
+        - guilds
+      summary: Get the list of channels for a category in a guild
+      description: |
+        Gets the list of channels for a category in a guild
+      parameters:
+        - name: guild_id
+          description: The guild ID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: category_id
+          description: The category ID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/DiscordCategory"
+        "404":
+          description: Guild or Category not found
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+
+  '/api/v1/guild/{guild_id}/channels':
+    get:
+      tags:
+        - guilds
+      summary: Get the list of channels for a guild
+      description: |
+        Gets the list of channels for a guild
+      parameters:
+        - name: guild_id
+          description: The guild ID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/DiscordChannel"
+        "404":
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+
   '/api/v1/minecraft/whitelist.json':
     get:
       tags:
@@ -47,7 +198,7 @@ paths:
               schema:
                 type: array
                 items:
-                  "$ref": "#/components/schemas/MinecrafWhiteListUser"
+                  "$ref": "#/components/schemas/MinecraftWhiteListUser"
 
   '/api/v1/minecraft/ops.json':
     get:
@@ -65,7 +216,7 @@ paths:
               schema:
                 type: array
                 items:
-                  "$ref": "#/components/schemas/MinecrafOpUser"
+                  "$ref": "#/components/schemas/MinecraftOpUser"
 
   '/api/v1/minecraft/uuid/{username}':
     get:
@@ -530,6 +681,7 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/ShiftCodePayload"
+
 components:
   schemas:
     ErrorStatusCodePayload:
@@ -544,6 +696,9 @@ components:
           type: string
         name:
           type: string
+      required:
+        - id
+        - name
     ShiftCodePayload:
       type: object
       properties:
@@ -798,7 +953,7 @@ components:
           type: string
         name:
           type: string
-    MinecrafOpUser:
+    MinecraftOpUser:
       type: object
       properties:
         uuid:
@@ -809,7 +964,7 @@ components:
           type: integer
         bypassPlayerLimit:
           type: boolean
-    MinecrafWhiteListUser:
+    MinecraftWhiteListUser:
       type: object
       properties:
         uuid:
@@ -819,6 +974,104 @@ components:
       required:
         - uuid
         - username
+
+    DiscordGuild:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        icon:
+          type: string
+        banner:
+          type: string
+        description:
+          type: string
+        member_count:
+          type: integer
+        features:
+          type: array
+          items:
+            type: string
+        owner_id:
+          type: string
+        vanity_url_code:
+          type: string
+        vanity_url:
+          type: string
+        preferred_locale:
+          type: string
+        verification_level:
+          type: string
+        boost_level:
+          type: integer
+        boost_count:
+          type: integer
+      required:
+        - id
+        - name
+
+    DiscordGuildChannels:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The guild ID
+        name:
+          type: string
+          description: The guild name
+        channels:
+          type: array
+          items:
+            "$ref": "#/components/schemas/DiscordCategory"
+        categories:
+          type: array
+          items:
+            "$ref": "#/components/schemas/DiscordCategory"
+    DiscordChannel:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        position:
+          type: integer
+        topic:
+          type: string
+        nsfw:
+          type: boolean
+        bitrate:
+          type: integer
+        user_limit:
+          type: integer
+        category_id:
+          type: string
+      required:
+        - id
+        - name
+        - type
+
+    DiscordCategory:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        position:
+          type: integer
+        type:
+          type: string
+        category_id:
+          type: string
+        channels:
+          type: array
+          items:
+            "$ref": "#/components/schemas/DiscordChannel"
   securitySchemes:
     X-AUTH-TOKEN:
       type: apiKey

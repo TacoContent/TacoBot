@@ -25,7 +25,7 @@ class HealthcheckApiHandler(BaseHttpHandler):
         self.minecraft_db = MinecraftDatabase()
         self.tracking_db = TrackingDatabase()
 
-    @uri_mapping("/api/v1/health", method="GET")
+    @uri_mapping(f"/api/{API_VERSION}/health", method="GET")
     @uri_mapping("/healthz", method="GET")
     @uri_mapping("/health", method="GET")
     def healthcheck(self, request: HttpRequest) -> HttpResponse:
