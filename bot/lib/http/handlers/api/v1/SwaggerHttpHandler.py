@@ -20,7 +20,7 @@ class SwaggerHttpHandler(BaseHttpHandler):
 
         self.tracking_db = TrackingDatabase()
 
-    @uri_mapping(f"/swagger.yaml", method="GET")
+    @uri_mapping("/swagger.yaml", method="GET")
     @uri_mapping(f"/api/{API_VERSION}/swagger.yaml", method="GET")
     async def swagger(self, request: HttpRequest) -> HttpResponse:
         _method = inspect.stack()[0][3]

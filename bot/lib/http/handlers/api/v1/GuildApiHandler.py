@@ -95,7 +95,7 @@ class GuildApiHandler(BaseHttpHandler):
                             "category_id": str(channel.category_id) if channel.category_id else None,
                         }
                         for channel in category.channels
-                    ]
+                    ],
                 }
                 for category in guild.categories
             ]
@@ -123,7 +123,9 @@ class GuildApiHandler(BaseHttpHandler):
             guild = self.bot.get_guild(int(guild_id))
             if guild is None:
                 raise HttpResponseException(404, headers, bytearray('{"error": "guild not found"}', "utf-8"))
-            category = next((cat for cat in guild.categories if str(cat.id) == uri_variables.get("category_id", None)), None)
+            category = next(
+                (cat for cat in guild.categories if str(cat.id) == uri_variables.get("category_id", None)), None
+            )
             if category is None:
                 raise HttpResponseException(404, headers, bytearray('{"error": "category not found"}', "utf-8"))
 
@@ -145,7 +147,8 @@ class GuildApiHandler(BaseHttpHandler):
                         "user_limit": getattr(channel, "user_limit", None),
                         "category_id": str(channel.category_id) if channel.category_id else None,
                     } for channel in category.channels
-                ]}
+                ],
+            }
 
             return HttpResponse(200, headers, bytearray(json.dumps(result), "utf-8"))
         except HttpResponseException as e:
@@ -191,7 +194,7 @@ class GuildApiHandler(BaseHttpHandler):
                             "category_id": str(channel.category_id) if channel.category_id else None,
                         }
                         for channel in category.channels
-                    ]
+                    ],
                 }
                 for category in guild.categories
             ]
@@ -208,12 +211,11 @@ class GuildApiHandler(BaseHttpHandler):
                     "user_limit": getattr(channel, "user_limit", None),
                     "category_id": str(channel.category_id) if channel.category_id else None,
                 }
-                for channel in guild.channels if channel.category_id is None and channel.type.name != "category"
+                for channel in guild.channels
+                if channel.category_id is None and channel.type.name != "category"
             ]
 
-            result = {
-                "id": str(guild.id), "name": guild.name, "channels": channels, "categories": categories
-            }
+            result = {"id": str(guild.id), "name": guild.name, "channels": channels, "categories": categories}
 
             return HttpResponse(200, headers, bytearray(json.dumps(result), "utf-8"))
         except HttpResponseException as e:
