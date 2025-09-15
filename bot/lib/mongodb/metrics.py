@@ -1338,7 +1338,7 @@ class MetricsDatabase(Database):
                                         "ACTIVE",
                                         "EXPIRED",
                                     ]
-                                }
+                                },
                             },
                             "total": {"$sum": 1},
                         }
