@@ -506,6 +506,27 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/TacoWebhookGamePayload"
+
+  '/webhook/shift':
+    post:
+      security:
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - webhook
+      summary: Submit SHiFT Code Webhook
+      description: ''
+      requestBody:
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/ShiftCodePayload"
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ShiftCodePayload"
 components:
   schemas:
     ErrorStatusCodePayload:
@@ -513,6 +534,38 @@ components:
       properties:
         error:
           type: integer
+    ShiftCodeGame:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    ShiftCodePayload:
+      type: object
+      properties:
+        code:
+          type: string
+        games:
+          type: array
+          items:
+            "$ref": "#/components/schemas/ShiftCodeGame"
+        platforms:
+          type: array
+          items:
+            type: string
+        expiry:
+          type: number
+        reward:
+          type: string
+        notes:
+          type: string
+        source:
+          type: string
+        created_at:
+          type: number
+      required:
+        - code
     TacoWebhookMinecraftTacosResponsePayload:
       type: object
       properties:

@@ -9,6 +9,7 @@ from bot.lib.http.handlers.BaseWebhookHandler import BaseWebhookHandler
 from bot.lib.mongodb.shift_codes import ShiftCodesDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.ui.ExternalUrlButtonView import ExternalUrlButtonView
+from bot.ui.MultipleExternalUrlButtonView import ButtonData, MultipleExternalUrlButtonView
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException, uri_mapping
 
@@ -126,7 +127,9 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
                         continue
                     fields.append({"name": game_name, "value": f"**{code}**", "inline": False})
 
-                link_button = ExternalUrlButtonView("Redeem", self.REDEEM_URL) if self.REDEEM_URL else None
+                buttons = MultipleExternalUrlButtonView(
+                    [ButtonData("Redeem", self.REDEEM_URL), ButtonData("Open Source", source)]
+                )
 
                 redeem_link = f"[Redeem ↗️]({self.REDEEM_URL}) " if self.REDEEM_URL else ""
                 open_source = f"[Open Source ↗️]({source}) " if source else ""
@@ -141,7 +144,7 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
                         delete_after=None,
                         fields=fields,
                         content=f"{notify_message}",
-                        view=link_button,
+                        view=buttons,
                     )
 
                     if message:
