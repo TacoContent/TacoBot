@@ -146,7 +146,8 @@ class GuildApiHandler(BaseHttpHandler):
                         "bitrate": getattr(channel, "bitrate", None),
                         "user_limit": getattr(channel, "user_limit", None),
                         "category_id": str(channel.category_id) if channel.category_id else None,
-                    } for channel in category.channels
+                    }
+                    for channel in category.channels
                 ],
             }
 
