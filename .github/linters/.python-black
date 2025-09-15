@@ -7,4 +7,4 @@ skip-magic-trailing-comma = true
 verbose = true
 diff = false
 check = true
-color = false
+color = true

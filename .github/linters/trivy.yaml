@@ -1,0 +1,11 @@
+---
+disable-telemetry: true
+exit-code: 1
+exit-on-eol: 2
+scan:
+  skip-dirs:
+    - .devcontainer/
+  scanners:
+    - vuln
+    - misconfig
+    - secret

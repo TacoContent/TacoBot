@@ -14,5 +14,7 @@ WORKDIR /workspace
 # RUN pip install --upgrade pip \
 #     && pip install -r /tmp/requirements.txt
 
+USER vscode
+
 # Default command
 CMD ["sleep", "infinity"]

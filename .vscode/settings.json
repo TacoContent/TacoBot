@@ -2,17 +2,12 @@
 	"black-formatter.args": [
 		"--verbose",
 		"--config=.github/linters/.python-black",
-		"--no-color"
 	],
 	"flake8.args": [
 		"--max-line-length=120",
 		"--rcfile=.github/linters/.flake8"
 	],
 	"python.formatting.provider": "black",
-	"python.formatting.blackArgs": [
-		"--line-length",
-		"120"
-	],
 	"cSpell.words": [
 		"automations",
 		"basedatabase",

@@ -1288,12 +1288,14 @@ class MetricsDatabase(Database):
                             "_id": {
                                 "state": {
                                     "$cond": [
-                                        {"$or": [
-                                            {"$eq": ["$expiry", None]},
-                                            {"$gt": ["$expiry", utils.get_timestamp()]}
-                                        ]},
+                                        {
+                                            "$or": [
+                                                {"$eq": ["$expiry", None]},
+                                                {"$gt": ["$expiry", utils.get_timestamp()]},
+                                            ]
+                                        },
                                         "ACTIVE",
-                                        "EXPIRED"
+                                        "EXPIRED",
                                     ]
                                 }
                             },
@@ -1327,12 +1329,14 @@ class MetricsDatabase(Database):
                                "guild_id": "$tracked_in.guild_id",
                                "state": {
                                     "$cond": [
-                                        {"$or": [
-                                            {"$eq": [ {"$ifNull": ["$expiry", None]}, None ]},
-                                            {"$gt": ["$expiry", utils.get_timestamp()]}
-                                        ]},
+                                        {
+                                            "$or": [
+                                                {"$eq": [{"$ifNull": ["$expiry", None]}, None]},
+                                                {"$gt": ["$expiry", utils.get_timestamp()]},
+                                            ]
+                                        },
                                         "ACTIVE",
-                                        "EXPIRED"
+                                        "EXPIRED",
                                     ]
                                 }
                            },
