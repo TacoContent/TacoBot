@@ -39,7 +39,4 @@ class ShiftCodeGame:
         self.name = game.get("name")
 
     def to_dict(self) -> dict:
-        return {
-            "id": self.id,
-            "name": self.name,
-        }
+        return {"id": self.id, "name": self.name}

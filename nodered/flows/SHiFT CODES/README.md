@@ -1,5 +1,1 @@
 # SHiFT CODES
-
-## Global Variables
-
-- 
