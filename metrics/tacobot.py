@@ -1023,7 +1023,6 @@ class TacoBotMetrics:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("shift_codes").set(1)
 
-
         try:
             q_tracked_shift_codes = self.db.get_tracked_shift_codes_counts() or []
             for gid in known_guilds:

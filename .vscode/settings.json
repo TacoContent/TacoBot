@@ -1,7 +1,7 @@
 {
 	"black-formatter.args": [
 		"--verbose",
-		"--config=.github/linters/.python-black",
+		"--config=.github/linters/.python-black"
 	],
 	"flake8.args": [
 		"--max-line-length=120",

@@ -1321,13 +1321,13 @@ class MetricsDatabase(Database):
             if self.connection is None:
                 self.open()
             return self.connection.shift_codes.aggregate(  # type: ignore
-               [
-                   {"$unwind": "$tracked_in"},
-                   {
-                       "$group": {
-                           "_id": {
-                               "guild_id": "$tracked_in.guild_id",
-                               "state": {
+                [
+                    {"$unwind": "$tracked_in"},
+                    {
+                        "$group": {
+                            "_id": {
+                                "guild_id": "$tracked_in.guild_id",
+                                "state": {
                                     "$cond": [
                                         {
                                             "$or": [
@@ -1339,12 +1339,12 @@ class MetricsDatabase(Database):
                                         "EXPIRED",
                                     ]
                                 }
-                           },
-                           "total": {"$sum": 1},
-                       }
-                   },
-                   {"$sort": {"total": -1}},
-               ]
+                            },
+                            "total": {"$sum": 1},
+                        }
+                    },
+                    {"$sort": {"total": -1}},
+                ]
             )
         except Exception as ex:
             self.log(

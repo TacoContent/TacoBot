@@ -1,8 +1,11 @@
 openapi: 3.0.1
 info:
   title: TacoBot
-  description: ""
-  version: 1.0.1
+  description: "Multi-Purpose Discord Bot with Minecraft, Twitch, and other integrations for the TACO community."
+  version: "1.0.0-snapshot"
+  contact:
+    name: TacoBot
+    url: "https://discord.gg/aQ37F2EcjF"
 servers:
   - url: '{host}'
     variables:
