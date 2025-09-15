@@ -363,6 +363,20 @@ class TacoBotMetrics:
             labelnames=["guild_id", "permission"],
         )
 
+        self.shift_codes_tracked = Gauge(
+            namespace=self.namespace,
+            name="shift_codes_tracked",
+            documentation="The number of shift codes tracked",
+            labelnames=["guild_id", "state"],
+        )
+
+        self.shift_codes_count = Gauge(
+            namespace=self.namespace,
+            name="shift_codes",
+            documentation="The number of shift codes",
+            labelnames=["state"],
+        )
+
         self.healthy = Gauge(
             namespace=self.namespace, name="healthy", documentation="The health of the bot", labelnames=[]
         )
@@ -992,6 +1006,40 @@ class TacoBotMetrics:
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             self.errors.labels("free_game_keys").set(1)
+
+        try:
+            q_shift_codes = self.db.get_shift_code_counts() or []
+            for state in ["ACTIVE", "EXPIRED"]:
+                shift_code_labels = {"state": state}
+                self.shift_codes_count.labels(**shift_code_labels).set(0)
+
+            for row in q_shift_codes:
+                shift_code_labels = {"state": row['_id']["state"]}
+                total_count = row["total"]
+                if total_count is not None and total_count > 0:
+                    self.shift_codes_count.labels(**shift_code_labels).set(row["total"])
+            self.errors.labels("shift_codes").set(0)
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            self.errors.labels("shift_codes").set(1)
+
+
+        try:
+            q_tracked_shift_codes = self.db.get_tracked_shift_codes_counts() or []
+            for gid in known_guilds:
+                for state in ["ACTIVE", "EXPIRED"]:
+                    shift_code_labels = {"guild_id": gid, "state": state}
+                    self.shift_codes_tracked.labels(**shift_code_labels).set(0)
+
+            for row in q_tracked_shift_codes:
+                shift_code_labels = {"guild_id": row['_id']["guild_id"], "state": row['_id']["state"]}
+                total_count = row["total"]
+                if total_count is not None and total_count > 0:
+                    self.shift_codes_tracked.labels(**shift_code_labels).set(row["total"])
+            self.errors.labels("tracked_shift_codes").set(0)
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            self.errors.labels("tracked_shift_codes").set(1)
 
         try:
             q_permission_counts = self.db.get_permission_counts() or []

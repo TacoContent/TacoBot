@@ -1275,3 +1275,79 @@ class MetricsDatabase(Database):
                 message=f"{ex}",
             )
             return None
+
+    def get_shift_code_counts(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None:
+                self.open()
+            return self.connection.shift_codes.aggregate(  # type: ignore
+                [
+                    {
+                        "$group": {
+                            "_id": {
+                                "state": {
+                                    "$cond": [
+                                        {"$or": [
+                                            {"$eq": ["$expiry", None]},
+                                            {"$gt": ["$expiry", utils.get_timestamp()]}
+                                        ]},
+                                        "ACTIVE",
+                                        "EXPIRED"
+                                    ]
+                                }
+                            },
+                            "total": {"$sum": 1},
+                        }
+                    },
+                    {"$sort": {"total": -1}},
+                ]
+            )
+        except Exception as ex:
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
+
+    def get_tracked_shift_codes_counts(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None:
+                self.open()
+            return self.connection.shift_codes.aggregate(  # type: ignore
+               [
+                   {"$unwind": "$tracked_in"},
+                   {
+                       "$group": {
+                           "_id": {
+                               "guild_id": "$tracked_in.guild_id",
+                               "state": {
+                                    "$cond": [
+                                        {"$or": [
+                                            {"$eq": [ {"$ifNull": ["$expiry", None]}, None ]},
+                                            {"$gt": ["$expiry", utils.get_timestamp()]}
+                                        ]},
+                                        "ACTIVE",
+                                        "EXPIRED"
+                                    ]
+                                }
+                           },
+                           "total": {"$sum": 1},
+                       }
+                   },
+                   {"$sort": {"total": -1}},
+               ]
+            )
+        except Exception as ex:
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
