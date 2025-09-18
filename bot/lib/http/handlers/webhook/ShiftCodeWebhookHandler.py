@@ -55,6 +55,7 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
             source = payload.get("source", None)
             notes = payload.get("notes", None)
             expiry = payload.get("expiry", None)
+            created_at = payload.get("created_at", None)
 
             desc = f"**SHiFT Code:** `{code}`"
             desc += f"\n\n**{html.unescape(reward)}**"
@@ -71,7 +72,14 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
                 else:
                     end_date_msg = f"\nExpires: <t:{expiry}:R>"
             else:
-                end_date_msg = "\nExpiry: Unknown"
+                end_date_msg = "\nExpiry: `Unknown`"
+
+            # if created_at is set, and is a number, convert to int
+            if created_at and isinstance(created_at, (int, float)):
+                created_at = int(created_at)
+                created_msg = f"\nPosted <t:{created_at}:R>"
+            else:
+                created_msg = ""
 
             guilds = self.bot.guilds
             for guild in guilds:
@@ -137,7 +145,7 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
                     message = await self.messaging.send_embed(
                         channel=channel,
                         title="SHiFT CODE ↗️",
-                        message=f"{end_date_msg}\n\n{desc}\n\n{redeem_link}{open_source}",
+                        message=f"{end_date_msg}{created_msg}\n\n{desc}\n\n{redeem_link}{open_source}",
                         url=self.REDEEM_URL,
                         image=None,
                         delete_after=None,
