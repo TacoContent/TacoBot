@@ -87,6 +87,29 @@ function getPostId(uri) {
   return match ? match[1] : null;
 }
 
+function calculateExpiry(expiryStr, createdAt) {
+  if (!expiryStr) return null;
+
+  // Check for YYYY-MM-DD format
+  let ts = toUnixTimestamp(expiryStr);
+  if (ts) return ts;
+
+  // Check for "in X days" or "in X hours"
+  let match = expiryStr.match(/(\d+)\s+(days?|hours?)/i);
+  if (match && createdAt) {
+    let value = parseInt(match[1], 10);
+    let unit = match[2].toLowerCase();
+
+    if (unit === "days" || unit === "day") {
+      return Math.floor(createdAt / 1000) + value * 24 * 60 * 60;
+    } else if (unit === "hours" || unit === "hour") {
+      return Math.floor(createdAt / 1000) + value * 60 * 60;
+    }
+  }
+
+  return null;
+}
+
 let post = msg.payload.post;
 
 if (!post || !post.record || !post.record.text) {
@@ -97,18 +120,38 @@ if (!post || !post.record || !post.record.text) {
 
 // Example inputs separated by -----
 /*
-T9RJB-BFKRR-3RBTW-B33TB-KCZB9
-let results = [];
-1 golden key for Borderlands 4 🎉
-
-Expiry unknown
------
 ZRR3T-56WRJ-JBBTB-TJBJT-XZF3X
 
 Golden keys/skeleton keys for Borderlands, Borderlands 2, Borderlands: The Pre-Sequel, Borderlands 3 and Tiny Tina’s Wonderlands
 
 Expires 2025-09-11
+
+----
+
+ZRR3T-56WRJ-JBBTB-TJBJT-XZF3X
+
+Golden keys/skeleton keys for Borderlands, Borderlands 2, Borderlands: The Pre-Sequel, Borderlands 3 and Tiny Tina’s Wonderlands
+
+Expires in 10 hours
+
+----
+
+T9RJB-BFKRR-3RBTW-B33TB-KCZB9
+
+1 golden key for Borderlands 4 🎉
+
+Expiry unknown
+
 -----
+
+ZRR3T-56WRJ-JBBTB-TJBJT-XZF3X
+
+Golden keys/skeleton keys for Borderlands, Borderlands 2, Borderlands: The Pre-Sequel, Borderlands 3 and Tiny Tina’s Wonderlands
+
+Expires 2025-09-11
+
+-----
+
 WHWJB-XH3SX-39CZW-H3BBB-BTF55
 
 1 golden key for Borderlands 4.
@@ -118,7 +161,9 @@ Unknown expiry
 WHKJJ-SXJHR-39CS5-9JJBT-595B9
 
 5 golden keys for Borderlands, Borderlands 2, Borderlands: The Pre-Sequel and Borderlands 3, plus a diamond key for Borderlands 3
+
 -----
+
 HRFTJ-XBB63-33T33-TB3JB-H5W59
 
 3 golden/skeleton keys
@@ -127,6 +172,15 @@ BL, BL2, BL:TPS, BL3, TTWL
 HX63J-9JT63-BJBTB-TB333-RZXFW
 
 3 golden keys for BL, BL2, BLTPS, BL3 and TTWL
+
+----
+BSRT3-FTZBJ-K6BTW-JB3T3-WXT99
+
+3ZXJB-53STT-56T3W-B3TT3-HTS95
+
+1 golden key each for Borderlands 4.
+
+Expires in 40 hours.
 */
 
 let input = post.record.text;
@@ -136,44 +190,75 @@ if (postId) {
   source = `https://bsky.app/profile/shift.jedillama.social/post/${postId}`;
 }
 
-let regex = /(?<code>(?:[A-Z0-9]{5}-){4}[A-Z0-9]{5})\s*\n+(?<reward>.*?(for\s|\n)(?<games>.+?))\s*(?:\n+(?:Expires\s(?<expiry>\d{4}-\d{2}-\d{2}))?|$)/gim;
+// let regex = /(?<code>(?:[A-Z0-9]{5}-){4}[A-Z0-9]{5})[\s\S]*?(?:(?<reward>.+?)(?:\s+each)?\s+for\s+(?<games>.+))?(?:\n+Expires\s+(?:in\s+)?(?<expiry>(?:\d{4}-\d{2}-\d{2}|\d{1,}(?:\s+days|\s+hours))))?(?!\n+(?:[A-Z0-9]{5}-){4}[A-Z0-9]{5}|$)/gmi;
+
+let regex = /(?<code>(?:[A-Z0-9]{5}-){4}[A-Z0-9]{5})\s*?\n+(?:(?<reward>.+)?(?:(?:\s+each)?(?:\s+for\s+|\n)(?<games>.+))\n+)?(?:Unknown\sExpiry)?(?:(?:Expires|Expiry)\s+(?:in\s+)?(?<expiry>(?:\d{4}-\d{2}-\d{2}|\d{1,}(?:\s+days|\s+hours))|unknown))?/gmi;
 
 created = post.record.createdAt ? toUnixTimestamp(post.record.createdAt.split("T")[0]) : Math.floor(Date.now() / 1000);
 
-let result = null;
-let match = regex.exec(input);
-if (match !== null) {
-  let games = match.groups.games
+let results = [];
+let resultCodes = []
+let resultGames = [];
+let resultReward = "";
+let resultExpiry = null;
+
+
+while ((match = regex.exec(input)) !== null) {
+  let code = match.groups.code.trim().toUpperCase().replace(/ /g, "");
+  let reward = match.groups.reward;
+  let expiry = match.groups.expiry ? match.groups.expiry : null;
+  let matchGames = match.groups.games
     ? match.groups.games.split(/\s*,\s*|\s+and\s+/).map(s => s.trim()).filter(Boolean)
     : [];
 
-  // Map to game objects, filter out nulls, and remove duplicates by id
-  let mappedGames = games.map(cleanGame).filter(Boolean);
-  let uniqueGames = [];
-  let seenIds = new Set();
-  for (let g of mappedGames) {
-    if (!seenIds.has(g.id)) {
-      uniqueGames.push(g);
-      seenIds.add(g.id);
+  if (!code || resultCodes.includes(code)) {
+    continue;
+  }
+
+  resultCodes.push(code);
+
+  // if there are multiple matches, the first one will not have expiry, games, or reward
+  if (reward) {
+    resultReward = reward.trim();
+  }
+
+  if (expiry) {
+    resultExpiry = expiry.trim();
+  }
+
+  if (matchGames.length > 0) {
+    // Map to game objects, filter out nulls, and remove duplicates by id
+    let mappedGames = matchGames.map(cleanGame).filter(Boolean);
+    let uniqueGames = [];
+    let seenIds = new Set();
+    for (let g of mappedGames) {
+      if (!seenIds.has(g.id)) {
+        uniqueGames.push(g);
+        seenIds.add(g.id);
+      }
     }
+    resultGames = uniqueGames;
   }
+}
 
-  if (uniqueGames.length === 0) {
-    uniqueGames = allGames();
-  }
+if (resultGames.length === 0) {
+  resultGames = allGames();
+}
 
-  result = {
-    code: match.groups.code.trim().toUpperCase().replace(/ /g, ""),
-    games: uniqueGames,
-    platforms: getAllPlatforms(uniqueGames),
+for (let code of resultCodes) {
+  results.push({
+    code: code,
+    reward: resultReward,
+    games: resultGames,
+    platforms: getAllPlatforms(resultGames),
+    expiry: calculateExpiry(resultExpiry) || null,
     source: source,
     source_id: "bsky-gbsc-nodered",
     notes: `Posted by ${post.author.displayName} (@${post.author.handle}) on Bluesky`,
-    reward: match.groups.reward.trim(),
-    created_at: created,
-    expiry: toUnixTimestamp(match.groups.expiry) || null
-  };
+    created_at: created
+  });
 }
 
-msg.payload = result;
+
+msg.payload = results;
 return msg;
