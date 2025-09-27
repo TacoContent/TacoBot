@@ -22,7 +22,12 @@ class BaseDatabase:
             os.environ, "MONGODB_URL", default_value=f"mongodb://localhost:27017/{self.database_name}"
         )
 
-    def open(self) -> None:
+    def getConnection(self, database: typing.Optional[str] = None) -> typing.Any:
+        if self.connection is None:
+            self.open()
+        return self.connection
+
+    def open(self, ) -> None:
         if not self.db_url:
             raise ValueError("MONGODB_URL is not set")
         if self.client is not None and self.connection is not None:

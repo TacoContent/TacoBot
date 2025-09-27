@@ -90,6 +90,193 @@ paths:
                     name:
                       type: string
 
+  '/api/v1/guilds/lookup/{guild_id}':
+    get:
+      tags:
+        - guilds
+      summary: Get the guild information
+      description: |
+        Gets the guild information
+      parameters:
+        - name: guild_id
+          description: The guild ID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/DiscordGuild"
+        "404":
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+
+  '/api/v1/guilds/lookup':
+    get:
+      tags:
+        - guilds
+      summary: Get the guild information
+      description: |
+        Gets the guild information
+      parameters:
+        - name: guild_id
+          description: The guild ID
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/DiscordGuild"
+        "404":
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+    post:
+      tags:
+        - guilds
+      summary: Get the guild information
+      description: |
+        Gets the guild information
+      parameters:
+        - name: guild_id
+          description: The guild ID
+          in: query
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/DiscordGuild"
+        "404":
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+
+  '/api/v1/guilds/lookup/batch/{guild_ids}':
+    get:
+      tags:
+        - guilds
+      summary: Get the guild information for multiple guilds
+      description: |
+        Gets the guild information for multiple guilds
+      parameters:
+        - name: guild_ids
+          description: Comma separated list of guild IDs
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/DiscordGuild"
+        "404":
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+
+  '/api/v1/guilds/lookup/batch':
+    get:
+      tags:
+        - guilds
+      summary: Get the guild information for multiple guilds
+      description: |
+        Gets the guild information for multiple guilds
+      parameters:
+        - name: guild_ids
+          description: Comma separated list of guild IDs
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/DiscordGuild"
+        "404":
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+    post:
+      tags:
+        - guilds
+      summary: Get the guild information for multiple guilds
+      description: |
+        Gets the guild information for multiple guilds
+      parameters:
+        - name: guild_ids
+          description: Comma separated list of guild IDs
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/DiscordGuild"
+        "404":
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+
   '/api/v1/guild/{guild_id}/categories':
     get:
       tags:
