@@ -15,5 +15,3 @@ class Database(BaseDatabase):
         self.connection = None
         self.db_url = self.settings.db_url
         pass
-
-

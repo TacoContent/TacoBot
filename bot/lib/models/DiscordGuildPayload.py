@@ -1,5 +1,3 @@
-
-
 # {
 #     "id": str(guild.id),
 #     "name": guild.name,

@@ -49,22 +49,27 @@ class GuildApiHandler(BaseHttpHandler):
             return None
 
         guild = self.bot.get_guild(int(guild_id))
-        return None if guild is None else DiscordGuildPayload({
-            "id": str(guild.id),
-            "name": guild.name,
-            "member_count": guild.member_count,
-            "icon": guild.icon.url if guild.icon else None,
-            "banner": guild.banner.url if guild.banner else None,
-            "owner_id": str(guild.owner_id) if guild.owner_id else None,
-            "features": guild.features,
-            "description": guild.description,
-            "vanity_url": guild.vanity_url if guild.vanity_url else None,
-            "vanity_url_code": guild.vanity_url_code if guild.vanity_url_code else None,
-            "preferred_locale": guild.preferred_locale,
-            "verification_level": str(guild.verification_level.name),
-            "boost_level": str(guild.premium_tier),
-            "boost_count": guild.premium_subscription_count,
-        }).to_dict()
+        return (
+            None
+            if guild is None
+            else DiscordGuildPayload(
+                {
+                    "id": str(guild.id),
+                    "name": guild.name,
+                    "member_count": guild.member_count,
+                    "icon": guild.icon.url if guild.icon else None,
+                    "banner": guild.banner.url if guild.banner else None,
+                    "owner_id": str(guild.owner_id) if guild.owner_id else None,
+                    "features": guild.features,
+                    "description": guild.description,
+                    "vanity_url": guild.vanity_url if guild.vanity_url else None,
+                    "vanity_url_code": guild.vanity_url_code if guild.vanity_url_code else None,
+                    "preferred_locale": guild.preferred_locale,
+                    "verification_level": str(guild.verification_level.name),
+                    "boost_level": str(guild.premium_tier),
+                    "boost_count": guild.premium_subscription_count,
+                }
+            ).to_dict()
 
     @uri_mapping(f"/api/{API_VERSION}/guilds/lookup/batch", method="GET")
     @uri_variable_mapping(f"/api/{API_VERSION}/guilds/lookup/batch/{{guild_ids}}", method="GET")
@@ -96,22 +101,24 @@ class GuildApiHandler(BaseHttpHandler):
                 continue
             guild = self.bot.get_guild(int(guild_id))
             if guild is not None:
-                guild_payload = DiscordGuildPayload({
-                    "id": str(guild.id),
-                    "name": guild.name,
-                    "member_count": guild.member_count,
-                    "icon": guild.icon.url if guild.icon else None,
-                    "banner": guild.banner.url if guild.banner else None,
-                    "owner_id": str(guild.owner_id) if guild.owner_id else None,
-                    "features": guild.features,
-                    "description": guild.description,
-                    "vanity_url": guild.vanity_url if guild.vanity_url else None,
-                    "vanity_url_code": guild.vanity_url_code if guild.vanity_url_code else None,
-                    "preferred_locale": guild.preferred_locale,
-                    "verification_level": str(guild.verification_level.name),
-                    "boost_level": str(guild.premium_tier),
-                    "boost_count": guild.premium_subscription_count,
-                })
+                guild_payload = DiscordGuildPayload(
+                    {
+                        "id": str(guild.id),
+                        "name": guild.name,
+                        "member_count": guild.member_count,
+                        "icon": guild.icon.url if guild.icon else None,
+                        "banner": guild.banner.url if guild.banner else None,
+                        "owner_id": str(guild.owner_id) if guild.owner_id else None,
+                        "features": guild.features,
+                        "description": guild.description,
+                        "vanity_url": guild.vanity_url if guild.vanity_url else None,
+                        "vanity_url_code": guild.vanity_url_code if guild.vanity_url_code else None,
+                        "preferred_locale": guild.preferred_locale,
+                        "verification_level": str(guild.verification_level.name),
+                        "boost_level": str(guild.premium_tier),
+                        "boost_count": guild.premium_subscription_count,
+                    }
+                )
                 guilds.append(guild_payload.to_dict())
         return guilds
 
