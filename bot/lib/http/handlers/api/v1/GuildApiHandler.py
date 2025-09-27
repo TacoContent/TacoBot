@@ -70,6 +70,7 @@ class GuildApiHandler(BaseHttpHandler):
                     "boost_count": guild.premium_subscription_count,
                 }
             ).to_dict()
+        )
 
     @uri_mapping(f"/api/{API_VERSION}/guilds/lookup/batch", method="GET")
     @uri_variable_mapping(f"/api/{API_VERSION}/guilds/lookup/batch/{{guild_ids}}", method="GET")
