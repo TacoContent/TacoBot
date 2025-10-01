@@ -421,3 +421,37 @@ class GuildApiHandler(BaseHttpHandler):
             "require_colons": emoji.require_colons,
             "url": emoji.url,
         }
+
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emojis/ids/batch", method="POST")
+    def get_guild_emojis_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> typing.List[dict]:
+        guild_id: str = uri_variables.get("guild_id", '0')
+        guild = self.bot.get_guild(int(guild_id))
+        if guild is None:
+            return []
+        query_ids: typing.Optional[list[str]] = request.query_params.get("ids", None)
+        body_ids: typing.Optional[list[str]] = None
+        if request.body is not None and request.method == "POST":
+            b_data = json.loads(request.body.decode("utf-8"))
+            if isinstance(b_data, list):
+                body_ids = b_data
+            elif isinstance(b_data, dict) and "ids" in b_data and isinstance(b_data["ids"], list):
+                body_ids = b_data.get("ids", [])
+        ids = []
+        if query_ids is not None and len(query_ids) > 0:
+            ids.extend(query_ids)
+        if body_ids is not None and len(body_ids) > 0:
+            ids.extend(body_ids)
+        emojis = [
+            {
+                "id": str(emoji.id),
+                "name": emoji.name,
+                "animated": emoji.animated,
+                "available": emoji.available,
+                "managed": emoji.managed,
+                "require_colons": emoji.require_colons,
+                "url": emoji.url,
+            }
+            for emoji in guild.emojis
+            if str(emoji.id) in ids
+        ]
+        return emojis
