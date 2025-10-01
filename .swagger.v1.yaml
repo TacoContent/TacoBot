@@ -1444,6 +1444,8 @@ components:
       properties:
         id:
           type: string
+        guild_id:
+          type: string
         name:
           type: string
         animated:

@@ -371,6 +371,7 @@ class GuildApiHandler(BaseHttpHandler):
         emojis = [
             {
                 "id": str(emoji.id),
+                "guild_id": str(emoji.guild_id),
                 "name": emoji.name,
                 "animated": emoji.animated,
                 "available": emoji.available,
@@ -394,6 +395,7 @@ class GuildApiHandler(BaseHttpHandler):
             return None
         return {
             "id": str(emoji.id),
+            "guild_id": str(emoji.guild_id),
             "name": emoji.name,
             "animated": emoji.animated,
             "available": emoji.available,
@@ -414,6 +416,7 @@ class GuildApiHandler(BaseHttpHandler):
             return None
         return {
             "id": str(emoji.id),
+            "guild_id": str(emoji.guild_id),
             "name": emoji.name,
             "animated": emoji.animated,
             "available": emoji.available,
@@ -444,6 +447,7 @@ class GuildApiHandler(BaseHttpHandler):
         emojis = [
             {
                 "id": str(emoji.id),
+                "guild_id": str(emoji.guild_id),
                 "name": emoji.name,
                 "animated": emoji.animated,
                 "available": emoji.available,
@@ -478,6 +482,7 @@ class GuildApiHandler(BaseHttpHandler):
         emojis = [
             {
                 "id": str(emoji.id),
+                "guild_id": str(emoji.guild_id),
                 "name": emoji.name,
                 "animated": emoji.animated,
                 "available": emoji.available,
