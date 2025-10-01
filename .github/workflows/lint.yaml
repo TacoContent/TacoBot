@@ -54,3 +54,7 @@ jobs:
           VALIDATE_JAVASCRIPT_ES: false
           VALIDATE_JAVASCRIPT_PRETTIER: false
           FIX_JAVASCRIPT_PRETTIER: false
+          VALIDATE_BIOME_FORMAT: false
+          FIX_BIOME_FORMAT: false
+          VALIDATE_PYTHON_RUFF_FORMAT: false
+          FIX_PYTHON_RUFF_FORMAT: false
