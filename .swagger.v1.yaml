@@ -373,6 +373,7 @@ paths:
     get:
       tags:
         - guilds
+        - emojis
       summary: Get the list of emojis for a guild
       description: |
         Gets the list of emojis for a guild
@@ -403,6 +404,7 @@ paths:
     get:
       tags:
         - guilds
+        - emojis
       summary: Get the emoji information for a guild by emoji ID
       description: |
         Gets the emoji information for a guild by emoji ID
@@ -437,6 +439,7 @@ paths:
     get:
       tags:
         - guilds
+        - emojis
       summary: Get the emoji information for a guild by emoji name
       description: |
         Gets the emoji information for a guild by emoji name
@@ -462,6 +465,48 @@ paths:
                 "$ref": "#/components/schemas/DiscordEmoji"
         "404":
           description: Guild or Emoji not found
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+
+  '/api/v1/guild/{guild_id}/emojis/ids/batch':
+    post:
+      tags:
+        - guilds
+        - emojis
+      summary: Get the emoji information for a guild by a batch of emoji IDs
+      description: |
+        Gets the emoji information for a guild by a batch of emoji IDs
+      parameters:
+        - name: guild_id
+          description: The guild ID
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                emoji_ids:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/DiscordEmoji"
+        "404":
+          description: Guild or Emojis not found
           content:
             application/json:
               schema:
