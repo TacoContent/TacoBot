@@ -369,6 +369,104 @@ paths:
               schema:
                 "$ref": '#/components/schemas/ErrorStatusCodePayload'
 
+  '/api/v1/guild/{guild_id}/emojis':
+    get:
+      tags:
+        - guilds
+      summary: Get the list of emojis for a guild
+      description: |
+        Gets the list of emojis for a guild
+      parameters:
+        - name: guild_id
+          description: The guild ID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/DiscordEmoji"
+        "404":
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+
+  '/api/v1/guild/{guild_id}/emoji/id/{emoji_id}':
+    get:
+      tags:
+        - guilds
+      summary: Get the emoji information for a guild by emoji ID
+      description: |
+        Gets the emoji information for a guild by emoji ID
+      parameters:
+        - name: guild_id
+          description: The guild ID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: emoji_id
+          description: The emoji ID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/DiscordEmoji"
+        "404":
+          description: Guild or Emoji not found
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+
+  '/api/v1/guild/{guild_id}/emoji/name/{emoji_name}':
+    get:
+      tags:
+        - guilds
+      summary: Get the emoji information for a guild by emoji name
+      description: |
+        Gets the emoji information for a guild by emoji name
+      parameters:
+        - name: guild_id
+          description: The guild ID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: emoji_name
+          description: The emoji name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/DiscordEmoji"
+        "404":
+          description: Guild or Emoji not found
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+
   '/api/v1/minecraft/whitelist.json':
     get:
       tags:
@@ -1259,6 +1357,25 @@ components:
           type: array
           items:
             "$ref": "#/components/schemas/DiscordChannel"
+
+    DiscordEmoji:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        animated:
+          type: boolean
+        available:
+          type: boolean
+        managed:
+          type: boolean
+        require_colons:
+          type: boolean
+        url:
+          type: string
+
   securitySchemes:
     X-AUTH-TOKEN:
       type: apiKey

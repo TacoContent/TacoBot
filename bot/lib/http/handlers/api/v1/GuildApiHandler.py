@@ -360,3 +360,64 @@ class GuildApiHandler(BaseHttpHandler):
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emojis", method="GET")
+    def get_guild_emojis(self, request: HttpRequest, uri_variables: dict) -> typing.List[dict]:
+        guild_id: str = uri_variables.get("guild_id", '0')
+
+        guild = self.bot.get_guild(int(guild_id))
+        if guild is None:
+            return []
+        emojis = [
+            {
+                "id": str(emoji.id),
+                "name": emoji.name,
+                "animated": emoji.animated,
+                "available": emoji.available,
+                "managed": emoji.managed,
+                "require_colons": emoji.require_colons,
+                "url": emoji.url,
+            }
+            for emoji in guild.emojis
+        ]
+        return emojis
+
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emoji/id/{{emoji_id}}", method="GET")
+    def get_guild_emoji(self, request: HttpRequest, uri_variables: dict) -> typing.Optional[dict]:
+        guild_id: str = uri_variables.get("guild_id", '0')
+        emoji_id: str = uri_variables.get("emoji_id", '0')
+        guild = self.bot.get_guild(int(guild_id))
+        if guild is None:
+            return None
+        emoji = next((e for e in guild.emojis if e.id == int(emoji_id)), None)
+        if emoji is None:
+            return None
+        return {
+            "id": str(emoji.id),
+            "name": emoji.name,
+            "animated": emoji.animated,
+            "available": emoji.available,
+            "managed": emoji.managed,
+            "require_colons": emoji.require_colons,
+            "url": emoji.url,
+        }
+
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emoji/name/{{emoji_name}}", method="GET")
+    def get_guild_emoji_by_name(self, request: HttpRequest, uri_variables: dict) -> typing.Optional[dict]:
+        guild_id: str = uri_variables.get("guild_id", '0')
+        emoji_name: str = uri_variables.get("emoji_name", '0')
+        guild = self.bot.get_guild(int(guild_id))
+        if guild is None:
+            return None
+        emoji = next((e for e in guild.emojis if e.name == emoji_name), None)
+        if emoji is None:
+            return None
+        return {
+            "id": str(emoji.id),
+            "name": emoji.name,
+            "animated": emoji.animated,
+            "available": emoji.available,
+            "managed": emoji.managed,
+            "require_colons": emoji.require_colons,
+            "url": emoji.url,
+        }
