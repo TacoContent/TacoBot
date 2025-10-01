@@ -490,12 +490,48 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                emoji_ids:
-                  type: array
-                  items:
-                    type: string
+              type: array
+              items:
+                type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/DiscordEmoji"
+        "404":
+          description: Guild or Emojis not found
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+
+  '/api/v1/guild/{guild_id}/emojis/names/batch':
+    post:
+      tags:
+        - guilds
+        - emojis
+      summary: Get the emoji information for a guild by a batch of emoji names
+      description: |
+        Gets the emoji information for a guild by a batch of emoji names
+      parameters:
+        - name: guild_id
+          description: The guild ID
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
       responses:
         "200":
           description: Successful operation
