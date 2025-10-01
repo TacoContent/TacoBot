@@ -63,7 +63,7 @@ class Birthday(TacobotCog):
                     user,
                     reason_msg,
                     tacotypes.TacoTypes.BIRTHDAY,
-                    taco_amount=taco_amount
+                    taco_amount=taco_amount,
                 )
 
             # TODO: change to full interaction response
