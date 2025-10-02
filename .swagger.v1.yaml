@@ -1250,7 +1250,6 @@ components:
         payload:
           type: object
           description: The event payload. This can be different depending on the event type
-
     MinecraftDiscordUserStatsInfo:
       type: object
       properties:
@@ -1386,7 +1385,6 @@ components:
       required:
         - uuid
         - username
-
     DiscordGuild:
       type: object
       properties:
@@ -1423,7 +1421,6 @@ components:
       required:
         - id
         - name
-
     DiscordGuildChannels:
       type: object
       properties:
@@ -1468,11 +1465,12 @@ components:
         - id
         - name
         - type
-
     DiscordCategory:
       type: object
       properties:
         id:
+          type: string
+        guild_id:
           type: string
         name:
           type: string
@@ -1486,7 +1484,6 @@ components:
           type: array
           items:
             "$ref": "#/components/schemas/DiscordChannel"
-
     DiscordEmoji:
       type: object
       properties:
