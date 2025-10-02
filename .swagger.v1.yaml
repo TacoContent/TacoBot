@@ -341,8 +341,12 @@ paths:
 
   '/api/v1/guild/{guild_id}/channels':
     get:
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
       tags:
         - guilds
+        - channels
       summary: Get the list of channels for a guild
       description: |
         Gets the list of channels for a guild
@@ -364,6 +368,48 @@ paths:
                   "$ref": "#/components/schemas/DiscordChannel"
         "404":
           description: Guild not found
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+
+  '/api/v1/guild/{guild_id}/channels/batch/ids':
+    post:
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
+        - channels
+      summary: Get the list of channels for a guild by a batch of channel IDs
+      description: |
+        Gets the list of channels for a guild by a batch of channel IDs
+      parameters:
+        - name: guild_id
+          description: The guild ID
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/DiscordChannel"
+        "404":
+          description: Guild or Channels not found
           content:
             application/json:
               schema:
@@ -1399,6 +1445,8 @@ components:
       type: object
       properties:
         id:
+          type: string
+        guild_id:
           type: string
         name:
           type: string

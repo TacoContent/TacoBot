@@ -277,6 +277,7 @@ class GuildApiHandler(BaseHttpHandler):
             categories = [
                 {
                     "id": str(category.id),
+                    "guild_id": str(guild.id),
                     "name": category.name,
                     "position": category.position,
                     "type": str(category.type.name),
@@ -324,6 +325,63 @@ class GuildApiHandler(BaseHttpHandler):
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/channels/batch/ids", method="POST")
+    def get_guild_channels_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        _method = inspect.stack()[0][3]
+        try:
+            headers = HttpHeaders()
+            headers.add("Content-Type", "application/json")
+
+            guild_id: typing.Optional[str] = uri_variables.get("guild_id", None)
+            if guild_id is None:
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id is required"}', "utf-8"))
+            if not guild_id.isdigit():
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id must be a number"}', "utf-8"))
+
+            guild = self.bot.get_guild(int(guild_id))
+            if guild is None:
+                raise HttpResponseException(404, headers, bytearray('{"error": "guild not found"}', "utf-8"))
+
+            query_ids: typing.Optional[list[str]] = request.query_params.get("ids", None)
+            body_ids: typing.Optional[list[str]] = None
+            if request.body is not None and request.method == "POST":
+                b_data = json.loads(request.body.decode("utf-8"))
+                if isinstance(b_data, list):
+                    body_ids = b_data
+                elif isinstance(b_data, dict) and "ids" in b_data and isinstance(b_data["ids"], list):
+                    body_ids = b_data.get("ids", [])
+            ids = []
+            if query_ids is not None and len(query_ids) > 0:
+                ids.extend(query_ids)
+            if body_ids is not None and len(body_ids) > 0:
+                ids.extend(body_ids)
+
+            channels = [
+                {
+                    "id": str(channel.id),
+                    "guild_id": str(guild.id),
+                    "name": channel.name,
+                    "type": str(channel.type.name),
+                    "position": channel.position,
+                    "topic": getattr(channel, "topic", None),
+                    "nsfw": getattr(channel, "nsfw", None),
+                    "bitrate": getattr(channel, "bitrate", None),
+                    "user_limit": getattr(channel, "user_limit", None),
+                    "category_id": str(channel.category_id) if channel.category_id else None,
+                }
+                for channel in guild.channels
+                if str(channel.id) in ids
+            ]
+
+            return HttpResponse(200, headers, bytearray(json.dumps(channels), "utf-8"))
+        except HttpResponseException as e:
+            return HttpResponse(e.status_code, e.headers, e.body)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
+            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
+            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+
 
     @uri_variable_mapping(f"/api/{API_VERSION}/user/{{id}}", method="GET")
     def get_user_info(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
