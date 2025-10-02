@@ -594,6 +594,76 @@ paths:
               schema:
                 "$ref": '#/components/schemas/ErrorStatusCodePayload'
 
+  '/api/v1/guild/{guild_id}/roles':
+    get:
+      tags:
+        - guilds
+        - roles
+      summary: Get the list of roles for a guild
+      description: |
+        Gets the list of roles for a guild
+      parameters:
+        - name: guild_id
+          description: The guild ID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/DiscordRole"
+        "404":
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+
+  '/api/v1/guild/{guild_id}/roles/batch/ids':
+    post:
+      tags:
+        - guilds
+        - roles
+      summary: Get the list of roles for a guild by a batch of role IDs
+      description: |
+        Gets the list of roles for a guild by a batch of role IDs
+      parameters:
+        - name: guild_id
+          description: The guild ID
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/DiscordRole"
+        "404":
+          description: Guild or Roles not found
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+
   '/api/v1/minecraft/whitelist.json':
     get:
       tags:
@@ -1503,6 +1573,39 @@ components:
           type: boolean
         url:
           type: string
+    DiscordRole:
+      type: object
+      properties:
+        id:
+          type: string
+        guild_id:
+          type: string
+        name:
+          type: string
+        color:
+          type: integer
+          nullable: true
+        position:
+          type: integer
+          nullable: true
+        permissions:
+          type: integer
+          nullable: true
+        managed:
+          type: boolean
+          nullable: true
+        mentionable:
+          type: boolean
+          nullable: true
+        hoist:
+          type: boolean
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+        unicode_emoji:
+          type: string
+          nullable: true
 
   securitySchemes:
     X-AUTH-TOKEN:
