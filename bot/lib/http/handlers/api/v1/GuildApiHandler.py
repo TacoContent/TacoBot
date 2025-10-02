@@ -177,6 +177,7 @@ class GuildApiHandler(BaseHttpHandler):
             categories = [
                 {
                     "id": str(category.id),
+                    "guild_id": str(guild.id),
                     "name": category.name,
                     "position": category.position,
                     "type": str(category.type.name),
@@ -184,6 +185,7 @@ class GuildApiHandler(BaseHttpHandler):
                     "channels": [
                         {
                             "id": str(channel.id),
+                            "guild_id": str(guild.id),
                             "name": channel.name,
                             "type": str(channel.type.name),
                             "position": channel.position,
@@ -230,6 +232,7 @@ class GuildApiHandler(BaseHttpHandler):
 
             result = {
                 "id": str(category.id),
+                "guild_id": str(guild.id),
                 "name": category.name,
                 "position": category.position,
                 "type": str(category.type.name),
@@ -237,6 +240,7 @@ class GuildApiHandler(BaseHttpHandler):
                 "channels": [
                     {
                         "id": str(channel.id),
+                        "guild_id": str(guild.id),
                         "name": channel.name,
                         "type": str(channel.type.name),
                         "position": channel.position,
@@ -285,6 +289,7 @@ class GuildApiHandler(BaseHttpHandler):
                     "channels": [
                         {
                             "id": str(channel.id),
+                            "guild_id": str(guild.id),
                             "name": channel.name,
                             "type": str(channel.type.name),
                             "position": channel.position,
@@ -303,6 +308,7 @@ class GuildApiHandler(BaseHttpHandler):
             channels = [
                 {
                     "id": str(channel.id),
+                    "guild_id": str(guild.id),
                     "name": channel.name,
                     "type": str(channel.type.name),
                     "position": channel.position,
@@ -381,7 +387,6 @@ class GuildApiHandler(BaseHttpHandler):
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
-
 
     @uri_variable_mapping(f"/api/{API_VERSION}/user/{{id}}", method="GET")
     def get_user_info(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
