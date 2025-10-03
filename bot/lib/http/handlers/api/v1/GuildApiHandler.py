@@ -706,8 +706,9 @@ class GuildApiHandler(BaseHttpHandler):
 
             results: list[dict] = []
 
-            # Index roles for quick lookup and ensure only mentionable roles are returned
-            roles_by_id = {str(r.id): r for r in guild.roles if getattr(r, "mentionable", False)}
+            # Index roles for quick lookup
+            # if getattr(r, "mentionable", False)
+            roles_by_id = {str(r.id): r for r in guild.roles}
 
             for id_str in id_set:
                 # Prefer role if ID matches a mentionable role
