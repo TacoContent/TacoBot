@@ -664,6 +664,48 @@ paths:
               schema:
                 "$ref": '#/components/schemas/ErrorStatusCodePayload'
 
+  '/api/v1/guild/{guild_id}/mentionables/batch/ids':
+    post:
+      tags:
+        - guilds
+        - roles
+        - users
+      summary: Batch lookup of mentionable users or roles by IDs
+      description: |
+        Returns an array of objects corresponding to the provided IDs. If an ID matches a mentionable role in the guild, a role object is returned. Otherwise, if it matches a user/member, a user object is returned. Each object includes a `type` discriminator set to `role` or `user`.
+      parameters:
+        - name: guild_id
+          description: The guild ID
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  oneOf:
+                    - $ref: '#/components/schemas/DiscordRole'
+                    - $ref: '#/components/schemas/DiscordUser'
+        "404":
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+
   '/api/v1/minecraft/whitelist.json':
     get:
       tags:
@@ -1606,6 +1648,40 @@ components:
         unicode_emoji:
           type: string
           nullable: true
+        type:
+          type: string
+          enum: [role]
+        mention:
+          type: string
+          description: Pre-formatted mention string for the role
+    DiscordUser:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [user]
+        id:
+          type: string
+        guild_id:
+          type: string
+        username:
+          type: string
+          nullable: true
+        display_name:
+          type: string
+          nullable: true
+        discriminator:
+          type: string
+          nullable: true
+        avatar:
+          type: string
+          nullable: true
+        bot:
+          type: boolean
+          nullable: true
+        mention:
+          type: string
+          description: Pre-formatted mention string for the user
 
   securitySchemes:
     X-AUTH-TOKEN:

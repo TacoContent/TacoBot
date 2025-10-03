@@ -406,6 +406,7 @@ class GuildApiHandler(BaseHttpHandler):
                 raise HttpResponseException(404, headers, bytearray('{"error": "user not found"}', "utf-8"))
 
             result = {
+                "type": "user",
                 "id": str(user.id),
                 "username": user.name,
                 "display_name": user.display_name,
@@ -414,6 +415,7 @@ class GuildApiHandler(BaseHttpHandler):
                 "bot": user.bot,
                 "system": getattr(user, "system", None),
                 "verified": getattr(user, "verified", None),
+                "mention": f"<@{user.id}>",
             }
 
             return HttpResponse(200, headers, bytearray(json.dumps(result), "utf-8"))
@@ -577,6 +579,7 @@ class GuildApiHandler(BaseHttpHandler):
 
             roles = [
                 {
+                    "type": "role",
                     "id": str(role.id),
                     "guild_id": str(guild.id),
                     "name": role.name,
@@ -588,6 +591,7 @@ class GuildApiHandler(BaseHttpHandler):
                     "hoist": getattr(role, "hoist", None),
                     "icon": getattr(getattr(role, "icon", None), "url", None),
                     "unicode_emoji": getattr(role, "unicode_emoji", None),
+                    "mention": f"<@&{role.id}>",
                 }
                 for role in guild.roles
             ]
@@ -633,6 +637,7 @@ class GuildApiHandler(BaseHttpHandler):
 
             roles = [
                 {
+                    "type": "role",
                     "id": str(role.id),
                     "guild_id": str(guild.id),
                     "name": role.name,
@@ -644,12 +649,122 @@ class GuildApiHandler(BaseHttpHandler):
                     "hoist": getattr(role, "hoist", None),
                     "icon": getattr(getattr(role, "icon", None), "url", None),
                     "unicode_emoji": getattr(role, "unicode_emoji", None),
+                    "mention": f"<@&{role.id}>",
                 }
                 for role in guild.roles
                 if str(role.id) in ids
             ]
 
             return HttpResponse(200, headers, bytearray(json.dumps(roles), "utf-8"))
+        except HttpResponseException as e:
+            return HttpResponse(e.status_code, e.headers, e.body)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
+            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
+            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/mentionables/batch/ids", method="POST")
+    def get_guild_mentionables_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        _method = inspect.stack()[0][3]
+        try:
+            headers = HttpHeaders()
+            headers.add("Content-Type", "application/json")
+
+            guild_id: typing.Optional[str] = uri_variables.get("guild_id", None)
+            if guild_id is None:
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id is required"}', "utf-8"))
+            if not guild_id.isdigit():
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id must be a number"}', "utf-8"))
+
+            guild = self.bot.get_guild(int(guild_id))
+            if guild is None:
+                raise HttpResponseException(404, headers, bytearray('{"error": "guild not found"}', "utf-8"))
+
+            # Collect IDs from query or body, following existing batch pattern
+            query_ids: typing.Optional[list[str]] = request.query_params.get("ids", None)
+            body_ids: typing.Optional[list[str]] = None
+            if request.body is not None and request.method == "POST":
+                b_data = json.loads(request.body.decode("utf-8"))
+                if isinstance(b_data, list):
+                    body_ids = b_data
+                elif isinstance(b_data, dict) and "ids" in b_data and isinstance(b_data["ids"], list):
+                    body_ids = b_data.get("ids", [])
+
+            ids: list[str] = []
+            if query_ids is not None and len(query_ids) > 0:
+                ids.extend(query_ids)
+            if body_ids is not None and len(body_ids) > 0:
+                ids.extend(body_ids)
+
+            # De-duplicate and filter numeric IDs only
+            id_set = []
+            seen = set()
+            for _id in ids:
+                if isinstance(_id, str) and _id.isdigit() and _id not in seen:
+                    seen.add(_id)
+                    id_set.append(_id)
+
+            results: list[dict] = []
+
+            # Index roles for quick lookup and ensure only mentionable roles are returned
+            roles_by_id = {str(r.id): r for r in guild.roles if getattr(r, "mentionable", False)}
+
+            for id_str in id_set:
+                # Prefer role if ID matches a mentionable role
+                role = roles_by_id.get(id_str, None)
+                if role is not None:
+                    results.append(
+                        {
+                            "type": "role",
+                            "id": str(role.id),
+                            "guild_id": str(guild.id),
+                            "name": role.name,
+                            "color": getattr(getattr(role, "color", None), "value", None),
+                            "position": getattr(role, "position", None),
+                            "permissions": getattr(getattr(role, "permissions", None), "value", None),
+                            "managed": getattr(role, "managed", None),
+                            "mentionable": getattr(role, "mentionable", None),
+                            "hoist": getattr(role, "hoist", None),
+                            "icon": getattr(getattr(role, "icon", None), "url", None),
+                            "unicode_emoji": getattr(role, "unicode_emoji", None),
+                            "mention": f"<@&{role.id}>",
+                        }
+                    )
+                    continue
+
+                # Otherwise, try to resolve as a guild member (user)
+                member = None
+                try:
+                    member = guild.get_member(int(id_str))
+                except Exception:
+                    member = None
+
+                user = None
+                if member is not None:
+                    user = member
+                else:
+                    # Fallback to global user cache if not present in guild cache
+                    try:
+                        user = self.bot.get_user(int(id_str))
+                    except Exception:
+                        user = None
+
+                if user is not None:
+                    results.append(
+                        {
+                            "type": "user",
+                            "id": str(user.id),
+                            "guild_id": str(guild.id),
+                            "username": getattr(user, "name", None),
+                            "display_name": getattr(user, "display_name", None),
+                            "discriminator": getattr(user, "discriminator", None),
+                            "avatar": getattr(getattr(user, "avatar", None), "url", None),
+                            "bot": getattr(user, "bot", None),
+                            "mention": f"<@{user.id}>",
+                        }
+                    )
+
+            return HttpResponse(200, headers, bytearray(json.dumps(results), "utf-8"))
         except HttpResponseException as e:
             return HttpResponse(e.status_code, e.headers, e.body)
         except Exception as e:
