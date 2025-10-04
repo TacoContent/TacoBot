@@ -6,22 +6,22 @@ from discord import Role
 
 class DiscordRole:
     def __init__(self, data):
-        self.type = "role"
-        self.id = data.get("id")
-        self.guild_id = data.get("guild_id")
+        self.type: str = "role"
+        self.id: str = data.get("id", "0")
+        self.guild_id: str = data.get("guild_id", "0")
 
         self.color: typing.Optional[int] = data.get("color", 0)
-        self.created_at = data.get("created_at")
-        self.display_icon = data.get("display_icon")
-        self.flags = data.get("flags")
+        self.created_at: typing.Optional[int] = data.get("created_at", None)
+        self.display_icon: typing.Optional[str] = data.get("display_icon", None)
+        self.flags: typing.Optional[int] = data.get("flags", None)
         self.hoist: typing.Optional[bool] = data.get("hoist", None)
-        self.icon = data.get("icon")
-        self.managed = data.get("managed")
-        self.mention = data.get("mention")
-        self.mentionable = data.get("mentionable")
-        self.name = data.get("name")
-        self.permissions = data.get("permissions")
-        self.position = data.get("position")
+        self.icon: typing.Optional[str] = data.get("icon", None)
+        self.managed: typing.Optional[bool] = data.get("managed", None)
+        self.mention: str = data.get("mention", "")
+        self.mentionable: bool = data.get("mentionable", False)
+        self.name: str = data.get("name", "")
+        self.permissions: int = data.get("permissions", 0)
+        self.position: int = data.get("position", 0)
         self.secondary_color: typing.Optional[int] = data.get("secondary_color", 0)
         self.tertiary_color: typing.Optional[int] = data.get("tertiary_color", 0)
         self.unicode_emoji: typing.Optional[str] = data.get("unicode_emoji")

@@ -6,7 +6,7 @@ import discord
 
 class DiscordEmoji:
     def __init__(self, data):
-        self.type = "emoji"
+        self.type: str = "emoji"
         self.id: int = data.get("id")
         self.animated: bool = data.get("animated", False)
         self.available: bool = data.get("available", True)

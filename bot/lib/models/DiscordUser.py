@@ -6,25 +6,27 @@ from discord import Member, User
 
 class DiscordUser:
     def __init__(self, data):
-        self.type = "user"
-        self.id = data.get("id")
-        self.guild_id = data.get("guild_id")
+        self.type: str = "user"
+        self.id: str = data.get("id", "0")
+        self.guild_id: str = data.get("guild_id", "0")
 
-        self.accent_color = data.get("accent_color")
-        self.avatar = data.get("avatar", data.get("default_avatar", None))
-        self.banner = data.get("banner")
-        self.bot = data.get("bot", False)
-        self.color = data.get("color")
-        self.created_at = data.get("created_at")
-        self.default_avatar = data.get("default_avatar")
-        self.discriminator = data.get("discriminator", 0)
-        self.display_avatar = data.get("display_avatar", data.get("avatar", data.get("default_avatar", None)))
-        self.display_name = data.get("display_name")
-        self.global_name = data.get("global_name")
-        self.mention = data.get("mention")
-        self.name = data.get("name")
-        self.system = data.get("system", False)
-        self.username = data.get("name")
+        self.accent_color: typing.Optional[int] = data.get("accent_color", None)
+        self.avatar: typing.Optional[str] = data.get("avatar", data.get("default_avatar", None))
+        self.banner: typing.Optional[str] = data.get("banner", None)
+        self.bot: bool = data.get("bot", False)
+        self.color: typing.Optional[int] = data.get("color", None)
+        self.created_at: typing.Optional[int] = data.get("created_at", None)
+        self.default_avatar: typing.Optional[str] = data.get("default_avatar", None)
+        self.discriminator: int = data.get("discriminator", 0)
+        self.display_avatar: typing.Optional[str] = data.get(
+            "display_avatar", data.get("avatar", data.get("default_avatar", None))
+        )
+        self.display_name: str = data.get("display_name", "")
+        self.global_name: str = data.get("global_name", "")
+        self.mention: str = data.get("mention", "")
+        self.name: str = data.get("name", "")
+        self.system: bool = data.get("system", False)
+        self.username: str = data.get("name", "")
 
     @staticmethod
     def fromUser(user: typing.Union[dict, User, Member]) -> "DiscordUser":
