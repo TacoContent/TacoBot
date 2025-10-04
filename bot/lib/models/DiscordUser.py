@@ -30,7 +30,6 @@ import datetime
 import typing
 
 from discord import Member, User
-import pytz
 
 
 class DiscordUser:

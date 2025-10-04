@@ -166,13 +166,14 @@ class TrackingDatabase(Database):
             timestamp = utils.to_timestamp(date)
             user.timestamp = timestamp
             payload = user.to_dict()
+            payload["timestamp"] = timestamp
 
             self.log(
                 guildId=int(user.guild_id),
                 level=loglevel.LogLevel.INFO,
                 method=f"{self._module}.{self._class}.{_method}",
                 message="Tracking Discord user",
-                stackTrace=f"{payload}"
+                stackTrace=f"{payload}",
             )
 
             self.connection.users.update_one(  # type: ignore

@@ -181,9 +181,7 @@ class BaseHttpHandler:
                     self.log.error(0, f"{self._module}.{self._class}.{_method}", "No token found in payload")
                     return False
 
-            expected = settings_obj.get(
-                "token", ''.join(random.choices(string.ascii_uppercase + string.digits, k=24))
-            )
+            expected = settings_obj.get("token", ''.join(random.choices(string.ascii_uppercase + string.digits, k=24)))
             if token != expected:
                 self.log.error(0, f"{self._module}.{self._class}.{_method}", "Invalid authentication token")
                 return False

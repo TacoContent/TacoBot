@@ -50,6 +50,7 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
         * Broadcasting to channels with role notifications.
         * Persistence for duplicate suppression.
     """
+
     def __init__(self, bot):
         super().__init__(bot)
         self._class = self.__class__.__name__

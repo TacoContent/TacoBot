@@ -114,6 +114,7 @@ class TacosWebhookHandler(BaseWebhookHandler):
     signed request that increments a viewer's tacos for helpful actions
     or achievements.
     """
+
     def __init__(self, bot):
         super().__init__(bot)
         self._class = self.__class__.__name__

@@ -55,6 +55,7 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
         * Format and send Discord embed messages to configured channels.
         * Record announcements in tracking DB to suppress duplicates.
     """
+
     def __init__(self, bot):
         super().__init__(bot)
         self._class = self.__class__.__name__

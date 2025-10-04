@@ -83,9 +83,13 @@ class DiscordMessage:
                 "jump_url": message.jump_url,
                 "edited_at": int(message.edited_at.timestamp()) if message.edited_at else 0,
                 "mentions": [{"id": str(user.id), "username": user.name} for user in message.mentions],
-                "attachments": [{"id": str(attachment.id), "url": attachment.url} for attachment in message.attachments],
+                "attachments": [
+                    {"id": str(attachment.id), "url": attachment.url} for attachment in message.attachments
+                ],
                 "embeds": [embed.to_dict() for embed in message.embeds],
-                "reactions": [{"emoji": str(reaction.emoji), "count": reaction.count} for reaction in message.reactions],
+                "reactions": [
+                    {"emoji": str(reaction.emoji), "count": reaction.count} for reaction in message.reactions
+                ],
                 "nonce": message.nonce,
                 "pinned": message.pinned,
                 "type": message.type,

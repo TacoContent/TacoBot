@@ -241,7 +241,9 @@ class MinecraftApiHandler(BaseHttpHandler):
             if not payload:
                 raise HttpResponseException(404, headers, b'{ "error": "No settings found in the payload" }')
 
-            self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Updating settings for guild {target_guild_id}")
+            self.log.debug(
+                0, f"{self._module}.{self._class}.{_method}", f"Updating settings for guild {target_guild_id}"
+            )
             self.log.debug(0, f"{self._module}.{self._class}.{_method}", json.dumps(payload, indent=4))
             # self.minecraft_db.update_version(
             #   {"guild_id": target_guild_id, "name": MINECRAFT_SETTINGS_SECTION},

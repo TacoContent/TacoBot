@@ -4,7 +4,6 @@ import os
 import typing
 
 import discord
-
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.models.DiscordMessage import DiscordMessage
@@ -63,11 +62,15 @@ class GuildMessagesApiHandler(BaseHttpHandler):
             channel = self.bot.get_channel(int(channel_id))
             ch_guild = getattr(channel, 'guild', None) if channel else None
             if channel is None or ch_guild is None or str(getattr(ch_guild, 'id', '0')) != guild_id:
-                raise HttpResponseException(404, headers, bytearray('{"error": "channel not found"}', 'utf-8'))
+                raise HttpResponseException(
+                    404, headers, bytearray('{"error": "channel not found"}', 'utf-8')
+                )
 
             # Ensure channel supports history (e.g., TextChannel / Thread)
             if not hasattr(channel, 'history'):
-                raise HttpResponseException(400, headers, bytearray('{"error": "channel does not support messages"}', 'utf-8'))
+                raise HttpResponseException(
+                    400, headers, bytearray('{"error": "channel does not support messages"}', 'utf-8')
+                )
 
             # limit query param
             q_limit: typing.Optional[list[str]] = request.query_params.get('limit')
@@ -92,7 +95,9 @@ class GuildMessagesApiHandler(BaseHttpHandler):
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, 'utf-8'))
 
-    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/channel/{{channel_id}}/message/{{message_id}}", method="GET")
+    @uri_variable_mapping(
+        f"/api/{API_VERSION}/guild/{{guild_id}}/channel/{{channel_id}}/message/{{message_id}}", method="GET"
+    )
     async def get_channel_message(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:  # noqa: ARG002
         """Fetch a single message by ID.
 
@@ -124,13 +129,19 @@ class GuildMessagesApiHandler(BaseHttpHandler):
             if channel is None or ch_guild is None or str(getattr(ch_guild, 'id', '0')) != guild_id:
                 raise HttpResponseException(404, headers, bytearray('{"error": "channel not found"}', 'utf-8'))
             if not hasattr(channel, 'fetch_message'):
-                raise HttpResponseException(400, headers, bytearray('{"error": "channel does not support fetching messages"}', 'utf-8'))
+                raise HttpResponseException(
+                    400, headers, bytearray('{"error": "channel does not support fetching messages"}', 'utf-8')
+                )
             try:
                 message = await channel.fetch_message(int(message_id))  # type: ignore[attr-defined]
             except discord.NotFound:  # type: ignore[attr-defined]
-                raise HttpResponseException(404, headers, bytearray('{"error": "message not found"}', 'utf-8')) from None
+                raise HttpResponseException(
+                    404, headers, bytearray('{"error": "message not found"}', 'utf-8')
+                ) from None
             except discord.Forbidden as e:  # type: ignore[attr-defined]
-                raise HttpResponseException(404, headers, bytearray(f'{{"error": "message not accessible: {str(e)}"}}', 'utf-8')) from None
+                raise HttpResponseException(
+                    404, headers, bytearray(f'{{"error": "message not accessible: {str(e)}"}}', 'utf-8')
+                ) from None
 
             payload = DiscordMessage.fromMessage(message).to_dict()
             return HttpResponse(200, headers, bytearray(json.dumps(payload), 'utf-8'))
@@ -141,7 +152,9 @@ class GuildMessagesApiHandler(BaseHttpHandler):
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, 'utf-8'))
 
-    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/channel/{{channel_id}}/messages/batch/ids", method="POST")
+    @uri_variable_mapping(
+        f"/api/{API_VERSION}/guild/{{guild_id}}/channel/{{channel_id}}/messages/batch/ids", method="POST"
+    )
     async def get_channel_messages_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Batch fetch multiple messages by IDs.
 
@@ -164,7 +177,9 @@ class GuildMessagesApiHandler(BaseHttpHandler):
             guild_id: typing.Optional[str] = uri_variables.get("guild_id")
             channel_id: typing.Optional[str] = uri_variables.get("channel_id")
             if guild_id is None or channel_id is None:
-                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id and channel_id are required"}', 'utf-8'))
+                raise HttpResponseException(
+                    400, headers, bytearray('{"error": "guild_id and channel_id are required"}', 'utf-8')
+                )
             if not guild_id.isdigit() or not channel_id.isdigit():
                 raise HttpResponseException(400, headers, bytearray('{"error": "ids must be numeric"}', 'utf-8'))
 

@@ -50,6 +50,7 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
             returning simple primitives for the public endpoints to translate into HTTP responses.
         * Permissions are represented using ``TacoPermissions`` enum and converted to/from strings.
     """
+
     def __init__(self, bot):
         super().__init__(bot)
         self._class = self.__class__.__name__
@@ -101,9 +102,7 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
         try:
-            result = await self._list_permissions(
-                uri_variables.get("guildId", "0"), uri_variables.get("userId", "0")
-            )
+            result = await self._list_permissions(uri_variables.get("guildId", "0"), uri_variables.get("userId", "0"))
             return HttpResponse(200, headers=headers, body=bytearray(json.dumps(result, indent=4), "utf-8"))
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{ex}")
@@ -145,9 +144,7 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
             if not self.validate_auth_token(request):
                 return HttpResponse(404, headers, b'{"error": "Invalid authentication token"}')
             result = await self._remove_permission(
-                uri_variables.get("guildId", "0"),
-                uri_variables.get("userId", "0"),
-                uri_variables.get("permission", ""),
+                uri_variables.get("guildId", "0"), uri_variables.get("userId", "0"), uri_variables.get("permission", "")
             )
             if result:
                 return HttpResponse(200, headers, b'{"status": "ok"}')
@@ -189,9 +186,7 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
             if not self.validate_auth_token(request):
                 return HttpResponse(404, headers, b'{"error": "Invalid authentication token"}')
             result = await self._add_permission(
-                uri_variables.get("guildId", "0"),
-                uri_variables.get("userId", "0"),
-                uri_variables.get("permission", ""),
+                uri_variables.get("guildId", "0"), uri_variables.get("userId", "0"), uri_variables.get("permission", "")
             )
             if result:
                 return HttpResponse(200, headers, b'{"status": "ok"}')
@@ -215,9 +210,7 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
             if not self.validate_auth_token(request):
                 return HttpResponse(404, headers, b'{"error": "Invalid authentication token"}')
             result = await self._add_permission(
-                uri_variables.get("guildId", "0"),
-                uri_variables.get("userId", "0"),
-                uri_variables.get("permission", ""),
+                uri_variables.get("guildId", "0"), uri_variables.get("userId", "0"), uri_variables.get("permission", "")
             )
             if result:
                 return HttpResponse(200, headers, b'{"status": "ok"}')

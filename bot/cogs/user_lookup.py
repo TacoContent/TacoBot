@@ -1,11 +1,9 @@
 import inspect
 import os
 import traceback
-import typing
 
 from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
-from bot.lib.enums.member_status import MemberStatus
 from bot.lib.models.DiscordUser import DiscordUser
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.tacobot import TacoBot

@@ -44,6 +44,7 @@ class SettingsApiHandler(BaseHttpHandler):
             other dedicated endpoints (e.g., Minecraft settings update).
         * The underlying ``Settings`` abstraction manages persistence details.
     """
+
     def __init__(self, bot):
         super().__init__(bot)
         self._class = self.__class__.__name__
