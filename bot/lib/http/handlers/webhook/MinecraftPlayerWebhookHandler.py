@@ -28,7 +28,7 @@ Extensibility:
     * Add new event types to ``MinecraftPlayerEvents`` and map them in ``event``.
     * Implement a corresponding ``_handle_<event>_event`` coroutine.
     * Consider adding rate limiting or replay protection if the webhook source
-      can retry aggressively.
+        can retry aggressively.
 """
 
 import inspect
@@ -64,9 +64,9 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
         Expected JSON Body:
             guild_id (int)  : Target Discord guild id.
             event (str)     : One of the supported minecraft player events
-                               (LOGIN, LOGOUT, DEATH, ...).
+                                (LOGIN, LOGOUT, DEATH, ...).
             payload (object): Event-specific data. Must contain at least
-                               ``user_id`` used to resolve the Discord user.
+                                ``user_id`` used to resolve the Discord user.
 
         Returns:
             200 JSON with echo + normalized event meta on success.

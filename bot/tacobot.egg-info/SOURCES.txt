@@ -1,7 +1,0 @@
-README.md
-pyproject.toml
-bot/tacobot.egg-info/PKG-INFO
-bot/tacobot.egg-info/SOURCES.txt
-bot/tacobot.egg-info/dependency_links.txt
-bot/tacobot.egg-info/requires.txt
-bot/tacobot.egg-info/top_level.txt

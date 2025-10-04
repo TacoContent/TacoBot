@@ -46,8 +46,8 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
 
     Notes:
         * Helper coroutine methods (_list_permissions, _add_permission, _remove_permission)
-          encapsulate conversion / persistence and swallow internal exceptions (logging them)
-          returning simple primitives for the public endpoints to translate into HTTP responses.
+            encapsulate conversion / persistence and swallow internal exceptions (logging them)
+            returning simple primitives for the public endpoints to translate into HTTP responses.
         * Permissions are represented using ``TacoPermissions`` enum and converted to/from strings.
     """
     def __init__(self, bot):

@@ -11,10 +11,10 @@ MongoDB collection (see :class:`TacosDatabase`).
 Two public POST endpoints are provided:
 
 1. ``/webhook/tacos`` – Primary endpoint for granting (or removing via a
-     negative amount) tacos between users.
+        negative amount) tacos between users.
 2. ``/webhook/minecraft/tacos`` – Convenience alias that simply delegates
-     to the primary endpoint so Minecraft specific automations can use a
-     namespaced path.
+        to the primary endpoint so Minecraft specific automations can use a
+        namespaced path.
 
 Authentication / Authorization
 ------------------------------
@@ -158,7 +158,7 @@ class TacosWebhookHandler(BaseWebhookHandler):
         See module docstring for full schema. Notable rules:
         * ``guild_id`` and ``from_user`` are mandatory.
         * Either ``to_user`` (Twitch username) or ``to_user_id`` (Discord id)
-          must be supplied.
+            must be supplied.
         * ``amount`` may be negative to remove tacos, bounded by limits.
         * Self‑gifting and gifting to bot accounts is prevented.
 

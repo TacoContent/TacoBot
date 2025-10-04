@@ -2,6 +2,7 @@
 \.idea/
 __pycache__/**
 __pycache__/
+tacobot.egg-info/
 *.env
 .env.*
 .env

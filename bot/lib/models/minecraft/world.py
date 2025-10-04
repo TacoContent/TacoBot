@@ -19,11 +19,11 @@ active : bool
 Design Choices
 --------------
 * Constructor performs strict validation; raises ``ValueError`` for any
-  missing required argument.
-* ``to_dict`` returns a shallow copy of the instance ``__dict__`` for
+    missing required argument.
+        * ``to_dict`` returns a shallow copy of the instance ``__dict__`` for
   quick JSON serialization.
 * Keep implementation intentionally minimal to avoid coupling with
-  storage or API layers.
+    storage or API layers.
 """
 
 

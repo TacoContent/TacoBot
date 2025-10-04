@@ -41,7 +41,7 @@ class SettingsApiHandler(BaseHttpHandler):
 
     Notes:
         * Currently only supports GET; write/update operations are handled by
-          other dedicated endpoints (e.g., Minecraft settings update).
+            other dedicated endpoints (e.g., Minecraft settings update).
         * The underlying ``Settings`` abstraction manages persistence details.
     """
     def __init__(self, bot):

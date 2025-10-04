@@ -4,3 +4,5 @@
 .git/
 .gitignore
 __pycache__/**
+
+tacobot.egg-info/
