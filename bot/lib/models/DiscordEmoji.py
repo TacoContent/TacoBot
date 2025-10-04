@@ -7,11 +7,11 @@ import discord
 class DiscordEmoji:
     def __init__(self, data):
         self.type: str = "emoji"
-        self.id: int = data.get("id")
+        self.id: str = data.get("id")
         self.animated: bool = data.get("animated", False)
         self.available: bool = data.get("available", True)
         self.created_at: typing.Optional[int] = data.get("created_at", None)
-        self.guild_id: typing.Optional[int] = data.get("guild_id", None)
+        self.guild_id: typing.Optional[str] = data.get("guild_id", None)
         self.managed: bool = data.get("managed", False)
         self.require_colons: bool = data.get("require_colons", False)
         self.name: str = data.get("name")
@@ -22,7 +22,7 @@ class DiscordEmoji:
         if isinstance(emoji, discord.Emoji):
             return DiscordEmoji(
                 {
-                    "id": emoji.id,
+                    "id": str(emoji.id),
                     "animated": emoji.animated,
                     "available": emoji.available,
                     "created_at": (
@@ -30,7 +30,7 @@ class DiscordEmoji:
                         if isinstance(emoji.created_at, datetime.datetime)
                         else None
                     ),
-                    "guild_id": emoji.guild.id if emoji.guild else None,
+                    "guild_id": str(emoji.guild.id) if emoji.guild else None,
                     "managed": emoji.managed,
                     "require_colons": emoji.require_colons,
                     "name": emoji.name,
