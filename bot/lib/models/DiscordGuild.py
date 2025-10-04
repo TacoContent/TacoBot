@@ -14,7 +14,7 @@
 #     "boost_level": str(guild.premium_tier),
 #     "boost_count": guild.premium_subscription_count,
 # }
-class DiscordGuildPayload:
+class DiscordGuild:
     def __init__(self, data: dict):
         self.id = data.get("id")
         self.name = data.get("name")

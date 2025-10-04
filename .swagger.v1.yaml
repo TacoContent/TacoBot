@@ -94,12 +94,11 @@ paths:
     get:
       tags:
         - guilds
-      summary: Get the guild information
+      summary: Lookup a guild
       description: |
-        Gets the guild information
+        Retrieves details for a single guild by its ID.
       parameters:
         - name: guild_id
-          description: The guild ID
           in: path
           required: true
           schema:
@@ -110,74 +109,13 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/DiscordGuild"
+                $ref: '#/components/schemas/DiscordGuild'
         "404":
           description: Guild not found
           content:
             application/json:
               schema:
-                "$ref": '#/components/schemas/ErrorStatusCodePayload'
-
-  '/api/v1/guilds/lookup':
-    get:
-      tags:
-        - guilds
-      summary: Get the guild information
-      description: |
-        Gets the guild information
-      parameters:
-        - name: guild_id
-          description: The guild ID
-          in: query
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/DiscordGuild"
-        "404":
-          description: Guild not found
-          content:
-            application/json:
-              schema:
-                "$ref": '#/components/schemas/ErrorStatusCodePayload'
-    post:
-      tags:
-        - guilds
-      summary: Get the guild information
-      description: |
-        Gets the guild information
-      parameters:
-        - name: guild_id
-          description: The guild ID
-          in: query
-          schema:
-            type: string
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                id:
-                  type: string
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/DiscordGuild"
-        "404":
-          description: Guild not found
-          content:
-            application/json:
-              schema:
-                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
 
   '/api/v1/guilds/lookup/batch/{guild_ids}':
     get:
@@ -422,10 +360,9 @@ paths:
         - emojis
       summary: Get the list of emojis for a guild
       description: |
-        Gets the list of emojis for a guild
+        Returns all custom emojis for the specified guild.
       parameters:
         - name: guild_id
-          description: The guild ID
           in: path
           required: true
           schema:
@@ -438,31 +375,35 @@ paths:
               schema:
                 type: array
                 items:
-                  "$ref": "#/components/schemas/DiscordEmoji"
+                  $ref: '#/components/schemas/DiscordEmoji'
+        "400":
+          description: Invalid guild id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
         "404":
           description: Guild not found
           content:
             application/json:
               schema:
-                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
 
   '/api/v1/guild/{guild_id}/emoji/id/{emoji_id}':
     get:
       tags:
         - guilds
         - emojis
-      summary: Get the emoji information for a guild by emoji ID
+      summary: Get an emoji by ID
       description: |
-        Gets the emoji information for a guild by emoji ID
+        Returns a single emoji object for the given emoji ID.
       parameters:
         - name: guild_id
-          description: The guild ID
           in: path
           required: true
           schema:
             type: string
         - name: emoji_id
-          description: The emoji ID
           in: path
           required: true
           schema:
@@ -473,31 +414,35 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/DiscordEmoji"
+                $ref: '#/components/schemas/DiscordEmoji'
+        "400":
+          description: Invalid guild or emoji id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
         "404":
           description: Guild or Emoji not found
           content:
             application/json:
               schema:
-                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
 
   '/api/v1/guild/{guild_id}/emoji/name/{emoji_name}':
     get:
       tags:
         - guilds
         - emojis
-      summary: Get the emoji information for a guild by emoji name
+      summary: Get an emoji by name
       description: |
-        Gets the emoji information for a guild by emoji name
+        Returns a single emoji object for the given emoji name.
       parameters:
         - name: guild_id
-          description: The guild ID
           in: path
           required: true
           schema:
             type: string
         - name: emoji_name
-          description: The emoji name
           in: path
           required: true
           schema:
@@ -508,37 +453,57 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/DiscordEmoji"
+                $ref: '#/components/schemas/DiscordEmoji'
+        "400":
+          description: Invalid guild id or emoji name missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
         "404":
           description: Guild or Emoji not found
           content:
             application/json:
               schema:
-                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
 
   '/api/v1/guild/{guild_id}/emojis/ids/batch':
     post:
       tags:
         - guilds
         - emojis
-      summary: Get the emoji information for a guild by a batch of emoji IDs
+      summary: Get a batch of emojis by their IDs
       description: |
-        Gets the emoji information for a guild by a batch of emoji IDs
+        Accepts either an array of emoji IDs as the JSON body or an object with an `ids` array field. Query parameter `ids` may also be provided multiple times.
       parameters:
         - name: guild_id
-          description: The guild ID
           in: path
           required: true
           schema:
             type: string
+        - name: ids
+          in: query
+          required: false
+          description: Repeatable query parameter of emoji ids
+          schema:
+            type: array
+            items:
+              type: string
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
-              type: array
-              items:
-                type: string
+              oneOf:
+                - type: array
+                  items:
+                    type: string
+                - type: object
+                  properties:
+                    ids:
+                      type: array
+                      items:
+                        type: string
       responses:
         "200":
           description: Successful operation
@@ -547,37 +512,57 @@ paths:
               schema:
                 type: array
                 items:
-                  "$ref": "#/components/schemas/DiscordEmoji"
-        "404":
-          description: Guild or Emojis not found
+                  $ref: '#/components/schemas/DiscordEmoji'
+        "400":
+          description: Invalid guild id or malformed body
           content:
             application/json:
               schema:
-                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        "404":
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
 
   '/api/v1/guild/{guild_id}/emojis/names/batch':
     post:
       tags:
         - guilds
         - emojis
-      summary: Get the emoji information for a guild by a batch of emoji names
+      summary: Get a batch of emojis by their names
       description: |
-        Gets the emoji information for a guild by a batch of emoji names
+        Accepts either an array of emoji names as the JSON body or an object with a `names` array field. Query parameter `names` may also be provided multiple times.
       parameters:
         - name: guild_id
-          description: The guild ID
           in: path
           required: true
           schema:
             type: string
+        - name: names
+          in: query
+          required: false
+          description: Repeatable query parameter of emoji names
+          schema:
+            type: array
+            items:
+              type: string
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
-              type: array
-              items:
-                type: string
+              oneOf:
+                - type: array
+                  items:
+                    type: string
+                - type: object
+                  properties:
+                    names:
+                      type: array
+                      items:
+                        type: string
       responses:
         "200":
           description: Successful operation
@@ -586,13 +571,19 @@ paths:
               schema:
                 type: array
                 items:
-                  "$ref": "#/components/schemas/DiscordEmoji"
-        "404":
-          description: Guild or Emojis not found
+                  $ref: '#/components/schemas/DiscordEmoji'
+        "400":
+          description: Invalid guild id or malformed body
           content:
             application/json:
               schema:
-                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        "404":
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
 
   '/api/v1/guild/{guild_id}/roles':
     get:
@@ -1212,7 +1203,9 @@ components:
       type: object
       properties:
         error:
-          type: integer
+          type: string
+      example:
+        error: "guild not found"
     ShiftCodeGame:
       type: object
       properties:
@@ -1599,6 +1592,9 @@ components:
     DiscordEmoji:
       type: object
       properties:
+        type:
+          type: string
+          enum: [emoji]
         id:
           type: string
         guild_id:
@@ -1613,11 +1609,17 @@ components:
           type: boolean
         require_colons:
           type: boolean
+        created_at:
+          type: string
+          format: date-time
         url:
           type: string
     DiscordRole:
       type: object
       properties:
+        type:
+          type: string
+          enum: [role]
         id:
           type: string
         guild_id:
@@ -1626,6 +1628,30 @@ components:
           type: string
         color:
           type: integer
+          format: int32
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        display_icon:
+          type: string
+          nullable: true
+        flags:
+          type: object
+        hoist:
+          type: boolean
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+        managed:
+          type: boolean
+          nullable: true
+        mention:
+          type: string
+        mentionable:
+          type: boolean
           nullable: true
         position:
           type: integer
@@ -1633,27 +1659,15 @@ components:
         permissions:
           type: integer
           nullable: true
-        managed:
-          type: boolean
+        secondary_color:
+          type: integer
           nullable: true
-        mentionable:
-          type: boolean
-          nullable: true
-        hoist:
-          type: boolean
-          nullable: true
-        icon:
-          type: string
+        tertiary_color:
+          type: integer
           nullable: true
         unicode_emoji:
           type: string
           nullable: true
-        type:
-          type: string
-          enum: [role]
-        mention:
-          type: string
-          description: Pre-formatted mention string for the role
     DiscordUser:
       type: object
       properties:
@@ -1664,24 +1678,55 @@ components:
           type: string
         guild_id:
           type: string
-        username:
-          type: string
-          nullable: true
-        display_name:
-          type: string
-          nullable: true
-        discriminator:
-          type: string
+        accent_color:
+          type: integer
           nullable: true
         avatar:
+          type: string
+          nullable: true
+        banner:
           type: string
           nullable: true
         bot:
           type: boolean
           nullable: true
+        color:
+          type: integer
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        default_avatar:
+          type: string
+          nullable: true
+        discriminator:
+          type: string
+          nullable: true
+        display_avatar:
+          type: string
+          nullable: true
+        display_name:
+          type: string
+          nullable: true
+        global_name:
+          type: string
+          nullable: true
         mention:
           type: string
-          description: Pre-formatted mention string for the user
+        name:
+          type: string
+          nullable: true
+        system:
+          type: boolean
+          nullable: true
+        username:
+          type: string
+          nullable: true
+    DiscordMentionable:
+      oneOf:
+        - $ref: '#/components/schemas/DiscordRole'
+        - $ref: '#/components/schemas/DiscordUser'
 
   securitySchemes:
     X-AUTH-TOKEN:

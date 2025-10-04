@@ -6,7 +6,10 @@ import typing
 
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
-from bot.lib.models.DiscordGuildPayload import DiscordGuildPayload
+from bot.lib.models.DiscordEmoji import DiscordEmoji
+from bot.lib.models.DiscordRole import DiscordRole
+from bot.lib.models.DiscordUser import DiscordUser
+from bot.lib.models.DiscordGuild import DiscordGuild
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
@@ -52,7 +55,7 @@ class GuildApiHandler(BaseHttpHandler):
         return (
             None
             if guild is None
-            else DiscordGuildPayload(
+            else DiscordGuild(
                 {
                     "id": str(guild.id),
                     "name": guild.name,
@@ -102,7 +105,7 @@ class GuildApiHandler(BaseHttpHandler):
                 continue
             guild = self.bot.get_guild(int(guild_id))
             if guild is not None:
-                guild_payload = DiscordGuildPayload(
+                guild_payload = DiscordGuild(
                     {
                         "id": str(guild.id),
                         "name": guild.name,
@@ -388,177 +391,171 @@ class GuildApiHandler(BaseHttpHandler):
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
 
-    @uri_variable_mapping(f"/api/{API_VERSION}/user/{{id}}", method="GET")
-    def get_user_info(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+    # =============================
+    # Emoji Endpoints (refactored)
+    # =============================
+
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emojis", method="GET")
+    def get_guild_emojis(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         _method = inspect.stack()[0][3]
+        headers = HttpHeaders(); headers.add("Content-Type", "application/json")
         try:
-            headers = HttpHeaders()
-            headers.add("Content-Type", "application/json")
+            guild_id: typing.Optional[str] = uri_variables.get("guild_id")
+            if guild_id is None:
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id is required"}', "utf-8"))
+            if not guild_id.isdigit():
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id must be a number"}', "utf-8"))
+            guild = self.bot.get_guild(int(guild_id))
+            if guild is None:
+                raise HttpResponseException(404, headers, bytearray('{"error": "guild not found"}', "utf-8"))
+            emojis = [DiscordEmoji.fromEmoji(e).to_dict() for e in guild.emojis]
+            return HttpResponse(200, headers, bytearray(json.dumps(emojis), "utf-8"))
+        except HttpResponseException as e:
+            return HttpResponse(e.status_code, e.headers, e.body)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
+            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
 
-            user_id: typing.Optional[str] = uri_variables.get("id", None)
-            if user_id is None:
-                raise HttpResponseException(400, headers, bytearray('{"error": "id is required"}', "utf-8"))
-            if not user_id.isdigit():
-                raise HttpResponseException(400, headers, bytearray('{"error": "id must be a number"}', "utf-8"))
-
-            user = self.bot.get_user(int(user_id))
-            if user is None:
-                raise HttpResponseException(404, headers, bytearray('{"error": "user not found"}', "utf-8"))
-
-            result = {
-                "type": "user",
-                "id": str(user.id),
-                "username": user.name,
-                "display_name": user.display_name,
-                "discriminator": user.discriminator,
-                "avatar": user.avatar.url if user.avatar else None,
-                "bot": user.bot,
-                "system": getattr(user, "system", None),
-                "verified": getattr(user, "verified", None),
-                "mention": f"<@{user.id}>",
-            }
-
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emoji/id/{{emoji_id}}", method="GET")
+    def get_guild_emoji(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        _method = inspect.stack()[0][3]
+        headers = HttpHeaders(); headers.add("Content-Type", "application/json")
+        try:
+            guild_id: typing.Optional[str] = uri_variables.get("guild_id")
+            emoji_id: typing.Optional[str] = uri_variables.get("emoji_id")
+            if guild_id is None:
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id is required"}', "utf-8"))
+            if emoji_id is None:
+                raise HttpResponseException(400, headers, bytearray('{"error": "emoji_id is required"}', "utf-8"))
+            if not guild_id.isdigit():
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id must be a number"}', "utf-8"))
+            if not emoji_id.isdigit():
+                raise HttpResponseException(400, headers, bytearray('{"error": "emoji_id must be a number"}', "utf-8"))
+            guild = self.bot.get_guild(int(guild_id))
+            if guild is None:
+                raise HttpResponseException(404, headers, bytearray('{"error": "guild not found"}', "utf-8"))
+            emoji = next((e for e in guild.emojis if e.id == int(emoji_id)), None)
+            if emoji is None:
+                raise HttpResponseException(404, headers, bytearray('{"error": "emoji not found"}', "utf-8"))
+            result = DiscordEmoji.fromEmoji(emoji).to_dict()
             return HttpResponse(200, headers, bytearray(json.dumps(result), "utf-8"))
         except HttpResponseException as e:
             return HttpResponse(e.status_code, e.headers, e.body)
         except Exception as e:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
 
-    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emojis", method="GET")
-    def get_guild_emojis(self, request: HttpRequest, uri_variables: dict) -> typing.List[dict]:
-        guild_id: str = uri_variables.get("guild_id", '0')
-
-        guild = self.bot.get_guild(int(guild_id))
-        if guild is None:
-            return []
-        emojis = [
-            {
-                "id": str(emoji.id),
-                "guild_id": str(emoji.guild_id),
-                "name": emoji.name,
-                "animated": emoji.animated,
-                "available": emoji.available,
-                "managed": emoji.managed,
-                "require_colons": emoji.require_colons,
-                "url": emoji.url,
-            }
-            for emoji in guild.emojis
-        ]
-        return emojis
-
-    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emoji/id/{{emoji_id}}", method="GET")
-    def get_guild_emoji(self, request: HttpRequest, uri_variables: dict) -> typing.Optional[dict]:
-        guild_id: str = uri_variables.get("guild_id", '0')
-        emoji_id: str = uri_variables.get("emoji_id", '0')
-        guild = self.bot.get_guild(int(guild_id))
-        if guild is None:
-            return None
-        emoji = next((e for e in guild.emojis if e.id == int(emoji_id)), None)
-        if emoji is None:
-            return None
-        return {
-            "id": str(emoji.id),
-            "guild_id": str(emoji.guild_id),
-            "name": emoji.name,
-            "animated": emoji.animated,
-            "available": emoji.available,
-            "managed": emoji.managed,
-            "require_colons": emoji.require_colons,
-            "url": emoji.url,
-        }
-
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emoji/name/{{emoji_name}}", method="GET")
-    def get_guild_emoji_by_name(self, request: HttpRequest, uri_variables: dict) -> typing.Optional[dict]:
-        guild_id: str = uri_variables.get("guild_id", '0')
-        emoji_name: str = uri_variables.get("emoji_name", '0')
-        guild = self.bot.get_guild(int(guild_id))
-        if guild is None:
-            return None
-        emoji = next((e for e in guild.emojis if e.name == emoji_name), None)
-        if emoji is None:
-            return None
-        return {
-            "id": str(emoji.id),
-            "guild_id": str(emoji.guild_id),
-            "name": emoji.name,
-            "animated": emoji.animated,
-            "available": emoji.available,
-            "managed": emoji.managed,
-            "require_colons": emoji.require_colons,
-            "url": emoji.url,
-        }
+    def get_guild_emoji_by_name(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        _method = inspect.stack()[0][3]
+        headers = HttpHeaders(); headers.add("Content-Type", "application/json")
+        try:
+            guild_id: typing.Optional[str] = uri_variables.get("guild_id")
+            emoji_name: typing.Optional[str] = uri_variables.get("emoji_name")
+            if guild_id is None:
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id is required"}', "utf-8"))
+            if not guild_id.isdigit():
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id must be a number"}', "utf-8"))
+            if emoji_name is None or len(emoji_name.strip()) == 0:
+                raise HttpResponseException(400, headers, bytearray('{"error": "emoji_name is required"}', "utf-8"))
+            guild = self.bot.get_guild(int(guild_id))
+            if guild is None:
+                raise HttpResponseException(404, headers, bytearray('{"error": "guild not found"}', "utf-8"))
+            emoji = next((e for e in guild.emojis if e.name == emoji_name), None)
+            if emoji is None:
+                raise HttpResponseException(404, headers, bytearray('{"error": "emoji not found"}', "utf-8"))
+            result = DiscordEmoji.fromEmoji(emoji).to_dict()
+            return HttpResponse(200, headers, bytearray(json.dumps(result), "utf-8"))
+        except HttpResponseException as e:
+            return HttpResponse(e.status_code, e.headers, e.body)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
+            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emojis/ids/batch", method="POST")
-    def get_guild_emojis_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> typing.List[dict]:
-        guild_id: str = uri_variables.get("guild_id", '0')
-        guild = self.bot.get_guild(int(guild_id))
-        if guild is None:
-            return []
-        query_ids: typing.Optional[list[str]] = request.query_params.get("ids", None)
-        body_ids: typing.Optional[list[str]] = None
-        if request.body is not None and request.method == "POST":
-            b_data = json.loads(request.body.decode("utf-8"))
-            if isinstance(b_data, list):
-                body_ids = b_data
-            elif isinstance(b_data, dict) and "ids" in b_data and isinstance(b_data["ids"], list):
-                body_ids = b_data.get("ids", [])
-        ids = []
-        if query_ids is not None and len(query_ids) > 0:
-            ids.extend(query_ids)
-        if body_ids is not None and len(body_ids) > 0:
-            ids.extend(body_ids)
-        emojis = [
-            {
-                "id": str(emoji.id),
-                "guild_id": str(emoji.guild_id),
-                "name": emoji.name,
-                "animated": emoji.animated,
-                "available": emoji.available,
-                "managed": emoji.managed,
-                "require_colons": emoji.require_colons,
-                "url": emoji.url,
-            }
-            for emoji in guild.emojis
-            if str(emoji.id) in ids
-        ]
-        return emojis
+    def get_guild_emojis_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        _method = inspect.stack()[0][3]
+        headers = HttpHeaders(); headers.add("Content-Type", "application/json")
+        try:
+            guild_id: typing.Optional[str] = uri_variables.get("guild_id")
+            if guild_id is None:
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id is required"}', "utf-8"))
+            if not guild_id.isdigit():
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id must be a number"}', "utf-8"))
+            guild = self.bot.get_guild(int(guild_id))
+            if guild is None:
+                raise HttpResponseException(404, headers, bytearray('{"error": "guild not found"}', "utf-8"))
+            query_ids: typing.Optional[list[str]] = request.query_params.get("ids")
+            body_ids: typing.Optional[list[str]] = None
+            if request.body is not None and request.method == "POST":
+                try:
+                    b_data = json.loads(request.body.decode("utf-8"))
+                except Exception:
+                    raise HttpResponseException(400, headers, bytearray('{"error": "invalid JSON body"}', "utf-8"))
+                if isinstance(b_data, list):
+                    body_ids = b_data
+                elif isinstance(b_data, dict) and "ids" in b_data and isinstance(b_data["ids"], list):
+                    body_ids = b_data.get("ids", [])
+            ids: list[str] = []
+            if query_ids:
+                ids.extend(query_ids)
+            if body_ids:
+                ids.extend(body_ids)
+            ids = list(dict.fromkeys(ids))
+            if len(ids) == 0:
+                return HttpResponse(200, headers, bytearray('[]', "utf-8"))
+            emojis = [DiscordEmoji.fromEmoji(e).to_dict() for e in guild.emojis if str(e.id) in ids]
+            return HttpResponse(200, headers, bytearray(json.dumps(emojis), "utf-8"))
+        except HttpResponseException as e:
+            return HttpResponse(e.status_code, e.headers, e.body)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
+            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emojis/names/batch", method="POST")
-    def get_guild_emojis_batch_by_names(self, request: HttpRequest, uri_variables: dict) -> typing.List[dict]:
-        guild_id: str = uri_variables.get("guild_id", '0')
-        guild = self.bot.get_guild(int(guild_id))
-        if guild is None:
-            return []
-        query_names: typing.Optional[list[str]] = request.query_params.get("names", None)
-        body_names: typing.Optional[list[str]] = None
-        if request.body is not None and request.method == "POST":
-            b_data = json.loads(request.body.decode("utf-8"))
-            if isinstance(b_data, list):
-                body_names = b_data
-            elif isinstance(b_data, dict) and "names" in b_data and isinstance(b_data["names"], list):
-                body_names = b_data.get("names", [])
-        names = []
-        if query_names is not None and len(query_names) > 0:
-            names.extend(query_names)
-        if body_names is not None and len(body_names) > 0:
-            names.extend(body_names)
-        emojis = [
-            {
-                "id": str(emoji.id),
-                "guild_id": str(emoji.guild_id),
-                "name": emoji.name,
-                "animated": emoji.animated,
-                "available": emoji.available,
-                "managed": emoji.managed,
-                "require_colons": emoji.require_colons,
-                "url": emoji.url,
-            }
-            for emoji in guild.emojis
-            if emoji.name in names
-        ]
-        return emojis
+    def get_guild_emojis_batch_by_names(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        _method = inspect.stack()[0][3]
+        headers = HttpHeaders(); headers.add("Content-Type", "application/json")
+        try:
+            guild_id: typing.Optional[str] = uri_variables.get("guild_id")
+            if guild_id is None:
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id is required"}', "utf-8"))
+            if not guild_id.isdigit():
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id must be a number"}', "utf-8"))
+            guild = self.bot.get_guild(int(guild_id))
+            if guild is None:
+                raise HttpResponseException(404, headers, bytearray('{"error": "guild not found"}', "utf-8"))
+            query_names: typing.Optional[list[str]] = request.query_params.get("names")
+            body_names: typing.Optional[list[str]] = None
+            if request.body is not None and request.method == "POST":
+                try:
+                    b_data = json.loads(request.body.decode("utf-8"))
+                except Exception:
+                    raise HttpResponseException(400, headers, bytearray('{"error": "invalid JSON body"}', "utf-8"))
+                if isinstance(b_data, list):
+                    body_names = b_data
+                elif isinstance(b_data, dict) and "names" in b_data and isinstance(b_data["names"], list):
+                    body_names = b_data.get("names", [])
+            names: list[str] = []
+            if query_names:
+                names.extend(query_names)
+            if body_names:
+                names.extend(body_names)
+            names = list(dict.fromkeys(names))
+            if len(names) == 0:
+                return HttpResponse(200, headers, bytearray('[]', "utf-8"))
+            emojis = [DiscordEmoji.fromEmoji(e).to_dict() for e in guild.emojis if e.name in names]
+            return HttpResponse(200, headers, bytearray(json.dumps(emojis), "utf-8"))
+        except HttpResponseException as e:
+            return HttpResponse(e.status_code, e.headers, e.body)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
+            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/roles", method="GET")
     def get_guild_roles(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
@@ -578,25 +575,11 @@ class GuildApiHandler(BaseHttpHandler):
                 raise HttpResponseException(404, headers, bytearray('{"error": "guild not found"}', "utf-8"))
 
             roles = [
-                {
-                    "type": "role",
-                    "id": str(role.id),
-                    "guild_id": str(guild.id),
-                    "name": role.name,
-                    "color": getattr(getattr(role, "color", None), "value", None),
-                    "position": getattr(role, "position", None),
-                    "permissions": getattr(getattr(role, "permissions", None), "value", None),
-                    "managed": getattr(role, "managed", None),
-                    "mentionable": getattr(role, "mentionable", None),
-                    "hoist": getattr(role, "hoist", None),
-                    "icon": getattr(getattr(role, "icon", None), "url", None),
-                    "unicode_emoji": getattr(role, "unicode_emoji", None),
-                    "mention": f"<@&{role.id}>",
-                }
+                DiscordRole.fromRole(role)
                 for role in guild.roles
             ]
 
-            return HttpResponse(200, headers, bytearray(json.dumps(roles), "utf-8"))
+            return HttpResponse(200, headers, bytearray(json.dumps([r.to_dict() for r in roles]), "utf-8"))
         except HttpResponseException as e:
             return HttpResponse(e.status_code, e.headers, e.body)
         except Exception as e:
@@ -636,26 +619,12 @@ class GuildApiHandler(BaseHttpHandler):
                 ids.extend(body_ids)
 
             roles = [
-                {
-                    "type": "role",
-                    "id": str(role.id),
-                    "guild_id": str(guild.id),
-                    "name": role.name,
-                    "color": getattr(getattr(role, "color", None), "value", None),
-                    "position": getattr(role, "position", None),
-                    "permissions": getattr(getattr(role, "permissions", None), "value", None),
-                    "managed": getattr(role, "managed", None),
-                    "mentionable": getattr(role, "mentionable", None),
-                    "hoist": getattr(role, "hoist", None),
-                    "icon": getattr(getattr(role, "icon", None), "url", None),
-                    "unicode_emoji": getattr(role, "unicode_emoji", None),
-                    "mention": f"<@&{role.id}>",
-                }
+                DiscordRole.fromRole(role)
                 for role in guild.roles
                 if str(role.id) in ids
             ]
 
-            return HttpResponse(200, headers, bytearray(json.dumps(roles), "utf-8"))
+            return HttpResponse(200, headers, bytearray(json.dumps([r.to_dict() for r in roles]), "utf-8"))
         except HttpResponseException as e:
             return HttpResponse(e.status_code, e.headers, e.body)
         except Exception as e:
@@ -704,7 +673,7 @@ class GuildApiHandler(BaseHttpHandler):
                     seen.add(_id)
                     id_set.append(_id)
 
-            results: list[dict] = []
+            results: typing.List[typing.Union[DiscordRole, DiscordUser]] = []
 
             # Index roles for quick lookup
             # if getattr(r, "mentionable", False)
@@ -714,23 +683,7 @@ class GuildApiHandler(BaseHttpHandler):
                 # Prefer role if ID matches a mentionable role
                 role = roles_by_id.get(id_str, None)
                 if role is not None:
-                    results.append(
-                        {
-                            "type": "role",
-                            "id": str(role.id),
-                            "guild_id": str(guild.id),
-                            "name": role.name,
-                            "color": getattr(getattr(role, "color", None), "value", None),
-                            "position": getattr(role, "position", None),
-                            "permissions": getattr(getattr(role, "permissions", None), "value", None),
-                            "managed": getattr(role, "managed", None),
-                            "mentionable": getattr(role, "mentionable", None),
-                            "hoist": getattr(role, "hoist", None),
-                            "icon": getattr(getattr(role, "icon", None), "url", None),
-                            "unicode_emoji": getattr(role, "unicode_emoji", None),
-                            "mention": f"<@&{role.id}>",
-                        }
-                    )
+                    results.append(DiscordRole.fromRole(role))
                     continue
 
                 # Otherwise, try to resolve as a guild member (user)
@@ -751,21 +704,15 @@ class GuildApiHandler(BaseHttpHandler):
                         user = None
 
                 if user is not None:
-                    results.append(
-                        {
-                            "type": "user",
-                            "id": str(user.id),
-                            "guild_id": str(guild.id),
-                            "username": getattr(user, "name", None),
-                            "display_name": getattr(user, "display_name", None),
-                            "discriminator": getattr(user, "discriminator", None),
-                            "avatar": getattr(getattr(user, "avatar", None), "url", None),
-                            "bot": getattr(user, "bot", None),
-                            "mention": f"<@{user.id}>",
-                        }
-                    )
+                    results.append(DiscordUser.fromUser(user))
 
-            return HttpResponse(200, headers, bytearray(json.dumps(results), "utf-8"))
+                output: list[dict] = []
+                for user in results:
+                    output.append(user.to_dict())
+                for role in results:
+                    output.append(role.to_dict())
+
+            return HttpResponse(200, headers, bytearray(json.dumps(output), "utf-8"))
         except HttpResponseException as e:
             return HttpResponse(e.status_code, e.headers, e.body)
         except Exception as e:
