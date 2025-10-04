@@ -38,9 +38,7 @@ class DiscordUser:
                     "accent_color": user.accent_color.value if user.accent_color else None,
                     # Extract avatar URL if present, avoiding embedding Asset objects
                     "avatar": (
-                        user.avatar.url
-                        if user.avatar
-                        else (user.default_avatar.url if user.default_avatar else None)
+                        user.avatar.url if user.avatar else (user.default_avatar.url if user.default_avatar else None)
                     ),
                     "banner": user.banner.url if user.banner else None,
                     "bot": user.bot,
