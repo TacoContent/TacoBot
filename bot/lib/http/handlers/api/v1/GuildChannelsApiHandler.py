@@ -1,0 +1,223 @@
+import inspect, json, os, typing
+from bot.lib.http.handlers.api.v1.const import API_VERSION
+from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
+from bot.tacobot import TacoBot
+from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
+from httpserver.server import HttpResponseException, uri_variable_mapping
+
+class GuildChannelsApiHandler(BaseHttpHandler):
+    def __init__(self, bot: TacoBot):
+        super().__init__(bot)
+        self._class = self.__class__.__name__
+        self._module = os.path.basename(__file__)[:-3]
+
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/categories", method="GET")
+    def get_guild_categories(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        _method = inspect.stack()[0][3]
+        try:
+            headers = HttpHeaders()
+            headers.add("Content-Type", "application/json")
+            guild_id: typing.Optional[str] = uri_variables.get("guild_id")
+            if guild_id is None:
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id is required"}', "utf-8"))
+            if not guild_id.isdigit():
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id must be a number"}', "utf-8"))
+            guild = self.bot.get_guild(int(guild_id))
+            if guild is None:
+                raise HttpResponseException(404, headers, bytearray('{"error": "guild not found"}', "utf-8"))
+            categories = [
+                {
+                    "id": str(category.id),
+                    "guild_id": str(guild.id),
+                    "name": category.name,
+                    "position": category.position,
+                    "type": str(category.type.name),
+                    "category_id": str(category.category_id) if category.category_id else None,
+                    "channels": [
+                        {
+                            "id": str(channel.id),
+                            "guild_id": str(guild.id),
+                            "name": channel.name,
+                            "type": str(channel.type.name),
+                            "position": channel.position,
+                            "topic": getattr(channel, "topic", None),
+                            "nsfw": getattr(channel, "nsfw", None),
+                            "bitrate": getattr(channel, "bitrate", None),
+                            "user_limit": getattr(channel, "user_limit", None),
+                            "category_id": str(channel.category_id) if channel.category_id else None,
+                        }
+                        for channel in category.channels
+                    ],
+                }
+                for category in guild.categories
+            ]
+            return HttpResponse(200, headers, bytearray(json.dumps(categories), "utf-8"))
+        except HttpResponseException as e:
+            return HttpResponse(e.status_code, e.headers, e.body)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e))
+            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
+            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/category/{{category_id}}", method="GET")
+    def get_guild_category(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        _method = inspect.stack()[0][3]
+        try:
+            headers = HttpHeaders()
+            headers.add("Content-Type", "application/json")
+            guild_id: typing.Optional[str] = uri_variables.get("guild_id")
+            if guild_id is None:
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id is required"}', "utf-8"))
+            if not guild_id.isdigit():
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id must be a number"}', "utf-8"))
+            guild = self.bot.get_guild(int(guild_id))
+            if guild is None:
+                raise HttpResponseException(404, headers, bytearray('{"error": "guild not found"}', "utf-8"))
+            category = next((cat for cat in guild.categories if str(cat.id) == uri_variables.get("category_id")), None)
+            if category is None:
+                raise HttpResponseException(404, headers, bytearray('{"error": "category not found"}', "utf-8"))
+            result = {
+                "id": str(category.id),
+                "guild_id": str(guild.id),
+                "name": category.name,
+                "position": category.position,
+                "type": str(category.type.name),
+                "category_id": str(category.category_id) if category.category_id else None,
+                "channels": [
+                    {
+                        "id": str(channel.id),
+                        "guild_id": str(guild.id),
+                        "name": channel.name,
+                        "type": str(channel.type.name),
+                        "position": channel.position,
+                        "topic": getattr(channel, "topic", None),
+                        "nsfw": getattr(channel, "nsfw", None),
+                        "bitrate": getattr(channel, "bitrate", None),
+                        "user_limit": getattr(channel, "user_limit", None),
+                        "category_id": str(channel.category_id) if channel.category_id else None,
+                    }
+                    for channel in category.channels
+                ],
+            }
+            return HttpResponse(200, headers, bytearray(json.dumps(result), "utf-8"))
+        except HttpResponseException as e:
+            return HttpResponse(e.status_code, e.headers, e.body)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e))
+            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
+            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/channels", method="GET")
+    def get_guild_channels(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        _method = inspect.stack()[0][3]
+        try:
+            headers = HttpHeaders()
+            headers.add("Content-Type", "application/json")
+            guild_id: typing.Optional[str] = uri_variables.get("guild_id")
+            if guild_id is None:
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id is required"}', "utf-8"))
+            if not guild_id.isdigit():
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id must be a number"}', "utf-8"))
+            guild = self.bot.get_guild(int(guild_id))
+            if guild is None:
+                raise HttpResponseException(404, headers, bytearray('{"error": "guild not found"}', "utf-8"))
+            categories = [
+                {
+                    "id": str(category.id),
+                    "guild_id": str(guild.id),
+                    "name": category.name,
+                    "position": category.position,
+                    "type": str(category.type.name),
+                    "category_id": str(category.category_id) if category.category_id else None,
+                    "channels": [
+                        {
+                            "id": str(channel.id),
+                            "guild_id": str(guild.id),
+                            "name": channel.name,
+                            "type": str(channel.type.name),
+                            "position": channel.position,
+                            "topic": getattr(channel, "topic", None),
+                            "nsfw": getattr(channel, "nsfw", None),
+                            "bitrate": getattr(channel, "bitrate", None),
+                            "user_limit": getattr(channel, "user_limit", None),
+                            "category_id": str(channel.category_id) if channel.category_id else None,
+                        }
+                        for channel in category.channels
+                    ],
+                }
+                for category in guild.categories
+            ]
+            channels = [
+                {
+                    "id": str(channel.id),
+                    "guild_id": str(guild.id),
+                    "name": channel.name,
+                    "type": str(channel.type.name),
+                    "position": channel.position,
+                    "topic": getattr(channel, "topic", None),
+                    "nsfw": getattr(channel, "nsfw", None),
+                    "bitrate": getattr(channel, "bitrate", None),
+                    "user_limit": getattr(channel, "user_limit", None),
+                    "category_id": str(channel.category_id) if channel.category_id else None,
+                }
+                for channel in guild.channels
+                if channel.category_id is None and channel.type.name != "category"
+            ]
+            result = {"id": str(guild.id), "name": guild.name, "channels": channels, "categories": categories}
+            return HttpResponse(200, headers, bytearray(json.dumps(result), "utf-8"))
+        except HttpResponseException as e:
+            return HttpResponse(e.status_code, e.headers, e.body)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e))
+            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
+            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/channels/batch/ids", method="POST")
+    def get_guild_channels_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        _method = inspect.stack()[0][3]
+        try:
+            headers = HttpHeaders()
+            headers.add("Content-Type", "application/json")
+            guild_id: typing.Optional[str] = uri_variables.get("guild_id")
+            if guild_id is None:
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id is required"}', "utf-8"))
+            if not guild_id.isdigit():
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id must be a number"}', "utf-8"))
+            guild = self.bot.get_guild(int(guild_id))
+            if guild is None:
+                raise HttpResponseException(404, headers, bytearray('{"error": "guild not found"}', "utf-8"))
+            query_ids: typing.Optional[list[str]] = request.query_params.get("ids")
+            body_ids: typing.Optional[list[str]] = None
+            if request.body is not None and request.method == "POST":
+                b_data = json.loads(request.body.decode("utf-8"))
+                if isinstance(b_data, list):
+                    body_ids = b_data
+                elif isinstance(b_data, dict) and "ids" in b_data and isinstance(b_data["ids"], list):
+                    body_ids = b_data.get("ids", [])
+            ids: list[str] = []
+            if query_ids:
+                ids.extend(query_ids)
+            if body_ids:
+                ids.extend(body_ids)
+            channels = [
+                {
+                    "id": str(channel.id),
+                    "guild_id": str(guild.id),
+                    "name": channel.name,
+                    "type": str(channel.type.name),
+                    "position": channel.position,
+                    "topic": getattr(channel, "topic", None),
+                    "nsfw": getattr(channel, "nsfw", None),
+                    "bitrate": getattr(channel, "bitrate", None),
+                    "user_limit": getattr(channel, "user_limit", None),
+                    "category_id": str(channel.category_id) if channel.category_id else None,
+                }
+                for channel in guild.channels if str(channel.id) in ids
+            ]
+            return HttpResponse(200, headers, bytearray(json.dumps(channels), "utf-8"))
+        except HttpResponseException as e:
+            return HttpResponse(e.status_code, e.headers, e.body)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e))
+            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
+            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))

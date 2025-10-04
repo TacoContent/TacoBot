@@ -1,6 +1,7 @@
 import typing
 from discord import User, Member
 
+
 class DiscordUser:
     def __init__(self, data):
         self.type = "user"
@@ -38,7 +39,15 @@ class DiscordUser:
                     "created_at": getattr(user, "created_at", None),
                     "default_avatar": user.default_avatar.url if user.default_avatar else None,
                     "discriminator": int(user.discriminator) if user.discriminator.isdigit() else 0,
-                    "display_avatar": user.display_avatar.url if user.display_avatar else (user.avatar.url if user.avatar else (user.default_avatar.url if user.default_avatar else None)),
+                    "display_avatar": (
+                        user.display_avatar.url
+                        if user.display_avatar
+                        else (
+                            user.avatar.url
+                            if user.avatar
+                            else (user.default_avatar.url if user.default_avatar else None)
+                        )
+                    ),
                     "display_name": getattr(user, "display_name", None),
                     "global_name": getattr(user, "global_name", None),
                     "mention": f"<@{user.id}>",
@@ -48,5 +57,6 @@ class DiscordUser:
                 }
             )
         return DiscordUser(user)
+
     def to_dict(self) -> dict:
         return self.__dict__

@@ -27,7 +27,8 @@ class DiscordRole:
     @staticmethod
     def fromRole(role: typing.Union[Role, dict]) -> "DiscordRole":
         if isinstance(role, Role):
-            return DiscordRole({
+            return DiscordRole(
+                {
                     "id": str(role.id),
                     "guild_id": str(role.guild.id),
                     "name": role.name,
@@ -44,7 +45,8 @@ class DiscordRole:
                     "secondary_color": getattr(getattr(role, "secondary_color", None), "value", None),
                     "tertiary_color": getattr(getattr(role, "tertiary_color", None), "value", None),
                     "unicode_emoji": getattr(role, "unicode_emoji", None),
-                })
+                }
+            )
         return DiscordRole(role)
 
     def to_dict(self):

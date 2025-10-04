@@ -217,141 +217,128 @@ paths:
 
   '/api/v1/guild/{guild_id}/categories':
     get:
-      tags:
-        - guilds
-      summary: Get the list of categories and channels for a guild
-      description: |
-        Gets the list of categories and channels for a guild
+      tags: [ guilds, channels ]
+      summary: List guild categories (with channels)
+      description: Returns all channel categories in the guild. Each category object embeds its child channels.
       parameters:
         - name: guild_id
-          description: The guild ID
           in: path
           required: true
-          schema:
-            type: string
+          description: Discord guild (server) ID
+          schema: { type: string }
       responses:
         "200":
-          description: Successful operation
+          description: OK
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/DiscordGuildChannels"
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordCategory'
         "404":
           description: Guild not found
           content:
             application/json:
-              schema:
-                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
 
   '/api/v1/guild/{guild_id}/category/{category_id}':
     get:
-      tags:
-        - guilds
-      summary: Get the list of channels for a category in a guild
-      description: |
-        Gets the list of channels for a category in a guild
+      tags: [ guilds, channels ]
+      summary: Get category (with channels)
+      description: Returns a single category and its child channels.
       parameters:
         - name: guild_id
-          description: The guild ID
           in: path
           required: true
-          schema:
-            type: string
+          schema: { type: string }
         - name: category_id
-          description: The category ID
           in: path
           required: true
-          schema:
-            type: string
+          schema: { type: string }
       responses:
         "200":
-          description: Successful operation
+          description: OK
           content:
             application/json:
-              schema:
-                "$ref": "#/components/schemas/DiscordCategory"
+              schema: { $ref: '#/components/schemas/DiscordCategory' }
         "404":
-          description: Guild or Category not found
+          description: Guild or category not found
           content:
             application/json:
-              schema:
-                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
 
   '/api/v1/guild/{guild_id}/channels':
     get:
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
-      tags:
-        - guilds
-        - channels
-      summary: Get the list of channels for a guild
-      description: |
-        Gets the list of channels for a guild
+      tags: [ guilds, channels ]
+      summary: List top-level guild channels
+      description: Returns channels that are not within a category. Use categories endpoint for nested channels.
       parameters:
         - name: guild_id
-          description: The guild ID
           in: path
           required: true
-          schema:
-            type: string
+          schema: { type: string }
       responses:
         "200":
-          description: Successful operation
+          description: OK
           content:
             application/json:
               schema:
                 type: array
-                items:
-                  "$ref": "#/components/schemas/DiscordChannel"
+                items: { $ref: '#/components/schemas/DiscordChannel' }
         "404":
           description: Guild not found
           content:
             application/json:
-              schema:
-                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
 
   '/api/v1/guild/{guild_id}/channels/batch/ids':
     post:
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
-      tags:
-        - guilds
-        - channels
-      summary: Get the list of channels for a guild by a batch of channel IDs
-      description: |
-        Gets the list of channels for a guild by a batch of channel IDs
+      tags: [ guilds, channels ]
+      summary: Batch fetch channels by IDs
+      description: Retrieve multiple channels. Accepts array body or object with ids property; can also accept repeated query param ids.
       parameters:
         - name: guild_id
-          description: The guild ID
           in: path
           required: true
-          schema:
-            type: string
+          schema: { type: string }
+        - name: ids
+          in: query
+          required: false
+          description: Repeatable channel ID query parameter
+          schema: { type: array, items: { type: string } }
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
-              type: array
-              items:
-                type: string
+              oneOf:
+                - type: array
+                  items: { type: string }
+                - type: object
+                  properties:
+                    ids:
+                      type: array
+                      items: { type: string }
+                  required: [ ids ]
       responses:
         "200":
-          description: Successful operation
+          description: OK
           content:
             application/json:
               schema:
                 type: array
-                items:
-                  "$ref": "#/components/schemas/DiscordChannel"
+                items: { $ref: '#/components/schemas/DiscordChannel' }
         "404":
-          description: Guild or Channels not found
+          description: Guild not found
           content:
             application/json:
-              schema:
-                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
 
   '/api/v1/guild/{guild_id}/emojis':
     get:
@@ -587,115 +574,97 @@ paths:
 
   '/api/v1/guild/{guild_id}/roles':
     get:
-      tags:
-        - guilds
-        - roles
-      summary: Get the list of roles for a guild
-      description: |
-        Gets the list of roles for a guild
+      tags: [ guilds, roles ]
+      summary: List guild roles
       parameters:
         - name: guild_id
-          description: The guild ID
           in: path
           required: true
-          schema:
-            type: string
+          schema: { type: string }
       responses:
         "200":
-          description: Successful operation
+          description: OK
           content:
             application/json:
-              schema:
-                type: array
-                items:
-                  "$ref": "#/components/schemas/DiscordRole"
+              schema: { type: array, items: { $ref: '#/components/schemas/DiscordRole' } }
         "404":
           description: Guild not found
           content:
             application/json:
-              schema:
-                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
 
   '/api/v1/guild/{guild_id}/roles/batch/ids':
     post:
-      tags:
-        - guilds
-        - roles
-      summary: Get the list of roles for a guild by a batch of role IDs
-      description: |
-        Gets the list of roles for a guild by a batch of role IDs
+      tags: [ guilds, roles ]
+      summary: Batch fetch roles by IDs
       parameters:
         - name: guild_id
-          description: The guild ID
           in: path
           required: true
-          schema:
-            type: string
+          schema: { type: string }
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
-              type: array
-              items:
-                type: string
+              oneOf:
+                - type: array
+                  items: { type: string }
+                - type: object
+                  properties:
+                    ids:
+                      type: array
+                      items: { type: string }
+                  required: [ ids ]
       responses:
         "200":
-          description: Successful operation
+          description: OK
           content:
             application/json:
-              schema:
-                type: array
-                items:
-                  "$ref": "#/components/schemas/DiscordRole"
-        "404":
-          description: Guild or Roles not found
-          content:
-            application/json:
-              schema:
-                "$ref": '#/components/schemas/ErrorStatusCodePayload'
-
-  '/api/v1/guild/{guild_id}/mentionables/batch/ids':
-    post:
-      tags:
-        - guilds
-        - roles
-        - users
-      summary: Batch lookup of mentionable users or roles by IDs
-      description: |
-        Returns an array of objects corresponding to the provided IDs. If an ID matches a mentionable role in the guild, a role object is returned. Otherwise, if it matches a user/member, a user object is returned. Each object includes a `type` discriminator set to `role` or `user`.
-      parameters:
-        - name: guild_id
-          description: The guild ID
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                type: string
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  oneOf:
-                    - $ref: '#/components/schemas/DiscordRole'
-                    - $ref: '#/components/schemas/DiscordUser'
+              schema: { type: array, items: { $ref: '#/components/schemas/DiscordRole' } }
         "404":
           description: Guild not found
           content:
             application/json:
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
+
+  '/api/v1/guild/{guild_id}/mentionables/batch/ids':
+    post:
+      tags: [ guilds, mentionables ]
+      summary: Batch fetch mentionables (roles or users) by IDs
+      description: Returns role and/or user payloads for provided IDs. Accepts array or object with ids property.
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: array
+                  items: { type: string }
+                - type: object
+                  properties:
+                    ids:
+                      type: array
+                      items: { type: string }
+                  required: [ ids ]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
               schema:
-                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+                type: array
+                items: { $ref: '#/components/schemas/DiscordMentionable' }
+        "404":
+          description: Guild not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
 
   '/api/v1/minecraft/whitelist.json':
     get:

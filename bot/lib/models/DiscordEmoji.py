@@ -19,17 +19,19 @@ class DiscordEmoji:
     @staticmethod
     def fromEmoji(emoji: typing.Union[discord.Emoji, dict]) -> "DiscordEmoji":
         if isinstance(emoji, discord.Emoji):
-            return DiscordEmoji({
-                "id": emoji.id,
-                "animated": emoji.animated,
-                "available": emoji.available,
-                "created_at": emoji.created_at,
-                "guild_id": emoji.guild.id if emoji.guild else None,
-                "managed": emoji.managed,
-                "require_colons": emoji.require_colons,
-                "name": emoji.name,
-                "url": emoji.url,
-            })
+            return DiscordEmoji(
+                {
+                    "id": emoji.id,
+                    "animated": emoji.animated,
+                    "available": emoji.available,
+                    "created_at": emoji.created_at,
+                    "guild_id": emoji.guild.id if emoji.guild else None,
+                    "managed": emoji.managed,
+                    "require_colons": emoji.require_colons,
+                    "name": emoji.name,
+                    "url": emoji.url,
+                }
+            )
         elif isinstance(emoji, dict):
             return DiscordEmoji(emoji)
         raise ValueError("Invalid emoji type")
