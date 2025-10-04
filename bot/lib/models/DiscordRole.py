@@ -40,7 +40,12 @@ class DiscordRole:
                         if isinstance(role.created_at, datetime.datetime)
                         else None
                     ),
-                    "display_icon": getattr(role, "display_icon", getattr(role, "url", None)),
+                    # display_icon can be a plain string (already a URL) or an Asset-like object with a .url
+                    "display_icon": (
+                        role.display_icon
+                        if isinstance(role.display_icon, str)
+                        else getattr(getattr(role, "display_icon", None), "url", None)
+                    ),
                     "hoist": getattr(role, "hoist", None),
                     "icon": (role.icon.url if role.icon else None) if hasattr(role, "icon") else None,
                     "managed": getattr(role, "managed", None),
@@ -56,4 +61,11 @@ class DiscordRole:
         return DiscordRole(role)
 
     def to_dict(self):
-        return self.__dict__
+        # Guard against any lingering discord.Asset (or similar) objects sneaking in
+        out = {}
+        for k, v in self.__dict__.items():
+            if hasattr(v, "url"):
+                out[k] = getattr(v, "url")
+            else:
+                out[k] = v
+        return out

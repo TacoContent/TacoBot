@@ -35,13 +35,14 @@ class DiscordUser:
                 {
                     "id": str(user.id),
                     "guild_id": str(getattr(getattr(user, "guild", None), "id", None)),
-                    "accent_color": getattr(user, "accent_color", None),
+                    "accent_color": user.accent_color.value if user.accent_color else None,
+                    # Extract avatar URL if present, avoiding embedding Asset objects
                     "avatar": (
                         user.avatar.url if user.avatar else (user.default_avatar.url if user.default_avatar else None),
                     ),
                     "banner": user.banner.url if user.banner else None,
-                    "bot": getattr(user, "bot", False),
-                    "color": getattr(getattr(user, "color", None), "value", None),
+                    "bot": user.bot,
+                    "color": user.color.value if user.color else None,
                     "created_at": (
                         int(user.created_at.timestamp() * 1000)
                         if isinstance(user.created_at, datetime.datetime)
@@ -58,15 +59,21 @@ class DiscordUser:
                             else (user.default_avatar.url if user.default_avatar else None)
                         )
                     ),
-                    "display_name": getattr(user, "display_name", None),
-                    "global_name": getattr(user, "global_name", None),
+                    "display_name": user.display_name,
+                    "global_name": user.global_name,
                     "mention": f"<@{user.id}>",
                     "name": user.name,
-                    "system": getattr(user, "system", False),
+                    "system": user.system,
                     "username": user.name,
                 }
             )
         return DiscordUser(user)
 
     def to_dict(self) -> dict:
-        return self.__dict__
+        out = {}
+        for k, v in self.__dict__.items():
+            if hasattr(v, "url"):
+                out[k] = getattr(v, "url")
+            else:
+                out[k] = v
+        return out
