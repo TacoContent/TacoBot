@@ -1,4 +1,8 @@
-import inspect, json, os, typing
+import inspect
+import json
+import os
+import typing
+
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.models.DiscordGuild import DiscordGuild
@@ -7,6 +11,7 @@ from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException, uri_mapping, uri_variable_mapping
+
 
 class GuildLookupApiHandler(BaseHttpHandler):
     def __init__(self, bot: TacoBot):
@@ -21,7 +26,8 @@ class GuildLookupApiHandler(BaseHttpHandler):
     @uri_mapping(f"/api/{API_VERSION}/guilds/lookup", method="POST")
     def guild_lookup(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         _method = inspect.stack()[0][3]
-        headers = HttpHeaders(); headers.add("Content-Type", "application/json")
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
         try:
             v_guild_id: typing.Optional[str] = uri_variables.get("guild_id")
             q_guild_id: typing.Optional[list[str]] = request.query_params.get("id")
@@ -84,7 +90,8 @@ class GuildLookupApiHandler(BaseHttpHandler):
     @uri_mapping(f"/api/{API_VERSION}/guilds/lookup/batch", method="POST")
     async def guild_lookup_batch(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         _method = inspect.stack()[0][3]
-        headers = HttpHeaders(); headers.add("Content-Type", "application/json")
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
         try:
             guild_ids: list[str] = []
             v_guild_ids: typing.Optional[str] = uri_variables.get("guild_ids")
@@ -104,7 +111,8 @@ class GuildLookupApiHandler(BaseHttpHandler):
                     guild_ids.extend([g for g in b_data.get("ids", []) if isinstance(g, str)])
 
             # De-duplicate preserving order
-            seen = set(); ordered_ids = []
+            seen = set()
+            ordered_ids = []
             for gid in guild_ids:
                 if gid not in seen:
                     seen.add(gid)
@@ -148,7 +156,8 @@ class GuildLookupApiHandler(BaseHttpHandler):
     def get_guilds(self, request: HttpRequest) -> HttpResponse:
         _method = inspect.stack()[0][3]
         try:
-            headers = HttpHeaders(); headers.add("Content-Type", "application/json")
+            headers = HttpHeaders()
+            headers.add("Content-Type", "application/json")
             guilds = [
                 {
                     "id": str(guild.id),

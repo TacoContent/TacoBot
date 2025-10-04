@@ -1,9 +1,14 @@
-import inspect, json, os, typing
+import inspect
+import json
+import os
+import typing
+
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.tacobot import TacoBot
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException, uri_variable_mapping
+
 
 class GuildChannelsApiHandler(BaseHttpHandler):
     def __init__(self, bot: TacoBot):
@@ -212,7 +217,8 @@ class GuildChannelsApiHandler(BaseHttpHandler):
                     "user_limit": getattr(channel, "user_limit", None),
                     "category_id": str(channel.category_id) if channel.category_id else None,
                 }
-                for channel in guild.channels if str(channel.id) in ids
+                for channel in guild.channels
+                if str(channel.id) in ids
             ]
             return HttpResponse(200, headers, bytearray(json.dumps(channels), "utf-8"))
         except HttpResponseException as e:

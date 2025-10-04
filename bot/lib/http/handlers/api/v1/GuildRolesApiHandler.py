@@ -1,4 +1,9 @@
-import json, os, typing, inspect, traceback
+import json
+import os
+import typing
+import inspect
+import traceback
+
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.models.DiscordRole import DiscordRole
@@ -6,6 +11,7 @@ from bot.lib.models.DiscordUser import DiscordUser
 from bot.tacobot import TacoBot
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException, uri_variable_mapping
+
 
 class GuildRolesApiHandler(BaseHttpHandler):
     def __init__(self, bot: TacoBot):

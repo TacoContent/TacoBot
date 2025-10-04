@@ -1,10 +1,15 @@
-import inspect, json, os, typing
+import inspect
+import json
+import os
+import typing
+
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.models.DiscordEmoji import DiscordEmoji
 from bot.tacobot import TacoBot
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException, uri_variable_mapping
+
 
 class GuildEmojisApiHandler(BaseHttpHandler):
     def __init__(self, bot: TacoBot):
