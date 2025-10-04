@@ -37,13 +37,7 @@ class DiscordUser:
                     "guild_id": str(getattr(getattr(user, "guild", None), "id", None)),
                     "accent_color": getattr(user, "accent_color", None),
                     "avatar": (
-                        user.avatar.url
-                        if user.avatar
-                        else (
-                            user.default_avatar.url
-                            if user.default_avatar
-                            else None
-                        ),
+                        user.avatar.url if user.avatar else (user.default_avatar.url if user.default_avatar else None),
                     ),
                     "banner": user.banner.url if user.banner else None,
                     "bot": getattr(user, "bot", False),
@@ -61,11 +55,7 @@ class DiscordUser:
                         else (
                             user.avatar.url
                             if user.avatar
-                            else (
-                                user.default_avatar.url
-                                if user.default_avatar
-                                else None
-                            )
+                            else (user.default_avatar.url if user.default_avatar else None)
                         )
                     ),
                     "display_name": getattr(user, "display_name", None),
