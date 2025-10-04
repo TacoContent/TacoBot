@@ -12,7 +12,6 @@ from bot.lib.enums.system_actions import SystemActions
 from bot.lib.models.DiscordUser import DiscordUser
 from bot.lib.models.triviaquestion import TriviaQuestion
 from bot.lib.mongodb.database import Database
-from bot.lib.mongodb.settings import Settings
 
 
 class TrackingDatabase(Database):
@@ -162,7 +161,7 @@ class TrackingDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow()
+            date = datetime.datetime.now(pytz.UTC)
             timestamp = utils.to_timestamp(date)
             user.timestamp = timestamp
             payload = user.to_dict()

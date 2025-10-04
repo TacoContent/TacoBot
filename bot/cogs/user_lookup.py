@@ -1,8 +1,11 @@
+import datetime
 import inspect
 import os
 import traceback
 
-from bot.lib import discordhelper
+import pytz
+
+from bot.lib import discordhelper, utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.models.DiscordUser import DiscordUser
 from bot.lib.mongodb.tracking import TrackingDatabase
@@ -50,18 +53,10 @@ class UserLookupCog(TacobotCog):
                 )
 
                 self.tracking_db.track_discord_user(user=DiscordUser.fromUser(member))
-                # self.tracking_db.track_user(
-                #     guildId=guild.id,
-                #     userId=member.id,
-                #     username=member.name,
-                #     discriminator=member.discriminator,
-                #     avatar=avatar,
-                #     displayname=member.display_name,
-                #     created=member.created_at,
-                #     bot=member.bot,
-                #     system=member.system,
-                #     status=MemberStatus.from_discord(member.status),
-                # )
+            date = datetime.datetime.now(pytz.UTC)
+            timestamp = utils.to_timestamp(date)
+            self.settings.settings_db.set_setting(guild.id, self.SETTINGS_SECTION, 'last_import', timestamp)
+
 
         except Exception as e:
             self.log.error(guild.id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
