@@ -79,16 +79,16 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
 
         Request Body (JSON example – fields vary by source):
             {
-              "game_id": "<unique id>",
-              "title": "Game Title",
-              "description": "<html / text>",
-              "instructions": "<html / text>",
-              "worth": "$19.99",
-              "end_date": 1730419200,  # epoch seconds
-              "open_giveaway_url": "https://...",
-              "type": "GAME" | "DLC" | "OTHER",
-              "platforms": ["steam", "epic", ...],
-              ...
+                "game_id": "<unique id>",
+                "title": "Game Title",
+                "description": "<html / text>",
+                "instructions": "<html / text>",
+                "worth": "$19.99",
+                "end_date": 1730419200,  # epoch seconds
+                "open_giveaway_url": "https://...",
+                "type": "GAME" | "DLC" | "OTHER",
+                "platforms": ["steam", "epic", ...],
+                ...
             }
 
         Behaviour Summary:

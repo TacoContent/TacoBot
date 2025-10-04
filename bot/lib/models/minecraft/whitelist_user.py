@@ -23,11 +23,11 @@ op : bool | None
 Design Notes
 ------------
 * No validation is performed here—callers are responsible for ensuring
-  username/uuid consistency.
+    username/uuid consistency.
 * ``*args`` are accepted for forward compatibility but ignored; only
-  keyword arguments are used to populate attributes.
+    keyword arguments are used to populate attributes.
 * Consider promoting to a ``dataclass`` if immutability or type-based
-  tooling becomes desirable in future refactors.
+    tooling becomes desirable in future refactors.
 """
 
 

@@ -69,24 +69,24 @@ class HealthcheckApiHandler(BaseHttpHandler):
         """Return basic service health status.
 
         Paths:
-          GET /api/v1/health
-          GET /healthz
-          GET /health
+            GET /api/v1/health
+            GET /healthz
+            GET /health
 
         Evaluation Steps:
-          - Retrieve Minecraft whitelist for primary guild (using configured primary_guild_id)
-          - Confirm whitelist is non-empty
-          - Confirm Discord bot client is ready
+            - Retrieve Minecraft whitelist for primary guild (using configured primary_guild_id)
+            - Confirm whitelist is non-empty
+            - Confirm Discord bot client is ready
 
         Returns:
-          200 Healthy!    All checks passed
-          500 Unhealthy!  One or more logical health checks failed
-
+            200 Healthy!    All checks passed
+            500 Unhealthy!  One or more logical health checks failed
+            500 {"error": "Internal server error: <details>"}  on unexpected exceptions
         Error Handling:
-          Any uncaught exception -> 500 with JSON error payload {"error": "Internal server error: ..."}
+            Any uncaught exception -> 500 with JSON error payload {"error": "Internal server error: ..."}
 
         Notes:
-          Response bodies for success/failure are plain strings (probe friendly).
+            Response bodies for success/failure are plain strings (probe friendly).
         """
         _method = inspect.stack()[0][3]
         try:

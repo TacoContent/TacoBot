@@ -56,15 +56,15 @@ class MinecraftApiHandler(BaseHttpHandler):
     """Expose Minecraft integration endpoints.
 
     Responsibilities:
-      - Provide read access to server/player meta (whitelist, ops, events, worlds)
-      - Surface server runtime status via a lightweight ping class (`MinecraftStatus`)
-      - Allow controlled update & retrieval of Minecraft-related bot settings
-      - Permit world activation changes and Mojang username -> UUID translation
+        - Provide read access to server/player meta (whitelist, ops, events, worlds)
+        - Surface server runtime status via a lightweight ping class (`MinecraftStatus`)
+        - Allow controlled update & retrieval of Minecraft-related bot settings
+        - Permit world activation changes and Mojang username -> UUID translation
 
     Notes:
-      - Many endpoints rely on Mongo persistence layers (MinecraftDatabase / Settings).
-      - The status endpoint shields failures by returning a deterministic offline
-        payload rather than raising, assisting external health dashboards.
+        - Many endpoints rely on Mongo persistence layers (MinecraftDatabase / Settings).
+        - The status endpoint shields failures by returning a deterministic offline
+            payload rather than raising, assisting external health dashboards.
     """
 
     def __init__(self, bot):
@@ -89,7 +89,7 @@ class MinecraftApiHandler(BaseHttpHandler):
         Response: Array[{ "uuid": str, "name": str }]
         Filtering: none (full list for the primary guild)
         Errors:
-          500 - Internal server error
+            500 - Internal server error
         """
         try:
             headers = HttpHeaders()
@@ -120,7 +120,7 @@ class MinecraftApiHandler(BaseHttpHandler):
         includes level and bypassPlayerLimit fields from persisted metadata.
         Response: Array[{ uuid, name, level, bypassPlayerLimit }]
         Errors:
-          500 - Internal server error
+            500 - Internal server error
         """
         try:
             headers = HttpHeaders()
@@ -160,7 +160,7 @@ class MinecraftApiHandler(BaseHttpHandler):
         Success Response: { success, online, status, host, version, players, description, motd, latency, ... }
         Failure (unreachable): HTTP 500 with a compact offline payload.
         Errors:
-          500 - Server unreachable or unexpected error.
+            500 - Server unreachable or unexpected error.
         """
         _method = inspect.stack()[0][3]
         try:
@@ -206,8 +206,8 @@ class MinecraftApiHandler(BaseHttpHandler):
 
         Request JSON Body:
             {
-              "guild_id": "<discord guild id>",
-              "settings": { ... arbitrary minecraft-related config ... }
+                "guild_id": "<discord guild id>",
+                "settings": { ... arbitrary minecraft-related config ... }
             }
 
         Returns:
@@ -264,7 +264,7 @@ class MinecraftApiHandler(BaseHttpHandler):
 
         Response: JSON object representing stored settings (with internal _id removed).
         Errors:
-          500 - internal server error
+            500 - internal server error
         """
         _method = inspect.stack()[0][3]
         try:
@@ -301,7 +301,7 @@ class MinecraftApiHandler(BaseHttpHandler):
         Excludes enum members whose value is 0 (treated as sentinel / NONE).
         Response: Array[str] of lowercase event names.
         Errors:
-          500 - internal server error
+            500 - internal server error
         """
         _method = inspect.stack()[0][3]
         try:
@@ -330,7 +330,7 @@ class MinecraftApiHandler(BaseHttpHandler):
 
         Response: Array[World] (serialized via model .to_dict()).
         Errors:
-          500 - internal server error
+            500 - internal server error
         """
         _method = inspect.stack()[0][3]
         try:
@@ -359,8 +359,8 @@ class MinecraftApiHandler(BaseHttpHandler):
 
         Response: World (single object) when active world exists.
         Errors:
-          404 - no active worlds
-          500 - internal server error
+            404 - no active worlds
+            500 - internal server error
         """
         _method = inspect.stack()[0][3]
         try:
@@ -390,9 +390,9 @@ class MinecraftApiHandler(BaseHttpHandler):
 
         Request JSON Body:
             {
-              "world": "<world id>",
-              "guild_id": "<guild id>" (optional, defaults to primary),
-              "name": "<display name>" (optional)
+                "world": "<world id>",
+                "guild_id": "<guild id>" (optional, defaults to primary),
+                "name": "<display name>" (optional)
             }
 
         Returns:

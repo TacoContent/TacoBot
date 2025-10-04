@@ -67,13 +67,13 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
 
         Expected JSON Body (fields may vary):
             {
-              "code": "ABCD3-WXYZ9-12345-67890-FOOBA",  # raw or spaced
-              "reward": "3 Golden Keys",
-              "games": [ {"name": "Borderlands 3"}, ... ],
-              "source": "https://origin.example/post",
-              "notes": "Platform agnostic",
-              "expiry": 1730419200,         # epoch seconds (optional)
-              "created_at": 1730000000       # epoch seconds (optional)
+                "code": "ABCD3-WXYZ9-12345-67890-FOOBA",  # raw or spaced
+                "reward": "3 Golden Keys",
+                "games": [ {"name": "Borderlands 3"}, ... ],
+                "source": "https://origin.example/post",
+                "notes": "Platform agnostic",
+                "expiry": 1730419200,         # epoch seconds (optional)
+                "created_at": 1730000000       # epoch seconds (optional)
             }
 
         Behaviour Summary:

@@ -17,33 +17,33 @@ class GuildLookupApiHandler(BaseHttpHandler):
     """Guild lookup endpoints.
 
     Endpoints:
-      Single guild lookup (resolve guild_id from path, query, or body):
-        GET  /api/v1/guilds/lookup/{guild_id}
-        GET  /api/v1/guilds/lookup?id=123
-        POST /api/v1/guilds/lookup            (body: "123" OR {"id": "123"})
+        Single guild lookup (resolve guild_id from path, query, or body):
+            GET  /api/v1/guilds/lookup/{guild_id}
+            GET  /api/v1/guilds/lookup?id=123
+            POST /api/v1/guilds/lookup            (body: "123" OR {"id": "123"})
 
-      Batch guild lookup (multiple guild IDs merged from path, query, or body):
-        GET  /api/v1/guilds/lookup/batch/{id1,id2,id3}
-        GET  /api/v1/guilds/lookup/batch?ids=1&ids=2&ids=3
-        POST /api/v1/guilds/lookup/batch      (body: ["1", "2"] OR {"ids": ["1","2"]})
+        Batch guild lookup (multiple guild IDs merged from path, query, or body):
+            GET  /api/v1/guilds/lookup/batch/{id1,id2,id3}
+            GET  /api/v1/guilds/lookup/batch?ids=1&ids=2&ids=3
+            POST /api/v1/guilds/lookup/batch      (body: ["1", "2"] OR {"ids": ["1","2"]})
 
-      List all guilds the bot is currently in:
-        GET  /api/v1/guilds
+        List all guilds the bot is currently in:
+            GET  /api/v1/guilds
 
     ID Source Resolution Rules (single & batch):
-      1. Path variable (highest precedence)
-      2. Query parameters (?id= / ?ids=)
-      3. JSON body (raw string / array / object variant)
+        1. Path variable (highest precedence)
+        2. Query parameters (?id= / ?ids=)
+        3. JSON body (raw string / array / object variant)
 
     Error Responses (JSON): {"error": "<message>"}
-      400 – Missing required id(s), invalid JSON body, or non-numeric id(s)
-      404 – Guild not found (single lookup only)
-      500 – Internal server error
+        400 – Missing required id(s), invalid JSON body, or non-numeric id(s)
+        404 – Guild not found (single lookup only)
+        500 – Internal server error
 
     Notes:
-      - Non-numeric IDs are ignored in batch mode (silently skipped).
-      - Duplicate IDs (any source) are de-duplicated while preserving first-seen order.
-      - Returned guild objects conform to the DiscordGuild schema (as represented by DiscordGuild.to_dict()).
+        - Non-numeric IDs are ignored in batch mode (silently skipped).
+        - Duplicate IDs (any source) are de-duplicated while preserving first-seen order.
+        - Returned guild objects conform to the DiscordGuild schema (as represented by DiscordGuild.to_dict()).
     """
 
     def __init__(self, bot: TacoBot):
@@ -60,21 +60,21 @@ class GuildLookupApiHandler(BaseHttpHandler):
         """Lookup a single guild by ID.
 
         Supported request forms (all equivalent):
-          GET  /api/v1/guilds/lookup/1234567890
-          GET  /api/v1/guilds/lookup?id=1234567890
-          POST /api/v1/guilds/lookup   body: "1234567890"
-          POST /api/v1/guilds/lookup   body: {"id": "1234567890"}
+            GET  /api/v1/guilds/lookup/1234567890
+            GET  /api/v1/guilds/lookup?id=1234567890
+            POST /api/v1/guilds/lookup   body: "1234567890"
+            POST /api/v1/guilds/lookup   body: {"id": "1234567890"}
 
         ID Selection Precedence:
-          1. Path variable guild_id
-          2. Query param ?id= (first value if multiple)
-          3. Body value (string or object.id)
+            1. Path variable guild_id
+            2. Query param ?id= (first value if multiple)
+            3. Body value (string or object.id)
 
         Returns: DiscordGuild object (JSON)
         Errors:
-          400 - guild_id missing / not numeric / invalid JSON body
-          404 - guild not found
-          500 - internal server error
+            400 - guild_id missing / not numeric / invalid JSON body
+            404 - guild not found
+            500 - internal server error
         """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
@@ -143,20 +143,20 @@ class GuildLookupApiHandler(BaseHttpHandler):
         """Lookup multiple guilds by ID.
 
         Supported request forms (merge all provided IDs):
-          GET  /api/v1/guilds/lookup/batch/1,2,3
-          GET  /api/v1/guilds/lookup/batch?ids=1&ids=2&ids=3
-          POST /api/v1/guilds/lookup/batch        body: ["1","2","3"]
-          POST /api/v1/guilds/lookup/batch        body: {"ids": ["1","2","3"]}
+            GET  /api/v1/guilds/lookup/batch/1,2,3
+            GET  /api/v1/guilds/lookup/batch?ids=1&ids=2&ids=3
+            POST /api/v1/guilds/lookup/batch        body: ["1","2","3"]
+            POST /api/v1/guilds/lookup/batch        body: {"ids": ["1","2","3"]}
 
         Behavior:
-          - All ID sources merged; duplicates removed preserving first occurrence order.
-          - Non-numeric IDs skipped silently.
-          - Guilds not found are skipped (result only contains resolvable guilds).
+            - All ID sources merged; duplicates removed preserving first occurrence order.
+            - Non-numeric IDs skipped silently.
+            - Guilds not found are skipped (result only contains resolvable guilds).
 
         Returns: Array[DiscordGuild]
         Errors:
-          400 - invalid JSON body
-          500 - internal server error
+            400 - invalid JSON body
+            500 - internal server error
         """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
@@ -228,7 +228,7 @@ class GuildLookupApiHandler(BaseHttpHandler):
         Method: GET
         Returns: Array[DiscordGuild]
         Errors:
-          500 - internal server error
+            500 - internal server error
         Notes: This reflects the real-time in-memory guild cache of the connected bot session.
         """
         _method = inspect.stack()[0][3]

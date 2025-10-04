@@ -17,9 +17,9 @@ class GuildMessagesApiHandler(BaseHttpHandler):
     """Handler providing read-only access to guild channel messages.
 
     Endpoints:
-      GET  /api/v1/guild/{guild_id}/channel/{channel_id}/messages            (list recent messages)
-      GET  /api/v1/guild/{guild_id}/channel/{channel_id}/message/{message_id} (single message)
-      POST /api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/ids   (batch by IDs)
+        GET  /api/v1/guild/{guild_id}/channel/{channel_id}/messages            (list recent messages)
+        GET  /api/v1/guild/{guild_id}/channel/{channel_id}/message/{message_id} (single message)
+        POST /api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/ids   (batch by IDs)
     """
 
     def __init__(self, bot: TacoBot):
@@ -34,11 +34,11 @@ class GuildMessagesApiHandler(BaseHttpHandler):
         Path: /api/v1/guild/{guild_id}/channel/{channel_id}/messages?limit=50
         Method: GET
         Query Params:
-          limit (optional int 1-100, default 50) - number of most recent messages.
+            limit (optional int 1-100, default 50) - number of most recent messages.
         Returns: Array[DiscordMessage] newest first (Discord API order from history iterator).
         Errors:
-          400 - missing/invalid IDs or unsupported channel type / bad limit
-          404 - guild or channel not found
+            400 - missing/invalid IDs or unsupported channel type / bad limit
+            404 - guild or channel not found
         Notes: Individual message serialization failures are skipped silently.
         """
         _method = inspect.stack()[0][3]
@@ -100,8 +100,8 @@ class GuildMessagesApiHandler(BaseHttpHandler):
         Method: GET
         Returns: DiscordMessage
         Errors:
-          400 - missing/invalid IDs
-          404 - guild, channel or message not found
+            400 - missing/invalid IDs
+            404 - guild, channel or message not found
         Notes: Forbidden access is surfaced as not accessible error.
         """
         _method = inspect.stack()[0][3]
@@ -148,13 +148,13 @@ class GuildMessagesApiHandler(BaseHttpHandler):
         Path: /api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/ids
         Method: POST
         Body (one of):
-          - JSON array of message IDs ["123", "456"]
-          - JSON object { "ids": ["123", "456"] }
+            - JSON array of message IDs ["123", "456"]
+            - JSON object { "ids": ["123", "456"] }
         Query (optional): ?ids=123&ids=456
         Returns: Array[DiscordMessage] (only messages successfully fetched & serialized)
         Errors:
-          400 - missing/invalid IDs or invalid JSON body
-          404 - guild or channel not found
+            400 - missing/invalid IDs or invalid JSON body
+            404 - guild or channel not found
         Notes: Missing / not found / un-fetchable messages are skipped.
         """
         _method = inspect.stack()[0][3]

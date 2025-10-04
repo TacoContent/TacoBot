@@ -11,12 +11,12 @@ Authentication:
 
 Payload (Generic Shape):
     {
-      "guild_id": 123456789012345678,
-      "event": "LOGIN" | "LOGOUT" | "DEATH" | ...,
-      "payload": {
-          "user_id": 112233445566778899,
-          ... arbitrary event-specific fields ...
-      }
+        "guild_id": 123456789012345678,
+        "event": "LOGIN" | "LOGOUT" | "DEATH" | ...,
+        "payload": {
+            "user_id": 112233445566778899,
+            ... arbitrary event-specific fields ...
+        }
     }
 
 Response Model:

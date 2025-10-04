@@ -25,8 +25,8 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         Method: GET
         Returns: Array[DiscordEmoji]
         Errors:
-          400 - missing/invalid guild_id
-          404 - guild not found
+            400 - missing/invalid guild_id
+            404 - guild not found
         """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
@@ -57,8 +57,8 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         Method: GET
         Returns: DiscordEmoji
         Errors:
-          400 - missing/invalid guild_id or emoji_id
-          404 - guild or emoji not found
+            400 - missing/invalid guild_id or emoji_id
+            404 - guild or emoji not found
         """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
@@ -97,8 +97,8 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         Method: GET
         Returns: DiscordEmoji
         Errors:
-          400 - missing/invalid guild_id or emoji_name
-          404 - guild or emoji not found
+            400 - missing/invalid guild_id or emoji_name
+            404 - guild or emoji not found
         """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
@@ -134,13 +134,13 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         Path: /api/v1/guild/{guild_id}/emojis/ids/batch
         Method: POST
         Body (one of):
-          - JSON array ["123", "456"]
-          - JSON object { "ids": ["123", "456"] }
+            - JSON array ["123", "456"]
+            - JSON object { "ids": ["123", "456"] }
         Query (optional): ?ids=123&ids=456
         Returns: Array[DiscordEmoji]
         Errors:
-          400 - missing/invalid guild_id or invalid body JSON
-          404 - guild not found
+            400 - missing/invalid guild_id or invalid body JSON
+            404 - guild not found
         """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
@@ -189,13 +189,13 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         Path: /api/v1/guild/{guild_id}/emojis/names/batch
         Method: POST
         Body (one of):
-          - JSON array ["smile", "wave"]
-          - JSON object { "names": ["smile", "wave"] }
+            - JSON array ["smile", "wave"]
+            - JSON object { "names": ["smile", "wave"] }
         Query (optional): ?names=smile&names=wave
         Returns: Array[DiscordEmoji]
         Errors:
-          400 - missing/invalid guild_id or invalid body JSON
-          404 - guild not found
+            400 - missing/invalid guild_id or invalid body JSON
+            404 - guild not found
         """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()

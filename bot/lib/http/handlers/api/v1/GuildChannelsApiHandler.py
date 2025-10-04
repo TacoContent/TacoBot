@@ -24,8 +24,8 @@ class GuildChannelsApiHandler(BaseHttpHandler):
         Method: GET
         Returns: Array[DiscordCategory] (each category embeds an array of its channels)
         Errors:
-          400 - missing/invalid guild_id
-          404 - guild not found
+            400 - missing/invalid guild_id
+            404 - guild not found
         """
         _method = inspect.stack()[0][3]
         try:
@@ -81,8 +81,8 @@ class GuildChannelsApiHandler(BaseHttpHandler):
         Method: GET
         Returns: DiscordCategory object with embedded channels array.
         Errors:
-          400 - missing/invalid guild_id
-          404 - guild or category not found
+            400 - missing/invalid guild_id
+            404 - guild or category not found
         """
         _method = inspect.stack()[0][3]
         try:
@@ -139,8 +139,8 @@ class GuildChannelsApiHandler(BaseHttpHandler):
         Returns: Object { id, name, channels: DiscordChannel[], categories: DiscordCategory[] }
         Notes: channels returned here exclude those inside categories; categories array also supplied.
         Errors:
-          400 - missing/invalid guild_id
-          404 - guild not found
+            400 - missing/invalid guild_id
+            404 - guild not found
         """
         _method = inspect.stack()[0][3]
         try:
@@ -212,13 +212,13 @@ class GuildChannelsApiHandler(BaseHttpHandler):
         Path: /api/v1/guild/{guild_id}/channels/batch/ids
         Method: POST
         Body (one of):
-          - JSON array of channel IDs ["123", "456"]
-          - JSON object { "ids": ["123", "456"] }
+            - JSON array of channel IDs ["123", "456"]
+            - JSON object { "ids": ["123", "456"] }
         Query (optional): repeatable ids parameter ?ids=123&ids=456
         Returns: Array[DiscordChannel]
         Errors:
-          400 - missing/invalid guild_id or malformed body
-          404 - guild not found
+            400 - missing/invalid guild_id or malformed body
+            404 - guild not found
         """
         _method = inspect.stack()[0][3]
         try:

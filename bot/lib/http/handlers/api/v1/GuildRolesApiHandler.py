@@ -27,8 +27,8 @@ class GuildRolesApiHandler(BaseHttpHandler):
         Method: GET
         Returns: Array[DiscordRole]
         Errors:
-          400 - missing/invalid guild_id
-          404 - guild not found
+            400 - missing/invalid guild_id
+            404 - guild not found
         """
         _method = inspect.stack()[0][3]
         try:
@@ -58,13 +58,13 @@ class GuildRolesApiHandler(BaseHttpHandler):
         Path: /api/v1/guild/{guild_id}/roles/batch/ids
         Method: POST
         Body (one of):
-          - JSON array ["123", "456"]
-          - JSON object { "ids": ["123", "456"] }
+            - JSON array ["123", "456"]
+            - JSON object { "ids": ["123", "456"] }
         Query (optional): ?ids=123&ids=456
         Returns: Array[DiscordRole]
         Errors:
-          400 - missing/invalid guild_id
-          404 - guild not found
+            400 - missing/invalid guild_id
+            404 - guild not found
         """
         _method = inspect.stack()[0][3]
         try:
@@ -107,13 +107,13 @@ class GuildRolesApiHandler(BaseHttpHandler):
         Path: /api/v1/guild/{guild_id}/mentionables/batch/ids
         Method: POST
         Body (one of):
-          - JSON array ["roleId", "userId"]
-          - JSON object { "ids": ["roleId", "userId"] }
+            - JSON array ["roleId", "userId"]
+            - JSON object { "ids": ["roleId", "userId"] }
         Query (optional): ?ids=roleId&ids=userId
         Returns: Array[DiscordRole|DiscordUser] (discriminated by presence of role/user fields)
         Errors:
-          400 - missing/invalid guild_id
-          404 - guild not found
+            400 - missing/invalid guild_id
+            404 - guild not found
         Notes: Duplicate and non-numeric IDs are ignored silently.
         """
         _method = inspect.stack()[0][3]
