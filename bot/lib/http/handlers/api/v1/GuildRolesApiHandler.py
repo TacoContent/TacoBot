@@ -1,7 +1,7 @@
+import inspect
 import json
 import os
 import typing
-import inspect
 import traceback
 
 from bot.lib.http.handlers.api.v1.const import API_VERSION
