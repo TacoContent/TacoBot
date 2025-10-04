@@ -1,6 +1,6 @@
 import typing
 
-from discord import User, Member
+from discord import Member, User
 
 
 class DiscordUser:
