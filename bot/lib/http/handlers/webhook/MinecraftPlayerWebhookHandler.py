@@ -51,6 +51,7 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
         * Resolve Discord user / member objects for contextual processing.
         * Delegate to event-specific handlers for response construction.
     """
+
     def __init__(self, bot):
         super().__init__(bot)
         self._class = self.__class__.__name__

@@ -62,9 +62,7 @@ class GuildMessagesApiHandler(BaseHttpHandler):
             channel = self.bot.get_channel(int(channel_id))
             ch_guild = getattr(channel, 'guild', None) if channel else None
             if channel is None or ch_guild is None or str(getattr(ch_guild, 'id', '0')) != guild_id:
-                raise HttpResponseException(
-                    404, headers, bytearray('{"error": "channel not found"}', 'utf-8')
-                )
+                raise HttpResponseException(404, headers, bytearray('{"error": "channel not found"}', 'utf-8'))
 
             # Ensure channel supports history (e.g., TextChannel / Thread)
             if not hasattr(channel, 'history'):
@@ -79,7 +77,9 @@ class GuildMessagesApiHandler(BaseHttpHandler):
                 try:
                     limit = max(1, min(100, int(q_limit[0])))
                 except ValueError:
-                    raise HttpResponseException(400, headers, bytearray('{"error": "limit must be an integer"}', 'utf-8'))
+                    raise HttpResponseException(
+                        400, headers, bytearray('{"error": "limit must be an integer"}', 'utf-8')
+                    )
 
             messages: list[dict] = []
             async for m in channel.history(limit=limit):  # type: ignore[attr-defined]
@@ -117,7 +117,9 @@ class GuildMessagesApiHandler(BaseHttpHandler):
             channel_id: typing.Optional[str] = uri_variables.get("channel_id")
             message_id: typing.Optional[str] = uri_variables.get("message_id")
             if guild_id is None or channel_id is None or message_id is None:
-                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id, channel_id and message_id are required"}', 'utf-8'))
+                raise HttpResponseException(
+                    400, headers, bytearray('{"error": "guild_id, channel_id and message_id are required"}', 'utf-8')
+                )
             if not guild_id.isdigit() or not channel_id.isdigit() or not message_id.isdigit():
                 raise HttpResponseException(400, headers, bytearray('{"error": "ids must be numeric"}', 'utf-8'))
 
@@ -191,7 +193,9 @@ class GuildMessagesApiHandler(BaseHttpHandler):
             if channel is None or ch_guild is None or str(getattr(ch_guild, 'id', '0')) != guild_id:
                 raise HttpResponseException(404, headers, bytearray('{"error": "channel not found"}', 'utf-8'))
             if not hasattr(channel, 'fetch_message'):
-                raise HttpResponseException(400, headers, bytearray('{"error": "channel does not support fetching messages"}', 'utf-8'))
+                raise HttpResponseException(
+                    400, headers, bytearray('{"error": "channel does not support fetching messages"}', 'utf-8')
+                )
 
             query_ids: typing.Optional[list[str]] = request.query_params.get('ids')
             body_ids: typing.Optional[list[str]] = None
