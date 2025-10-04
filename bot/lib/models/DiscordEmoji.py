@@ -10,7 +10,7 @@ class DiscordEmoji:
         self.id: int = data.get("id")
         self.animated: bool = data.get("animated", False)
         self.available: bool = data.get("available", True)
-        self.created_at: typing.Optional[datetime.datetime] = data.get("created_at", None)
+        self.created_at: typing.Optional[int] = data.get("created_at", None)
         self.guild_id: typing.Optional[int] = data.get("guild_id", None)
         self.managed: bool = data.get("managed", False)
         self.require_colons: bool = data.get("require_colons", False)
@@ -25,7 +25,7 @@ class DiscordEmoji:
                     "id": emoji.id,
                     "animated": emoji.animated,
                     "available": emoji.available,
-                    "created_at": emoji.created_at,
+                    "created_at": int(emoji.created_at.timestamp() * 1000) if isinstance(emoji.created_at, datetime.datetime) else None,
                     "guild_id": emoji.guild.id if emoji.guild else None,
                     "managed": emoji.managed,
                     "require_colons": emoji.require_colons,

@@ -1,3 +1,4 @@
+import datetime
 import typing
 
 from discord import Member, User
@@ -37,7 +38,7 @@ class DiscordUser:
                     "banner": getattr(getattr(user, "banner", None), "url", None),
                     "bot": getattr(user, "bot", False),
                     "color": getattr(getattr(user, "color", None), "value", None),
-                    "created_at": getattr(user, "created_at", None),
+                    "created_at": int(user.created_at.timestamp() * 1000) if isinstance(user.created_at, datetime.datetime) else None,
                     "default_avatar": user.default_avatar.url if user.default_avatar else None,
                     "discriminator": int(user.discriminator) if user.discriminator.isdigit() else 0,
                     "display_avatar": (
