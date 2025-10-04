@@ -42,7 +42,7 @@ class DiscordRole:
                     ),
                     "display_icon": getattr(role, "display_icon", getattr(role, "url", None)),
                     "hoist": getattr(role, "hoist", None),
-                    "icon": getattr(getattr(role, "icon", None), "url", None),
+                    "icon": (role.icon.url if role.icon else None) if hasattr(role, "icon") else None,
                     "managed": getattr(role, "managed", None),
                     "mention": f"<@&{role.id}>",
                     "mentionable": getattr(role, "mentionable", None),
