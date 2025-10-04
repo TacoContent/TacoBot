@@ -17,10 +17,13 @@ RUN \
     apk add --no-cache git curl build-base tcl tk && \
     mkdir -p /app /data && \
     pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r /app/setup/requirements.txt && \
+    # pip install --no-cache-dir -r /app/setup/requirements.txt && \
+    pip install --no-cache-dir -e /app && \
     sed -i "s/APP_VERSION = \"1.0.0-snapshot\"/APP_VERSION = \"${APP_VERSION}\"/g" "/app/bot/lib/settings.py" && \
     sed -i "s/\"version\": \"1.0.0-snapshot\"/\"version\": \"${APP_VERSION}\"/g" "/app/app.manifest" && \
     sed -i "s/version: \"1.0.0-snapshot\"/version: \"${APP_VERSION}\"/g" "/app/.swagger.v1.yaml" && \
+    # update ppyproject.toml to reflect the correct version
+    sed -i "s/^version = \".*\"/version = \"${APP_VERSION}\"/" "/app/pyproject.toml" && \
     apk del git build-base && \
     rm -rf /app/setup
 
@@ -31,6 +34,7 @@ RUN addgroup -S tacobot && adduser -S tacobot -G tacobot
 RUN chown -R tacobot:tacobot /app /data && \
     mkdir -p /config && \
     chown -R tacobot:tacobot /config
+  # && \ python -m compileall /app
 
 USER tacobot
 
@@ -41,5 +45,7 @@ WORKDIR /app
 # perform health check using both discordhealthcheck and a curl to localhost:8931/healthz
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD discordhealthcheck && curl --fail-with-body --silent --show-error -X GET http://localhost:8931/healthz || exit 1
+
+EXPOSE 8931 8932
 
 CMD ["python", "-u", "/app/main.py"]

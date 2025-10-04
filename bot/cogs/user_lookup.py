@@ -6,6 +6,7 @@ import typing
 from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums.member_status import MemberStatus
+from bot.lib.models.DiscordUser import DiscordUser
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.tacobot import TacoBot
 from discord.ext import commands
@@ -49,21 +50,20 @@ class UserLookupCog(TacobotCog):
                     f"{self._module}.{self._class}.{_method}",
                     f"Tracking user {member.name} in guild {guild.name}",
                 )
-                avatar: typing.Union[str, None] = (
-                    member.avatar.url if member.avatar is not None else member.default_avatar.url
-                )
-                self.tracking_db.track_user(
-                    guildId=guild.id,
-                    userId=member.id,
-                    username=member.name,
-                    discriminator=member.discriminator,
-                    avatar=avatar,
-                    displayname=member.display_name,
-                    created=member.created_at,
-                    bot=member.bot,
-                    system=member.system,
-                    status=MemberStatus.from_discord(member.status),
-                )
+
+                self.tracking_db.track_discord_user(user=DiscordUser.fromUser(member))
+                # self.tracking_db.track_user(
+                #     guildId=guild.id,
+                #     userId=member.id,
+                #     username=member.name,
+                #     discriminator=member.discriminator,
+                #     avatar=avatar,
+                #     displayname=member.display_name,
+                #     created=member.created_at,
+                #     bot=member.bot,
+                #     system=member.system,
+                #     status=MemberStatus.from_discord(member.status),
+                # )
 
         except Exception as e:
             self.log.error(guild.id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
@@ -75,26 +75,24 @@ class UserLookupCog(TacobotCog):
         try:
             if member is None or member.guild is None:
                 return
-            avatar: typing.Union[str, None] = (
-                member.avatar.url if member.avatar is not None else member.default_avatar.url
-            )
             self.log.debug(
                 member.guild.id,
                 f"{self._module}.{self._class}.{_method}",
                 f"User {member.id} joined guild {member.guild.id}",
             )
-            self.tracking_db.track_user(
-                guildId=member.guild.id,
-                userId=member.id,
-                username=member.name,
-                discriminator=member.discriminator,
-                avatar=avatar,
-                displayname=member.display_name,
-                created=member.created_at,
-                bot=member.bot,
-                system=member.system,
-                status=MemberStatus.from_discord(member.status),
-            )
+            self.tracking_db.track_discord_user(user=DiscordUser.fromUser(member))
+            # self.tracking_db.track_user(
+            #     guildId=member.guild.id,
+            #     userId=member.id,
+            #     username=member.name,
+            #     discriminator=member.discriminator,
+            #     avatar=avatar,
+            #     displayname=member.display_name,
+            #     created=member.created_at,
+            #     bot=member.bot,
+            #     system=member.system,
+            #     status=MemberStatus.from_discord(member.status),
+            # )
         except Exception as e:
             self.log.error(member.guild.id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
@@ -104,26 +102,27 @@ class UserLookupCog(TacobotCog):
         try:
             if after is None or after.guild is None:
                 return
-            avatar: typing.Union[str, None] = after.avatar.url if after.avatar is not None else after.default_avatar.url
+
             self.log.debug(
                 after.guild.id,
                 f"{self._module}.{self._class}.{_method}",
                 f"User {after.id} updated in guild {after.guild.id}",
             )
-            self.tracking_db.track_user(
-                guildId=after.guild.id,
-                userId=after.id,
-                username=after.name,
-                discriminator=after.discriminator,
-                avatar=avatar,
-                displayname=after.display_name,
-                created=after.created_at,
-                bot=after.bot,
-                system=after.system,
-                status=MemberStatus.from_discord(after.status),
-            )
+            self.tracking_db.track_discord_user(user=DiscordUser.fromUser(after))
+            # self.tracking_db.track_user(
+            #     guildId=after.guild.id,
+            #     userId=after.id,
+            #     username=after.name,
+            #     discriminator=after.discriminator,
+            #     avatar=avatar,
+            #     displayname=after.display_name,
+            #     created=after.created_at,
+            #     bot=after.bot,
+            #     system=after.system,
+            #     status=MemberStatus.from_discord(after.status),
+            # )
         except Exception as e:
-            self.log.error(after.guild.id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
+            self.log.error(after.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
 
 async def setup(bot):

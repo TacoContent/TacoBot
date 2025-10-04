@@ -21,6 +21,15 @@ class GuildRolesApiHandler(BaseHttpHandler):
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/roles", method="GET")
     def get_guild_roles(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """List all roles in a guild.
+
+        Path: /api/v1/guild/{guild_id}/roles
+        Method: GET
+        Returns: Array[DiscordRole]
+        Errors:
+          400 - missing/invalid guild_id
+          404 - guild not found
+        """
         _method = inspect.stack()[0][3]
         try:
             headers = HttpHeaders()
@@ -37,13 +46,26 @@ class GuildRolesApiHandler(BaseHttpHandler):
             return HttpResponse(200, headers, bytearray(json.dumps([r.to_dict() for r in roles]), 'utf-8'))
         except HttpResponseException as e:
             return HttpResponse(e.status_code, e.headers, e.body)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, 'utf-8'))
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/roles/batch/ids", method="POST")
     def get_guild_roles_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """Batch fetch roles by IDs.
+
+        Path: /api/v1/guild/{guild_id}/roles/batch/ids
+        Method: POST
+        Body (one of):
+          - JSON array ["123", "456"]
+          - JSON object { "ids": ["123", "456"] }
+        Query (optional): ?ids=123&ids=456
+        Returns: Array[DiscordRole]
+        Errors:
+          400 - missing/invalid guild_id
+          404 - guild not found
+        """
         _method = inspect.stack()[0][3]
         try:
             headers = HttpHeaders()
@@ -73,13 +95,27 @@ class GuildRolesApiHandler(BaseHttpHandler):
             return HttpResponse(200, headers, bytearray(json.dumps([r.to_dict() for r in roles]), 'utf-8'))
         except HttpResponseException as e:
             return HttpResponse(e.status_code, e.headers, e.body)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, 'utf-8'))
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/mentionables/batch/ids", method="POST")
     def get_guild_mentionables_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """Batch fetch mentionables (roles or users) by IDs.
+
+        Path: /api/v1/guild/{guild_id}/mentionables/batch/ids
+        Method: POST
+        Body (one of):
+          - JSON array ["roleId", "userId"]
+          - JSON object { "ids": ["roleId", "userId"] }
+        Query (optional): ?ids=roleId&ids=userId
+        Returns: Array[DiscordRole|DiscordUser] (discriminated by presence of role/user fields)
+        Errors:
+          400 - missing/invalid guild_id
+          404 - guild not found
+        Notes: Duplicate and non-numeric IDs are ignored silently.
+        """
         _method = inspect.stack()[0][3]
         try:
             headers = HttpHeaders()
@@ -121,13 +157,13 @@ class GuildRolesApiHandler(BaseHttpHandler):
                 member = None
                 try:
                     member = guild.get_member(int(id_str))
-                except Exception:
+                except Exception:  # noqa: BLE001
                     member = None
                 user = member
                 if user is None:
                     try:
                         user = self.bot.get_user(int(id_str))
-                    except Exception:
+                    except Exception:  # noqa: BLE001
                         user = None
                 if user is not None:
                     results.append(DiscordUser.fromUser(user))
@@ -135,7 +171,7 @@ class GuildRolesApiHandler(BaseHttpHandler):
             return HttpResponse(200, headers, bytearray(json.dumps(output), 'utf-8'))
         except HttpResponseException as e:
             return HttpResponse(e.status_code, e.headers, e.body)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, 'utf-8'))

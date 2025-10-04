@@ -1,3 +1,32 @@
+"""Healthcheck API handler.
+
+Lightweight liveness/readiness probe endpoints used by external monitors and
+orchestrators. Keeps logic intentionally minimal for speed and predictability.
+Returns simple string bodies for success/failure plus JSON payload on internal
+exceptions.
+
+Routes (GET):
+    /api/v1/health  - Versioned health endpoint
+    /healthz        - Kubernetes-style conventional path
+    /health         - Legacy/simple alias
+
+Health Criteria:
+    1. Ability to fetch the Minecraft whitelist for the configured primary guild
+    2. Whitelist not empty
+    3. Discord bot client is ready (self.bot.is_ready())
+
+Responses:
+    200  "Healthy!"    All criteria satisfied
+    500  "Unhealthy!"  One or more criteria failed (logical health failure)
+    500  {"error": "Internal server error: ..."} unexpected exception during processing
+
+Design Notes:
+    - Fast path: no heavy DB round trips besides whitelist accessor.
+    - If richer diagnostics are needed later (DB ping, external API latency,
+        cache checks), consider adding a verbose mode (?verbose=true) returning a
+        JSON object enumerating subsystem statuses.
+"""
+
 import inspect
 import os
 import traceback
@@ -13,6 +42,14 @@ from httpserver.server import HttpResponseException, uri_mapping
 
 
 class HealthcheckApiHandler(BaseHttpHandler):
+    """Provides simple health endpoints for uptime / readiness checks.
+
+    Current implementation is intentionally conservative. Additional checks
+    (database connectivity, external API latency, cache layer) can be added
+    later behind optional query flags or a verbose mode to avoid impacting
+    critical liveness probes.
+    """
+
     def __init__(self, bot: TacoBot):
         super().__init__(bot)
         self._class = self.__class__.__name__
@@ -29,6 +66,28 @@ class HealthcheckApiHandler(BaseHttpHandler):
     @uri_mapping("/healthz", method="GET")
     @uri_mapping("/health", method="GET")
     def healthcheck(self, request: HttpRequest) -> HttpResponse:
+        """Return basic service health status.
+
+        Paths:
+          GET /api/v1/health
+          GET /healthz
+          GET /health
+
+        Evaluation Steps:
+          - Retrieve Minecraft whitelist for primary guild (using configured primary_guild_id)
+          - Confirm whitelist is non-empty
+          - Confirm Discord bot client is ready
+
+        Returns:
+          200 Healthy!    All checks passed
+          500 Unhealthy!  One or more logical health checks failed
+
+        Error Handling:
+          Any uncaught exception -> 500 with JSON error payload {"error": "Internal server error: ..."}
+
+        Notes:
+          Response bodies for success/failure are plain strings (probe friendly).
+        """
         _method = inspect.stack()[0][3]
         try:
             headers = HttpHeaders()
@@ -43,7 +102,7 @@ class HealthcheckApiHandler(BaseHttpHandler):
             return HttpResponse(500, headers, bytearray("Unhealthy!", "utf-8"))
         except HttpResponseException as e:
             return HttpResponse(e.status_code, e.headers, e.body)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))

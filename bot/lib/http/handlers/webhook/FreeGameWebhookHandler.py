@@ -1,3 +1,31 @@
+"""Free Game Webhook Handler.
+
+This handler receives inbound webhook POSTs describing limited-time free /
+discounted game offers and distributes formatted Discord embed messages to
+configured guild channels. It performs light enrichment:
+
+* Expands/unwraps the incoming giveaway URL following redirects.
+* Optionally shortens URLs via a configured shortener service.
+* Attempts to construct a platform specific "open in launcher" deep link when
+    supported (Steam / Epic / Microsoft Store) to improve user experience.
+* Applies formatting for pricing (strikethrough original), end/ended relative
+    timestamps, and platform listing.
+* Avoids duplicate announcements per guild using a tracking database.
+
+Error Model:
+        * Authentication failures -> 401 JSON {"error": "Invalid webhook token"}
+        * Missing body -> 400 JSON {"error": "No payload found in the request"}
+        * Unhandled exceptions -> 500 JSON {"error": "Internal server error: <details>"}
+
+Idempotency / Safety:
+        The handler checks whether a given `game_id` is already tracked for a guild
+        prior to posting, preventing duplicate notifications if the webhook retries.
+
+Extensibility Notes:
+        * Additional platform deep-link rules can be added in `_get_open_in_app_url`.
+        * Future localization could parameterize static strings (e.g. "Ends", "FREE").
+"""
+
 import html
 import inspect
 import json
@@ -18,6 +46,15 @@ from httpserver.server import HttpResponseException, uri_mapping
 
 
 class FreeGameWebhookHandler(BaseWebhookHandler):
+    """Process incoming free game webhook payloads and broadcast announcements.
+
+    Responsibilities:
+        * Validate webhook authentication token.
+        * Decode & log the raw payload for observability.
+        * Enrich offer data (redirect resolution, URL shortening, deep links).
+        * Format and send Discord embed messages to configured channels.
+        * Record announcements in tracking DB to suppress duplicates.
+    """
     def __init__(self, bot):
         super().__init__(bot)
         self._class = self.__class__.__name__
@@ -34,7 +71,38 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
 
     @uri_mapping("/webhook/game", method="POST")
     async def game(self, request: HttpRequest) -> HttpResponse:
-        """Receive a free game payload from the webhook"""
+        """Handle inbound free game webhook event.
+
+        Authentication:
+            Expects a valid webhook token (``validate_webhook_token``). If
+            invalid a 401 JSON response is returned.
+
+        Request Body (JSON example – fields vary by source):
+            {
+              "game_id": "<unique id>",
+              "title": "Game Title",
+              "description": "<html / text>",
+              "instructions": "<html / text>",
+              "worth": "$19.99",
+              "end_date": 1730419200,  # epoch seconds
+              "open_giveaway_url": "https://...",
+              "type": "GAME" | "DLC" | "OTHER",
+              "platforms": ["steam", "epic", ...],
+              ...
+            }
+
+        Behaviour Summary:
+            * Validates auth & body presence.
+            * Derives offer type/platform list and aesthetics.
+            * Resolves and shortens URL; attempts launcher deep link.
+            * Skips guilds where feature disabled or game already tracked.
+            * Posts embed with buttons and role mentions.
+
+        Returns:
+            200 JSON echo of original payload on success.
+            400 / 401 JSON error for client issues.
+            500 JSON error for unexpected failures.
+        """
         _method = inspect.stack()[0][3]
 
         try:
@@ -191,9 +259,22 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
             return HttpResponse(e.status_code, e.headers, e.body)
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
-            return HttpResponse(500)
+            if 'headers' not in locals():
+                headers = HttpHeaders()
+                headers.add("Content-Type", "application/json")
+            err_msg = f'{{"error": "Internal server error: {str(e)}"}}'
+            return HttpResponse(500, headers, bytearray(err_msg, "utf-8"))
 
     def _get_open_in_app_url(self, url: str) -> tuple[str, str]:
+        """Return (launcher_name, deep_link_url) for supported platforms.
+
+        Currently supports:
+            * Microsoft Store (ms-windows-store://)
+            * Steam (steam://openurl/...)
+            * Epic Games Launcher (com.epicgames.launcher://)
+
+        Returns empty tuple components when no mapping is available.
+        """
         if not url or url == "":
             return "", ""
 
@@ -222,6 +303,11 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
         return "", ""
 
     def _get_open_url(self, url: str) -> str:
+        """(Placeholder) Potential transformation for public sharing URL.
+
+        Currently returns the original URL; retained for future expansion
+        (e.g., converting Steam store URLs to short-form share links).
+        """
         if not url or url == "":
             return ""
 
@@ -235,6 +321,7 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
         return url
 
     def _get_offer_type_str(self, offer_type: FreeGameTypes) -> str:
+        """Map enum offer type to human-readable string for embed labels."""
         if offer_type == FreeGameTypes.GAME:
             return "Game"
         elif offer_type == FreeGameTypes.DLC:
@@ -243,12 +330,18 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
             return "Offer"
 
     def _get_offer_type(self, offer_type: str) -> FreeGameTypes:
+        """Convert string (case-insensitive) to ``FreeGameTypes`` enum."""
         return FreeGameTypes.str_to_enum(offer_type)
 
     def _get_offer_platform(self, platform: str) -> FreeGamePlatforms:
+        """Convert platform string to ``FreeGamePlatforms`` enum."""
         return FreeGamePlatforms.str_to_enum(platform)
 
     def _get_offer_platform_list(self, platforms: list) -> str:
+        """Format platform list as a Markdown bullet string for embedding.
+
+        Returns a hyphenated list or a single ``- Unknown`` entry when empty.
+        """
         platform_list = []
         for platform in platforms:
             platform_list.append(str(self._get_offer_platform(platform)))

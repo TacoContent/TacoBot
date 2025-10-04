@@ -1,3 +1,36 @@
+"""Minecraft Player Webhook Handler.
+
+This handler receives webhook POST events describing real‑time Minecraft player
+activity (login, logout, death, etc.) and relays/records them for Discord
+consumption. Each event payload is validated, mapped to the
+``MinecraftPlayerEvents`` enum, then dispatched to a dedicated handler method.
+
+Authentication:
+    A valid webhook token is required (``validate_webhook_token``). Invalid
+    tokens produce ``401`` responses with a JSON error body.
+
+Payload (Generic Shape):
+    {
+      "guild_id": 123456789012345678,
+      "event": "LOGIN" | "LOGOUT" | "DEATH" | ...,
+      "payload": {
+          "user_id": 112233445566778899,
+          ... arbitrary event-specific fields ...
+      }
+    }
+
+Response Model:
+    200: JSON {"status": "ok", "data": { ... }} for supported events.
+    4xx: JSON {"error": "<reason>"} for validation problems.
+    500: JSON {"error": "Internal server error: <details>"} for unexpected failures.
+
+Extensibility:
+    * Add new event types to ``MinecraftPlayerEvents`` and map them in ``event``.
+    * Implement a corresponding ``_handle_<event>_event`` coroutine.
+    * Consider adding rate limiting or replay protection if the webhook source
+      can retry aggressively.
+"""
+
 import inspect
 import json
 import traceback
@@ -10,6 +43,14 @@ from httpserver.server import HttpResponseException, uri_mapping
 
 
 class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
+    """Dispatch Minecraft player activity webhook events.
+
+    Responsibilities:
+        * Validate auth + structural integrity of incoming JSON payloads.
+        * Normalize / enum-validate event names.
+        * Resolve Discord user / member objects for contextual processing.
+        * Delegate to event-specific handlers for response construction.
+    """
     def __init__(self, bot):
         super().__init__(bot)
         self._class = self.__class__.__name__
@@ -18,7 +59,20 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
 
     @uri_mapping("/webhook/minecraft/player/event", method="POST")
     async def event(self, request: HttpRequest, **kwargs) -> HttpResponse:
-        """Receive a Minecraft player event payload from the webhook"""
+        """Ingress point for Minecraft player events.
+
+        Expected JSON Body:
+            guild_id (int)  : Target Discord guild id.
+            event (str)     : One of the supported minecraft player events
+                               (LOGIN, LOGOUT, DEATH, ...).
+            payload (object): Event-specific data. Must contain at least
+                               ``user_id`` used to resolve the Discord user.
+
+        Returns:
+            200 JSON with echo + normalized event meta on success.
+            4xx JSON error for missing/invalid fields or unknown event.
+            500 JSON error for unexpected processing failures.
+        """
         _method = inspect.stack()[0][3]
 
         try:
@@ -89,7 +143,17 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
             raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
 
     async def _handle_login_event(self, guild, member, discord_user, data_payload, headers) -> HttpResponse:
-        """Handle a Minecraft player login event"""
+        """Construct response for a LOGIN event.
+
+        Parameters:
+            guild: Discord Guild object.
+            member: Discord Member instance resolved from guild/user id.
+            discord_user: Discord User object.
+            data_payload: Raw event-specific payload dict from request.
+            headers: Shared HttpHeaders (already includes content-type + event id).
+
+        Returns: 200 JSON with standardized structure or 500 on failure.
+        """
         _method = inspect.stack()[0][3]
 
         try:
@@ -114,10 +178,11 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
             return HttpResponse(200, headers, bytearray(json.dumps(result, indent=4), "utf-8"))
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
-            return HttpResponse(500, headers, b'{ "error": "Internal server error" }')
+            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
+            return HttpResponse(500, headers, bytearray(err_msg, "utf-8"))
 
     async def _handle_logout_event(self, guild, member, discord_user, data_payload, headers) -> HttpResponse:
-        """Handle a Minecraft player logout event"""
+        """Construct response for a LOGOUT event (mirror of login handler)."""
         _method = inspect.stack()[0][3]
 
         try:
@@ -140,10 +205,11 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
             return HttpResponse(200, headers, bytearray(json.dumps(result, indent=4), "utf-8"))
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
-            return HttpResponse(500, headers, b'{ "error": "Internal server error" }')
+            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
+            return HttpResponse(500, headers, bytearray(err_msg, "utf-8"))
 
     async def _handle_death_event(self, guild, member, discord_user, data_payload, headers) -> HttpResponse:
-        """Handle a Minecraft player death event"""
+        """Construct response for a DEATH event."""
         _method = inspect.stack()[0][3]
 
         try:
@@ -167,4 +233,5 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
             return HttpResponse(200, headers, bytearray(json.dumps(result, indent=4), "utf-8"))
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
-            return HttpResponse(500, headers, b'{ "error": "Internal server error" }')
+            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
+            return HttpResponse(500, headers, bytearray(err_msg, "utf-8"))

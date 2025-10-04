@@ -19,6 +19,15 @@ class GuildEmojisApiHandler(BaseHttpHandler):
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emojis", method="GET")
     def get_guild_emojis(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """List all emojis in the specified guild.
+
+        Path: /api/v1/guild/{guild_id}/emojis
+        Method: GET
+        Returns: Array[DiscordEmoji]
+        Errors:
+          400 - missing/invalid guild_id
+          404 - guild not found
+        """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
@@ -35,13 +44,22 @@ class GuildEmojisApiHandler(BaseHttpHandler):
             return HttpResponse(200, headers, bytearray(json.dumps(emojis), "utf-8"))
         except HttpResponseException as e:
             return HttpResponse(e.status_code, e.headers, e.body)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e))
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emoji/id/{{emoji_id}}", method="GET")
     def get_guild_emoji(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """Get a single emoji by numeric ID.
+
+        Path: /api/v1/guild/{guild_id}/emoji/id/{emoji_id}
+        Method: GET
+        Returns: DiscordEmoji
+        Errors:
+          400 - missing/invalid guild_id or emoji_id
+          404 - guild or emoji not found
+        """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
@@ -66,13 +84,22 @@ class GuildEmojisApiHandler(BaseHttpHandler):
             return HttpResponse(200, headers, bytearray(json.dumps(result), "utf-8"))
         except HttpResponseException as e:
             return HttpResponse(e.status_code, e.headers, e.body)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e))
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emoji/name/{{emoji_name}}", method="GET")
     def get_guild_emoji_by_name(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """Get a single emoji by name.
+
+        Path: /api/v1/guild/{guild_id}/emoji/name/{emoji_name}
+        Method: GET
+        Returns: DiscordEmoji
+        Errors:
+          400 - missing/invalid guild_id or emoji_name
+          404 - guild or emoji not found
+        """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
@@ -95,13 +122,26 @@ class GuildEmojisApiHandler(BaseHttpHandler):
             return HttpResponse(200, headers, bytearray(json.dumps(result), "utf-8"))
         except HttpResponseException as e:
             return HttpResponse(e.status_code, e.headers, e.body)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e))
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emojis/ids/batch", method="POST")
     def get_guild_emojis_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """Batch fetch emojis by IDs.
+
+        Path: /api/v1/guild/{guild_id}/emojis/ids/batch
+        Method: POST
+        Body (one of):
+          - JSON array ["123", "456"]
+          - JSON object { "ids": ["123", "456"] }
+        Query (optional): ?ids=123&ids=456
+        Returns: Array[DiscordEmoji]
+        Errors:
+          400 - missing/invalid guild_id or invalid body JSON
+          404 - guild not found
+        """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
@@ -119,7 +159,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
             if request.body is not None and request.method == "POST":
                 try:
                     b_data = json.loads(request.body.decode("utf-8"))
-                except Exception:
+                except Exception:  # noqa: BLE001
                     raise HttpResponseException(400, headers, bytearray('{"error": "invalid JSON body"}', "utf-8"))
                 if isinstance(b_data, list):
                     body_ids = b_data
@@ -137,13 +177,26 @@ class GuildEmojisApiHandler(BaseHttpHandler):
             return HttpResponse(200, headers, bytearray(json.dumps(emojis), "utf-8"))
         except HttpResponseException as e:
             return HttpResponse(e.status_code, e.headers, e.body)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e))
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emojis/names/batch", method="POST")
     def get_guild_emojis_batch_by_names(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """Batch fetch emojis by names.
+
+        Path: /api/v1/guild/{guild_id}/emojis/names/batch
+        Method: POST
+        Body (one of):
+          - JSON array ["smile", "wave"]
+          - JSON object { "names": ["smile", "wave"] }
+        Query (optional): ?names=smile&names=wave
+        Returns: Array[DiscordEmoji]
+        Errors:
+          400 - missing/invalid guild_id or invalid body JSON
+          404 - guild not found
+        """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
@@ -161,7 +214,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
             if request.body is not None and request.method == "POST":
                 try:
                     b_data = json.loads(request.body.decode("utf-8"))
-                except Exception:
+                except Exception:  # noqa: BLE001
                     raise HttpResponseException(400, headers, bytearray('{"error": "invalid JSON body"}', "utf-8"))
                 if isinstance(b_data, list):
                     body_names = b_data
@@ -179,7 +232,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
             return HttpResponse(200, headers, bytearray(json.dumps(emojis), "utf-8"))
         except HttpResponseException as e:
             return HttpResponse(e.status_code, e.headers, e.body)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e))
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))

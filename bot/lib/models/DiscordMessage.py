@@ -1,9 +1,39 @@
+"""Discord message model abstraction.
+
+Provides :class:`DiscordMessage`, a serializable representation of a
+message suitable for API responses. Extracts a subset of relevant
+fields while normalizing types (e.g., converting snowflakes to strings
+and timestamps to ints).
+
+Timestamp Units
+---------------
+``created_at`` and ``edited_at`` are stored as seconds since the UNIX
+epoch (int). Upstream code should multiply by 1000 if milliseconds are
+required for frontend consumers.
+
+Factory Method
+--------------
+``fromMessage`` accepts either a live ``discord.Message`` instance or an
+existing mapping. It raises ``ValueError`` for unsupported input types.
+Embeds are transformed using each embed's ``to_dict`` method to avoid
+serialization issues.
+"""
+
 import typing
 
 import discord
 
 
 class DiscordMessage:
+    """Represents a Discord message snapshot.
+
+    Parameters
+    ----------
+    data : dict
+        Mapping of message attributes. See module documentation for
+        interpretation of each field.
+    """
+
     def __init__(self, data: typing.Dict[str, typing.Any]):
         self.type = "message"
         self.id: str = data.get("id", "0")
@@ -25,6 +55,23 @@ class DiscordMessage:
 
     @staticmethod
     def fromMessage(message: typing.Union[typing.Dict[str, typing.Any], discord.Message]) -> "DiscordMessage":
+        """Factory to build a :class:`DiscordMessage` from a message or dict.
+
+        Parameters
+        ----------
+        message : discord.Message | dict
+            Source message instance or pre-assembled dictionary.
+
+        Returns
+        -------
+        DiscordMessage
+            Normalized message model.
+
+        Raises
+        ------
+        ValueError
+            If ``message`` is neither a dict nor ``discord.Message``.
+        """
         if isinstance(message, discord.Message):
             data = {
                 "id": str(message.id),
@@ -51,4 +98,5 @@ class DiscordMessage:
         return DiscordMessage(data)
 
     def to_dict(self) -> typing.Dict[str, typing.Any]:
+        """Return a dictionary representation of the message."""
         return self.__dict__

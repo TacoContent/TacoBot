@@ -1,3 +1,32 @@
+"""Discord role model abstraction.
+
+The :class:`DiscordRole` class provides a JSON-friendly representation
+of a Discord role object, normalizing asset URLs and converting rich
+Discord.py objects (``Color``, ``Permissions``, etc.) into primitive
+values.
+
+Color Fields
+------------
+``color``, ``secondary_color``, and ``tertiary_color`` are stored as
+integer values when resolvable, or ``None`` / 0 fallback values.
+
+Timestamps
+----------
+``created_at`` is stored as milliseconds since the UNIX epoch when the
+source attribute is a valid ``datetime`` instance.
+
+Mention Formatting
+------------------
+The ``mention`` attribute embeds the role id in the standard Discord
+role mention format ``<@&role_id>``.
+
+Factory Method
+--------------
+``fromRole`` accepts either a live ``discord.Role`` or a dictionary that
+already matches the expected structure. Non-role, non-dict inputs raise
+``ValueError`` indirectly when used elsewhere.
+"""
+
 import datetime
 import typing
 
@@ -5,6 +34,14 @@ from discord import Role
 
 
 class DiscordRole:
+    """Represents a Discord role with normalized primitive fields.
+
+    Parameters
+    ----------
+    data : dict
+        Role attribute mapping.
+    """
+
     def __init__(self, data):
         self.type: str = "role"
         self.id: str = data.get("id", "0")
@@ -28,6 +65,18 @@ class DiscordRole:
 
     @staticmethod
     def fromRole(role: typing.Union[Role, dict]) -> "DiscordRole":
+        """Build a :class:`DiscordRole` from a live role or dictionary.
+
+        Parameters
+        ----------
+        role : discord.Role | dict
+            Source role instance or dictionary representation.
+
+        Returns
+        -------
+        DiscordRole
+            Normalized role model.
+        """
         if isinstance(role, Role):
             return DiscordRole(
                 {
@@ -61,7 +110,12 @@ class DiscordRole:
         return DiscordRole(role)
 
     def to_dict(self):
-        # Guard against any lingering discord.Asset (or similar) objects sneaking in
+        """Return a safe dictionary serialization of the role.
+
+        Any attributes that *could* still be asset-like (e.g., have a
+        ``url`` attribute) are flattened to their URL string to avoid
+        JSON serialization issues.
+        """
         out = {}
         for k, v in self.__dict__.items():
             if hasattr(v, "url"):

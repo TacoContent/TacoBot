@@ -1788,8 +1788,7 @@ components:
           type: integer
           nullable: true
         created_at:
-          type: string
-          format: date-time
+          type: number
           nullable: true
         default_avatar:
           type: string
@@ -1811,8 +1810,14 @@ components:
         name:
           type: string
           nullable: true
+        status:
+          type: string
+          nullable: true
         system:
           type: boolean
+          nullable: true
+        timestamp:
+          type: number
           nullable: true
         username:
           type: string

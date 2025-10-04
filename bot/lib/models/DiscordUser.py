@@ -1,10 +1,48 @@
+"""Discord user / member model abstraction.
+
+The :class:`DiscordUser` class normalizes core identifying and visual
+profile attributes from a ``discord.User`` or ``discord.Member`` object
+for API responses. Rich objects (avatars, banners) are converted to URL
+strings to ensure portability and JSON friendliness.
+
+Field Highlights
+----------------
+accent_color / color : int | None
+    Resolved integer color values (if available).
+avatar / display_avatar / default_avatar : str | None
+    Prioritized avatar sources, with ``display_avatar`` reflecting the
+    appearance seen in the Discord client.
+created_at : int | None
+    Milliseconds since epoch when resolvable.
+discriminator : int
+    Parsed numeric discriminator; non-digit values (e.g., in username
+    migration contexts) resolve to 0.
+mention : str
+    Pre-formatted user mention string.
+
+Factory Method
+--------------
+``fromUser`` accepts either a live ``User``/``Member`` or a mapping. It
+ensures all asset references become plain URLs.
+"""
+
 import datetime
 import typing
 
 from discord import Member, User
+import pytz
 
 
 class DiscordUser:
+    """Represents a Discord user or member with normalized primitives.
+
+    Parameters
+    ----------
+    data : dict
+        Mapping of user/member attributes (may originate from a factory
+        method or serialized cache layer).
+    """
+
     def __init__(self, data):
         self.type: str = "user"
         self.id: str = data.get("id", "0")
@@ -25,11 +63,25 @@ class DiscordUser:
         self.global_name: str = data.get("global_name", "")
         self.mention: str = data.get("mention", "")
         self.name: str = data.get("name", "")
+        self.status: typing.Optional[str] = data.get("status", None)
         self.system: bool = data.get("system", False)
+        self.timestamp: typing.Optional[typing.Union[int, float]] = data.get("timestamp", None)
         self.username: str = data.get("name", "")
 
     @staticmethod
     def fromUser(user: typing.Union[dict, User, Member]) -> "DiscordUser":
+        """Create a :class:`DiscordUser` from a live Discord user/member or dict.
+
+        Parameters
+        ----------
+        user : User | Member | dict
+            Source user or member object, or pre-serialized mapping.
+
+        Returns
+        -------
+        DiscordUser
+            Normalized user model.
+        """
         if isinstance(user, (User, Member)):
             return DiscordUser(
                 {
@@ -65,11 +117,13 @@ class DiscordUser:
                     "name": user.name,
                     "system": user.system,
                     "username": user.name,
+                    "status": getattr(getattr(user, "status"), "value") if hasattr(user, "status") else None,
                 }
             )
         return DiscordUser(user)
 
     def to_dict(self) -> dict:
+        """Return a dictionary representation suitable for JSON encoding."""
         out = {}
         for k, v in self.__dict__.items():
             if hasattr(v, "url"):

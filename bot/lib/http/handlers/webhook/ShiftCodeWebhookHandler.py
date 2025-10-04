@@ -1,3 +1,31 @@
+"""SHiFT Code Webhook Handler.
+
+Processes inbound webhook POSTs containing Gearbox / Borderlands style SHiFT
+codes. Each payload is validated, normalized (code formatting), and broadcast
+to configured guild channels with embed + reactions allowing community voted
+validity (✅ / ❌). Duplicate codes per guild are suppressed using persistence.
+
+Primary responsibilities:
+        * Validate webhook authentication token.
+        * Parse and sanitize the raw SHiFT code (uppercase, strip spaces).
+        * Skip expired codes (expiry timestamp already elapsed).
+        * Expand multi‑game entries into embed fields (one field per game).
+        * Provide quick redeem & source buttons using an external multi-button view.
+        * Track posted codes to avoid re-announcement.
+
+Error model:
+        401 -> Invalid webhook token
+        400 -> Structural issues (missing body / games / code)
+        200 -> Success (echo JSON) or benign skip (expired code message)
+        500 -> Internal error (JSON {"error": "Internal server error: ..."})
+
+Extensibility notes:
+        * Additional formatting (e.g., code categorization) can be inserted before
+            broadcasting.
+        * Reaction handling logic (tally working vs not working) could be added via
+            a separate event listener reacting to these emoji.
+"""
+
 import html
 import inspect
 import json
@@ -14,6 +42,14 @@ from httpserver.server import HttpResponseException, uri_mapping
 
 
 class ShiftCodeWebhookHandler(BaseWebhookHandler):
+    """Handle SHiFT code announcements across subscribed guilds.
+
+    Responsibilities:
+        * Auth + payload validation.
+        * Normalization and early expiry filtering.
+        * Broadcasting to channels with role notifications.
+        * Persistence for duplicate suppression.
+    """
     def __init__(self, bot):
         super().__init__(bot)
         self._class = self.__class__.__name__
@@ -27,7 +63,32 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
 
     @uri_mapping("/webhook/shift", method="POST")
     async def shift_code(self, request: HttpRequest) -> HttpResponse:
-        """Receive a free game payload from the webhook"""
+        """Ingest and broadcast a SHiFT code webhook payload.
+
+        Expected JSON Body (fields may vary):
+            {
+              "code": "ABCD3-WXYZ9-12345-67890-FOOBA",  # raw or spaced
+              "reward": "3 Golden Keys",
+              "games": [ {"name": "Borderlands 3"}, ... ],
+              "source": "https://origin.example/post",
+              "notes": "Platform agnostic",
+              "expiry": 1730419200,         # epoch seconds (optional)
+              "created_at": 1730000000       # epoch seconds (optional)
+            }
+
+        Behaviour Summary:
+            * Validates auth & body presence; rejects if missing required keys.
+            * Normalizes code (uppercase, remove spaces) for duplicate tracking.
+            * Skips guilds with feature disabled or already tracking the code.
+            * Builds embed fields—one per game entry.
+            * Adds reaction markers for community validation.
+            * Returns the original payload (JSON) on success.
+
+        Returns:
+            200: JSON echo of original payload or a message indicating expiry.
+            400/401: JSON error for client issues.
+            500: JSON error for unexpected failures.
+        """
         _method = inspect.stack()[0][3]
 
         try:
@@ -170,4 +231,8 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
             return HttpResponse(e.status_code, e.headers, e.body)
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
-            return HttpResponse(500)
+            if 'headers' not in locals():
+                headers = HttpHeaders()
+                headers.add("Content-Type", "application/json")
+            err_msg = f'{{"error": "Internal server error: {str(e)}"}}'
+            return HttpResponse(500, headers, bytearray(err_msg, "utf-8"))

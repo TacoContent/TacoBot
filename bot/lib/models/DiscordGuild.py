@@ -1,23 +1,46 @@
-# {
-#     "id": str(guild.id),
-#     "name": guild.name,
-#     "member_count": guild.member_count,
-#     "icon": guild.icon.url if guild.icon else None,
-#     "banner": guild.banner.url if guild.banner else None,
-#     "owner_id": str(guild.owner_id) if guild.owner_id else None,
-#     "features": guild.features,
-#     "description": guild.description,
-#     "vanity_url": guild.vanity_url if guild.vanity_url else None,
-#     "vanity_url_code": guild.vanity_url_code if guild.vanity_url_code else None,
-#     "preferred_locale": guild.preferred_locale,
-#     "verification_level": str(guild.verification_level.name),
-#     "boost_level": str(guild.premium_tier),
-#     "boost_count": guild.premium_subscription_count,
-# }
+"""Discord guild (server) model abstraction.
+
+This module provides :class:`DiscordGuild`, a simplified, serializable
+snapshot of key guild properties—useful for external API responses or
+lightweight caching layers.
+
+Captured Fields (selected)
+--------------------------
+id : str
+    Guild snowflake id.
+name : str
+    Guild name.
+member_count : int
+    Present member count (may not include offline members depending on
+    gateway intents & cache state at retrieval time).
+icon / banner : str | None
+    CDN URLs if assets exist.
+owner_id : str | None
+    Owner user id.
+features : list | None
+    List of enabled feature flags.
+boost_level : str | None
+    Premium tier level textual representation.
+boost_count : int
+    Number of boosts.
+
+The model accepts a pre-built ``dict`` (often produced by a helper that
+extracts raw attributes from a live ``discord.Guild`` object).
+"""
+
 import typing
 
 
 class DiscordGuild:
+    """Represents a Discord guild snapshot.
+
+    Parameters
+    ----------
+    data : dict
+        Dictionary of guild properties; missing keys fall back to
+        reasonable defaults (see assignments below).
+    """
+
     def __init__(self, data: dict):
         self.id: str = data.get("id", "0")
         self.name: str = data.get("name", "Unknown Guild")
@@ -35,4 +58,5 @@ class DiscordGuild:
         self.boost_count: int = data.get("boost_count", 0)
 
     def to_dict(self) -> dict:
+        """Return a dictionary representation of the guild model."""
         return self.__dict__

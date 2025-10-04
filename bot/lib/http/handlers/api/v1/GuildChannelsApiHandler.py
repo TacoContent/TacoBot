@@ -18,6 +18,15 @@ class GuildChannelsApiHandler(BaseHttpHandler):
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/categories", method="GET")
     def get_guild_categories(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """List all channel categories in a guild including their child channels.
+
+        Path: /api/v1/guild/{guild_id}/categories
+        Method: GET
+        Returns: Array[DiscordCategory] (each category embeds an array of its channels)
+        Errors:
+          400 - missing/invalid guild_id
+          404 - guild not found
+        """
         _method = inspect.stack()[0][3]
         try:
             headers = HttpHeaders()
@@ -66,6 +75,15 @@ class GuildChannelsApiHandler(BaseHttpHandler):
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/category/{{category_id}}", method="GET")
     def get_guild_category(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """Get a single category (and its channels) by ID.
+
+        Path: /api/v1/guild/{guild_id}/category/{category_id}
+        Method: GET
+        Returns: DiscordCategory object with embedded channels array.
+        Errors:
+          400 - missing/invalid guild_id
+          404 - guild or category not found
+        """
         _method = inspect.stack()[0][3]
         try:
             headers = HttpHeaders()
@@ -114,6 +132,16 @@ class GuildChannelsApiHandler(BaseHttpHandler):
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/channels", method="GET")
     def get_guild_channels(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """List top-level (non-category) channels plus include category definitions.
+
+        Path: /api/v1/guild/{guild_id}/channels
+        Method: GET
+        Returns: Object { id, name, channels: DiscordChannel[], categories: DiscordCategory[] }
+        Notes: channels returned here exclude those inside categories; categories array also supplied.
+        Errors:
+          400 - missing/invalid guild_id
+          404 - guild not found
+        """
         _method = inspect.stack()[0][3]
         try:
             headers = HttpHeaders()
@@ -179,6 +207,19 @@ class GuildChannelsApiHandler(BaseHttpHandler):
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/channels/batch/ids", method="POST")
     def get_guild_channels_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """Batch fetch specific channels by ID.
+
+        Path: /api/v1/guild/{guild_id}/channels/batch/ids
+        Method: POST
+        Body (one of):
+          - JSON array of channel IDs ["123", "456"]
+          - JSON object { "ids": ["123", "456"] }
+        Query (optional): repeatable ids parameter ?ids=123&ids=456
+        Returns: Array[DiscordChannel]
+        Errors:
+          400 - missing/invalid guild_id or malformed body
+          404 - guild not found
+        """
         _method = inspect.stack()[0][3]
         try:
             headers = HttpHeaders()

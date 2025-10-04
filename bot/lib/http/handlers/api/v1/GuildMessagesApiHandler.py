@@ -27,9 +27,20 @@ class GuildMessagesApiHandler(BaseHttpHandler):
         self._class = self.__class__.__name__
         self._module = os.path.basename(__file__)[:-3]
 
-    # List recent messages in a channel
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/channel/{{channel_id}}/messages", method="GET")
     async def get_channel_messages(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """List recent messages from a text-capable channel.
+
+        Path: /api/v1/guild/{guild_id}/channel/{channel_id}/messages?limit=50
+        Method: GET
+        Query Params:
+          limit (optional int 1-100, default 50) - number of most recent messages.
+        Returns: Array[DiscordMessage] newest first (Discord API order from history iterator).
+        Errors:
+          400 - missing/invalid IDs or unsupported channel type / bad limit
+          404 - guild or channel not found
+        Notes: Individual message serialization failures are skipped silently.
+        """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
@@ -71,8 +82,7 @@ class GuildMessagesApiHandler(BaseHttpHandler):
             async for m in channel.history(limit=limit):  # type: ignore[attr-defined]
                 try:
                     messages.append(DiscordMessage.fromMessage(m).to_dict())
-                except Exception:
-                    # Skip serialization errors for any particular message
+                except Exception:  # noqa: BLE001
                     continue
             return HttpResponse(200, headers, bytearray(json.dumps(messages), 'utf-8'))
         except HttpResponseException as e:
@@ -82,9 +92,18 @@ class GuildMessagesApiHandler(BaseHttpHandler):
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, 'utf-8'))
 
-    # Get single message by ID
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/channel/{{channel_id}}/message/{{message_id}}", method="GET")
     async def get_channel_message(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:  # noqa: ARG002
+        """Fetch a single message by ID.
+
+        Path: /api/v1/guild/{guild_id}/channel/{channel_id}/message/{message_id}
+        Method: GET
+        Returns: DiscordMessage
+        Errors:
+          400 - missing/invalid IDs
+          404 - guild, channel or message not found
+        Notes: Forbidden access is surfaced as not accessible error.
+        """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
@@ -122,9 +141,22 @@ class GuildMessagesApiHandler(BaseHttpHandler):
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, 'utf-8'))
 
-    # Batch fetch messages by IDs
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/channel/{{channel_id}}/messages/batch/ids", method="POST")
     async def get_channel_messages_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """Batch fetch multiple messages by IDs.
+
+        Path: /api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/ids
+        Method: POST
+        Body (one of):
+          - JSON array of message IDs ["123", "456"]
+          - JSON object { "ids": ["123", "456"] }
+        Query (optional): ?ids=123&ids=456
+        Returns: Array[DiscordMessage] (only messages successfully fetched & serialized)
+        Errors:
+          400 - missing/invalid IDs or invalid JSON body
+          404 - guild or channel not found
+        Notes: Missing / not found / un-fetchable messages are skipped.
+        """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
@@ -151,7 +183,7 @@ class GuildMessagesApiHandler(BaseHttpHandler):
             if request.body is not None and request.method == 'POST':
                 try:
                     b_data = json.loads(request.body.decode('utf-8'))
-                except Exception:
+                except Exception:  # noqa: BLE001
                     raise HttpResponseException(400, headers, bytearray('{"error": "invalid JSON body"}', 'utf-8'))
                 if isinstance(b_data, list):
                     body_ids = [i for i in b_data if isinstance(i, str)]

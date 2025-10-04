@@ -15,6 +15,178 @@ TacoBot is a feature-rich, modular Discord bot designed to enhance your server w
 
 To get started with TacoBot, clone this repository and review the documentation for setup, configuration, and usage instructions.
 
+## Quickstart
+
+The fastest way to get TacoBot running locally (Linux/macOS bash or Windows PowerShell 7+):
+
+```bash
+git clone https://github.com/your-org/TacoBot.git
+cd TacoBot
+python3 -m venv .venv && source .venv/bin/activate  # (PowerShell: python -m venv .venv; . .venv/Scripts/Activate.ps1)
+pip install -e .
+python ./main.py
+```
+
+If you prefer Docker, skip to the [Docker](#docker) section below.
+
+## Environment Setup (Python Virtual Environment)
+
+TacoBot now ships with a `pyproject.toml` (PEP 621) for modern dependency management.
+Use this preferred workflow to create an isolated environment and install dependencies.
+
+### 1. Prerequisites
+
+- Python >=3.10–3.12 (see `requires-python` in `pyproject.toml`)
+- (Recommended) Latest `pip` and `virtualenv` tooling
+
+### 2. Create & Activate a Virtual Environment
+
+#### Windows (PowerShell)
+
+``` pwsh
+python -m venv .venv
+. .venv/Scripts/Activate.ps1
+python -m pip install --upgrade pip
+```
+
+#### Linux / macOS (bash / zsh)
+
+``` bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+```
+
+### 3. Install Project Dependencies (Editable Mode)
+
+This installs the application and its runtime dependencies defined in `pyproject.toml`:
+
+``` shell
+pip install -e .
+```
+
+### 4. (Alternative) Install from Legacy Requirements File
+
+If you prefer the classic approach:
+
+``` shell
+pip install -r setup/requirements.txt
+```
+
+### 5. Verifying the Installation
+
+``` shell
+python -c "import discord, pymongo, aiohttp; print('Dependencies OK')"
+```
+
+### 6. (Optional) Development Tooling
+
+If/when a `dev` extra is added you could install with:
+
+``` shell
+pip install -e .[dev]
+```
+
+### 7. Running the Bot
+
+After configuring environment variables (.env) / settings:
+
+``` shell
+python ./main.py
+```
+
+To deactivate the virtual environment when finished:
+
+``` pwsh
+deactivate
+```
+
+## Docker
+
+You can run TacoBot in a container. The provided `Dockerfile` builds an image using the project sources.
+
+### 1. Build the Image
+
+```bash
+docker build -t tacobot:latest .
+```
+
+### 2. Provide Environment Configuration
+
+Create a `.env` file (or export variables) containing at least your Discord bot token and Mongo connection string, for example:
+
+```env
+DISCORD_TOKEN=your_bot_token_here
+MONGODB_URI=mongodb://mongo:27017/tacobot
+```
+
+### 3. Run the Container
+
+Expose the HTTP port (adjust if your server component uses a different port):
+
+```bash
+docker run --env-file .env -p 8931:8931 -p 8932:8932 --name tacobot tacobot:latest
+```
+
+### 4. Persisting Data (Optional)
+
+If the bot writes files (logs, cache, etc.) map a volume:
+
+```bash
+docker run --env-file .env -p 8000:8000 \
+  -v $(pwd)/data:/app/data \
+  --name tacobot tacobot:latest
+```
+
+### 5. Updating
+
+Pull latest changes, rebuild, and recreate the container:
+
+```bash
+git pull
+docker build -t tacobot:latest .
+docker stop tacobot && docker rm tacobot
+docker run --env-file .env -p 8000:8000 --name tacobot tacobot:latest
+```
+
+## Bootstrap Scripts
+
+For convenience, platform-specific scripts are included under `scripts/` to create/activate a virtual environment and install dependencies.
+
+| Platform | Script |
+|----------|--------|
+| Windows (PowerShell) | `scripts/bootstrap.ps1` |
+| Linux | `scripts/bootstrap-linux.sh` |
+| macOS | `scripts/bootstrap-macos.sh` |
+
+### Usage Examples
+
+Windows (PowerShell):
+
+```pwsh
+./scripts/bootstrap.ps1
+```
+
+Linux:
+
+```bash
+chmod +x scripts/bootstrap-linux.sh
+./scripts/bootstrap-linux.sh
+```
+
+macOS:
+
+```bash
+chmod +x scripts/bootstrap-macos.sh
+./scripts/bootstrap-macos.sh
+```
+
+After running a bootstrap script, activate the environment (if not already active) and launch:
+
+```bash
+python ./main.py
+```
+
 ## Documentation
 
 Comprehensive documentation is available in the [docs/](./docs/README.md) folder, including:
