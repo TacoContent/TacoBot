@@ -4,7 +4,6 @@ import os
 import traceback
 
 import pytz
-
 from bot.lib import discordhelper, utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.models.DiscordUser import DiscordUser
@@ -56,7 +55,6 @@ class UserLookupCog(TacobotCog):
             date = datetime.datetime.now(pytz.UTC)
             timestamp = utils.to_timestamp(date)
             self.settings.settings_db.set_setting(guild.id, self.SETTINGS_SECTION, 'last_import', timestamp)
-
 
         except Exception as e:
             self.log.error(guild.id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
