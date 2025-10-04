@@ -35,7 +35,11 @@ class DiscordRole:
                     "guild_id": str(role.guild.id),
                     "name": role.name,
                     "color": getattr(getattr(role, "color", None), "value", None),
-                    "created_at": int(role.created_at.timestamp() * 1000) if isinstance(role.created_at, datetime.datetime) else None,
+                    "created_at": (
+                        int(role.created_at.timestamp() * 1000)
+                        if isinstance(role.created_at, datetime.datetime)
+                        else None
+                    ),
                     "display_icon": getattr(role, "display_icon", getattr(role, "url", None)),
                     "hoist": getattr(role, "hoist", None),
                     "icon": getattr(getattr(role, "icon", None), "url", None),

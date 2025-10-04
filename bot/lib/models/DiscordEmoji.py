@@ -25,7 +25,11 @@ class DiscordEmoji:
                     "id": emoji.id,
                     "animated": emoji.animated,
                     "available": emoji.available,
-                    "created_at": int(emoji.created_at.timestamp() * 1000) if isinstance(emoji.created_at, datetime.datetime) else None,
+                    "created_at": (
+                        int(emoji.created_at.timestamp() * 1000)
+                        if isinstance(emoji.created_at, datetime.datetime)
+                        else None
+                    ),
                     "guild_id": emoji.guild.id if emoji.guild else None,
                     "managed": emoji.managed,
                     "require_colons": emoji.require_colons,
