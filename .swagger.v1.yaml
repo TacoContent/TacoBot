@@ -340,6 +340,131 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
 
+  '/api/v1/guild/{guild_id}/channel/{channel_id}/messages':
+    get:
+      tags: [ guilds, channels, messages ]
+      summary: List recent messages in a channel
+      description: Returns up to the most recent 100 messages (default 50) for the specified text channel.
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: channel_id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+          description: Max number of most recent messages to return (1-100, default 50)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/DiscordMessage' }
+        "400":
+          description: Invalid guild/channel id or channel unsupported
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
+        "404":
+          description: Guild or channel not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
+
+  '/api/v1/guild/{guild_id}/channel/{channel_id}/message/{message_id}':
+    get:
+      tags: [ guilds, channels, messages ]
+      summary: Get a single message
+      description: Fetch a single message by its ID.
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: channel_id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: message_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DiscordMessage' }
+        "400":
+          description: Invalid ids
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
+        "404":
+          description: Guild, channel, or message not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
+
+  '/api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/ids':
+    post:
+      tags: [ guilds, channels, messages ]
+      summary: Batch fetch messages by IDs
+      description: Retrieve multiple messages. Accepts an array body or object with ids property; can also accept repeated query param ids.
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: channel_id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: ids
+          in: query
+          required: false
+          schema: { type: array, items: { type: string } }
+          description: Repeatable message ID query parameter
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: array
+                  items: { type: string }
+                - type: object
+                  properties:
+                    ids:
+                      type: array
+                      items: { type: string }
+                  required: [ ids ]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/DiscordMessage' }
+        "400":
+          description: Invalid ids or malformed body
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
+        "404":
+          description: Guild or channel not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
+
   '/api/v1/guild/{guild_id}/emojis':
     get:
       tags:
@@ -1696,6 +1821,65 @@ components:
       oneOf:
         - $ref: '#/components/schemas/DiscordRole'
         - $ref: '#/components/schemas/DiscordUser'
+    DiscordMessage:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [ message ]
+        id:
+          type: string
+        channel_id:
+          type: string
+        guild_id:
+          type: string
+        author_id:
+          type: string
+        content:
+          type: string
+        created_at:
+          type: integer
+          description: Epoch timestamp (seconds)
+        jump_url:
+          type: string
+          nullable: true
+        edited_at:
+          type: integer
+        mention_everyone:
+          type: boolean
+        mentions:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              username: { type: string }
+        attachments:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              url: { type: string }
+        embeds:
+            type: array
+            items:
+              type: object
+        reactions:
+          type: array
+          items:
+            type: object
+            properties:
+              emoji: { type: string }
+              count: { type: integer }
+        nonce:
+          type: string
+          nullable: true
+        pinned:
+          type: boolean
+        message_type:
+          type: integer
+      required: [ id, channel_id, guild_id, author_id, content, created_at ]
 
   securitySchemes:
     X-AUTH-TOKEN:
