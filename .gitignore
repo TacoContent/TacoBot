@@ -6,6 +6,10 @@ tacobot.egg-info/
 *.env
 .env.*
 .env
+!.github/env/*.env
+# ignore the super-linter log file when running super-linter locally
+super-linter-summary.log
+
 # Created by https://www.toptal.com/developers/gitignore/api/linux
 # Edit at https://www.toptal.com/developers/gitignore?templates=linux
 

@@ -5,6 +5,7 @@ exit-on-eol: 2
 scan:
   skip-dirs:
     - .devcontainer/
+    - __pycache__/
   scanners:
     - vuln
     - misconfig

@@ -202,3 +202,79 @@ For detailed guides and tables of contents, see the [TacoBot Documentation Index
 ---
 
 For questions, issues, or contributions, please refer to the documentation or open an issue in this repository.
+
+## Contributing / Running Tests
+
+### Development Environment
+
+Create and activate a virtual environment, then install the project with dev dependencies:
+
+```pwsh
+python -m venv .venv
+./.venv/Scripts/Activate.ps1
+pip install -e .[dev]
+```
+
+On Linux/macOS:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .[dev]
+```
+
+### Running the Test Suite
+
+Plain run:
+
+```bash
+pytest
+```
+
+With coverage (terminal report):
+
+```bash
+pytest --cov=bot --cov-report=term-missing
+```
+
+### Using VS Code Tasks
+
+This repo includes `.vscode/tasks.json` tasks:
+
+| Task | Description |
+|------|-------------|
+| Python: Run Tests | Executes all tests with pytest. |
+| Python: Run Tests (Coverage) | Runs tests and prints line coverage. |
+| Lint (Ruff) | Static style / lint checks. |
+| Type Check (mypy) | Static type analysis. |
+
+Open the command palette and run: `Tasks: Run Task`.
+
+### Pre-Commit (Optional Recommendation)
+
+You can add a local pre-commit hook to run lint + tests before commits:
+
+```bash
+echo "#!/usr/bin/env bash
+ruff check . || exit 1
+mypy bot || exit 1
+pytest -q || exit 1" > .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+### Filing Issues / PRs
+
+1. Open an issue describing the change or bug.
+2. Create a feature branch (`feat/short-description`).
+3. Add tests for new behavior; ensure `pytest` passes.
+4. Run lint and type checks.
+5. Submit PR with a concise summary and link to the issue.
+
+### Coding Guidelines
+
+- Follow existing 4-space indentation & formatting (Black enforced).
+- Keep public APIs documented with docstrings.
+- Favor small focused commits for review clarity.
+- Maintain consistent error payload shape (`{"error": "message"}`).
+
+Thank you for contributing to TacoBot!

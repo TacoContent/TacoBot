@@ -34,29 +34,33 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+
+      - name: Load Super-Linter env
+        run: cat .github/env/super-linter.env >> "$GITHUB_ENV"
+
       - name: Super-Linter
         uses: super-linter/super-linter/slim@v8
         env:
           VALIDATE_ALL_CODEBASE: true
           GITHUB_TOKEN: ${{ github.token }}
-          VALIDATE_BASH_EXEC: false
-          VALIDATE_PYTHON_FLAKE8: false
-          VALIDATE_PYTHON_MYPY: false
-          VALIDATE_CHECKOV: false
-          FIX_YAML_PRETTIER: false
-          VALIDATE_YAML_PRETTIER: false
-          VALIDATE_PYTHON_PYINK: false
-          FIX_JSON_PRETTIER: false
-          VALIDATE_JSON_PRETTIER: false
-          VALIDATE_PYTHON_PYLINT: false
-          VALIDATE_MARKDOWN_PRETTIER: false
-          FIX_MARKDOWN_PRETTIER: false
-          VALIDATE_JAVASCRIPT_ES: false
-          VALIDATE_JAVASCRIPT_PRETTIER: false
-          FIX_JAVASCRIPT_PRETTIER: false
-          VALIDATE_BIOME_FORMAT: false
-          FIX_BIOME_FORMAT: false
-          VALIDATE_PYTHON_RUFF_FORMAT: false
-          FIX_PYTHON_RUFF_FORMAT: false
-          VALIDATE_BIOME_LINT: false
-          FIX_BIOME_LINT: false
+          # VALIDATE_BASH_EXEC: false
+          # VALIDATE_PYTHON_FLAKE8: false
+          # VALIDATE_PYTHON_MYPY: false
+          # VALIDATE_CHECKOV: false
+          # FIX_YAML_PRETTIER: false
+          # VALIDATE_YAML_PRETTIER: false
+          # VALIDATE_PYTHON_PYINK: false
+          # FIX_JSON_PRETTIER: false
+          # VALIDATE_JSON_PRETTIER: false
+          # VALIDATE_PYTHON_PYLINT: false
+          # VALIDATE_MARKDOWN_PRETTIER: false
+          # FIX_MARKDOWN_PRETTIER: false
+          # VALIDATE_JAVASCRIPT_ES: false
+          # VALIDATE_JAVASCRIPT_PRETTIER: false
+          # FIX_JAVASCRIPT_PRETTIER: false
+          # VALIDATE_BIOME_FORMAT: false
+          # FIX_BIOME_FORMAT: false
+          # VALIDATE_PYTHON_RUFF_FORMAT: false
+          # FIX_PYTHON_RUFF_FORMAT: false
+          # VALIDATE_BIOME_LINT: false
+          # FIX_BIOME_LINT: false

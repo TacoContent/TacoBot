@@ -49,7 +49,7 @@ class VoiceChatCog(TacobotCog):
 
                 await self.discord_helper.taco_give_user(
                     guildId=guild_id,
-                    fromUser=self.bot.user,
+                    fromUser=self.bot.user,  # type: ignore
                     toUser=member,
                     reason=reason_msg,
                     give_type=tacotypes.TacoTypes.CREATE_VOICE_CHANNEL,

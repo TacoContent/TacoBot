@@ -26,7 +26,11 @@ class TacobotCog(commands.Cog):
             raise Exception("No section provided")
         cog_settings = self.settings.get_settings(guildId, section)
         if not cog_settings:
-            raise Exception(f"No '{section}' settings found for guild {guildId}")
+            # check for global settings
+            cog_settings = self.settings.get_settings(0, section)
+        # if we still dont have settings, raise an error
+        if not cog_settings:
+            raise Exception(f"No '{section}' settings found for guild {guildId} or globally.")
         return cog_settings
 
     def get_tacos_settings(self, guildId: int = 0) -> dict:
