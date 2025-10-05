@@ -196,8 +196,8 @@ def test_announcements_database_track_announcement(monkeypatch):
     assert len(fake_collection.calls) == 1
     flt, update, upsert = fake_collection.calls[0]
     assert flt == {
-        "guild_id": str(entry.guild_id), 
-        "channel_id": str(entry.channel_id), 
+        "guild_id": str(entry.guild_id),
+        "channel_id": str(entry.channel_id),
         "message_id": str(entry.message_id),
     }
     assert "$set" in update

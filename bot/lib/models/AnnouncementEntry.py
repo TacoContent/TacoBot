@@ -76,6 +76,7 @@ class AnnouncementMessage:
             "type": self.type.name,
         }
 
+
 class AnnouncementEntry:
     """Top-level tracked announcement entity.
 
