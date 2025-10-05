@@ -753,6 +753,152 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
 
+  '/api/v1/guild/{guild_id}/join-whitelist':
+    get:
+      tags: [ guilds, whitelist ]
+      summary: List all join whitelist entries
+      description: Returns the complete join whitelist for the guild. For large lists, prefer the paginated endpoint.
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/JoinWhitelistUser' }
+        "400":
+          description: Invalid guild id
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
+    post:
+      tags: [ guilds, whitelist ]
+      summary: Add (upsert) a user to join whitelist
+      description: |
+        Provide JSON body: { "user_id": "<id>", "added_by": "<id>" }
+
+        The "added_by" field is optional and defaults to the same value as "user_id" when omitted.
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id: { type: string }
+                added_by: { type: string }
+              required: [ user_id ]
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JoinWhitelistUser' }
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
+
+  '/api/v1/guild/{guild_id}/join-whitelist/page':
+    get:
+      tags: [ guilds, whitelist ]
+      summary: List paginated join whitelist entries
+      description: Returns a page of join whitelist entries. Accepts query params skip (default 0) and take (default 50, max 200).
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: skip
+          in: query
+          required: false
+          schema: { type: integer, minimum: 0, default: 0 }
+        - name: take
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PagedResults' }
+        "400":
+          description: Invalid pagination parameters
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
+
+  '/api/v1/guild/{guild_id}/join-whitelist/{user_id}':
+    put:
+      tags: [ guilds, whitelist ]
+      summary: Update (re-add) a join whitelist entry
+      description: |
+        Upserts a specific user.
+
+        Optional body example:
+          { "added_by": "<id>" }
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: user_id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                added_by: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JoinWhitelistUser' }
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
+    delete:
+      tags: [ guilds, whitelist ]
+      summary: Delete a join whitelist entry
+      description: Removes a user from the whitelist.
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: user_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: No Content (deleted)
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
+
   '/api/v1/guild/{guild_id}/mentionables/batch/ids':
     post:
       tags: [ guilds, mentionables ]
@@ -1885,6 +2031,50 @@ components:
         message_type:
           type: integer
       required: [ id, channel_id, guild_id, author_id, content, created_at ]
+    JoinWhitelistUser:
+      type: object
+      description: Join whitelist entry
+      properties:
+        guild_id:
+          type: string
+        user_id:
+          type: string
+        added_by:
+          type: string
+          nullable: true
+        timestamp:
+          type: integer
+          nullable: true
+          description: Epoch seconds when entry was added
+      required: [ guild_id, user_id ]
+    PagedResultsJoinWhitelistUser:
+      allOf:
+        - $ref: '#/components/schemas/PagedResults'
+        - properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/JoinWhitelistUser'
+
+    PagedResults:
+      type: object
+      description: Paginated results.
+      properties:
+        total:
+          type: integer
+          description: Total number of matching items (unpaged)
+        skip:
+          type: integer
+          description: Number of items skipped (offset)
+        take:
+          type: integer
+          description: Requested page size
+        items:
+          type: array
+          description: Page slice of items
+          items: {}
+
+      required: [ total, skip, take, items ]
 
   securitySchemes:
     X-AUTH-TOKEN:
