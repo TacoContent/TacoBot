@@ -21,7 +21,6 @@ import datetime
 import inspect
 import os
 import traceback
-import typing
 
 import pytz
 from bot.lib import utils
@@ -58,7 +57,7 @@ class AnnouncementsDatabase(Database):
         * Ensures a database connection is open.
         * Derives a `tracked_at` timestamp separate from message creation/edit times.
         * Performs an upsert keyed on (guild_id, channel_id, message_id)
-          to avoid duplicate records and to reflect message edits/deletions.
+            to avoid duplicate records and to reflect message edits/deletions.
         """
         _method = inspect.stack()[0][3]
         try:

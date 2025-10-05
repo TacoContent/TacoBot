@@ -19,7 +19,9 @@ interoperability simple.
 """
 
 import typing
+
 import discord
+
 
 class AnnouncementMessage:
     """Serializable snapshot of a Discord message's content layer.
@@ -98,16 +100,16 @@ class AnnouncementEntry:
     """
 
     def __init__(
-            self,
-            guild_id: int,
-            channel_id: int,
-            message_id: int,
-            author_id: int,
-            created_at: int,
-            updated_at: int,
-            message: typing.Optional[AnnouncementMessage],
-            deleted_at: typing.Optional[int],
-        ) -> None:
+        self,
+        guild_id: int,
+        channel_id: int,
+        message_id: int,
+        author_id: int,
+        created_at: int,
+        updated_at: int,
+        message: typing.Optional[AnnouncementMessage],
+        deleted_at: typing.Optional[int],
+    ) -> None:
         self.channel_id = channel_id
         self.message_id = message_id
         self.guild_id = guild_id

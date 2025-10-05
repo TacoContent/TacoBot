@@ -4,6 +4,8 @@ import os
 import traceback
 import typing
 
+import pytz
+
 from bot.lib import utils
 from bot.lib.enums import loglevel
 from bot.lib.models.JoinWhitelistUser import JoinWhitelistUser
@@ -24,15 +26,12 @@ class WhitelistDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow()
+            date = datetime.datetime.now(pytz.UTC)
             timestamp = utils.to_timestamp(date)
 
-            payload = JoinWhitelistUser({
-                "guild_id": str(guild_id),
-                "user_id": str(user_id),
-                "added_by": str(added_by),
-                "timestamp": timestamp,
-            }).to_dict()
+            payload = JoinWhitelistUser(
+                {"guild_id": str(guild_id), "user_id": str(user_id), "added_by": str(added_by), "timestamp": timestamp}
+            ).to_dict()
 
             self.connection.join_whitelist.update_one(  # type: ignore
                 {"guild_id": str(guild_id), "user_id": str(user_id)}, {"$set": payload}, upsert=True

@@ -15,6 +15,13 @@ indent_size = 2
 
 [.vscode/settings.json]
 indent_style = tab
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+
+[.vscode/tasks.json]
+indent_style = tab
+insert_final_newline = unset
+trim_trailing_whitespace = unset
 
 [*.py]
 indent_style = space

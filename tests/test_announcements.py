@@ -14,12 +14,12 @@ from __future__ import annotations
 
 import datetime
 from types import SimpleNamespace
-from typing import List, Optional, Any, cast
+from typing import Any, List, Optional, cast
 
 import pytest
 
 try:  # pragma: no cover - defensive import guard
-    import discord  # type: ignore
+    import discord
 except Exception:  # pragma: no cover
     pytest.skip("discord.py not installed; skip announcement tests", allow_module_level=True)
 
@@ -128,14 +128,7 @@ def test_announcement_message_to_dict_basic():
 # -----------------------------
 def test_announcement_entry_from_message_no_edit():
     created = datetime.datetime(2024, 1, 1, tzinfo=datetime.timezone.utc)
-    msg = StubMessage(
-        guild_id=1,
-        channel_id=2,
-        message_id=3,
-        author_id=4,
-        content="Hello",
-        created_at=created,
-    )
+    msg = StubMessage(guild_id=1, channel_id=2, message_id=3, author_id=4, content="Hello", created_at=created)
 
     entry = AnnouncementEntry.from_message(cast(Any, msg))  # type: ignore[arg-type]
     assert entry.guild_id == 1
@@ -195,20 +188,18 @@ def test_announcements_database_track_announcement(monkeypatch):
     db.connection = SimpleNamespace(announcements=fake_collection)  # type: ignore
     db.client = object()  # type: ignore[assignment]
 
-    msg = StubMessage(
-        guild_id=123,
-        channel_id=456,
-        message_id=789,
-        author_id=101112,
-        content="Persist me",
-    )
+    msg = StubMessage(guild_id=123, channel_id=456, message_id=789, author_id=101112, content="Persist me")
     entry = AnnouncementEntry.from_message(cast(Any, msg))  # type: ignore[arg-type]
 
     db.track_announcement(entry)
 
     assert len(fake_collection.calls) == 1
     flt, update, upsert = fake_collection.calls[0]
-    assert flt == {"guild_id": str(entry.guild_id), "channel_id": str(entry.channel_id), "message_id": str(entry.message_id)}
+    assert flt == {
+        "guild_id": str(entry.guild_id), 
+        "channel_id": str(entry.channel_id), 
+        "message_id": str(entry.message_id),
+    }
     assert "$set" in update
     payload = update["$set"]
     # Validate a subset of fields

@@ -13,9 +13,9 @@ Key Behaviors:
 ----------------
 * Only operates for guilds where the cog has been enabled in settings
 * Optionally imports existing historical messages (on guild availability) up to a
-  configured limit when `import_existing` is true
+    configured limit when `import_existing` is true
 * Tracks create, edit, delete, bulk delete events; for deletions a `deleted_at`
-  timestamp is stored (soft delete) so historical content remains accessible
+    timestamp is stored (soft delete) so historical content remains accessible
 
 Settings (per guild / section: announcements):
 ----------------------------------------------
@@ -52,7 +52,6 @@ from bot.lib.messaging import Messaging
 from bot.lib.models.AnnouncementEntry import AnnouncementEntry
 from bot.lib.mongodb.announcements import AnnouncementsDatabase
 from discord.ext import commands
-
 
 
 class AnnouncementsCog(TacobotCog):
@@ -228,11 +227,7 @@ class AnnouncementsCog(TacobotCog):
         _method = inspect.stack()[0][3]
         try:
             if not message.guild:
-                self.log.warn(
-                    0,
-                    f"{self._module}.{self._class}.{_method}",
-                    "Message is not in a guild",
-                )
+                self.log.warn(0, f"{self._module}.{self._class}.{_method}", "Message is not in a guild")
                 return
 
             cog_settings = self.get_cog_settings(message.guild.id)

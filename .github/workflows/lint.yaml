@@ -41,6 +41,7 @@ jobs:
       - name: Super-Linter
         uses: super-linter/super-linter/slim@v8
         env:
+          # env values in ../env/super-linter.env override them here
           VALIDATE_ALL_CODEBASE: true
           GITHUB_TOKEN: ${{ github.token }}
           # VALIDATE_BASH_EXEC: false
