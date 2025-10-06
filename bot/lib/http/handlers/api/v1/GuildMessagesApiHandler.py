@@ -244,7 +244,9 @@ class GuildMessagesApiHandler(BaseHttpHandler):
                             async for msg in channel.history(limit=2, around=find_msg):
                                 if str(msg.id) == mid:
                                     m = msg
-                                    self.log.info(0, f"{self._module}.{self._class}.{_method}", f"Found message in history: {mid}")
+                                    self.log.info(
+                                        0, f"{self._module}.{self._class}.{_method}", f"Found message in history: {mid}"
+                                    )
                                     break
                 except Exception:  # noqa: BLE001
                     m = None
