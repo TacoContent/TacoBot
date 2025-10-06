@@ -240,9 +240,11 @@ class GuildMessagesApiHandler(BaseHttpHandler):
                         if channel is not None and isinstance(
                             channel, typing.Union[discord.TextChannel, discord.VoiceChannel]
                         ):
+                            self.log.info(0, f"{self._module}.{self._class}.{_method}", f"Searching history for {mid}")
                             async for msg in channel.history(limit=2, around=find_msg):
                                 if str(msg.id) == mid:
                                     m = msg
+                                    self.log.info(0, f"{self._module}.{self._class}.{_method}", f"Found message in history: {mid}")
                                     break
                 except Exception:  # noqa: BLE001
                     m = None
@@ -254,6 +256,7 @@ class GuildMessagesApiHandler(BaseHttpHandler):
                         continue
                 else:
                     try:
+                        self.log.info(0, f"{self._module}.{self._class}.{_method}", f"Fetching message from API: {mid}")
                         m = await channel.fetch_message(int(mid))  # type: ignore[attr-defined]
                     except discord.NotFound:  # type: ignore[attr-defined]
                         continue
