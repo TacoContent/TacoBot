@@ -1,5 +1,7 @@
 import typing
+
 import discord
+
 
 class DiscordMessageReaction:
     def __init__(self, emoji: str, count: int):
@@ -7,30 +9,24 @@ class DiscordMessageReaction:
         self.count = count
 
     def to_dict(self) -> dict:
-        return {
-            "emoji": self.emoji,
-            "count": self.count,
-        }
+        return {"emoji": self.emoji, "count": self.count}
 
     @staticmethod
     def from_message(message: discord.Message) -> typing.List["DiscordMessageReaction"]:
-        return [DiscordMessageReaction(emoji=str(reaction.emoji), count=reaction.count) for reaction in getattr(message, 'reactions', [])]
+        return [
+            DiscordMessageReaction(emoji=str(reaction.emoji), count=reaction.count)
+            for reaction in getattr(message, 'reactions', [])
+        ]
 
     @staticmethod
     def from_message_reaction(reaction: typing.Union[discord.Reaction, dict]) -> "DiscordMessageReaction":
         if isinstance(reaction, discord.Reaction):
-            return DiscordMessageReaction(
-                emoji=str(reaction.emoji),
-                count=reaction.count,
-            )
+            return DiscordMessageReaction(emoji=str(reaction.emoji), count=reaction.count)
         elif isinstance(reaction, dict):
             if "emoji" not in reaction or "count" not in reaction:
                 raise ValueError("Dictionary must contain 'emoji' and 'count' keys")
             if not isinstance(reaction["emoji"], str) or not isinstance(reaction["count"], int):
                 raise ValueError("'emoji' must be a string and 'count' must be an integer")
 
-            return DiscordMessageReaction(
-                emoji=reaction.get("emoji", ""),
-                count=reaction.get("count", 0),
-            )
+            return DiscordMessageReaction(emoji=reaction.get("emoji", ""), count=reaction.get("count", 0))
         raise ValueError("Invalid reaction type")

@@ -3,6 +3,7 @@
 __pycache__/**
 __pycache__/
 tacobot.egg-info/
+.venv/
 *.env
 .env.*
 .env

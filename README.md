@@ -22,7 +22,7 @@ The fastest way to get TacoBot running locally (Linux/macOS bash or Windows Powe
 ```bash
 git clone https://github.com/your-org/TacoBot.git
 cd TacoBot
-python3 -m venv .venv && source .venv/bin/activate  # (PowerShell: python -m venv .venv; . .venv/Scripts/Activate.ps1)
+python3 -m venv .venv && source .venv/scripts/activate  # (PowerShell: python -m venv .venv; . .venv/Scripts/Activate.ps1)
 pip install -e .
 python ./main.py
 ```
