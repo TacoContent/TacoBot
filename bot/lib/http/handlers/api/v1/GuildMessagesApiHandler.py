@@ -359,13 +359,37 @@ class GuildMessagesApiHandler(BaseHttpHandler):
             for mid in ordered_ids:
                 if not mid.isdigit():
                     continue
+                # try to pull from the channel history first.
+                # This is more efficient than fetching individually.
+                m = None
                 try:
-                    m = await channel.fetch_message(int(mid))  # type: ignore[attr-defined]
-                except discord.NotFound:  # type: ignore[attr-defined]
-                    continue
+                    find_msg = channel.get_partial_message(int(mid))  # type: ignore[attr-defined]
+                    if hasattr(channel, 'history'):
+                        if channel is not None and (
+                            isinstance(channel, discord.TextChannel) or isinstance(channel, discord.VoiceChannel)
+                        ):
+                            self.log.info(0, f"{self._module}.{self._class}.{_method}", f"Searching history for {mid}")
+                            async for msg in channel.history(limit=2, around=find_msg):
+                                if str(msg.id) == mid:
+                                    m = msg
+                                    self.log.info(
+                                        0, f"{self._module}.{self._class}.{_method}", f"Found message in history: {mid}"
+                                    )
+                                    break
                 except Exception:  # noqa: BLE001
+                    m = None
+
+                if m is None:
+                    try:
+                        m = await channel.fetch_message(int(mid))  # type: ignore[attr-defined]
+                    except discord.NotFound:  # type: ignore[attr-defined]
+                        continue
+                    except Exception:  # noqa: BLE001
+                        continue
+                if m is None:
                     continue
                 try:
+                    self.log.info(0, f"{self._module}.{self._class}.{_method}", f"Found message in history: {mid}")
                     reactions = DiscordMessageReaction.from_message(m)
                 except Exception:  # noqa: BLE001
                     reactions = []
