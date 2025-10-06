@@ -237,8 +237,8 @@ class GuildMessagesApiHandler(BaseHttpHandler):
                 try:
                     find_msg = channel.get_partial_message(int(mid))  # type: ignore[attr-defined]
                     if hasattr(channel, 'history'):
-                        if channel is not None and isinstance(
-                            channel, typing.Union[discord.TextChannel, discord.VoiceChannel]
+                        if channel is not None and (
+                            isinstance(channel, discord.TextChannel) or isinstance(channel, discord.VoiceChannel)
                         ):
                             self.log.info(0, f"{self._module}.{self._class}.{_method}", f"Searching history for {mid}")
                             async for msg in channel.history(limit=2, around=find_msg):
@@ -252,6 +252,7 @@ class GuildMessagesApiHandler(BaseHttpHandler):
                     m = None
 
                 if m is not None:
+                    self.log.info(0, f"{self._module}.{self._class}.{_method}", f"Found message in history: {mid}")
                     try:
                         result.append(DiscordMessage.fromMessage(m).to_dict())
                     except Exception:  # noqa: BLE001
