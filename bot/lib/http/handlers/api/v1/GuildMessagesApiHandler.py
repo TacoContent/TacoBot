@@ -229,16 +229,38 @@ class GuildMessagesApiHandler(BaseHttpHandler):
             for mid in ordered_ids:
                 if not mid.isdigit():
                     continue
+
+                # try to pull from the channel history first.
+                # This is more efficient than fetching individually.
+
+                m = None
                 try:
-                    m = await channel.fetch_message(int(mid))  # type: ignore[attr-defined]
-                except discord.NotFound:  # type: ignore[attr-defined]
-                    continue
+                    find_msg = channel.get_partial_message(int(mid))  # type: ignore[attr-defined]
+                    if hasattr(channel, 'history'):
+                        if channel is not None and isinstance(channel, typing.Union[discord.TextChannel, discord.VoiceChannel]):
+                            async for msg in channel.history(limit=2, around=find_msg):
+                                if str(msg.id) == mid:
+                                    m = msg
+                                    break
                 except Exception:  # noqa: BLE001
-                    continue
-                try:
-                    result.append(DiscordMessage.fromMessage(m).to_dict())
-                except Exception:  # noqa: BLE001
-                    continue
+                    m = None
+
+                if m is not None:
+                    try:
+                        result.append(DiscordMessage.fromMessage(m).to_dict())
+                    except Exception:  # noqa: BLE001
+                        continue
+                else:
+                    try:
+                        m = await channel.fetch_message(int(mid))  # type: ignore[attr-defined]
+                    except discord.NotFound:  # type: ignore[attr-defined]
+                        continue
+                    except Exception:  # noqa: BLE001
+                        continue
+                    try:
+                        result.append(DiscordMessage.fromMessage(m).to_dict())
+                    except Exception:  # noqa: BLE001
+                        continue
             return HttpResponse(200, headers, bytearray(json.dumps(result), 'utf-8'))
         except HttpResponseException as e:
             return HttpResponse(e.status_code, e.headers, e.body)
