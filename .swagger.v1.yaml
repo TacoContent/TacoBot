@@ -465,6 +465,52 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
 
+  '/api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/reactions':
+    post:
+      tags: [ guilds, channels, messages, reactions ]
+      summary: Get reactions for a batch of messages (per-message grouping)
+      description: |
+        Returns a mapping of message IDs to their reactions arrays. Each reactions array contains
+        objects with the emoji (custom emoji mention format or unicode) and the count for that message.
+        Missing / inaccessible messages are silently omitted. Duplicate message IDs are de-duplicated.
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: channel_id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items: { type: string }
+              description: Array of message IDs
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  items: { $ref: '#/components/schemas/DiscordMessageReaction' }
+        "400":
+          description: Invalid ids or malformed body
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
+        "404":
+          description: Guild or channel not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
+
   '/api/v1/guild/{guild_id}/emojis':
     get:
       tags:

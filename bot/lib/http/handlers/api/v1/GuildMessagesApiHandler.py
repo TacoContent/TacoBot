@@ -251,19 +251,26 @@ class GuildMessagesApiHandler(BaseHttpHandler):
         f"/api/{API_VERSION}/guild/{{guild_id}}/channel/{{channel_id}}/messages/batch/reactions", method="POST"
     )
     async def get_reactions_for_messages_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
-        """Batch fetch unique reactions across multiple messages.
+        """Batch fetch reactions grouped per message.
 
         Path: /api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/reactions
         Method: POST
         Body (one of):
             - JSON array of message IDs ["123", "456"]
             - JSON object { "ids": ["123", "456"] }
-        Query (optional): ?ids=123&ids=456
-        Returns: Array[DiscordMessageReaction] (unique by emoji, aggregated count)
+        Query (optional): ?ids=123&ids=456 (merged with body / de-duped preserving order)
+        Returns: JSON object keyed by message id. Example:
+            {
+              "123": [ { "emoji": ":taco:", "count": 3 }, { "emoji": "👍", "count": 2 } ],
+              "456": [ { "emoji": "🔥", "count": 1 } ]
+            }
         Errors:
             400 - missing/invalid IDs or invalid JSON body
             404 - guild or channel not found
-        Notes: Messages not found / inaccessible are skipped. Counts are the sum of each emoji's reaction count across all found messages.
+        Notes:
+            - Messages not found / inaccessible are skipped (omitted from result).
+            - Each message's reactions list is sorted by descending count then emoji key.
+            - Reaction counts are per message (no cross-message aggregation).
         """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
@@ -317,8 +324,8 @@ class GuildMessagesApiHandler(BaseHttpHandler):
             if len(ordered_ids) == 0:
                 return HttpResponse(200, headers, bytearray('[]', 'utf-8'))
 
-            # Aggregate reactions across all fetched messages
-            aggregate: dict[str, int] = {}
+            # Per message reaction grouping
+            per_message: dict[str, list[dict]] = {}
             for mid in ordered_ids:
                 if not mid.isdigit():
                     continue
@@ -328,20 +335,19 @@ class GuildMessagesApiHandler(BaseHttpHandler):
                     continue
                 except Exception:  # noqa: BLE001
                     continue
-                reactions = DiscordMessageReaction.from_message(m)
-                if reactions and len(reactions) > 0:
-                    for r in reactions:
-                        if r.emoji and r.count > 0:
-                            aggregate[r.emoji] = aggregate.get(r.emoji, 0) + r.count
+                try:
+                    reactions = DiscordMessageReaction.from_message(m)
+                except Exception:  # noqa: BLE001
+                    reactions = []
+                # Filter & sort per message
+                filtered = [r for r in reactions if r.emoji and r.count > 0]
+                if not filtered:
+                    per_message[str(mid)] = []
                     continue
-                continue
+                filtered.sort(key=lambda r: (-r.count, r.emoji))
+                per_message[str(mid)] = [r.to_dict() for r in filtered]
 
-            # Build output list
-            output = [
-                DiscordMessageReaction(emoji=emoji, count=count).to_dict()
-                for emoji, count in sorted(aggregate.items(), key=lambda kv: (-kv[1], kv[0]))
-            ]
-            return HttpResponse(200, headers, bytearray(json.dumps(output), 'utf-8'))
+            return HttpResponse(200, headers, bytearray(json.dumps(per_message), 'utf-8'))
         except HttpResponseException as e:
             return HttpResponse(e.status_code, e.headers, e.body)
         except Exception as e:  # noqa: BLE001
