@@ -1057,7 +1057,6 @@ paths:
           required: true
           schema:
             type: string
-
       tags:
         - minecraft
       responses:
@@ -2013,16 +2012,13 @@ components:
               id: { type: string }
               url: { type: string }
         embeds:
-            type: array
-            items:
-              type: object
-        reactions:
           type: array
           items:
             type: object
-            properties:
-              emoji: { type: string }
-              count: { type: integer }
+        reactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiscordMessageReaction'
         nonce:
           type: string
           nullable: true
@@ -2031,6 +2027,15 @@ components:
         message_type:
           type: integer
       required: [ id, channel_id, guild_id, author_id, content, created_at ]
+    DiscordMessageReaction:
+      type: object
+      properties:
+        emoji:
+          type: string
+          description: The emoji (unicode or custom emoji textual representation)
+        count:
+          type: integer
+          description: Reaction count (or aggregated count across queried messages)
     JoinWhitelistUser:
       type: object
       description: Join whitelist entry

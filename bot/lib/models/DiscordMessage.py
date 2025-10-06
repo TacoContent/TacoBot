@@ -23,6 +23,8 @@ import typing
 
 import discord
 
+from bot.lib.models.DiscordMessageReaction import DiscordMessageReaction
+
 
 class DiscordMessage:
     """Represents a Discord message snapshot.
@@ -87,9 +89,7 @@ class DiscordMessage:
                     {"id": str(attachment.id), "url": attachment.url} for attachment in message.attachments
                 ],
                 "embeds": [embed.to_dict() for embed in message.embeds],
-                "reactions": [
-                    {"emoji": str(reaction.emoji), "count": reaction.count} for reaction in message.reactions
-                ],
+                "reactions": DiscordMessageReaction.from_message(message),
                 "nonce": message.nonce,
                 "pinned": message.pinned,
                 "type": message.type,
