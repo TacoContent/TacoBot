@@ -1,0 +1,64 @@
+{
+	// VS Code tasks for TacoBot
+	"$schema": "vscode://schemas/tasks",
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Python: Run Tests",
+			"type": "shell",
+			"command": "pytest",
+			"options": {
+				"env": {
+					"PYTHONPATH": "${workspaceFolder}/bot"
+				}
+			},
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [
+				"$python"
+			],
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "Python: Run Tests (Coverage)",
+			"type": "shell",
+			"command": "pytest --cov=bot --cov-report=term-missing",
+			"options": {
+				"env": {
+					"PYTHONPATH": "${workspaceFolder}/bot"
+				}
+			},
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [
+				"$python"
+			]
+		},
+		{
+			"label": "Format Check (Black)",
+			"type": "shell",
+			"command": "black --check .",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			}
+		},
+		{
+			"label": "Lint (Super Linter)",
+			"type": "shell",
+			"command": "docker run --rm --env-file .github/env/super-linter.env -e RUN_LOCAL=true -e CREATE_LOG_FILE=true -e LOG_FILE=super-linter-summary.log -e DEFAULT_BRANCH=develop -e GITHUB_WORKSPACE=/workspace -v ${workspaceFolder}:/workspace ghcr.io/super-linter/super-linter:v8",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"detail": "Run GitHub Super-Linter locally against the repository using Docker"
+		}
+	]
+}

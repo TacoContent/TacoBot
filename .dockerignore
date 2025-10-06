@@ -4,5 +4,6 @@
 .git/
 .gitignore
 __pycache__/**
+super-linter-summary.log
 
 tacobot.egg-info/

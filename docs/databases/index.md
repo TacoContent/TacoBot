@@ -18,6 +18,7 @@ This page serves as a table of contents for all documented MongoDB collections i
 - [live_activity](./live_activity.md)
 - [live_tracked](./live_tracked.md)
 - [logs](./logs.md)
+- [announcements](./announcements.md)
 - [mentalmondays](./mentalmondays.md)
 - [messages](./messages.md)
 - [migration_runs](./migration_runs.md)

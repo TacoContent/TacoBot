@@ -7,12 +7,13 @@
 		"--max-line-length=120",
 		"--rcfile=.github/linters/.flake8"
 	],
-	"python.formatting.provider": "black",
 	"cSpell.words": [
 		"addgroup",
 		"adduser",
 		"aiohttp",
 		"asyncio",
+		"appdetails",
+		"appids",
 		"automations",
 		"basedatabase",
 		"bday",
@@ -34,6 +35,7 @@
 		"mentionables",
 		"Mojang",
 		"mypy",
+		"MYPY",
 		"ncipollo",
 		"nodered",
 		"openurl",
@@ -42,6 +44,8 @@
 		"productid",
 		"pwsh",
 		"pycache",
+		"PYINK",
+		"PYLINT",
 		"pymongo",
 		"pyproject",
 		"pytest",
@@ -63,6 +67,7 @@
 		"tqotd",
 		"triviaquestion",
 		"venv",
+		"voicechat",
 		"wdyctw",
 		"Wyri"
 	]
