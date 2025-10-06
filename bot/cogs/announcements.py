@@ -227,41 +227,18 @@ class AnnouncementsCog(TacobotCog):
         _method = inspect.stack()[0][3]
         try:
             if not message.guild:
-                self.log.warn(0, f"{self._module}.{self._class}.{_method}", "Message is not in a guild")
                 return
 
             cog_settings = self.get_cog_settings(message.guild.id)
             if not cog_settings.get("enabled", False):
-                self.log.warn(
-                    message.guild.id,
-                    f"{self._module}.{self._class}.{_method}",
-                    f"Announcement tracking disabled for guild {message.guild.id}",
-                )
                 return
 
             # do we care about this channel?
             if str(message.channel.id) not in cog_settings.get("channels", []):
-                self.log.warn(
-                    message.guild.id,
-                    f"{self._module}.{self._class}.{_method}",
-                    f"Ignoring announcement message {message.id} in channel {message.channel.id}",
-                )
                 return
-
-            # track this announcement
-            self.log.debug(
-                message.guild.id,
-                f"{self._module}.{self._class}.{_method}",
-                f"Tracking announcement message {message.id} in channel {message.channel.id}",
-            )
 
             deleted_at: typing.Optional[int] = (
                 int(utils.to_timestamp(datetime.datetime.now(pytz.UTC))) if deleted else None
-            )
-            self.log.debug(
-                message.guild.id,
-                f"{self._module}.{self._class}.{_method}",
-                f"Tracking announcement: message.id={message.id}",
             )
             self.announcements_db.track_announcement(AnnouncementEntry.from_message(message, deleted_at=deleted_at))
 
