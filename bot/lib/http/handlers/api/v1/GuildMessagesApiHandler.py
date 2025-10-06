@@ -237,7 +237,9 @@ class GuildMessagesApiHandler(BaseHttpHandler):
                 try:
                     find_msg = channel.get_partial_message(int(mid))  # type: ignore[attr-defined]
                     if hasattr(channel, 'history'):
-                        if channel is not None and isinstance(channel, typing.Union[discord.TextChannel, discord.VoiceChannel]):
+                        if channel is not None and isinstance(
+                            channel, typing.Union[discord.TextChannel, discord.VoiceChannel]
+                        ):
                             async for msg in channel.history(limit=2, around=find_msg):
                                 if str(msg.id) == mid:
                                     m = msg
@@ -283,8 +285,8 @@ class GuildMessagesApiHandler(BaseHttpHandler):
         Query (optional): ?ids=123&ids=456 (merged with body / de-duped preserving order)
         Returns: JSON object keyed by message id. Example:
             {
-              "123": [ { "emoji": ":taco:", "count": 3 }, { "emoji": "👍", "count": 2 } ],
-              "456": [ { "emoji": "🔥", "count": 1 } ]
+                "123": [ { "emoji": ":taco:", "count": 3 }, { "emoji": "👍", "count": 2 } ],
+                "456": [ { "emoji": "🔥", "count": 1 } ]
             }
         Errors:
             400 - missing/invalid IDs or invalid JSON body
