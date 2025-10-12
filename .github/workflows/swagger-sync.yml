@@ -1,5 +1,5 @@
+---
 name: Swagger Sync Check
-
 on:
   pull_request:
     paths:
@@ -7,11 +7,9 @@ on:
       - '.swagger.v1.yaml'
       - 'scripts/sync_endpoints.py'
   push:
-    branches: [ develop ]
-    paths:
-      - 'bot/**'
-      - '.swagger.v1.yaml'
-      - 'scripts/sync_endpoints.py'
+    branches:
+      - develop
+      - beta*
 
 jobs:
   swagger-sync:
