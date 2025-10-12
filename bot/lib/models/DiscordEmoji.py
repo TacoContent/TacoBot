@@ -45,8 +45,10 @@ import datetime
 import typing
 
 import discord
+from bot.lib.models.openapi import openapi_model
 
 
+@openapi_model("DiscordEmoji", description="Snapshot of a Discord emoji's core attributes.")
 class DiscordEmoji:
     """Represents a Discord custom (guild) emoji.
 

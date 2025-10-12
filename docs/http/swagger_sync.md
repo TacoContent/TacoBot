@@ -346,6 +346,16 @@ Metric meanings (shown in summary):
 
 Cobertura mapping: each endpoint ~ a line; documented endpoints counted as covered.
 
+Cobertura custom properties added to the root `<coverage>` element expose extended metrics for dashboards:
+
+| Property | Description |
+|----------|-------------|
+| handlers_total | Total non-ignored handlers considered |
+| ignored_handlers | Ignored handlers count |
+| swagger_only_operations | Orphan swagger operations (no handler) |
+| model_components_generated | Count of auto-generated model component schemas this run |
+| model_components_existing_not_generated | Existing schemas not produced by the generator (manual / enriched) |
+
 ---
 
 ## 8. Diff Output

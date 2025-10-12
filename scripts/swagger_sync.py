@@ -670,6 +670,15 @@ def _generate_coverage(endpoints: List[Endpoint], ignored: List[Tuple[str,str,pa
             'version': 'tacobot-openapi-coverage-v1',
             'timestamp': str(int(time.time()))
         })
+        # Custom properties for supplementary metrics (consumed by CI dashboards)
+        props = SubElement(root, 'properties')
+        def _prop(name: str, value: Any) -> None:  # noqa: ANN001
+            SubElement(props, 'property', {'name': name, 'value': str(value)})
+        _prop('handlers_total', summary['handlers_total'])
+        _prop('ignored_handlers', summary['ignored_total'])
+        _prop('swagger_only_operations', summary['swagger_only_operations'])
+        _prop('model_components_generated', summary.get('model_components_generated', 0))
+        _prop('model_components_existing_not_generated', summary.get('model_components_existing_not_generated', 0))
         pkgs = SubElement(root, 'packages')
         pkg = SubElement(pkgs, 'package', {'name': 'openapi.handlers', 'line-rate': f"{line_rate:.4f}", 'branch-rate': '0.0', 'complexity': '0'})
         classes = SubElement(pkg, 'classes')

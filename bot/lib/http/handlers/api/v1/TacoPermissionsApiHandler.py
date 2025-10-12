@@ -66,7 +66,6 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
     async def _list_permissions(self, guildId: str, userId: str) -> typing.List[str]:
         """Return list of permission strings for a user.
 
-        @openapi: ignore
         Parameters:
             guildId: Discord guild ID (string form expected in route)
             userId:  Discord user ID (string form expected in route)
@@ -91,7 +90,6 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
     async def get(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """List permissions for a user.
 
-        @openapi: ignore
         Path Parameters:
             guildId: Discord guild ID
             userId:  Discord user ID
@@ -99,6 +97,42 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
         Returns:
             200 JSON array of permission strings (may be empty)
             500 JSON error on unexpected failure
+
+        >>>openapi
+        get:
+          security:
+            - X-AUTH-TOKEN: []
+            - X-TACOBOT-TOKEN: []
+          tags:
+            - permissions
+          summary: Get user permissions
+          parameters:
+          - name: guildId
+            in: path
+            required: true
+            schema:
+              type: string
+          - name: userId
+            in: path
+            required: true
+            schema:
+              type: string
+          responses:
+            '200':
+              description: Successful operation
+              content:
+                application/json:
+                  schema:
+                    type: array
+                    items:
+                      type: string
+            '500':
+              description: Internal server error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ErrorStatusCodePayload'
+        <<<openapi
         """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
