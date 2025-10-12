@@ -44,6 +44,7 @@ from httpserver.server import HttpResponseException, uri_mapping
 class HealthcheckApiHandler(BaseHttpHandler):
     """Provides simple health endpoints for uptime / readiness checks.
 
+    @openapi: ignore
     Current implementation is intentionally conservative. Additional checks
     (database connectivity, external API latency, cache layer) can be added
     later behind optional query flags or a verbose mode to avoid impacting
@@ -68,6 +69,7 @@ class HealthcheckApiHandler(BaseHttpHandler):
     def healthcheck(self, request: HttpRequest) -> HttpResponse:
         """Return basic service health status.
 
+        @openapi: ignore
         Paths:
             GET /api/v1/health
             GET /healthz

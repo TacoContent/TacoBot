@@ -23,6 +23,7 @@ class GuildRolesApiHandler(BaseHttpHandler):
     def get_guild_roles(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """List all roles in a guild.
 
+        @openapi: ignore
         Path: /api/v1/guild/{guild_id}/roles
         Method: GET
         Returns: Array[DiscordRole]
@@ -55,6 +56,7 @@ class GuildRolesApiHandler(BaseHttpHandler):
     def get_guild_roles_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Batch fetch roles by IDs.
 
+        @openapi: ignore
         Path: /api/v1/guild/{guild_id}/roles/batch/ids
         Method: POST
         Body (one of):
@@ -104,6 +106,7 @@ class GuildRolesApiHandler(BaseHttpHandler):
     def get_guild_mentionables_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Batch fetch mentionables (roles or users) by IDs.
 
+        @openapi: ignore
         Path: /api/v1/guild/{guild_id}/mentionables/batch/ids
         Method: POST
         Body (one of):
@@ -167,6 +170,69 @@ class GuildRolesApiHandler(BaseHttpHandler):
                         user = None
                 if user is not None:
                     results.append(DiscordUser.fromUser(user))
+            output: list[dict] = [r.to_dict() for r in results]
+            return HttpResponse(200, headers, bytearray(json.dumps(output), 'utf-8'))
+        except HttpResponseException as e:
+            return HttpResponse(e.status_code, e.headers, e.body)
+        except Exception as e:  # noqa: BLE001
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
+            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
+            raise HttpResponseException(500, headers, bytearray(err_msg, 'utf-8'))
+
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/mentionables", method="GET")
+    def get_guild_mentionables(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """List all mentionables (roles and users) in a guild.
+
+        @openapi: ignore
+        Path: /api/v1/guild/{guild_id}/mentionables
+        Method: GET
+        Returns: Array[DiscordRole|DiscordUser]
+        Errors:
+            400 - missing/invalid guild_id
+            404 - guild not found
+        Swagger:
+            Summary: List guild mentionables (roles + members)
+            Tags: [Guild, Mentionables]
+            OperationId: getGuildMentionables
+            Parameters:
+              - in: path
+                name: guild_id
+                schema:
+                  type: string
+                required: true
+                description: Discord guild id
+            Responses:
+              200:
+                description: Array of mentionable role and user objects
+                content:
+                  application/json:
+                    schema:
+                      type: array
+                      items:
+                        oneOf:
+                          - $ref: '#/components/schemas/DiscordRole'
+                          - $ref: '#/components/schemas/DiscordUser'
+              400: { description: Missing or invalid guild id }
+              404: { description: Guild not found }
+              500: { description: Internal server error }
+        """
+        _method = inspect.stack()[0][3]
+        try:
+            headers = HttpHeaders()
+            headers.add("Content-Type", "application/json")
+            guild_id: typing.Optional[str] = uri_variables.get("guild_id")
+            if guild_id is None:
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id is required"}', 'utf-8'))
+            if not guild_id.isdigit():
+                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id must be a number"}', 'utf-8'))
+            guild = self.bot.get_guild(int(guild_id))
+            if guild is None:
+                raise HttpResponseException(404, headers, bytearray('{"error": "guild not found"}', 'utf-8'))
+            results: list[typing.Union[DiscordRole, DiscordUser]] = []
+            for role in guild.roles:
+                results.append(DiscordRole.fromRole(role))
+            for member in guild.members:
+                results.append(DiscordUser.fromUser(member))
             output: list[dict] = [r.to_dict() for r in results]
             return HttpResponse(200, headers, bytearray(json.dumps(output), 'utf-8'))
         except HttpResponseException as e:

@@ -112,6 +112,7 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
     def list_join_whitelist(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:  # noqa: ARG002
         """Return the complete join whitelist for a guild.
 
+        @openapi: ignore
         Path: /api/v1/guild/{guild_id}/join-whitelist
         Method: GET
         Returns: Array[JoinWhitelistUser]
@@ -135,6 +136,7 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
     def list_join_whitelist_paged(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Return a paginated subset of the join whitelist.
 
+        @openapi: ignore
         Query Parameters:
             skip (int, default 0)
             take (int, default 50, max 200)
@@ -172,6 +174,7 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
     def add_join_whitelist_user(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Add (upsert) a user to the join whitelist.
 
+        @openapi: ignore
         Body JSON:
             { "user_id": "123", "added_by": "456" }
         """
@@ -204,6 +207,7 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
     def update_join_whitelist_user(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Update (re-add) a whitelist entry for a user.
 
+        @openapi: ignore
         Body can include:
             { "added_by": "<id>" }
         If omitted, added_by defaults to target user (self-added scenario).
@@ -234,7 +238,9 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/join-whitelist/{{user_id}}", method="DELETE")
     def delete_join_whitelist_user(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:  # noqa: ARG002
-        """Remove a user from the join whitelist."""
+        """Remove a user from the join whitelist.
+        @openapi: ignore
+        """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")

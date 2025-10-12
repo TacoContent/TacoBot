@@ -1,0 +1,35 @@
+name: Swagger Sync Check
+
+on:
+  pull_request:
+    paths:
+      - 'bot/**'
+      - '.swagger.v1.yaml'
+      - 'scripts/sync_endpoints.py'
+  push:
+    branches: [ develop ]
+    paths:
+      - 'bot/**'
+      - '.swagger.v1.yaml'
+      - 'scripts/sync_endpoints.py'
+
+jobs:
+  swagger-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies (minimal)
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+
+      - name: Swagger sync check
+        run: |
+          python scripts/sync_endpoints.py --check --markdown-summary openapi_summary.md --handlers-root bot/lib/http/handlers/ --swagger-file .swagger.v1.yaml --coverage-report openapi_coverage.json --show-missing-blocks --coverage-format json --verbose-coverage --show-orphans

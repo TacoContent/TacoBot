@@ -983,6 +983,35 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
 
+  '/api/v1/guild/{guild_id}/mentionables':
+    get:
+      tags: [ guilds, mentionables ]
+      summary: List guild mentionables (roles + members)
+      description: Returns all roles and members for the specified guild as mentionable union objects.
+      parameters:
+        - name: guild_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/DiscordMentionable' }
+        "400":
+          description: Missing or invalid guild id
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
+        "404":
+          description: Guild not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
+
   '/api/v1/minecraft/whitelist.json':
     get:
       tags:
