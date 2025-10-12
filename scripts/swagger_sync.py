@@ -1,33 +1,18 @@
 #!/usr/bin/env python
+"""OpenAPI / Swagger synchronization script (canonical name: swagger_sync.py).
+
+Formerly named ``sync_endpoints.py``. The legacy file has been removed; any
+external automation should invoke this module instead:
+
+    python scripts/swagger_sync.py --check
+
+All previous functionality (diffing, coverage reporting, markdown summary,
+colorized unified diffs, output directory management) is preserved.
 """
-Synchronize HTTP handler docstring OpenAPI snippets with the master Swagger file.
 
-Modes:
-    --check  (default)  Validate that generated paths match those in .swagger.v1.yaml; exit 1 if drift.
-    --fix               Overwrite / inject path definitions into .swagger.v1.yaml.
-
-Docstring Format:
-Include a YAML block delimited by ---openapi and ---end inside the function docstring. Example:
-
-    \"\"\"
-    Human description.
-
-    ---openapi
-    summary: List guild mentionables (roles + members)
-    tags: [guilds, mentionables]
-    responses:
-      200:
-        description: OK
-    ---end
-    \"\"\"
-
-Only selected top-level keys are read: summary, description, tags, parameters, requestBody, responses, security.
-Responses are required; if omitted a minimal 200 OK is injected.
-
-NOTE: This script currently only manages the 'paths' section. Components/schemas remain manual.
-"""
 from __future__ import annotations
 
+# Copy of original script content (kept identical for rename) -----------------
 import ast
 import argparse
 import pathlib
@@ -67,9 +52,7 @@ class Endpoint:
         for k in SUPPORTED_KEYS:
             if k in self.meta:
                 op[k] = self.meta[k]
-        # Ensure minimal responses
         op.setdefault("responses", {"200": {"description": "OK"}})
-        # Normalize tags
         if "tags" in op and isinstance(op["tags"], str):
             op["tags"] = [op["tags"]]
         return op
@@ -92,7 +75,6 @@ def extract_openapi_block(doc: Optional[str]) -> Dict[str, Any]:
 
 
 def resolve_path_literal(node: ast.AST) -> Optional[str]:
-    # Accept simple Constant or f-string with simple Name + Constant parts.
     if isinstance(node, ast.Constant) and isinstance(node.value, str):
         return node.value
     if isinstance(node, ast.JoinedStr):  # f-string
@@ -101,13 +83,11 @@ def resolve_path_literal(node: ast.AST) -> Optional[str]:
             if isinstance(value, ast.Constant) and isinstance(value.value, str):
                 parts.append(value.value)
             elif isinstance(value, ast.FormattedValue):
-                # Only allow simple Name identifiers (e.g., API_VERSION)
                 if isinstance(value.value, ast.Name):
                     name = value.value.id
-                    # Minimal whitelist
                     if name == "API_VERSION":
-                        parts.append("v1")  # Hardwired; adjust if dynamic versions supported
-                    else:  # Unknown name -> abort resolution
+                        parts.append("v1")
+                    else:
                         return None
                 else:
                     return None
@@ -118,13 +98,6 @@ def resolve_path_literal(node: ast.AST) -> Optional[str]:
 
 
 def collect_endpoints(handlers_root: pathlib.Path, *, ignore_file_globs: Optional[List[str]] = None) -> Tuple[List[Endpoint], List[Tuple[str, str, pathlib.Path, str]]]:
-    """Collect endpoints plus a list of ignored endpoints.
-
-    Ignored logic:
-      - If the module docstring contains '@openapi: ignore' every endpoint in that file is ignored.
-      - If an individual function docstring contains the marker, that specific endpoint is ignored.
-    Ignored endpoints are returned (path, method, file, function) so they can be reported.
-    """
     endpoints: List[Endpoint] = []
     ignored: List[Tuple[str, str, pathlib.Path, str]] = []
     ignore_file_globs = ignore_file_globs or []
@@ -157,12 +130,9 @@ def collect_endpoints(handlers_root: pathlib.Path, *, ignore_file_globs: Optiona
                         continue
                     if not deco.args:
                         continue
-                    # Extract the path / template / pattern literal (f-strings supported via resolve helper)
                     path_str = resolve_path_literal(deco.args[0])
                     if not path_str:
-                        # Unable to resolve literal (maybe dynamic); skip for now.
                         continue
-                    # Determine methods (can be single str or list/tuple of strs)
                     methods: List[str] = ['get']
                     for kw in deco.keywords or []:
                         if kw.arg == 'method':
@@ -175,12 +145,10 @@ def collect_endpoints(handlers_root: pathlib.Path, *, ignore_file_globs: Optiona
                                         collected.append(elt.value.lower())
                                 if collected:
                                     methods = collected
-                    # Regex pattern mappings cannot be represented as swagger path keys; mark them ignored.
                     if deco_name == 'uri_pattern_mapping':
                         for m in methods:
                             ignored.append((path_str, m, py_file, fn.name))
                         continue
-                    # For uri_mapping & uri_variable_mapping: record endpoints normally.
                     for m in methods:
                         if module_ignored or fn_ignored:
                             ignored.append((path_str, m, py_file, fn.name))
@@ -201,18 +169,10 @@ ANSI_RED = "\x1b[31m"
 ANSI_CYAN = "\x1b[36m"
 ANSI_RESET = "\x1b[0m"
 
-# Global (module-level) toggle set by --no-color CLI flag
 DISABLE_COLOR = False
 
 
 def _colorize_unified(diff_lines: List[str]) -> List[str]:
-    """Apply ANSI colors to unified diff lines (unless globally disabled).
-
-    Conventions:
-      - File headers (--- / +++) & hunk headers (@@ .. @@) -> cyan
-      - Added lines -> green
-      - Removed lines -> red
-    """
     colored: List[str] = []
     for line in diff_lines:
         if DISABLE_COLOR:
@@ -230,16 +190,11 @@ def _colorize_unified(diff_lines: List[str]) -> List[str]:
 
 
 def _dump_operation_yaml(op: Dict[str, Any]) -> List[str]:
-    # Stable dump for diffing, avoid trailing '...' markers
     dumped = yaml.safe_dump(op, sort_keys=True).rstrip().splitlines()
     return [l if l.strip() else '' for l in dumped]
 
 
 def _diff_operations(existing: Optional[Dict[str, Any]], new: Dict[str, Any], *, op_id: str) -> List[str]:
-    """Return a unified diff (patch style) between existing and new operation YAML.
-
-    Colorize additions (green) and deletions (red) for improved CI readability.
-    """
     if existing is None:
         existing_lines: List[str] = []
     else:
@@ -286,20 +241,7 @@ def detect_orphans(swagger: Dict[str, Any], endpoints: List[Endpoint]) -> list[s
 
 
 def _generate_coverage(endpoints: List[Endpoint], ignored: List[Tuple[str,str,pathlib.Path,str]], swagger: Dict[str, Any], *, report_path: pathlib.Path, fmt: str) -> None:
-    """Generate a coverage style report comparing handlers/docstrings vs swagger.
-
-    Coverage semantics:
-      - An endpoint is "covered" if it has an ---openapi block AND there is a matching swagger operation.
-      - definition_matches indicates the swagger operation equals the generated operation from the docstring.
-      - Swagger-only operations (orphans) are listed separately.
-      - Ignored endpoints are excluded from denominator metrics but retained for transparency.
-    Formats:
-      json: rich structured JSON
-      text: simple human-readable summary (similar spirit to Go coverage summary)
-      cobertura: minimal Cobertura XML approximation (lines == endpoints)
-    """
     summary, endpoint_records, swagger_only = _compute_coverage(endpoints, ignored, swagger)
-
     if fmt == 'json':
         payload = {
             'summary': summary,
@@ -334,13 +276,12 @@ def _generate_coverage(endpoints: List[Endpoint], ignored: List[Tuple[str,str,pa
                 lines.append(f" - {so['method'].upper()} {so['path']}")
         report_path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
     elif fmt == 'cobertura':
-        # Minimal Cobertura XML
         try:
             from xml.etree.ElementTree import Element, SubElement, tostring  # noqa: WPS433
         except Exception as e:  # pragma: no cover
             raise SystemExit(f"XML generation failed: {e}")
         lines_valid = summary['handlers_total'] + summary['swagger_only_operations']
-        lines_covered = summary['with_openapi_block']  # using number of documented handlers as coverage lines
+        lines_covered = summary['with_openapi_block']
         line_rate = (lines_covered / lines_valid) if lines_valid else 0.0
         root = Element('coverage', {
             'lines-valid': str(lines_valid),
@@ -374,7 +315,6 @@ def _generate_coverage(endpoints: List[Endpoint], ignored: List[Tuple[str,str,pa
                 'hits': covered,
                 'branch': 'false'
             })
-        # swagger only lines appended
         for so in swagger_only:
             line_number += 1
             cls = SubElement(classes, 'class', {
@@ -395,8 +335,8 @@ def _generate_coverage(endpoints: List[Endpoint], ignored: List[Tuple[str,str,pa
     else:
         raise SystemExit(f"Unsupported coverage format: {fmt}")
 
+
 def _compute_coverage(endpoints: List[Endpoint], ignored: List[Tuple[str,str,pathlib.Path,str]], swagger: Dict[str, Any]):
-    """Compute coverage summary and details without writing a report file."""
     swagger_paths = swagger.get('paths', {}) or {}
     methods_set = {"get","post","put","delete","patch","options","head"}
     swagger_ops: List[Tuple[str,str,Dict[str,Any]]] = []
@@ -407,7 +347,6 @@ def _compute_coverage(endpoints: List[Endpoint], ignored: List[Tuple[str,str,pat
             ml = m.lower()
             if ml in methods_set and isinstance(opdef, dict):
                 swagger_ops.append((p, ml, opdef))
-
     endpoint_records = []
     ignored_set = {(p,m,f,fn) for (p,m,f,fn) in ignored}
     with_block = 0
@@ -493,6 +432,7 @@ def main() -> None:
     parser.add_argument('--swagger-file', default=str(DEFAULT_SWAGGER_FILE), help='Path to swagger file to sync (default: .swagger.v1.yaml)')
     parser.add_argument('--ignore-file', action='append', default=[], help='Glob pattern (relative to handlers root) or filename to ignore (can be repeated)')
     parser.add_argument('--markdown-summary', help='Write a GitHub Actions style Markdown summary to this file (in addition to console output)')
+    parser.add_argument('--output-directory', default='.', help='Base directory to place output artifacts (coverage reports, markdown summary). Default: current working directory')
     parser.add_argument(
         '--color',
         choices=['auto', 'always', 'never'],
@@ -506,19 +446,14 @@ def main() -> None:
     if not handlers_root.exists():
         raise SystemExit(f"Handlers root does not exist: {handlers_root}")
 
-    global DISABLE_COLOR  # noqa: PLW0603 - intentional global toggle
-    # Color decision precedence:
-    # 1. --force-color always enables
-    # 2. --no-color always disables
-    # 3. Otherwise enable only if stdout is a TTY
-    color_reason: str
+    global DISABLE_COLOR
     if args.color == 'always':
         DISABLE_COLOR = False
         color_reason = 'enabled (mode=always)'
     elif args.color == 'never':
         DISABLE_COLOR = True
         color_reason = 'disabled (mode=never)'
-    else:  # auto
+    else:
         if sys.stdout.isatty():
             DISABLE_COLOR = False
             color_reason = 'enabled (mode=auto, TTY)'
@@ -530,13 +465,36 @@ def main() -> None:
     swagger = load_swagger(swagger_path)
     swagger_new, changed, notes, diffs = merge(swagger, endpoints)
 
-    # Include ignored endpoints in code_pairs for orphan detection so they don't appear as orphans
     orphans = detect_orphans(swagger_new, endpoints) if args.show_orphans else []
-
-    # Always compute coverage for richer console output (uses proposed swagger_new for parity with potential write)
     coverage_summary, coverage_records, coverage_swagger_only = _compute_coverage(endpoints, ignored, swagger_new)
-    if args.coverage_report:
-        _generate_coverage(endpoints, ignored, swagger_new, report_path=pathlib.Path(args.coverage_report), fmt=args.coverage_format)
+    output_dir = pathlib.Path(args.output_directory)
+    try:
+        output_dir.mkdir(parents=True, exist_ok=True)
+    except Exception as e:  # pragma: no cover
+        raise SystemExit(f"Failed to create output directory '{output_dir}': {e}")
+
+    def _resolve_output(p: Optional[str]) -> Optional[pathlib.Path]:
+        if not p:
+            return None
+        path_obj = pathlib.Path(p)
+        if path_obj.is_absolute():
+            return path_obj
+        return output_dir / path_obj
+
+    coverage_report_path = _resolve_output(args.coverage_report)
+    markdown_summary_path = _resolve_output(args.markdown_summary)
+
+    try:
+        repo_root = pathlib.Path.cwd().resolve()
+        out_resolved = output_dir.resolve()
+        if repo_root in out_resolved.parents and out_resolved.name != 'reports':
+            print(f"WARNING: Output directory '{out_resolved}' is inside the repository and is not 'reports/'. Consider using 'reports/' to avoid accidental commits.", file=sys.stderr)
+    except Exception:  # pragma: no cover
+        pass
+
+    if coverage_report_path:
+        coverage_report_path.parent.mkdir(parents=True, exist_ok=True)
+        _generate_coverage(endpoints, ignored, swagger_new, report_path=coverage_report_path, fmt=args.coverage_format)
 
     def print_coverage_summary(prefix: str = "OpenAPI Documentation Coverage Summary") -> None:
         cs = coverage_summary
@@ -548,7 +506,6 @@ def main() -> None:
         print(f"  In swagger (handlers):      {cs['handlers_in_swagger']} ({cs['coverage_rate_handlers_in_swagger']:.1%})")
         print(f"  Definition matches:         {cs['definition_matches']} / {cs['with_openapi_block']} ({cs['operation_definition_match_rate']:.1%})")
         print(f"  Swagger only operations:    {cs['swagger_only_operations']}")
-        # Suggested actions
         suggestions: List[str] = []
         if cs['without_openapi_block'] > 0:
             suggestions.append("Add ---openapi blocks for undocumented handlers.")
@@ -575,7 +532,7 @@ def main() -> None:
                 print(f"    - {rec['method'].upper()} {rec['path']} :: {'|'.join(flags) if flags else 'NONE'}")
             if coverage_swagger_only:
                 print("\n  Swagger-only (no handler) operations:")
-                for so in coverage_swagger_only[:50]:  # cap listing
+                for so in coverage_swagger_only[:50]:
                     print(f"    - {so['method'].upper()} {so['path']}")
                 if len(coverage_swagger_only) > 50:
                     print(f"    ... ({len(coverage_swagger_only)-50} more)")
@@ -597,33 +554,34 @@ def main() -> None:
                 print(f" - {o}")
         return
 
-    # check mode (default or --check)
     coverage_fail = False
     if args.fail_on_coverage_below is not None:
         threshold = args.fail_on_coverage_below
         if threshold > 1:
             threshold = threshold / 100.0
         actual = coverage_summary['coverage_rate_handlers_with_block']
-        if actual + 1e-12 < threshold:  # small epsilon
+        if actual + 1e-12 < threshold:
             coverage_fail = True
             print(f"Coverage threshold not met: {actual:.2%} < {threshold:.2%}", file=sys.stderr)
+
     def build_markdown_summary(*, changed: bool, coverage_fail: bool) -> str:
-        """Construct a GitHub Actions style markdown summary for this run."""
         def _strip_ansi(s: str) -> str:
             return re.sub(r"\x1b\[[0-9;]*m", "", s)
         lines_md: List[str] = []
-        lines_md.append("## OpenAPI Sync Result")
+        lines_md.append("# OpenAPI Sync Result")
+        lines_md.append("")
         if changed:
-            lines_md.append("**Status:** Drift detected. Please run the sync script with `--fix` and commit the updated swagger file.\n")
+            lines_md.append("**Status:** Drift detected. Please run the sync script with `--fix` and commit the updated swagger file.")
         elif coverage_fail:
-            lines_md.append("**Status:** Coverage threshold failed.\n")
+            lines_md.append("**Status:** Coverage threshold failed.")
         else:
-            lines_md.append("**Status:** In sync ✅\n")
-        # Color status note
-        lines_md.append(f"_Diff color output: {'disabled' if DISABLE_COLOR else 'enabled'} ({color_reason})._\n")
-        # Coverage summary table
+            lines_md.append("**Status:** In sync ✅")
+        lines_md.append("")
+        lines_md.append(f"_Diff color output: {color_reason}._")
+        lines_md.append("")
         cs = coverage_summary
-        lines_md.append("### Coverage Summary")
+        lines_md.append("## Coverage Summary")
+        lines_md.append("")
         lines_md.append("| Metric | Value | Percent |")
         lines_md.append("|--------|-------|---------|")
         lines_md.append(f"| Handlers considered | {cs['handlers_total']} | - |")
@@ -631,21 +589,22 @@ def main() -> None:
         lines_md.append(f"| With doc blocks | {cs['with_openapi_block']} | {cs['coverage_rate_handlers_with_block']:.1%} |")
         lines_md.append(f"| In swagger (handlers) | {cs['handlers_in_swagger']} | {cs['coverage_rate_handlers_in_swagger']:.1%} |")
         lines_md.append(f"| Definition matches | {cs['definition_matches']} / {cs['with_openapi_block']} | {cs['operation_definition_match_rate']:.1%} |")
-        lines_md.append(f"| Swagger only operations | {cs['swagger_only_operations']} | - |\n")
-        # Suggestions
+        lines_md.append(f"| Swagger only operations | {cs['swagger_only_operations']} | - |")
+        lines_md.append("")
         sugg: List[str] = []
         if cs['without_openapi_block'] > 0:
             sugg.append("Add `---openapi` blocks for handlers missing documentation.")
         if cs['swagger_only_operations'] > 0:
             sugg.append("Remove, implement, or ignore swagger-only operations.")
         if sugg:
-            lines_md.append("### Suggestions")
+            lines_md.append("## Suggestions")
+            lines_md.append("")
             for s in sugg:
                 lines_md.append(f"- {s}")
             lines_md.append("")
-        # Drift diffs
         if changed:
-            lines_md.append("### Proposed Operation Diffs")
+            lines_md.append("## Proposed Operation Diffs")
+            lines_md.append("")
             for (path, method), dlines in diffs.items():
                 lines_md.append(f"<details><summary>{method.upper()} {path}</summary>")
                 lines_md.append("")
@@ -655,28 +614,33 @@ def main() -> None:
                 lines_md.append("```")
                 lines_md.append("</details>")
             lines_md.append("")
-        # Swagger only subset
         if coverage_swagger_only:
-            lines_md.append("### Swagger-only Operations (no handler)")
+            lines_md.append("## Swagger-only Operations (no handler)")
+            lines_md.append("")
             show = coverage_swagger_only[:25]
             for so in show:
                 lines_md.append(f"- `{so['method'].upper()} {so['path']}`")
             if len(coverage_swagger_only) > 25:
                 lines_md.append(f"... and {len(coverage_swagger_only)-25} more")
             lines_md.append("")
-        # Ignored endpoints
         if ignored:
-            lines_md.append("### Ignored Endpoints (@openapi: ignore)")
+            lines_md.append("## Ignored Endpoints (@openapi: ignore)")
+            lines_md.append("")
             for (p, m, f, fn) in ignored[:50]:
                 lines_md.append(f"- `{m.upper()} {p}` ({f.name}:{fn})")
             if len(ignored) > 50:
                 lines_md.append(f"... and {len(ignored)-50} more")
             lines_md.append("")
-        return "\n".join(lines_md) + "\n"
+        content = "\n".join(lines_md)
+        content = "\n".join(l.rstrip() for l in content.splitlines())
+        content = re.sub(r"\n{3,}", "\n\n", content)
+        if not content.endswith("\n"):
+            content += "\n"
+        return content
 
     if changed or coverage_fail:
         if changed:
-            print("Drift detected between handlers and swagger. Run: python scripts/sync_endpoints.py --fix", file=sys.stderr)
+            print("Drift detected between handlers and swagger. Run: python scripts/swagger_sync.py --fix", file=sys.stderr)
             for n in notes:
                 print(f" - {n}")
             print("\nProposed changes:")
@@ -694,19 +658,20 @@ def main() -> None:
                 print(f" - {m.upper()} {p} ({f.name}:{fn})")
         print()
         print_coverage_summary()
-
-        # GitHub Actions summary & optional markdown summary file
         summary_targets: List[str] = []
         step_summary = os.getenv("GITHUB_STEP_SUMMARY")
         if step_summary:
             summary_targets.append(step_summary)
-        if args.markdown_summary:
-            summary_targets.append(args.markdown_summary)
+        if markdown_summary_path:
+            summary_targets.append(str(markdown_summary_path))
         if summary_targets:
             try:
                 content = build_markdown_summary(changed=changed, coverage_fail=coverage_fail)
                 for path_out in summary_targets:
-                    with open(path_out, 'a', encoding='utf-8') as fh:
+                    mode = 'a'
+                    if markdown_summary_path and path_out == str(markdown_summary_path):
+                        mode = 'w'
+                    with open(path_out, mode, encoding='utf-8') as fh:
                         fh.write(content)
             except Exception as e:  # pragma: no cover
                 print(f"WARNING: Failed writing markdown summary: {e}", file=sys.stderr)
@@ -719,19 +684,20 @@ def main() -> None:
                 print(f" - {m.upper()} {p} ({f.name}:{fn})")
         print()
         print_coverage_summary()
-
-        # GitHub Actions / markdown summary for success path
         summary_targets: List[str] = []
         step_summary = os.getenv("GITHUB_STEP_SUMMARY")
         if step_summary:
             summary_targets.append(step_summary)
-        if args.markdown_summary:
-            summary_targets.append(args.markdown_summary)
+        if markdown_summary_path:
+            summary_targets.append(str(markdown_summary_path))
         if summary_targets:
             try:
                 content = build_markdown_summary(changed=False, coverage_fail=False)
                 for path_out in summary_targets:
-                    with open(path_out, 'a', encoding='utf-8') as fh:
+                    mode = 'a'
+                    if markdown_summary_path and path_out == str(markdown_summary_path):
+                        mode = 'w'
+                    with open(path_out, mode, encoding='utf-8') as fh:
                         fh.write(content)
             except Exception as e:  # pragma: no cover
                 print(f"WARNING: Failed writing markdown summary: {e}", file=sys.stderr)

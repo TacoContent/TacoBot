@@ -1,11 +1,11 @@
 ---
 name: Swagger Sync Check
-on: #
+on:
   pull_request:
     paths:
       - 'bot/**'
       - '.swagger.v1.yaml'
-      - 'scripts/sync_endpoints.py'
+      - 'scripts/swagger_sync.py'
   push:
     branches:
       - develop
@@ -33,4 +33,22 @@ jobs:
 
       - name: Swagger sync check
         run: |
-          python scripts/sync_endpoints.py --check --markdown-summary openapi_summary.md --handlers-root bot/lib/http/handlers/ --swagger-file .swagger.v1.yaml --coverage-report openapi_coverage.json --show-missing-blocks --coverage-format json --verbose-coverage --show-orphans
+          python scripts/swagger_sync.py \
+            --check \
+            --handlers-root bot/lib/http/handlers/ \
+            --swagger-file .swagger.v1.yaml \
+            --output-directory reports \
+            --markdown-summary openapi_summary.md \
+            --coverage-report openapi_coverage.json \
+            --show-missing-blocks \
+            --coverage-format json \
+            --verbose-coverage \
+            --show-orphans
+
+      - name: Upload OpenAPI reports artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-reports
+          path: reports/
+          if-no-files-found: warn

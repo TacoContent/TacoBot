@@ -2,12 +2,19 @@
 \.idea/
 __pycache__/**
 __pycache__/
+.pytest_cache/
 tacobot.egg-info/
 .venv/
 *.env
 .env.*
 .env
 !.github/env/*.env
+
+reports/*
+!reports/.gitkeep
+!reports/README.md
+
+
 # ignore the super-linter log file when running super-linter locally
 super-linter-summary.log
 super-linter-summary.ansi.log

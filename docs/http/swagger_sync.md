@@ -1,4 +1,4 @@
-# Swagger Sync Script (`scripts/sync_endpoints.py`)
+# Swagger Sync Script (`scripts/swagger_sync.py`)
 
 Comprehensive guide to the OpenAPI sync tool that keeps handler docstrings and the master `/.swagger.v1.yaml` synchronized.
 
@@ -12,7 +12,7 @@ Maintaining a large OpenAPI file by hand is error‑prone. Endpoints drift when:
 - A summary / response code changes in code but the YAML is stale.
 - Old endpoints are removed from code but still appear in the spec.
 
-The `scripts/sync_endpoints.py` script provides a one‑way synchronization from code → swagger (handlers are the source of truth for path operations). It can:
+The `scripts/swagger_sync.py` script provides a one‑way synchronization from code → swagger (handlers are the source of truth for path operations). It can:
 
 - Detect drift (CI check mode)
 - Regenerate the `paths` operations block entries (write mode)
@@ -121,7 +121,7 @@ Anything else is ignored safely.
 ## 4. CLI Reference
 
 ```text
-python scripts/sync_endpoints.py [--check|--fix] [options]
+python scripts/swagger_sync.py [--check|--fix] [options]
 
 Modes (mutually exclusive):
   --check            Default. Validate swagger vs handlers; exit 1 on drift.
@@ -139,6 +139,7 @@ General Options:
   --coverage-format FORMAT   json|text|cobertura (default json).
   --fail-on-coverage-below N Fail if handler doc coverage < N (0-1 or 0-100).
   --markdown-summary FILE    Append GitHub-friendly markdown summary output.
+  --output-directory DIR     Base directory for report outputs (coverage & summary). Default: current working directory.
   --color MODE               Color output: auto (default, only if TTY), always, never.
 
 Exit Codes:
@@ -150,13 +151,13 @@ Exit Codes:
 ### 4.1 Basic Check
 
 ```bash
-python scripts/sync_endpoints.py
+python scripts/swagger_sync.py
 ```
 
 ### 4.2 Apply Fixes
 
 ```bash
-python scripts/sync_endpoints.py --fix
+python scripts/swagger_sync.py --fix
 git add .swagger.v1.yaml
 git commit -m "chore: sync swagger"
 ```
@@ -164,7 +165,7 @@ git commit -m "chore: sync swagger"
 ### 4.3 Coverage Report (JSON + Threshold)
 
 ```bash
-python scripts/sync_endpoints.py --coverage-report openapi_coverage.json --fail-on-coverage-below 95
+python scripts/swagger_sync.py --coverage-report openapi_coverage.json --fail-on-coverage-below 95
 ```
 
 Accepts `95` or `0.95`. Failure exits with code 1.
@@ -172,32 +173,43 @@ Accepts `95` or `0.95`. Failure exits with code 1.
 ### 4.4 Human-Friendly Coverage Text
 
 ```bash
-python scripts/sync_endpoints.py --coverage-report coverage.txt --coverage-format text
+python scripts/swagger_sync.py --coverage-report coverage.txt --coverage-format text
 ```
 
 ### 4.5 Cobertura (CI Metrics Dashboards)
 
 ```bash
-python scripts/sync_endpoints.py --coverage-report coverage.xml --coverage-format cobertura
+python scripts/swagger_sync.py --coverage-report coverage.xml --coverage-format cobertura
 ```
 
 ### 4.6 Show Missing Blocks & Swagger Orphans Together
 
 ```bash
-python scripts/sync_endpoints.py --show-missing-blocks --show-orphans
+python scripts/swagger_sync.py --show-missing-blocks --show-orphans
 ```
 
 ### 4.7 Ignore Specific Files
 
 ```bash
-python scripts/sync_endpoints.py --ignore-file experimental_*.py --ignore-file LegacyHandler.py
+python scripts/swagger_sync.py --ignore-file experimental_*.py --ignore-file LegacyHandler.py
 ```
 
 ### 4.8 Append Markdown Summary (Local or CI)
 
 ```bash
-python scripts/sync_endpoints.py --markdown-summary swagger_sync_summary.md
+python scripts/swagger_sync.py --markdown-summary swagger_sync_summary.md
 ```
+
+Use a dedicated output directory (auto-created) for report artifacts:
+
+```bash
+python scripts/swagger_sync.py \
+  --markdown-summary openapi_summary.md \
+  --coverage-report openapi_coverage.json \
+  --output-directory reports
+```
+
+Absolute paths bypass the output directory root resolution, relative paths are placed beneath the specified directory.
 
 In GitHub Actions, if `GITHUB_STEP_SUMMARY` is set the summary is appended there automatically.
 
@@ -208,7 +220,7 @@ Example snippet (GitHub Actions job step):
 ```yaml
       - name: OpenAPI sync & coverage
         run: |
-          python scripts/sync_endpoints.py --check --fail-on-coverage-below 90 --show-missing-blocks
+          python scripts/swagger_sync.py --check --fail-on-coverage-below 90 --show-missing-blocks
 ```
 
 ---
@@ -311,8 +323,8 @@ Markdown summaries always strip ANSI codes and note the effective color mode & r
 
 1. Implement handler with decorator `@uri_variable_mapping("/api/{API_VERSION}/resource", method="GET")`.
 2. Add docstring with human preface + `---openapi` block including at least a 200 response.
-3. Run sync (check mode): `python scripts/sync_endpoints.py`.
-4. If drift: `python scripts/sync_endpoints.py --fix` then commit swagger update.
+3. Run sync (check mode): `python scripts/swagger_sync.py`.
+4. If drift: `python scripts/swagger_sync.py --fix` then commit swagger update.
 5. Add / update tests referencing new endpoint.
 6. (Optional) Run coverage report to confirm metrics.
 
@@ -320,19 +332,19 @@ Markdown summaries always strip ANSI codes and note the effective color mode & r
 
 ## 13. FAQ
 
-**Q: Do I need a block for internal / experimental endpoints?**  
+**Q: Do I need a block for internal / experimental endpoints?**
 Add one or mark with `@openapi: ignore`. Avoid silent omissions.
 
-**Q: Does `--fix` delete swagger-only paths?**  
+**Q: Does `--fix` delete swagger-only paths?**
 No. It only updates / inserts operations. Remove obsolete paths manually (script will highlight them as orphans).
 
-**Q: Are comments in swagger preserved?**  
+**Q: Are comments in swagger preserved?**
 Only outside replaced operation objects. Inline comments within an updated operation are lost on rewrite.
 
-**Q: How are tags normalized?**  
+**Q: How are tags normalized?**
 Single string converted to single-element array for consistency.
 
-**Q: What constitutes a definition match?**  
+**Q: What constitutes a definition match?**
 Exact dict equality after generating the operation object from the doc block (including default responses).
 
 ---

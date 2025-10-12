@@ -63,7 +63,7 @@
 		{
 			"label": "Swagger Validation",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python scripts/sync_endpoints.py --check --markdown-summary openapi_summary.md --handlers-root bot/lib/http/handlers/ --swagger-file .swagger.v1.yaml --coverage-report openapi_coverage.json --show-missing-blocks --coverage-format json --verbose-coverage --show-orphans",
+			"command": "./.venv/scripts/Activate.ps1; python scripts/swagger_sync.py --check --markdown-summary=openapi_summary.md --handlers-root=bot/lib/http/handlers/ --swagger-file=.swagger.v1.yaml --output-directory=./reports/openapi --coverage-report=openapi_coverage.json --show-missing-blocks --coverage-format=json --verbose-coverage --show-orphans",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"
