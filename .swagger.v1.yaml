@@ -1428,8 +1428,6 @@ paths:
                 $ref: '#/components/schemas/MinecraftPlayerEventPayload'
   /api/v1/permissions/{guildId}/{userId}:
     get:
-      tags:
-      - permissions
       summary: Get user permissions
       parameters:
       - name: guildId
@@ -1442,6 +1440,9 @@ paths:
         required: true
         schema:
           type: string
+      security:
+      - X-AUTH-TOKEN: []
+      - X-TACOBOT-TOKEN: []
       responses:
         '200':
           description: Successful operation
@@ -1451,6 +1452,14 @@ paths:
                 type: array
                 items:
                   type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+      - permissions
   /api/v1/permissions/{guildId}/{userId}/{permission}:
     post:
       tags:

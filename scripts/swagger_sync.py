@@ -149,6 +149,75 @@ Rules & Caveats
     are NOT declared in the decorator's ``method=`` list cause the run to fail fast (non‑zero exit).
     Without ``--strict`` these are downgraded to warnings and the extraneous verb definitions are ignored.
 
+Model Component Auto‑Generation
+-------------------------------
+Classes in the models root (default ``bot/lib/models``) decorated with
+``@openapi_model("ComponentName", description="...")`` are translated into
+basic ``components.schemas`` entries. Property extraction is heuristic: any
+``self.<attr>`` assignment (optionally with an annotation) inside ``__init__``
+becomes a schema property. Types are inferred from annotations or literal
+defaults (int → integer, bool → boolean, float → number, list → array, else
+string). Optional/nullable detection is naive (presence of ``Optional`` / ``None``
+in the annotation string). Complex/nested objects are intentionally collapsed
+to ``string`` for safety—refine manually in the swagger file if richer schemas
+are required. Disable this behavior with ``--no-model-components`` or change
+the scan root via ``--models-root``.
+
+Decorator Example::
+
+    from bot.lib.models.openapi import openapi_model
+    from typing import Optional
+
+    @openapi_model("DiscordChannel", description="Discord text/voice channel snapshot")
+    class DiscordChannel:
+        def __init__(self, id: int, name: str, topic: Optional[str] = None, nsfw: bool = False, position: int = 0):
+            self.id: int = id
+            self.name: str = name
+            self.topic: Optional[str] = topic  # Optional → nullable true (and not required)
+            self.nsfw: bool = nsfw
+            self.position: int = position
+            self.permission_overwrites: list[str] = []  # list → type: array, items: string
+
+Generated YAML (excerpt)::
+
+    components:
+      schemas:
+        DiscordChannel:
+          type: object
+          description: Discord text/voice channel snapshot
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            topic: { type: string, nullable: true }
+            nsfw: { type: boolean }
+            position: { type: integer }
+            permission_overwrites:
+              type: array
+              items: { type: string }
+          required: [id, name, nsfw, position, permission_overwrites]
+
+Inference Rules:
+* Required unless annotation contains ``Optional`` or ``None``.
+* ``int``→integer, ``bool``→boolean, ``float``→number, ``list[List]``→array (items default to string).
+* Nullable flag added when ``Optional``/``None`` present.
+* Private attributes (leading ``_``) ignored.
+* Unknown / complex types collapse to ``string`` (manually refine in swagger if needed).
+
+Drift Warnings:
+If the inferred schema differs from the existing component a unified diff is printed (colorized when enabled):
+
+    WARNING: Model schema drift detected for component 'DiscordChannel'.
+    --- a/components.schemas.DiscordChannel
+    +++ b/components.schemas.DiscordChannel
+    @@
+    -  topic: { type: string }
+    +  topic: { type: string, nullable: true }
+
+Accept by running with ``--fix`` and committing the updated ``.swagger.v1.yaml``.
+
+Limitations: no recursion, no enum/format inference, arrays always ``items: {type: string}``. Edit richer details manually.
+Tests: see ``tests/test_swagger_sync_model_components.py``.
+
 Internal API (selected)
 -----------------------
 * ``collect_endpoints`` → List[Endpoint], plus ignored list
@@ -219,6 +288,7 @@ DEFAULT_HANDLERS_ROOT = pathlib.Path("bot/lib/http/handlers/")
 DEFAULT_SWAGGER_FILE = pathlib.Path(".swagger.v1.yaml")
 SUPPORTED_KEYS = {"summary", "description", "tags", "parameters", "requestBody", "responses", "security"}
 IGNORE_MARKER = "@openapi: ignore"
+MODEL_DECORATOR_ATTR = '__openapi_component__'
 
 @dataclass
 class Endpoint:
@@ -365,6 +435,100 @@ def collect_endpoints(handlers_root: pathlib.Path, *, strict: bool = False, igno
                             meta = raw_meta_full if isinstance(raw_meta_full, dict) else {}
                         endpoints.append(Endpoint(path=path_str, method=m, meta=meta, function=fn.name, file=py_file))
     return endpoints, ignored
+
+
+def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, Any]]:
+    """Collect model classes decorated with @openapi_model and derive naive schemas.
+
+    Strategy (pure AST – no imports executed):
+    * Find classes with an @openapi_model decorator.
+    * Extract component name (first positional arg or class name fallback) and description kwarg.
+    * Inside __init__, record any self.<attr> AnnAssign or Assign targets (skip private leading _).
+    * Infer primitive types from annotations / literal defaults; mark non-optional as required.
+    Limitations: nested / complex types collapsed to string; arrays default items.type=string.
+    """
+    components: Dict[str, Dict[str, Any]] = {}
+    if not models_root.exists():
+        return components
+    for py_file in models_root.rglob('*.py'):
+        if py_file.name.startswith('_'):
+            continue
+        try:
+            src = py_file.read_text(encoding='utf-8')
+        except Exception:
+            continue
+        try:
+            module = ast.parse(src, filename=str(py_file))
+        except SyntaxError:
+            continue
+        for cls in [n for n in module.body if isinstance(n, ast.ClassDef)]:
+            comp_name: Optional[str] = None
+            description: str = ''
+            for deco in cls.decorator_list:
+                if isinstance(deco, ast.Call) and getattr(deco.func, 'id', '') == 'openapi_model':
+                    if deco.args and isinstance(deco.args[0], ast.Constant) and isinstance(deco.args[0].value, str):
+                        comp_name = deco.args[0].value
+                    for kw in deco.keywords or []:
+                        if kw.arg == 'description' and isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
+                            description = kw.value.value
+                elif isinstance(deco, ast.Name) and deco.id == 'openapi_model':
+                    comp_name = cls.name
+            if not comp_name:
+                continue
+            annotations: Dict[str, str] = {}
+            for node in cls.body:
+                if isinstance(node, ast.FunctionDef) and node.name == '__init__':
+                    for stmt in node.body:
+                        if isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Attribute) and isinstance(stmt.target.value, ast.Name) and stmt.target.value.id == 'self':
+                            attr = stmt.target.attr
+                            if attr.startswith('_'): continue
+                            anno = ''
+                            if hasattr(ast, 'unparse'):
+                                try:
+                                    anno = ast.unparse(stmt.annotation)
+                                except Exception:
+                                    anno = ''
+                            annotations[attr] = anno or 'string'
+                        elif isinstance(stmt, ast.Assign):
+                            for tgt in stmt.targets:
+                                if isinstance(tgt, ast.Attribute) and isinstance(tgt.value, ast.Name) and tgt.value.id == 'self':
+                                    attr = tgt.attr
+                                    if attr.startswith('_'): continue
+                                    if attr not in annotations:
+                                        inferred = 'string'
+                                        if isinstance(stmt.value, ast.Constant):
+                                            if isinstance(stmt.value.value, bool): inferred = 'boolean'
+                                            elif isinstance(stmt.value.value, int): inferred = 'integer'
+                                            elif isinstance(stmt.value.value, float): inferred = 'number'
+                                        annotations[attr] = inferred
+            props: Dict[str, Any] = {}
+            required: List[str] = []
+            for attr, anno_str in annotations.items():
+                nullable = 'Optional' in anno_str or 'None' in anno_str
+                typ = 'string'
+                if 'int' in anno_str:
+                    typ = 'integer'
+                elif 'bool' in anno_str:
+                    typ = 'boolean'
+                elif 'float' in anno_str:
+                    typ = 'number'
+                elif 'list' in anno_str or 'List' in anno_str:
+                    typ = 'array'
+                schema: Dict[str, Any] = {'type': typ}
+                if typ == 'array':
+                    schema['items'] = {'type': 'string'}
+                if nullable:
+                    schema['nullable'] = True
+                props[attr] = schema
+                if not nullable:
+                    required.append(attr)
+            comp_schema: Dict[str, Any] = {'type': 'object', 'properties': props}
+            if required:
+                comp_schema['required'] = sorted(required)
+            if description:
+                comp_schema['description'] = description
+            components[comp_name] = comp_schema
+    return components
 
 
 def load_swagger(swagger_file: pathlib.Path) -> Dict[str, Any]:
@@ -647,6 +811,8 @@ def main() -> None:
     parser.add_argument('--openapi-start', default=DEFAULT_OPENAPI_START, help=f'Start delimiter for embedded OpenAPI blocks (default: {DEFAULT_OPENAPI_START!r}; legacy {LEGACY_OPENAPI_START!r} also accepted)')
     parser.add_argument('--openapi-end', default=DEFAULT_OPENAPI_END, help=f'End delimiter for embedded OpenAPI blocks (default: {DEFAULT_OPENAPI_END!r}; legacy {LEGACY_OPENAPI_END!r} also accepted)')
     parser.add_argument('--list-endpoints', action='store_true', help='Print collected handler endpoints (path method file:function) and exit (debug aid)')
+    parser.add_argument('--models-root', default='bot/lib/models', help='Root directory to scan for @openapi_model decorated classes')
+    parser.add_argument('--no-model-components', action='store_true', help='Disable automatic model component generation')
     parser.add_argument(
         '--color',
         choices=['auto', 'always', 'never'],
@@ -698,6 +864,32 @@ def main() -> None:
         sys.exit(0)
 
     swagger = load_swagger(swagger_path)
+    # Model components
+    if not args.no_model_components:
+        model_components = collect_model_components(pathlib.Path(args.models_root))
+        if model_components:
+            schemas = swagger.setdefault('components', {}).setdefault('schemas', {})
+            updated = []
+            for name, new_schema in model_components.items():
+                existing = schemas.get(name)
+                if existing != new_schema:
+                    # diff for awareness
+                    existing_lines = yaml.safe_dump(existing or {}, sort_keys=True).rstrip().splitlines() if existing is not None else []
+                    new_lines = yaml.safe_dump(new_schema, sort_keys=True).rstrip().splitlines()
+                    if existing is not None and existing_lines != new_lines:
+                        warn = f"Model schema drift detected for component '{name}'."
+                        if not DISABLE_COLOR:
+                            warn = f"{ANSI_YELLOW}WARNING: {warn}{ANSI_RESET}"
+                        else:
+                            warn = f"WARNING: {warn}"
+                        print(warn, file=sys.stderr)
+                        diff = difflib.unified_diff(existing_lines, new_lines, fromfile=f"a/components.schemas.{name}", tofile=f"b/components.schemas.{name}", lineterm='')
+                        for dl in _colorize_unified(list(diff)):
+                            print(dl, file=sys.stderr)
+                    schemas[name] = new_schema
+                    updated.append(name)
+            if updated:
+                print(f"Model schemas updated: {', '.join(sorted(updated))}")
     swagger_new, changed, notes, diffs = merge(swagger, endpoints)
 
     orphans = detect_orphans(swagger_new, endpoints) if args.show_orphans else []
