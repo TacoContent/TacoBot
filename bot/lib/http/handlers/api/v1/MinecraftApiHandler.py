@@ -54,7 +54,7 @@ from httpserver.server import HttpResponseException, uri_mapping, uri_variable_m
 
 class MinecraftApiHandler(BaseHttpHandler):
     """Expose Minecraft integration endpoints.
-
+    @openapi: ignore
     Responsibilities:
         - Provide read access to server/player meta (whitelist, ops, events, worlds)
         - Surface server runtime status via a lightweight ping class (`MinecraftStatus`)
@@ -86,6 +86,7 @@ class MinecraftApiHandler(BaseHttpHandler):
     def minecraft_whitelist(self, request: HttpRequest) -> HttpResponse:
         """Return the current Minecraft whitelist.
 
+        @openapi: ignore
         Response: Array[{ "uuid": str, "name": str }]
         Filtering: none (full list for the primary guild)
         Errors:
@@ -116,6 +117,7 @@ class MinecraftApiHandler(BaseHttpHandler):
     def minecraft_oplist(self, request: HttpRequest) -> HttpResponse:
         """Return enabled operator (op) entries.
 
+        @openapi: ignore
         Only ops whose stored `op.enabled` flag is true are included. Each op
         includes level and bypassPlayerLimit fields from persisted metadata.
         Response: Array[{ uuid, name, level, bypassPlayerLimit }]
@@ -153,6 +155,7 @@ class MinecraftApiHandler(BaseHttpHandler):
     def minecraft_server_status(self, request: HttpRequest) -> HttpResponse:
         """Return live Minecraft server status summary.
 
+        @openapi: ignore
         Performs a basic status query (host + port) and returns normalized
         structure including: version, player counts, MOTD (multiple formats),
         latency, secure chat enforcement, favicon/icon, and success/online flags.
@@ -200,6 +203,7 @@ class MinecraftApiHandler(BaseHttpHandler):
     def minecraft_update_settings(self, request: HttpRequest) -> HttpResponse:
         """Update Minecraft settings document for a guild.
 
+        @openapi: ignore
         Authentication:
             Requires a valid auth token (``validate_auth_token``). If the token
             is invalid a 404 (intentionally obscuring) is returned.
@@ -264,6 +268,7 @@ class MinecraftApiHandler(BaseHttpHandler):
     def minecraft_get_settings(self, request: HttpRequest) -> HttpResponse:
         """Fetch Minecraft settings for the primary guild.
 
+        @openapi: ignore
         Response: JSON object representing stored settings (with internal _id removed).
         Errors:
             500 - internal server error
@@ -300,6 +305,7 @@ class MinecraftApiHandler(BaseHttpHandler):
     def minecraft_player_events(self, request: HttpRequest) -> HttpResponse:
         """Enumerate supported Minecraft player event identifiers.
 
+        @openapi: ignore
         Excludes enum members whose value is 0 (treated as sentinel / NONE).
         Response: Array[str] of lowercase event names.
         Errors:
@@ -330,6 +336,7 @@ class MinecraftApiHandler(BaseHttpHandler):
     def minecraft_worlds(self, request: HttpRequest) -> HttpResponse:
         """List all known worlds for the primary guild.
 
+        @openapi: ignore
         Response: Array[World] (serialized via model .to_dict()).
         Errors:
             500 - internal server error
@@ -359,6 +366,7 @@ class MinecraftApiHandler(BaseHttpHandler):
     def minecraft_active_world(self, request: HttpRequest) -> HttpResponse:
         """Return the currently active world for the primary guild.
 
+        @openapi: ignore
         Response: World (single object) when active world exists.
         Errors:
             404 - no active worlds
@@ -390,6 +398,7 @@ class MinecraftApiHandler(BaseHttpHandler):
     def minecraft_set_active_world(self, request: HttpRequest) -> HttpResponse:
         """Set (and activate) a world for a guild.
 
+        @openapi: ignore
         Request JSON Body:
             {
                 "world": "<world id>",
@@ -438,6 +447,7 @@ class MinecraftApiHandler(BaseHttpHandler):
     def minecraft_mojang_lookup(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Translate a Mojang / Minecraft username into a UUID.
 
+        @openapi: ignore
         Path Parameters:
             username: Mojang account name.
 

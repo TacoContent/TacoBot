@@ -59,6 +59,7 @@ class SwaggerHttpHandler(BaseHttpHandler):
     async def swagger(self, request: HttpRequest) -> HttpResponse:
         """Serve the OpenAPI/Swagger YAML document.
 
+        @openapi: ignore
         Returns:
             200: Raw YAML swagger content.
             500: JSON error body if the swagger file cannot be read.

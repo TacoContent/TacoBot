@@ -31,6 +31,7 @@ class GuildMessagesApiHandler(BaseHttpHandler):
     async def get_channel_messages(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """List recent messages from a text-capable channel.
 
+        @openapi: ignore
         Path: /api/v1/guild/{guild_id}/channel/{channel_id}/messages?limit=50
         Method: GET
         Query Params:
@@ -102,6 +103,7 @@ class GuildMessagesApiHandler(BaseHttpHandler):
     async def get_channel_message(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:  # noqa: ARG002
         """Fetch a single message by ID.
 
+        @openapi: ignore
         Path: /api/v1/guild/{guild_id}/channel/{channel_id}/message/{message_id}
         Method: GET
         Returns: DiscordMessage
@@ -161,6 +163,7 @@ class GuildMessagesApiHandler(BaseHttpHandler):
     async def get_channel_messages_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Batch fetch multiple messages by IDs.
 
+        @openapi: ignore
         Path: /api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/ids
         Method: POST
         Body (one of):
@@ -283,6 +286,7 @@ class GuildMessagesApiHandler(BaseHttpHandler):
     async def get_reactions_for_messages_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Batch fetch reactions grouped per message.
 
+        @openapi: ignore
         Path: /api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/reactions
         Method: POST
         Body (one of):

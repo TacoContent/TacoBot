@@ -66,6 +66,7 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
     async def _list_permissions(self, guildId: str, userId: str) -> typing.List[str]:
         """Return list of permission strings for a user.
 
+        @openapi: ignore
         Parameters:
             guildId: Discord guild ID (string form expected in route)
             userId:  Discord user ID (string form expected in route)
@@ -90,6 +91,7 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
     async def get(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """List permissions for a user.
 
+        @openapi: ignore
         Path Parameters:
             guildId: Discord guild ID
             userId:  Discord user ID
@@ -112,6 +114,7 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
     async def _remove_permission(self, guildId: str, userId: str, permission: str) -> bool:
         """Remove a permission flag from a user.
 
+        @openapi: ignore
         Returns True on success, False on invalid input or error.
         """
         _method = inspect.stack()[0][3]
@@ -131,6 +134,7 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
     async def delete(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Delete (remove) a permission from a user.
 
+        @openapi: ignore
         Auth: Requires valid token.
         Returns:
             200 {"status": "ok"} on success
@@ -173,6 +177,7 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
     async def post(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Add a permission (non-idempotent, but multiple adds are harmless).
 
+        @openapi: ignore
         Auth required.
         Returns:
             200 {"status": "ok"}
@@ -200,6 +205,7 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
     async def put(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Idempotent add (ensures a permission exists for a user).
 
+        @openapi: ignore
         Auth required.
         Returns follow POST semantics (200 ok / 404 invalid or failed / 500 error).
         """

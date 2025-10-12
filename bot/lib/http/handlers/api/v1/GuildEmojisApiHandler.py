@@ -21,6 +21,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
     def get_guild_emojis(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """List all emojis in the specified guild.
 
+        @openapi: ignore
         Path: /api/v1/guild/{guild_id}/emojis
         Method: GET
         Returns: Array[DiscordEmoji]
@@ -53,6 +54,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
     def get_guild_emoji(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Get a single emoji by numeric ID.
 
+        @openapi: ignore
         Path: /api/v1/guild/{guild_id}/emoji/id/{emoji_id}
         Method: GET
         Returns: DiscordEmoji
@@ -93,6 +95,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
     def get_guild_emoji_by_name(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Get a single emoji by name.
 
+        @openapi: ignore
         Path: /api/v1/guild/{guild_id}/emoji/name/{emoji_name}
         Method: GET
         Returns: DiscordEmoji
@@ -131,6 +134,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
     def get_guild_emojis_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Batch fetch emojis by IDs.
 
+        @openapi: ignore
         Path: /api/v1/guild/{guild_id}/emojis/ids/batch
         Method: POST
         Body (one of):
@@ -186,6 +190,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
     def get_guild_emojis_batch_by_names(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Batch fetch emojis by names.
 
+        @openapi: ignore
         Path: /api/v1/guild/{guild_id}/emojis/names/batch
         Method: POST
         Body (one of):

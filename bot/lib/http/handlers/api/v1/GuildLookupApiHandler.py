@@ -16,6 +16,7 @@ from httpserver.server import HttpResponseException, uri_mapping, uri_variable_m
 class GuildLookupApiHandler(BaseHttpHandler):
     """Guild lookup endpoints.
 
+    @openapi: ignore
     Endpoints:
         Single guild lookup (resolve guild_id from path, query, or body):
             GET  /api/v1/guilds/lookup/{guild_id}
@@ -59,6 +60,7 @@ class GuildLookupApiHandler(BaseHttpHandler):
     def guild_lookup(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Lookup a single guild by ID.
 
+        @openapi: ignore
         Supported request forms (all equivalent):
             GET  /api/v1/guilds/lookup/1234567890
             GET  /api/v1/guilds/lookup?id=1234567890
@@ -142,6 +144,7 @@ class GuildLookupApiHandler(BaseHttpHandler):
     async def guild_lookup_batch(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Lookup multiple guilds by ID.
 
+        @openapi: ignore
         Supported request forms (merge all provided IDs):
             GET  /api/v1/guilds/lookup/batch/1,2,3
             GET  /api/v1/guilds/lookup/batch?ids=1&ids=2&ids=3
@@ -224,6 +227,7 @@ class GuildLookupApiHandler(BaseHttpHandler):
     def get_guilds(self, request: HttpRequest) -> HttpResponse:
         """List all guilds the bot is currently a member of.
 
+        @openapi: ignore
         Path: /api/v1/guilds
         Method: GET
         Returns: Array[DiscordGuild]

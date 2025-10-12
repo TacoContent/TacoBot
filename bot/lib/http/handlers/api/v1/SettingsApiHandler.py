@@ -61,6 +61,7 @@ class SettingsApiHandler(BaseHttpHandler):
     def get_settings(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Retrieve a settings document for the primary guild.
 
+        @openapi: ignore
         Path Parameters:
             section (str): Logical settings section name.
 
