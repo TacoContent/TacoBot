@@ -1,62 +1,64 @@
 openapi: 3.0.1
 info:
   title: TacoBot
-  description: "Multi-Purpose Discord Bot with Minecraft, Twitch, and other integrations for the TACO community."
-  version: "1.0.0-snapshot"
+  description: Multi-Purpose Discord Bot with Minecraft, Twitch, and other integrations
+    for the TACO community.
+  version: 1.0.0-snapshot
   contact:
     name: TacoBot
-    url: "https://discord.gg/aQ37F2EcjF"
+    url: https://discord.gg/aQ37F2EcjF
 servers:
-  - url: '{host}'
-    variables:
-      host:
-        enum:
-          - 'http://localhost:8931'
-          - 'http://lb.bit13.local:8931'
-        default: 'http://lb.bit13.local:8931'
+- url: '{host}'
+  variables:
+    host:
+      enum:
+      - http://localhost:8931
+      - http://lb.bit13.local:8931
+      default: http://lb.bit13.local:8931
 paths:
-  '/api/v1/swagger.yaml':
+  /api/v1/swagger.yaml:
     get:
       tags:
-        - swagger
+      - swagger
       summary: Get the swagger file
-      description: |
-        Gets the swagger file
+      description: 'Gets the swagger file
+
+        '
       parameters: []
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/yaml:
               schema:
                 type: string
-
-  '/swagger.yaml':
+  /swagger.yaml:
     get:
       tags:
-        - swagger
+      - swagger
       summary: Get the swagger file
-      description: |
-        Gets the swagger file
+      description: 'Gets the swagger file
+
+        '
       parameters: []
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/yaml:
               schema:
                 type: string
-
-  '/api/v1/health':
+  /api/v1/health:
     get:
       tags:
-        - health
+      - health
       summary: Get the health status of the service
-      description: |
-        Gets the health status of the service
+      description: 'Gets the health status of the service
+
+        '
       parameters: []
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
@@ -66,17 +68,17 @@ paths:
                   status:
                     type: string
                     example: ok
-
-  '/api/v1/guilds':
+  /api/v1/guilds:
     get:
       tags:
-        - guilds
+      - guilds
       summary: Get the list of guilds the bot is in
-      description: |
-        Gets the list of guilds the bot is in
+      description: 'Gets the list of guilds the bot is in
+
+        '
       parameters: []
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
@@ -89,108 +91,109 @@ paths:
                       type: string
                     name:
                       type: string
-
-  '/api/v1/guilds/lookup/{guild_id}':
+  /api/v1/guilds/lookup/{guild_id}:
     get:
       tags:
-        - guilds
+      - guilds
       summary: Lookup a guild
-      description: |
-        Retrieves details for a single guild by its ID.
+      description: 'Retrieves details for a single guild by its ID.
+
+        '
       parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
-            type: string
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/DiscordGuild'
-        "404":
+        '404':
           description: Guild not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-
-  '/api/v1/guilds/lookup/batch/{guild_ids}':
+  /api/v1/guilds/lookup/batch/{guild_ids}:
     get:
       tags:
-        - guilds
+      - guilds
       summary: Get the guild information for multiple guilds
-      description: |
-        Gets the guild information for multiple guilds
+      description: 'Gets the guild information for multiple guilds
+
+        '
       parameters:
-        - name: guild_ids
-          description: Comma separated list of guild IDs
-          in: path
-          required: true
-          schema:
+      - name: guild_ids
+        description: Comma separated list of guild IDs
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordGuild'
+        '404':
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/guilds/lookup/batch:
+    get:
+      tags:
+      - guilds
+      summary: Get the guild information for multiple guilds
+      description: 'Gets the guild information for multiple guilds
+
+        '
+      parameters:
+      - name: guild_ids
+        description: Comma separated list of guild IDs
+        in: query
+        schema:
+          type: array
+          items:
             type: string
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  "$ref": "#/components/schemas/DiscordGuild"
-        "404":
+                  $ref: '#/components/schemas/DiscordGuild'
+        '404':
           description: Guild not found
           content:
             application/json:
               schema:
-                "$ref": '#/components/schemas/ErrorStatusCodePayload'
-
-  '/api/v1/guilds/lookup/batch':
-    get:
-      tags:
-        - guilds
-      summary: Get the guild information for multiple guilds
-      description: |
-        Gets the guild information for multiple guilds
-      parameters:
-        - name: guild_ids
-          description: Comma separated list of guild IDs
-          in: query
-          schema:
-            type: array
-            items:
-              type: string
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  "$ref": "#/components/schemas/DiscordGuild"
-        "404":
-          description: Guild not found
-          content:
-            application/json:
-              schema:
-                "$ref": '#/components/schemas/ErrorStatusCodePayload'
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
     post:
       tags:
-        - guilds
+      - guilds
       summary: Get the guild information for multiple guilds
-      description: |
-        Gets the guild information for multiple guilds
+      description: 'Gets the guild information for multiple guilds
+
+        '
       parameters:
-        - name: guild_ids
-          description: Comma separated list of guild IDs
-          in: query
-          schema:
-            type: array
-            items:
-              type: string
+      - name: guild_ids
+        description: Comma separated list of guild IDs
+        in: query
+        schema:
+          type: array
+          items:
+            type: string
       requestBody:
         required: false
         content:
@@ -200,34 +203,37 @@ paths:
               items:
                 type: string
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  "$ref": "#/components/schemas/DiscordGuild"
-        "404":
+                  $ref: '#/components/schemas/DiscordGuild'
+        '404':
           description: Guild not found
           content:
             application/json:
               schema:
-                "$ref": '#/components/schemas/ErrorStatusCodePayload'
-
-  '/api/v1/guild/{guild_id}/categories':
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/guild/{guild_id}/categories:
     get:
-      tags: [ guilds, channels ]
+      tags:
+      - guilds
+      - channels
       summary: List guild categories (with channels)
-      description: Returns all channel categories in the guild. Each category object embeds its child channels.
+      description: Returns all channel categories in the guild. Each category object
+        embeds its child channels.
       parameters:
-        - name: guild_id
-          in: path
-          required: true
-          description: Discord guild (server) ID
-          schema: { type: string }
+      - name: guild_id
+        in: path
+        required: true
+        description: Discord guild (server) ID
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -235,263 +241,332 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/DiscordCategory'
-        "404":
+        '404':
           description: Guild not found
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-
-  '/api/v1/guild/{guild_id}/category/{category_id}':
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/guild/{guild_id}/category/{category_id}:
     get:
-      tags: [ guilds, channels ]
+      tags:
+      - guilds
+      - channels
       summary: Get category (with channels)
       description: Returns a single category and its child channels.
       parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema: { type: string }
-        - name: category_id
-          in: path
-          required: true
-          schema: { type: string }
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: category_id
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/DiscordCategory' }
-        "404":
+              schema:
+                $ref: '#/components/schemas/DiscordCategory'
+        '404':
           description: Guild or category not found
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-
-  '/api/v1/guild/{guild_id}/channels':
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/guild/{guild_id}/channels:
     get:
       security:
-        - X-AUTH-TOKEN: []
-        - X-TACOBOT-TOKEN: []
-      tags: [ guilds, channels ]
+      - X-AUTH-TOKEN: []
+      - X-TACOBOT-TOKEN: []
+      tags:
+      - guilds
+      - channels
       summary: List top-level guild channels
-      description: Returns channels that are not within a category. Use categories endpoint for nested channels.
+      description: Returns channels that are not within a category. Use categories
+        endpoint for nested channels.
       parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema: { type: string }
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/DiscordChannel' }
-        "404":
+                items:
+                  $ref: '#/components/schemas/DiscordChannel'
+        '404':
           description: Guild not found
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-
-  '/api/v1/guild/{guild_id}/channels/batch/ids':
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/guild/{guild_id}/channels/batch/ids:
     post:
       security:
-        - X-AUTH-TOKEN: []
-        - X-TACOBOT-TOKEN: []
-      tags: [ guilds, channels ]
+      - X-AUTH-TOKEN: []
+      - X-TACOBOT-TOKEN: []
+      tags:
+      - guilds
+      - channels
       summary: Batch fetch channels by IDs
-      description: Retrieve multiple channels. Accepts array body or object with ids property; can also accept repeated query param ids.
+      description: Retrieve multiple channels. Accepts array body or object with ids
+        property; can also accept repeated query param ids.
       parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema: { type: string }
-        - name: ids
-          in: query
-          required: false
-          description: Repeatable channel ID query parameter
-          schema: { type: array, items: { type: string } }
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ids
+        in: query
+        required: false
+        description: Repeatable channel ID query parameter
+        schema:
+          type: array
+          items:
+            type: string
       requestBody:
         required: false
         content:
           application/json:
             schema:
               oneOf:
-                - type: array
-                  items: { type: string }
-                - type: object
-                  properties:
-                    ids:
-                      type: array
-                      items: { type: string }
-                  required: [ ids ]
+              - type: array
+                items:
+                  type: string
+              - type: object
+                properties:
+                  ids:
+                    type: array
+                    items:
+                      type: string
+                required:
+                - ids
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/DiscordChannel' }
-        "404":
+                items:
+                  $ref: '#/components/schemas/DiscordChannel'
+        '404':
           description: Guild not found
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-
-  '/api/v1/guild/{guild_id}/channel/{channel_id}/messages':
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/guild/{guild_id}/channel/{channel_id}/messages:
     get:
-      tags: [ guilds, channels, messages ]
+      tags:
+      - guilds
+      - channels
+      - messages
       summary: List recent messages in a channel
-      description: Returns up to the most recent 100 messages (default 50) for the specified text channel.
+      description: Returns up to the most recent 100 messages (default 50) for the
+        specified text channel.
       parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema: { type: string }
-        - name: channel_id
-          in: path
-          required: true
-          schema: { type: string }
-        - name: limit
-          in: query
-          required: false
-          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
-          description: Max number of most recent messages to return (1-100, default 50)
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: channel_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+        description: Max number of most recent messages to return (1-100, default
+          50)
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/DiscordMessage' }
-        "400":
+                items:
+                  $ref: '#/components/schemas/DiscordMessage'
+        '400':
           description: Invalid guild/channel id or channel unsupported
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-        "404":
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
           description: Guild or channel not found
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-
-  '/api/v1/guild/{guild_id}/channel/{channel_id}/message/{message_id}':
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/guild/{guild_id}/channel/{channel_id}/message/{message_id}:
     get:
-      tags: [ guilds, channels, messages ]
+      tags:
+      - guilds
+      - channels
+      - messages
       summary: Get a single message
       description: Fetch a single message by its ID.
       parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema: { type: string }
-        - name: channel_id
-          in: path
-          required: true
-          schema: { type: string }
-        - name: message_id
-          in: path
-          required: true
-          schema: { type: string }
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: channel_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/DiscordMessage' }
-        "400":
+              schema:
+                $ref: '#/components/schemas/DiscordMessage'
+        '400':
           description: Invalid ids
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-        "404":
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
           description: Guild, channel, or message not found
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-
-  '/api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/ids':
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/ids:
     post:
-      tags: [ guilds, channels, messages ]
+      tags:
+      - guilds
+      - channels
+      - messages
       summary: Batch fetch messages by IDs
-      description: Retrieve multiple messages. Accepts an array body or object with ids property; can also accept repeated query param ids.
+      description: Retrieve multiple messages. Accepts an array body or object with
+        ids property; can also accept repeated query param ids.
       parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema: { type: string }
-        - name: channel_id
-          in: path
-          required: true
-          schema: { type: string }
-        - name: ids
-          in: query
-          required: false
-          schema: { type: array, items: { type: string } }
-          description: Repeatable message ID query parameter
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: channel_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ids
+        in: query
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+        description: Repeatable message ID query parameter
       requestBody:
         required: false
         content:
           application/json:
             schema:
               oneOf:
-                - type: array
-                  items: { type: string }
-                - type: object
-                  properties:
-                    ids:
-                      type: array
-                      items: { type: string }
-                  required: [ ids ]
+              - type: array
+                items:
+                  type: string
+              - type: object
+                properties:
+                  ids:
+                    type: array
+                    items:
+                      type: string
+                required:
+                - ids
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/DiscordMessage' }
-        "400":
+                items:
+                  $ref: '#/components/schemas/DiscordMessage'
+        '400':
           description: Invalid ids or malformed body
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-        "404":
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
           description: Guild or channel not found
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-
-  '/api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/reactions':
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/reactions:
     post:
-      tags: [ guilds, channels, messages, reactions ]
+      tags:
+      - guilds
+      - channels
+      - messages
+      - reactions
       summary: Get reactions for a batch of messages (per-message grouping)
-      description: |
-        Returns a mapping of message IDs to their reactions arrays. Each reactions array contains
-        objects with the emoji (custom emoji mention format or unicode) and the count for that message.
-        Missing / inaccessible messages are silently omitted. Duplicate message IDs are de-duplicated.
+      description: 'Returns a mapping of message IDs to their reactions arrays. Each
+        reactions array contains
+
+        objects with the emoji (custom emoji mention format or unicode) and the count
+        for that message.
+
+        Missing / inaccessible messages are silently omitted. Duplicate message IDs
+        are de-duplicated.
+
+        '
       parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema: { type: string }
-        - name: channel_id
-          in: path
-          required: true
-          schema: { type: string }
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: channel_id
+        in: path
+        required: true
+        schema:
+          type: string
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: array
-              items: { type: string }
+              items:
+                type: string
               description: Array of message IDs
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
@@ -499,34 +574,28 @@ paths:
                 type: object
                 additionalProperties:
                   type: array
-                  items: { $ref: '#/components/schemas/DiscordMessageReaction' }
-        "400":
+                  items:
+                    $ref: '#/components/schemas/DiscordMessageReaction'
+        '400':
           description: Invalid ids or malformed body
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-        "404":
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
           description: Guild or channel not found
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-
-  '/api/v1/guild/{guild_id}/emojis':
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/guild/{guild_id}/emojis:
     get:
-      tags:
-        - guilds
-        - emojis
       summary: Get the list of emojis for a guild
-      description: |
-        Returns all custom emojis for the specified guild.
-      parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
-            type: string
+      tags:
+      - guilds
+      - emojis
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
@@ -534,136 +603,145 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/DiscordEmoji'
-        "400":
+        '400':
           description: Invalid guild id
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-        "404":
+        '404':
           description: Guild not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-
-  '/api/v1/guild/{guild_id}/emoji/id/{emoji_id}':
+      description: Returns all custom emojis for the specified guild.
+      parameters:
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/v1/guild/{guild_id}/emoji/id/{emoji_id}:
     get:
       tags:
-        - guilds
-        - emojis
+      - guilds
+      - emojis
       summary: Get an emoji by ID
-      description: |
-        Returns a single emoji object for the given emoji ID.
+      description: 'Returns a single emoji object for the given emoji ID.
+
+        '
       parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: emoji_id
-          in: path
-          required: true
-          schema:
-            type: string
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: emoji_id
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/DiscordEmoji'
-        "400":
+        '400':
           description: Invalid guild or emoji id
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-        "404":
+        '404':
           description: Guild or Emoji not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-
-  '/api/v1/guild/{guild_id}/emoji/name/{emoji_name}':
+  /api/v1/guild/{guild_id}/emoji/name/{emoji_name}:
     get:
       tags:
-        - guilds
-        - emojis
+      - guilds
+      - emojis
       summary: Get an emoji by name
-      description: |
-        Returns a single emoji object for the given emoji name.
+      description: 'Returns a single emoji object for the given emoji name.
+
+        '
       parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: emoji_name
-          in: path
-          required: true
-          schema:
-            type: string
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: emoji_name
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/DiscordEmoji'
-        "400":
+        '400':
           description: Invalid guild id or emoji name missing
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-        "404":
+        '404':
           description: Guild or Emoji not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-
-  '/api/v1/guild/{guild_id}/emojis/ids/batch':
+  /api/v1/guild/{guild_id}/emojis/ids/batch:
     post:
       tags:
-        - guilds
-        - emojis
+      - guilds
+      - emojis
       summary: Get a batch of emojis by their IDs
-      description: |
-        Accepts either an array of emoji IDs as the JSON body or an object with an `ids` array field. Query parameter `ids` may also be provided multiple times.
+      description: 'Accepts either an array of emoji IDs as the JSON body or an object
+        with an `ids` array field. Query parameter `ids` may also be provided multiple
+        times.
+
+        '
       parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: ids
+        in: query
+        required: false
+        description: Repeatable query parameter of emoji ids
+        schema:
+          type: array
+          items:
             type: string
-        - name: ids
-          in: query
-          required: false
-          description: Repeatable query parameter of emoji ids
-          schema:
-            type: array
-            items:
-              type: string
       requestBody:
         required: false
         content:
           application/json:
             schema:
               oneOf:
-                - type: array
-                  items:
-                    type: string
-                - type: object
-                  properties:
-                    ids:
-                      type: array
-                      items:
-                        type: string
+              - type: array
+                items:
+                  type: string
+              - type: object
+                properties:
+                  ids:
+                    type: array
+                    items:
+                      type: string
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
@@ -671,58 +749,60 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/DiscordEmoji'
-        "400":
+        '400':
           description: Invalid guild id or malformed body
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-        "404":
+        '404':
           description: Guild not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-
-  '/api/v1/guild/{guild_id}/emojis/names/batch':
+  /api/v1/guild/{guild_id}/emojis/names/batch:
     post:
       tags:
-        - guilds
-        - emojis
+      - guilds
+      - emojis
       summary: Get a batch of emojis by their names
-      description: |
-        Accepts either an array of emoji names as the JSON body or an object with a `names` array field. Query parameter `names` may also be provided multiple times.
+      description: 'Accepts either an array of emoji names as the JSON body or an
+        object with a `names` array field. Query parameter `names` may also be provided
+        multiple times.
+
+        '
       parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: names
+        in: query
+        required: false
+        description: Repeatable query parameter of emoji names
+        schema:
+          type: array
+          items:
             type: string
-        - name: names
-          in: query
-          required: false
-          description: Repeatable query parameter of emoji names
-          schema:
-            type: array
-            items:
-              type: string
       requestBody:
         required: false
         content:
           application/json:
             schema:
               oneOf:
-                - type: array
-                  items:
-                    type: string
-                - type: object
-                  properties:
-                    names:
-                      type: array
-                      items:
-                        type: string
+              - type: array
+                items:
+                  type: string
+              - type: object
+                properties:
+                  names:
+                    type: array
+                    items:
+                      type: string
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
@@ -730,110 +810,136 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/DiscordEmoji'
-        "400":
+        '400':
           description: Invalid guild id or malformed body
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-        "404":
+        '404':
           description: Guild not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-
-  '/api/v1/guild/{guild_id}/roles':
+  /api/v1/guild/{guild_id}/roles:
     get:
-      tags: [ guilds, roles ]
+      tags:
+      - guilds
+      - roles
       summary: List guild roles
       parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema: { type: string }
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
-              schema: { type: array, items: { $ref: '#/components/schemas/DiscordRole' } }
-        "404":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordRole'
+        '404':
           description: Guild not found
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-
-  '/api/v1/guild/{guild_id}/roles/batch/ids':
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/guild/{guild_id}/roles/batch/ids:
     post:
-      tags: [ guilds, roles ]
+      tags:
+      - guilds
+      - roles
       summary: Batch fetch roles by IDs
       parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema: { type: string }
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
       requestBody:
         required: false
         content:
           application/json:
             schema:
               oneOf:
-                - type: array
-                  items: { type: string }
-                - type: object
-                  properties:
-                    ids:
-                      type: array
-                      items: { type: string }
-                  required: [ ids ]
+              - type: array
+                items:
+                  type: string
+              - type: object
+                properties:
+                  ids:
+                    type: array
+                    items:
+                      type: string
+                required:
+                - ids
       responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema: { type: array, items: { $ref: '#/components/schemas/DiscordRole' } }
-        "404":
-          description: Guild not found
-          content:
-            application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-
-  '/api/v1/guild/{guild_id}/join-whitelist':
-    get:
-      tags: [ guilds, whitelist ]
-      summary: List all join whitelist entries
-      description: Returns the complete join whitelist for the guild. For large lists, prefer the paginated endpoint.
-      parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema: { type: string }
-      responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/JoinWhitelistUser' }
-        "400":
+                items:
+                  $ref: '#/components/schemas/DiscordRole'
+        '404':
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/guild/{guild_id}/join-whitelist:
+    get:
+      tags:
+      - guilds
+      - whitelist
+      summary: List all join whitelist entries
+      description: Returns the complete join whitelist for the guild. For large lists,
+        prefer the paginated endpoint.
+      parameters:
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JoinWhitelistUser'
+        '400':
           description: Invalid guild id
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
     post:
-      tags: [ guilds, whitelist ]
+      tags:
+      - guilds
+      - whitelist
       summary: Add (upsert) a user to join whitelist
-      description: |
-        Provide JSON body: { "user_id": "<id>", "added_by": "<id>" }
+      description: 'Provide JSON body: { "user_id": "<id>", "added_by": "<id>" }
 
-        The "added_by" field is optional and defaults to the same value as "user_id" when omitted.
+
+        The "added_by" field is optional and defaults to the same value as "user_id"
+        when omitted.
+
+        '
       parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema: { type: string }
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
       requestBody:
         required: true
         content:
@@ -841,69 +947,86 @@ paths:
             schema:
               type: object
               properties:
-                user_id: { type: string }
-                added_by: { type: string }
-              required: [ user_id ]
+                user_id:
+                  type: string
+                added_by:
+                  type: string
+              required:
+              - user_id
       responses:
-        "201":
+        '201':
           description: Created
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/JoinWhitelistUser' }
-        "400":
+              schema:
+                $ref: '#/components/schemas/JoinWhitelistUser'
+        '400':
           description: Invalid input
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-
-  '/api/v1/guild/{guild_id}/join-whitelist/page':
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/guild/{guild_id}/join-whitelist/page:
     get:
-      tags: [ guilds, whitelist ]
+      tags:
+      - guilds
+      - whitelist
       summary: List paginated join whitelist entries
-      description: Returns a page of join whitelist entries. Accepts query params skip (default 0) and take (default 50, max 200).
+      description: Returns a page of join whitelist entries. Accepts query params
+        skip (default 0) and take (default 50, max 200).
       parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema: { type: string }
-        - name: skip
-          in: query
-          required: false
-          schema: { type: integer, minimum: 0, default: 0 }
-        - name: take
-          in: query
-          required: false
-          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - name: take
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/PagedResults' }
-        "400":
+              schema:
+                $ref: '#/components/schemas/PagedResults'
+        '400':
           description: Invalid pagination parameters
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-
-  '/api/v1/guild/{guild_id}/join-whitelist/{user_id}':
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/guild/{guild_id}/join-whitelist/{user_id}:
     put:
-      tags: [ guilds, whitelist ]
+      tags:
+      - guilds
+      - whitelist
       summary: Update (re-add) a join whitelist entry
-      description: |
-        Upserts a specific user.
-
-        Optional body example:
-          { "added_by": "<id>" }
+      description: "Upserts a specific user.\n\nOptional body example:\n  { \"added_by\"\
+        : \"<id>\" }\n"
       parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema: { type: string }
-        - name: user_id
-          in: path
-          required: true
-          schema: { type: string }
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: string
       requestBody:
         required: false
         content:
@@ -911,293 +1034,311 @@ paths:
             schema:
               type: object
               properties:
-                added_by: { type: string }
+                added_by:
+                  type: string
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/JoinWhitelistUser' }
-        "400":
+              schema:
+                $ref: '#/components/schemas/JoinWhitelistUser'
+        '400':
           description: Invalid input
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
     delete:
-      tags: [ guilds, whitelist ]
+      tags:
+      - guilds
+      - whitelist
       summary: Delete a join whitelist entry
       description: Removes a user from the whitelist.
       parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema: { type: string }
-        - name: user_id
-          in: path
-          required: true
-          schema: { type: string }
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
-        "204":
+        '204':
           description: No Content (deleted)
-        "400":
+        '400':
           description: Invalid input
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-
-  '/api/v1/guild/{guild_id}/mentionables/batch/ids':
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/guild/{guild_id}/mentionables/batch/ids:
     post:
-      tags: [ guilds, mentionables ]
+      tags:
+      - guilds
+      - mentionables
       summary: Batch fetch mentionables (roles or users) by IDs
-      description: Returns role and/or user payloads for provided IDs. Accepts array or object with ids property.
+      description: Returns role and/or user payloads for provided IDs. Accepts array
+        or object with ids property.
       parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema: { type: string }
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
       requestBody:
         required: false
         content:
           application/json:
             schema:
               oneOf:
-                - type: array
-                  items: { type: string }
-                - type: object
-                  properties:
-                    ids:
-                      type: array
-                      items: { type: string }
-                  required: [ ids ]
+              - type: array
+                items:
+                  type: string
+              - type: object
+                properties:
+                  ids:
+                    type: array
+                    items:
+                      type: string
+                required:
+                - ids
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/DiscordMentionable' }
-        "404":
+                items:
+                  $ref: '#/components/schemas/DiscordMentionable'
+        '404':
           description: Guild not found
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-
-  '/api/v1/guild/{guild_id}/mentionables':
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/guild/{guild_id}/mentionables:
     get:
-      tags: [ guilds, mentionables ]
+      tags:
+      - guilds
+      - mentionables
       summary: List guild mentionables (roles + members)
-      description: Returns all roles and members for the specified guild as mentionable union objects.
+      description: Returns all roles and members for the specified guild as mentionable
+        union objects.
       parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema: { type: string }
+      - name: guild_id
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: '#/components/schemas/DiscordMentionable' }
-        "400":
+                items:
+                  $ref: '#/components/schemas/DiscordMentionable'
+        '400':
           description: Missing or invalid guild id
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-        "404":
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
           description: Guild not found
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-
-  '/api/v1/minecraft/whitelist.json':
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/minecraft/whitelist.json:
     get:
       tags:
-        - minecraft
+      - minecraft
       summary: Get the whitelist JSON
-      description: |
-        Gets JSON formatted whitelist configuration
+      description: 'Gets JSON formatted whitelist configuration
+
+        '
       parameters: []
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  "$ref": "#/components/schemas/MinecraftWhiteListUser"
-
-  '/api/v1/minecraft/ops.json':
+                  $ref: '#/components/schemas/MinecraftWhiteListUser'
+  /api/v1/minecraft/ops.json:
     get:
       tags:
-        - minecraft
+      - minecraft
       summary: Get the ops list JSON
-      description: |
-        Gets JSON formatted OPS configuration
+      description: 'Gets JSON formatted OPS configuration
+
+        '
       parameters: []
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  "$ref": "#/components/schemas/MinecraftOpUser"
-
-  '/api/v1/minecraft/uuid/{username}':
+                  $ref: '#/components/schemas/MinecraftOpUser'
+  /api/v1/minecraft/uuid/{username}:
     get:
       tags:
-        - minecraft
+      - minecraft
       summary: Get userid from username
-      description: |
-        Gets JSON payload of userid from username
+      description: 'Gets JSON payload of userid from username
+
+        '
       parameters:
-        - name: username
-          description: Minecraft username
-          in: path
-          required: true
-          schema:
-            type: string
+      - name: username
+        description: Minecraft username
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": '#/components/schemas/MinecraftUser'
-        "500":
+                $ref: '#/components/schemas/MinecraftUser'
+        '500':
           description: Server Error
           content:
             application/json:
               schema:
-                "$ref": '#/components/schemas/ErrorStatusCodePayload'
-
-  '/api/v1/minecraft/status':
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/minecraft/status:
     get:
       tags:
-        - minecraft
+      - minecraft
       summary: Get the server status information
-      description: |
-        Gets information on the server.
+      description: 'Gets information on the server.
+
+        '
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/MinecraftServerStatus"
-
-  '/api/v1/minecraft/version':
+                $ref: '#/components/schemas/MinecraftServerStatus'
+  /api/v1/minecraft/version:
     get:
       tags:
-        - minecraft
+      - minecraft
       summary: Get the minecraft server version information
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/TacoMinecraftServerSettings"
+                $ref: '#/components/schemas/TacoMinecraftServerSettings'
     post:
       security:
-        - X-AUTH-TOKEN: []
-        - X-TACOBOT-TOKEN: []
+      - X-AUTH-TOKEN: []
+      - X-TACOBOT-TOKEN: []
       tags:
-        - minecraft
+      - minecraft
       summary: Set the minecraft server version information
       requestBody:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/TacoMinecraftServerSettings"
+              $ref: '#/components/schemas/TacoMinecraftServerSettings'
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/TacoMinecraftServerSettings"
-
-  '/api/v1/minecraft/player/{user}/stats':
+                $ref: '#/components/schemas/TacoMinecraftServerSettings'
+  /api/v1/minecraft/player/{user}/stats:
     get:
       parameters:
-        - name: user
-          description: The users minecraft username
-          in: path
-          required: true
-          schema:
-            type: string
+      - name: user
+        description: The users minecraft username
+        in: path
+        required: true
+        schema:
+          type: string
       tags:
-        - minecraft
+      - minecraft
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/MinecraftDiscordUserStatsInfo"
+                $ref: '#/components/schemas/MinecraftDiscordUserStatsInfo'
     post:
       parameters:
-        - name: user
-          description: The users minecraft uuid
-          in: path
-          required: true
-          schema:
-            type: string
+      - name: user
+        description: The users minecraft uuid
+        in: path
+        required: true
+        schema:
+          type: string
       tags:
-        - minecraft
+      - minecraft
       responses:
-        "200":
+        '200':
           description: Successful operation
       requestBody:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/MinecraftUserStatsPayload"
-
-  '/api/v1/minecraft/player/{username}/stats/{world}':
+              $ref: '#/components/schemas/MinecraftUserStatsPayload'
+  /api/v1/minecraft/player/{username}/stats/{world}:
     parameters:
-      - name: username
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: world
-        in: path
-        required: true
-        schema:
-          "$ref": "#/components/schemas/TacoMinecraftWorlds"
+    - name: username
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: world
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/TacoMinecraftWorlds'
     get:
       tags:
-        - minecraft
+      - minecraft
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/MinecraftDiscordUserStatsInfo"
-
-  '/api/v1/minecraft/world':
+                $ref: '#/components/schemas/MinecraftDiscordUserStatsInfo'
+  /api/v1/minecraft/world:
     get:
       tags:
-        - minecraft
+      - minecraft
       summary: Get the active minecraft server world information
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/TacoMinecraftWorldInfo"
+                $ref: '#/components/schemas/TacoMinecraftWorldInfo'
     post:
       tags:
-        - minecraft
+      - minecraft
       summary: Set the active minecraft server world
       requestBody:
         content:
@@ -1209,116 +1350,110 @@ paths:
                   type: string
                   description: Discord Guild ID
                 world:
-                  "$ref": "#/components/schemas/TacoMinecraftWorlds"
+                  $ref: '#/components/schemas/TacoMinecraftWorlds'
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/TacoMinecraftWorldInfo"
-
-  '/api/v1/minecraft/worlds':
+                $ref: '#/components/schemas/TacoMinecraftWorldInfo'
+  /api/v1/minecraft/worlds:
     get:
       tags:
-        - minecraft
+      - minecraft
       summary: Get the active minecraft server world information
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  "$ref": "#/components/schemas/TacoMinecraftWorldInfo"
-
-  '/tacobot/guild/{guild}/invite/{channel}':
+                  $ref: '#/components/schemas/TacoMinecraftWorldInfo'
+  /tacobot/guild/{guild}/invite/{channel}:
     post:
       security:
-        - X-AUTH-TOKEN: []
+      - X-AUTH-TOKEN: []
       tags:
-        - twitch
+      - twitch
       summary: Invite Bot to twitch channel
       description: ''
       parameters:
-        - name: guild
-          in: path
-          description: The GUILD ID
-          required: true
-          schema:
-            type: string
-            format: ''
-        - name: channel
-          in: path
-          description: The name of the twitch channel
-          required: true
-          schema:
-            type: string
-            format: ''
-
+      - name: guild
+        in: path
+        description: The GUILD ID
+        required: true
+        schema:
+          type: string
+          format: ''
+      - name: channel
+        in: path
+        description: The name of the twitch channel
+        required: true
+        schema:
+          type: string
+          format: ''
       responses:
-        "200":
+        '200':
           description: Successful operation
-
-  '/api/v1/minecraft/player/events':
+  /api/v1/minecraft/player/events:
     get:
       tags:
-        - minecraft
+      - minecraft
       summary: Get the minecraft player events
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  "$ref": "#/components/schemas/MinecraftPlayerEvent"
-
-  '/api/v1/minecraft/player/event/{event}':
+                  $ref: '#/components/schemas/MinecraftPlayerEvent'
+  /api/v1/minecraft/player/event/{event}:
     get:
       tags:
-        - minecraft
+      - minecraft
       summary: Get the minecraft player event
       parameters:
-        - name: event
-          in: path
-          required: true
-          description: The event type. Values can be pulled from the /tacobot/minecraft/player/events endpoint
-          schema:
-            type: string
-            enum:
-              - login
-              - logout
-              - death
-
+      - name: event
+        in: path
+        required: true
+        description: The event type. Values can be pulled from the /tacobot/minecraft/player/events
+          endpoint
+        schema:
+          type: string
+          enum:
+          - login
+          - logout
+          - death
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/MinecraftPlayerEventPayload"
-
-  '/api/v1/permissions/{guildId}/{userId}':
+                $ref: '#/components/schemas/MinecraftPlayerEventPayload'
+  /api/v1/permissions/{guildId}/{userId}:
     get:
       tags:
-        - permissions
+      - permissions
       summary: Get user permissions
       parameters:
-        - name: guildId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
+      - name: guildId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
@@ -1326,191 +1461,185 @@ paths:
                 type: array
                 items:
                   type: string
-
-  '/api/v1/permissions/{guildId}/{userId}/{permission}':
+  /api/v1/permissions/{guildId}/{userId}/{permission}:
     post:
       tags:
-        - permissions
+      - permissions
       summary: Add permission to user
       parameters:
-        - name: guildId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: permission
-          in: path
-          required: true
-          schema:
-            type: string
+      - name: guildId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: permission
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: Successful operation
     put:
       tags:
-        - permissions
+      - permissions
       summary: Add permission to user
       parameters:
-        - name: guildId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: permission
-          in: path
-          required: true
-          schema:
-            type: string
+      - name: guildId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: permission
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: Successful operation
     delete:
       tags:
-        - permissions
+      - permissions
       summary: Remove permission from user
       parameters:
-        - name: guildId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: permission
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Successful operation
-
-  '/webhook/minecraft/tacos/{action}':
-    parameters:
-      - name: action
+      - name: guildId
         in: path
         required: true
-        description: What action was taken
         schema:
           type: string
-          enum:
-            - login
-            - custom
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: permission
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successful operation
+  /webhook/minecraft/tacos/{action}:
+    parameters:
+    - name: action
+      in: path
+      required: true
+      description: What action was taken
+      schema:
+        type: string
+        enum:
+        - login
+        - custom
     post:
       security:
-        - X-TACOBOT-TOKEN: []
+      - X-TACOBOT-TOKEN: []
       tags:
-        - webhook
+      - webhook
       summary: Minecraft Webhook to give tacos to a user
       description: ''
       requestBody:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/TacoWebhookMinecraftTacosPayload"
+              $ref: '#/components/schemas/TacoWebhookMinecraftTacosPayload'
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/TacoWebhookMinecraftTacosResponsePayload"
+                $ref: '#/components/schemas/TacoWebhookMinecraftTacosResponsePayload'
     delete:
       security:
-        - X-TACOBOT-TOKEN: []
+      - X-TACOBOT-TOKEN: []
       tags:
-        - webhook
+      - webhook
       summary: Minecraft Webhook to remove tacos from a user
       description: ''
       requestBody:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/TacoWebhookMinecraftTacosPayload"
+              $ref: '#/components/schemas/TacoWebhookMinecraftTacosPayload'
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/TacoWebhookMinecraftTacosResponsePayload"
-
-  '/webhook/minecraft/player/event':
+                $ref: '#/components/schemas/TacoWebhookMinecraftTacosResponsePayload'
+  /webhook/minecraft/player/event:
     post:
       security:
-        - X-TACOBOT-TOKEN: []
+      - X-TACOBOT-TOKEN: []
       tags:
-        - webhook
+      - webhook
       summary: Minecraft Webhook to send player events
       description: ''
       requestBody:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/MinecraftPlayerEventPayload"
+              $ref: '#/components/schemas/MinecraftPlayerEventPayload'
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/MinecraftPlayerEventPayload"
-
-  '/webhook/game':
+                $ref: '#/components/schemas/MinecraftPlayerEventPayload'
+  /webhook/game:
     post:
       security:
-        - X-TACOBOT-TOKEN: []
+      - X-TACOBOT-TOKEN: []
       tags:
-        - webhook
+      - webhook
       summary: Submit Free Game Webhook
       description: ''
       requestBody:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/TacoWebhookGamePayload"
+              $ref: '#/components/schemas/TacoWebhookGamePayload'
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/TacoWebhookGamePayload"
-
-  '/webhook/shift':
+                $ref: '#/components/schemas/TacoWebhookGamePayload'
+  /webhook/shift:
     post:
       security:
-        - X-TACOBOT-TOKEN: []
+      - X-TACOBOT-TOKEN: []
       tags:
-        - webhook
+      - webhook
       summary: Submit SHiFT Code Webhook
       description: ''
       requestBody:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/ShiftCodePayload"
+              $ref: '#/components/schemas/ShiftCodePayload'
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/ShiftCodePayload"
-
+                $ref: '#/components/schemas/ShiftCodePayload'
 components:
   schemas:
     ErrorStatusCodePayload:
@@ -1519,7 +1648,7 @@ components:
         error:
           type: string
       example:
-        error: "guild not found"
+        error: guild not found
     ShiftCodeGame:
       type: object
       properties:
@@ -1528,8 +1657,8 @@ components:
         name:
           type: string
       required:
-        - id
-        - name
+      - id
+      - name
     ShiftCodePayload:
       type: object
       properties:
@@ -1538,7 +1667,7 @@ components:
         games:
           type: array
           items:
-            "$ref": "#/components/schemas/ShiftCodeGame"
+            $ref: '#/components/schemas/ShiftCodeGame'
         platforms:
           type: array
           items:
@@ -1554,14 +1683,14 @@ components:
         created_at:
           type: number
       required:
-        - code
+      - code
     TacoWebhookMinecraftTacosResponsePayload:
       type: object
       properties:
         success:
           type: boolean
         payload:
-          "$ref": "#/components/schemas/TacoWebhookMinecraftTacosPayload"
+          $ref: '#/components/schemas/TacoWebhookMinecraftTacosPayload'
         total_tacos:
           type: integer
     TacoWebhookMinecraftTacosPayload:
@@ -1580,8 +1709,8 @@ components:
         type:
           type: string
           enum:
-            - login
-            - custom
+          - login
+          - custom
     TacoWebhookGamePayload:
       type: object
       properties:
@@ -1619,14 +1748,14 @@ components:
       default: taco_atm10
       type: string
       enum:
-        - taco_atm8
-        - taco_atm9
-        - taco_atm10
+      - taco_atm8
+      - taco_atm9
+      - taco_atm10
     TacoMinecraftWorldInfo:
       type: object
       properties:
         world:
-          "$ref": "#/components/schemas/TacoMinecraftWorlds"
+          $ref: '#/components/schemas/TacoMinecraftWorlds'
         name:
           type: string
         active:
@@ -1639,9 +1768,9 @@ components:
       type: object
       properties:
         stats:
-          "$ref": "#/components/schemas/MinecraftUserStats"
+          $ref: '#/components/schemas/MinecraftUserStats'
         world_name:
-          "$ref": "#/components/schemas/TacoMinecraftWorlds"
+          $ref: '#/components/schemas/TacoMinecraftWorlds'
     MinecraftUserStats:
       type: object
       properties:
@@ -1668,12 +1797,13 @@ components:
           type: string
         payload:
           type: object
-          description: The event payload. This can be different depending on the event type
+          description: The event payload. This can be different depending on the event
+            type
     MinecraftDiscordUserStatsInfo:
       type: object
       properties:
         world:
-          "$ref": "#/components/schemas/TacoMinecraftWorlds"
+          $ref: '#/components/schemas/TacoMinecraftWorlds'
         uuid:
           type: string
         username:
@@ -1684,7 +1814,7 @@ components:
         modified:
           type: number
         stats:
-          "$ref": "#/components/schemas/MinecraftUserStats"
+          $ref: '#/components/schemas/MinecraftUserStats'
     MinecraftServerSettings:
       type: object
       properties:
@@ -1703,7 +1833,7 @@ components:
         mods:
           type: array
           items:
-            "$ref": "#/components/schemas/TacoMinecraftServerSettingsMod"
+            $ref: '#/components/schemas/TacoMinecraftServerSettingsMod'
     TacoMinecraftServerSettingsMod:
       type: object
       properties:
@@ -1719,7 +1849,7 @@ components:
         name:
           type: string
         settings:
-          "$ref": "#/components/schemas/MinecraftServerSettings"
+          $ref: '#/components/schemas/MinecraftServerSettings'
         timestamp:
           type: number
     MinecraftServerStatus:
@@ -1731,8 +1861,8 @@ components:
           type: string
         status:
           enum:
-            - online
-            - offline
+          - online
+          - offline
           type: string
         description:
           type: string
@@ -1802,8 +1932,8 @@ components:
         username:
           type: string
       required:
-        - uuid
-        - username
+      - uuid
+      - username
     DiscordGuild:
       type: object
       properties:
@@ -1838,8 +1968,8 @@ components:
         boost_count:
           type: integer
       required:
-        - id
-        - name
+      - id
+      - name
     DiscordGuildChannels:
       type: object
       properties:
@@ -1852,11 +1982,11 @@ components:
         channels:
           type: array
           items:
-            "$ref": "#/components/schemas/DiscordCategory"
+            $ref: '#/components/schemas/DiscordCategory'
         categories:
           type: array
           items:
-            "$ref": "#/components/schemas/DiscordCategory"
+            $ref: '#/components/schemas/DiscordCategory'
     DiscordChannel:
       type: object
       properties:
@@ -1881,9 +2011,9 @@ components:
         category_id:
           type: string
       required:
-        - id
-        - name
-        - type
+      - id
+      - name
+      - type
     DiscordCategory:
       type: object
       properties:
@@ -1902,13 +2032,14 @@ components:
         channels:
           type: array
           items:
-            "$ref": "#/components/schemas/DiscordChannel"
+            $ref: '#/components/schemas/DiscordChannel'
     DiscordEmoji:
       type: object
       properties:
         type:
           type: string
-          enum: [emoji]
+          enum:
+          - emoji
         id:
           type: string
         guild_id:
@@ -1933,7 +2064,8 @@ components:
       properties:
         type:
           type: string
-          enum: [role]
+          enum:
+          - role
         id:
           type: string
         guild_id:
@@ -1987,7 +2119,8 @@ components:
       properties:
         type:
           type: string
-          enum: [user]
+          enum:
+          - user
         id:
           type: string
         guild_id:
@@ -2044,14 +2177,15 @@ components:
           nullable: true
     DiscordMentionable:
       oneOf:
-        - $ref: '#/components/schemas/DiscordRole'
-        - $ref: '#/components/schemas/DiscordUser'
+      - $ref: '#/components/schemas/DiscordRole'
+      - $ref: '#/components/schemas/DiscordUser'
     DiscordMessage:
       type: object
       properties:
         type:
           type: string
-          enum: [ message ]
+          enum:
+          - message
         id:
           type: string
         channel_id:
@@ -2077,15 +2211,19 @@ components:
           items:
             type: object
             properties:
-              id: { type: string }
-              username: { type: string }
+              id:
+                type: string
+              username:
+                type: string
         attachments:
           type: array
           items:
             type: object
             properties:
-              id: { type: string }
-              url: { type: string }
+              id:
+                type: string
+              url:
+                type: string
         embeds:
           type: array
           items:
@@ -2101,7 +2239,13 @@ components:
           type: boolean
         message_type:
           type: integer
-      required: [ id, channel_id, guild_id, author_id, content, created_at ]
+      required:
+      - id
+      - channel_id
+      - guild_id
+      - author_id
+      - content
+      - created_at
     DiscordMessageReaction:
       type: object
       properties:
@@ -2126,16 +2270,17 @@ components:
           type: integer
           nullable: true
           description: Epoch seconds when entry was added
-      required: [ guild_id, user_id ]
+      required:
+      - guild_id
+      - user_id
     PagedResultsJoinWhitelistUser:
       allOf:
-        - $ref: '#/components/schemas/PagedResults'
-        - properties:
+      - $ref: '#/components/schemas/PagedResults'
+      - properties:
+          items:
+            type: array
             items:
-              type: array
-              items:
-                $ref: '#/components/schemas/JoinWhitelistUser'
-
+              $ref: '#/components/schemas/JoinWhitelistUser'
     PagedResults:
       type: object
       description: Paginated results.
@@ -2153,9 +2298,11 @@ components:
           type: array
           description: Page slice of items
           items: {}
-
-      required: [ total, skip, take, items ]
-
+      required:
+      - total
+      - skip
+      - take
+      - items
   securitySchemes:
     X-AUTH-TOKEN:
       type: apiKey
@@ -2168,5 +2315,5 @@ components:
       name: X-TACOBOT-TOKEN
       in: header
 security:
-  - X-AUTH-TOKEN: []
-  - X-TACOBOT-TOKEN: []
+- X-AUTH-TOKEN: []
+- X-TACOBOT-TOKEN: []

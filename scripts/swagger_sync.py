@@ -271,6 +271,7 @@ def load_swagger(swagger_file: pathlib.Path) -> Dict[str, Any]:
 ANSI_GREEN = "\x1b[32m"
 ANSI_RED = "\x1b[31m"
 ANSI_CYAN = "\x1b[36m"
+ANSI_YELLOW = "\x1b[33m"
 ANSI_RESET = "\x1b[0m"
 
 DISABLE_COLOR = False
@@ -603,11 +604,17 @@ def main() -> None:
                 if not parts:
                     # repo root itself – always warn if not explicitly reports
                     if out_resolved.name != 'reports':
-                        print(f"WARNING: Output directory '{out_resolved}' is inside the repository and is not 'reports/'. Consider using 'reports/' to avoid accidental commits.", file=sys.stderr)
+                        warn_msg = f"WARNING: Output directory '{out_resolved}' is inside the repository and is not 'reports/'. Consider using 'reports/' to avoid accidental commits."
+                        if not DISABLE_COLOR:
+                            warn_msg = f"{ANSI_YELLOW}{warn_msg}{ANSI_RESET}"
+                        print(warn_msg, file=sys.stderr)
                 else:
                     # Allow reports/ and any nested path under reports/
                     if parts[0] != 'reports':
-                        print(f"WARNING: Output directory '{out_resolved}' is inside the repository and is not 'reports/'. Consider using 'reports/' to avoid accidental commits.", file=sys.stderr)
+                        warn_msg = f"WARNING: Output directory '{out_resolved}' is inside the repository and is not 'reports/'. Consider using 'reports/' to avoid accidental commits."
+                        if not DISABLE_COLOR:
+                            warn_msg = f"{ANSI_YELLOW}{warn_msg}{ANSI_RESET}"
+                        print(warn_msg, file=sys.stderr)
     except Exception:  # pragma: no cover
         pass
 

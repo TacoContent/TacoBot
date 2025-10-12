@@ -71,6 +71,18 @@ Guidelines:
 - Keep YAML indentation consistent (2 spaces) and avoid tabs.
 - For arrays of mixed role/user objects, use `oneOf` referencing existing component schemas.
 
+#### 2.1.1 Rules for generating OpenAPI DocStrings
+
+- Use `---openapi` and `---end` delimiters exactly (no extra spaces).
+- Use `>-'` for multi-line `description` to preserve newlines.
+- Always specify `tags` as an array, even if only one tag.
+- Define all path parameters in `parameters` section with `in: path`.
+- Use `$ref` to reference existing schemas in `components/schemas/`.
+- Always include `responses` section; define at least `200` and relevant error codes.
+- Use consistent 2-space indentation; avoid tabs. Do not use 4-space indentation.
+- Add a custom annotation to the openapi block to indicate that the information is auto-generated and should not be manually edited.
+- Always use `LF` line endings within the docstring block, even on Windows.
+
 ### 2.2 Error Handling Pattern
 - Validate inputs early; raise `HttpResponseException(status, headers, body)` for 4xx conditions.
 - Catch broad exceptions last, log via `self.log.error`, and raise a 500 with a generic message (never leak stack details to client).
@@ -165,6 +177,7 @@ Conventions:
 - Be sure to document all public methods and classes with docstrings.
 - Update all relevant documentation files when adding features or changing behavior.
 - Update a changelog or release notes for significant performance improvements or regressions.
+- Always use `LF` line endings, even on Windows, to maintain consistency across environments.
 
 ---
 ## 13. Performance Considerations
