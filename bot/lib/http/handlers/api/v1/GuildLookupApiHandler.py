@@ -9,8 +9,9 @@ from bot.lib.models.DiscordGuild import DiscordGuild
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
+from httpserver.EndpointDecorators import uri_mapping, uri_variable_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException, uri_mapping, uri_variable_mapping
+from httpserver.server import HttpResponseException
 
 
 class GuildLookupApiHandler(BaseHttpHandler):

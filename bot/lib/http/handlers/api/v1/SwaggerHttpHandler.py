@@ -30,8 +30,9 @@ import traceback
 from bot.lib.http.handlers.api.v1.const import API_VERSION  # noqa: F401
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.mongodb.tracking import TrackingDatabase
+from httpserver.EndpointDecorators import uri_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException, uri_mapping
+from httpserver.server import HttpResponseException
 
 
 class SwaggerHttpHandler(BaseHttpHandler):

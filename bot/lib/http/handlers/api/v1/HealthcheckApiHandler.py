@@ -37,8 +37,9 @@ from bot.lib.mongodb.minecraft import MinecraftDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
+from httpserver.EndpointDecorators import uri_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException, uri_mapping
+from httpserver.server import HttpResponseException
 
 
 class HealthcheckApiHandler(BaseHttpHandler):

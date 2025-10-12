@@ -1,6 +1,6 @@
 ---
 name: Correct PR Branch Check
-"on": # quoted to avoid YAML lint 'truthy' warning
+on: # yamllint disable-line rule:truthy
   pull_request:
     branches:
       - "main"

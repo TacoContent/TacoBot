@@ -6,8 +6,9 @@ import typing
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.tacobot import TacoBot
+from httpserver.EndpointDecorators import uri_variable_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException, uri_variable_mapping
+from httpserver.server import HttpResponseException
 
 
 class GuildChannelsApiHandler(BaseHttpHandler):

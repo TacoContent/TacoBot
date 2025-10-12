@@ -9,8 +9,9 @@ from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.models.DiscordRole import DiscordRole
 from bot.lib.models.DiscordUser import DiscordUser
 from bot.tacobot import TacoBot
+from httpserver.EndpointDecorators import uri_variable_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException, uri_variable_mapping
+from httpserver.server import HttpResponseException
 
 
 class GuildRolesApiHandler(BaseHttpHandler):

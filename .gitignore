@@ -10,6 +10,8 @@ tacobot.egg-info/
 !.github/env/*.env
 # ignore the super-linter log file when running super-linter locally
 super-linter-summary.log
+super-linter-summary.ansi.log
+super-linter-output/
 openapi_coverage.json
 openapi_summary.md
 

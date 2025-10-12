@@ -38,8 +38,9 @@ import traceback
 from bot.lib import discordhelper
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
 from bot.lib.http.handlers.BaseWebhookHandler import BaseWebhookHandler
+from httpserver.EndpointDecorators import uri_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException, uri_mapping
+from httpserver.server import HttpResponseException
 
 
 class MinecraftPlayerWebhookHandler(BaseWebhookHandler):

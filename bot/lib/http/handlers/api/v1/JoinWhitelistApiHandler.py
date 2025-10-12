@@ -45,8 +45,9 @@ from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.models.JoinWhitelistUser import JoinWhitelistUser
 from bot.lib.mongodb.whitelist import WhitelistDatabase
 from bot.tacobot import TacoBot
+from httpserver.EndpointDecorators import uri_variable_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException, uri_variable_mapping
+from httpserver.server import HttpResponseException
 
 
 class JoinWhitelistApiHandler(BaseHttpHandler):

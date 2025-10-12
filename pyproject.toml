@@ -43,6 +43,10 @@ dev = [
   "types-requests",
   "types-PyYAML",
 ]
+# Dependencies needed for building documentation (install via: pip install -e .[docs])
+docs = [
+  "pyyaml>=6.0,<7.0"
+]
 
 [tool.setuptools.packages.find]
 where = ["bot"]

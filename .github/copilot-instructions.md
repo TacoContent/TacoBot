@@ -84,14 +84,14 @@ Guidelines:
 ---
 ## 3. OpenAPI Sync Script (`scripts/sync_endpoints.py`)
 - Parses handler AST to detect decorators + docstring `---openapi` blocks.
-- Merges operation objects into `.swagger.v1.yaml` when run with `--write`.
+- Merges operation objects into `.swagger.v1.yaml` when run with `--fix`.
 - `--check` (CI default) emits patch-style unified diffs with color for drift and exits non-zero.
 - Supports orphan detection (`--show-orphans`) to list spec paths lacking handlers.
 - Only updates the `paths` section; schemas/components must be curated manually.
 
 Always run `./.venv/scripts/Activate.ps1;` before executing the `python scripts/sync_endpoints.py` command to ensure the virtual environment is active.
 
-Best Practice: Run `./.venv/scripts/Activate.ps1; python scripts/sync_endpoints.py --check` before committing. If drift is legitimate, run with `--write` and commit the updated swagger file.
+Best Practice: Run `./.venv/scripts/Activate.ps1; python scripts/sync_endpoints.py --check` before committing. If drift is legitimate, run with `--fix` and commit the updated swagger file.
 
 ---
 ## 4. Models & Serialization
@@ -130,7 +130,7 @@ Conventions:
 1. Implement handler method with decorator in correct versioned directory.
 2. Write docstring with `---openapi` block (as above) referencing existing schemas.
 3. Add or update related models & component schemas (manual edit to swagger if new schema).
-4. Run sync script `--check`; if diff expected, run `--write` and commit swagger.
+4. Run sync script `--check`; if diff expected, run `--fix` and commit swagger.
 5. Add tests covering success + at least one 4xx path.
 6. Update user-facing docs in `docs/http/` if behavior is externally relevant.
 
@@ -174,7 +174,7 @@ Conventions:
 ## 15. Pull Request Quality Gate
 Before submitting a PR that touches TacoBot code:
 - All tests pass (run `pytest`).
-- `scripts/sync_endpoints.py --check` passes (or follow with `--write` + commit).
+- `scripts/sync_endpoints.py --check` passes (or follow with `--fix` + commit).
 - Swagger changes reviewed for accuracy.
 - New tests added for new logic paths.
 - No stray debug prints or commented-out code blocks.

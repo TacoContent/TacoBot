@@ -1,6 +1,6 @@
 # Swagger Sync Script (`scripts/sync_endpoints.py`)
 
-This document explains the purpose and usage of the Swagger sync script that keeps the API handler docstrings and the master `/.swagger.v1.yaml` file aligned.
+Comprehensive guide to the OpenAPI sync tool that keeps handler docstrings and the master `/.swagger.v1.yaml` synchronized.
 
 ---
 
@@ -48,148 +48,283 @@ Schemas (`components.schemas`) are intentionally NOT auto‑generated right now.
 
 Add a YAML block between `---openapi` and `---end` markers. Supported keys in that block:
 
-- `summary`
-- `description`
-- `tags` (array or single string)
-- `parameters`
-- `requestBody`
-- `responses`
-- `security`
+---
 
-Any unsupported keys are ignored. If `responses` is omitted, a default `200: { description: OK }` is injected.
+## 1. Purpose
 
-Keep a brief human-readable sentence above the block for normal readers.
+Hand-maintaining large OpenAPI specs invites drift:
 
-Example complete docstring:
+- New handlers never added to the spec
+- Handler changes (summary, parameters, responses) not reflected
+- Deleted handlers persist as "ghost" endpoints
 
-```python
-"""List all mentionables (roles and users) in a guild.
+This script treats handler docstring metadata as the single source of truth for `paths` operations and automates synchronization.
 
----openapi
-summary: List guild mentionables (roles + members)
-tags: [guilds, mentionables]
-responses:
-  200:
-    description: OK
-  404:
-    description: Guild not found
----end
-"""
-```
+Core capabilities:
+
+- Drift detection (check mode / CI)
+- Automatic operation updates (`--fix`)
+- OpenAPI documentation coverage metrics
+- Orphan (swagger‑only) path detection
+- Ignored endpoints via marker
+- Coverage report generation (JSON / text / Cobertura)
+- GitHub Actions friendly markdown summary
+
+Schemas (`components.schemas`) remain manual to allow intentional curation.
 
 ---
 
-## CLI Usage
+## 2. High-Level Flow
 
-From the repository root (inside the TacoBot project):
+1. Walk handler tree (default: `bot/lib/http/handlers/`).
+2. Identify functions decorated with `@uri_variable_mapping()` inside classes.
+3. Parse docstring and extract a YAML block delimited by `---openapi` / `---end`.
+4. Build an operation object (filtering to supported keys).
+5. Compare against the existing swagger `paths` entry.
+6. Report unified diff (check) or write updated operation (`--fix`).
+7. Compute coverage & optional reports.
 
-### Check Mode (default)
+---
 
-Detect drift and exit non‑zero if differences are found (used in CI):
+## 3. Docstring OpenAPI Block
+
+Delimited block example:
+
+```yaml
+---openapi
+summary: List guild mentionables (roles + members)
+description: >-
+  Returns combined roles and members for mention logic.
+tags: [guilds, mentionables]
+parameters:
+  - in: path
+    name: guild_id
+    required: true
+    schema: { type: string }
+responses:
+  200: { description: OK }
+  404: { description: Guild not found }
+security:
+  - apiKeyAuth: []
+---end
+```
+
+Supported top-level keys:
+`summary`, `description`, `tags`, `parameters`, `requestBody`, `responses`, `security`.
+
+If `responses` omitted a minimal `200` response is injected. `tags` provided as a single string are normalized into a one-element list.
+
+Anything else is ignored safely.
+
+---
+
+## 4. CLI Reference
+
+```text
+python scripts/sync_endpoints.py [--check|--fix] [options]
+
+Modes (mutually exclusive):
+  --check            Default. Validate swagger vs handlers; exit 1 on drift.
+  --fix              Apply updates (write operations to swagger file).
+
+General Options:
+  --handlers-root PATH       Override handler root (default bot/lib/http/handlers/)
+  --swagger-file FILE        Path to swagger file (default .swagger.v1.yaml)
+  --ignore-file GLOB         Glob (relative) or filename to skip; repeatable.
+  --show-orphans             List swagger paths lacking handlers.
+  --show-ignored             List endpoints skipped via @openapi: ignore.
+  --show-missing-blocks      List handlers without an ---openapi block.
+  --verbose-coverage         Print per-endpoint coverage flags.
+  --coverage-report FILE     Emit coverage report (format via --coverage-format).
+  --coverage-format FORMAT   json|text|cobertura (default json).
+  --fail-on-coverage-below N Fail if handler doc coverage < N (0-1 or 0-100).
+  --markdown-summary FILE    Append GitHub-friendly markdown summary output.
+
+Exit Codes:
+  0 In sync (or after successful --fix) / coverage OK
+  1 Drift detected in check mode OR coverage threshold unmet
+  (Other) Abnormal termination / argument error
+```
+
+### 4.1 Basic Check
 
 ```bash
 python scripts/sync_endpoints.py
 ```
 
-(Equivalent to `--check`.)
-
-### Write Mode
-
-Regenerate/overwrite the differing path operations:
+### 4.2 Apply Fixes
 
 ```bash
-python scripts/sync_endpoints.py --write
+python scripts/sync_endpoints.py --fix
+git add .swagger.v1.yaml
+git commit -m "chore: sync swagger"
 ```
 
-This rewrites `.swagger.v1.yaml` with updated operations (order preserved as much as possible by PyYAML but comments may move if they were within replaced operations).
-
-### Show Orphans
-
-List operations that exist only in the swagger file and have no backing handler:
+### 4.3 Coverage Report (JSON + Threshold)
 
 ```bash
-python scripts/sync_endpoints.py --write --show-orphans
-# or in check mode:
-python scripts/sync_endpoints.py --show-orphans
+python scripts/sync_endpoints.py --coverage-report openapi_coverage.json --fail-on-coverage-below 95
 ```
 
-Exit codes:
+Accepts `95` or `0.95`. Failure exits with code 1.
 
-- `0` = In sync (or write completed successfully)
-- `1` = Drift detected in check mode
+### 4.4 Human-Friendly Coverage Text
 
----
+```bash
+python scripts/sync_endpoints.py --coverage-report coverage.txt --coverage-format text
+```
 
-## GitHub Action Integration
+### 4.5 Cobertura (CI Metrics Dashboards)
 
-A workflow (`.github/workflows/swagger-sync.yml`) runs the script in `--check` mode on:
+```bash
+python scripts/sync_endpoints.py --coverage-report coverage.xml --coverage-format cobertura
+```
 
-- Pull requests touching handler code, swagger file, or the script
-- Pushes to the `develop` branch
+### 4.6 Show Missing Blocks & Swagger Orphans Together
 
-If drift is detected, the workflow fails with a list of updated operations.
+```bash
+python scripts/sync_endpoints.py --show-missing-blocks --show-orphans
+```
 
-To fix a failing PR:
+### 4.7 Ignore Specific Files
 
-1. Run locally: `python scripts/sync_endpoints.py --write`
-2. Review the changes to `.swagger.v1.yaml` (ensure no unintended overwrites)
-3. Commit & push
+```bash
+python scripts/sync_endpoints.py --ignore-file experimental_*.py --ignore-file LegacyHandler.py
+```
 
----
+### 4.8 Append Markdown Summary (Local or CI)
 
-## Limitations / Intentional Simplifications
+```bash
+python scripts/sync_endpoints.py --markdown-summary swagger_sync_summary.md
+```
 
-- Only manages `paths` operations; does not remove or modify schemas.
-- Does not merge partial updates: the script replaces the entire operation entry for that method.
-- f-strings in path decorators are only partially resolved (currently whitelists `API_VERSION`). Complex dynamic paths are skipped.
-- No validation that referenced `$ref` schemas exist (could be added later).
-- Multi-version API support is not implemented (assumes `/api/v1/`).
+In GitHub Actions, if `GITHUB_STEP_SUMMARY` is set the summary is appended there automatically.
 
----
+### 4.9 Enforce Documentation Coverage in CI
 
-## Future Enhancements (Ideas)
+Example snippet (GitHub Actions job step):
 
-- Round‑trip YAML using `ruamel.yaml` to preserve comments and key ordering more faithfully.
-- Add field-level diff output.
-- Validate `$ref` targets.
-- Enforce presence of an `---openapi` block for all public endpoints.
-- Auto-generate TypeScript client snippets from updated operations.
-- Multi-version awareness (`/api/v2/` side-by-side management).
-
----
-
-## Troubleshooting
-
-| Symptom | Cause | Fix |
-|---------|-------|-----|
-| Script reports drift but you just added a docstring | Missing `---openapi` delimiters or indentation break inside YAML | Verify delimiters and that YAML parses stand‑alone |
-| Endpoint ignored | Could not resolve path literal (complex f-string) | Simplify path or extend resolver logic |
-| CI fails after deletion of a handler | Orphan path still in swagger | Run with `--write` (and optionally remove obsolete path manually) |
-| Tags appear as characters | Provided `tags: some-tag` as string | Use array or accept script converting to one-element list |
+```yaml
+      - name: OpenAPI sync & coverage
+        run: |
+          python scripts/sync_endpoints.py --check --fail-on-coverage-below 90 --show-missing-blocks
+```
 
 ---
 
-## Quick Checklist for New Endpoint
+## 5. Ignoring Endpoints
 
-1. Add handler with `@uri_variable_mapping("/api/{API_VERSION}/...", method="GET")`.
-2. Write docstring with human line + `---openapi` block.
-3. Include at least a `responses` section.
-4. Run `python scripts/sync_endpoints.py` (ensure no drift) then `--write` to update swagger.
-5. Commit code + updated swagger.
+Add `@openapi: ignore` to either:
 
----
+1. Module docstring ⇒ all endpoints in file ignored.
+2. Individual function docstring ⇒ only that handler ignored.
 
-## FAQ
+Ignored endpoints:
 
-**Q:** Do I have to document every response code?
-**A:** Only the ones you care to expose; unspecified ones get no entry. Provide explicit 4xx/5xx descriptions for clarity.
+- Are excluded from coverage denominator
+- Can still be listed with `--show-ignored`
+- Prevent swagger orphan listing for those paths
 
-**Q:** Will this break manual edits I make directly in `.swagger.v1.yaml`?
-**A:** Only for the specific operation objects that differ—script replaces them wholesale. Keep custom examples inside the docstring block for persistence.
-
-**Q:** Can we auto-add schemas?
-**A:** Yes later—out of scope for the initial lightweight sync.
+Use sparingly—prefer documenting or removing instead.
 
 ---
 
-Happy documenting! ✨
+## 6. Coverage Semantics
+
+Metric meanings (shown in summary):
+
+- Handlers considered: Non-ignored endpoints discovered.
+- With doc blocks: Handlers with an `---openapi` block.
+- In swagger (handlers): Those whose path+method entry exists in swagger.
+- Definition matches: Count where the swagger operation exactly equals generated doc block (normalized).
+- Swagger only operations: Path+method present in swagger but not in code (non-ignored).
+
+`--fail-on-coverage-below` compares (with doc blocks / handlers considered).
+
+Cobertura mapping: each endpoint ~ a line; documented endpoints counted as covered.
+
+---
+
+## 7. Diff Output
+
+When drift detected in check mode the script prints unified diffs for each differing operation. Added lines green, removed lines red (ANSI). In Markdown summaries the color codes are stripped and diffs are wrapped in fenced `diff` blocks.
+
+---
+
+## 8. Best Practices for Authoring Blocks
+
+| Goal | Tip |
+|------|-----|
+| Stable diffs | Keep key order consistent (summary, description, tags, parameters, requestBody, responses, security). |
+| Minimal noise | Omit description if summary is fully sufficient. |
+| Consistent tags | Use plural nouns at same case (e.g. `guilds`, `roles`). |
+| Response clarity | Always describe likely 4xx / 404 / 403 errors. |
+| Avoid redundancy | Put long prose in `description`, keep `summary` ≤ ~12 words. |
+
+---
+
+## 9. Limitations & Design Choices
+
+- Only manipulates `paths` operations (no automatic schema generation / pruning)
+- Replaces whole operation objects (atomic, simpler diff reasoning)
+- Limited f-string resolution (currently whitelists `API_VERSION` → `v1`)
+- No `$ref` existence validation (future enhancement)
+- Single API version scope (`/api/v1/`) assumed
+
+---
+
+## 10. Future Roadmap Ideas
+
+- `ruamel.yaml` round‑trip preservation
+- `$ref` schema validation & usage stats
+- Enforce doc block presence with optional `--require-blocks`
+- Operation sorting / stable ordering across runs
+- TS client generation hook
+- Multi-version orchestration (`/api/v2/` discovery)
+
+---
+
+## 11. Troubleshooting (Expanded)
+
+| Symptom | Likely Cause | Resolution |
+|---------|--------------|-----------|
+| Drift reported unexpectedly | Stale swagger entry differs from generated operation | Run with `--fix` and commit |
+| Endpoint missing from coverage | Missing `---openapi` block | Add block & re-run |
+| Endpoint totally absent from output | Decorator path not resolvable (dynamic f-string) | Simplify path or extend resolver function |
+| Tagged as ignored but still counted | Marker in a comment not docstring | Place `@openapi: ignore` inside actual module or function docstring |
+| Swagger-only path not listed | Used `--fix` without `--show-orphans` | Re-run with `--show-orphans` |
+| Coverage threshold failing | Threshold too high for current docs | Add blocks or lower threshold intentionally |
+| ANSI color bleed in logs | CI strips not applied | Use markdown summary or pipe through `sed -r 's/\x1b\[[0-9;]*m//g'` |
+
+---
+
+## 12. New Endpoint Checklist
+
+1. Implement handler with decorator `@uri_variable_mapping("/api/{API_VERSION}/resource", method="GET")`.
+2. Add docstring with human preface + `---openapi` block including at least a 200 response.
+3. Run sync (check mode): `python scripts/sync_endpoints.py`.
+4. If drift: `python scripts/sync_endpoints.py --fix` then commit swagger update.
+5. Add / update tests referencing new endpoint.
+6. (Optional) Run coverage report to confirm metrics.
+
+---
+
+## 13. FAQ
+
+**Q: Do I need a block for internal / experimental endpoints?**  
+Add one or mark with `@openapi: ignore`. Avoid silent omissions.
+
+**Q: Does `--fix` delete swagger-only paths?**  
+No. It only updates / inserts operations. Remove obsolete paths manually (script will highlight them as orphans).
+
+**Q: Are comments in swagger preserved?**  
+Only outside replaced operation objects. Inline comments within an updated operation are lost on rewrite.
+
+**Q: How are tags normalized?**  
+Single string converted to single-element array for consistency.
+
+**Q: What constitutes a definition match?**  
+Exact dict equality after generating the operation object from the doc block (including default responses).
+
+---
+Happy documenting & syncing! ✨

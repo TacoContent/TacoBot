@@ -3,8 +3,8 @@
 Synchronize HTTP handler docstring OpenAPI snippets with the master Swagger file.
 
 Modes:
-  --check  (default)  Validate that generated paths match those in .swagger.v1.yaml; exit 1 if drift.
-  --write             Overwrite / inject path definitions into .swagger.v1.yaml.
+    --check  (default)  Validate that generated paths match those in .swagger.v1.yaml; exit 1 if drift.
+    --fix               Overwrite / inject path definitions into .swagger.v1.yaml.
 
 Docstring Format:
 Include a YAML block delimited by ---openapi and ---end inside the function docstring. Example:
@@ -445,7 +445,7 @@ def _compute_coverage(endpoints: List[Endpoint], ignored: List[Tuple[str,str,pat
 def main() -> None:
     parser = argparse.ArgumentParser(description="Sync handler docstring OpenAPI blocks to swagger file")
     mode_group = parser.add_mutually_exclusive_group()
-    mode_group.add_argument('--write', action='store_true', help='Write changes instead of just checking for drift')
+    mode_group.add_argument('--fix', action='store_true', help='Write changes instead of just checking for drift')
     mode_group.add_argument('--check', action='store_true', help='Explicitly run in check mode (default) and show diff')
     parser.add_argument('--show-orphans', action='store_true', help='List swagger paths that have no code handler')
     parser.add_argument('--show-ignored', action='store_true', help='List endpoints skipped due to @openapi: ignore markers')
@@ -518,7 +518,7 @@ def main() -> None:
                     print(f"    - {so['method'].upper()} {so['path']}")
                 if len(coverage_swagger_only) > 50:
                     print(f"    ... ({len(coverage_swagger_only)-50} more)")
-    if args.write:
+    if args.fix:
         if changed:
             swagger_path.write_text(yaml.safe_dump(swagger_new, sort_keys=False), encoding='utf-8')
             print("Swagger updated.")
@@ -553,7 +553,7 @@ def main() -> None:
         lines_md: List[str] = []
         lines_md.append("## OpenAPI Sync Result")
         if changed:
-            lines_md.append("**Status:** Drift detected. Please run the sync script with `--write` and commit the updated swagger file.\n")
+            lines_md.append("**Status:** Drift detected. Please run the sync script with `--fix` and commit the updated swagger file.\n")
         elif coverage_fail:
             lines_md.append("**Status:** Coverage threshold failed.\n")
         else:
@@ -613,7 +613,7 @@ def main() -> None:
 
     if changed or coverage_fail:
         if changed:
-            print("Drift detected between handlers and swagger. Run: python scripts/sync_endpoints.py --write", file=sys.stderr)
+            print("Drift detected between handlers and swagger. Run: python scripts/sync_endpoints.py --fix", file=sys.stderr)
             for n in notes:
                 print(f" - {n}")
             print("\nProposed changes:")

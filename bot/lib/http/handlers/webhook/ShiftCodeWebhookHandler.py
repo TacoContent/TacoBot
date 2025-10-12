@@ -37,8 +37,9 @@ from bot.lib.http.handlers.BaseWebhookHandler import BaseWebhookHandler
 from bot.lib.mongodb.shift_codes import ShiftCodesDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.ui.MultipleExternalUrlButtonView import ButtonData, MultipleExternalUrlButtonView
+from httpserver.EndpointDecorators import uri_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException, uri_mapping
+from httpserver.server import HttpResponseException
 
 
 class ShiftCodeWebhookHandler(BaseWebhookHandler):

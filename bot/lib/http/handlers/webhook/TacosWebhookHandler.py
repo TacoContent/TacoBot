@@ -97,8 +97,9 @@ from bot.lib.http.handlers.BaseWebhookHandler import BaseWebhookHandler
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.users_utils import UsersUtils
+from httpserver.EndpointDecorators import uri_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException, uri_mapping
+from httpserver.server import HttpResponseException
 
 
 class TacosWebhookHandler(BaseWebhookHandler):

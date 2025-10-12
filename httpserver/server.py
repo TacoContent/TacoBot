@@ -25,41 +25,11 @@ import traceback
 import types
 import typing
 from collections.abc import Generator
-from dataclasses import dataclass
 
 from bot.lib import logger, settings
 from bot.lib.enums import loglevel
+from httpserver.UriRoute import UriRoute
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse, http_parser, http_send_response
-
-
-@dataclass
-class UriRoute:
-    path: str | re.Pattern
-    http_method: str | list[str]
-    uri_variables: list[str] | None
-    call_args: list[str]
-    auth_callback: types.FunctionType | None = None
-
-    def is_static(self) -> bool:
-        return not isinstance(self.path, re.Pattern)
-
-    def http_methods(self) -> Generator[str]:
-        if isinstance(self.http_method, str):
-            yield self.http_method
-        else:
-            for m in self.http_method:
-                yield m
-
-    def match(self, http_method: str, path: str) -> bool:
-        for m in self.http_methods():
-            if m == http_method:
-                break
-        else:
-            return False
-
-        if self.is_static():
-            return path == self.path
-        return self.path.match(path) is not None
 
 
 def _convert_params(request: HttpRequest, route: UriRoute, method):
@@ -89,43 +59,7 @@ def _convert_params(request: HttpRequest, route: UriRoute, method):
     return args
 
 
-def _uri_variable_to_pattern(uri):
-    """
-    Converts a URI like /foo/{name}/{id}/bar
-    into a regex pattern like /foo/(?P<name>[^/]*)/(?P<id>[^/]*)/bar
-    """
-    uri_variables = []
-    last_index = 0
-    uri_parts = ['^']
-    for m in re.finditer(r'\{(.*?)\}', uri):
-        group_name = m.group(1)
-        uri_variables.append(group_name)
-        start, end = m.span()
-        uri_parts.append(uri[last_index:start])
-        uri_parts.append('(?P<')
-        uri_parts.append(group_name)
-        uri_parts.append('>[^/]*)')
-        last_index = end
-    if last_index < len(uri):
-        uri_parts.append(uri[last_index:])
-    uri_parts.append('$')
-    return uri_variables, re.compile(''.join(uri_parts))
 
-
-def _uri_route_decorator(
-    f,
-    path: str | re.Pattern,
-    http_method: str | list[str],
-    uri_variables: list[str] | None = None,
-    auth_callback: types.FunctionType | None = None,
-):
-    args_specs = inspect.getfullargspec(f)
-    route = UriRoute(path, http_method, uri_variables, args_specs.args, auth_callback)
-
-    routes = getattr(f, '_http_routes', [])
-    routes.append(route)
-    f._http_routes = routes
-    return f
 
 
 def _scan_handler_for_uri_routes(handler: object) -> Generator[tuple[object, UriRoute]]:
@@ -134,18 +68,6 @@ def _scan_handler_for_uri_routes(handler: object) -> Generator[tuple[object, Uri
         for route in getattr(method, '_http_routes', []):
             yield method, route
 
-
-def uri_mapping(path: str, method: str | list[str] = 'GET', auth_callback: types.FunctionType | None = None):
-    return lambda f: _uri_route_decorator(f, path, method, auth_callback=auth_callback)
-
-
-def uri_pattern_mapping(path: str, method: str | list[str] = 'GET'):
-    return lambda f: _uri_route_decorator(f, re.compile(path), method)
-
-
-def uri_variable_mapping(path: str, method: str | list[str] = 'GET'):
-    uri_variables, uri_regex = _uri_variable_to_pattern(path)
-    return lambda f: _uri_route_decorator(f, uri_regex, method, uri_variables)
 
 
 class HttpResponseException(Exception):

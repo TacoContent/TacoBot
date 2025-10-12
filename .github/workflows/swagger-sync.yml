@@ -1,6 +1,6 @@
 ---
 name: Swagger Sync Check
-on:
+on: #
   pull_request:
     paths:
       - 'bot/**'
@@ -10,18 +10,21 @@ on:
     branches:
       - develop
       - beta*
-
+permissions: {}
 jobs:
   swagger-sync:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       - name: Install dependencies (minimal)
         run: |
