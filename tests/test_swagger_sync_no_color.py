@@ -1,4 +1,4 @@
-"""Test the --color=auto|always|never flag behavior (internal color toggle) of sync_endpoints.py.
+"""Test the --color=auto|always|never flag behavior (internal color toggle) of swagger_sync.py (renamed from sync_endpoints.py).
 
 We simulate a minimal handler module with a documented endpoint and an empty swagger file
 such that drift occurs; we then run the script in check mode with and without --no-color
@@ -14,7 +14,7 @@ This focuses on _colorize_unified behavior and global DISABLE_COLOR toggle.
 from __future__ import annotations
 
 import pathlib
-from scripts import sync_endpoints as se
+from scripts import swagger_sync as se
 
 TMP_COLOR_ROOT = pathlib.Path('tests/tmp_color_handlers')
 

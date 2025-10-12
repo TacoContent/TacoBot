@@ -1,4 +1,4 @@
-"""Tests for scripts.sync_endpoints.collect_endpoints decorator support.
+"""Tests for scripts.swagger_sync.collect_endpoints decorator support (renamed from sync_endpoints).
 
 Covers:
  - uri_mapping (single + multi-method)
@@ -13,7 +13,7 @@ from __future__ import annotations
 import pathlib
 import textwrap
 
-from scripts.sync_endpoints import collect_endpoints
+from scripts.swagger_sync import collect_endpoints
 
 TMP_ROOT = pathlib.Path('tests/tmp_handlers')
 
