@@ -56,10 +56,11 @@ class FetchError(discord.NotFound):  # type: ignore[misc]
         super().__init__(response=None, message="not found")  # type: ignore[arg-type]
 
 class StubChannel:
-    def __init__(self, channel_id: int, messages: Dict[int, StubMessage], not_found: List[int] | None = None):
+    def __init__(self, channel_id: int, messages: Dict[int, StubMessage], not_found: List[int] | None = None, guild_id: int = 1):
         self.id = channel_id
         self._messages = messages
         self._not_found = set(not_found or [])
+        self.guild = SimpleNamespace(id=guild_id)
 
     async def fetch_message(self, mid: int):  # emulates discord.TextChannel.fetch_message
         if mid in self._not_found or mid not in self._messages:
@@ -90,14 +91,13 @@ def make_request(body_obj: Any | None, method: str = "POST") -> HttpRequest:
     if body_obj is not None:
         raw = json.dumps(body_obj).encode("utf-8")
     return HttpRequest(
-        method=method,
-        path="/api/v1/guild/1/channel/2/messages/batch/reactions",
-        headers=headers,
-        body=raw,
-        query_params={},
-        version="HTTP/1.1",
-        keep_alive=False,
-        client=None,
+        0.0,
+        method,
+        "/api/v1/guild/1/channel/2/messages/batch/reactions",
+        {},  # query_params
+        "HTTP/1.1",
+        headers,
+        raw,
     )
 
 
@@ -170,14 +170,13 @@ async def test_reactions_batch_invalid_json_body():
     # Provide body which is invalid JSON
     headers = HttpHeaders()
     bad_req = HttpRequest(
-        method="POST",
-        path="/api/v1/guild/1/channel/2/messages/batch/reactions",
-        headers=headers,
-        body=b"{ not valid json",
-        query_params={},
-        version="HTTP/1.1",
-        keep_alive=False,
-        client=None,
+        0.0,
+        "POST",
+        "/api/v1/guild/1/channel/2/messages/batch/reactions",
+        {},
+        "HTTP/1.1",
+        headers,
+        b"{ not valid json",
     )
     channel = StubChannel(2, {})
     bot = StubBot(1, channel)

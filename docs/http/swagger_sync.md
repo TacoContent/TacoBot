@@ -139,6 +139,7 @@ General Options:
   --coverage-format FORMAT   json|text|cobertura (default json).
   --fail-on-coverage-below N Fail if handler doc coverage < N (0-1 or 0-100).
   --markdown-summary FILE    Append GitHub-friendly markdown summary output.
+  --color MODE               Color output: auto (default, only if TTY), always, never.
 
 Exit Codes:
   0 In sync (or after successful --fix) / coverage OK
@@ -247,7 +248,15 @@ Cobertura mapping: each endpoint ~ a line; documented endpoints counted as cover
 
 ## 7. Diff Output
 
-When drift detected in check mode the script prints unified diffs for each differing operation. Added lines green, removed lines red (ANSI). In Markdown summaries the color codes are stripped and diffs are wrapped in fenced `diff` blocks.
+When drift is detected in check mode the script prints unified diffs for each differing operation. Added lines are green, removed lines red, and file / hunk headers cyan using ANSI sequences. Color behavior is controlled by `--color`:
+
+| Mode   | Behavior                                   |
+|--------|---------------------------------------------|
+| auto   | Enable only if stdout is a TTY (default).   |
+| always | Always emit ANSI colors.                    |
+| never  | Never emit ANSI colors.                     |
+
+Markdown summaries always strip ANSI codes and note the effective color mode & reason (TTY vs non‑TTY).
 
 ---
 

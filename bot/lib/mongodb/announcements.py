@@ -72,7 +72,8 @@ class AnnouncementsDatabase(Database):
                 "updated_at": entry.updated_at,
                 "deleted_at": entry.deleted_at,
                 "message": entry.message.to_dict() if entry.message else None,
-                "tracked_at": timestamp,
+                # Store as integer seconds for consistency & easier querying
+                "tracked_at": int(timestamp),
             }
 
             self.connection.announcements.update_one(  # type: ignore

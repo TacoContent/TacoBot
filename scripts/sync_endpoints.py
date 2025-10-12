@@ -147,25 +147,46 @@ def collect_endpoints(handlers_root: pathlib.Path, *, ignore_file_globs: Optiona
             if not isinstance(node, ast.ClassDef):
                 continue
             for fn in [n for n in node.body if isinstance(n, ast.FunctionDef)]:
-                # Determine if function-level ignore
                 fn_doc = ast.get_docstring(fn) or ""
                 fn_ignored = IGNORE_MARKER in fn_doc
                 for deco in fn.decorator_list:
-                    if isinstance(deco, ast.Call) and getattr(deco.func, 'id', '') == 'uri_variable_mapping':
-                        if not deco.args:
-                            continue
-                        path_str = resolve_path_literal(deco.args[0])
-                        if not path_str:
-                            continue
-                        method = 'get'
-                        for kw in deco.keywords or []:
-                            if kw.arg == 'method' and isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
-                                method = kw.value.value.lower()
+                    if not isinstance(deco, ast.Call):
+                        continue
+                    deco_name = getattr(deco.func, 'id', '')
+                    if deco_name not in {'uri_variable_mapping', 'uri_mapping', 'uri_pattern_mapping'}:
+                        continue
+                    if not deco.args:
+                        continue
+                    # Extract the path / template / pattern literal (f-strings supported via resolve helper)
+                    path_str = resolve_path_literal(deco.args[0])
+                    if not path_str:
+                        # Unable to resolve literal (maybe dynamic); skip for now.
+                        continue
+                    # Determine methods (can be single str or list/tuple of strs)
+                    methods: List[str] = ['get']
+                    for kw in deco.keywords or []:
+                        if kw.arg == 'method':
+                            if isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
+                                methods = [kw.value.value.lower()]
+                            elif isinstance(kw.value, (ast.List, ast.Tuple)):
+                                collected: List[str] = []
+                                for elt in kw.value.elts:
+                                    if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
+                                        collected.append(elt.value.lower())
+                                if collected:
+                                    methods = collected
+                    # Regex pattern mappings cannot be represented as swagger path keys; mark them ignored.
+                    if deco_name == 'uri_pattern_mapping':
+                        for m in methods:
+                            ignored.append((path_str, m, py_file, fn.name))
+                        continue
+                    # For uri_mapping & uri_variable_mapping: record endpoints normally.
+                    for m in methods:
                         if module_ignored or fn_ignored:
-                            ignored.append((path_str, method, py_file, fn.name))
+                            ignored.append((path_str, m, py_file, fn.name))
                             continue
                         meta = extract_openapi_block(fn_doc)
-                        endpoints.append(Endpoint(path=path_str, method=method, meta=meta, function=fn.name, file=py_file))
+                        endpoints.append(Endpoint(path=path_str, method=m, meta=meta, function=fn.name, file=py_file))
     return endpoints, ignored
 
 
@@ -177,14 +198,28 @@ def load_swagger(swagger_file: pathlib.Path) -> Dict[str, Any]:
 
 ANSI_GREEN = "\x1b[32m"
 ANSI_RED = "\x1b[31m"
+ANSI_CYAN = "\x1b[36m"
 ANSI_RESET = "\x1b[0m"
+
+# Global (module-level) toggle set by --no-color CLI flag
+DISABLE_COLOR = False
 
 
 def _colorize_unified(diff_lines: List[str]) -> List[str]:
+    """Apply ANSI colors to unified diff lines (unless globally disabled).
+
+    Conventions:
+      - File headers (--- / +++) & hunk headers (@@ .. @@) -> cyan
+      - Added lines -> green
+      - Removed lines -> red
+    """
     colored: List[str] = []
     for line in diff_lines:
-        if line.startswith('+++ ') or line.startswith('--- '):
-            colored.append(line)  # headers not colorized (could add cyan later)
+        if DISABLE_COLOR:
+            colored.append(line)
+            continue
+        if line.startswith('+++ ') or line.startswith('--- ') or line.startswith('@@ '):
+            colored.append(f"{ANSI_CYAN}{line}{ANSI_RESET}")
         elif line.startswith('+') and not line.startswith('+++ '):
             colored.append(f"{ANSI_GREEN}{line}{ANSI_RESET}")
         elif line.startswith('-') and not line.startswith('--- '):
@@ -458,12 +493,38 @@ def main() -> None:
     parser.add_argument('--swagger-file', default=str(DEFAULT_SWAGGER_FILE), help='Path to swagger file to sync (default: .swagger.v1.yaml)')
     parser.add_argument('--ignore-file', action='append', default=[], help='Glob pattern (relative to handlers root) or filename to ignore (can be repeated)')
     parser.add_argument('--markdown-summary', help='Write a GitHub Actions style Markdown summary to this file (in addition to console output)')
+    parser.add_argument(
+        '--color',
+        choices=['auto', 'always', 'never'],
+        default='auto',
+        help='Color output mode: auto (default, only if TTY), always, never'
+    )
     args = parser.parse_args()
 
     handlers_root = pathlib.Path(args.handlers_root)
     swagger_path = pathlib.Path(args.swagger_file)
     if not handlers_root.exists():
         raise SystemExit(f"Handlers root does not exist: {handlers_root}")
+
+    global DISABLE_COLOR  # noqa: PLW0603 - intentional global toggle
+    # Color decision precedence:
+    # 1. --force-color always enables
+    # 2. --no-color always disables
+    # 3. Otherwise enable only if stdout is a TTY
+    color_reason: str
+    if args.color == 'always':
+        DISABLE_COLOR = False
+        color_reason = 'enabled (mode=always)'
+    elif args.color == 'never':
+        DISABLE_COLOR = True
+        color_reason = 'disabled (mode=never)'
+    else:  # auto
+        if sys.stdout.isatty():
+            DISABLE_COLOR = False
+            color_reason = 'enabled (mode=auto, TTY)'
+        else:
+            DISABLE_COLOR = True
+            color_reason = 'disabled (mode=auto, non-TTY)'
 
     endpoints, ignored = collect_endpoints(handlers_root, ignore_file_globs=args.ignore_file)
     swagger = load_swagger(swagger_path)
@@ -558,6 +619,8 @@ def main() -> None:
             lines_md.append("**Status:** Coverage threshold failed.\n")
         else:
             lines_md.append("**Status:** In sync ✅\n")
+        # Color status note
+        lines_md.append(f"_Diff color output: {'disabled' if DISABLE_COLOR else 'enabled'} ({color_reason})._\n")
         # Coverage summary table
         cs = coverage_summary
         lines_md.append("### Coverage Summary")

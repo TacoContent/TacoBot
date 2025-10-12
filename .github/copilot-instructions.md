@@ -158,6 +158,13 @@ Conventions:
 - Formatting: If Black is configured, follow its defaults (run formatting task locally before committing).
 - Linting: CI may run additional linters; avoid unused imports, broad excepts (except where explicitly justified and annotated `# noqa: BLE001`).
 - Type hints: Use typing generics (e.g., `list[str]` with Python 3.12) and annotate function signatures.
+- Always run tests in the .venv before pushing changes.
+- Commit messages: Use concise imperative style (e.g., "Add endpoint for...").
+- Use branches named `feat/short-description`, `fix/short-description`, or `docs/short-description` for clarity.
+- Squash minor fixup commits before merging to keep history clean.
+- Be sure to document all public methods and classes with docstrings.
+- Update all relevant documentation files when adding features or changing behavior.
+- Update a changelog or release notes for significant performance improvements or regressions.
 
 ---
 ## 13. Performance Considerations

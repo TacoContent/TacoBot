@@ -75,9 +75,9 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
         """
         if skip < 0:
             skip = 0
-        if take < 0:
-            take = 0
-        end = skip + take if take != 0 else None
+        if take <= 0:
+            return []
+        end = skip + take
         return items[skip:end]
 
     def _validate_guild_id(self, headers: HttpHeaders, uri_variables: dict) -> int:
