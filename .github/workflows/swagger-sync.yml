@@ -37,7 +37,7 @@ jobs:
             --check \
             --handlers-root bot/lib/http/handlers/ \
             --swagger-file .swagger.v1.yaml \
-            --output-directory reports \
+            --output-directory reports/openapi \
             --markdown-summary openapi_summary.md \
             --coverage-report openapi_coverage.json \
             --show-missing-blocks \

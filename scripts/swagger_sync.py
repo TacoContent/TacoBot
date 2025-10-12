@@ -1,13 +1,117 @@
 #!/usr/bin/env python
-"""OpenAPI / Swagger synchronization script (canonical name: swagger_sync.py).
+"""OpenAPI / Swagger synchronization & coverage utility.
 
-Formerly named ``sync_endpoints.py``. The legacy file has been removed; any
-external automation should invoke this module instead:
+Summary
+=======
+This module scans the TacoBot HTTP handler tree for docstring‑embedded OpenAPI
+blocks (delimited by ``---openapi`` / ``---end``) and keeps the canonical
+Swagger specification file (``.swagger.v1.yaml``) in sync. It can:
 
-    python scripts/swagger_sync.py --check
+* Detect drift (missing / changed operations) and show a colorized unified diff.
+* Optionally apply the changes to the swagger file (``--fix`` mode).
+* Generate documentation coverage metrics (JSON / plain text / Cobertura XML).
+* Produce a GitHub Actions friendly Markdown summary (written either to the
+    path passed via ``--markdown-summary`` and/or to the file referenced by the
+    ``GITHUB_STEP_SUMMARY`` environment variable).
+* List orphan swagger paths (present in spec, absent in code) and ignored
+    handlers (annotated with ``@openapi: ignore`` in their docstrings / module
+    docstring).
+* Emit per‑endpoint diagnostics and suggestions to improve documentation.
 
-All previous functionality (diffing, coverage reporting, markdown summary,
-colorized unified diffs, output directory management) is preserved.
+Why this exists
+---------------
+Manual maintenance of OpenAPI specs drifts quickly. By colocating a minimal
+YAML fragment alongside each handler we enable:
+* Localized review of API surface changes (git diff shows both code + spec).
+* Simple per‑method coverage accounting (each handler counts as one logical
+    line for Cobertura reports → easy CI gates).
+* Low‑friction incremental documentation (start with summary + responses; add
+    parameters later without touching a large central file).
+
+Key Concepts
+------------
+* Endpoint collection: ``collect_endpoints`` walks the handlers root gathering
+    decorated methods using ``uri_mapping`` / ``uri_variable_mapping``. Pattern
+    based mappings (``uri_pattern_mapping``) are *ignored* for swagger sync but
+    are tracked as intentionally skipped.
+* Supported YAML keys inside an openapi block are constrained to
+    ``SUPPORTED_KEYS`` for predictable merges. Any unspecified response schema
+    defaults to ``200: { description: "OK" }``.
+* Merge strategy: Per path+method operation objects are replaced atomically if
+    any field differs (simpler + deterministic vs. deep diffs).
+* Coverage: Two dimensions are reported – documentation presence (has an
+    ``---openapi`` block) and swagger synchronization (operation also present &
+    structurally identical). A third list shows swagger‑only operations.
+* Output directory: All artifact paths passed via CLI are resolved relative to
+    ``--output-directory`` (default: ``.``). If that directory lives inside the
+    repository and is *not* named ``reports`` a warning is printed to discourage
+    accidental commits of ephemeral outputs.
+
+CLI Synopsis
+------------
+        python scripts/swagger_sync.py --check \
+                --handlers-root bot/lib/http/handlers/ \
+                --swagger-file .swagger.v1.yaml \
+                --coverage-report openapi_coverage.json \
+                --coverage-format json \
+                --markdown-summary openapi_summary.md
+
+Important Flags (abridged):
+* ``--fix``: Persist merged swagger changes.
+* ``--check``: (default) Do not write; exit non‑zero on drift or coverage fail.
+* ``--coverage-report`` + ``--coverage-format``: Emit coverage in json|text|cobertura.
+* ``--fail-on-coverage-below``: Gate CI (accepts 0‑1 or 0‑100 style thresholds).
+* ``--show-orphans`` / ``--show-ignored`` / ``--show-missing-blocks``: Additional diagnostics.
+* ``--color {auto,always,never}``: Control ANSI colorization of diffs.
+* ``--output-directory``: Base path for report + summary artifacts.
+
+Exit Codes
+----------
+* 0: Swagger is in sync and coverage threshold (if any) satisfied.
+* 1: Drift detected OR coverage threshold not met.
+* (Other): Early parameter / file validation errors raise ``SystemExit``.
+
+Environment Integration
+-----------------------
+If ``GITHUB_STEP_SUMMARY`` is set the Markdown summary is appended there so the
+GitHub Actions job summary surfaces drift & coverage without inspecting logs.
+
+Migration Note
+--------------
+This file supersedes the legacy ``scripts/sync_endpoints.py`` (now deleted).
+All functionality was carried forward; only the entrypoint name changed to
+better reflect its purpose (``swagger_sync``) and to avoid persistent diffs on
+future enhancements.
+
+Potential Future Enhancements
+-----------------------------
+* Automatic component schema stubs (guarded behind a flag).
+* Pagination / filtering hints for large collections.
+* Security scheme enforcement summary.
+* Automatic pruning suggestions for stale swagger‑only paths older than N days.
+
+Internal API (selected)
+-----------------------
+* ``collect_endpoints`` → List[Endpoint], plus ignored list
+* ``merge`` → (updated_swagger, changed?, notes, diffs)
+* ``detect_orphans`` → list[str] of swagger‑only operations
+* ``_generate_coverage`` / ``_compute_coverage`` → metrics + per‑endpoint records
+* ``_diff_operations`` → unified diff lines for a single operation
+
+The underscore‑prefixed helpers are intentionally internal; tests import them
+only where fine‑grained verification adds reliability (e.g. color behavior).
+
+Usage Tip
+---------
+Run in check mode locally before committing:
+        python scripts/swagger_sync.py --check --show-missing-blocks --coverage-report reports/openapi/coverage.json --output-directory reports/openapi
+
+Then, if drift is reported and acceptable, apply:
+        python scripts/swagger_sync.py --fix
+
+Implementation detail: colorization is suppressed automatically when stdout is
+not a TTY (unless ``--color=always``). The global ``DISABLE_COLOR`` flag keeps
+the cost of color decisions minimal in inner loops.
 """
 
 from __future__ import annotations
@@ -484,11 +588,26 @@ def main() -> None:
     coverage_report_path = _resolve_output(args.coverage_report)
     markdown_summary_path = _resolve_output(args.markdown_summary)
 
+    # Warn if artifacts risk accidental commit. Allow 'reports' root and any subdirectory underneath.
     try:
         repo_root = pathlib.Path.cwd().resolve()
         out_resolved = output_dir.resolve()
-        if repo_root in out_resolved.parents and out_resolved.name != 'reports':
-            print(f"WARNING: Output directory '{out_resolved}' is inside the repository and is not 'reports/'. Consider using 'reports/' to avoid accidental commits.", file=sys.stderr)
+        if repo_root in out_resolved.parents:
+            # Determine if path is reports or inside reports
+            try:
+                rel = out_resolved.relative_to(repo_root)
+            except Exception:  # pragma: no cover
+                rel = None
+            if rel is not None:
+                parts = rel.parts
+                if not parts:
+                    # repo root itself – always warn if not explicitly reports
+                    if out_resolved.name != 'reports':
+                        print(f"WARNING: Output directory '{out_resolved}' is inside the repository and is not 'reports/'. Consider using 'reports/' to avoid accidental commits.", file=sys.stderr)
+                else:
+                    # Allow reports/ and any nested path under reports/
+                    if parts[0] != 'reports':
+                        print(f"WARNING: Output directory '{out_resolved}' is inside the repository and is not 'reports/'. Consider using 'reports/' to avoid accidental commits.", file=sys.stderr)
     except Exception:  # pragma: no cover
         pass
 

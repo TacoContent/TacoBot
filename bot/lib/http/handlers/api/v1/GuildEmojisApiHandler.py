@@ -22,34 +22,71 @@ class GuildEmojisApiHandler(BaseHttpHandler):
     def get_guild_emojis(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """List all emojis in the specified guild.
 
-        @openapi: ignore
-        Path: /api/v1/guild/{guild_id}/emojis
-        Method: GET
-        Returns: Array[DiscordEmoji]
-        Errors:
-            400 - missing/invalid guild_id
-            404 - guild not found
+        Returns a JSON array of guild emoji objects (custom emojis only).
+
+        Args:
+                request: Incoming HTTP request.
+                uri_variables: Path variables containing ``guild_id``.
+
+        Raises:
+                HttpResponseException: For validation, lookup, or internal errors.
+
+        ---openapi
+        summary: Get the list of emojis for a guild
+        description: >-
+          Returns all custom emojis for the specified guild.
+        tags:
+          - guilds
+          - emojis
+        parameters:
+          - name: guild_id
+            in: path
+            required: true
+            schema:
+              type: string
+        responses:
+          '200':
+            description: Successful operation
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/DiscordEmoji'
+          '400':
+            description: Invalid guild id
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorStatusCodePayload'
+          '404':
+            description: Guild not found
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorStatusCodePayload'
+        ---end
         """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
         try:
-            guild_id: typing.Optional[str] = uri_variables.get("guild_id")
-            if guild_id is None:
-                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id is required"}', "utf-8"))
-            if not guild_id.isdigit():
-                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id must be a number"}', "utf-8"))
-            guild = self.bot.get_guild(int(guild_id))
-            if guild is None:
-                raise HttpResponseException(404, headers, bytearray('{"error": "guild not found"}', "utf-8"))
-            emojis = [DiscordEmoji.fromEmoji(e).to_dict() for e in guild.emojis]
-            return HttpResponse(200, headers, bytearray(json.dumps(emojis), "utf-8"))
+                guild_id: typing.Optional[str] = uri_variables.get("guild_id")
+                if guild_id is None:
+                        raise HttpResponseException(400, headers, bytearray('{"error": "guild_id is required"}', "utf-8"))
+                if not guild_id.isdigit():
+                        raise HttpResponseException(400, headers, bytearray('{"error": "guild_id must be a number"}', "utf-8"))
+                guild = self.bot.get_guild(int(guild_id))
+                if guild is None:
+                        raise HttpResponseException(404, headers, bytearray('{"error": "guild not found"}', "utf-8"))
+                emojis = [DiscordEmoji.fromEmoji(e).to_dict() for e in guild.emojis]
+                return HttpResponse(200, headers, bytearray(json.dumps(emojis), "utf-8"))
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+                return HttpResponse(e.status_code, e.headers, e.body)
         except Exception as e:  # noqa: BLE001
-            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e))
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+                self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e))
+                err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
+                raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emoji/id/{{emoji_id}}", method="GET")
     def get_guild_emoji(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
