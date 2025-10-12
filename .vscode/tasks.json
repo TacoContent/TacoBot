@@ -53,7 +53,7 @@
 		{
 			"label": "Lint (Super Linter)",
 			"type": "shell",
-			"command": "docker run --rm --env-file .github/env/super-linter.env -e RUN_LOCAL=true -e CREATE_LOG_FILE=true -e LOG_FILE=super-linter-summary.log -e DEFAULT_BRANCH=develop -e GITHUB_WORKSPACE=/workspace -v ${workspaceFolder}:/workspace ghcr.io/super-linter/super-linter:v8",
+			"command": "docker run --rm --env-file .github/env/super-linter.env -e RUN_LOCAL=true -e CREATE_LOG_FILE=true -e LOG_FILE=super-linter-output/super-linter-summary.ansi.log -e DEFAULT_BRANCH=develop -e GITHUB_WORKSPACE=/github/workspace -v ${workspaceFolder}:/github/workspace ghcr.io/super-linter/super-linter:v8",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"
