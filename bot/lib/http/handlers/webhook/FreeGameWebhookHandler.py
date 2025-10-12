@@ -93,7 +93,7 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
                 ...
             }
 
-        Behaviour Summary:
+        Behavior Summary:
             * Validates auth & body presence.
             * Derives offer type/platform list and aesthetics.
             * Resolves and shortens URL; attempts launcher deep link.
@@ -104,6 +104,28 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
             200 JSON echo of original payload on success.
             400 / 401 JSON error for client issues.
             500 JSON error for unexpected failures.
+
+        >>>openapi
+        post:
+          security:
+            - X-TACOBOT-TOKEN: []
+          tags:
+            - webhook
+          summary: Submit Free Game Webhook
+          description: ''
+          requestBody:
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/TacoWebhookGamePayload'
+          responses:
+            '200':
+              description: Successful operation
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/TacoWebhookGamePayload'
+        <<<openapi
         """
         _method = inspect.stack()[0][3]
 

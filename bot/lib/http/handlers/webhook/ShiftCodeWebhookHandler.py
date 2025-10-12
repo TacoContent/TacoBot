@@ -90,6 +90,7 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
             200: JSON echo of original payload or a message indicating expiry.
             400/401: JSON error for client issues.
             500: JSON error for unexpected failures.
+        @openapi: ignore
         """
         _method = inspect.stack()[0][3]
 

@@ -31,7 +31,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         Raises:
                 HttpResponseException: For validation, lookup, or internal errors.
 
-        ---openapi
+        >>>openapi
         summary: Get the list of emojis for a guild
         description: >-
           Returns all custom emojis for the specified guild.
@@ -65,7 +65,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
               application/json:
                 schema:
                   $ref: '#/components/schemas/ErrorStatusCodePayload'
-        ---end
+        <<<openapi
         """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
@@ -92,13 +92,51 @@ class GuildEmojisApiHandler(BaseHttpHandler):
     def get_guild_emoji(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Get a single emoji by numeric ID.
 
-        @openapi: ignore
         Path: /api/v1/guild/{guild_id}/emoji/id/{emoji_id}
         Method: GET
         Returns: DiscordEmoji
         Errors:
             400 - missing/invalid guild_id or emoji_id
             404 - guild or emoji not found
+        >>>openapi
+        get:
+          tags:
+            - guilds
+            - emojis
+          summary: Get an emoji by ID
+          description: >-
+            Returns a single emoji object for the given emoji ID.
+          parameters:
+            - name: guild_id
+              in: path
+              required: true
+              schema:
+                type: string
+            - name: emoji_id
+              in: path
+              required: true
+              schema:
+                type: string
+          responses:
+            '200':
+              description: Successful operation
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/DiscordEmoji'
+            '400':
+              description: Invalid guild or emoji id
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ErrorStatusCodePayload'
+            '404':
+              description: Guild or Emoji not found
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ErrorStatusCodePayload'
+        <<<openapi
         """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
@@ -133,13 +171,52 @@ class GuildEmojisApiHandler(BaseHttpHandler):
     def get_guild_emoji_by_name(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Get a single emoji by name.
 
-        @openapi: ignore
         Path: /api/v1/guild/{guild_id}/emoji/name/{emoji_name}
         Method: GET
         Returns: DiscordEmoji
         Errors:
             400 - missing/invalid guild_id or emoji_name
             404 - guild or emoji not found
+
+        >>>openapi
+        get:
+          tags:
+            - guilds
+            - emojis
+          summary: Get an emoji by name
+          description: >-
+            Returns a single emoji object for the given emoji name.
+          parameters:
+            - name: guild_id
+              in: path
+              required: true
+              schema:
+                type: string
+            - name: emoji_name
+              in: path
+              required: true
+              schema:
+                type: string
+          responses:
+            '200':
+              description: Successful operation
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/DiscordEmoji'
+            '400':
+              description: Invalid guild id or emoji name missing
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ErrorStatusCodePayload'
+            '404':
+              description: Guild or Emoji not found
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ErrorStatusCodePayload'
+        <<<openapi
         """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()

@@ -43,7 +43,8 @@ jobs:
             --show-missing-blocks \
             --coverage-format json \
             --verbose-coverage \
-            --show-orphans
+            --show-orphans \
+            --strict
 
       - name: Upload OpenAPI reports artifact
         if: always()

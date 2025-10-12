@@ -28,17 +28,21 @@ class GuildChannelsApiHandler(BaseHttpHandler):
                 400 - missing/invalid guild_id
                 404 - guild not found
 
-        ---openapi
-        summary: List guild categories (with channels)
-        description: Returns all channel categories in the guild. Each category object embeds its child channels.
-        tags: [guilds, channels]
-        parameters:
-          - in: path
-            name: guild_id
-            required: true
-            description: Discord guild (server) ID
-            schema: { type: string }
-        responses:
+        >>>openapi
+        get:
+          summary: List guild categories (with channels)
+          description: >-
+            Returns all channel categories in the guild. Each category object embeds its child channels.
+          tags:
+            - guilds
+            - channels
+          parameters:
+            - in: path
+              name: guild_id
+              required: true
+              description: Discord guild (server) ID
+              schema: { type: string }
+          responses:
             '200':
               description: OK
               content:
@@ -52,7 +56,7 @@ class GuildChannelsApiHandler(BaseHttpHandler):
                 content:
                   application/json:
                     schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-        ---end
+        <<<openapi
         """
         _method = inspect.stack()[0][3]
         try:
@@ -111,11 +115,12 @@ class GuildChannelsApiHandler(BaseHttpHandler):
                 400 - missing/invalid guild_id
                 404 - guild or category not found
 
-        ---openapi
-        summary: Get category (with channels)
-        description: Returns a single category and its child channels.
-        tags: [guilds, channels]
-        parameters:
+        >>>openapi
+        get:
+          summary: Get category (with channels)
+          description: Returns a single category and its child channels.
+          tags: [guilds, channels]
+          parameters:
             - in: path
               name: guild_id
               required: true
@@ -124,7 +129,7 @@ class GuildChannelsApiHandler(BaseHttpHandler):
               name: category_id
               required: true
               schema: { type: string }
-        responses:
+          responses:
             '200':
               description: OK
               content:
@@ -135,7 +140,7 @@ class GuildChannelsApiHandler(BaseHttpHandler):
               content:
                 application/json:
                   schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-        ---end
+        <<<openapi
         """
         _method = inspect.stack()[0][3]
         try:
@@ -195,19 +200,20 @@ class GuildChannelsApiHandler(BaseHttpHandler):
                 400 - missing/invalid guild_id
                 404 - guild not found
 
-        ---openapi
-        summary: List top-level guild channels
-        description: Returns channels that are not within a category. Use categories endpoint for nested channels.
-        tags: [guilds, channels]
-        security:
-          - X-AUTH-TOKEN: []
-          - X-TACOBOT-TOKEN: []
-        parameters:
-          - in: path
-            name: guild_id
-            required: true
-            schema: { type: string }
-        responses:
+        >>>openapi
+        get:
+          summary: List top-level guild channels
+          description: Returns channels that are not within a category. Use categories endpoint for nested channels.
+          tags: [guilds, channels]
+          security:
+            - X-AUTH-TOKEN: []
+            - X-TACOBOT-TOKEN: []
+          parameters:
+            - in: path
+              name: guild_id
+              required: true
+              schema: { type: string }
+          responses:
             '200':
               description: OK
               content:
@@ -220,7 +226,7 @@ class GuildChannelsApiHandler(BaseHttpHandler):
               content:
                 application/json:
                   schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-        ---end
+        <<<openapi
         """
         _method = inspect.stack()[0][3]
         try:
@@ -300,51 +306,52 @@ class GuildChannelsApiHandler(BaseHttpHandler):
                 400 - missing/invalid guild_id or malformed body
                 404 - guild not found
 
-        ---openapi
-        summary: Batch fetch channels by IDs
-        description: Retrieve multiple channels. Accepts array body or object with ids property; can also accept repeated query param ids.
-        tags: [guilds, channels]
-        security:
-          - X-AUTH-TOKEN: []
-          - X-TACOBOT-TOKEN: []
-        parameters:
-          - in: path
-            name: guild_id
-            required: true
-            schema: { type: string }
-          - in: query
-            name: ids
+        >>>openapi
+        post:
+          summary: Batch fetch channels by IDs
+          description: Retrieve multiple channels. Accepts array body or object with ids property; can also accept repeated query param ids.
+          tags: [guilds, channels]
+          security:
+            - X-AUTH-TOKEN: []
+            - X-TACOBOT-TOKEN: []
+          parameters:
+            - in: path
+              name: guild_id
+              required: true
+              schema: { type: string }
+            - in: query
+              name: ids
+              required: false
+              description: Repeatable channel ID query parameter
+              schema: { type: array, items: { type: string } }
+          requestBody:
             required: false
-            description: Repeatable channel ID query parameter
-            schema: { type: array, items: { type: string } }
-        requestBody:
-          required: false
-          content:
-            application/json:
-              schema:
-                oneOf:
-                  - type: array
-                    items: { type: string }
-                  - type: object
-                    properties:
-                      ids:
-                        type: array
-                        items: { type: string }
-                    required: [ ids ]
-        responses:
-          '200':
-            description: OK
             content:
               application/json:
                 schema:
-                  type: array
-                  items: { $ref: '#/components/schemas/DiscordChannel' }
-          '404':
-            description: Guild not found
-            content:
-              application/json:
-                schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-        ---end
+                  oneOf:
+                    - type: array
+                      items: { type: string }
+                    - type: object
+                      properties:
+                        ids:
+                          type: array
+                          items: { type: string }
+                      required: [ ids ]
+          responses:
+            '200':
+              description: OK
+              content:
+                application/json:
+                  schema:
+                    type: array
+                    items: { $ref: '#/components/schemas/DiscordChannel' }
+            '404':
+              description: Guild not found
+              content:
+                application/json:
+                  schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
+        <<<openapi
         """
         _method = inspect.stack()[0][3]
         try:

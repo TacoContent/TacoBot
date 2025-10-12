@@ -60,7 +60,6 @@ class SwaggerHttpHandler(BaseHttpHandler):
     async def swagger(self, request: HttpRequest) -> HttpResponse:
         """Serve the OpenAPI/Swagger YAML document.
 
-        @openapi: ignore
         Returns:
             200: Raw YAML swagger content.
             500: JSON error body if the swagger file cannot be read.
@@ -69,6 +68,22 @@ class SwaggerHttpHandler(BaseHttpHandler):
             The file lookup is synchronous; given its small size this is
             acceptable. If expanded substantially consider async file IO or
             caching the contents in memory on first request.
+        >>>openapi
+        get:
+          tags:
+            - swagger
+          summary: Get the swagger file
+          description: >-
+            Gets the swagger file
+          parameters: []
+          responses:
+            '200':
+              description: Successful operation
+              content:
+                application/yaml:
+                  schema:
+                    type: string
+        <<<openapi
         """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()

@@ -203,6 +203,38 @@ For detailed guides and tables of contents, see the [TacoBot Documentation Index
 
 For questions, issues, or contributions, please refer to the documentation or open an issue in this repository.
 
+### OpenAPI / Swagger Sync (`scripts/swagger_sync.py`)
+
+Handler HTTP endpoints embed minimal OpenAPI fragments inside their docstrings between `>>>openapi` / `<<<openapi` markers (legacy `---openapi` / `---end` still accepted).
+The `scripts/swagger_sync.py` utility keeps those fragments and the canonical `.swagger.v1.yaml` file in sync.
+
+Quick check (no write) using defaults:
+
+```pwsh
+python scripts/swagger_sync.py --check --handlers-root bot/lib/http/handlers/ --swagger-file .swagger.v1.yaml
+```
+
+Apply changes to the swagger file:
+
+```pwsh
+python scripts/swagger_sync.py --fix --handlers-root bot/lib/http/handlers/ --swagger-file .swagger.v1.yaml
+```
+
+Method-rooted blocks (multiple verbs in one docstring) are supported using top-level `get:`, `post:` etc. keys.
+Custom delimiters can be provided with `--openapi-start` / `--openapi-end` if you need a different embedding style.
+If a docstring lists a verb that's not present in the decorator's `method=` list you can:
+
+- Run normally (default) – a warning is emitted and the extraneous verb is ignored.
+- Use `--strict` – the run fails fast (non-zero exit) so CI can catch stale / copy-pasted verb sections.
+
+Example strict run:
+
+```pwsh
+python scripts/swagger_sync.py --check --strict --handlers-root bot/lib/http/handlers/ --swagger-file .swagger.v1.yaml
+```
+
+See `tests/test_swagger_sync_method_rooted.py` and `tests/test_swagger_sync_strict_validation.py` for examples.
+
 ## Contributing / Running Tests
 
 ### Development Environment

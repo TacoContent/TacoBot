@@ -45,7 +45,6 @@ from httpserver.server import HttpResponseException
 class HealthcheckApiHandler(BaseHttpHandler):
     """Provides simple health endpoints for uptime / readiness checks.
 
-    @openapi: ignore
     Current implementation is intentionally conservative. Additional checks
     (database connectivity, external API latency, cache layer) can be added
     later behind optional query flags or a verbose mode to avoid impacting
@@ -70,7 +69,6 @@ class HealthcheckApiHandler(BaseHttpHandler):
     def healthcheck(self, request: HttpRequest) -> HttpResponse:
         """Return basic service health status.
 
-        @openapi: ignore
         Paths:
             GET /api/v1/health
             GET /healthz
@@ -90,6 +88,27 @@ class HealthcheckApiHandler(BaseHttpHandler):
 
         Notes:
             Response bodies for success/failure are plain strings (probe friendly).
+
+        >>>openapi
+        get:
+          tags:
+            - health
+          summary: Get the health status of the service
+          description: >-
+            Gets the health status of the service
+          parameters: []
+          responses:
+            '200':
+              description: Successful operation
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: ok
+        <<<openapi
         """
         _method = inspect.stack()[0][3]
         try:

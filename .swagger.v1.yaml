@@ -20,10 +20,6 @@ paths:
     get:
       tags:
       - swagger
-      summary: Get the swagger file
-      description: 'Gets the swagger file
-
-        '
       parameters: []
       responses:
         '200':
@@ -32,14 +28,12 @@ paths:
             application/yaml:
               schema:
                 type: string
+      summary: Get the swagger file
+      description: Gets the swagger file
   /swagger.yaml:
     get:
       tags:
       - swagger
-      summary: Get the swagger file
-      description: 'Gets the swagger file
-
-        '
       parameters: []
       responses:
         '200':
@@ -48,15 +42,13 @@ paths:
             application/yaml:
               schema:
                 type: string
+      summary: Get the swagger file
+      description: Gets the swagger file
   /api/v1/health:
     get:
+      description: Gets the health status of the service
       tags:
       - health
-      summary: Get the health status of the service
-      description: 'Gets the health status of the service
-
-        '
-      parameters: []
       responses:
         '200':
           description: Successful operation
@@ -68,6 +60,8 @@ paths:
                   status:
                     type: string
                     example: ok
+      summary: Get the health status of the service
+      parameters: []
   /api/v1/guilds:
     get:
       tags:
@@ -628,9 +622,7 @@ paths:
       - guilds
       - emojis
       summary: Get an emoji by ID
-      description: 'Returns a single emoji object for the given emoji ID.
-
-        '
+      description: Returns a single emoji object for the given emoji ID.
       parameters:
       - name: guild_id
         in: path
@@ -666,10 +658,6 @@ paths:
       tags:
       - guilds
       - emojis
-      summary: Get an emoji by name
-      description: 'Returns a single emoji object for the given emoji name.
-
-        '
       parameters:
       - name: guild_id
         in: path
@@ -681,6 +669,8 @@ paths:
         required: true
         schema:
           type: string
+      summary: Get an emoji by name
+      description: Returns a single emoji object for the given emoji name.
       responses:
         '200':
           description: Successful operation
@@ -1640,6 +1630,77 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ShiftCodePayload'
+  /healthz:
+    get:
+      description: Gets the health status of the service
+      tags:
+      - health
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+      summary: Get the health status of the service
+      parameters: []
+  /health:
+    get:
+      description: Gets the health status of the service
+      tags:
+      - health
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+      summary: Get the health status of the service
+      parameters: []
+  /api/v1/settings/{section}:
+    get:
+      summary: Get settings for a guild and section
+      security:
+      - X-AUTH-TOKEN: []
+      - X-TACOBOT-TOKEN: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+        '404':
+          description: Guild or Emoji not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Retrieves the settings document for the primary guild and the specified
+        section.
+      parameters:
+      - name: section
+        in: path
+        required: true
+        schema:
+          type: string
+      tags:
+      - settings
 components:
   schemas:
     ErrorStatusCodePayload:

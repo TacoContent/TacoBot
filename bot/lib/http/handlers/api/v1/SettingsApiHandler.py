@@ -61,7 +61,6 @@ class SettingsApiHandler(BaseHttpHandler):
     def get_settings(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Retrieve a settings document for the primary guild.
 
-        @openapi: ignore
         Path Parameters:
             section (str): Logical settings section name.
 
@@ -73,6 +72,43 @@ class SettingsApiHandler(BaseHttpHandler):
             200 JSON object (may be empty dict) representing stored settings.
             404 JSON {"error": "Invalid authentication token"}
             500 JSON {"error": "Internal server error: <details>"}
+
+        >>>openapi
+        get:
+          security:
+            - X-AUTH-TOKEN: []
+            - X-TACOBOT-TOKEN: []
+          tags:
+            - settings
+          summary: Get settings for a guild and section
+          description: >-
+            Retrieves the settings document for the primary guild and the specified section.
+          parameters:
+            - name: section
+              in: path
+              required: true
+              schema:
+                type: string
+          responses:
+            '200':
+              description: Successful operation
+              content:
+                application/json:
+                  schema:
+                    type: object
+            '404':
+              description: Guild or Emoji not found
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ErrorStatusCodePayload'
+            '500':
+              description: Internal server error
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ErrorStatusCodePayload'
+        <<<openapi
         """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()

@@ -74,6 +74,7 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
             200 JSON with echo + normalized event meta on success.
             4xx JSON error for missing/invalid fields or unknown event.
             500 JSON error for unexpected processing failures.
+        @openapi: ignore
         """
         _method = inspect.stack()[0][3]
 

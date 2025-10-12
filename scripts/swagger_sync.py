@@ -4,7 +4,7 @@
 Summary
 =======
 This module scans the TacoBot HTTP handler tree for docstring‑embedded OpenAPI
-blocks (delimited by ``---openapi`` / ``---end``) and keeps the canonical
+blocks (delimited by ``>>>openapi`` / ``<<<openapi`` by default – legacy ``---openapi`` / ``---end`` still accepted) and keeps the canonical
 Swagger specification file (``.swagger.v1.yaml``) in sync. It can:
 
 * Detect drift (missing / changed operations) and show a colorized unified diff.
@@ -90,6 +90,65 @@ Potential Future Enhancements
 * Security scheme enforcement summary.
 * Automatic pruning suggestions for stale swagger‑only paths older than N days.
 
+Method‑rooted OpenAPI Blocks
+----------------------------
+Two docstring block layouts are supported between the `>>>openapi` / `<<<openapi` delimiters (legacy `---openapi` / `---end` also work):
+
+1. Flat (legacy) – operation fields live at the top level (``summary``, ``tags``, ``parameters``, ``responses`` …):
+
+        ```yaml
+        >>>openapi
+        summary: List items
+        tags: [items]
+        responses:
+            '200': { description: OK }
+        <<<openapi
+        ```
+
+2. Method‑rooted – top‑level keys are HTTP methods whose values are operation objects. This is useful
+     when a single handler function is decorated for multiple methods and you want different docs per method:
+
+        ```yaml
+        >>>openapi
+        get:
+            summary: List items
+            tags: [items]
+            responses:
+                '200': { description: OK }
+        post:
+            summary: Create item
+            tags: [items]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema: { $ref: '#/components/schemas/NewItem' }
+            responses:
+                '200': { description: Created }
+    <<<openapi
+        ```
+
+Detection Logic
+---------------
+If every top‑level key inside the block that matches an HTTP verb (``get``, ``post``, ``put``, ``delete``,
+``patch``, ``options``, ``head``) forms a non‑empty set, the block is treated as *method‑rooted* and the
+sub‑mapping corresponding to the decorator’s method is selected. Otherwise the parser assumes the *flat*
+style and uses the whole mapping as the operation object.
+
+Rules & Caveats
+---------------
+* Only keys in ``SUPPORTED_KEYS`` inside the chosen mapping are forwarded to the swagger operation.
+* Mixing styles (e.g. having both ``summary:`` and ``get:`` at the same top level) is discouraged; any
+    flat keys are ignored when method‑rooted keys are present.
+* Omitted ``responses`` results in a default ``200`` with description "OK" (same as flat mode).
+* A method listed in decorators but missing from the method‑rooted block yields an empty meta mapping
+    (effectively no OpenAPI block for that method). Add at least a ``summary`` + ``responses`` to count
+    towards coverage.
+* See ``tests/test_swagger_sync_method_rooted.py`` for an executable example.
+* ``--strict`` flag: When supplied to the CLI, any HTTP verb keys present in a method‑rooted block that
+    are NOT declared in the decorator's ``method=`` list cause the run to fail fast (non‑zero exit).
+    Without ``--strict`` these are downgraded to warnings and the extraneous verb definitions are ignored.
+
 Internal API (selected)
 -----------------------
 * ``collect_endpoints`` → List[Endpoint], plus ignored list
@@ -134,10 +193,28 @@ import json
 try:
     import yaml  # type: ignore
 except Exception as e:  # pragma: no cover
+    # ANSI constants not declared yet at this point; print plain message
     print("Missing dependency pyyaml. Install with: pip install pyyaml", file=sys.stderr)
     raise
 
-OPENAPI_BLOCK_RE = re.compile(r"---openapi\s*(.*?)\s*---end", re.DOTALL | re.IGNORECASE)
+# Default (new) delimiters and legacy fallback pattern. The regex will be built at runtime
+# to allow user overrides via CLI flags.
+DEFAULT_OPENAPI_START = ">>>openapi"
+DEFAULT_OPENAPI_END = "<<<openapi"
+LEGACY_OPENAPI_START = "---openapi"
+LEGACY_OPENAPI_END = "---end"
+
+def build_openapi_block_re(start_marker: str, end_marker: str) -> re.Pattern[str]:
+    # Escape user-provided markers for safe regex embedding; capture lazily.
+    sm = re.escape(start_marker)
+    em = re.escape(end_marker)
+    # Always allow legacy markers in addition to the configured pair for backward compatibility.
+    legacy = f"(?:{re.escape(LEGACY_OPENAPI_START)}|{sm})"
+    legacy_end = f"(?:{re.escape(LEGACY_OPENAPI_END)}|{em})"
+    return re.compile(rf"{legacy}\s*(.*?)\s*{legacy_end}", re.DOTALL | re.IGNORECASE)
+
+# Initialized later in main() after argument parsing; provide a module-level default for import-time uses (tests may override).
+OPENAPI_BLOCK_RE = build_openapi_block_re(DEFAULT_OPENAPI_START, DEFAULT_OPENAPI_END)
 DEFAULT_HANDLERS_ROOT = pathlib.Path("bot/lib/http/handlers/")
 DEFAULT_SWAGGER_FILE = pathlib.Path(".swagger.v1.yaml")
 SUPPORTED_KEYS = {"summary", "description", "tags", "parameters", "requestBody", "responses", "security"}
@@ -201,7 +278,7 @@ def resolve_path_literal(node: ast.AST) -> Optional[str]:
     return None
 
 
-def collect_endpoints(handlers_root: pathlib.Path, *, ignore_file_globs: Optional[List[str]] = None) -> Tuple[List[Endpoint], List[Tuple[str, str, pathlib.Path, str]]]:
+def collect_endpoints(handlers_root: pathlib.Path, *, strict: bool = False, ignore_file_globs: Optional[List[str]] = None) -> Tuple[List[Endpoint], List[Tuple[str, str, pathlib.Path, str]]]:
     endpoints: List[Endpoint] = []
     ignored: List[Tuple[str, str, pathlib.Path, str]] = []
     ignore_file_globs = ignore_file_globs or []
@@ -223,7 +300,8 @@ def collect_endpoints(handlers_root: pathlib.Path, *, ignore_file_globs: Optiona
         for node in module.body:
             if not isinstance(node, ast.ClassDef):
                 continue
-            for fn in [n for n in node.body if isinstance(n, ast.FunctionDef)]:
+            # Include both sync and async handler methods
+            for fn in [n for n in node.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]:
                 fn_doc = ast.get_docstring(fn) or ""
                 fn_ignored = IGNORE_MARKER in fn_doc
                 for deco in fn.decorator_list:
@@ -253,11 +331,38 @@ def collect_endpoints(handlers_root: pathlib.Path, *, ignore_file_globs: Optiona
                         for m in methods:
                             ignored.append((path_str, m, py_file, fn.name))
                         continue
+                    # Parse the OpenAPI block once per function; support two styles:
+                    # 1. Flat operation keys (summary, tags, parameters, ...)
+                    # 2. Method-rooted mapping (get: {...}, post: {...}, ...)
+                    raw_meta_full = extract_openapi_block(fn_doc)
+                    http_method_keys = {k for k in (raw_meta_full.keys() if isinstance(raw_meta_full, dict) else []) if k.lower() in {"get","post","put","delete","patch","options","head"}}
+                    # Validation: if docstring declares method-rooted keys not present in decorator list.
+                    if http_method_keys:
+                        declared = set(methods)
+                        extra = {mk.lower() for mk in http_method_keys if mk.lower() not in declared}
+                        if extra:
+                            msg = (
+                                f"WARNING: OpenAPI docstring method(s) {sorted(extra)} not declared in decorator for {fn.name} "
+                                f"at {py_file}:{fn.lineno}. Decorator methods: {sorted(declared)}"
+                            )
+                            if strict:
+                                raise ValueError(msg.replace("WARNING: ", ""))
+                            else:
+                                print(msg, file=sys.stderr)
                     for m in methods:
                         if module_ignored or fn_ignored:
                             ignored.append((path_str, m, py_file, fn.name))
                             continue
-                        meta = extract_openapi_block(fn_doc)
+                        if http_method_keys:
+                            # Method-rooted style: select the matching sub-dict for this handler method.
+                            chosen: Dict[str, Any] = {}
+                            for mk, mv in raw_meta_full.items():  # type: ignore[union-attr]
+                                if mk.lower() == m and isinstance(mv, dict):
+                                    chosen = mv
+                                    break
+                            meta = chosen
+                        else:
+                            meta = raw_meta_full if isinstance(raw_meta_full, dict) else {}
                         endpoints.append(Endpoint(path=path_str, method=m, meta=meta, function=fn.name, file=py_file))
     return endpoints, ignored
 
@@ -538,6 +643,10 @@ def main() -> None:
     parser.add_argument('--ignore-file', action='append', default=[], help='Glob pattern (relative to handlers root) or filename to ignore (can be repeated)')
     parser.add_argument('--markdown-summary', help='Write a GitHub Actions style Markdown summary to this file (in addition to console output)')
     parser.add_argument('--output-directory', default='.', help='Base directory to place output artifacts (coverage reports, markdown summary). Default: current working directory')
+    parser.add_argument('--strict', action='store_true', help='Treat docstring/decorator HTTP method mismatches as errors (default: warn and ignore extraneous methods)')
+    parser.add_argument('--openapi-start', default=DEFAULT_OPENAPI_START, help=f'Start delimiter for embedded OpenAPI blocks (default: {DEFAULT_OPENAPI_START!r}; legacy {LEGACY_OPENAPI_START!r} also accepted)')
+    parser.add_argument('--openapi-end', default=DEFAULT_OPENAPI_END, help=f'End delimiter for embedded OpenAPI blocks (default: {DEFAULT_OPENAPI_END!r}; legacy {LEGACY_OPENAPI_END!r} also accepted)')
+    parser.add_argument('--list-endpoints', action='store_true', help='Print collected handler endpoints (path method file:function) and exit (debug aid)')
     parser.add_argument(
         '--color',
         choices=['auto', 'always', 'never'],
@@ -566,7 +675,28 @@ def main() -> None:
             DISABLE_COLOR = True
             color_reason = 'disabled (mode=auto, non-TTY)'
 
-    endpoints, ignored = collect_endpoints(handlers_root, ignore_file_globs=args.ignore_file)
+    try:
+        # Rebuild regex with possibly customized markers before collecting endpoints.
+        global OPENAPI_BLOCK_RE
+        OPENAPI_BLOCK_RE = build_openapi_block_re(args.openapi_start, args.openapi_end)
+        endpoints, ignored = collect_endpoints(handlers_root, strict=args.strict, ignore_file_globs=args.ignore_file)
+    except ValueError as e:
+        err_msg = f"ERROR: {e}"
+        if not DISABLE_COLOR:
+            err_msg = f"{ANSI_RED}{err_msg}{ANSI_RESET}"
+        print(err_msg, file=sys.stderr)
+        sys.exit(1)
+    if args.list_endpoints:
+        # Just list endpoints and exit early (no swagger load needed)
+        print("Collected endpoints:")
+        for ep in endpoints:
+            print(f" - {ep.method.upper()} {ep.path} ({ep.file}:{ep.function}) block={'yes' if ep.meta else 'no'}")
+        if ignored:
+            print("Ignored endpoints (@openapi: ignore):")
+            for (p,m,f,fn) in ignored:
+                print(f" - {m.upper()} {p} ({f}:{fn})")
+        sys.exit(0)
+
     swagger = load_swagger(swagger_path)
     swagger_new, changed, notes, diffs = merge(swagger, endpoints)
 
@@ -688,7 +818,10 @@ def main() -> None:
         actual = coverage_summary['coverage_rate_handlers_with_block']
         if actual + 1e-12 < threshold:
             coverage_fail = True
-            print(f"Coverage threshold not met: {actual:.2%} < {threshold:.2%}", file=sys.stderr)
+            msg = f"Coverage threshold not met: {actual:.2%} < {threshold:.2%}"
+            if not DISABLE_COLOR:
+                msg = f"{ANSI_RED}{msg}{ANSI_RESET}"
+            print(msg, file=sys.stderr)
 
     def build_markdown_summary(*, changed: bool, coverage_fail: bool) -> str:
         def _strip_ansi(s: str) -> str:
@@ -766,7 +899,10 @@ def main() -> None:
 
     if changed or coverage_fail:
         if changed:
-            print("Drift detected between handlers and swagger. Run: python scripts/swagger_sync.py --fix", file=sys.stderr)
+            drift_msg = "Drift detected between handlers and swagger. Run: python scripts/swagger_sync.py --fix"
+            if not DISABLE_COLOR:
+                drift_msg = f"{ANSI_RED}{drift_msg}{ANSI_RESET}"
+            print(drift_msg, file=sys.stderr)
             for n in notes:
                 print(f" - {n}")
             print("\nProposed changes:")
@@ -775,7 +911,10 @@ def main() -> None:
                 for dl in dlines:
                     print(dl)
         elif coverage_fail:
-            print("Documentation coverage threshold not met.", file=sys.stderr)
+            msg = "Documentation coverage threshold not met."
+            if not DISABLE_COLOR:
+                msg = f"{ANSI_RED}{msg}{ANSI_RESET}"
+            print(msg, file=sys.stderr)
         if orphans:
             print("\n(Info) Potential swagger-only paths (use --show-orphans for list)")
         if args.show_ignored and ignored:
