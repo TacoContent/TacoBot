@@ -614,9 +614,12 @@ def detect_orphans(swagger: Dict[str, Any], endpoints: List[Endpoint]) -> list[s
     return orphan_notes
 
 
-def _generate_coverage(endpoints: List[Endpoint], ignored: List[Tuple[str,str,pathlib.Path,str]], swagger: Dict[str, Any], *, report_path: pathlib.Path, fmt: str) -> None:
+def _generate_coverage(endpoints: List[Endpoint], ignored: List[Tuple[str,str,pathlib.Path,str]], swagger: Dict[str, Any], *, report_path: pathlib.Path, fmt: str, extra_summary: Optional[Dict[str, Any]] = None) -> None:
     summary, endpoint_records, swagger_only = _compute_coverage(endpoints, ignored, swagger)
+    if extra_summary:
+        summary.update(extra_summary)
     if fmt == 'json':
+        # If model component metrics were added upstream they will already be in summary.
         payload = {
             'summary': summary,
             'endpoints': endpoint_records,
@@ -864,16 +867,16 @@ def main() -> None:
         sys.exit(0)
 
     swagger = load_swagger(swagger_path)
-    # Model components
+    # Model components (collect + track metrics)
+    model_components: Dict[str, Dict[str, Any]] = {}
+    model_components_updated: List[str] = []
     if not args.no_model_components:
         model_components = collect_model_components(pathlib.Path(args.models_root))
         if model_components:
             schemas = swagger.setdefault('components', {}).setdefault('schemas', {})
-            updated = []
             for name, new_schema in model_components.items():
                 existing = schemas.get(name)
                 if existing != new_schema:
-                    # diff for awareness
                     existing_lines = yaml.safe_dump(existing or {}, sort_keys=True).rstrip().splitlines() if existing is not None else []
                     new_lines = yaml.safe_dump(new_schema, sort_keys=True).rstrip().splitlines()
                     if existing is not None and existing_lines != new_lines:
@@ -887,13 +890,19 @@ def main() -> None:
                         for dl in _colorize_unified(list(diff)):
                             print(dl, file=sys.stderr)
                     schemas[name] = new_schema
-                    updated.append(name)
-            if updated:
-                print(f"Model schemas updated: {', '.join(sorted(updated))}")
+                    model_components_updated.append(name)
+            if model_components_updated:
+                print(f"Model schemas updated: {', '.join(sorted(model_components_updated))}")
+    existing_schemas = swagger.get('components', {}).get('schemas', {}) if isinstance(swagger.get('components'), dict) else {}
+    model_components_generated_count = len(model_components)
+    model_components_existing_not_generated_count = sum(1 for k in existing_schemas.keys() if k not in model_components) if existing_schemas else 0
     swagger_new, changed, notes, diffs = merge(swagger, endpoints)
 
     orphans = detect_orphans(swagger_new, endpoints) if args.show_orphans else []
     coverage_summary, coverage_records, coverage_swagger_only = _compute_coverage(endpoints, ignored, swagger_new)
+    # augment coverage summary with component metrics
+    coverage_summary['model_components_generated'] = model_components_generated_count
+    coverage_summary['model_components_existing_not_generated'] = model_components_existing_not_generated_count
     output_dir = pathlib.Path(args.output_directory)
     try:
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -942,7 +951,11 @@ def main() -> None:
 
     if coverage_report_path:
         coverage_report_path.parent.mkdir(parents=True, exist_ok=True)
-        _generate_coverage(endpoints, ignored, swagger_new, report_path=coverage_report_path, fmt=args.coverage_format)
+        extra = {
+            'model_components_generated': model_components_generated_count,
+            'model_components_existing_not_generated': model_components_existing_not_generated_count,
+        }
+        _generate_coverage(endpoints, ignored, swagger_new, report_path=coverage_report_path, fmt=args.coverage_format, extra_summary=extra)
 
     def print_coverage_summary(prefix: str = "OpenAPI Documentation Coverage Summary") -> None:
         cs = coverage_summary
@@ -954,6 +967,8 @@ def main() -> None:
         print(f"  In swagger (handlers):      {cs['handlers_in_swagger']} ({cs['coverage_rate_handlers_in_swagger']:.1%})")
         print(f"  Definition matches:         {cs['definition_matches']} / {cs['with_openapi_block']} ({cs['operation_definition_match_rate']:.1%})")
         print(f"  Swagger only operations:    {cs['swagger_only_operations']}")
+        print(f"  Model components generated: {cs.get('model_components_generated', 0)}")
+        print(f"  Schemas not generated:      {cs.get('model_components_existing_not_generated', 0)}")
         suggestions: List[str] = []
         if cs['without_openapi_block'] > 0:
             suggestions.append("Add ---openapi blocks for undocumented handlers.")
@@ -971,12 +986,17 @@ def main() -> None:
         if args.verbose_coverage:
             print("\n  Per-endpoint detail:")
             for rec in coverage_records:
-                flags = []
-                if rec['ignored']: flags.append('IGNORED')
-                if rec['has_openapi_block']: flags.append('BLOCK')
-                if rec['in_swagger']: flags.append('SWAGGER')
-                if rec['definition_matches']: flags.append('MATCH')
-                if rec['missing_in_swagger']: flags.append('MISSING_SWAGGER')
+                flags: List[str] = []
+                if rec['ignored']:
+                    flags.append('IGNORED')
+                if rec['has_openapi_block']:
+                    flags.append('BLOCK')
+                if rec['in_swagger']:
+                    flags.append('SWAGGER')
+                if rec['definition_matches']:
+                    flags.append('MATCH')
+                if rec['missing_in_swagger']:
+                    flags.append('MISSING_SWAGGER')
                 print(f"    - {rec['method'].upper()} {rec['path']} :: {'|'.join(flags) if flags else 'NONE'}")
             if coverage_swagger_only:
                 print("\n  Swagger-only (no handler) operations:")
@@ -1018,71 +1038,71 @@ def main() -> None:
     def build_markdown_summary(*, changed: bool, coverage_fail: bool) -> str:
         def _strip_ansi(s: str) -> str:
             return re.sub(r"\x1b\[[0-9;]*m", "", s)
-        lines_md: List[str] = []
-        lines_md.append("# OpenAPI Sync Result")
-        lines_md.append("")
-        if changed:
-            lines_md.append("**Status:** Drift detected. Please run the sync script with `--fix` and commit the updated swagger file.")
-        elif coverage_fail:
-            lines_md.append("**Status:** Coverage threshold failed.")
-        else:
-            lines_md.append("**Status:** In sync ✅")
-        lines_md.append("")
-        lines_md.append(f"_Diff color output: {color_reason}._")
-        lines_md.append("")
         cs = coverage_summary
-        lines_md.append("## Coverage Summary")
-        lines_md.append("")
-        lines_md.append("| Metric | Value | Percent |")
-        lines_md.append("|--------|-------|---------|")
-        lines_md.append(f"| Handlers considered | {cs['handlers_total']} | - |")
-        lines_md.append(f"| Ignored handlers | {cs['ignored_total']} | - |")
-        lines_md.append(f"| With doc blocks | {cs['with_openapi_block']} | {cs['coverage_rate_handlers_with_block']:.1%} |")
-        lines_md.append(f"| In swagger (handlers) | {cs['handlers_in_swagger']} | {cs['coverage_rate_handlers_in_swagger']:.1%} |")
-        lines_md.append(f"| Definition matches | {cs['definition_matches']} / {cs['with_openapi_block']} | {cs['operation_definition_match_rate']:.1%} |")
-        lines_md.append(f"| Swagger only operations | {cs['swagger_only_operations']} | - |")
-        lines_md.append("")
-        sugg: List[str] = []
-        if cs['without_openapi_block'] > 0:
-            sugg.append("Add `---openapi` blocks for handlers missing documentation.")
-        if cs['swagger_only_operations'] > 0:
-            sugg.append("Remove, implement, or ignore swagger-only operations.")
-        if sugg:
-            lines_md.append("## Suggestions")
-            lines_md.append("")
-            for s in sugg:
-                lines_md.append(f"- {s}")
-            lines_md.append("")
+        lines: List[str] = ["# OpenAPI Sync Result", ""]
         if changed:
-            lines_md.append("## Proposed Operation Diffs")
-            lines_md.append("")
+            lines.append("**Status:** Drift detected. Please run the sync script with `--fix` and commit the updated swagger file.")
+        elif coverage_fail:
+            lines.append("**Status:** Coverage threshold failed.")
+        else:
+            lines.append("**Status:** In sync ✅")
+        lines.append("")
+        lines.append(f"_Diff color output: {color_reason}._")
+        lines.append("")
+        lines.append("## Coverage Summary")
+        lines.append("")
+        lines.append("| Metric | Value | Percent |")
+        lines.append("|--------|-------|---------|")
+        lines.append(f"| Handlers considered | {cs['handlers_total']} | - |")
+        lines.append(f"| Ignored handlers | {cs['ignored_total']} | - |")
+        lines.append(f"| With doc blocks | {cs['with_openapi_block']} | {cs['coverage_rate_handlers_with_block']:.1%} |")
+        lines.append(f"| In swagger (handlers) | {cs['handlers_in_swagger']} | {cs['coverage_rate_handlers_in_swagger']:.1%} |")
+        lines.append(f"| Definition matches | {cs['definition_matches']} / {cs['with_openapi_block']} | {cs['operation_definition_match_rate']:.1%} |")
+        lines.append(f"| Swagger only operations | {cs['swagger_only_operations']} | - |")
+        lines.append(f"| Model components generated | {cs.get('model_components_generated', 0)} | - |")
+        lines.append(f"| Schemas not generated | {cs.get('model_components_existing_not_generated', 0)} | - |")
+        lines.append("")
+        suggestions_md: List[str] = []
+        if cs['without_openapi_block'] > 0:
+            suggestions_md.append("Add `---openapi` blocks for handlers missing documentation.")
+        if cs['swagger_only_operations'] > 0:
+            suggestions_md.append("Remove, implement, or ignore swagger-only operations.")
+        if suggestions_md:
+            lines.append("## Suggestions")
+            lines.append("")
+            for s in suggestions_md:
+                lines.append(f"- {s}")
+            lines.append("")
+        if changed:
+            lines.append("## Proposed Operation Diffs")
+            lines.append("")
             for (path, method), dlines in diffs.items():
-                lines_md.append(f"<details><summary>{method.upper()} {path}</summary>")
-                lines_md.append("")
-                lines_md.append("```diff")
+                lines.append(f"<details><summary>{method.upper()} {path}</summary>")
+                lines.append("")
+                lines.append("```diff")
                 for dl in dlines:
-                    lines_md.append(_strip_ansi(dl))
-                lines_md.append("```")
-                lines_md.append("</details>")
-            lines_md.append("")
+                    lines.append(_strip_ansi(dl))
+                lines.append("```")
+                lines.append("</details>")
+            lines.append("")
         if coverage_swagger_only:
-            lines_md.append("## Swagger-only Operations (no handler)")
-            lines_md.append("")
+            lines.append("## Swagger-only Operations (no handler)")
+            lines.append("")
             show = coverage_swagger_only[:25]
             for so in show:
-                lines_md.append(f"- `{so['method'].upper()} {so['path']}`")
+                lines.append(f"- `{so['method'].upper()} {so['path']}`")
             if len(coverage_swagger_only) > 25:
-                lines_md.append(f"... and {len(coverage_swagger_only)-25} more")
-            lines_md.append("")
+                lines.append(f"... and {len(coverage_swagger_only)-25} more")
+            lines.append("")
         if ignored:
-            lines_md.append("## Ignored Endpoints (@openapi: ignore)")
-            lines_md.append("")
+            lines.append("## Ignored Endpoints (@openapi: ignore)")
+            lines.append("")
             for (p, m, f, fn) in ignored[:50]:
-                lines_md.append(f"- `{m.upper()} {p}` ({f.name}:{fn})")
+                lines.append(f"- `{m.upper()} {p}` ({f.name}:{fn})")
             if len(ignored) > 50:
-                lines_md.append(f"... and {len(ignored)-50} more")
-            lines_md.append("")
-        content = "\n".join(lines_md)
+                lines.append(f"... and {len(ignored)-50} more")
+            lines.append("")
+        content = "\n".join(lines)
         content = "\n".join(l.rstrip() for l in content.splitlines())
         content = re.sub(r"\n{3,}", "\n\n", content)
         if not content.endswith("\n"):

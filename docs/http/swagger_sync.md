@@ -339,6 +339,8 @@ Metric meanings (shown in summary):
 - In swagger (handlers): Those whose path+method entry exists in swagger.
 - Definition matches: Count where the swagger operation exactly equals generated doc block (normalized).
 - Swagger only operations: Path+method present in swagger but not in code (non-ignored).
+ - Model components generated: Count of `@openapi_model` decorated classes discovered and translated into primitive schemas this run.
+ - Schemas not generated: Existing `components.schemas` entries present in swagger that were not produced by the current auto-generation pass (manually maintained or richer schemas).
 
 `--fail-on-coverage-below` compares (with doc blocks / handlers considered).
 
