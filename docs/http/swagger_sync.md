@@ -17,8 +17,7 @@ The `scripts/swagger_sync.py` script provides a one‑way synchronization from c
 - Detect drift (CI check mode)
 - Regenerate the `paths` operations block entries (write mode)
 - Optionally list swagger‑only orphan endpoints
-
-Schemas (`components.schemas`) are intentionally NOT auto‑generated right now.
+- Auto‑generate / update simple model component schemas from decorated Python classes (see Section 4)
 
 ---
 
@@ -70,7 +69,7 @@ Core capabilities:
 - Coverage report generation (JSON / text / Cobertura)
 - GitHub Actions friendly markdown summary
 
-Schemas (`components.schemas`) remain manual to allow intentional curation.
+Basic schemas (`components.schemas`) for decorated models can now be auto‑generated; richer schemas remain manual (Section 4).
 
 ---
 
@@ -118,7 +117,96 @@ Anything else is ignored safely.
 
 ---
 
-## 4. CLI Reference
+## 4. Model Component Auto‑Generation
+
+Auto-generate primitive OpenAPI component schemas from model classes to avoid repetitive manual YAML.
+
+### 4.1 Decorator
+
+Add the `@openapi_model` decorator to a class inside the models root (default: `bot/lib/models`).
+
+```python
+from bot.lib.models.openapi import openapi_model
+from typing import Optional
+
+@openapi_model("DiscordChannel", description="Discord text/voice channel snapshot")
+class DiscordChannel:
+    def __init__(self, id: int, name: str, topic: Optional[str] = None, nsfw: bool = False, position: int = 0):
+        self.id: int = id
+        self.name: str = name
+        self.topic: Optional[str] = topic  # Optional → nullable
+        self.nsfw: bool = nsfw
+        self.position: int = position
+        self.permission_overwrites: list[str] = []  # list → array items:string
+```
+
+### 4.2 Generated YAML (excerpt)
+
+```yaml
+components:
+  schemas:
+    DiscordChannel:
+      type: object
+      description: Discord text/voice channel snapshot
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        topic: { type: string, nullable: true }
+        nsfw: { type: boolean }
+        position: { type: integer }
+        permission_overwrites:
+          type: array
+          items: { type: string }
+      required: [id, name, nsfw, position, permission_overwrites]
+```
+
+### 4.3 Inference Rules
+
+| Aspect | Rule |
+|--------|------|
+| Required vs optional | Field required unless annotation contains `Optional` or `None` |
+| Primitive mapping | `int`→integer, `bool`→boolean, `float`→number |
+| Arrays | Annotation containing `list`/`List` (or list literal assignment) → `type: array`, `items: {type: string}` |
+| Nullable | Added when `Optional` or `None` present in annotation string |
+| Private attrs | Attributes starting with `_` ignored |
+| Unknown/complex | Collapsed to `string` (manually refine in swagger) |
+
+### 4.4 Drift Warnings
+
+If the inferred schema differs from the existing swagger component a warning + unified diff is printed (colorized if enabled):
+
+```text
+WARNING: Model schema drift detected for component 'DiscordChannel'.
+--- a/components.schemas.DiscordChannel
++++ b/components.schemas.DiscordChannel
+@@
+-  topic: { type: string }
++  topic: { type: string, nullable: true }
+```
+
+Run with `--fix` to accept and write the updated schema.
+
+### 4.5 CLI Flags
+
+| Flag | Purpose |
+|------|---------|
+| `--models-root PATH` | Change root scanned for decorated models (default `bot/lib/models`) |
+| `--no-model-components` | Disable model component generation entirely |
+
+### 4.6 Limitations
+
+* No nested object introspection / `$ref` chaining automatically.
+* Arrays always default `items.type` to `string`.
+* No enum / format / pattern inference.
+* Manual edits adding richer constraints are preserved unless the script regenerates that specific property (i.e., property name removed or its primitive classification changes).
+
+### 4.7 Testing
+
+Add or extend tests (see `tests/test_swagger_sync_model_components.py`) validating component presence & key property types when adding new models or adjusting inference heuristics.
+
+---
+
+## 5. CLI Reference
 
 ```text
 python scripts/swagger_sync.py [--check|--fix] [options]
@@ -148,13 +236,13 @@ Exit Codes:
   (Other) Abnormal termination / argument error
 ```
 
-### 4.1 Basic Check
+### 5.1 Basic Check
 
 ```bash
 python scripts/swagger_sync.py
 ```
 
-### 4.2 Apply Fixes
+### 5.2 Apply Fixes
 
 ```bash
 python scripts/swagger_sync.py --fix
@@ -162,7 +250,7 @@ git add .swagger.v1.yaml
 git commit -m "chore: sync swagger"
 ```
 
-### 4.3 Coverage Report (JSON + Threshold)
+### 5.3 Coverage Report (JSON + Threshold)
 
 ```bash
 python scripts/swagger_sync.py --coverage-report openapi_coverage.json --fail-on-coverage-below 95
@@ -170,31 +258,31 @@ python scripts/swagger_sync.py --coverage-report openapi_coverage.json --fail-on
 
 Accepts `95` or `0.95`. Failure exits with code 1.
 
-### 4.4 Human-Friendly Coverage Text
+### 5.4 Human-Friendly Coverage Text
 
 ```bash
 python scripts/swagger_sync.py --coverage-report coverage.txt --coverage-format text
 ```
 
-### 4.5 Cobertura (CI Metrics Dashboards)
+### 5.5 Cobertura (CI Metrics Dashboards)
 
 ```bash
 python scripts/swagger_sync.py --coverage-report coverage.xml --coverage-format cobertura
 ```
 
-### 4.6 Show Missing Blocks & Swagger Orphans Together
+### 5.6 Show Missing Blocks & Swagger Orphans Together
 
 ```bash
 python scripts/swagger_sync.py --show-missing-blocks --show-orphans
 ```
 
-### 4.7 Ignore Specific Files
+### 5.7 Ignore Specific Files
 
 ```bash
 python scripts/swagger_sync.py --ignore-file experimental_*.py --ignore-file LegacyHandler.py
 ```
 
-### 4.8 Append Markdown Summary (Local or CI)
+### 5.8 Append Markdown Summary (Local or CI)
 
 ```bash
 python scripts/swagger_sync.py --markdown-summary swagger_sync_summary.md
@@ -213,7 +301,7 @@ Absolute paths bypass the output directory root resolution, relative paths are p
 
 In GitHub Actions, if `GITHUB_STEP_SUMMARY` is set the summary is appended there automatically.
 
-### 4.9 Enforce Documentation Coverage in CI
+### 5.9 Enforce Documentation Coverage in CI
 
 Example snippet (GitHub Actions job step):
 
@@ -225,7 +313,7 @@ Example snippet (GitHub Actions job step):
 
 ---
 
-## 5. Ignoring Endpoints
+## 6. Ignoring Endpoints
 
 Add `@openapi: ignore` to either:
 
@@ -242,7 +330,7 @@ Use sparingly—prefer documenting or removing instead.
 
 ---
 
-## 6. Coverage Semantics
+## 7. Coverage Semantics
 
 Metric meanings (shown in summary):
 
@@ -258,7 +346,7 @@ Cobertura mapping: each endpoint ~ a line; documented endpoints counted as cover
 
 ---
 
-## 7. Diff Output
+## 8. Diff Output
 
 When drift is detected in check mode the script prints unified diffs for each differing operation. Added lines are green, removed lines red, and file / hunk headers cyan using ANSI sequences. Color behavior is controlled by `--color`:
 
@@ -272,7 +360,7 @@ Markdown summaries always strip ANSI codes and note the effective color mode & r
 
 ---
 
-## 8. Best Practices for Authoring Blocks
+## 9. Best Practices for Authoring Blocks
 
 | Goal | Tip |
 |------|-----|
@@ -284,9 +372,10 @@ Markdown summaries always strip ANSI codes and note the effective color mode & r
 
 ---
 
-## 9. Limitations & Design Choices
+## 10. Limitations & Design Choices
 
-- Only manipulates `paths` operations (no automatic schema generation / pruning)
+- Auto-generated model components are primitive-only: no nested object traversal, enum/format inference, or `$ref` wiring is attempted. Existing manual enrichments persist unless a field is re‑inferred.
+- No automated pruning of unused schemas; script will not delete stale components.
 - Replaces whole operation objects (atomic, simpler diff reasoning)
 - Limited f-string resolution (currently whitelists `API_VERSION` → `v1`)
 - No `$ref` existence validation (future enhancement)
@@ -294,7 +383,7 @@ Markdown summaries always strip ANSI codes and note the effective color mode & r
 
 ---
 
-## 10. Future Roadmap Ideas
+## 11. Future Roadmap Ideas
 
 - `ruamel.yaml` round‑trip preservation
 - `$ref` schema validation & usage stats
@@ -305,7 +394,7 @@ Markdown summaries always strip ANSI codes and note the effective color mode & r
 
 ---
 
-## 11. Troubleshooting (Expanded)
+## 12. Troubleshooting (Expanded)
 
 | Symptom | Likely Cause | Resolution |
 |---------|--------------|-----------|
@@ -319,7 +408,7 @@ Markdown summaries always strip ANSI codes and note the effective color mode & r
 
 ---
 
-## 12. New Endpoint Checklist
+## 13. New Endpoint Checklist
 
 1. Implement handler with decorator `@uri_variable_mapping("/api/{API_VERSION}/resource", method="GET")`.
 2. Add docstring with human preface + `---openapi` block including at least a 200 response.
@@ -330,7 +419,7 @@ Markdown summaries always strip ANSI codes and note the effective color mode & r
 
 ---
 
-## 13. FAQ
+## 14. FAQ
 
 **Q: Do I need a block for internal / experimental endpoints?**
 Add one or mark with `@openapi: ignore`. Avoid silent omissions.
