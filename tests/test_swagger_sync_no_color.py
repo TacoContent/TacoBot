@@ -22,7 +22,7 @@ TMP_COLOR_ROOT = pathlib.Path('tests/tmp_color_handlers')
 def setup_module(module):  # noqa: D401
     TMP_COLOR_ROOT.mkdir(exist_ok=True)
     (TMP_COLOR_ROOT / '__init__.py').write_text('', encoding='utf-8')
-    code = '''\nfrom httpserver.EndpointDecorators import uri_mapping\nclass H:\n    @uri_mapping('/color-test', method='GET')\n    def c(self, request):\n        """Doc\n\n---openapi\nsummary: Color test\nresponses: { 200: { description: OK } }\n---end\n"""\n        pass\n'''
+    code = '''\nfrom httpserver.EndpointDecorators import uri_mapping\nclass H:\n    @uri_mapping('/color-test', method='GET')\n    def c(self, request):\n        """Doc\n\n>>>openapi\nsummary: Color test\nresponses: { 200: { description: OK } }\n<<<openapi\n"""\n        pass\n'''
     (TMP_COLOR_ROOT / 'Handler.py').write_text(code, encoding='utf-8')
 
 

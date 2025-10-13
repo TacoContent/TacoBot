@@ -2,14 +2,14 @@
 
 This ensures a single docstring containing:
 
-    ---openapi
+    >>>openapi
     get:
       summary: Foo
       responses: { 200: { description: OK } }
     post:
       summary: Foo create
       responses: { 200: { description: Created } }
-    ---end
+    <<<openapi
 
 produces two Endpoint objects with the correct meta subset for each method.
 """
@@ -35,7 +35,7 @@ def setup_module(module):  # noqa: D401 - test fixture style
             def dual(self, request):
                 """Dual method endpoint with method-rooted openapi block
 
-                ---openapi
+                >>>openapi
                 get:
                   summary: Dual get
                   tags: [test]
@@ -44,7 +44,7 @@ def setup_module(module):  # noqa: D401 - test fixture style
                   summary: Dual post
                   tags: [test]
                   responses: { 200: { description: OK } }
-                ---end
+                <<<openapi
                 """
                 pass
         '''

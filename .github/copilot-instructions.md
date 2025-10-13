@@ -36,9 +36,11 @@ All HTTP endpoints live inside classes within `bot/lib/http/handlers/api/v1/`. A
 5. Adds `Content-Type: application/json` header explicitly.
 
 ### 2.1 Docstring → OpenAPI Sync
+
 Each synced endpoint SHOULD include a minimal YAML block in its docstring, delimited EXACTLY by:
+
 ```
----openapi
+>>>openapi
 summary: Short summary sentence
 description: >-
   (Optional) Longer multi-line description in folded style.
@@ -61,8 +63,11 @@ responses:
             $ref: '#/components/schemas/DiscordRole'
   400: { description: Bad request }
   404: { description: Not found }
----end
+<<<openapi
 ```
+
+Everything between the `>>>openapi` and `<<<openapi` markers is parsed as YAML. Use 2 spaces for indentation.
+
 Guidelines:
 - Only supported top-level keys: `summary`, `description`, `tags`, `parameters`, `requestBody`, `responses`, `security`.
 - Omit `responses` ONLY if intending the script to inject a default `200` placeholder (prefer being explicit).
@@ -73,7 +78,7 @@ Guidelines:
 
 #### 2.1.1 Rules for generating OpenAPI DocStrings
 
-- Use `---openapi` and `---end` delimiters exactly (no extra spaces).
+- Use `>>>openapi` and `<<<openapi` delimiters exactly (no extra spaces).
 - Use `>-'` for multi-line `description` to preserve newlines.
 - Always specify `tags` as an array, even if only one tag.
 - Define all path parameters in `parameters` section with `in: path`.
@@ -95,7 +100,7 @@ Guidelines:
 
 ---
 ## 3. OpenAPI Sync Script (`scripts/sync_endpoints.py`)
-- Parses handler AST to detect decorators + docstring `---openapi` blocks.
+- Parses handler AST to detect decorators + docstring `>>>openapi` blocks.
 - Merges operation objects into `.swagger.v1.yaml` when run with `--fix`.
 - `--check` (CI default) emits patch-style unified diffs with color for drift and exits non-zero.
 - Supports orphan detection (`--show-orphans`) to list spec paths lacking handlers.
@@ -131,6 +136,8 @@ All new or modified code MUST have tests in `tests/`:
 - Handler tests (if HTTP test harness exists) asserting status codes, headers, and JSON shape.
 - Permission/edge-case tests: invalid IDs, missing guild, empty arrays, duplicated IDs.
 - Regression tests when fixing bugs (reference issue ID in test name or docstring).
+- Do not run the VSCode Task to run tests; instead, run tests directly in the terminal after activating the virtual environment.
+  - This has been observed to cause failures when run via the Task.
 
 Conventions:
 - Test file per module or feature: `test_<module>.py`.
@@ -140,7 +147,7 @@ Conventions:
 ---
 ## 8. Adding a New Endpoint (Checklist)
 1. Implement handler method with decorator in correct versioned directory.
-2. Write docstring with `---openapi` block (as above) referencing existing schemas.
+2. Write docstring with `>>>openapi` block (as above) referencing existing schemas.
 3. Add or update related models & component schemas (manual edit to swagger if new schema).
 4. Run sync script `--check`; if diff expected, run `--fix` and commit swagger.
 5. Add tests covering success + at least one 4xx path.

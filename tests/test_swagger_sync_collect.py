@@ -27,25 +27,25 @@ def setup_module(module):  # noqa: D401 - test fixture style
         class DemoHandler:
             @uri_mapping('/health', method='GET')
             def health(self, request):
-                """health endpoint\n\n                ---openapi
+                """health endpoint\n\n                >>>openapi
                 summary: Health
                 responses: { 200: { description: OK } }
-                ---end
+                <<<openapi
                 """
                 pass
 
             @uri_mapping('/multi', method=['GET','POST'])
             def multi(self, request):
-                """multi endpoint\n\n                ---openapi
+                """multi endpoint\n\n                >>>openapi
                 summary: Multi
                 responses: { 200: { description: OK } }
-                ---end
+                <<<openapi
                 """
                 pass
 
             @uri_variable_mapping('/api/v1/items/{item_id}', method='DELETE')
             def delete_item(self, request, uri_variables):
-                """delete endpoint\n\n                ---openapi
+                """delete endpoint\n\n                >>>openapi
                 summary: Delete item
                 parameters:
                   - in: path
@@ -54,16 +54,16 @@ def setup_module(module):  # noqa: D401 - test fixture style
                     required: true
                     description: Item id
                 responses: { 200: { description: Deleted } }
-                ---end
+                <<<openapi
                 """
                 pass
 
             @uri_pattern_mapping(r'^/regex/(?P<slug>[a-z0-9-]+)$', method='GET')
             def regex(self, request, slug):
-                """regex endpoint (ignored)\n\n                ---openapi
+                """regex endpoint (ignored)\n\n                >>>openapi
                 summary: Regex
                 responses: { 200: { description: OK } }
-                ---end
+                <<<openapi
                 """
                 pass
         ''')

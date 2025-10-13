@@ -6,10 +6,10 @@ class DemoHandler:
     def health(self, request):
         """health endpoint
 
-        ---openapi
+        >>>openapi
         summary: Health
         responses: { 200: { description: OK } }
-        ---end
+        <<<openapi
         """
         pass
 
@@ -17,10 +17,10 @@ class DemoHandler:
     def multi(self, request):
         """multi endpoint
 
-        ---openapi
+        >>>openapi
         summary: Multi
         responses: { 200: { description: OK } }
-        ---end
+        <<<openapi
         """
         pass
 
@@ -28,7 +28,7 @@ class DemoHandler:
     def delete_item(self, request, uri_variables):
         """delete endpoint
 
-        ---openapi
+        >>>openapi
         summary: Delete item
         parameters:
           - in: path
@@ -37,7 +37,7 @@ class DemoHandler:
             required: true
             description: Item id
         responses: { 200: { description: Deleted } }
-        ---end
+        <<<openapi
         """
         pass
 
@@ -45,9 +45,9 @@ class DemoHandler:
     def regex(self, request, slug):
         """regex endpoint (ignored)
 
-        ---openapi
+        >>>openapi
         summary: Regex
         responses: { 200: { description: OK } }
-        ---end
+        <<<openapi
         """
         pass

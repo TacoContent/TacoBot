@@ -6,7 +6,7 @@
 		{
 			"label": "Python: Run Tests",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; pytest",
+			"command": "./.venv/scripts/Activate.ps1; python -m pytest tests/ -x",
 			"options": {
 				"env": {
 					"PYTHONPATH": "${workspaceFolder}/bot"
@@ -27,7 +27,7 @@
 		{
 			"label": "Python: Run Tests (Coverage)",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; pytest --cov=bot --cov-report=term-missing",
+			"command": "./.venv/scripts/Activate.ps1; python -m pytest tests/ -x --cov=bot --cov-report=term-missing",
 			"options": {
 				"env": {
 					"PYTHONPATH": "${workspaceFolder}/bot"
@@ -59,6 +59,17 @@
 				"panel": "dedicated"
 			},
 			"detail": "Run GitHub Super-Linter locally against the repository using Docker"
+		},
+		{
+			"label": "Swagger Validation Quiet",
+			"type": "shell",
+			"command": "./.venv/scripts/Activate.ps1; python scripts/swagger_sync.py --check --markdown-summary=openapi_summary.md --models-root=bot/lib/models --handlers-root=bot/lib/http/handlers/ --swagger-file=.swagger.v1.yaml --output-directory=./reports/openapi/ --coverage-report=openapi_coverage.json --coverage-format=json --strict",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"detail": "Validate the OpenAPI (Swagger) specification file"
 		},
 		{
 			"label": "Swagger Validation",

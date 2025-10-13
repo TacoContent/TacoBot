@@ -12,7 +12,7 @@ class MergeMetadataExample:
     properties:
       literal:
         description: A literal field
-        enum: [simple]
+        enum: [simple] # this should be overwritten by the actual Literal value that is set in code
       primary:
         description: Primary description from legacy block
       merged:

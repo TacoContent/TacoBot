@@ -16,7 +16,7 @@ The `scripts/swagger_sync.py` script provides a one‑way synchronization from c
 
 - Detect drift (CI check mode)
 - Regenerate the `paths` operations block entries (write mode)
-- Optionally list swagger‑only orphan endpoints
+- Optionally list swagger‑only orphan endpoints and components
 - Auto‑generate / update simple model component schemas from decorated Python classes (see Section 4)
 
 ---
@@ -28,13 +28,13 @@ The `scripts/swagger_sync.py` script provides a one‑way synchronization from c
 3. Extracts a structured OpenAPI YAML fragment from a delimited block inside the function docstring:
 
    ```yaml
-   ---openapi
+   >>>openapi
    summary: List guild mentionables (roles + members)
    tags: [guilds, mentionables]
    responses:
      200:
        description: OK
-   ---end
+   <<<openapi
    ```
 
 4. Builds/updates the operation object for that `path + method` (lowercased method) in memory.
@@ -45,7 +45,7 @@ The `scripts/swagger_sync.py` script provides a one‑way synchronization from c
 
 ## Docstring Format
 
-Add a YAML block between `---openapi` and `---end` markers. Supported keys in that block:
+Add a YAML block between `>>>openapi` and `<<<openapi` markers. Supported keys in that block:
 
 ---
 
@@ -65,6 +65,7 @@ Core capabilities:
 - Automatic operation updates (`--fix`)
 - OpenAPI documentation coverage metrics
 - Orphan (swagger‑only) path detection
+- Orphan (swagger‑only) component detection
 - Ignored endpoints via marker
 - Coverage report generation (JSON / text / Cobertura)
 - GitHub Actions friendly markdown summary
@@ -77,7 +78,7 @@ Basic schemas (`components.schemas`) for decorated models can now be auto‑gene
 
 1. Walk handler tree (default: `bot/lib/http/handlers/`).
 2. Identify functions decorated with `@uri_variable_mapping()` inside classes.
-3. Parse docstring and extract a YAML block delimited by `---openapi` / `---end`.
+3. Parse docstring and extract a YAML block delimited by `>>>openapi` / `<<<openapi`.
 4. Build an operation object (filtering to supported keys).
 5. Compare against the existing swagger `paths` entry.
 6. Report unified diff (check) or write updated operation (`--fix`).
@@ -90,7 +91,7 @@ Basic schemas (`components.schemas`) for decorated models can now be auto‑gene
 Delimited block example:
 
 ```yaml
----openapi
+>>>openapi
 summary: List guild mentionables (roles + members)
 description: >-
   Returns combined roles and members for mention logic.
@@ -105,7 +106,7 @@ responses:
   404: { description: Guild not found }
 security:
   - apiKeyAuth: []
----end
+<<<openapi
 ```
 
 Supported top-level keys:
@@ -121,7 +122,12 @@ Anything else is ignored safely.
 
 Auto-generate primitive OpenAPI component schemas from model classes to avoid repetitive manual YAML.
 
-### 4.1 Decorator
+The system supports two schema generation modes:
+
+1. **Object Schema Mode (Default)**: Extracts properties from `__init__` parameters to generate object schemas
+2. **Simple Type Schema Mode**: Uses a complete schema definition in the class docstring for simple types like enums
+
+### 4.1 Object Schema Mode
 
 Add the `@openapi_model` decorator to a class inside the models root (default: `bot/lib/models`).
 
@@ -140,7 +146,7 @@ class DiscordChannel:
         self.permission_overwrites: list[str] = []  # list → array items:string
 ```
 
-### 4.2 Generated YAML (excerpt)
+#### Object Schema Generated YAML
 
 ```yaml
 components:
@@ -160,7 +166,51 @@ components:
       required: [id, name, nsfw, position, permission_overwrites]
 ```
 
-### 4.3 Inference Rules
+### 4.2 Simple Type Schema Mode
+
+For simple types (enums, primitives with constraints, etc.), add a complete OpenAPI schema definition in the class docstring using the `>>>openapi` block:
+
+```python
+from bot.lib.models.openapi import openapi_model
+
+@openapi_model("MinecraftWorld", description="Represents a Minecraft world")
+class MinecraftWorld:
+    '''A Minecraft world identifier.
+
+    >>>openapi
+    type: string
+    default: taco_atm10
+    enum:
+      - taco_atm8
+      - taco_atm9
+      - taco_atm10
+    <<<openapi
+    '''
+```
+
+#### Simple Type Schema Generated YAML
+
+```yaml
+components:
+  schemas:
+    MinecraftWorld:
+      type: string
+      default: taco_atm10
+      description: Represents a Minecraft world
+      enum:
+        - taco_atm8
+        - taco_atm9
+        - taco_atm10
+```
+
+**Key differences from Object Schema Mode:**
+
+- The `>>>openapi` block must include a `type` field and NOT include a `properties` field
+- The entire schema definition comes from the docstring block
+- No `__init__` parameter processing occurs
+- The decorator's `description` is added if not present in the schema
+
+### 4.3 Inference Rules (Object Schema Mode)
 
 | Aspect | Rule |
 |--------|------|
@@ -208,8 +258,7 @@ You can enrich generated component schemas with per-property metadata (currently
 
 Marker summary:
 
-- Preferred (unified): `>>>openapi` … `<<<openapi`
-- Legacy (still accepted, deprecated): `>>>openapi-model` / `<<<openapi-model` and `---openapi-model` / `---end`
+- `>>>openapi` … `<<<openapi`
 
 Merge precedence & behavior:
 
@@ -277,13 +326,7 @@ Error handling / safety:
 - Malformed YAML in any metadata block is logged as a warning; that block is skipped rather than failing the run.
 - If both unified and legacy markers appear, the first valid unified properties block wins and legacy is ignored.
 
-Migration notes:
-
-1. Existing `>>>openapi-model` / `<<<openapi-model` (or `---openapi-model` / `---end`) blocks continue to work but should be migrated to unified markers for consistency.
-2. Functionality is identical; only delimiters change.
-3. Mixed usage within a single docstring prefers unified markers.
-
-Why a docstring block vs decorator kwargs? The block scales better for many fields and keeps verbose descriptions close to the attribute semantics without inflating decorator argument lists.
+Why a docstring block vs decorator `kwargs`? The block scales better for many fields and keeps verbose descriptions close to the attribute semantics without inflating decorator argument lists.
 
 ### 4.8 Testing
 
@@ -304,7 +347,7 @@ General Options:
   --handlers-root PATH       Override handler root (default bot/lib/http/handlers/)
   --swagger-file FILE        Path to swagger file (default .swagger.v1.yaml)
   --ignore-file GLOB         Glob (relative) or filename to skip; repeatable.
-  --show-orphans             List swagger paths lacking handlers.
+  --show-orphans             List swagger paths and components lacking handlers/models.
   --show-ignored             List endpoints skipped via @openapi: ignore.
   --show-missing-blocks      List handlers without an ---openapi block.
   --verbose-coverage         Print per-endpoint coverage flags.
@@ -380,6 +423,12 @@ python scripts/swagger_sync.py --coverage-report coverage.xml --coverage-format 
 python scripts/swagger_sync.py --show-missing-blocks --show-orphans
 ```
 
+This will show:
+
+- Handlers without `>>>openapi` blocks
+- Path orphans (swagger paths without handlers)
+- Component orphans (swagger components without `@openapi_model` classes)
+
 ### 5.7 Ignore Specific Files
 
 ```bash
@@ -434,7 +483,69 @@ Use sparingly—prefer documenting or removing instead.
 
 ---
 
-## 7. Coverage Semantics
+## 7. Orphan Detection
+
+The script can identify two types of orphaned items in your OpenAPI specification:
+
+### 7.1 Path Orphans
+
+**Path orphans** are API endpoints (path + method combinations) that exist in the swagger file but have no corresponding handler methods in the codebase.
+
+Example orphan paths:
+
+- `GET /api/v1/guilds` (defined in swagger but no handler exists)
+- `POST /api/v1/minecraft/stats` (handler was removed but swagger entry remains)
+
+### 7.2 Component Orphans
+
+**Component orphans** are schema components defined in `components.schemas` that have no corresponding `@openapi_model` decorated model classes in the codebase.
+
+### 7.3 Using Orphan Detection
+
+```bash
+# Show both path and component orphans
+python scripts/swagger_sync.py --show-orphans
+
+# Check mode with orphan detection (typical CI usage)
+python scripts/swagger_sync.py --check --show-orphans
+```
+
+When orphans are detected but `--show-orphans` is not used, the script will show a hint message:
+
+```text
+Suggestions:
+  - Remove or implement swagger-only paths, or mark related handlers with @openapi: ignore if intentional.
+```
+
+### 7.4 Orphan Output Format
+
+Orphans are clearly distinguished in the output:
+
+```text
+Orphans:
+ - Path present only in swagger (no handler): GET /api/v1/guilds
+ - Path present only in swagger (no handler): POST /api/v1/minecraft/stats
+ - Component present only in swagger (no model class): MinecraftUser
+ - Component present only in swagger (no model class): TacoWebhookPayload
+```
+
+### 7.5 Managing Orphans
+
+**Path Orphans:**
+
+- **Remove** the path from swagger if the endpoint is no longer needed
+- **Implement** the missing handler if the endpoint should exist
+- **Mark ignored** with `@openapi: ignore` if the path is intentionally swagger-only
+
+**Component Orphans:**
+
+- **Remove** the component schema if no longer needed
+- **Create** an `@openapi_model` decorated class if the component should be auto-generated
+- **Keep** manually for complex schemas that require manual definition (nested objects, advanced validation, etc.)
+
+---
+
+## 8. Coverage Semantics
 
 Metric meanings (shown in summary):
 
@@ -444,7 +555,7 @@ Metric meanings (shown in summary):
 - Definition matches: Count where the swagger operation exactly equals generated doc block (normalized).
 - Swagger only operations: Path+method present in swagger but not in code (non-ignored).
 - Model components generated: Count of `@openapi_model` decorated classes discovered and translated into primitive schemas this run.
-- Schemas not generated: Existing `components.schemas` entries present in swagger that were not produced by the current auto-generation pass (manually maintained or richer schemas).
+- Schemas not generated: Existing `components.schemas` entries present in swagger that were not produced by the current auto-generation pass (manually maintained or richer schemas). These are potential component orphans if no corresponding model class exists.
 
 `--fail-on-coverage-below` compares (with doc blocks / handlers considered).
 
@@ -462,7 +573,7 @@ Cobertura custom properties added to the root `<coverage>` element expose extend
 
 ---
 
-## 8. Diff Output
+## 9. Diff Output
 
 When drift is detected in check mode the script prints unified diffs for each differing operation. Added lines are green, removed lines red, and file / hunk headers cyan using ANSI sequences. Color behavior is controlled by `--color`:
 
@@ -476,7 +587,7 @@ Markdown summaries always strip ANSI codes and note the effective color mode & r
 
 ---
 
-## 9. Best Practices for Authoring Blocks
+## 10. Best Practices for Authoring Blocks
 
 | Goal | Tip |
 |------|-----|
@@ -488,7 +599,7 @@ Markdown summaries always strip ANSI codes and note the effective color mode & r
 
 ---
 
-## 10. Limitations & Design Choices
+## 11. Limitations & Design Choices
 
 - Auto-generated model components are primitive-only: no nested object traversal, enum/format inference, or `$ref` wiring is attempted. Existing manual enrichments persist unless a field is re‑inferred.
 - No automated pruning of unused schemas; script will not delete stale components.
@@ -499,7 +610,7 @@ Markdown summaries always strip ANSI codes and note the effective color mode & r
 
 ---
 
-## 11. Future Roadmap Ideas
+## 12. Future Roadmap Ideas
 
 - `ruamel.yaml` round‑trip preservation
 - `$ref` schema validation & usage stats
@@ -510,7 +621,7 @@ Markdown summaries always strip ANSI codes and note the effective color mode & r
 
 ---
 
-## 12. Troubleshooting (Expanded)
+## 13. Troubleshooting (Expanded)
 
 | Symptom | Likely Cause | Resolution |
 |---------|--------------|-----------|
@@ -519,12 +630,13 @@ Markdown summaries always strip ANSI codes and note the effective color mode & r
 | Endpoint totally absent from output | Decorator path not resolvable (dynamic f-string) | Simplify path or extend resolver function |
 | Tagged as ignored but still counted | Marker in a comment not docstring | Place `@openapi: ignore` inside actual module or function docstring |
 | Swagger-only path not listed | Used `--fix` without `--show-orphans` | Re-run with `--show-orphans` |
+| Component orphan not detected | Component schema not in `components.schemas` or model class exists but not decorated with `@openapi_model` | Verify component location and ensure model class uses `@openapi_model` decorator |
 | Coverage threshold failing | Threshold too high for current docs | Add blocks or lower threshold intentionally |
 | ANSI color bleed in logs | CI strips not applied | Use markdown summary or pipe through `sed -r 's/\x1b\[[0-9;]*m//g'` |
 
 ---
 
-## 13. New Endpoint Checklist
+## 14. New Endpoint Checklist
 
 1. Implement handler with decorator `@uri_variable_mapping("/api/{API_VERSION}/resource", method="GET")`.
 2. Add docstring with human preface + `---openapi` block including at least a 200 response.
@@ -535,7 +647,7 @@ Markdown summaries always strip ANSI codes and note the effective color mode & r
 
 ---
 
-## 14. FAQ
+## 15. FAQ
 
 **Q: Do I need a block for internal / experimental endpoints?**
 Add one or mark with `@openapi: ignore`. Avoid silent omissions.
@@ -551,6 +663,9 @@ Single string converted to single-element array for consistency.
 
 **Q: What constitutes a definition match?**
 Exact dict equality after generating the operation object from the doc block (including default responses).
+
+**Q: What's the difference between path orphans and component orphans?**
+Path orphans are API endpoints defined in swagger without corresponding handler methods. Component orphans are schema definitions in `components.schemas` without corresponding `@openapi_model` decorated classes. Both indicate potential drift between code and specification.
 
 ---
 Happy documenting & syncing! ✨

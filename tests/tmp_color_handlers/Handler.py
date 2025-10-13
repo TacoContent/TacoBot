@@ -5,9 +5,9 @@ class H:
     def c(self, request):
         """Doc
 
----openapi
+>>>openapi
 summary: Color test
 responses: { 200: { description: OK } }
----end
+<<<openapi
 """
         pass

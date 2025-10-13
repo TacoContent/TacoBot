@@ -6,7 +6,7 @@ class DualHandler:
     def dual(self, request):
         """Dual method endpoint with method-rooted openapi block
 
-        ---openapi
+        >>>openapi
         get:
           summary: Dual get
           tags: [test]
@@ -15,6 +15,6 @@ class DualHandler:
           summary: Dual post
           tags: [test]
           responses: { 200: { description: OK } }
-        ---end
+        <<<openapi
         """
         pass

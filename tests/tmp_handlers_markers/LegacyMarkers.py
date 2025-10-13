@@ -6,9 +6,9 @@ class LegacyMarkersHandler:
     def get_legacy(self, request):
         """Example using legacy markers.
 
-        ---openapi
+        >>>openapi
         summary: Legacy markers example
         responses: { 200: { description: OK } }
-        ---end
+        <<<openapi
         """
         pass

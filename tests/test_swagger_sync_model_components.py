@@ -73,15 +73,17 @@ def test_collect_model_components_join_whitelist_user_property_descriptions():
 
 
 def test_collect_model_components_metadata_merge_precedence():
-    models_root = pathlib.Path('bot/lib/models')
+    models_root = pathlib.Path('tests/tmp_model_components')
     comps = collect_model_components(models_root)
     assert 'MergeMetadataExample' in comps, 'MergeMetadataExample component missing'
     schema = comps['MergeMetadataExample']
     props = schema['properties']
     # Legacy description preserved
-    assert props['merged'].get('description') == 'Legacy description (should persist)'
+    assert props['merged'].get('description') == 'description (should persist)'
     # Unified block added enum without overwriting description
-    assert 'enum' in props['merged'] and props['merged']['enum'] == ['a', 'b', 'c']
+    assert 'enum' in props['merged'] and props['merged']['enum'] == ['a', 'b', 'c'], 'Enum missing or incorrect'
+    # Literal field enum from code takes precedence over both blocks
+    assert 'enum' in props['literal'] and props['literal']['enum'] == ['simple'], 'Literal enum incorrect'
     # Property only in unified block present
     assert 'added_only_in_unified' in props, 'Unified-only property missing'
     # Legacy-only property present

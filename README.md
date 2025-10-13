@@ -205,7 +205,7 @@ For questions, issues, or contributions, please refer to the documentation or op
 
 ### OpenAPI / Swagger Sync (`scripts/swagger_sync.py`)
 
-Handler HTTP endpoints embed minimal OpenAPI fragments inside their docstrings between `>>>openapi` / `<<<openapi` markers (legacy `---openapi` / `---end` still accepted).
+Handler HTTP endpoints embed minimal OpenAPI fragments inside their docstrings between `>>>openapi` / `<<<openapi` markers.
 The `scripts/swagger_sync.py` utility keeps those fragments and the canonical `.swagger.v1.yaml` file in sync.
 
 Quick check (no write) using defaults:

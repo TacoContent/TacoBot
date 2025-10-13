@@ -21,7 +21,7 @@ from scripts import swagger_sync as se
 
 def _make_handler(tmp: pathlib.Path) -> None:
     (tmp / '__init__.py').write_text('', encoding='utf-8')
-    code = """from httpserver.EndpointDecorators import uri_mapping\nclass H:\n    @uri_mapping('/od-test', method='GET')\n    def h(self, request):\n        \"\"\"Doc\n\n---openapi\nsummary: OD Test\nresponses: { 200: { description: OK } }\n---end\n\"\"\"\n        pass\n"""
+    code = """from httpserver.EndpointDecorators import uri_mapping\nclass H:\n    @uri_mapping('/od-test', method='GET')\n    def h(self, request):\n        \"\"\"Doc\n\n>>>openapi\nsummary: OD Test\nresponses: { 200: { description: OK } }\n<<<openapi\n\"\"\"\n        pass\n"""
     (tmp / 'Handler.py').write_text(code, encoding='utf-8')
 
 

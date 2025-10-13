@@ -1,25 +1,24 @@
 openapi: 3.0.1
 info:
   title: TacoBot
-  description: Multi-Purpose Discord Bot with Minecraft, Twitch, and other integrations
-    for the TACO community.
+  description: Multi-Purpose Discord Bot with Minecraft, Twitch, and other integrations for the TACO community.
   version: 1.0.0-snapshot
   contact:
     name: TacoBot
     url: https://discord.gg/aQ37F2EcjF
 servers:
-- url: '{host}'
-  variables:
-    host:
-      enum:
-      - http://localhost:8931
-      - http://lb.bit13.local:8931
-      default: http://lb.bit13.local:8931
+  - url: '{host}'
+    variables:
+      host:
+        enum:
+          - http://localhost:8931
+          - http://lb.bit13.local:8931
+        default: http://lb.bit13.local:8931
 paths:
   /api/v1/swagger.yaml:
     get:
       tags:
-      - swagger
+        - swagger
       parameters: []
       responses:
         '200':
@@ -33,7 +32,7 @@ paths:
   /swagger.yaml:
     get:
       tags:
-      - swagger
+        - swagger
       parameters: []
       responses:
         '200':
@@ -48,7 +47,7 @@ paths:
     get:
       description: Gets the health status of the service
       tags:
-      - health
+        - health
       responses:
         '200':
           description: Successful operation
@@ -65,7 +64,7 @@ paths:
   /api/v1/guilds:
     get:
       tags:
-      - guilds
+        - guilds
       summary: Get the list of guilds the bot is in
       description: 'Gets the list of guilds the bot is in
 
@@ -88,17 +87,17 @@ paths:
   /api/v1/guilds/lookup/{guild_id}:
     get:
       tags:
-      - guilds
+        - guilds
       summary: Lookup a guild
       description: 'Retrieves details for a single guild by its ID.
 
         '
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Successful operation
@@ -115,18 +114,18 @@ paths:
   /api/v1/guilds/lookup/batch/{guild_ids}:
     get:
       tags:
-      - guilds
+        - guilds
       summary: Get the guild information for multiple guilds
       description: 'Gets the guild information for multiple guilds
 
         '
       parameters:
-      - name: guild_ids
-        description: Comma separated list of guild IDs
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: guild_ids
+          description: Comma separated list of guild IDs
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Successful operation
@@ -145,19 +144,19 @@ paths:
   /api/v1/guilds/lookup/batch:
     get:
       tags:
-      - guilds
+        - guilds
       summary: Get the guild information for multiple guilds
       description: 'Gets the guild information for multiple guilds
 
         '
       parameters:
-      - name: guild_ids
-        description: Comma separated list of guild IDs
-        in: query
-        schema:
-          type: array
-          items:
-            type: string
+        - name: guild_ids
+          description: Comma separated list of guild IDs
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
       responses:
         '200':
           description: Successful operation
@@ -175,19 +174,19 @@ paths:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
     post:
       tags:
-      - guilds
+        - guilds
       summary: Get the guild information for multiple guilds
       description: 'Gets the guild information for multiple guilds
 
         '
       parameters:
-      - name: guild_ids
-        description: Comma separated list of guild IDs
-        in: query
-        schema:
-          type: array
-          items:
-            type: string
+        - name: guild_ids
+          description: Comma separated list of guild IDs
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
       requestBody:
         required: false
         content:
@@ -214,18 +213,17 @@ paths:
   /api/v1/guild/{guild_id}/categories:
     get:
       tags:
-      - guilds
-      - channels
+        - guilds
+        - channels
       summary: List guild categories (with channels)
-      description: Returns all channel categories in the guild. Each category object
-        embeds its child channels.
+      description: Returns all channel categories in the guild. Each category object embeds its child channels.
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        description: Discord guild (server) ID
-        schema:
-          type: string
+        - name: guild_id
+          in: path
+          required: true
+          description: Discord guild (server) ID
+          schema:
+            type: string
       responses:
         '200':
           description: OK
@@ -244,21 +242,21 @@ paths:
   /api/v1/guild/{guild_id}/category/{category_id}:
     get:
       tags:
-      - guilds
-      - channels
+        - guilds
+        - channels
       summary: Get category (with channels)
       description: Returns a single category and its child channels.
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: category_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: category_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: OK
@@ -275,20 +273,19 @@ paths:
   /api/v1/guild/{guild_id}/channels:
     get:
       security:
-      - X-AUTH-TOKEN: []
-      - X-TACOBOT-TOKEN: []
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
       tags:
-      - guilds
-      - channels
+        - guilds
+        - channels
       summary: List top-level guild channels
-      description: Returns channels that are not within a category. Use categories
-        endpoint for nested channels.
+      description: Returns channels that are not within a category. Use categories endpoint for nested channels.
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: OK
@@ -307,45 +304,44 @@ paths:
   /api/v1/guild/{guild_id}/channels/batch/ids:
     post:
       security:
-      - X-AUTH-TOKEN: []
-      - X-TACOBOT-TOKEN: []
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
       tags:
-      - guilds
-      - channels
+        - guilds
+        - channels
       summary: Batch fetch channels by IDs
-      description: Retrieve multiple channels. Accepts array body or object with ids
-        property; can also accept repeated query param ids.
+      description: Retrieve multiple channels. Accepts array body or object with ids property; can also accept repeated query param ids.
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ids
-        in: query
-        required: false
-        description: Repeatable channel ID query parameter
-        schema:
-          type: array
-          items:
+        - name: guild_id
+          in: path
+          required: true
+          schema:
             type: string
+        - name: ids
+          in: query
+          required: false
+          description: Repeatable channel ID query parameter
+          schema:
+            type: array
+            items:
+              type: string
       requestBody:
         required: false
         content:
           application/json:
             schema:
               oneOf:
-              - type: array
-                items:
-                  type: string
-              - type: object
-                properties:
-                  ids:
-                    type: array
-                    items:
-                      type: string
-                required:
-                - ids
+                - type: array
+                  items:
+                    type: string
+                - type: object
+                  properties:
+                    ids:
+                      type: array
+                      items:
+                        type: string
+                  required:
+                    - ids
       responses:
         '200':
           description: OK
@@ -364,33 +360,31 @@ paths:
   /api/v1/guild/{guild_id}/channel/{channel_id}/messages:
     get:
       tags:
-      - guilds
-      - channels
-      - messages
+        - guilds
+        - channels
+        - messages
       summary: List recent messages in a channel
-      description: Returns up to the most recent 100 messages (default 50) for the
-        specified text channel.
+      description: Returns up to the most recent 100 messages (default 50) for the specified text channel.
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: channel_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 1
-          maximum: 100
-          default: 50
-        description: Max number of most recent messages to return (1-100, default
-          50)
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: channel_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Max number of most recent messages to return (1-100, default 50)
       responses:
         '200':
           description: OK
@@ -415,27 +409,27 @@ paths:
   /api/v1/guild/{guild_id}/channel/{channel_id}/message/{message_id}:
     get:
       tags:
-      - guilds
-      - channels
-      - messages
+        - guilds
+        - channels
+        - messages
       summary: Get a single message
       description: Fetch a single message by its ID.
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: channel_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: message_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: channel_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: message_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: OK
@@ -458,48 +452,47 @@ paths:
   /api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/ids:
     post:
       tags:
-      - guilds
-      - channels
-      - messages
+        - guilds
+        - channels
+        - messages
       summary: Batch fetch messages by IDs
-      description: Retrieve multiple messages. Accepts an array body or object with
-        ids property; can also accept repeated query param ids.
+      description: Retrieve multiple messages. Accepts an array body or object with ids property; can also accept repeated query param ids.
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: channel_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ids
-        in: query
-        required: false
-        schema:
-          type: array
-          items:
+        - name: guild_id
+          in: path
+          required: true
+          schema:
             type: string
-        description: Repeatable message ID query parameter
+        - name: channel_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: ids
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          description: Repeatable message ID query parameter
       requestBody:
         required: false
         content:
           application/json:
             schema:
               oneOf:
-              - type: array
-                items:
-                  type: string
-              - type: object
-                properties:
-                  ids:
-                    type: array
-                    items:
-                      type: string
-                required:
-                - ids
+                - type: array
+                  items:
+                    type: string
+                - type: object
+                  properties:
+                    ids:
+                      type: array
+                      items:
+                        type: string
+                  required:
+                    - ids
       responses:
         '200':
           description: OK
@@ -524,32 +517,29 @@ paths:
   /api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/reactions:
     post:
       tags:
-      - guilds
-      - channels
-      - messages
-      - reactions
+        - guilds
+        - channels
+        - messages
+        - reactions
       summary: Get reactions for a batch of messages (per-message grouping)
-      description: 'Returns a mapping of message IDs to their reactions arrays. Each
-        reactions array contains
+      description: 'Returns a mapping of message IDs to their reactions arrays. Each reactions array contains
 
-        objects with the emoji (custom emoji mention format or unicode) and the count
-        for that message.
+        objects with the emoji (custom emoji mention format or unicode) and the count for that message.
 
-        Missing / inaccessible messages are silently omitted. Duplicate message IDs
-        are de-duplicated.
+        Missing / inaccessible messages are silently omitted. Duplicate message IDs are de-duplicated.
 
         '
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: channel_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: channel_id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -586,8 +576,8 @@ paths:
     get:
       summary: Get the list of emojis for a guild
       tags:
-      - guilds
-      - emojis
+        - guilds
+        - emojis
       responses:
         '200':
           description: Successful operation
@@ -611,29 +601,29 @@ paths:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
       description: Returns all custom emojis for the specified guild.
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
   /api/v1/guild/{guild_id}/emoji/id/{emoji_id}:
     get:
       tags:
-      - guilds
-      - emojis
+        - guilds
+        - emojis
       summary: Get an emoji by ID
       description: Returns a single emoji object for the given emoji ID.
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: emoji_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: emoji_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Successful operation
@@ -656,19 +646,19 @@ paths:
   /api/v1/guild/{guild_id}/emoji/name/{emoji_name}:
     get:
       tags:
-      - guilds
-      - emojis
+        - guilds
+        - emojis
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: emoji_name
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: emoji_name
+          in: path
+          required: true
+          schema:
+            type: string
       summary: Get an emoji by name
       description: Returns a single emoji object for the given emoji name.
       responses:
@@ -693,43 +683,41 @@ paths:
   /api/v1/guild/{guild_id}/emojis/ids/batch:
     post:
       tags:
-      - guilds
-      - emojis
+        - guilds
+        - emojis
       summary: Get a batch of emojis by their IDs
-      description: 'Accepts either an array of emoji IDs as the JSON body or an object
-        with an `ids` array field. Query parameter `ids` may also be provided multiple
-        times.
+      description: 'Accepts either an array of emoji IDs as the JSON body or an object with an `ids` array field. Query parameter `ids` may also be provided multiple times.
 
         '
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: ids
-        in: query
-        required: false
-        description: Repeatable query parameter of emoji ids
-        schema:
-          type: array
-          items:
+        - name: guild_id
+          in: path
+          required: true
+          schema:
             type: string
+        - name: ids
+          in: query
+          required: false
+          description: Repeatable query parameter of emoji ids
+          schema:
+            type: array
+            items:
+              type: string
       requestBody:
         required: false
         content:
           application/json:
             schema:
               oneOf:
-              - type: array
-                items:
-                  type: string
-              - type: object
-                properties:
-                  ids:
-                    type: array
-                    items:
-                      type: string
+                - type: array
+                  items:
+                    type: string
+                - type: object
+                  properties:
+                    ids:
+                      type: array
+                      items:
+                        type: string
       responses:
         '200':
           description: Successful operation
@@ -754,43 +742,41 @@ paths:
   /api/v1/guild/{guild_id}/emojis/names/batch:
     post:
       tags:
-      - guilds
-      - emojis
+        - guilds
+        - emojis
       summary: Get a batch of emojis by their names
-      description: 'Accepts either an array of emoji names as the JSON body or an
-        object with a `names` array field. Query parameter `names` may also be provided
-        multiple times.
+      description: 'Accepts either an array of emoji names as the JSON body or an object with a `names` array field. Query parameter `names` may also be provided multiple times.
 
         '
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: names
-        in: query
-        required: false
-        description: Repeatable query parameter of emoji names
-        schema:
-          type: array
-          items:
+        - name: guild_id
+          in: path
+          required: true
+          schema:
             type: string
+        - name: names
+          in: query
+          required: false
+          description: Repeatable query parameter of emoji names
+          schema:
+            type: array
+            items:
+              type: string
       requestBody:
         required: false
         content:
           application/json:
             schema:
               oneOf:
-              - type: array
-                items:
-                  type: string
-              - type: object
-                properties:
-                  names:
-                    type: array
-                    items:
-                      type: string
+                - type: array
+                  items:
+                    type: string
+                - type: object
+                  properties:
+                    names:
+                      type: array
+                      items:
+                        type: string
       responses:
         '200':
           description: Successful operation
@@ -815,15 +801,15 @@ paths:
   /api/v1/guild/{guild_id}/roles:
     get:
       tags:
-      - guilds
-      - roles
+        - guilds
+        - roles
       summary: List guild roles
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: OK
@@ -842,32 +828,32 @@ paths:
   /api/v1/guild/{guild_id}/roles/batch/ids:
     post:
       tags:
-      - guilds
-      - roles
+        - guilds
+        - roles
       summary: Batch fetch roles by IDs
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         required: false
         content:
           application/json:
             schema:
               oneOf:
-              - type: array
-                items:
-                  type: string
-              - type: object
-                properties:
-                  ids:
-                    type: array
-                    items:
-                      type: string
-                required:
-                - ids
+                - type: array
+                  items:
+                    type: string
+                - type: object
+                  properties:
+                    ids:
+                      type: array
+                      items:
+                        type: string
+                  required:
+                    - ids
       responses:
         '200':
           description: OK
@@ -886,17 +872,16 @@ paths:
   /api/v1/guild/{guild_id}/join-whitelist:
     get:
       tags:
-      - guilds
-      - whitelist
+        - guilds
+        - whitelist
       summary: List all join whitelist entries
-      description: Returns the complete join whitelist for the guild. For large lists,
-        prefer the paginated endpoint.
+      description: Returns the complete join whitelist for the guild. For large lists, prefer the paginated endpoint.
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: OK
@@ -914,22 +899,21 @@ paths:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
     post:
       tags:
-      - guilds
-      - whitelist
+        - guilds
+        - whitelist
       summary: Add (upsert) a user to join whitelist
       description: 'Provide JSON body: { "user_id": "<id>", "added_by": "<id>" }
 
 
-        The "added_by" field is optional and defaults to the same value as "user_id"
-        when omitted.
+        The "added_by" field is optional and defaults to the same value as "user_id" when omitted.
 
         '
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -942,7 +926,7 @@ paths:
                 added_by:
                   type: string
               required:
-              - user_id
+                - user_id
       responses:
         '201':
           description: Created
@@ -959,32 +943,31 @@ paths:
   /api/v1/guild/{guild_id}/join-whitelist/page:
     get:
       tags:
-      - guilds
-      - whitelist
+        - guilds
+        - whitelist
       summary: List paginated join whitelist entries
-      description: Returns a page of join whitelist entries. Accepts query params
-        skip (default 0) and take (default 50, max 200).
+      description: Returns a page of join whitelist entries. Accepts query params skip (default 0) and take (default 50, max 200).
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: skip
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 0
-          default: 0
-      - name: take
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 1
-          maximum: 200
-          default: 50
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: skip
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: take
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
       responses:
         '200':
           description: OK
@@ -1001,22 +984,21 @@ paths:
   /api/v1/guild/{guild_id}/join-whitelist/{user_id}:
     put:
       tags:
-      - guilds
-      - whitelist
+        - guilds
+        - whitelist
       summary: Update (re-add) a join whitelist entry
-      description: "Upserts a specific user.\n\nOptional body example:\n  { \"added_by\"\
-        : \"<id>\" }\n"
+      description: "Upserts a specific user.\n\nOptional body example:\n  { \"added_by\": \"<id>\" }\n"
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: user_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         required: false
         content:
@@ -1041,21 +1023,21 @@ paths:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
     delete:
       tags:
-      - guilds
-      - whitelist
+        - guilds
+        - whitelist
       summary: Delete a join whitelist entry
       description: Removes a user from the whitelist.
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: user_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '204':
           description: No Content (deleted)
@@ -1068,34 +1050,33 @@ paths:
   /api/v1/guild/{guild_id}/mentionables/batch/ids:
     post:
       tags:
-      - guilds
-      - mentionables
+        - guilds
+        - mentionables
       summary: Batch fetch mentionables (roles or users) by IDs
-      description: Returns role and/or user payloads for provided IDs. Accepts array
-        or object with ids property.
+      description: Returns role and/or user payloads for provided IDs. Accepts array or object with ids property.
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         required: false
         content:
           application/json:
             schema:
               oneOf:
-              - type: array
-                items:
-                  type: string
-              - type: object
-                properties:
-                  ids:
-                    type: array
-                    items:
-                      type: string
-                required:
-                - ids
+                - type: array
+                  items:
+                    type: string
+                - type: object
+                  properties:
+                    ids:
+                      type: array
+                      items:
+                        type: string
+                  required:
+                    - ids
       responses:
         '200':
           description: OK
@@ -1114,17 +1095,16 @@ paths:
   /api/v1/guild/{guild_id}/mentionables:
     get:
       tags:
-      - guilds
-      - mentionables
+        - guilds
+        - mentionables
       summary: List guild mentionables (roles + members)
-      description: Returns all roles and members for the specified guild as mentionable
-        union objects.
+      description: Returns all roles and members for the specified guild as mentionable union objects.
       parameters:
-      - name: guild_id
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: guild_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: OK
@@ -1149,7 +1129,7 @@ paths:
   /api/v1/minecraft/whitelist.json:
     get:
       tags:
-      - minecraft
+        - minecraft
       summary: Get the whitelist JSON
       description: 'Gets JSON formatted whitelist configuration
 
@@ -1167,7 +1147,7 @@ paths:
   /api/v1/minecraft/ops.json:
     get:
       tags:
-      - minecraft
+        - minecraft
       summary: Get the ops list JSON
       description: 'Gets JSON formatted OPS configuration
 
@@ -1185,18 +1165,18 @@ paths:
   /api/v1/minecraft/uuid/{username}:
     get:
       tags:
-      - minecraft
+        - minecraft
       summary: Get userid from username
       description: 'Gets JSON payload of userid from username
 
         '
       parameters:
-      - name: username
-        description: Minecraft username
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: username
+          description: Minecraft username
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Successful operation
@@ -1213,7 +1193,7 @@ paths:
   /api/v1/minecraft/status:
     get:
       tags:
-      - minecraft
+        - minecraft
       summary: Get the server status information
       description: 'Gets information on the server.
 
@@ -1228,7 +1208,7 @@ paths:
   /api/v1/minecraft/version:
     get:
       tags:
-      - minecraft
+        - minecraft
       summary: Get the minecraft server version information
       responses:
         '200':
@@ -1239,10 +1219,10 @@ paths:
                 $ref: '#/components/schemas/TacoMinecraftServerSettings'
     post:
       security:
-      - X-AUTH-TOKEN: []
-      - X-TACOBOT-TOKEN: []
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
       tags:
-      - minecraft
+        - minecraft
       summary: Set the minecraft server version information
       requestBody:
         content:
@@ -1259,14 +1239,14 @@ paths:
   /api/v1/minecraft/player/{user}/stats:
     get:
       parameters:
-      - name: user
-        description: The users minecraft username
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: user
+          description: The users minecraft username
+          in: path
+          required: true
+          schema:
+            type: string
       tags:
-      - minecraft
+        - minecraft
       responses:
         '200':
           description: Successful operation
@@ -1276,14 +1256,14 @@ paths:
                 $ref: '#/components/schemas/MinecraftDiscordUserStatsInfo'
     post:
       parameters:
-      - name: user
-        description: The users minecraft uuid
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: user
+          description: The users minecraft uuid
+          in: path
+          required: true
+          schema:
+            type: string
       tags:
-      - minecraft
+        - minecraft
       responses:
         '200':
           description: Successful operation
@@ -1294,19 +1274,19 @@ paths:
               $ref: '#/components/schemas/MinecraftUserStatsPayload'
   /api/v1/minecraft/player/{username}/stats/{world}:
     parameters:
-    - name: username
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: world
-      in: path
-      required: true
-      schema:
-        $ref: '#/components/schemas/TacoMinecraftWorlds'
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: world
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/TacoMinecraftWorlds'
     get:
       tags:
-      - minecraft
+        - minecraft
       responses:
         '200':
           description: Successful operation
@@ -1317,7 +1297,7 @@ paths:
   /api/v1/minecraft/world:
     get:
       tags:
-      - minecraft
+        - minecraft
       summary: Get the active minecraft server world information
       responses:
         '200':
@@ -1328,7 +1308,7 @@ paths:
                 $ref: '#/components/schemas/TacoMinecraftWorldInfo'
     post:
       tags:
-      - minecraft
+        - minecraft
       summary: Set the active minecraft server world
       requestBody:
         content:
@@ -1351,7 +1331,7 @@ paths:
   /api/v1/minecraft/worlds:
     get:
       tags:
-      - minecraft
+        - minecraft
       summary: Get the active minecraft server world information
       responses:
         '200':
@@ -1365,33 +1345,33 @@ paths:
   /tacobot/guild/{guild}/invite/{channel}:
     post:
       security:
-      - X-AUTH-TOKEN: []
+        - X-AUTH-TOKEN: []
       tags:
-      - twitch
+        - twitch
       summary: Invite Bot to twitch channel
       description: ''
       parameters:
-      - name: guild
-        in: path
-        description: The GUILD ID
-        required: true
-        schema:
-          type: string
-          format: ''
-      - name: channel
-        in: path
-        description: The name of the twitch channel
-        required: true
-        schema:
-          type: string
-          format: ''
+        - name: guild
+          in: path
+          description: The GUILD ID
+          required: true
+          schema:
+            type: string
+            format: ''
+        - name: channel
+          in: path
+          description: The name of the twitch channel
+          required: true
+          schema:
+            type: string
+            format: ''
       responses:
         '200':
           description: Successful operation
   /api/v1/minecraft/player/events:
     get:
       tags:
-      - minecraft
+        - minecraft
       summary: Get the minecraft player events
       responses:
         '200':
@@ -1405,20 +1385,19 @@ paths:
   /api/v1/minecraft/player/event/{event}:
     get:
       tags:
-      - minecraft
+        - minecraft
       summary: Get the minecraft player event
       parameters:
-      - name: event
-        in: path
-        required: true
-        description: The event type. Values can be pulled from the /tacobot/minecraft/player/events
-          endpoint
-        schema:
-          type: string
-          enum:
-          - login
-          - logout
-          - death
+        - name: event
+          in: path
+          required: true
+          description: The event type. Values can be pulled from the /tacobot/minecraft/player/events endpoint
+          schema:
+            type: string
+            enum:
+              - login
+              - logout
+              - death
       responses:
         '200':
           description: Successful operation
@@ -1430,19 +1409,19 @@ paths:
     get:
       summary: Get user permissions
       parameters:
-      - name: guildId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: userId
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
       security:
-      - X-AUTH-TOKEN: []
-      - X-TACOBOT-TOKEN: []
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
       responses:
         '200':
           description: Successful operation
@@ -1459,93 +1438,93 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
       tags:
-      - permissions
+        - permissions
   /api/v1/permissions/{guildId}/{userId}/{permission}:
     post:
       tags:
-      - permissions
+        - permissions
       summary: Add permission to user
       parameters:
-      - name: guildId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: userId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: permission
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: permission
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Successful operation
     put:
       tags:
-      - permissions
+        - permissions
       summary: Add permission to user
       parameters:
-      - name: guildId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: userId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: permission
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: permission
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Successful operation
     delete:
       tags:
-      - permissions
+        - permissions
       summary: Remove permission from user
       parameters:
-      - name: guildId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: userId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: permission
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: permission
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Successful operation
   /webhook/minecraft/tacos/{action}:
     parameters:
-    - name: action
-      in: path
-      required: true
-      description: What action was taken
-      schema:
-        type: string
-        enum:
-        - login
-        - custom
+      - name: action
+        in: path
+        required: true
+        description: What action was taken
+        schema:
+          type: string
+          enum:
+            - login
+            - custom
     post:
       security:
-      - X-TACOBOT-TOKEN: []
+        - X-TACOBOT-TOKEN: []
       tags:
-      - webhook
+        - webhook
       summary: Minecraft Webhook to give tacos to a user
       description: ''
       requestBody:
@@ -1562,9 +1541,9 @@ paths:
                 $ref: '#/components/schemas/TacoWebhookMinecraftTacosResponsePayload'
     delete:
       security:
-      - X-TACOBOT-TOKEN: []
+        - X-TACOBOT-TOKEN: []
       tags:
-      - webhook
+        - webhook
       summary: Minecraft Webhook to remove tacos from a user
       description: ''
       requestBody:
@@ -1582,9 +1561,9 @@ paths:
   /webhook/minecraft/player/event:
     post:
       security:
-      - X-TACOBOT-TOKEN: []
+        - X-TACOBOT-TOKEN: []
       tags:
-      - webhook
+        - webhook
       summary: Minecraft Webhook to send player events
       description: ''
       requestBody:
@@ -1602,9 +1581,9 @@ paths:
   /webhook/game:
     post:
       security:
-      - X-TACOBOT-TOKEN: []
+        - X-TACOBOT-TOKEN: []
       tags:
-      - webhook
+        - webhook
       summary: Submit Free Game Webhook
       description: ''
       requestBody:
@@ -1622,9 +1601,9 @@ paths:
   /webhook/shift:
     post:
       security:
-      - X-TACOBOT-TOKEN: []
+        - X-TACOBOT-TOKEN: []
       tags:
-      - webhook
+        - webhook
       summary: Submit SHiFT Code Webhook
       description: ''
       requestBody:
@@ -1643,7 +1622,7 @@ paths:
     get:
       description: Gets the health status of the service
       tags:
-      - health
+        - health
       responses:
         '200':
           description: Successful operation
@@ -1661,7 +1640,7 @@ paths:
     get:
       description: Gets the health status of the service
       tags:
-      - health
+        - health
       responses:
         '200':
           description: Successful operation
@@ -1679,8 +1658,8 @@ paths:
     get:
       summary: Get settings for a guild and section
       security:
-      - X-AUTH-TOKEN: []
-      - X-TACOBOT-TOKEN: []
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
       responses:
         '200':
           description: Successful operation
@@ -1700,16 +1679,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-      description: Retrieves the settings document for the primary guild and the specified
-        section.
+      description: Retrieves the settings document for the primary guild and the specified section.
       parameters:
-      - name: section
-        in: path
-        required: true
-        schema:
-          type: string
+        - name: section
+          in: path
+          required: true
+          schema:
+            type: string
       tags:
-      - settings
+        - settings
 components:
   schemas:
     ErrorStatusCodePayload:
@@ -1717,8 +1695,14 @@ components:
       properties:
         error:
           type: string
-      example:
-        error: guild not found
+          description: Description of the error.
+        code:
+          type: integer
+          nullable: true
+          description: Error code.
+      required:
+        - error
+      description: Represents an error status code payload.
     ShiftCodeGame:
       type: object
       properties:
@@ -1727,23 +1711,25 @@ components:
         name:
           type: string
       required:
-      - id
-      - name
+        - id
+        - name
+      description: Represents a supported game for SHiFT codes.
     ShiftCodePayload:
       type: object
       properties:
-        code:
-          type: string
         games:
           type: array
           items:
             $ref: '#/components/schemas/ShiftCodeGame'
+        code:
+          type: string
         platforms:
           type: array
           items:
             type: string
         expiry:
-          type: number
+          type: integer
+          nullable: true
         reward:
           type: string
         notes:
@@ -1751,89 +1737,158 @@ components:
         source:
           type: string
         created_at:
-          type: number
+          type: integer
       required:
-      - code
+        - code
+        - created_at
+        - games
+        - notes
+        - platforms
+        - reward
+        - source
+      description: Payload for the SHiFT Code.
     TacoWebhookMinecraftTacosResponsePayload:
       type: object
       properties:
         success:
           type: boolean
+          description: Whether the operation was successful.
         payload:
           $ref: '#/components/schemas/TacoWebhookMinecraftTacosPayload'
+          description: The payload that was processed.
         total_tacos:
           type: integer
+          description: The total number of tacos.
+      required:
+        - payload
+        - success
+        - total_tacos
+      description: Represents a response payload for TacoWebhook Minecraft Tacos events.
     TacoWebhookMinecraftTacosPayload:
       type: object
       properties:
         guild_id:
           type: string
+          description: The ID of the guild where the tacos are being sent.
         from_user:
           type: string
+          description: The user who is sending the tacos.
         to_user_id:
           type: string
+          description: The ID of the user who is receiving the tacos.
         amount:
           type: integer
+          description: The number of tacos being sent.
         reason:
           type: string
+          description: The reason for sending the tacos.
         type:
           type: string
           enum:
-          - login
-          - custom
+            - login
+            - custom
+          description: The event type for giving the tacos to the user.
+      required:
+        - amount
+        - from_user
+        - guild_id
+        - reason
+        - to_user_id
+        - type
+      description: Payload that is sent to give a Minecraft user tacos.
     TacoWebhookGamePayload:
       type: object
       properties:
         game_id:
-          type: integer
+          type: string
+          description: The unique identifier for the game.
         end_date:
-          type: number
+          type: integer
+          nullable: true
+          description: The end date of the game.
         worth:
           type: string
+          nullable: true
+          description: The worth of the game.
         open_giveaway_url:
           type: string
+          description: The URL to open the giveaway.
         title:
           type: string
+          description: The title of the game.
         thumbnail:
           type: string
+          description: The thumbnail image URL of the game.
         image:
           type: string
+          description: The main image URL of the game.
         description:
           type: string
+          description: The description of the game.
         instructions:
           type: string
+          nullable: true
+          description: The instructions for the game.
         published_date:
-          type: number
+          type: integer
+          description: The published date of the game.
         type:
           type: string
+          description: The type of the game.
         platforms:
           type: array
           items:
             type: string
+          description: The platforms the game is available on.
         formatted_published_date:
           type: string
+          nullable: true
+          description: The formatted published date of the game.
         formatted_end_date:
           type: string
+          nullable: true
+          description: The formatted end date of the game.
+      required:
+        - description
+        - game_id
+        - image
+        - open_giveaway_url
+        - platforms
+        - published_date
+        - thumbnail
+        - title
+        - type
+      description: Represents the payload for a Taco webhook game event.
     TacoMinecraftWorlds:
-      default: taco_atm10
+      default: taco_atm10-2
       type: string
       enum:
-      - taco_atm8
-      - taco_atm9
-      - taco_atm10
+        - taco_atm8
+        - taco_atm9
+        - taco_atm10
+        - taco_atm10-2
+      description: Represents a Minecraft world managed by TacoBot.
     TacoMinecraftWorldInfo:
       type: object
       properties:
         world:
           $ref: '#/components/schemas/TacoMinecraftWorlds'
+          description: This is the world identifier
         name:
           type: string
+          description: The display name of the world
         active:
-          description: Indicates if the world is the active world
           type: boolean
+          description: Indicates if the world is the active world
         guild_id:
-          description: Discord Guild ID
           type: string
+          description: Discord Guild ID
+      required:
+        - active
+        - guild_id
+        - name
+        - world
+      description: Represents a Minecraft world managed by Taco.
     MinecraftUserStatsPayload:
       type: object
       properties:
@@ -1867,8 +1922,7 @@ components:
           type: string
         payload:
           type: object
-          description: The event payload. This can be different depending on the event
-            type
+          description: The event payload. This can be different depending on the event type
     MinecraftDiscordUserStatsInfo:
       type: object
       properties:
@@ -1931,8 +1985,8 @@ components:
           type: string
         status:
           enum:
-          - online
-          - offline
+            - online
+            - offline
           type: string
         description:
           type: string
@@ -2002,8 +2056,8 @@ components:
         username:
           type: string
       required:
-      - uuid
-      - username
+        - uuid
+        - username
     DiscordGuild:
       type: object
       properties:
@@ -2050,8 +2104,8 @@ components:
           type: integer
           nullable: true
       required:
-      - id
-      - name
+        - id
+        - name
       description: Snapshot of a Discord guild's core attributes.
     DiscordGuildChannels:
       type: object
@@ -2102,11 +2156,11 @@ components:
           type: string
           nullable: true
       required:
-      - id
-      - name
-      - nsfw
-      - position
-      - type
+        - id
+        - name
+        - nsfw
+        - position
+        - type
       description: Snapshot of a Discord channel's core attributes. (test)
     DiscordCategory:
       type: object
@@ -2133,7 +2187,7 @@ components:
         type:
           type: string
           enum:
-          - emoji
+            - emoji
         id:
           type: string
         animated:
@@ -2156,13 +2210,13 @@ components:
           type: string
           nullable: true
       required:
-      - animated
-      - available
-      - id
-      - managed
-      - name
-      - require_colons
-      - type
+        - animated
+        - available
+        - id
+        - managed
+        - name
+        - require_colons
+        - type
       description: Snapshot of a Discord emoji's core attributes.
     DiscordRole:
       type: object
@@ -2170,26 +2224,23 @@ components:
         type:
           type: string
           enum:
-          - role
+            - role
         id:
           type: string
         guild_id:
           type: string
-        name:
-          type: string
         color:
           type: integer
-          format: int32
           nullable: true
         created_at:
-          type: string
-          format: date-time
+          type: integer
           nullable: true
         display_icon:
           type: string
           nullable: true
         flags:
-          type: object
+          type: integer
+          nullable: true
         hoist:
           type: boolean
           nullable: true
@@ -2203,13 +2254,12 @@ components:
           type: string
         mentionable:
           type: boolean
-          nullable: true
-        position:
-          type: integer
-          nullable: true
+        name:
+          type: string
         permissions:
           type: integer
-          nullable: true
+        position:
+          type: integer
         secondary_color:
           type: integer
           nullable: true
@@ -2219,13 +2269,23 @@ components:
         unicode_emoji:
           type: string
           nullable: true
+      required:
+        - guild_id
+        - id
+        - mention
+        - mentionable
+        - name
+        - permissions
+        - position
+        - type
+      description: Represents a Discord role with normalized primitive fields.
     DiscordUser:
       type: object
       properties:
         type:
           type: string
           enum:
-          - user
+            - user
         id:
           type: string
         guild_id:
@@ -2241,12 +2301,11 @@ components:
           nullable: true
         bot:
           type: boolean
-          nullable: true
         color:
           type: integer
           nullable: true
         created_at:
-          type: number
+          type: integer
           nullable: true
         default_avatar:
           type: string
@@ -2259,38 +2318,45 @@ components:
           nullable: true
         display_name:
           type: string
-          nullable: true
         global_name:
           type: string
-          nullable: true
         mention:
           type: string
         name:
           type: string
-          nullable: true
         status:
           type: string
           nullable: true
         system:
           type: boolean
-          nullable: true
         timestamp:
-          type: number
+          type: integer
           nullable: true
         username:
           type: string
-          nullable: true
+      required:
+        - bot
+        - display_name
+        - global_name
+        - guild_id
+        - id
+        - mention
+        - name
+        - system
+        - type
+        - username
+      description: Represents a Discord user with normalized primitives.
     DiscordMentionable:
       oneOf:
-      - $ref: '#/components/schemas/DiscordRole'
-      - $ref: '#/components/schemas/DiscordUser'
+        - $ref: '#/components/schemas/DiscordRole'
+        - $ref: '#/components/schemas/DiscordUser'
     DiscordMessage:
       type: object
       properties:
         type:
           type: string
           enum:
-          - message
+            - message
         id:
           type: string
         channel_id:
@@ -2338,17 +2404,17 @@ components:
         message_type:
           type: integer
       required:
-      - author_id
-      - channel_id
-      - content
-      - created_at
-      - edited_at
-      - guild_id
-      - id
-      - mention_everyone
-      - message_type
-      - pinned
-      - type
+        - author_id
+        - channel_id
+        - content
+        - created_at
+        - edited_at
+        - guild_id
+        - id
+        - mention_everyone
+        - message_type
+        - pinned
+        - type
       description: Snapshot of a Discord message.
     DiscordMessageReaction:
       type: object
@@ -2358,35 +2424,38 @@ components:
         count:
           type: integer
       required:
-      - count
-      - emoji
+        - count
+        - emoji
       description: Snapshot of a Discord message reaction.
     JoinWhitelistUser:
       type: object
-      description: Join whitelist entry
       properties:
         guild_id:
           type: string
+          description: Discord guild (server) identifier scoping the whitelist entry.
         user_id:
           type: string
+          description: Discord user identifier for the whitelisted user.
         added_by:
           type: string
           nullable: true
+          description: Discord user id (or system marker) of the actor who added the entry.
         timestamp:
           type: integer
           nullable: true
-          description: Epoch seconds when entry was added
+          description: Creation timestamp (seconds since epoch, or milliseconds depending on writer).
       required:
-      - guild_id
-      - user_id
+        - guild_id
+        - user_id
+      description: Container for a guild-scoped join whitelist record.
     PagedResultsJoinWhitelistUser:
       allOf:
-      - $ref: '#/components/schemas/PagedResults'
-      - properties:
-          items:
-            type: array
+        - $ref: '#/components/schemas/PagedResults'
+        - properties:
             items:
-              $ref: '#/components/schemas/JoinWhitelistUser'
+              type: array
+              items:
+                $ref: '#/components/schemas/JoinWhitelistUser'
     PagedResults:
       type: object
       description: Paginated results.
@@ -2405,10 +2474,10 @@ components:
           description: Page slice of items
           items: {}
       required:
-      - total
-      - skip
-      - take
-      - items
+        - total
+        - skip
+        - take
+        - items
   securitySchemes:
     X-AUTH-TOKEN:
       type: apiKey
@@ -2421,5 +2490,5 @@ components:
       name: X-TACOBOT-TOKEN
       in: header
 security:
-- X-AUTH-TOKEN: []
-- X-TACOBOT-TOKEN: []
+  - X-AUTH-TOKEN: []
+  - X-TACOBOT-TOKEN: []

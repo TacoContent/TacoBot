@@ -4,7 +4,7 @@
 Summary
 =======
 This module scans the TacoBot HTTP handler tree for docstring‑embedded OpenAPI
-blocks (delimited by ``>>>openapi`` / ``<<<openapi`` by default – legacy ``---openapi`` / ``---end`` still accepted) and keeps the canonical
+blocks (delimited by ``>>>openapi`` / ``<<<openapi`` by default) and keeps the canonical
 Swagger specification file (``.swagger.v1.yaml``) in sync. It can:
 
 * Detect drift (missing / changed operations) and show a colorized unified diff.
@@ -40,7 +40,7 @@ Key Concepts
 * Merge strategy: Per path+method operation objects are replaced atomically if
     any field differs (simpler + deterministic vs. deep diffs).
 * Coverage: Two dimensions are reported – documentation presence (has an
-    ``---openapi`` block) and swagger synchronization (operation also present &
+    ``>>>openapi <<<openapi`` block) and swagger synchronization (operation also present &
     structurally identical). A third list shows swagger‑only operations.
 * Output directory: All artifact paths passed via CLI are resolved relative to
     ``--output-directory`` (default: ``.``). If that directory lives inside the
@@ -61,7 +61,7 @@ Important Flags (abridged):
 * ``--check``: (default) Do not write; exit non‑zero on drift or coverage fail.
 * ``--coverage-report`` + ``--coverage-format``: Emit coverage in json|text|cobertura.
 * ``--fail-on-coverage-below``: Gate CI (accepts 0‑1 or 0‑100 style thresholds).
-* ``--show-orphans`` / ``--show-ignored`` / ``--show-missing-blocks``: Additional diagnostics.
+* ``--show-orphans`` / ``--show-ignored`` / ``--show-missing-blocks``: Additional diagnostics for paths/components.
 * ``--color {auto,always,never}``: Control ANSI colorization of diffs.
 * ``--output-directory``: Base path for report + summary artifacts.
 
@@ -92,7 +92,7 @@ Potential Future Enhancements
 
 Method‑rooted OpenAPI Blocks
 ----------------------------
-Two docstring block layouts are supported between the `>>>openapi` / `<<<openapi` delimiters (legacy `---openapi` / `---end` also work):
+Two docstring block layouts are supported between the `>>>openapi` / `<<<openapi` delimiters:
 
 1. Flat (legacy) – operation fields live at the top level (``summary``, ``tags``, ``parameters``, ``responses`` …):
 
@@ -153,17 +153,28 @@ Model Component Auto‑Generation
 -------------------------------
 Classes in the models root (default ``bot/lib/models``) decorated with
 ``@openapi_model("ComponentName", description="...")`` are translated into
-basic ``components.schemas`` entries. Property extraction is heuristic: any
-``self.<attr>`` assignment (optionally with an annotation) inside ``__init__``
-becomes a schema property. Types are inferred from annotations or literal
-defaults (int → integer, bool → boolean, float → number, list → array, else
-string). Optional/nullable detection is naive (presence of ``Optional`` / ``None``
-in the annotation string). Complex/nested objects are intentionally collapsed
-to ``string`` for safety—refine manually in the swagger file if richer schemas
-are required. Disable this behavior with ``--no-model-components`` or change
+basic ``components.schemas`` entries.
+
+Two modes are supported:
+
+1. **Object Schema Mode (Default)**: Property extraction is heuristic: any
+   ``self.<attr>`` assignment (optionally with an annotation) inside ``__init__``
+   becomes a schema property. Types are inferred from annotations or literal
+   defaults (int → integer, bool → boolean, float → number, list → array, else
+   string). Optional/nullable detection is naive (presence of ``Optional`` / ``None``
+   in the annotation string). Complex/nested objects are intentionally collapsed
+   to ``string`` for safety—refine manually in the swagger file if richer schemas
+   are required.
+
+2. **Simple Type Schema Mode**: When the class docstring contains a ``>>>openapi``
+   block with a ``type`` field but no ``properties`` field, the entire block
+   is used as the complete schema definition. This allows for simple types like
+   enums, primitives with defaults, etc.
+
+Disable this behavior with ``--no-model-components`` or change
 the scan root via ``--models-root``.
 
-Decorator Example::
+Object Schema Example::
 
     from bot.lib.models.openapi import openapi_model
     from typing import Optional
@@ -195,6 +206,37 @@ Generated YAML (excerpt)::
               type: array
               items: { type: string }
           required: [id, name, nsfw, position, permission_overwrites]
+
+Simple Type Schema Example::
+
+    from bot.lib.models.openapi import openapi_model
+
+    @openapi_model("MinecraftWorld", description="Represents a Minecraft world")
+    class MinecraftWorld:
+        '''Represents a Minecraft world managed by TacoBot.
+
+        >>>openapi
+        type: string
+        default: taco_atm10
+        enum:
+          - taco_atm8
+          - taco_atm9
+          - taco_atm10
+        <<<openapi
+        '''
+
+Generated YAML (excerpt)::
+
+    components:
+      schemas:
+        MinecraftWorld:
+          type: string
+          default: taco_atm10
+          description: Represents a Minecraft world
+          enum:
+            - taco_atm8
+            - taco_atm9
+            - taco_atm10
 
 Inference Rules:
 * Required unless annotation contains ``Optional`` or ``None``.
@@ -258,33 +300,37 @@ from typing import Any, Dict, List, Optional, Tuple
 import fnmatch
 import time
 import json
+from io import StringIO
 
 try:
-    import yaml  # type: ignore
+    from ruamel.yaml import YAML  # type: ignore
+    # Create a YAML instance with better formatting and comment preservation
+    yaml = YAML()
+    yaml.preserve_quotes = True
+    yaml.map_indent = 2
+    yaml.sequence_indent = 4
+    yaml.sequence_dash_offset = 2
+    yaml.width = 4096  # Prevent line wrapping for long lines
 except Exception as e:  # pragma: no cover
     # ANSI constants not declared yet at this point; print plain message
-    print("Missing dependency pyyaml. Install with: pip install pyyaml", file=sys.stderr)
+    print("Missing dependency ruamel.yaml. Install with: pip install ruamel.yaml", file=sys.stderr)
     raise
 
 # Default (new) delimiters and legacy fallback pattern. The regex will be built at runtime
 # to allow user overrides via CLI flags.
 DEFAULT_OPENAPI_START = ">>>openapi"
 DEFAULT_OPENAPI_END = "<<<openapi"
-LEGACY_OPENAPI_START = "---openapi"
-LEGACY_OPENAPI_END = "---end"
 
 def build_openapi_block_re(start_marker: str, end_marker: str) -> re.Pattern[str]:
     # Escape user-provided markers for safe regex embedding; capture lazily.
     sm = re.escape(start_marker)
     em = re.escape(end_marker)
-    # Always allow legacy markers in addition to the configured pair for backward compatibility.
-    legacy = f"(?:{re.escape(LEGACY_OPENAPI_START)}|{sm})"
-    legacy_end = f"(?:{re.escape(LEGACY_OPENAPI_END)}|{em})"
-    return re.compile(rf"{legacy}\s*(.*?)\s*{legacy_end}", re.DOTALL | re.IGNORECASE)
+    return re.compile(rf"{sm}\s*(.*?)\s*{em}", re.DOTALL | re.IGNORECASE)
 
 # Initialized later in main() after argument parsing; provide a module-level default for import-time uses (tests may override).
 OPENAPI_BLOCK_RE = build_openapi_block_re(DEFAULT_OPENAPI_START, DEFAULT_OPENAPI_END)
 DEFAULT_HANDLERS_ROOT = pathlib.Path("bot/lib/http/handlers/")
+DEFAULT_MODELS_ROOT = pathlib.Path("bot/lib/models/")
 DEFAULT_SWAGGER_FILE = pathlib.Path(".swagger.v1.yaml")
 SUPPORTED_KEYS = {"summary", "description", "tags", "parameters", "requestBody", "responses", "security"}
 IGNORE_MARKER = "@openapi: ignore"
@@ -317,12 +363,12 @@ def extract_openapi_block(doc: Optional[str]) -> Dict[str, Any]:
         return {}
     raw = m.group(1)
     try:
-        data = yaml.safe_load(raw) or {}
+        data = yaml.load(raw) or {}
         if not isinstance(data, dict):
             raise ValueError("OpenAPI block must be a mapping")
         return data
     except Exception as e:
-        raise ValueError(f"Failed parsing ---openapi block: {e}\nBlock contents:\n{textwrap.indent(raw, '    ')}") from e
+        raise ValueError(f"Failed parsing >>>openapi <<<openapi block: {e}\nBlock contents:\n{textwrap.indent(raw, '    ')}") from e
 
 
 def resolve_path_literal(node: ast.AST) -> Optional[str]:
@@ -464,49 +510,39 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
         for cls in [n for n in module.body if isinstance(n, ast.ClassDef)]:
             comp_name: Optional[str] = None
             description: str = ''
-            # Parse class docstring for optional openapi-model property metadata block.
+            # Parse class docstring for optional openapi-model property metadata block or full schema override.
             raw_class_doc = ast.get_docstring(cls) or ''
             prop_meta: Dict[str, Dict[str, Any]] = {}
-            # 1. Legacy dedicated markers (>>>openapi-model / ---openapi-model) – priority source.
-            if 'openapi-model' in raw_class_doc:
-                model_block_re = re.compile(r'(?:>>>openapi-model|---openapi-model)\s*(.*?)\s*(?:<<<openapi-model|---end)', re.DOTALL | re.IGNORECASE)
-                for m_model in model_block_re.finditer(raw_class_doc):  # allow multiple, merge
-                    raw_block = m_model.group(1)
-                    try:
-                        loaded = yaml.safe_load(raw_block) or {}
-                        if isinstance(loaded, dict) and 'properties' in loaded and isinstance(loaded['properties'], dict):
-                            for k, v in loaded['properties'].items():
-                                if isinstance(v, dict):
-                                    # First definition wins; subsequent legacy blocks only add missing keys.
-                                    existing = prop_meta.get(k)
-                                    if existing is None:
-                                        prop_meta[k] = v.copy()
-                                    else:
-                                        for mk, mv in v.items():
-                                            if mk not in existing:
-                                                existing[mk] = mv
-                    except Exception:
-                        continue  # Ignore malformed legacy block(s)
-            # 2. Unified markers (>>>openapi / <<<openapi) – augment only (do not overwrite legacy keys)
-            if '>>>openapi' in raw_class_doc or '---openapi' in raw_class_doc:
-                unified_re = re.compile(r'(?:>>>openapi|---openapi)\s*(.*?)\s*(?:<<<openapi|---end)', re.DOTALL | re.IGNORECASE)
+            full_schema_override: Optional[Dict[str, Any]] = None
+
+            # Check for full schema definition in >>>openapi block
+            if '>>>openapi' in raw_class_doc:
+                unified_re = re.compile(r'(?:>>>openapi)\s*(.*?)\s*(?:<<<openapi)', re.DOTALL | re.IGNORECASE)
                 for m_unified in unified_re.finditer(raw_class_doc):
                     raw_block = m_unified.group(1)
                     try:
-                        loaded = yaml.safe_load(raw_block) or {}
-                        if isinstance(loaded, dict) and 'properties' in loaded and isinstance(loaded['properties'], dict):
-                            for k, v in loaded['properties'].items():
-                                if not isinstance(v, dict):
-                                    continue
-                                existing = prop_meta.get(k)
-                                if existing is None:
-                                    # New property metadata entirely from unified block.
-                                    prop_meta[k] = v.copy()
-                                else:
-                                    # Add only keys not already present (preserve legacy priority).
-                                    for mk, mv in v.items():
-                                        if mk not in existing:
-                                            existing[mk] = mv
+                        loaded = yaml.load(raw_block) or {}
+                        if isinstance(loaded, dict):
+                            # Check if this is a full schema definition (has type but no properties)
+                            # or if it has properties, treat as property metadata
+                            if 'type' in loaded and 'properties' not in loaded:
+                                # This is a full schema definition, not just property metadata
+                                full_schema_override = loaded.copy()
+                                break  # Use the first complete schema found
+                            elif 'properties' in loaded and isinstance(loaded['properties'], dict):
+                                # Property metadata mode
+                                for k, v in loaded['properties'].items():
+                                    if not isinstance(v, dict):
+                                        continue
+                                    existing = prop_meta.get(k)
+                                    if existing is None:
+                                        # New property metadata entirely from unified block.
+                                        prop_meta[k] = v.copy()
+                                    else:
+                                        # Add only keys not already present (preserve legacy priority).
+                                        for mk, mv in v.items():
+                                            if mk not in existing:
+                                                existing[mk] = mv
                     except Exception:
                         continue  # Try next block if present
             for deco in cls.decorator_list:
@@ -520,6 +556,17 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
                     comp_name = cls.name
             if not comp_name:
                 continue
+
+            # If we have a full schema override, use it directly
+            if full_schema_override is not None:
+                comp_schema = full_schema_override.copy()
+                # Add description from decorator if not present in schema
+                if description and 'description' not in comp_schema:
+                    comp_schema['description'] = description
+                components[comp_name] = comp_schema
+                continue
+
+            # Otherwise, proceed with object property extraction from __init__
             annotations: Dict[str, str] = {}
             for node in cls.body:
                 if isinstance(node, ast.FunctionDef) and node.name == '__init__':
@@ -551,24 +598,9 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
             for attr, anno_str in annotations.items():
                 nullable = 'Optional' in anno_str or 'None' in anno_str
                 typ = 'string'
-                if 'int' in anno_str:
-                    typ = 'integer'
-                elif 'bool' in anno_str:
-                    typ = 'boolean'
-                elif 'float' in anno_str:
-                    typ = 'number'
-                elif 'list' in anno_str or 'List' in anno_str:
-                    typ = 'array'
-                schema: Dict[str, Any] = {'type': typ}
-                if typ == 'array':
-                    # Default item type is string, but upgrade to object if annotation implies list/dict of dicts
-                    items_type = 'string'
-                    lowered = anno_str.lower()
-                    # Heuristic: presence of 'dict' inside the list annotation (e.g., List[Dict[str, Any]] or list[dict])
-                    if 'dict' in lowered:
-                        items_type = 'object'
-                    schema['items'] = {'type': items_type}
-                # Literal enum inference (typing.Literal[...])
+                schema: Dict[str, Any] = {}
+
+                # Check for Literal enum first (highest priority)
                 if 'Literal[' in anno_str or 'typing.Literal[' in anno_str:
                     # Extract inside Literal[...] (greedy until closing ])
                     # Simple string parse; we avoid full AST of the annotation text.
@@ -595,9 +627,66 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
                                     enum_vals.append(rv_clean)
                             if enum_vals:
                                 # If all literals are strings, ensure base type string
-                                schema['type'] = 'string'
-                                schema['enum'] = sorted(set(enum_vals))
-                if nullable:
+                                schema = {'type': 'string', 'enum': sorted(set(enum_vals))}
+
+                # If not a Literal, check for primitive types (list first, then primitives)
+                if not schema:  # Only if we haven't set a Literal enum schema
+                    if 'list' in anno_str or 'List' in anno_str:
+                        typ = 'array'
+                    elif 'int' in anno_str:
+                        typ = 'integer'
+                    elif 'bool' in anno_str:
+                        typ = 'boolean'
+                    elif 'float' in anno_str:
+                        typ = 'number'
+                    else:
+                        # Check for standalone model class references (CamelCase classes)
+                        # Extract potential class names from the annotation
+                        model_pattern = r'\b([A-Z][A-Za-z0-9_]*)\b'
+                        matches = re.findall(model_pattern, anno_str)
+
+                        # Filter out common typing keywords and look for actual model class names
+                        typing_keywords = {'Optional', 'Union', 'List', 'Dict', 'Any', 'Type', 'Callable', 'Tuple', 'Set', 'Literal'}
+                        potential_models = [m for m in matches if m not in typing_keywords]
+
+                        # If we found a potential model class name, use it as a $ref
+                        if potential_models:
+                            # Use the first potential model (most common case: single class reference)
+                            model_name = potential_models[0]
+                            schema = {'$ref': f'#/components/schemas/{model_name}'}
+                        else:
+                            # Default to string type
+                            schema = {'type': typ}
+
+                    # Only set type if we don't have a $ref
+                    if '$ref' not in schema:
+                        schema['type'] = typ
+                if typ == 'array':
+                    # Default item type is string, but upgrade to object if annotation implies list/dict of dicts
+                    items_type = 'string'
+                    lowered = anno_str.lower()
+                    # Heuristic: presence of 'dict' inside the list annotation (e.g., List[Dict[str, Any]] or list[dict])
+                    if 'dict' in lowered:
+                        items_type = 'object'
+                        schema['items'] = {'type': items_type}
+                    else:
+                        # Check for List[ModelClass] pattern to generate $ref
+                        list_pattern = r'(?:List|list)\s*\[\s*([A-Za-z_][A-Za-z0-9_]*)\s*\]'
+                        match = re.search(list_pattern, anno_str)
+                        if match:
+                            inner_type = match.group(1)
+                            # Check if this inner type will be or is a known component
+                            # We need to look ahead in the processing or check if it's already processed
+                            # For now, use heuristic: if it looks like a class name (CamelCase), assume it's a component
+                            if inner_type and inner_type[0].isupper():
+                                schema['items'] = {'$ref': f'#/components/schemas/{inner_type}'}
+                            else:
+                                schema['items'] = {'type': items_type}
+                        else:
+                            schema['items'] = {'type': items_type}
+
+                # Handle nullable properties - but not for $ref types (OpenAPI spec doesn't support nullable on $ref)
+                if nullable and '$ref' not in schema:
                     schema['nullable'] = True
                 # Merge in property metadata (currently description + future extensibility)
                 meta = prop_meta.get(attr)
@@ -628,7 +717,7 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
 def load_swagger(swagger_file: pathlib.Path) -> Dict[str, Any]:
     if not swagger_file.exists():
         raise SystemExit(f"Swagger file {swagger_file} not found.")
-    return yaml.safe_load(swagger_file.read_text(encoding="utf-8")) or {}
+    return yaml.load(swagger_file.read_text(encoding="utf-8")) or {}
 
 
 ANSI_GREEN = "\x1b[32m"
@@ -658,7 +747,10 @@ def _colorize_unified(diff_lines: List[str]) -> List[str]:
 
 
 def _dump_operation_yaml(op: Dict[str, Any]) -> List[str]:
-    dumped = yaml.safe_dump(op, sort_keys=True).rstrip().splitlines()
+    from io import StringIO as StringIOModule
+    stream = StringIOModule()
+    yaml.dump(op, stream)
+    dumped = stream.getvalue().rstrip().splitlines()
     return [l if l.strip() else '' for l in dumped]
 
 
@@ -695,9 +787,11 @@ def merge(swagger: Dict[str, Any], endpoints: List[Endpoint]) -> Tuple[Dict[str,
     return swagger, changed, notes, diffs
 
 
-def detect_orphans(swagger: Dict[str, Any], endpoints: List[Endpoint]) -> list[str]:
+def detect_orphans(swagger: Dict[str, Any], endpoints: List[Endpoint], model_components: Optional[Dict[str, Dict[str, Any]]] = None) -> list[str]:
     code_pairs = {(e.path, e.method) for e in endpoints}
     orphan_notes: list[str] = []
+
+    # Check for orphaned paths (present in swagger but no handler)
     for path, methods in swagger.get('paths', {}).items():
         if not isinstance(methods, dict):
             continue
@@ -705,6 +799,16 @@ def detect_orphans(swagger: Dict[str, Any], endpoints: List[Endpoint]) -> list[s
             if m.lower() in {"get","post","put","delete","patch","options","head"}:
                 if (path, m.lower()) not in code_pairs:
                     orphan_notes.append(f"Path present only in swagger (no handler): {m.upper()} {path}")
+
+    # Check for orphaned components (present in swagger but no model class)
+    if model_components is not None:
+        swagger_components = swagger.get('components', {}).get('schemas', {})
+        if swagger_components:
+            model_component_names = set(model_components.keys())
+            for component_name in swagger_components.keys():
+                if component_name not in model_component_names:
+                    orphan_notes.append(f"Component present only in swagger (no model class): {component_name}")
+
     return orphan_notes
 
 
@@ -901,23 +1005,23 @@ def main() -> None:
     mode_group = parser.add_mutually_exclusive_group()
     mode_group.add_argument('--fix', action='store_true', help='Write changes instead of just checking for drift')
     mode_group.add_argument('--check', action='store_true', help='Explicitly run in check mode (default) and show diff')
-    parser.add_argument('--show-orphans', action='store_true', help='List swagger paths that have no code handler')
+    parser.add_argument('--show-orphans', action='store_true', help='List swagger paths and components that have no code handler/model')
     parser.add_argument('--show-ignored', action='store_true', help='List endpoints skipped due to @openapi: ignore markers')
     parser.add_argument('--coverage-report', help='Write an OpenAPI coverage report to the given path (json, text, or cobertura based on --coverage-format)')
     parser.add_argument('--coverage-format', default='json', choices=['json','text','cobertura'], help='Coverage report format (default: json)')
     parser.add_argument('--fail-on-coverage-below', type=float, help='Fail (non-zero exit) if documentation coverage (handlers with openapi blocks) is below this threshold (accepts 0-1 or 0-100)')
     parser.add_argument('--verbose-coverage', action='store_true', default=False, help='Show per-endpoint coverage detail inline')
-    parser.add_argument('--show-missing-blocks', action='store_true', help='List endpoints missing an ---openapi block')
+    parser.add_argument('--show-missing-blocks', action='store_true', help='List endpoints missing an >>>openapi <<<openapi block')
     parser.add_argument('--handlers-root', default=str(DEFAULT_HANDLERS_ROOT), help='Root directory containing HTTP handler Python files (default: bot/lib/http/handlers/api/v1)')
     parser.add_argument('--swagger-file', default=str(DEFAULT_SWAGGER_FILE), help='Path to swagger file to sync (default: .swagger.v1.yaml)')
     parser.add_argument('--ignore-file', action='append', default=[], help='Glob pattern (relative to handlers root) or filename to ignore (can be repeated)')
     parser.add_argument('--markdown-summary', help='Write a GitHub Actions style Markdown summary to this file (in addition to console output)')
     parser.add_argument('--output-directory', default='.', help='Base directory to place output artifacts (coverage reports, markdown summary). Default: current working directory')
     parser.add_argument('--strict', action='store_true', help='Treat docstring/decorator HTTP method mismatches as errors (default: warn and ignore extraneous methods)')
-    parser.add_argument('--openapi-start', default=DEFAULT_OPENAPI_START, help=f'Start delimiter for embedded OpenAPI blocks (default: {DEFAULT_OPENAPI_START!r}; legacy {LEGACY_OPENAPI_START!r} also accepted)')
-    parser.add_argument('--openapi-end', default=DEFAULT_OPENAPI_END, help=f'End delimiter for embedded OpenAPI blocks (default: {DEFAULT_OPENAPI_END!r}; legacy {LEGACY_OPENAPI_END!r} also accepted)')
+    parser.add_argument('--openapi-start', default=DEFAULT_OPENAPI_START, help=f'Start delimiter for embedded OpenAPI blocks (default: {DEFAULT_OPENAPI_START!r})')
+    parser.add_argument('--openapi-end', default=DEFAULT_OPENAPI_END, help=f'End delimiter for embedded OpenAPI blocks (default: {DEFAULT_OPENAPI_END!r})')
     parser.add_argument('--list-endpoints', action='store_true', help='Print collected handler endpoints (path method file:function) and exit (debug aid)')
-    parser.add_argument('--models-root', default='bot/lib/models', help='Root directory to scan for @openapi_model decorated classes')
+    parser.add_argument('--models-root', default=DEFAULT_MODELS_ROOT, help=f'Root directory to scan for @openapi_model decorated classes (default: {DEFAULT_MODELS_ROOT!r})')
     parser.add_argument('--no-model-components', action='store_true', help='Disable automatic model component generation')
     parser.add_argument(
         '--color',
@@ -981,8 +1085,18 @@ def main() -> None:
             for name, new_schema in model_components.items():
                 existing = schemas.get(name)
                 if existing != new_schema:
-                    existing_lines = yaml.safe_dump(existing or {}, sort_keys=True).rstrip().splitlines() if existing is not None else []
-                    new_lines = yaml.safe_dump(new_schema, sort_keys=True).rstrip().splitlines()
+                    # Compare schema differences using string representation
+                    from io import StringIO as StringIOModule
+                    if existing is not None:
+                        existing_stream = StringIOModule()
+                        yaml.dump(existing, existing_stream)
+                        existing_lines = existing_stream.getvalue().rstrip().splitlines()
+                    else:
+                        existing_lines = []
+
+                    new_stream = StringIOModule()
+                    yaml.dump(new_schema, new_stream)
+                    new_lines = new_stream.getvalue().rstrip().splitlines()
                     if existing is not None and existing_lines != new_lines:
                         warn = f"Model schema drift detected for component '{name}'."
                         if not DISABLE_COLOR:
@@ -1003,7 +1117,7 @@ def main() -> None:
     model_components_existing_not_generated_count = sum(1 for k in existing_schemas.keys() if k not in model_components) if existing_schemas else 0
     swagger_new, changed, notes, diffs = merge(swagger, endpoints)
 
-    orphans = detect_orphans(swagger_new, endpoints) if args.show_orphans else []
+    orphans = detect_orphans(swagger_new, endpoints, model_components) if args.show_orphans else []
     coverage_summary, coverage_records, coverage_swagger_only = _compute_coverage(endpoints, ignored, swagger_new)
     # augment coverage summary with component metrics
     coverage_summary['model_components_generated'] = model_components_generated_count
@@ -1076,7 +1190,7 @@ def main() -> None:
         print(f"  Schemas not generated:      {cs.get('model_components_existing_not_generated', 0)}")
         suggestions: List[str] = []
         if cs['without_openapi_block'] > 0:
-            suggestions.append("Add ---openapi blocks for undocumented handlers.")
+            suggestions.append("Add >>>openapi <<<openapi blocks for undocumented handlers.")
         if cs['swagger_only_operations'] > 0:
             suggestions.append("Remove or implement swagger-only paths, or mark related handlers with @openapi: ignore if intentional.")
         if suggestions:
@@ -1084,7 +1198,7 @@ def main() -> None:
             for s in suggestions:
                 print(f"    - {s}")
         if args.show_missing_blocks and cs['without_openapi_block']:
-            print("\n  Endpoints missing ---openapi block:")
+            print("\n  Endpoints missing >>>openapi <<<openapi block:")
             for rec in coverage_records:
                 if not rec['ignored'] and not rec['has_openapi_block']:
                     print(f"    - {rec['method'].upper()} {rec['path']} ({rec['file']}:{rec['function']})")
@@ -1112,7 +1226,10 @@ def main() -> None:
     if args.fix:
         if changed or components_changed:
             # Write out even if only components changed (previously skipped)
-            swagger_path.write_text(yaml.safe_dump(swagger_new, sort_keys=False), encoding='utf-8')
+            from io import StringIO as StringIOModule
+            stream = StringIOModule()
+            yaml.dump(swagger_new, stream)
+            swagger_path.write_text(stream.getvalue(), encoding='utf-8')
             if changed and components_changed:
                 print("Swagger updated (endpoint operations + component schemas).")
             elif changed and not components_changed:
@@ -1176,7 +1293,7 @@ def main() -> None:
         lines.append("")
         suggestions_md: List[str] = []
         if cs['without_openapi_block'] > 0:
-            suggestions_md.append("Add `---openapi` blocks for handlers missing documentation.")
+            suggestions_md.append("Add `>>>openapi <<<openapi` blocks for handlers missing documentation.")
         if cs['swagger_only_operations'] > 0:
             suggestions_md.append("Remove, implement, or ignore swagger-only operations.")
         if suggestions_md:
@@ -1240,7 +1357,12 @@ def main() -> None:
                 msg = f"{ANSI_RED}{msg}{ANSI_RESET}"
             print(msg, file=sys.stderr)
         if orphans:
-            print("\n(Info) Potential swagger-only paths (use --show-orphans for list)")
+            if args.show_orphans:
+                print("\nOrphans:")
+                for o in orphans:
+                    print(f" - {o}")
+            else:
+                print("\n(Info) Potential swagger-only paths (use --show-orphans for list)")
         if args.show_ignored and ignored:
             print("\nIgnored endpoints (@openapi: ignore):")
             for (p, m, f, fn) in ignored:
@@ -1267,6 +1389,13 @@ def main() -> None:
         sys.exit(1)
     else:
         print("Swagger paths are in sync with handlers.")
+        if orphans:
+            if args.show_orphans:
+                print("Orphans:")
+                for o in orphans:
+                    print(f" - {o}")
+            else:
+                print("(Info) Potential swagger-only paths and components (use --show-orphans for list)")
         if args.show_ignored and ignored:
             print("Ignored endpoints (@openapi: ignore):")
             for (p, m, f, fn) in ignored:

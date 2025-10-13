@@ -3,7 +3,6 @@
 Scenarios:
 1. New default markers (>>>openapi / <<<openapi) are parsed.
 2. Custom markers provided by rebuilding regex (e.g. [[openapi and ]]openapi) are parsed.
-3. Legacy markers (---openapi / ---end) continue to function (covered indirectly in other tests but reasserted here).
 """
 from __future__ import annotations
 
@@ -54,24 +53,6 @@ def setup_module(module):  # noqa: D401
                 pass
     '''), encoding='utf-8')
 
-    # 3. Legacy markers remain (---openapi / ---end)
-    (BASE / 'LegacyMarkers.py').write_text(textwrap.dedent('''
-        from httpserver.EndpointDecorators import uri_mapping
-
-        class LegacyMarkersHandler:
-            @uri_mapping('/legacy-markers', method=['GET'])
-            def get_legacy(self, request):
-                """Example using legacy markers.
-
-                ---openapi
-                summary: Legacy markers example
-                responses: { 200: { description: OK } }
-                ---end
-                """
-                pass
-    '''), encoding='utf-8')
-
-
 def teardown_module(module):  # noqa: D401 - keep artifacts
     pass
 
@@ -92,9 +73,3 @@ def test_custom_markers_parse(monkeypatch):
     # Ensure the custom markers summary present
     summary = next(e.meta.get('summary') for e in eps if e.path == '/custom-markers')
     assert summary == 'Custom markers example'
-
-
-def test_legacy_markers_still_work():
-    eps, _ = collect_endpoints(BASE)
-    legacy = next(e for e in eps if e.path == '/legacy-markers')
-    assert legacy.meta.get('summary') == 'Legacy markers example'
