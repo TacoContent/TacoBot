@@ -516,7 +516,42 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
                     typ = 'array'
                 schema: Dict[str, Any] = {'type': typ}
                 if typ == 'array':
-                    schema['items'] = {'type': 'string'}
+                    # Default item type is string, but upgrade to object if annotation implies list/dict of dicts
+                    items_type = 'string'
+                    lowered = anno_str.lower()
+                    # Heuristic: presence of 'dict' inside the list annotation (e.g., List[Dict[str, Any]] or list[dict])
+                    if 'dict' in lowered:
+                        items_type = 'object'
+                    schema['items'] = {'type': items_type}
+                # Literal enum inference (typing.Literal[...])
+                if 'Literal[' in anno_str or 'typing.Literal[' in anno_str:
+                    # Extract inside Literal[...] (greedy until closing ])
+                    # Simple string parse; we avoid full AST of the annotation text.
+                    lit_start = anno_str.find('Literal[')
+                    if lit_start == -1:
+                        lit_start = anno_str.find('typing.Literal[')
+                    if lit_start != -1:
+                        sub = anno_str[lit_start:]
+                        # find matching closing bracket
+                        end_idx = sub.find(']')
+                        if end_idx != -1:
+                            inner = sub[len('Literal['):end_idx]
+                            # Split by comma, strip spaces/quotes
+                            raw_vals = [v.strip() for v in inner.split(',') if v.strip()]
+                            enum_vals: List[str] = []
+                            for rv in raw_vals:
+                                # Remove surrounding quotes if present
+                                if (rv.startswith("'") and rv.endswith("'")) or (rv.startswith('"') and rv.endswith('"')):
+                                    rv_clean = rv[1:-1]
+                                else:
+                                    rv_clean = rv
+                                # Only include primitive literal strings (skip complex expressions)
+                                if rv_clean and all(c.isalnum() or c in ('-','_','.') for c in rv_clean):
+                                    enum_vals.append(rv_clean)
+                            if enum_vals:
+                                # If all literals are strings, ensure base type string
+                                schema['type'] = 'string'
+                                schema['enum'] = sorted(set(enum_vals))
                 if nullable:
                     schema['nullable'] = True
                 props[attr] = schema

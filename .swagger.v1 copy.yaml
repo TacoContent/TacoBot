@@ -2132,8 +2132,6 @@ components:
       properties:
         type:
           type: string
-          enum:
-          - emoji
         id:
           type: string
         animated:
@@ -2303,6 +2301,7 @@ components:
           type: string
         created_at:
           type: integer
+          description: Epoch timestamp (seconds)
         jump_url:
           type: string
           nullable: true
@@ -2314,22 +2313,28 @@ components:
           type: array
           items:
             type: object
-          nullable: true
+            properties:
+              id:
+                type: string
+              username:
+                type: string
         attachments:
           type: array
           items:
             type: object
-          nullable: true
+            properties:
+              id:
+                type: string
+              url:
+                type: string
         embeds:
           type: array
           items:
             type: object
-          nullable: true
         reactions:
           type: array
           items:
-            type: object
-          nullable: true
+            $ref: '#/components/schemas/DiscordMessageReaction'
         nonce:
           type: string
           nullable: true
@@ -2338,29 +2343,21 @@ components:
         message_type:
           type: integer
       required:
-      - author_id
+      - id
       - channel_id
+      - guild_id
+      - author_id
       - content
       - created_at
-      - edited_at
-      - guild_id
-      - id
-      - mention_everyone
-      - message_type
-      - pinned
-      - type
-      description: Snapshot of a Discord message.
     DiscordMessageReaction:
       type: object
       properties:
         emoji:
           type: string
+          description: The emoji (unicode or custom emoji textual representation)
         count:
           type: integer
-      required:
-      - count
-      - emoji
-      description: Snapshot of a Discord message reaction.
+          description: Reaction count (or aggregated count across queried messages)
     JoinWhitelistUser:
       type: object
       description: Join whitelist entry

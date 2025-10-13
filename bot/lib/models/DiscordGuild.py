@@ -30,7 +30,10 @@ extracts raw attributes from a live ``discord.Guild`` object).
 
 import typing
 
+from bot.lib.models.openapi import openapi_model
 
+
+@openapi_model("DiscordGuild", description="Snapshot of a Discord guild's core attributes.")
 class DiscordGuild:
     """Represents a Discord guild snapshot.
 
@@ -44,7 +47,7 @@ class DiscordGuild:
     def __init__(self, data: dict):
         self.id: str = data.get("id", "0")
         self.name: str = data.get("name", "Unknown Guild")
-        self.member_count: int = data.get("member_count", 0)
+        self.member_count: typing.Optional[int] = data.get("member_count", None)
         self.icon: typing.Optional[str] = data.get("icon", None)
         self.banner: typing.Optional[str] = data.get("banner", None)
         self.owner_id: typing.Optional[str] = data.get("owner_id", None)
@@ -55,7 +58,7 @@ class DiscordGuild:
         self.preferred_locale: typing.Optional[str] = data.get("preferred_locale", None)
         self.verification_level: typing.Optional[str] = data.get("verification_level", None)
         self.boost_level: typing.Optional[str] = data.get("boost_level", None)
-        self.boost_count: int = data.get("boost_count", 0)
+        self.boost_count: typing.Optional[int] = data.get("boost_count", None)
 
     def to_dict(self) -> dict:
         """Return a dictionary representation of the guild model."""

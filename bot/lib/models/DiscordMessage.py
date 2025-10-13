@@ -22,9 +22,11 @@ serialization issues.
 import typing
 
 import discord
+from bot.lib.models.openapi import openapi_model
 from bot.lib.models.DiscordMessageReaction import DiscordMessageReaction
 
 
+@openapi_model("DiscordMessage", description="Snapshot of a Discord message.")
 class DiscordMessage:
     """Represents a Discord message snapshot.
 
@@ -36,7 +38,7 @@ class DiscordMessage:
     """
 
     def __init__(self, data: typing.Dict[str, typing.Any]):
-        self.type = "message"
+        self.type: typing.Literal["message"] = "message"
         self.id: str = data.get("id", "0")
         self.channel_id: str = data.get("channel_id", "0")
         self.guild_id: str = data.get("guild_id", "0")
@@ -46,10 +48,10 @@ class DiscordMessage:
         self.jump_url: typing.Optional[str] = data.get("jump_url", None)
         self.edited_at: int = data.get("edited_at", 0)
         self.mention_everyone: bool = data.get("mention_everyone", False)
-        self.mentions: typing.List[typing.Dict] = data.get("mentions", [])
-        self.attachments: typing.List[typing.Dict] = data.get("attachments", [])
-        self.embeds: typing.List[typing.Dict] = data.get("embeds", [])
-        self.reactions: typing.List[typing.Dict] = data.get("reactions", [])
+        self.mentions: typing.Optional[typing.List[typing.Dict]] = data.get("mentions", [])
+        self.attachments: typing.Optional[typing.List[typing.Dict]] = data.get("attachments", [])
+        self.embeds: typing.Optional[typing.List[typing.Dict]] = data.get("embeds", [])
+        self.reactions: typing.Optional[typing.List[typing.Dict]] = data.get("reactions", [])
         self.nonce: typing.Optional[str] = data.get("nonce")
         self.pinned: bool = data.get("pinned", False)
         self.message_type: int = data.get("type", 0)

@@ -60,7 +60,7 @@ class DiscordEmoji:
     """
 
     def __init__(self, data):
-        self.type: str = "emoji"
+        self.type: typing.Literal["emoji"] = "emoji"
         self.id: str = data.get("id")
         self.animated: bool = data.get("animated", False)
         self.available: bool = data.get("available", True)
