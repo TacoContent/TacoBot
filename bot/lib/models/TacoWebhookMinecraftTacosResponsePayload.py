@@ -2,11 +2,15 @@
 import typing
 
 
-from bot.lib.models.openapi import openapi_model
+from bot.lib.models.openapi import openapi_managed, openapi_model
 from bot.lib.models.TacoWebhookMinecraftTacosPayload import TacoWebhookMinecraftTacosPayload
 
 
-@openapi_model("TacoWebhookMinecraftTacosResponsePayload", description="Represents a response payload for TacoWebhook Minecraft Tacos events.")
+@openapi_model(
+    "TacoWebhookMinecraftTacosResponsePayload",
+    description="Represents a response payload for TacoWebhook Minecraft Tacos events.",
+)
+@openapi_managed()
 class TacoWebhookMinecraftTacosResponsePayload:
     """Response payload for TacoWebhook Minecraft Tacos events.
 

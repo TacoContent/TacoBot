@@ -3,8 +3,10 @@ import json
 import os
 import typing
 
+
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
+from bot.lib.models.openapi import openapi_managed
 from bot.tacobot import TacoBot
 from httpserver.EndpointDecorators import uri_variable_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
@@ -292,6 +294,7 @@ class GuildChannelsApiHandler(BaseHttpHandler):
             raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/channels/batch/ids", method="POST")
+    @openapi_managed()
     def get_guild_channels_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Batch fetch specific channels by ID.
 
@@ -306,6 +309,7 @@ class GuildChannelsApiHandler(BaseHttpHandler):
                 400 - missing/invalid guild_id or malformed body
                 404 - guild not found
 
+        TODO: add ability to define some of the fields below via decorators
         >>>openapi
         post:
           summary: Batch fetch channels by IDs

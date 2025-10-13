@@ -32,7 +32,7 @@ python -m pip install --upgrade pip wheel setuptools
 
 Write-Host '[tacobot] Installing project (editable)'
 if ($Dev) {
-    pip install -e .[dev]
+    pip install -e .[dev,docs]
 } else {
     pip install -e .
 }

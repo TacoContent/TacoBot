@@ -88,3 +88,32 @@ def test_collect_model_components_metadata_merge_precedence():
     assert 'added_only_in_unified' in props, 'Unified-only property missing'
     # Legacy-only property present
     assert 'primary' in props and props['primary'].get('description') == 'Primary description from legacy block'
+
+
+def test_collect_model_components_openapi_attributes():
+    models_root = pathlib.Path('bot/lib/models')
+    comps = collect_model_components(models_root)
+    assert 'MinecraftPlayerEvent' in comps, 'MinecraftPlayerEvent component missing'
+    schema = comps['MinecraftPlayerEvent']
+    assert schema.get('x-tacobot-managed') is True, 'openapi_managed attribute missing on schema'
+    event_schema = schema['properties']['event']
+    assert event_schema['type'] == 'string'
+    assert event_schema.get('enum') == ['death', 'login', 'logout', 'unknown']
+
+
+def test_collect_model_components_attribute_prefix_normalization():
+    models_root = pathlib.Path('tests/tmp_model_components')
+    comps = collect_model_components(models_root)
+    assert 'DecoratorAttributeExample' in comps, 'DecoratorAttributeExample component missing'
+    schema = comps['DecoratorAttributeExample']
+    assert schema.get('x-custom-flag') == 'enabled', 'Decorator attribute should be namespaced with x- prefix'
+
+
+def test_collect_model_components_optional_dict_infers_object():
+    models_root = pathlib.Path('bot/lib/models')
+    comps = collect_model_components(models_root)
+    assert 'MinecraftPlayerEventPayload' in comps, 'MinecraftPlayerEventPayload component missing'
+    schema = comps['MinecraftPlayerEventPayload']
+    payload_schema = schema['properties']['payload']
+    assert payload_schema['type'] == 'object', 'Optional dict annotation should map to object type'
+    assert payload_schema.get('nullable') is True, 'Optional dict should remain nullable'

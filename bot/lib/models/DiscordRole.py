@@ -31,10 +31,11 @@ import datetime
 import typing
 
 from discord import Role
-from bot.lib.models.openapi import openapi_model
+from bot.lib.models.openapi import openapi_managed, openapi_model
 
 
 @openapi_model("DiscordRole", description="Represents a Discord role with normalized primitive fields.")
+@openapi_managed()
 class DiscordRole:
     """Represents a Discord role with normalized primitive fields.
 

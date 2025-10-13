@@ -335,6 +335,357 @@ DEFAULT_SWAGGER_FILE = pathlib.Path(".swagger.v1.yaml")
 SUPPORTED_KEYS = {"summary", "description", "tags", "parameters", "requestBody", "responses", "security"}
 IGNORE_MARKER = "@openapi: ignore"
 MODEL_DECORATOR_ATTR = '__openapi_component__'
+MISSING = object()
+TYPE_ALIAS_CACHE: Dict[pathlib.Path, Dict[str, str]] = {}
+TYPE_ALIAS_METADATA: Dict[str, Dict[str, Any]] = {}
+GLOBAL_TYPE_ALIASES: Dict[str, str] = {}
+
+
+def _decorator_identifier(node: ast.AST) -> Optional[str]:
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        return node.attr
+    return None
+
+
+def _extract_constant(node: ast.AST) -> Any:
+    if isinstance(node, ast.Constant):
+        return node.value
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
+        operand = getattr(node, 'operand', None)
+        if isinstance(operand, ast.Constant) and isinstance(operand.value, (int, float)):
+            return -operand.value
+    return MISSING
+
+
+def _safe_unparse(node: Optional[ast.AST]) -> Optional[str]:
+    if node is None:
+        return None
+    if hasattr(ast, 'unparse'):
+        try:
+            return ast.unparse(node)
+        except Exception:
+            return None
+    return None
+
+
+def _normalize_extension_key(name: str) -> str:
+    return name if name.startswith('x-') else f"x-{name}"
+
+
+def _extract_literal_schema(anno_str: str) -> Optional[Dict[str, Any]]:
+    if 'Literal[' not in anno_str and 'typing.Literal[' not in anno_str:
+        return None
+    lit_start = anno_str.find('Literal[')
+    if lit_start == -1:
+        lit_start = anno_str.find('typing.Literal[')
+    sub = anno_str[lit_start:]
+    end_idx = sub.find(']')
+    if end_idx == -1:
+        return None
+    inner = sub[len('Literal['):end_idx]
+    raw_vals = [v.strip() for v in inner.split(',') if v.strip()]
+    enum_vals: List[str] = []
+    for rv in raw_vals:
+        if (rv.startswith("'") and rv.endswith("'")) or (rv.startswith('"') and rv.endswith('"')):
+            rv_clean = rv[1:-1]
+        else:
+            rv_clean = rv
+        if rv_clean and all(c.isalnum() or c in ('-','_','.') for c in rv_clean):
+            enum_vals.append(rv_clean)
+    if not enum_vals:
+        return None
+    return {'type': 'string', 'enum': sorted(set(enum_vals))}
+
+
+def _extract_constant_dict(node: ast.AST) -> Optional[Dict[str, Any]]:
+    if not isinstance(node, ast.Dict):
+        return None
+    result: Dict[str, Any] = {}
+    for key_node, value_node in zip(node.keys, node.values):
+        if key_node is None or value_node is None:
+            return None
+        key = _extract_constant(key_node)
+        if key is MISSING or not isinstance(key, str):
+            return None
+        value = _extract_constant(value_node)
+        if value is MISSING:
+            return None
+        result[key] = value
+    return result
+
+
+def _build_schema_from_annotation(anno_str: str) -> Dict[str, Any]:
+    schema = _extract_literal_schema(anno_str) or {}
+    if schema:
+        return schema
+    lower = anno_str.lower()
+    if 'list' in anno_str or 'List' in anno_str:
+        schema = {'type': 'array', 'items': {'type': 'string'}}
+    elif 'dict' in lower or 'mapping' in lower:
+        schema = {'type': 'object'}
+    elif 'int' in anno_str:
+        schema = {'type': 'integer'}
+    elif 'bool' in anno_str:
+        schema = {'type': 'boolean'}
+    elif 'float' in anno_str or 'double' in lower:
+        schema = {'type': 'number'}
+    else:
+        # Attempt to detect model references for alias definitions
+        model_pattern = r'\b([A-Z][A-Za-z0-9_]*)\b'
+        matches = re.findall(model_pattern, anno_str)
+        typing_keywords = {'Optional', 'Union', 'List', 'Dict', 'Any', 'Type', 'Callable', 'Tuple', 'Set', 'Literal'}
+        potential_models = [m for m in matches if m not in typing_keywords]
+        if potential_models:
+            schema = {'$ref': f"#/components/schemas/{potential_models[0]}"}
+        else:
+            schema = {'type': 'string'}
+    return schema
+
+
+def _discover_attribute_aliases(models_root: pathlib.Path) -> Dict[str, Tuple[Optional[str], Any]]:
+    alias_map: Dict[str, Tuple[Optional[str], Any]] = {}
+    candidates: List[pathlib.Path] = []
+    potential = (models_root / 'openapi.py').resolve()
+    candidates.append(potential)
+    default_candidate = (DEFAULT_MODELS_ROOT / 'openapi.py').resolve()
+    if default_candidate not in candidates:
+        candidates.append(default_candidate)
+    for candidate in candidates:
+        if not candidate.exists():
+            continue
+        try:
+            src = candidate.read_text(encoding='utf-8')
+        except Exception:
+            continue
+        try:
+            module = ast.parse(src, filename=str(candidate))
+        except SyntaxError:
+            continue
+        for node in module.body:
+            if not isinstance(node, ast.FunctionDef):
+                continue
+            ret_value: Optional[ast.AST] = None
+            for stmt in node.body:
+                if isinstance(stmt, ast.Return):
+                    ret_value = stmt.value
+                    break
+            if not isinstance(ret_value, ast.AST):
+                continue
+            if isinstance(ret_value, ast.Expr):
+                ret_value = ret_value.value  # pragma: no cover
+            if not isinstance(ret_value, ast.Call):
+                continue
+            if _decorator_identifier(ret_value.func) != 'openapi_attribute':
+                continue
+            attr_name: Optional[str] = None
+            attr_value: Any = MISSING
+            if ret_value.args:
+                maybe_name = _extract_constant(ret_value.args[0])
+                if isinstance(maybe_name, str):
+                    attr_name = maybe_name
+            if ret_value.args and len(ret_value.args) > 1:
+                attr_value = _extract_constant(ret_value.args[1])
+            for kw in ret_value.keywords or []:
+                if kw.arg == 'name':
+                    maybe_kw_name = _extract_constant(kw.value)
+                    if isinstance(maybe_kw_name, str):
+                        attr_name = maybe_kw_name
+                elif kw.arg == 'value':
+                    attr_value = _extract_constant(kw.value)
+            alias_map[node.name] = (attr_name, attr_value)
+        if alias_map:
+            break
+    return alias_map
+
+
+def _is_type_alias_annotation(node: Optional[ast.AST]) -> bool:
+    if node is None:
+        return False
+    if isinstance(node, ast.Name):
+        return node.id == 'TypeAlias'
+    if isinstance(node, ast.Attribute):
+        return node.attr == 'TypeAlias'
+    return False
+
+
+def _module_name_to_path(module_name: Optional[str], current_file: pathlib.Path, level: int) -> Optional[pathlib.Path]:
+    current_file = current_file.resolve()
+    if level > 0:
+        base = current_file.parent
+        for _ in range(level - 1):
+            base = base.parent
+        if module_name:
+            relative = module_name.replace('.', os.sep)
+            base = base / relative
+        if base.is_dir():
+            pkg_init = (base / '__init__.py').resolve()
+            if pkg_init.exists():
+                return pkg_init
+        candidate = base if base.suffix == '.py' else base.with_suffix('.py')
+        if candidate.exists():
+            return candidate.resolve()
+        maybe_pkg = (base / '__init__.py') if not base.name == '__init__' else base
+        if maybe_pkg.exists():
+            return maybe_pkg.resolve()
+        return None
+    if not module_name:
+        return None
+    relative = module_name.replace('.', os.sep)
+    repo_root = pathlib.Path('.').resolve()
+    candidate = (repo_root / f"{relative}.py").resolve()
+    if candidate.exists():
+        return candidate
+    candidate_pkg = (repo_root / relative / '__init__.py').resolve()
+    if candidate_pkg.exists():
+        return candidate_pkg
+    for parent in current_file.parents:
+        fallback = (parent / f"{relative}.py").resolve()
+        if fallback.exists():
+            return fallback
+        fallback_pkg = (parent / relative / '__init__.py').resolve()
+        if fallback_pkg.exists():
+            return fallback_pkg
+    return None
+
+
+def _load_type_aliases_for_path(path: pathlib.Path) -> Dict[str, str]:
+    resolved = path.resolve()
+    cached = TYPE_ALIAS_CACHE.get(resolved)
+    if cached is not None:
+        return cached
+    TYPE_ALIAS_CACHE[resolved] = {}
+    try:
+        src = resolved.read_text(encoding='utf-8')
+    except Exception:
+        return TYPE_ALIAS_CACHE[resolved]
+    try:
+        module = ast.parse(src, filename=str(resolved))
+    except SyntaxError:
+        return TYPE_ALIAS_CACHE[resolved]
+    alias_map = _collect_type_aliases_from_ast(module, resolved)
+    TYPE_ALIAS_CACHE[resolved] = alias_map
+    return alias_map
+
+
+def _load_type_aliases_for_module(module_name: Optional[str], level: int, current_file: pathlib.Path) -> Dict[str, str]:
+    target = _module_name_to_path(module_name, current_file, level)
+    if not target:
+        return {}
+    return _load_type_aliases_for_path(target)
+
+
+def _collect_type_aliases_from_ast(module: ast.AST, file_path: pathlib.Path) -> Dict[str, str]:
+    global TYPE_ALIAS_METADATA, GLOBAL_TYPE_ALIASES
+    alias_map: Dict[str, str] = {}
+    for node in getattr(module, 'body', []):
+        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            if not _is_type_alias_annotation(node.annotation):
+                continue
+            alias_name = node.target.id
+            value_node = node.value
+            if isinstance(value_node, ast.Call) and isinstance(value_node.func, ast.Call):
+                factory_call = value_node.func
+                if _decorator_identifier(factory_call.func) == 'openapi_type_alias':
+                    component_name: Optional[str] = None
+                    description: Optional[str] = None
+                    default_value: Any = MISSING
+                    managed_flag = False
+                    attr_map: Dict[str, Any] = {}
+                    if factory_call.args:
+                        maybe_name = _extract_constant(factory_call.args[0])
+                        if isinstance(maybe_name, str):
+                            component_name = maybe_name
+                    for kw in factory_call.keywords or []:
+                        if kw.arg == 'name':
+                            maybe_name = _extract_constant(kw.value)
+                            if isinstance(maybe_name, str):
+                                component_name = maybe_name
+                        elif kw.arg == 'description':
+                            maybe_desc = _extract_constant(kw.value)
+                            if isinstance(maybe_desc, str):
+                                description = maybe_desc
+                        elif kw.arg == 'default':
+                            default_value = _extract_constant(kw.value)
+                        elif kw.arg == 'managed':
+                            maybe_managed = _extract_constant(kw.value)
+                            if isinstance(maybe_managed, bool):
+                                managed_flag = maybe_managed
+                        elif kw.arg == 'attributes':
+                            extracted = _extract_constant_dict(kw.value)
+                            if extracted is not None:
+                                attr_map = extracted
+                    component_name = component_name or alias_name
+                    alias_value_node = value_node.args[0] if value_node.args else None
+                    alias_value_str = _safe_unparse(alias_value_node) or ''
+                    if alias_value_str:
+                        alias_map[alias_name] = alias_value_str
+                    meta: Dict[str, Any] = {
+                        'alias': alias_name,
+                        'component': component_name,
+                        'annotation': alias_value_str,
+                        'path': str(file_path.resolve()),
+                    }
+                    if description is not None:
+                        meta['description'] = description
+                    if default_value is not MISSING:
+                        meta['default'] = default_value
+                    extensions: Dict[str, Any] = {}
+                    if managed_flag:
+                        extensions['x-tacobot-managed'] = True
+                    for k, v in attr_map.items():
+                        extensions[_normalize_extension_key(k)] = v
+                    if extensions:
+                        meta['extensions'] = extensions
+                    TYPE_ALIAS_METADATA[alias_name] = meta
+                    continue
+            value_str = _safe_unparse(node.value)
+            if value_str:
+                alias_map[alias_name] = value_str
+    for node in getattr(module, 'body', []):
+        if isinstance(node, ast.ImportFrom):
+            remote_aliases = _load_type_aliases_for_module(node.module, node.level, file_path)
+            if not remote_aliases:
+                continue
+            for alias in node.names:
+                if alias.name == '*':
+                    continue
+                local_name = alias.asname or alias.name
+                if local_name in alias_map:
+                    continue
+                remote = remote_aliases.get(alias.name)
+                if remote:
+                    alias_map[local_name] = remote
+    if alias_map:
+        GLOBAL_TYPE_ALIASES.update(alias_map)
+    return alias_map
+
+
+def _register_type_aliases(py_file: pathlib.Path, module: ast.Module) -> Dict[str, str]:
+    resolved = py_file.resolve()
+    cached = TYPE_ALIAS_CACHE.get(resolved)
+    if cached is not None:
+        return cached
+    alias_map = _collect_type_aliases_from_ast(module, resolved)
+    TYPE_ALIAS_CACHE[resolved] = alias_map
+    return alias_map
+
+
+def _expand_type_aliases(annotation: str, alias_map: Dict[str, str]) -> str:
+    if not alias_map or not annotation:
+        return annotation
+    expanded = annotation
+    for _ in range(5):
+        previous = expanded
+        for alias_name, alias_value in alias_map.items():
+            if not alias_value:
+                continue
+            pattern = r'\b' + re.escape(alias_name) + r'\b'
+            expanded = re.sub(pattern, f'({alias_value})', expanded)
+        if expanded == previous:
+            break
+    return expanded
 
 @dataclass
 class Endpoint:
@@ -496,6 +847,8 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
     components: Dict[str, Dict[str, Any]] = {}
     if not models_root.exists():
         return components
+    resolved_models_root = models_root.resolve()
+    attribute_aliases = _discover_attribute_aliases(models_root)
     for py_file in models_root.rglob('*.py'):
         if py_file.name.startswith('_'):
             continue
@@ -507,6 +860,7 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
             module = ast.parse(src, filename=str(py_file))
         except SyntaxError:
             continue
+        type_alias_map = _register_type_aliases(py_file, module)
         for cls in [n for n in module.body if isinstance(n, ast.ClassDef)]:
             comp_name: Optional[str] = None
             description: str = ''
@@ -545,15 +899,64 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
                                                 existing[mk] = mv
                     except Exception:
                         continue  # Try next block if present
+            decorator_extensions: Dict[str, Any] = {}
             for deco in cls.decorator_list:
-                if isinstance(deco, ast.Call) and getattr(deco.func, 'id', '') == 'openapi_model':
-                    if deco.args and isinstance(deco.args[0], ast.Constant) and isinstance(deco.args[0].value, str):
-                        comp_name = deco.args[0].value
-                    for kw in deco.keywords or []:
-                        if kw.arg == 'description' and isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
-                            description = kw.value.value
-                elif isinstance(deco, ast.Name) and deco.id == 'openapi_model':
-                    comp_name = cls.name
+                deco_call: Optional[ast.Call] = deco if isinstance(deco, ast.Call) else None
+                deco_name = None
+                if isinstance(deco, ast.Call):
+                    deco_name = _decorator_identifier(deco.func)
+                else:
+                    deco_name = _decorator_identifier(deco)
+                if not deco_name:
+                    continue
+                if deco_name == 'openapi_model':
+                    if deco_call and deco_call.args:
+                        first_arg = _extract_constant(deco_call.args[0])
+                        if isinstance(first_arg, str):
+                            comp_name = first_arg
+                    elif not deco_call:
+                        comp_name = cls.name
+                    for kw in (deco_call.keywords if deco_call else []) or []:
+                        if kw.arg == 'name':
+                            kw_name = _extract_constant(kw.value)
+                            if isinstance(kw_name, str):
+                                comp_name = kw_name
+                        elif kw.arg == 'description':
+                            kw_desc = _extract_constant(kw.value)
+                            if isinstance(kw_desc, str):
+                                description = kw_desc
+                elif deco_name == 'openapi_attribute':
+                    if not deco_call:
+                        continue
+                    attr_name: Optional[str] = None
+                    attr_value: Any = MISSING
+                    if deco_call.args:
+                        raw_name = _extract_constant(deco_call.args[0])
+                        if isinstance(raw_name, str):
+                            attr_name = raw_name
+                    if deco_call.args and len(deco_call.args) > 1:
+                        attr_value = _extract_constant(deco_call.args[1])
+                    for kw in deco_call.keywords or []:
+                        if kw.arg == 'name':
+                            kw_name = _extract_constant(kw.value)
+                            if isinstance(kw_name, str):
+                                attr_name = kw_name
+                        elif kw.arg == 'value':
+                            attr_value = _extract_constant(kw.value)
+                    if not attr_name:
+                        continue
+                    sanitized = _normalize_extension_key(attr_name)
+                    if attr_value is MISSING:
+                        attr_value = True
+                    decorator_extensions[sanitized] = attr_value
+                elif deco_name in attribute_aliases:
+                    alias_name, alias_value = attribute_aliases[deco_name]
+                    if not alias_name:
+                        continue
+                    sanitized = alias_name if alias_name.startswith('x-') else f"x-{alias_name}"
+                    if alias_value is MISSING:
+                        alias_value = True
+                    decorator_extensions[sanitized] = alias_value
             if not comp_name:
                 continue
 
@@ -563,6 +966,8 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
                 # Add description from decorator if not present in schema
                 if description and 'description' not in comp_schema:
                     comp_schema['description'] = description
+                if decorator_extensions:
+                    comp_schema.update(decorator_extensions)
                 components[comp_name] = comp_schema
                 continue
 
@@ -574,12 +979,8 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
                         if isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Attribute) and isinstance(stmt.target.value, ast.Name) and stmt.target.value.id == 'self':
                             attr = stmt.target.attr
                             if attr.startswith('_'): continue
-                            anno = ''
-                            if hasattr(ast, 'unparse'):
-                                try:
-                                    anno = ast.unparse(stmt.annotation)
-                                except Exception:
-                                    anno = ''
+                            anno = _safe_unparse(stmt.annotation) or ''
+                            anno = _expand_type_aliases(anno, type_alias_map)
                             annotations[attr] = anno or 'string'
                         elif isinstance(stmt, ast.Assign):
                             for tgt in stmt.targets:
@@ -596,6 +997,7 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
             props: Dict[str, Any] = {}
             required: List[str] = []
             for attr, anno_str in annotations.items():
+                anno_str = _expand_type_aliases(anno_str, type_alias_map)
                 nullable = 'Optional' in anno_str or 'None' in anno_str
                 typ = 'string'
                 schema: Dict[str, Any] = {}
@@ -631,8 +1033,11 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
 
                 # If not a Literal, check for primitive types (list first, then primitives)
                 if not schema:  # Only if we haven't set a Literal enum schema
+                    lower_anno = anno_str.lower()
                     if 'list' in anno_str or 'List' in anno_str:
                         typ = 'array'
+                    elif 'dict' in lower_anno or 'mapping' in lower_anno:
+                        typ = 'object'
                     elif 'int' in anno_str:
                         typ = 'integer'
                     elif 'bool' in anno_str:
@@ -655,8 +1060,11 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
                             model_name = potential_models[0]
                             schema = {'$ref': f'#/components/schemas/{model_name}'}
                         else:
-                            # Default to string type
-                            schema = {'type': typ}
+                            if typ == 'object':
+                                schema = {'type': 'object'}
+                            else:
+                                # Default to string type
+                                schema = {'type': typ}
 
                     # Only set type if we don't have a $ref
                     if '$ref' not in schema:
@@ -710,7 +1118,40 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
                 comp_schema['required'] = sorted(required)
             if description:
                 comp_schema['description'] = description
+            if decorator_extensions:
+                comp_schema.update(decorator_extensions)
             components[comp_name] = comp_schema
+    for alias_meta in TYPE_ALIAS_METADATA.values():
+        defined_path_str = alias_meta.get('path')
+        if not defined_path_str:
+            continue
+        try:
+            defined_path = pathlib.Path(defined_path_str).resolve()
+        except Exception:
+            continue
+        try:
+            defined_path.relative_to(resolved_models_root)
+        except ValueError:
+            continue
+        component_name = alias_meta.get('component')
+        alias_name = alias_meta.get('alias')
+        if not component_name or not alias_name:
+            continue
+        if component_name in components:
+            continue
+        annotation_str = alias_meta.get('annotation', '')
+        expanded_annotation = _expand_type_aliases(annotation_str, GLOBAL_TYPE_ALIASES)
+        schema = _build_schema_from_annotation(expanded_annotation)
+        description = str(alias_meta.get('description')) if 'description' in alias_meta else ''
+        if isinstance(description, str):
+            schema['description'] = description
+        default_value = alias_meta.get('default', MISSING)
+        if default_value is not MISSING:
+            schema['default'] = default_value
+        extensions = alias_meta.get('extensions') or {}
+        for ext_key, ext_value in extensions.items():
+            schema[_normalize_extension_key(ext_key)] = ext_value
+        components[component_name] = schema
     return components
 
 
@@ -1097,8 +1538,12 @@ def main() -> None:
                     new_stream = StringIOModule()
                     yaml.dump(new_schema, new_stream)
                     new_lines = new_stream.getvalue().rstrip().splitlines()
-                    if existing is not None and existing_lines != new_lines:
-                        warn = f"Model schema drift detected for component '{name}'."
+                    # Show diff whenever existing differs from new OR when component is brand new
+                    if existing_lines != new_lines:
+                        if existing is not None:
+                            warn = f"Model schema drift detected for component '{name}'."
+                        else:
+                            warn = f"New model schema component '{name}' added."
                         if not DISABLE_COLOR:
                             warn = f"{ANSI_YELLOW}WARNING: {warn}{ANSI_RESET}"
                         else:

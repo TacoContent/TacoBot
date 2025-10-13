@@ -1,10 +1,11 @@
 
 import typing
 
-from bot.lib.models.openapi import openapi_model
+from bot.lib.models.openapi import openapi_managed, openapi_model
 
 
 @openapi_model("TacoWebhookGamePayload", description="Represents the payload for a Taco webhook game event.")
+@openapi_managed()
 class TacoWebhookGamePayload:
     """Represents the payload for a Taco webhook game event.
 

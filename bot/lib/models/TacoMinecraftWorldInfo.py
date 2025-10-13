@@ -1,9 +1,10 @@
 
-from bot.lib.models.openapi import openapi_model
+from bot.lib.models.openapi import openapi_managed, openapi_model
 from bot.lib.models.TacoMinecraftWorlds import TacoMinecraftWorlds
 
 
 @openapi_model("TacoMinecraftWorldInfo", description="Represents a Minecraft world managed by Taco.")
+@openapi_managed()
 class TacoMinecraftWorldInfo:
     """
     Represents a Minecraft world managed by Taco.

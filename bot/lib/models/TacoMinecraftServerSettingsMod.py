@@ -1,0 +1,20 @@
+
+from bot.lib.models.openapi import openapi_managed, openapi_model
+
+@openapi_model("TacoMinecraftServerSettingsMod", description="Represents a mod installed on the Minecraft server.")
+@openapi_managed()
+class TacoMinecraftServerSettingsMod:
+    """Represents a mod installed on the Minecraft server.
+
+    >>>openapi
+    properties:
+      name:
+        description: The name of the mod.
+      version:
+        description: The version of the mod.
+    <<<openapi
+    """
+
+    def __init__(self, data: dict):
+        self.name: str = data.get("name", "")
+        self.version: str = data.get("version", "")

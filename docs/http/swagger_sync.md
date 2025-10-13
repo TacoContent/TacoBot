@@ -248,6 +248,7 @@ Run with `--fix` to accept and write the updated schema.
 - No nested object introspection / `$ref` chaining is performed (a list of dicts is treated as an `items: { type: object }` with no inner property introspection).
 - Arrays of primitives still default `items.type` to `string` when an element annotation type cannot be inferred (e.g. `list` unparameterized). Lists that clearly contain a `dict`/`Dict` annotation are emitted with `items.type: object`.
 - Enum inference is currently limited to `typing.Literal[...]` string literals (e.g. `Literal["emoji", "sticker"]`). Other enum styles (e.g. `Enum` subclasses, int literals) are not auto-detected yet.
+- Literal-based `typing.TypeAlias` definitions are expanded before inference, so you can import aliases such as `MinecraftPlayerEventLiteral` without duplicating the literal list in every model annotation.
 - No automatic `format` / `pattern` / numeric range inference.
 - Property metadata cannot change required vs optional status (that still derives from the annotation's Optional / None presence).
 - Manual swagger edits adding richer constraints are preserved unless the generator re-infers and overwrites the same primitive field (e.g. renaming or changing primitive classification). Added constraints you place manually (like `minLength`) are left untouched if not part of the generated skeleton.
@@ -328,7 +329,31 @@ Error handling / safety:
 
 Why a docstring block vs decorator `kwargs`? The block scales better for many fields and keeps verbose descriptions close to the attribute semantics without inflating decorator argument lists.
 
-### 4.8 Testing
+### 4.8 Decorator Vendor Extensions
+
+For concise vendor extension flags, decorate the model class with `@openapi_attribute("x-some-flag", value)` (or helper decorators such as `@openapi_managed()`). The generator surfaces these attributes as top-level schema keys. If the supplied name omits the required `x-` prefix, it is added automatically during generation.
+
+Example:
+
+```python
+@openapi_model("MinecraftPlayerEvent")
+@openapi_managed()
+class MinecraftPlayerEvent:
+    ...
+```
+
+Produces:
+
+```yaml
+MinecraftPlayerEvent:
+  type: object
+  x-tacobot-managed: true
+  ...
+```
+
+Use these decorators for simple booleans/strings/numbers you want mirrored in the swagger component. Any helper that internally returns `openapi_attribute(...)` (like `openapi_managed`) is detected automatically, so additional wrappers do not require script changes. Prefer docstring metadata blocks for richer per-property annotations.
+
+### 4.9 Testing
 
 Add or extend tests (see `tests/test_swagger_sync_model_components.py`) validating component presence & key property types when adding new models or adjusting inference heuristics.
 

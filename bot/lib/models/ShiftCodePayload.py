@@ -1,10 +1,11 @@
 import time
 import typing
 
-from bot.lib.models.openapi import openapi_model
+from bot.lib.models.openapi import openapi_managed, openapi_model
 
 
 @openapi_model("ShiftCodePayload", description="Payload for the SHiFT Code.")
+@openapi_managed()
 class ShiftCodePayload:
     def __init__(self, payload: dict):
         self.games: typing.List[ShiftCodeGame] = [ShiftCodeGame(game) for game in payload.get("games", [])]
@@ -38,6 +39,7 @@ class ShiftCodePayload:
 
 
 @openapi_model("ShiftCodeGame", description="Represents a supported game for SHiFT codes.")
+@openapi_managed()
 class ShiftCodeGame:
     def __init__(self, game: dict):
         self.id: str = game.get("id", "")

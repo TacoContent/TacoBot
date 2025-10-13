@@ -1,9 +1,10 @@
 import typing
 
-from bot.lib.models.openapi import openapi_model
+from bot.lib.models.openapi import openapi_managed, openapi_model
 
 
 @openapi_model("ErrorStatusCodePayload", description="Represents an error status code payload.")
+@openapi_managed()
 class ErrorStatusCodePayload:
     """Model for error status code payloads.
     Represents an error message.

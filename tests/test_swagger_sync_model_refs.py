@@ -297,12 +297,12 @@ def openapi_model(name: str, description: str = None):
         assert props['union_type']['type'] == 'integer'
         assert '$ref' not in props['union_type']
 
-        # any_type and dict_type should default to string
-        assert props['any_type']['type'] == 'string'
-        assert '$ref' not in props['any_type']
+    # any_type should default to string, dict_type should be object
+    assert props['any_type']['type'] == 'string'
+    assert '$ref' not in props['any_type']
 
-        assert props['dict_type']['type'] == 'string'
-        assert '$ref' not in props['dict_type']
+    assert props['dict_type']['type'] == 'object'
+    assert '$ref' not in props['dict_type']
 
 
 def test_model_class_ref_literal_enum_unchanged():
