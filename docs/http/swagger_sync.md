@@ -195,10 +195,10 @@ Run with `--fix` to accept and write the updated schema.
 
 ### 4.6 Limitations
 
-* No nested object introspection / `$ref` chaining automatically.
-* Arrays always default `items.type` to `string`.
-* No enum / format / pattern inference.
-* Manual edits adding richer constraints are preserved unless the script regenerates that specific property (i.e., property name removed or its primitive classification changes).
+- No nested object introspection / `$ref` chaining automatically.
+- Arrays always default `items.type` to `string`.
+- No enum / format / pattern inference.
+- Manual edits adding richer constraints are preserved unless the script regenerates that specific property (i.e., property name removed or its primitive classification changes).
 
 ### 4.7 Testing
 
@@ -249,6 +249,25 @@ python scripts/swagger_sync.py --fix
 git add .swagger.v1.yaml
 git commit -m "chore: sync swagger"
 ```
+
+### 5.2.1 Fix Mode Status Messages
+
+When running with `--fix` the script now emits a granular status message describing *what* changed. Possible outputs:
+
+| Message | Meaning |
+|---------|---------|
+| `Swagger updated (endpoint operations + component schemas).` | Both one or more path operation objects and at least one auto-generated model component schema changed and were written. |
+| `Swagger updated (endpoint operations).` | Only path operation objects (endpoints) changed; no component schema adjustments were needed. |
+| `Swagger updated (component schemas only – no endpoint operation changes).` | Only auto-generated model component schemas changed (e.g. attribute added / optionality toggled); no endpoint definitions were modified. |
+| `No endpoint or component schema changes needed.` | The generated operations and component schemas already matched the swagger file; nothing was written. |
+
+Notes:
+
+- Component schema change detection is independent of endpoint drift; a modification to a decorated model (Section 4) that alters its inferred schema will trigger a write even if no endpoints changed.
+- The older generic message `No changes needed.` has been replaced to avoid ambiguity when only model component schemas were involved.
+- In check mode (`--check`), component schema drift still surfaces as warnings with unified diffs; only `--fix` persists them.
+- CI logs can assert on these exact strings if you want to enforce that schema adjustments were applied during a given run.
+
 
 ### 5.3 Coverage Report (JSON + Threshold)
 
@@ -339,8 +358,8 @@ Metric meanings (shown in summary):
 - In swagger (handlers): Those whose path+method entry exists in swagger.
 - Definition matches: Count where the swagger operation exactly equals generated doc block (normalized).
 - Swagger only operations: Path+method present in swagger but not in code (non-ignored).
- - Model components generated: Count of `@openapi_model` decorated classes discovered and translated into primitive schemas this run.
- - Schemas not generated: Existing `components.schemas` entries present in swagger that were not produced by the current auto-generation pass (manually maintained or richer schemas).
+- Model components generated: Count of `@openapi_model` decorated classes discovered and translated into primitive schemas this run.
+- Schemas not generated: Existing `components.schemas` entries present in swagger that were not produced by the current auto-generation pass (manually maintained or richer schemas).
 
 `--fail-on-coverage-below` compares (with doc blocks / handlers considered).
 

@@ -879,6 +879,7 @@ def main() -> None:
     # Model components (collect + track metrics)
     model_components: Dict[str, Dict[str, Any]] = {}
     model_components_updated: List[str] = []
+    components_changed = False  # Track if components.schemas mutated so we persist swagger even w/o path diffs
     if not args.no_model_components:
         model_components = collect_model_components(pathlib.Path(args.models_root))
         if model_components:
@@ -900,6 +901,7 @@ def main() -> None:
                             print(dl, file=sys.stderr)
                     schemas[name] = new_schema
                     model_components_updated.append(name)
+                    components_changed = True
             if model_components_updated:
                 print(f"Model schemas updated: {', '.join(sorted(model_components_updated))}")
     existing_schemas = swagger.get('components', {}).get('schemas', {}) if isinstance(swagger.get('components'), dict) else {}
@@ -1014,13 +1016,20 @@ def main() -> None:
                 if len(coverage_swagger_only) > 50:
                     print(f"    ... ({len(coverage_swagger_only)-50} more)")
     if args.fix:
-        if changed:
+        if changed or components_changed:
+            # Write out even if only components changed (previously skipped)
             swagger_path.write_text(yaml.safe_dump(swagger_new, sort_keys=False), encoding='utf-8')
-            print("Swagger updated.")
-            for n in notes:
-                print(f" - {n}")
+            if changed and components_changed:
+                print("Swagger updated (endpoint operations + component schemas).")
+            elif changed and not components_changed:
+                print("Swagger updated (endpoint operations).")
+            elif components_changed and not changed:
+                print("Swagger updated (component schemas only – no endpoint operation changes).")
+            if notes:
+                for n in notes:
+                    print(f" - {n}")
         else:
-            print("No changes needed.")
+            print("No endpoint or component schema changes needed.")
         if args.show_ignored and ignored:
             print("Ignored endpoints (@openapi: ignore):")
             for (p, m, f, fn) in ignored:

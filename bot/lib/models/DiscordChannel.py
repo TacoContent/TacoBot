@@ -2,7 +2,7 @@ import typing
 from bot.lib.models.openapi import openapi_model
 
 
-@openapi_model("DiscordChannel", description="Snapshot of a Discord channel's core attributes.")
+@openapi_model("DiscordChannel", description="Snapshot of a Discord channel's core attributes. (test)")
 class DiscordChannel:
     """Represents a Discord channel snapshot.
     Parameters

@@ -2062,28 +2062,39 @@ components:
       properties:
         id:
           type: string
-        guild_id:
-          type: string
         name:
           type: string
         type:
           type: string
+        guild_id:
+          type: string
+          nullable: true
         position:
           type: integer
         topic:
           type: string
+          nullable: true
         nsfw:
           type: boolean
         bitrate:
           type: integer
+          nullable: true
         user_limit:
           type: integer
+          nullable: true
+        created_at:
+          type: integer
+          nullable: true
         category_id:
           type: string
+          nullable: true
       required:
       - id
       - name
+      - nsfw
+      - position
       - type
+      description: Snapshot of a Discord channel's core attributes. (test)
     DiscordCategory:
       type: object
       properties:
@@ -2108,27 +2119,36 @@ components:
       properties:
         type:
           type: string
-          enum:
-          - emoji
         id:
-          type: string
-        guild_id:
-          type: string
-        name:
           type: string
         animated:
           type: boolean
         available:
           type: boolean
+        created_at:
+          type: integer
+          nullable: true
+        guild_id:
+          type: string
+          nullable: true
         managed:
           type: boolean
         require_colons:
           type: boolean
-        created_at:
+        name:
           type: string
-          format: date-time
         url:
           type: string
+          nullable: true
+      required:
+      - animated
+      - available
+      - id
+      - managed
+      - name
+      - require_colons
+      - type
+      description: Snapshot of a Discord emoji's core attributes.
     DiscordRole:
       type: object
       properties:
