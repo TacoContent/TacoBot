@@ -6,7 +6,7 @@
 		{
 			"label": "Python: Run Tests",
 			"type": "shell",
-			"command": "pytest",
+			"command": "./.venv/scripts/Activate.ps1; pytest",
 			"options": {
 				"env": {
 					"PYTHONPATH": "${workspaceFolder}/bot"
@@ -27,7 +27,7 @@
 		{
 			"label": "Python: Run Tests (Coverage)",
 			"type": "shell",
-			"command": "pytest --cov=bot --cov-report=term-missing",
+			"command": "./.venv/scripts/Activate.ps1; pytest --cov=bot --cov-report=term-missing",
 			"options": {
 				"env": {
 					"PYTHONPATH": "${workspaceFolder}/bot"

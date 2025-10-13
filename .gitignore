@@ -13,6 +13,9 @@ tacobot.egg-info/
 reports/*
 !reports/.gitkeep
 !reports/README.md
+# ignore file copies and backup files
+'* copy.*'
+'* copy/'
 
 
 # ignore the super-linter log file when running super-linter locally

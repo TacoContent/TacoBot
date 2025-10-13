@@ -31,9 +31,35 @@ Design Notes
 
 import typing
 
+from bot.lib.models.openapi import openapi_model
 
+
+@openapi_model("JoinWhitelistUser", description="Container for a guild-scoped join whitelist record.")
 class JoinWhitelistUser:
-    """Container for a guild-scoped join whitelist record."""
+    """Container for a guild-scoped join whitelist record.
+
+    Properties:
+    - guild_id:
+        The ID of the guild where the user is whitelisted.
+    - user_id:
+        The ID of the user who is whitelisted.
+    - added_by:
+        The ID of the user who added the whitelist entry, or None if added by the system.
+    - timestamp:
+        The timestamp when the whitelist entry was created, or None if not set.
+
+    >>>openapi
+    properties:
+        guild_id:
+            description: Discord guild (server) identifier scoping the whitelist entry.
+        user_id:
+            description: Discord user identifier for the whitelisted user.
+        added_by:
+            description: Discord user id (or system marker) of the actor who added the entry.
+        timestamp:
+            description: Creation timestamp (seconds since epoch, or milliseconds depending on writer).
+    <<<openapi
+    """
 
     def __init__(self, data: dict):
         self._id: typing.Optional[typing.Any] = data.get("_id", None)

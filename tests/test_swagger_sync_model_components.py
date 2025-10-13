@@ -57,3 +57,32 @@ def test_collect_model_components_discord_emoji_literal_enum():
     # Should include enum with the literal value 'emoji'
     assert 'enum' in type_schema, 'Enum not inferred for Literal field'
     assert type_schema['enum'] == ['emoji'], f"Unexpected enum values: {type_schema['enum']}"
+
+
+def test_collect_model_components_join_whitelist_user_property_descriptions():
+    models_root = pathlib.Path('bot/lib/models')
+    comps = collect_model_components(models_root)
+    assert 'JoinWhitelistUser' in comps, 'JoinWhitelistUser component missing'
+    schema = comps['JoinWhitelistUser']
+    props = schema['properties']
+    # Ensure metadata descriptions were applied
+    assert props['guild_id'].get('description') == 'Discord guild (server) identifier scoping the whitelist entry.'
+    assert props['user_id'].get('description') == 'Discord user identifier for the whitelisted user.'
+    assert 'description' in props['added_by'], 'added_by description missing'
+    assert 'description' in props['timestamp'], 'timestamp description missing'
+
+
+def test_collect_model_components_metadata_merge_precedence():
+    models_root = pathlib.Path('bot/lib/models')
+    comps = collect_model_components(models_root)
+    assert 'MergeMetadataExample' in comps, 'MergeMetadataExample component missing'
+    schema = comps['MergeMetadataExample']
+    props = schema['properties']
+    # Legacy description preserved
+    assert props['merged'].get('description') == 'Legacy description (should persist)'
+    # Unified block added enum without overwriting description
+    assert 'enum' in props['merged'] and props['merged']['enum'] == ['a', 'b', 'c']
+    # Property only in unified block present
+    assert 'added_only_in_unified' in props, 'Unified-only property missing'
+    # Legacy-only property present
+    assert 'primary' in props and props['primary'].get('description') == 'Primary description from legacy block'

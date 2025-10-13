@@ -29,9 +29,11 @@ ensures all asset references become plain URLs.
 import datetime
 import typing
 
+from bot.lib.models.openapi import openapi_model
 from discord import Member, User
 
 
+@openapi_model("DiscordUser", description="Represents a Discord user with normalized primitives.")
 class DiscordUser:
     """Represents a Discord user or member with normalized primitives.
 
@@ -43,7 +45,7 @@ class DiscordUser:
     """
 
     def __init__(self, data):
-        self.type: str = "user"
+        self.type: typing.Literal["user"] = "user"
         self.id: str = data.get("id", "0")
         self.guild_id: str = data.get("guild_id", "0")
 
@@ -54,7 +56,7 @@ class DiscordUser:
         self.color: typing.Optional[int] = data.get("color", None)
         self.created_at: typing.Optional[int] = data.get("created_at", None)
         self.default_avatar: typing.Optional[str] = data.get("default_avatar", None)
-        self.discriminator: int = data.get("discriminator", 0)
+        self.discriminator: typing.Optional[str] = str(data.get("discriminator", 0))
         self.display_avatar: typing.Optional[str] = data.get(
             "display_avatar", data.get("avatar", data.get("default_avatar", None))
         )

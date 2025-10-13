@@ -195,12 +195,97 @@ Run with `--fix` to accept and write the updated schema.
 
 ### 4.6 Limitations
 
-- No nested object introspection / `$ref` chaining automatically.
-- Arrays always default `items.type` to `string`.
-- No enum / format / pattern inference.
-- Manual edits adding richer constraints are preserved unless the script regenerates that specific property (i.e., property name removed or its primitive classification changes).
+- No nested object introspection / `$ref` chaining is performed (a list of dicts is treated as an `items: { type: object }` with no inner property introspection).
+- Arrays of primitives still default `items.type` to `string` when an element annotation type cannot be inferred (e.g. `list` unparameterized). Lists that clearly contain a `dict`/`Dict` annotation are emitted with `items.type: object`.
+- Enum inference is currently limited to `typing.Literal[...]` string literals (e.g. `Literal["emoji", "sticker"]`). Other enum styles (e.g. `Enum` subclasses, int literals) are not auto-detected yet.
+- No automatic `format` / `pattern` / numeric range inference.
+- Property metadata cannot change required vs optional status (that still derives from the annotation's Optional / None presence).
+- Manual swagger edits adding richer constraints are preserved unless the generator re-infers and overwrites the same primitive field (e.g. renaming or changing primitive classification). Added constraints you place manually (like `minLength`) are left untouched if not part of the generated skeleton.
 
-### 4.7 Testing
+### 4.7 Property Metadata Blocks (Per-Property Descriptions & Extensibility)
+
+You can enrich generated component schemas with per-property metadata (currently most useful for `description`, with room for future keys like examples, deprecation flags, or custom vendor extensions) directly inside the model class docstring using the unified `>>>openapi` / `<<<openapi` markers.
+
+Marker summary:
+
+- Preferred (unified): `>>>openapi` … `<<<openapi`
+- Legacy (still accepted, deprecated): `>>>openapi-model` / `<<<openapi-model` and `---openapi-model` / `---end`
+
+Merge precedence & behavior:
+
+1. All legacy `openapi-model` blocks (one or many) are parsed first. For each property the first legacy definition establishes its metadata; subsequent legacy blocks only add missing keys (they do not overwrite).
+2. All unified `openapi` blocks are then parsed in order. For each property they add only keys not already present (augment) and never overwrite keys sourced from legacy blocks.
+3. If no legacy block exists, unified blocks provide the entire metadata set (first block containing `properties` wins for each property key, later unified blocks add missing keys).
+4. This allows teams to migrate gradually: keep authoritative descriptions in a legacy block, add new enum/examples in a unified block, then later collapse to a single unified block.
+
+Block YAML structure (top-level key: `properties`):
+
+```python
+@openapi_model("JoinWhitelistUser", description="Guild whitelist membership")
+class JoinWhitelistUser:
+    """Represents a whitelist entry.
+
+    >>>openapi
+    properties:
+      guild_id:
+        description: Discord guild id
+      user_id:
+        description: Whitelisted user id
+      added_by:
+        description: Moderator who added the user
+      timestamp:
+        description: Unix timestamp (seconds) when added
+    <<<openapi
+    """
+    def __init__(self, guild_id: int, user_id: int, added_by: int, timestamp: int):
+        ...
+```
+
+Resulting schema snippet (excerpt):
+
+```yaml
+JoinWhitelistUser:
+  type: object
+  description: Guild whitelist membership
+  properties:
+    guild_id:
+      type: integer
+      description: Discord guild id
+    user_id:
+      type: integer
+      description: Whitelisted user id
+    added_by:
+      type: integer
+      description: Moderator who added the user
+    timestamp:
+      type: integer
+      description: Unix timestamp (seconds) when added
+```
+
+Guidelines & rules:
+
+1. Indentation: Use 2 spaces; avoid tabs (consistent with other OpenAPI YAML in the repo).
+2. Only the `properties` mapping is currently consumed; unknown top-level keys are ignored safely (future expansion point).
+3. Property names must correspond to attributes discovered in `__init__` (or assigned at class body). Extra names are ignored.
+4. Merging behavior: The generator starts with inferred primitive shape and then overlays metadata keys (e.g. `description`, `enum`). Existing swagger manual enrichments that are NOT regenerated (like `minLength`) are preserved.
+5. Enum override: You may supply an `enum:` array in the metadata block to override (or provide) enum values. This will supersede a `typing.Literal`-derived enum if present.
+6. Required list is still determined solely by annotation Optionality; metadata does not influence required vs optional.
+7. Do not embed anchors or complex YAML features—simple mappings & scalars recommended.
+
+Error handling / safety:
+
+- Malformed YAML in any metadata block is logged as a warning; that block is skipped rather than failing the run.
+- If both unified and legacy markers appear, the first valid unified properties block wins and legacy is ignored.
+
+Migration notes:
+
+1. Existing `>>>openapi-model` / `<<<openapi-model` (or `---openapi-model` / `---end`) blocks continue to work but should be migrated to unified markers for consistency.
+2. Functionality is identical; only delimiters change.
+3. Mixed usage within a single docstring prefers unified markers.
+
+Why a docstring block vs decorator kwargs? The block scales better for many fields and keeps verbose descriptions close to the attribute semantics without inflating decorator argument lists.
+
+### 4.8 Testing
 
 Add or extend tests (see `tests/test_swagger_sync_model_components.py`) validating component presence & key property types when adding new models or adjusting inference heuristics.
 

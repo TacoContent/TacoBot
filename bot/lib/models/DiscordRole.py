@@ -31,8 +31,10 @@ import datetime
 import typing
 
 from discord import Role
+from bot.lib.models.openapi import openapi_model
 
 
+@openapi_model("DiscordRole", description="Represents a Discord role with normalized primitive fields.")
 class DiscordRole:
     """Represents a Discord role with normalized primitive fields.
 
@@ -43,7 +45,7 @@ class DiscordRole:
     """
 
     def __init__(self, data):
-        self.type: str = "role"
+        self.type: typing.Literal["role"] = "role"
         self.id: str = data.get("id", "0")
         self.guild_id: str = data.get("guild_id", "0")
 

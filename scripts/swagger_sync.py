@@ -464,6 +464,51 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
         for cls in [n for n in module.body if isinstance(n, ast.ClassDef)]:
             comp_name: Optional[str] = None
             description: str = ''
+            # Parse class docstring for optional openapi-model property metadata block.
+            raw_class_doc = ast.get_docstring(cls) or ''
+            prop_meta: Dict[str, Dict[str, Any]] = {}
+            # 1. Legacy dedicated markers (>>>openapi-model / ---openapi-model) – priority source.
+            if 'openapi-model' in raw_class_doc:
+                model_block_re = re.compile(r'(?:>>>openapi-model|---openapi-model)\s*(.*?)\s*(?:<<<openapi-model|---end)', re.DOTALL | re.IGNORECASE)
+                for m_model in model_block_re.finditer(raw_class_doc):  # allow multiple, merge
+                    raw_block = m_model.group(1)
+                    try:
+                        loaded = yaml.safe_load(raw_block) or {}
+                        if isinstance(loaded, dict) and 'properties' in loaded and isinstance(loaded['properties'], dict):
+                            for k, v in loaded['properties'].items():
+                                if isinstance(v, dict):
+                                    # First definition wins; subsequent legacy blocks only add missing keys.
+                                    existing = prop_meta.get(k)
+                                    if existing is None:
+                                        prop_meta[k] = v.copy()
+                                    else:
+                                        for mk, mv in v.items():
+                                            if mk not in existing:
+                                                existing[mk] = mv
+                    except Exception:
+                        continue  # Ignore malformed legacy block(s)
+            # 2. Unified markers (>>>openapi / <<<openapi) – augment only (do not overwrite legacy keys)
+            if '>>>openapi' in raw_class_doc or '---openapi' in raw_class_doc:
+                unified_re = re.compile(r'(?:>>>openapi|---openapi)\s*(.*?)\s*(?:<<<openapi|---end)', re.DOTALL | re.IGNORECASE)
+                for m_unified in unified_re.finditer(raw_class_doc):
+                    raw_block = m_unified.group(1)
+                    try:
+                        loaded = yaml.safe_load(raw_block) or {}
+                        if isinstance(loaded, dict) and 'properties' in loaded and isinstance(loaded['properties'], dict):
+                            for k, v in loaded['properties'].items():
+                                if not isinstance(v, dict):
+                                    continue
+                                existing = prop_meta.get(k)
+                                if existing is None:
+                                    # New property metadata entirely from unified block.
+                                    prop_meta[k] = v.copy()
+                                else:
+                                    # Add only keys not already present (preserve legacy priority).
+                                    for mk, mv in v.items():
+                                        if mk not in existing:
+                                            existing[mk] = mv
+                    except Exception:
+                        continue  # Try next block if present
             for deco in cls.decorator_list:
                 if isinstance(deco, ast.Call) and getattr(deco.func, 'id', '') == 'openapi_model':
                     if deco.args and isinstance(deco.args[0], ast.Constant) and isinstance(deco.args[0].value, str):
@@ -554,6 +599,20 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
                                 schema['enum'] = sorted(set(enum_vals))
                 if nullable:
                     schema['nullable'] = True
+                # Merge in property metadata (currently description + future extensibility)
+                meta = prop_meta.get(attr)
+                if meta:
+                    # Avoid overwriting core inferred keys unless explicitly different; description is additive
+                    desc_val = meta.get('description') if isinstance(meta, dict) else None
+                    if isinstance(desc_val, str):
+                        schema['description'] = desc_val
+                    # Allow enum override via metadata (if user wants manual control)
+                    if 'enum' in meta and isinstance(meta['enum'], list):
+                        schema['enum'] = meta['enum']
+                    # Additional future keys can be shallow-copied if they don't collide.
+                    for extra_k, extra_v in meta.items():
+                        if extra_k not in schema:
+                            schema[extra_k] = extra_v
                 props[attr] = schema
                 if not nullable:
                     required.append(attr)
