@@ -30,11 +30,10 @@ extracts raw attributes from a live ``discord.Guild`` object).
 
 import typing
 
-from bot.lib.models.openapi import openapi_managed, openapi_model
+from bot.lib.models.openapi import openapi
 
-
-@openapi_model("DiscordGuild", description="Snapshot of a Discord guild's core attributes.")
-@openapi_managed()
+@openapi.component("DiscordGuild", description="Snapshot of a Discord guild's core attributes.")
+@openapi.openapi_managed()
 class DiscordGuild:
     """Represents a Discord guild snapshot.
 

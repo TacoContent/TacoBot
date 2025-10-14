@@ -12,9 +12,9 @@ def test_openapi_deprecated_decorator():
 
         deprecated_model = '''
 import typing
-from bot.lib.models.openapi import openapi_model, openapi_deprecated
+from bot.lib.models.openapi import component, openapi_deprecated
 
-@openapi_model("DeprecatedModel", description="A deprecated model")
+@openapi.component("DeprecatedModel", description="A deprecated model")
 @openapi_deprecated()
 class DeprecatedModel:
     """A model marked as deprecated."""
@@ -27,7 +27,7 @@ from typing import Any, Callable, TypeVar
 
 T = TypeVar('T')
 
-def openapi_model(name: str, description: str = None):
+def component(name: str, description: str = None):
     def decorator(cls):
         cls._openapi_name = name
         cls._openapi_description = description
@@ -48,7 +48,9 @@ def openapi_deprecated():
 
         test_file = models_root / "deprecated_model.py"
         test_file.write_text(deprecated_model)
-        openapi_file = models_root / "openapi.py"
+        openapi_dir = models_root / "openapi"
+        openapi_dir.mkdir(parents=True, exist_ok=True)
+        openapi_file = openapi_dir / "openapi.py"
         openapi_file.write_text(openapi_content)
 
         comps, _ = collect_model_components(models_root)
@@ -68,9 +70,9 @@ def test_openapi_exclude_decorator():
 
         excluded_model = '''
 import typing
-from bot.lib.models.openapi import openapi_model, openapi_exclude
+from bot.lib.models.openapi import component, openapi_exclude
 
-@openapi_model("ExcludedModel", description="This should not appear")
+@openapi.component("ExcludedModel", description="This should not appear")
 @openapi_exclude()
 class ExcludedModel:
     """A model marked for exclusion."""
@@ -83,7 +85,7 @@ from typing import Any, Callable, TypeVar
 
 T = TypeVar('T')
 
-def openapi_model(name: str, description: str = None):
+def component(name: str, description: str = None):
     def decorator(cls):
         cls._openapi_name = name
         cls._openapi_description = description
@@ -104,7 +106,9 @@ def openapi_exclude():
 
         test_file = models_root / "excluded_model.py"
         test_file.write_text(excluded_model)
-        openapi_file = models_root / "openapi.py"
+        openapi_dir = models_root / "openapi"
+        openapi_dir.mkdir(parents=True, exist_ok=True)
+        openapi_file = openapi_dir / "openapi.py"
         openapi_file.write_text(openapi_content)
 
         comps, _ = collect_model_components(models_root)
@@ -120,26 +124,26 @@ def test_multiple_models_mixed_decorators():
 
         models_content = '''
 import typing
-from bot.lib.models.openapi import openapi_model, openapi_deprecated, openapi_exclude, openapi_managed
+from bot.lib.models.openapi import component, openapi_deprecated, openapi_exclude, openapi_managed
 
-@openapi_model("NormalModel", description="A normal model")
+@openapi.component("NormalModel", description="A normal model")
 class NormalModel:
     def __init__(self, value: str):
         self.value: str = value
 
-@openapi_model("DeprecatedModel", description="A deprecated model")
+@openapi.component("DeprecatedModel", description="A deprecated model")
 @openapi_deprecated()
 class DeprecatedModel:
     def __init__(self, old_field: str):
         self.old_field: str = old_field
 
-@openapi_model("ExcludedModel", description="Should not appear")
+@openapi.component("ExcludedModel", description="Should not appear")
 @openapi_exclude()
 class ExcludedModel:
     def __init__(self, secret: str):
         self.secret: str = secret
 
-@openapi_model("ManagedDeprecatedModel", description="Managed and deprecated")
+@openapi.component("ManagedDeprecatedModel", description="Managed and deprecated")
 @openapi_managed()
 @openapi_deprecated()
 class ManagedDeprecatedModel:
@@ -152,7 +156,7 @@ from typing import Any, Callable, TypeVar
 
 T = TypeVar('T')
 
-def openapi_model(name: str, description: str = None):
+def component(name: str, description: str = None):
     def decorator(cls):
         cls._openapi_name = name
         cls._openapi_description = description
@@ -179,7 +183,9 @@ def openapi_exclude():
 
         test_file = models_root / "test_models.py"
         test_file.write_text(models_content)
-        openapi_file = models_root / "openapi.py"
+        openapi_dir = models_root / "openapi"
+        openapi_dir.mkdir(parents=True, exist_ok=True)
+        openapi_file = openapi_dir / "openapi.py"
         openapi_file.write_text(openapi_content)
 
         comps, _ = collect_model_components(models_root)
@@ -216,9 +222,9 @@ def test_deprecated_with_properties():
 
         deprecated_model = '''
 import typing
-from bot.lib.models.openapi import openapi_model, openapi_deprecated
+from bot.lib.models.openapi import component, openapi_deprecated
 
-@openapi_model("DetailedDeprecatedModel", description="Deprecated with complex properties")
+@openapi.component("DetailedDeprecatedModel", description="Deprecated with complex properties")
 @openapi_deprecated()
 class DetailedDeprecatedModel:
     def __init__(self,
@@ -237,7 +243,7 @@ from typing import Any, Callable, TypeVar
 
 T = TypeVar('T')
 
-def openapi_model(name: str, description: str = None):
+def component(name: str, description: str = None):
     def decorator(cls):
         cls._openapi_name = name
         cls._openapi_description = description
@@ -258,7 +264,9 @@ def openapi_deprecated():
 
         test_file = models_root / "deprecated_model.py"
         test_file.write_text(deprecated_model)
-        openapi_file = models_root / "openapi.py"
+        openapi_dir = models_root / "openapi"
+        openapi_dir.mkdir(parents=True, exist_ok=True)
+        openapi_file = openapi_dir / "openapi.py"
         openapi_file.write_text(openapi_content)
 
         comps, _ = collect_model_components(models_root)
@@ -299,9 +307,9 @@ def test_exclude_priority_over_other_decorators():
 
         excluded_model = '''
 import typing
-from bot.lib.models.openapi import openapi_model, openapi_exclude, openapi_deprecated, openapi_managed
+from bot.lib.models.openapi import component, openapi_exclude, openapi_deprecated, openapi_managed
 
-@openapi_model("FullyDecoratedExcluded", description="Should not appear despite other decorators")
+@openapi.component("FullyDecoratedExcluded", description="Should not appear despite other decorators")
 @openapi_managed()
 @openapi_deprecated()
 @openapi_exclude()
@@ -315,7 +323,7 @@ from typing import Any, Callable, TypeVar
 
 T = TypeVar('T')
 
-def openapi_model(name: str, description: str = None):
+def component(name: str, description: str = None):
     def decorator(cls):
         cls._openapi_name = name
         cls._openapi_description = description
@@ -342,7 +350,9 @@ def openapi_exclude():
 
         test_file = models_root / "excluded_model.py"
         test_file.write_text(excluded_model)
-        openapi_file = models_root / "openapi.py"
+        openapi_dir = models_root / "openapi"
+        openapi_dir.mkdir(parents=True, exist_ok=True)
+        openapi_file = openapi_dir / "openapi.py"
         openapi_file.write_text(openapi_content)
 
         comps, _ = collect_model_components(models_root)

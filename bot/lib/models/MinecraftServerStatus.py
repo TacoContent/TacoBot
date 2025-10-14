@@ -1,11 +1,10 @@
 
 import typing
 
-from bot.lib.models.openapi import openapi_managed, openapi_model
+from bot.lib.models.openapi import openapi
 
-
-@openapi_model("MinecraftServerStatusMotd", description="Represents the message of the day (MOTD) information in a Minecraft server status response.")
-@openapi_managed()
+@openapi.component("MinecraftServerStatusMotd", description="Represents the message of the day (MOTD) information in a Minecraft server status response.")
+@openapi.openapi_managed()
 class MinecraftServerStatusMotd:
     """Container for the "message of the day" (MOTD) information in a Minecraft server status response.
 
@@ -28,8 +27,8 @@ class MinecraftServerStatusMotd:
         self.raw: str = data.get("raw", "")
         self.ansi: str = data.get("ansi", "")
 
-@openapi_model("MinecraftServerStatusPlayers", description="Represents player count information in a Minecraft server status response.")
-@openapi_managed()
+@openapi.component("MinecraftServerStatusPlayers", description="Represents player count information in a Minecraft server status response.")
+@openapi.openapi_managed()
 class MinecraftServerStatusPlayers:
     """Container for player count information in a Minecraft server status response.
 
@@ -46,8 +45,8 @@ class MinecraftServerStatusPlayers:
         self.online: int = data.get("online", 0)
         self.max: int = data.get("max", 0)
 
-@openapi_model("MinecraftServerStatusVersion", description="Represents version information in a Minecraft server status response.")
-@openapi_managed()
+@openapi.component("MinecraftServerStatusVersion", description="Represents version information in a Minecraft server status response.")
+@openapi.openapi_managed()
 class MinecraftServerStatusVersion:
     """Container for version information in a Minecraft server status response.
 
@@ -64,8 +63,8 @@ class MinecraftServerStatusVersion:
         self.name: str = data.get("name", "")
         self.protocol: int = data.get("protocol", 0)
 
-@openapi_model("MinecraftServerStatus", description="Represents the status of a Minecraft server.")
-@openapi_managed()
+@openapi.component("MinecraftServerStatus", description="Represents the status of a Minecraft server.")
+@openapi.openapi_managed()
 class MinecraftServerStatus:
     """Container for the overall Minecraft server status response.
     >>>openapi

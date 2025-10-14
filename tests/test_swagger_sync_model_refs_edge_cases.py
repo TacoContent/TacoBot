@@ -15,9 +15,9 @@ def test_model_class_ref_nonexistent_class():
         models_root = pathlib.Path(temp_dir)
 
         test_model_content = '''
-from bot.lib.models.openapi import openapi_model
+from bot.lib.models.openapi import component
 
-@openapi_model("ForwardRefModel", description="A model with forward reference")
+@openapi.component("ForwardRefModel", description="A model with forward reference")
 class ForwardRefModel:
     def __init__(self, id: int, related: NonExistentClass):
         self.id: int = id
@@ -25,7 +25,7 @@ class ForwardRefModel:
 '''
 
         openapi_content = '''
-def openapi_model(name: str, description: str = None):
+def openapi.component(name: str, description: str = None):
     def decorator(cls):
         cls._openapi_name = name
         cls._openapi_description = description
@@ -35,7 +35,9 @@ def openapi_model(name: str, description: str = None):
 
         test_file = models_root / "test_models.py"
         test_file.write_text(test_model_content)
-        openapi_file = models_root / "openapi.py"
+        openapi_dir = models_root / "openapi"
+        openapi_dir.mkdir(parents=True, exist_ok=True)
+        openapi_file = openapi_dir / "openapi.py"
         openapi_file.write_text(openapi_content)
 
         comps, _ = collect_model_components(models_root)
@@ -59,9 +61,9 @@ def test_model_class_ref_nested_generic():
 
         test_model_content = '''
 import typing
-from bot.lib.models.openapi import openapi_model
+from bot.lib.models.openapi import component
 
-@openapi_model("NestedModel", description="A model with nested generics")
+@openapi.component("NestedModel", description="A model with nested generics")
 class NestedModel:
     def __init__(self,
                  complex_dict: typing.Dict[str, typing.List[typing.Optional[str]]],
@@ -71,7 +73,7 @@ class NestedModel:
 '''
 
         openapi_content = '''
-def openapi_model(name: str, description: str = None):
+def component(name: str, description: str = None):
     def decorator(cls):
         cls._openapi_name = name
         cls._openapi_description = description
@@ -81,7 +83,9 @@ def openapi_model(name: str, description: str = None):
 
         test_file = models_root / "test_models.py"
         test_file.write_text(test_model_content)
-        openapi_file = models_root / "openapi.py"
+        openapi_dir = models_root / "openapi"
+        openapi_dir.mkdir(parents=True, exist_ok=True)
+        openapi_file = openapi_dir / "openapi.py"
         openapi_file.write_text(openapi_content)
 
         comps, _ = collect_model_components(models_root)
@@ -104,9 +108,9 @@ def test_model_class_ref_empty_annotation():
         models_root = pathlib.Path(temp_dir)
 
         test_model_content = '''
-from bot.lib.models.openapi import openapi_model
+from bot.lib.models.openapi import component
 
-@openapi_model("EdgeCaseModel", description="A model with edge case annotations")
+@openapi.component("EdgeCaseModel", description="A model with edge case annotations")
 class EdgeCaseModel:
     def __init__(self, normal: str, no_annotation, empty_annotation: ""):
         self.normal: str = normal
@@ -115,7 +119,7 @@ class EdgeCaseModel:
 '''
 
         openapi_content = '''
-def openapi_model(name: str, description: str = None):
+def component(name: str, description: str = None):
     def decorator(cls):
         cls._openapi_name = name
         cls._openapi_description = description
@@ -125,7 +129,9 @@ def openapi_model(name: str, description: str = None):
 
         test_file = models_root / "test_models.py"
         test_file.write_text(test_model_content)
-        openapi_file = models_root / "openapi.py"
+        openapi_dir = models_root / "openapi"
+        openapi_dir.mkdir(parents=True, exist_ok=True)
+        openapi_file = openapi_dir / "openapi.py"
         openapi_file.write_text(openapi_content)
 
         comps, _ = collect_model_components(models_root)
@@ -148,9 +154,9 @@ def test_model_class_ref_camelcase_detection():
         models_root = pathlib.Path(temp_dir)
 
         test_model_content = '''
-from bot.lib.models.openapi import openapi_model
+from bot.lib.models.openapi import component
 
-@openapi_model("CamelCaseModel", description="A model testing CamelCase detection")
+@openapi.component("CamelCaseModel", description="A model testing CamelCase detection")
 class CamelCaseModel:
     def __init__(self,
                  good_ref: UserModel,
@@ -166,7 +172,7 @@ class CamelCaseModel:
 '''
 
         openapi_content = '''
-def openapi_model(name: str, description: str = None):
+def component(name: str, description: str = None):
     def decorator(cls):
         cls._openapi_name = name
         cls._openapi_description = description
@@ -176,7 +182,9 @@ def openapi_model(name: str, description: str = None):
 
         test_file = models_root / "test_models.py"
         test_file.write_text(test_model_content)
-        openapi_file = models_root / "openapi.py"
+        openapi_dir = models_root / "openapi"
+        openapi_dir.mkdir(parents=True, exist_ok=True)
+        openapi_file = openapi_dir / "openapi.py"
         openapi_file.write_text(openapi_content)
 
         comps, _ = collect_model_components(models_root)
@@ -208,9 +216,9 @@ def test_model_class_ref_with_literal_and_model():
 
         test_model_content = '''
 import typing
-from bot.lib.models.openapi import openapi_model
+from bot.lib.models.openapi import component
 
-@openapi_model("MixedModel", description="A model with both Literal and model refs")
+@openapi.component("MixedModel", description="A model with both Literal and model refs")
 class MixedModel:
     def __init__(self,
                  status: typing.Literal["Active", "Inactive"],
@@ -222,7 +230,7 @@ class MixedModel:
 '''
 
         openapi_content = '''
-def openapi_model(name: str, description: str = None):
+def component(name: str, description: str = None):
     def decorator(cls):
         cls._openapi_name = name
         cls._openapi_description = description
@@ -232,7 +240,9 @@ def openapi_model(name: str, description: str = None):
 
         test_file = models_root / "test_models.py"
         test_file.write_text(test_model_content)
-        openapi_file = models_root / "openapi.py"
+        openapi_dir = models_root / "openapi"
+        openapi_dir.mkdir(parents=True, exist_ok=True)
+        openapi_file = openapi_dir / "openapi.py"
         openapi_file.write_text(openapi_content)
 
         comps, _ = collect_model_components(models_root)

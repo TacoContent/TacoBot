@@ -15,12 +15,12 @@ def test_component_only_update_triggers_write(monkeypatch):
         tmp = pathlib.Path(td)
         # Replicate minimal project structure required: scripts, swagger file, models dir
         (tmp / 'scripts').mkdir(parents=True)
-        (tmp / 'bot/lib/models').mkdir(parents=True)
+        (tmp / 'bot/lib/models/openapi').mkdir(parents=True)
 
         shutil.copyfile(SCRIPT, tmp / 'scripts/swagger_sync.py')
         shutil.copyfile(SWAGGER, tmp / '.swagger.v1.yaml')
         # Copy the openapi decorator helper so the import path resolves
-        shutil.copyfile(MODELS_DIR / 'openapi.py', tmp / 'bot/lib/models/openapi.py')
+        shutil.copyfile(MODELS_DIR / 'openapi/openapi.py', tmp / 'bot/lib/models/openapi/openapi.py')
 
     # Pick a model file that exists (DiscordChannel) and add a new attribute to force component drift
         source_model = MODELS_DIR / 'DiscordChannel.py'

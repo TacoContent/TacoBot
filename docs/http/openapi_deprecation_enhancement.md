@@ -6,7 +6,7 @@ Added two new decorators to the OpenAPI model system: `@openapi_deprecated()` an
 
 ## Changes Implemented
 
-### 1. New Decorators in `bot/lib/models/openapi.py`
+### 1. New Decorators in `bot/lib/models/openapi/openapi.py`
 
 #### `@openapi_deprecated()`
 
@@ -16,7 +16,7 @@ Added two new decorators to the OpenAPI model system: `@openapi_deprecated()` an
 - Use case: Signaling to API consumers that they should migrate to alternatives
 
 ```python
-@openapi_model("LegacyModel", description="Old model being replaced")
+@openapi.component("LegacyModel", description="Old model being replaced")
 @openapi_deprecated()
 class LegacyModel:
     def __init__(self, data: str):
@@ -31,7 +31,7 @@ class LegacyModel:
 - Use case: Internal-only models, test fixtures, or models being removed from public API
 
 ```python
-@openapi_model("InternalModel", description="Should not appear in API")
+@openapi.component("InternalModel", description="Should not appear in API")
 @openapi_exclude()
 class InternalModel:
     def __init__(self, secret: str):
@@ -125,7 +125,7 @@ ExampleDeprecatedModel:
 ### Stacking Decorators
 
 ```python
-@openapi_model("Model")
+@openapi.component("Model")
 @openapi_managed()
 @openapi_deprecated()  # ✓ Works - both flags present
 class Model:
@@ -135,7 +135,7 @@ class Model:
 ### Exclusion Priority
 
 ```python
-@openapi_model("Model")
+@openapi.component("Model")
 @openapi_managed()
 @openapi_deprecated()
 @openapi_exclude()  # ✓ Takes priority - model not in schema

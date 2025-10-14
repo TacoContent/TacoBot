@@ -1,9 +1,8 @@
 
-from bot.lib.models.openapi import openapi_managed, openapi_model
+from bot.lib.models.openapi import openapi
 
-
-@openapi_model("MinecraftUserStats", description="Payload for Minecraft user statistics.")
-@openapi_managed()
+@openapi.component("MinecraftUserStats", description="Payload for Minecraft user statistics.")
+@openapi.openapi_managed()
 class MinecraftUserStats(dict):
     """Payload for Minecraft user statistics.
 

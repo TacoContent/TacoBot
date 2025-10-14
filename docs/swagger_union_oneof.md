@@ -364,18 +364,18 @@ In addition to `oneOf` for exclusive alternatives, the script now supports `anyO
 
 ```python
 import typing
-from lib.models.openapi import openapi_type_alias
+from lib.models.openapi import component, openapi_type_alias
 
-@openapi_model()
+@openapi.component()
 class SearchDateFilter:
     start_date: str
     end_date: str
 
-@openapi_model()
+@openapi.component()
 class SearchAuthorFilter:
     author_id: str
 
-@openapi_model()
+@openapi.component()
 class SearchTagFilter:
     tags: list[str]
 
@@ -384,7 +384,7 @@ SearchCriteria: typing.TypeAlias = typing.Union[
     SearchDateFilter, SearchAuthorFilter, SearchTagFilter
 ]
 
-openapi_type_alias(
+openapi.openapi_type_alias(
     "SearchCriteria",
     description="Search filters that can be combined - supports date range, author, and/or tag filters.",
     anyof=True,  # NEW: Generates anyOf instead of oneOf

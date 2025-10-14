@@ -1,10 +1,11 @@
 
 import typing
 from bot.lib.models.DiscordChannel import DiscordChannel
-from bot.lib.models.openapi import openapi_managed, openapi_model
+from bot.lib.models.openapi import openapi
 
-@openapi_model("DiscordCategory", description="Model for a Discord Category.")
-@openapi_managed()
+
+@openapi.component("DiscordCategory", description="Model for a Discord Category.")
+@openapi.openapi_managed()
 class DiscordCategory:
     """Model for a Discord Category.
 

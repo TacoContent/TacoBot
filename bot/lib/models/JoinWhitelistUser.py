@@ -31,11 +31,10 @@ Design Notes
 
 import typing
 
-from bot.lib.models.openapi import openapi_managed, openapi_model
+from bot.lib.models.openapi import openapi
 
-
-@openapi_model("JoinWhitelistUser", description="Container for a guild-scoped join whitelist record.")
-@openapi_managed()
+@openapi.component("JoinWhitelistUser", description="Container for a guild-scoped join whitelist record.")
+@openapi.openapi_managed()
 class JoinWhitelistUser:
     """Container for a guild-scoped join whitelist record.
 

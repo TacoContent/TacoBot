@@ -1,11 +1,10 @@
 import typing
 
 import discord
-from bot.lib.models.openapi import openapi_managed, openapi_model
+from bot.lib.models.openapi import openapi
 
-
-@openapi_model("DiscordMessageReaction", description="Snapshot of a Discord message reaction.")
-@openapi_managed()
+@openapi.component("DiscordMessageReaction", description="Snapshot of a Discord message reaction.")
+@openapi.openapi_managed()
 class DiscordMessageReaction:
     def __init__(self, emoji: str, count: int):
         self.emoji: str = emoji

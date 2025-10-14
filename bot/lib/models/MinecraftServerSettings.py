@@ -1,12 +1,11 @@
 
 import typing
 
-from bot.lib.models.openapi import openapi_managed, openapi_model
-
+from bot.lib.models.openapi import openapi
 from bot.lib.models.TacoMinecraftServerSettingsMod import TacoMinecraftServerSettingsMod
 
-@openapi_model("MinecraftServerSettings", description="Configuration for the Minecraft Server.")
-@openapi_managed()
+@openapi.component("MinecraftServerSettings", description="Configuration for the Minecraft Server.")
+@openapi.openapi_managed()
 class MinecraftServerSettings:
   """Configuration for the Minecraft Server.
 

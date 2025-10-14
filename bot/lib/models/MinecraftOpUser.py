@@ -1,8 +1,7 @@
-from bot.lib.models.openapi import openapi_managed, openapi_model
+from bot.lib.models.openapi import openapi
 
-
-@openapi_model("MinecraftOpUser", description="Represents a Minecraft user with operator permissions.")
-@openapi_managed()
+@openapi.component("MinecraftOpUser", description="Represents a Minecraft user with operator permissions.")
+@openapi.openapi_managed()
 class MinecraftOpUser:
   """Represents a Minecraft user with operator permissions.
     >>>openapi

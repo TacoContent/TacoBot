@@ -107,7 +107,7 @@ SearchCriteria:
 
 ## Files Modified
 
-### 1. `bot/lib/models/openapi.py`
+### 1. `bot/lib/models/openapi/openapi.py`
 
 - Added `anyof` parameter to `openapi_type_alias` decorator
 - Updated docstring with anyof usage examples

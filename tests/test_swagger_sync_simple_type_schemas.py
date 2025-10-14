@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Test simple type schema generation for @openapi_model classes."""
+"""Test simple type schema generation for @openapi.component classes."""
 
 import pathlib
 import tempfile
@@ -12,13 +12,13 @@ def test_simple_string_enum_schema():
     with tempfile.TemporaryDirectory() as tmpdir:
         models_dir = pathlib.Path(tmpdir) / 'models'
         models_dir.mkdir()
-        
+
         # Create a simple enum model file
         model_file = models_dir / 'TestEnum.py'
         model_file.write_text(textwrap.dedent("""
-            from bot.lib.models.openapi import openapi_model
+            from bot.lib.models.openapi import component
 
-            @openapi_model("TestEnum", description="Test enum type")
+            @openapi.component("TestEnum", description="Test enum type")
             class TestEnum:
                 '''A test enum type.
 
@@ -27,23 +27,23 @@ def test_simple_string_enum_schema():
                 default: option_a
                 enum:
                   - option_a
-                  - option_b  
+                  - option_b
                   - option_c
                 <<<openapi
                 '''
         """))
-        
+
         components, _ = collect_model_components(models_dir)
-        
+
         assert 'TestEnum' in components
         schema = components['TestEnum']
-        
+
         # Verify it's a simple type schema, not an object
         assert schema['type'] == 'string'
         assert schema['default'] == 'option_a'
         assert schema['enum'] == ['option_a', 'option_b', 'option_c']
         assert schema['description'] == 'Test enum type'
-        
+
         # Verify it doesn't have object properties
         assert 'properties' not in schema
         assert 'required' not in schema
@@ -54,13 +54,13 @@ def test_simple_integer_with_minimum():
     with tempfile.TemporaryDirectory() as tmpdir:
         models_dir = pathlib.Path(tmpdir) / 'models'
         models_dir.mkdir()
-        
+
         # Create a simple integer model file
         model_file = models_dir / 'TestInteger.py'
         model_file.write_text(textwrap.dedent("""
-            from bot.lib.models.openapi import openapi_model
+            from bot.lib.models.openapi import component
 
-            @openapi_model("TestInteger")
+            @openapi.component("TestInteger")
             class TestInteger:
                 '''A test integer type.
 
@@ -72,18 +72,18 @@ def test_simple_integer_with_minimum():
                 <<<openapi
                 '''
         """))
-        
+
         components, _ = collect_model_components(models_dir)
-        
+
         assert 'TestInteger' in components
         schema = components['TestInteger']
-        
+
         # Verify it's a simple integer schema
         assert schema['type'] == 'integer'
         assert schema['minimum'] == 1
         assert schema['maximum'] == 100
         assert schema['default'] == 50
-        
+
         # Verify it doesn't have object properties
         assert 'properties' not in schema
         assert 'required' not in schema
@@ -94,13 +94,13 @@ def test_simple_boolean_schema():
     with tempfile.TemporaryDirectory() as tmpdir:
         models_dir = pathlib.Path(tmpdir) / 'models'
         models_dir.mkdir()
-        
+
         # Create a simple boolean model file
         model_file = models_dir / 'TestBoolean.py'
         model_file.write_text(textwrap.dedent("""
-            from bot.lib.models.openapi import openapi_model
+            from bot.lib.models.openapi import component
 
-            @openapi_model("TestBoolean", description="Test boolean flag")
+            @openapi.component("TestBoolean", description="Test boolean flag")
             class TestBoolean:
                 '''A test boolean type.
 
@@ -110,17 +110,17 @@ def test_simple_boolean_schema():
                 <<<openapi
                 '''
         """))
-        
+
         components, _ = collect_model_components(models_dir)
-        
+
         assert 'TestBoolean' in components
         schema = components['TestBoolean']
-        
+
         # Verify it's a simple boolean schema
         assert schema['type'] == 'boolean'
         assert schema['default'] is False
         assert schema['description'] == 'Test boolean flag'
-        
+
         # Verify it doesn't have object properties
         assert 'properties' not in schema
         assert 'required' not in schema
@@ -131,13 +131,13 @@ def test_object_schema_still_works():
     with tempfile.TemporaryDirectory() as tmpdir:
         models_dir = pathlib.Path(tmpdir) / 'models'
         models_dir.mkdir()
-        
+
         # Create a model with properties (should still generate object schema)
         model_file = models_dir / 'TestObject.py'
         model_file.write_text(textwrap.dedent("""
-            from bot.lib.models.openapi import openapi_model
+            from bot.lib.models.openapi import component
 
-            @openapi_model("TestObject", description="Test object type")
+            @openapi.component("TestObject", description="Test object type")
             class TestObject:
                 '''A test object type.
 
@@ -148,17 +148,17 @@ def test_object_schema_still_works():
                     description: A custom field
                 <<<openapi
                 '''
-                
+
                 def __init__(self, id: int, name: str):
                     self.id: int = id
                     self.name: str = name
         """))
-        
+
         components, _ = collect_model_components(models_dir)
-        
+
         assert 'TestObject' in components
         schema = components['TestObject']
-        
+
         # Verify it's still an object schema
         assert schema['type'] == 'object'
         assert 'properties' in schema
@@ -173,24 +173,24 @@ def test_fallback_to_object_without_openapi_block():
     with tempfile.TemporaryDirectory() as tmpdir:
         models_dir = pathlib.Path(tmpdir) / 'models'
         models_dir.mkdir()
-        
+
         # Create a standard object model without openapi block
         model_file = models_dir / 'TestStandard.py'
         model_file.write_text(textwrap.dedent("""
-            from bot.lib.models.openapi import openapi_model
+            from bot.lib.models.openapi import ccomponent
 
-            @openapi_model("TestStandard", description="Standard object")
+            @openapi.component("TestStandard", description="Standard object")
             class TestStandard:
                 def __init__(self, id: int, value: str):
                     self.id = id
                     self.value = value
         """))
-        
+
         components, _ = collect_model_components(models_dir)
-        
+
         assert 'TestStandard' in components
         schema = components['TestStandard']
-        
+
         # Verify it's an object schema (fallback behavior)
         assert schema['type'] == 'object'
         assert 'properties' in schema
@@ -203,13 +203,13 @@ def test_description_precedence():
     with tempfile.TemporaryDirectory() as tmpdir:
         models_dir = pathlib.Path(tmpdir) / 'models'
         models_dir.mkdir()
-        
+
         # Create a simple schema without description in openapi block
         model_file = models_dir / 'TestDescription.py'
         model_file.write_text(textwrap.dedent("""
-            from bot.lib.models.openapi import openapi_model
+            from bot.lib.models.openapi import component
 
-            @openapi_model("TestDescription", description="From decorator")
+            @openapi.component("TestDescription", description="From decorator")
             class TestDescription:
                 '''Test description precedence.
 
@@ -219,12 +219,12 @@ def test_description_precedence():
                 <<<openapi
                 '''
         """))
-        
+
         components, _ = collect_model_components(models_dir)
-        
+
         assert 'TestDescription' in components
         schema = components['TestDescription']
-        
+
         # Verify decorator description is used
         assert schema['description'] == 'From decorator'
 
@@ -234,13 +234,13 @@ def test_schema_description_overrides_decorator():
     with tempfile.TemporaryDirectory() as tmpdir:
         models_dir = pathlib.Path(tmpdir) / 'models'
         models_dir.mkdir()
-        
+
         # Create a schema with description in openapi block
         model_file = models_dir / 'TestDescOverride.py'
         model_file.write_text(textwrap.dedent("""
-            from bot.lib.models.openapi import openapi_model
+            from bot.lib.models.openapi import component
 
-            @openapi_model("TestDescOverride", description="From decorator")
+            @openapi.component("TestDescOverride", description="From decorator")
             class TestDescOverride:
                 '''Test description override.
 
@@ -251,11 +251,11 @@ def test_schema_description_overrides_decorator():
                 <<<openapi
                 '''
         """))
-        
+
         components, _ = collect_model_components(models_dir)
-        
+
         assert 'TestDescOverride' in components
         schema = components['TestDescOverride']
-        
+
         # Verify schema description overrides decorator
         assert schema['description'] == 'From schema'

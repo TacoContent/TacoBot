@@ -1,10 +1,10 @@
 
 
 from bot.lib.models.MinecraftServerSettings import MinecraftServerSettings
-from bot.lib.models.openapi import openapi_managed, openapi_model
+from bot.lib.models.openapi import openapi
 
-@openapi_model("TacoMinecraftServerSettings", description="Represents the settings for a Minecraft server managed by TacoBot.")
-@openapi_managed()
+@openapi.component("TacoMinecraftServerSettings", description="Represents the settings for a Minecraft server managed by TacoBot.")
+@openapi.openapi_managed()
 class TacoMinecraftServerSettings:
     """Represents the settings for a Minecraft server managed by TacoBot.
 

@@ -1,10 +1,10 @@
 
-from bot.lib.models.openapi import openapi_managed, openapi_model
+from bot.lib.models.openapi import openapi
 from bot.lib.models.TacoMinecraftWorlds import TacoMinecraftWorlds
 
 
-@openapi_model("TacoMinecraftWorldInfo", description="Represents a Minecraft world managed by Taco.")
-@openapi_managed()
+@openapi.component("TacoMinecraftWorldInfo", description="Represents a Minecraft world managed by Taco.")
+@openapi.openapi_managed()
 class TacoMinecraftWorldInfo:
     """
     Represents a Minecraft world managed by Taco.
@@ -24,7 +24,7 @@ class TacoMinecraftWorldInfo:
     """
 
     def __init__(self, data: dict):
-        self.world: TacoMinecraftWorlds = TacoMinecraftWorlds.from_str(data.get("world", TacoMinecraftWorlds.taco_atm10_2))
+        self.world: TacoMinecraftWorlds = data.get("world", "")
         self.name: str = data.get("name", "Unknown World")
         self.active: bool = data.get("active", False)
         self.guild_id: str = str(data.get("guild_id", ""))

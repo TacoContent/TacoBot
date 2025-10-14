@@ -2,11 +2,10 @@ import typing
 
 from bot.lib.models.DiscordCategory import DiscordCategory
 from bot.lib.models.DiscordChannel import DiscordChannel
-from bot.lib.models.openapi import openapi_managed, openapi_model
+from bot.lib.models.openapi import openapi
 
-
-@openapi_model("DiscordGuildChannels", description="Snapshot of a Discord guild's channels and categories.")
-@openapi_managed()
+@openapi.component("DiscordGuildChannels", description="Snapshot of a Discord guild's channels and categories.")
+@openapi.openapi_managed()
 class DiscordGuildChannels:
     """Model for Discord guild channels data.
 

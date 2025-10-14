@@ -152,7 +152,7 @@ Rules & Caveats
 Model Component Auto‑Generation
 -------------------------------
 Classes in the models root (default ``bot/lib/models``) decorated with
-``@openapi_model("ComponentName", description="...")`` are translated into
+``@openapi.component("ComponentName", description="...")`` are translated into
 basic ``components.schemas`` entries.
 
 Two modes are supported:
@@ -176,10 +176,10 @@ the scan root via ``--models-root``.
 
 Object Schema Example::
 
-    from bot.lib.models.openapi import openapi_model
+    from bot.lib.models.openapi import component
     from typing import Optional
 
-    @openapi_model("DiscordChannel", description="Discord text/voice channel snapshot")
+    @openapi.component("DiscordChannel", description="Discord text/voice channel snapshot")
     class DiscordChannel:
         def __init__(self, id: int, name: str, topic: Optional[str] = None, nsfw: bool = False, position: int = 0):
             self.id: int = id
@@ -209,9 +209,9 @@ Generated YAML (excerpt)::
 
 Simple Type Schema Example::
 
-    from bot.lib.models.openapi import openapi_model
+    from bot.lib.models.openapi import component
 
-    @openapi_model("MinecraftWorld", description="Represents a Minecraft world")
+    @openapi.component("MinecraftWorld", description="Represents a Minecraft world")
     class MinecraftWorld:
         '''Represents a Minecraft world managed by TacoBot.
 
@@ -740,9 +740,9 @@ def _extract_refs_from_types(type_list: list[str]) -> list[Dict[str, str]]:
 def _discover_attribute_aliases(models_root: pathlib.Path) -> Dict[str, Tuple[Optional[str], Any]]:
     alias_map: Dict[str, Tuple[Optional[str], Any]] = {}
     candidates: List[pathlib.Path] = []
-    potential = (models_root / 'openapi.py').resolve()
+    potential = (models_root / 'openapi/openapi.py').resolve()
     candidates.append(potential)
-    default_candidate = (DEFAULT_MODELS_ROOT / 'openapi.py').resolve()
+    default_candidate = (DEFAULT_MODELS_ROOT / 'openapi/openapi.py').resolve()
     if default_candidate not in candidates:
         candidates.append(default_candidate)
     for candidate in candidates:
@@ -1293,10 +1293,10 @@ def collect_endpoints(handlers_root: pathlib.Path, *, strict: bool = False, igno
 
 
 def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[str, Any]], set[str]]:
-    """Collect model classes decorated with @openapi_model and derive naive schemas.
+    """Collect model classes decorated with @openapi.component and derive naive schemas.
 
     Strategy (pure AST – no imports executed):
-    * Find classes with an @openapi_model decorator.
+    * Find classes with an @openapi.component decorator.
     * Extract component name (first positional arg or class name fallback) and description kwarg.
     * Inside __init__, record any self.<attr> AnnAssign or Assign targets (skip private leading _).
     * Infer primitive types from annotations / literal defaults; mark non-optional as required.
@@ -1372,7 +1372,7 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                     deco_name = _decorator_identifier(deco)
                 if not deco_name:
                     continue
-                if deco_name == 'openapi_model':
+                if deco_name == 'component':
                     if deco_call and deco_call.args:
                         first_arg = _extract_constant(deco_call.args[0])
                         if isinstance(first_arg, str):
@@ -1984,7 +1984,7 @@ def main() -> None:
     parser.add_argument('--openapi-start', default=DEFAULT_OPENAPI_START, help=f'Start delimiter for embedded OpenAPI blocks (default: {DEFAULT_OPENAPI_START!r})')
     parser.add_argument('--openapi-end', default=DEFAULT_OPENAPI_END, help=f'End delimiter for embedded OpenAPI blocks (default: {DEFAULT_OPENAPI_END!r})')
     parser.add_argument('--list-endpoints', action='store_true', help='Print collected handler endpoints (path method file:function) and exit (debug aid)')
-    parser.add_argument('--models-root', default=DEFAULT_MODELS_ROOT, help=f'Root directory to scan for @openapi_model decorated classes (default: {DEFAULT_MODELS_ROOT!r})')
+    parser.add_argument('--models-root', default=DEFAULT_MODELS_ROOT, help=f'Root directory to scan for @openapi.component decorated classes (default: {DEFAULT_MODELS_ROOT!r})')
     parser.add_argument('--no-model-components', action='store_true', help='Disable automatic model component generation')
     parser.add_argument(
         '--color',

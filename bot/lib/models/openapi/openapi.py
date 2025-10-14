@@ -1,6 +1,6 @@
 """OpenAPI model decoration utilities.
 
-Provides a lightweight decorator ``@openapi_model(name, description=None)`` that attaches
+Provides a lightweight decorator ``@openapi.component(name, description=None)`` that attaches
 OpenAPI component metadata to a Python model class so the swagger_sync script can
 auto-generate (or refresh) `components.schemas` entries.
 
@@ -24,7 +24,7 @@ AttrT = TypeVar('AttrT')
 
 _TYPE_ALIAS_REGISTRY: Dict[str, Dict[str, Any]] = {}
 
-def openapi_model(name: Optional[str] = None, description: Optional[str] = None) -> Callable[[type], type]:
+def component(name: Optional[str] = None, description: Optional[str] = None) -> Callable[[type], type]:
     def _wrap(cls: type) -> type:
         setattr(cls, '__openapi_component__', name or cls.__name__)
         if description:
@@ -116,4 +116,12 @@ def openapi_type_alias(
 def get_openapi_type_alias_metadata(name: str) -> Optional[Dict[str, Any]]:
     return _TYPE_ALIAS_REGISTRY.get(name)
 
-__all__ = ['openapi_model', 'openapi_attribute', 'openapi_managed', 'openapi_deprecated', 'openapi_exclude', 'openapi_type_alias', 'get_openapi_type_alias_metadata']
+__all__ = [
+    'component',
+    'openapi_attribute',
+    'openapi_managed',
+    'openapi_deprecated',
+    'openapi_exclude',
+    'openapi_type_alias',
+    'get_openapi_type_alias_metadata'
+]

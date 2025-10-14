@@ -2,12 +2,12 @@ import typing
 
 from lib.models.DiscordUser import DiscordUser
 from lib.models.DiscordRole import DiscordRole
-from lib.models.openapi import openapi_type_alias
+from bot.lib.models.openapi import openapi
 
 
 DiscordMentionable: typing.TypeAlias = typing.Union[DiscordRole, DiscordUser]
 
-openapi_type_alias(
+openapi.openapi_type_alias(
     "DiscordMentionable",
     description="Represents a Discord mentionable entity.",
     managed=True,

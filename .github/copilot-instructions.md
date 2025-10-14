@@ -87,6 +87,7 @@ Guidelines:
 - `operationId` (if used) becomes `operationId` in swagger (currently script does not enforce but may be extended—keep unique).
 - Keep YAML indentation consistent (2 spaces) and avoid tabs.
 - For arrays of mixed role/user objects, use `oneOf` referencing existing component schemas.
+- If you have suggestions for improving the sync script or docstring format, propose them in the scripts/SUGGESTIONS.md file and mention you added the suggestions.
 
 #### 2.1.1 Rules for generating OpenAPI DocStrings
 

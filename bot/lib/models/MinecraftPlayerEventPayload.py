@@ -2,11 +2,10 @@
 import typing
 
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEventLiteral
-from bot.lib.models.openapi import openapi_managed, openapi_model
+from bot.lib.models.openapi import openapi
 
-
-@openapi_model("MinecraftPlayerEventPayload", description="Payload for Minecraft player events.")
-@openapi_managed()
+@openapi.component("MinecraftPlayerEventPayload", description="Payload for Minecraft player events.")
+@openapi.openapi_managed()
 class MinecraftPlayerEventPayload:
     """Payload for Minecraft player events.
     >>>openapi

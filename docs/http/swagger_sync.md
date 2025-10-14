@@ -129,13 +129,13 @@ The system supports two schema generation modes:
 
 ### 4.1 Object Schema Mode
 
-Add the `@openapi_model` decorator to a class inside the models root (default: `bot/lib/models`).
+Add the `@openapi.component` decorator to a class inside the models root (default: `bot/lib/models`).
 
 ```python
-from bot.lib.models.openapi import openapi_model
+from bot.lib.models.openapi import component
 from typing import Optional
 
-@openapi_model("DiscordChannel", description="Discord text/voice channel snapshot")
+@openapi.component("DiscordChannel", description="Discord text/voice channel snapshot")
 class DiscordChannel:
     def __init__(self, id: int, name: str, topic: Optional[str] = None, nsfw: bool = False, position: int = 0):
         self.id: int = id
@@ -171,9 +171,9 @@ components:
 For simple types (enums, primitives with constraints, etc.), add a complete OpenAPI schema definition in the class docstring using the `>>>openapi` block:
 
 ```python
-from bot.lib.models.openapi import openapi_model
+from bot.lib.models.openapi import component
 
-@openapi_model("MinecraftWorld", description="Represents a Minecraft world")
+@openapi.component("MinecraftWorld", description="Represents a Minecraft world")
 class MinecraftWorld:
     '''A Minecraft world identifier.
 
@@ -271,7 +271,7 @@ Merge precedence & behavior:
 Block YAML structure (top-level key: `properties`):
 
 ```python
-@openapi_model("JoinWhitelistUser", description="Guild whitelist membership")
+@openapi.component("JoinWhitelistUser", description="Guild whitelist membership")
 class JoinWhitelistUser:
     """Represents a whitelist entry.
 
@@ -336,7 +336,7 @@ For concise vendor extension flags, decorate the model class with `@openapi_attr
 Example:
 
 ```python
-@openapi_model("MinecraftPlayerEvent")
+@openapi.component("MinecraftPlayerEvent")
 @openapi_managed()
 class MinecraftPlayerEvent:
     ...
@@ -360,7 +360,7 @@ Marks a model as managed by TacoBot. Adds `x-tacobot-managed: true` to the schem
 Marks a model as deprecated. Adds `x-tacobot-deprecated: true` to the schema. Use this for models being phased out or replaced, signaling to API consumers that they should migrate to alternatives.
 
 ```python
-@openapi_model("LegacyUserModel", description="Deprecated user model")
+@openapi.component("LegacyUserModel", description="Deprecated user model")
 @openapi_deprecated()
 class LegacyUserModel:
     def __init__(self, user_id: int):
@@ -387,7 +387,7 @@ LegacyUserModel:
 Completely excludes a model from OpenAPI schema generation. The decorated model will NOT appear in `components.schemas`. Use this for internal-only models, test fixtures, or models being removed from the public API.
 
 ```python
-@openapi_model("InternalDebugModel", description="Should not appear in API")
+@openapi.component("InternalDebugModel", description="Should not appear in API")
 @openapi_exclude()
 class InternalDebugModel:
     def __init__(self, debug_data: str):
@@ -396,12 +396,12 @@ class InternalDebugModel:
 
 Result: No schema generated for `InternalDebugModel`.
 
-**Combining Decorators**
+##### Combining Decorators
 
 Decorators can be stacked. For example, a model can be both managed and deprecated:
 
 ```python
-@openapi_model("LegacyManagedModel")
+@openapi.component("LegacyManagedModel")
 @openapi_managed()
 @openapi_deprecated()
 class LegacyManagedModel:
@@ -511,7 +511,7 @@ This will show:
 
 - Handlers without `>>>openapi` blocks
 - Path orphans (swagger paths without handlers)
-- Component orphans (swagger components without `@openapi_model` classes)
+- Component orphans (swagger components without `@openapi.component` classes)
 
 ### 5.7 Ignore Specific Files
 
@@ -582,7 +582,7 @@ Example orphan paths:
 
 ### 7.2 Component Orphans
 
-**Component orphans** are schema components defined in `components.schemas` that have no corresponding `@openapi_model` decorated model classes in the codebase.
+**Component orphans** are schema components defined in `components.schemas` that have no corresponding `@openapi.component` decorated model classes in the codebase.
 
 ### 7.3 Using Orphan Detection
 
@@ -624,7 +624,7 @@ Orphans:
 **Component Orphans:**
 
 - **Remove** the component schema if no longer needed
-- **Create** an `@openapi_model` decorated class if the component should be auto-generated
+- **Create** an `@openapi.component` decorated class if the component should be auto-generated
 - **Keep** manually for complex schemas that require manual definition (nested objects, advanced validation, etc.)
 
 ---
@@ -634,11 +634,11 @@ Orphans:
 Metric meanings (shown in summary):
 
 - Handlers considered: Non-ignored endpoints discovered.
-- With doc blocks: Handlers with an `---openapi` block.
+- With doc blocks: Handlers with an `>>>openapi` block.
 - In swagger (handlers): Those whose path+method entry exists in swagger.
 - Definition matches: Count where the swagger operation exactly equals generated doc block (normalized).
 - Swagger only operations: Path+method present in swagger but not in code (non-ignored).
-- Model components generated: Count of `@openapi_model` decorated classes discovered and translated into primitive schemas this run.
+- Model components generated: Count of `@openapi.component` decorated classes discovered and translated into primitive schemas this run.
 - Schemas not generated: Existing `components.schemas` entries present in swagger that were not produced by the current auto-generation pass (manually maintained or richer schemas). These are potential component orphans if no corresponding model class exists.
 
 `--fail-on-coverage-below` compares (with doc blocks / handlers considered).
@@ -714,7 +714,7 @@ Markdown summaries always strip ANSI codes and note the effective color mode & r
 | Endpoint totally absent from output | Decorator path not resolvable (dynamic f-string) | Simplify path or extend resolver function |
 | Tagged as ignored but still counted | Marker in a comment not docstring | Place `@openapi: ignore` inside actual module or function docstring |
 | Swagger-only path not listed | Used `--fix` without `--show-orphans` | Re-run with `--show-orphans` |
-| Component orphan not detected | Component schema not in `components.schemas` or model class exists but not decorated with `@openapi_model` | Verify component location and ensure model class uses `@openapi_model` decorator |
+| Component orphan not detected | Component schema not in `components.schemas` or model class exists but not decorated with `@openapi.component` | Verify component location and ensure model class uses `@openapi.component` decorator |
 | Coverage threshold failing | Threshold too high for current docs | Add blocks or lower threshold intentionally |
 | ANSI color bleed in logs | CI strips not applied | Use markdown summary or pipe through `sed -r 's/\x1b\[[0-9;]*m//g'` |
 
@@ -749,7 +749,7 @@ Single string converted to single-element array for consistency.
 Exact dict equality after generating the operation object from the doc block (including default responses).
 
 **Q: What's the difference between path orphans and component orphans?**
-Path orphans are API endpoints defined in swagger without corresponding handler methods. Component orphans are schema definitions in `components.schemas` without corresponding `@openapi_model` decorated classes. Both indicate potential drift between code and specification.
+Path orphans are API endpoints defined in swagger without corresponding handler methods. Component orphans are schema definitions in `components.schemas` without corresponding `@openapi.component` decorated classes. Both indicate potential drift between code and specification.
 
 ---
 Happy documenting & syncing! ✨

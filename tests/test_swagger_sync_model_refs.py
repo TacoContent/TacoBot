@@ -18,15 +18,15 @@ def test_model_class_ref_simple():
 
         # Create a mock model with a reference to another model class
         test_model_content = '''
-from bot.lib.models.openapi import openapi_model
+from bot.lib.models.openapi import component
 
-@openapi_model("TestUser", description="A test user model")
+@openapi.component("TestUser", description="A test user model")
 class TestUser:
     def __init__(self, id: int, name: str):
         self.id: int = id
         self.name: str = name
 
-@openapi_model("TestPost", description="A test post model with user reference")
+@openapi.component("TestPost", description="A test post model with user reference")
 class TestPost:
     def __init__(self, id: int, title: str, author: TestUser):
         self.id: int = id
@@ -38,9 +38,9 @@ class TestPost:
         test_file = models_root / "test_models.py"
         test_file.write_text(test_model_content)
 
-        # Also create the openapi.py file that's imported
+        # Also create the openapi/openapi.py file that's imported
         openapi_content = '''
-def openapi_model(name: str, description: str = None):
+def component(name: str, description: str = None):
     """Mock decorator for testing."""
     def decorator(cls):
         cls._openapi_name = name
@@ -48,7 +48,9 @@ def openapi_model(name: str, description: str = None):
         return cls
     return decorator
 '''
-        openapi_file = models_root / "openapi.py"
+        openapi_dir = models_root / "openapi"
+        openapi_dir.mkdir(parents=True, exist_ok=True)
+        openapi_file = openapi_dir / "openapi.py"
         openapi_file.write_text(openapi_content)
 
         # Collect the model components
@@ -78,15 +80,15 @@ def test_model_class_ref_with_optional():
 
         test_model_content = '''
 import typing
-from bot.lib.models.openapi import openapi_model
+from bot.lib.models.openapi import component
 
-@openapi_model("Category", description="A category model")
+@openapi.component("Category", description="A category model")
 class Category:
     def __init__(self, id: int, name: str):
         self.id: int = id
         self.name: str = name
 
-@openapi_model("Product", description="A product with optional category")
+@openapi.component("Product", description="A product with optional category")
 class Product:
     def __init__(self, id: int, name: str, category: typing.Optional[Category] = None):
         self.id: int = id
@@ -95,7 +97,7 @@ class Product:
 '''
 
         openapi_content = '''
-def openapi_model(name: str, description: str = None):
+def component(name: str, description: str = None):
     def decorator(cls):
         cls._openapi_name = name
         cls._openapi_description = description
@@ -105,7 +107,9 @@ def openapi_model(name: str, description: str = None):
 
         test_file = models_root / "test_models.py"
         test_file.write_text(test_model_content)
-        openapi_file = models_root / "openapi.py"
+        openapi_dir = models_root / "openapi"
+        openapi_dir.mkdir(parents=True, exist_ok=True)
+        openapi_file = openapi_dir / "openapi.py"
         openapi_file.write_text(openapi_content)
 
         comps, _ = collect_model_components(models_root)
@@ -133,15 +137,15 @@ def test_model_class_ref_list_of_models():
 
         test_model_content = '''
 import typing
-from bot.lib.models.openapi import openapi_model
+from bot.lib.models.openapi import component
 
-@openapi_model("Tag", description="A tag model")
+@openapi.component("Tag", description="A tag model")
 class Tag:
     def __init__(self, id: int, name: str):
         self.id: int = id
         self.name: str = name
 
-@openapi_model("Article", description="An article with tags")
+@openapi.component("Article", description="An article with tags")
 class Article:
     def __init__(self, id: int, title: str, tags: typing.List[Tag]):
         self.id: int = id
@@ -150,7 +154,7 @@ class Article:
 '''
 
         openapi_content = '''
-def openapi_model(name: str, description: str = None):
+def component(name: str, description: str = None):
     def decorator(cls):
         cls._openapi_name = name
         cls._openapi_description = description
@@ -160,7 +164,9 @@ def openapi_model(name: str, description: str = None):
 
         test_file = models_root / "test_models.py"
         test_file.write_text(test_model_content)
-        openapi_file = models_root / "openapi.py"
+        openapi_dir = models_root / "openapi"
+        openapi_dir.mkdir(parents=True, exist_ok=True)
+        openapi_file = openapi_dir / "openapi.py"
         openapi_file.write_text(openapi_content)
 
         comps, _ = collect_model_components(models_root)
@@ -189,15 +195,15 @@ def test_model_class_ref_mixed_with_primitives():
 
         test_model_content = '''
 import typing
-from bot.lib.models.openapi import openapi_model
+from bot.lib.models.openapi import component
 
-@openapi_model("Address", description="An address model")
+@openapi.component("Address", description="An address model")
 class Address:
     def __init__(self, street: str, city: str):
         self.street: str = street
         self.city: str = city
 
-@openapi_model("Person", description="A person with mixed field types")
+@openapi.component("Person", description="A person with mixed field types")
 class Person:
     def __init__(self, id: int, name: str, age: int, is_active: bool, address: Address, tags: typing.List[str]):
         self.id: int = id
@@ -209,7 +215,7 @@ class Person:
 '''
 
         openapi_content = '''
-def openapi_model(name: str, description: str = None):
+def component(name: str, description: str = None):
     def decorator(cls):
         cls._openapi_name = name
         cls._openapi_description = description
@@ -219,7 +225,9 @@ def openapi_model(name: str, description: str = None):
 
         test_file = models_root / "test_models.py"
         test_file.write_text(test_model_content)
-        openapi_file = models_root / "openapi.py"
+        openapi_dir = models_root / "openapi"
+        openapi_dir.mkdir(parents=True, exist_ok=True)
+        openapi_file = openapi_dir / "openapi.py"
         openapi_file.write_text(openapi_content)
 
         comps, _ = collect_model_components(models_root)
@@ -250,9 +258,9 @@ def test_model_class_ref_ignores_typing_keywords():
 
         test_model_content = '''
 import typing
-from bot.lib.models.openapi import openapi_model
+from bot.lib.models.openapi import component
 
-@openapi_model("TestModel", description="A test model with complex typing")
+@openapi.component("TestModel", description="A test model with complex typing")
 class TestModel:
     def __init__(self,
                  optional_str: typing.Optional[str] = None,
@@ -266,7 +274,7 @@ class TestModel:
 '''
 
         openapi_content = '''
-def openapi_model(name: str, description: str = None):
+def component(name: str, description: str = None):
     def decorator(cls):
         cls._openapi_name = name
         cls._openapi_description = description
@@ -276,7 +284,9 @@ def openapi_model(name: str, description: str = None):
 
         test_file = models_root / "test_models.py"
         test_file.write_text(test_model_content)
-        openapi_file = models_root / "openapi.py"
+        openapi_dir = models_root / "openapi"
+        openapi_dir.mkdir(parents=True, exist_ok=True)
+        openapi_file = openapi_dir / "openapi.py"
         openapi_file.write_text(openapi_content)
 
         comps, _ = collect_model_components(models_root)
@@ -312,16 +322,16 @@ def test_model_class_ref_literal_enum_unchanged():
 
         test_model_content = '''
 import typing
-from bot.lib.models.openapi import openapi_model
+from bot.lib.models.openapi import component
 
-@openapi_model("StatusModel", description="A model with literal enum")
+@openapi.component("StatusModel", description="A model with literal enum")
 class StatusModel:
     def __init__(self, status: typing.Literal["active", "inactive", "pending"]):
         self.status: typing.Literal["active", "inactive", "pending"] = status
 '''
 
         openapi_content = '''
-def openapi_model(name: str, description: str = None):
+def component(name: str, description: str = None):
     def decorator(cls):
         cls._openapi_name = name
         cls._openapi_description = description
@@ -331,7 +341,9 @@ def openapi_model(name: str, description: str = None):
 
         test_file = models_root / "test_models.py"
         test_file.write_text(test_model_content)
-        openapi_file = models_root / "openapi.py"
+        openapi_dir = models_root / "openapi"
+        openapi_dir.mkdir(parents=True, exist_ok=True)
+        openapi_file = openapi_dir / "openapi.py"
         openapi_file.write_text(openapi_content)
 
         comps, _ = collect_model_components(models_root)

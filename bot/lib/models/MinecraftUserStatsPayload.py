@@ -1,12 +1,12 @@
 
 from bot.lib.models.MinecraftUserStats import MinecraftUserStats
-from bot.lib.models.openapi import openapi_exclude, openapi_managed, openapi_model
+from bot.lib.models.openapi import openapi
 from bot.lib.models.TacoMinecraftWorlds import TacoMinecraftWorlds
 
 
 
-@openapi_model("MinecraftUserStatsPayload", description="Payload container for user stats by world.")
-@openapi_managed()
+@openapi.component("MinecraftUserStatsPayload", description="Payload container for user stats by world.")
+@openapi.openapi_managed()
 class MinecraftUserStatsPayload:
     """Payload container for user stats by world.
 

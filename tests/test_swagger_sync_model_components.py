@@ -1,4 +1,4 @@
-"""Tests automatic model component schema extraction via @openapi_model.
+"""Tests automatic model component schema extraction via @openapi.component.
 
 Validates that the DiscordChannel model (decorated) is turned into an OpenAPI
 component schema with expected property types and required list.

@@ -22,12 +22,12 @@ serialization issues.
 import typing
 
 import discord
-from bot.lib.models.openapi import openapi_managed, openapi_model
 from bot.lib.models.DiscordMessageReaction import DiscordMessageReaction
+from bot.lib.models.openapi import openapi
 
 
-@openapi_model("DiscordMessage", description="Snapshot of a Discord message.")
-@openapi_managed()
+@openapi.component("DiscordMessage", description="Snapshot of a Discord message.")
+@openapi.openapi_managed()
 class DiscordMessage:
     """Represents a Discord message snapshot.
 

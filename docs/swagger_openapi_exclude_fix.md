@@ -1,10 +1,13 @@
 # OpenAPI Exclusion Fix - Active Component Removal
 
 ## Problem
+
 The `@openapi_exclude()` decorator was only preventing new components from being generated during swagger sync, but was not actively removing existing component definitions from `.swagger.v1.yaml`. This meant that once a component was added, marking it with `@openapi_exclude()` wouldn't remove it from the specification.
 
 ## Solution
+
 Modified `scripts/swagger_sync.py` to:
+
 1. Track excluded component names in a `set` during collection
 2. Return both the components dict and exclusions set from `collect_model_components()`
 3. Actively remove excluded components from the swagger specification
@@ -14,6 +17,7 @@ Modified `scripts/swagger_sync.py` to:
 ## Changes Made
 
 ### 1. Function Signature Update
+
 **File**: `scripts/swagger_sync.py`
 
 Changed `collect_model_components()` return type from `Dict[str, Dict[str, Any]]` to `tuple[Dict[str, Dict[str, Any]], set[str]]`:
@@ -23,7 +27,7 @@ def collect_model_components(
     models_root: pathlib.Path
 ) -> tuple[Dict[str, Dict[str, Any]], set[str]]:
     """
-    Scan models_root for @openapi_model classes and generate component schemas.
+    Scan models_root for @openapiopenapi.component_model classes and generate component schemas.
     
     Returns:
         Tuple of (components dict, excluded component names set)
@@ -35,6 +39,7 @@ def collect_model_components(
 ```
 
 ### 2. Exclusion Tracking
+
 When a model with `@openapi_exclude()` is encountered, instead of skipping silently:
 
 ```python
@@ -44,6 +49,7 @@ if getattr(cls, '__openapi_exclude__', False):
 ```
 
 ### 3. Active Removal Logic
+
 In the main function, after updating component schemas:
 
 ```python
@@ -78,6 +84,7 @@ for excluded in excluded_model_components:
 ```
 
 ### 4. Test Updates
+
 All tests calling `collect_model_components()` were updated to unpack the tuple:
 
 ```python
@@ -89,6 +96,7 @@ comps, _ = collect_model_components(models_root)
 ```
 
 **Files Updated**:
+
 - `tests/test_swagger_sync_tmp_test_models.py`
 - `tests/test_swagger_sync_simple_type_schemas.py`
 - `tests/test_swagger_sync_model_refs_edge_cases.py`
@@ -100,6 +108,7 @@ comps, _ = collect_model_components(models_root)
 ## Behavior
 
 ### Before Fix
+
 ```bash
 $ python scripts/swagger_sync.py --check
 # Component with @openapi_exclude() still in .swagger.v1.yaml
@@ -108,6 +117,7 @@ $ python scripts/swagger_sync.py --check
 ```
 
 ### After Fix
+
 ```bash
 $ python scripts/swagger_sync.py --check
 WARNING: Excluded model schema component 'MinecraftUserStatsPayload' removed.
@@ -131,12 +141,15 @@ Swagger updated (component schemas only – no endpoint operation changes).
 ```
 
 ## Testing
+
 All 68 tests pass:
+
 - ✅ 54 existing swagger_sync tests
 - ✅ 7 new decorator tests (5 unit + 2 integration)
 - ✅ 7 other tests
 
 Key test coverage:
+
 - `test_openapi_exclude_decorator()` - Verifies excluded models don't appear
 - `test_multiple_models_mixed_decorators()` - Validates exclusion priority
 - `test_tmp_test_models_in_tests_directory()` - Integration test for test fixtures
@@ -144,9 +157,9 @@ Key test coverage:
 ## Usage Example
 
 ```python
-from bot.lib.models.openapi import openapi_model, openapi_exclude
+from bot.lib.models.openapi import component, openapi_exclude
 
-@openapi_model("LegacyPayload", description="Deprecated payload structure")
+@openapi.component("LegacyPayload", description="Deprecated payload structure")
 @openapi_exclude()  # Will be removed from swagger
 class MinecraftUserStatsPayload:
     def __init__(self, world_name: str, stats: dict):

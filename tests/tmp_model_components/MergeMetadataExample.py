@@ -1,10 +1,10 @@
 """Example model demonstrating merged metadata from legacy and unified blocks."""
 
 import typing
-from bot.lib.models.openapi import openapi_model
+from bot.lib.models.openapi import component
 
 
-@openapi_model("MergeMetadataExample", description="Demonstrates metadata merging order.")
+@component("MergeMetadataExample", description="Demonstrates metadata merging order.")
 class MergeMetadataExample:
     """Demonstrates merging rules.
 

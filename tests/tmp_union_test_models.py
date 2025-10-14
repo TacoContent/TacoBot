@@ -9,27 +9,27 @@ NOTE: This file follows the tmp_* naming convention used in tests for
       swagger sync since the --models-root defaults to bot/lib/models.
 """
 import typing
-from bot.lib.models.openapi import openapi_type_alias, openapi_model
+from bot.lib.models.openapi import openapi_type_alias, component
 from bot.lib.models.DiscordRole import DiscordRole
 from bot.lib.models.DiscordUser import DiscordUser
 
 
 # Test filter models for SearchCriteria union type
-@openapi_model()
+@openapi.component()
 class SearchDateFilter:
     """Date range filter for search."""
     start_date: str
     end_date: str
 
 
-@openapi_model()
+@openapi.component()
 class SearchAuthorFilter:
     """Author filter for search."""
     author_id: str
     author_name: str | None
 
 
-@openapi_model()
+@openapi.component()
 class SearchTagFilter:
     """Tag filter for search."""
     tags: list[str]

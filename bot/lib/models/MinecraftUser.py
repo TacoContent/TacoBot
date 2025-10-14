@@ -1,8 +1,7 @@
-from bot.lib.models.openapi import openapi_managed, openapi_model
+from bot.lib.models.openapi import openapi
 
-
-@openapi_model("MinecraftUser", description="Represents a Minecraft user with a unique ID.")
-@openapi_managed()
+@openapi.component("MinecraftUser", description="Represents a Minecraft user with a unique ID.")
+@openapi.openapi_managed()
 class MinecraftUser:
     """Represents a Minecraft user with a unique ID.
 

@@ -6,7 +6,7 @@ from scripts.swagger_sync import collect_model_components
 
 
 def test_subclass_uses_allof_for_inheritance():
-    """Test that subclasses of @openapi_model classes use allOf structure."""
+    """Test that subclasses of @openapi.component classes use allOf structure."""
     with tempfile.TemporaryDirectory() as temp_dir:
         models_root = pathlib.Path(temp_dir)
 
@@ -16,10 +16,10 @@ def test_subclass_uses_allof_for_inheritance():
 
         T = TypeVar('T')
 
-        def openapi_model(name: str, description: str = ""):
+        def component(name: str, description: str = ""):
             def decorator(cls):
-                cls.__openapi_model_name__ = name
-                cls.__openapi_model_description__ = description
+                cls.__component_name__ = name
+                cls.__component_description__ = description
                 return cls
             return decorator
 
@@ -29,7 +29,7 @@ def test_subclass_uses_allof_for_inheritance():
                 return cls
             return decorator
 
-        @openapi_model("BaseModel", description="Base model for inheritance")
+        @openapi.component("BaseModel", description="Base model for inheritance")
         @openapi_managed()
         class BaseModel:
             def __init__(self, data: dict):
@@ -39,9 +39,9 @@ def test_subclass_uses_allof_for_inheritance():
 
         # Create subclass
         sub_model = textwrap.dedent('''
-        from test_base import BaseModel, openapi_model, openapi_managed
+        from test_base import BaseModel, component, openapi_managed
 
-        @openapi_model("SubModel", description="Subclass model")
+        @openapi.component("SubModel", description="Subclass model")
         @openapi_managed()
         class SubModel(BaseModel):
             def __init__(self, data: dict):
@@ -59,10 +59,10 @@ def test_subclass_uses_allof_for_inheritance():
                 return target
             return decorator
 
-        def openapi_model(name: str, description: str = ""):
+        def component(name: str, description: str = ""):
             def decorator(cls):
-                cls.__openapi_model_name__ = name
-                cls.__openapi_model_description__ = description
+                cls.__openapi_component_name__ = name
+                cls.__openapi_component_description__ = description
                 return cls
             return decorator
 
@@ -74,7 +74,9 @@ def test_subclass_uses_allof_for_inheritance():
         base_file.write_text(base_model)
         sub_file = models_root / "test_sub.py"
         sub_file.write_text(sub_model)
-        openapi_file = models_root / "openapi.py"
+        openapi_dir = models_root / "openapi"
+        openapi_dir.mkdir(parents=True, exist_ok=True)
+        openapi_file = openapi_dir / "openapi.py"
         openapi_file.write_text(openapi_content)
 
         comps, _ = collect_model_components(models_root)
@@ -123,24 +125,24 @@ def test_generic_base_class_with_typevar():
 
         T = TypeVar('T')
 
-        def openapi_model(name: str, description: str = ""):
+        def component(name: str, description: str = ""):
             def decorator(cls):
-                cls.__openapi_model_name__ = name
-                cls.__openapi_model_description__ = description
+                cls.__openapi_component_name__ = name
+                cls.__openapi_component_description__ = description
                 return cls
             return decorator
 
-        @openapi_model("GenericBase", description="Generic base class")
+        @openapi.component("GenericBase", description="Generic base class")
         class GenericBase(Generic[T]):
             def __init__(self, data: dict):
                 self.items: typing.List[T] = data.get("items", [])
         ''')
 
         sub_model = textwrap.dedent('''
-        from test_base import GenericBase, openapi_model
+        from test_base import GenericBase, component
         import typing
 
-        @openapi_model("ConcreteModel", description="Concrete implementation")
+        @openapi.component("ConcreteModel", description="Concrete implementation")
         class ConcreteModel(GenericBase):
             def __init__(self, data: dict):
                 super().__init__(data)
@@ -156,10 +158,10 @@ def test_generic_base_class_with_typevar():
                 return target
             return decorator
 
-        def openapi_model(name: str, description: str = ""):
+        def component(name: str, description: str = ""):
             def decorator(cls):
-                cls.__openapi_model_name__ = name
-                cls.__openapi_model_description__ = description
+                cls.__openapi_component_name__ = name
+                cls.__openapi_component_description__ = description
                 return cls
             return decorator
         ''')
@@ -168,7 +170,9 @@ def test_generic_base_class_with_typevar():
         base_file.write_text(base_model)
         sub_file = models_root / "test_sub.py"
         sub_file.write_text(sub_model)
-        openapi_file = models_root / "openapi.py"
+        openapi_dir = models_root / "openapi"
+        openapi_dir.mkdir(parents=True, exist_ok=True)
+        openapi_file = openapi_dir / "openapi.py"
         openapi_file.write_text(openapi_content)
 
         comps, _ = collect_model_components(models_root)
@@ -203,25 +207,25 @@ def test_multiple_inheritance_levels():
         models_root = pathlib.Path(temp_dir)
 
         models_content = textwrap.dedent('''
-        def openapi_model(name: str, description: str = ""):
+        def component(name: str, description: str = ""):
             def decorator(cls):
-                cls.__openapi_model_name__ = name
-                cls.__openapi_model_description__ = description
+                cls.__openapi_component_name__ = name
+                cls.__openapi_component_description__ = description
                 return cls
             return decorator
 
-        @openapi_model("GrandParent", description="Top level")
+        @openapi.component("GrandParent", description="Top level")
         class GrandParent:
             def __init__(self, data: dict):
                 self.id: int = data.get("id", 0)
 
-        @openapi_model("Parent", description="Middle level")
+        @openapi.component("Parent", description="Middle level")
         class Parent(GrandParent):
             def __init__(self, data: dict):
                 super().__init__(data)
                 self.name: str = data.get("name", "")
 
-        @openapi_model("Child", description="Bottom level")
+        @openapi.component("Child", description="Bottom level")
         class Child(Parent):
             def __init__(self, data: dict):
                 super().__init__(data)
@@ -237,17 +241,19 @@ def test_multiple_inheritance_levels():
                 return target
             return decorator
 
-        def openapi_model(name: str, description: str = ""):
+        def component(name: str, description: str = ""):
             def decorator(cls):
-                cls.__openapi_model_name__ = name
-                cls.__openapi_model_description__ = description
+                cls.__openapi_component_name__ = name
+                cls.__openapi_component_description__ = description
                 return cls
             return decorator
         ''')
 
         models_file = models_root / "test_models.py"
         models_file.write_text(models_content)
-        openapi_file = models_root / "openapi.py"
+        openapi_dir = models_root / "openapi"
+        openapi_dir.mkdir(parents=True, exist_ok=True)
+        openapi_file = openapi_dir / "openapi.py"
         openapi_file.write_text(openapi_content)
 
         comps, _ = collect_model_components(models_root)
@@ -277,14 +283,14 @@ def test_no_inheritance_standard_schema():
         models_root = pathlib.Path(temp_dir)
 
         model_content = textwrap.dedent('''
-        def openapi_model(name: str, description: str = ""):
+        def component(name: str, description: str = ""):
             def decorator(cls):
-                cls.__openapi_model_name__ = name
-                cls.__openapi_model_description__ = description
+                cls.__openapi_component_name__ = name
+                cls.__openapi_component_description__ = description
                 return cls
             return decorator
 
-        @openapi_model("StandaloneModel", description="No inheritance")
+        @openapi.component("StandaloneModel", description="No inheritance")
         class StandaloneModel:
             def __init__(self, data: dict):
                 self.field1: str = data.get("field1", "")
@@ -300,17 +306,19 @@ def test_no_inheritance_standard_schema():
                 return target
             return decorator
 
-        def openapi_model(name: str, description: str = ""):
+        def component(name: str, description: str = ""):
             def decorator(cls):
-                cls.__openapi_model_name__ = name
-                cls.__openapi_model_description__ = description
+                cls.__openapi_component_name__ = name
+                cls.__openapi_component_description__ = description
                 return cls
             return decorator
         ''')
 
         model_file = models_root / "test_model.py"
         model_file.write_text(model_content)
-        openapi_file = models_root / "openapi.py"
+        openapi_dir = models_root / "openapi"
+        openapi_dir.mkdir(parents=True, exist_ok=True)
+        openapi_file = openapi_dir / "openapi.py"
         openapi_file.write_text(openapi_content)
 
         comps, _ = collect_model_components(models_root)

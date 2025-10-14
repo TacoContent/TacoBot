@@ -1,9 +1,8 @@
 
-from bot.lib.models.openapi import openapi_managed, openapi_model
+from bot.lib.models.openapi import openapi
 
-
-@openapi_model("MinecraftWhiteListUser", description="A user on the Minecraft whitelist.")
-@openapi_managed()
+@openapi.component("MinecraftWhiteListUser", description="A user on the Minecraft whitelist.")
+@openapi.openapi_managed()
 class MinecraftWhiteListUser:
     """A user on the Minecraft whitelist.
 

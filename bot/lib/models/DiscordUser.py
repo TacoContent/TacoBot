@@ -29,12 +29,12 @@ ensures all asset references become plain URLs.
 import datetime
 import typing
 
-from bot.lib.models.openapi import openapi_managed, openapi_model
+from bot.lib.models.openapi import openapi
 from discord import Member, User
 
 
-@openapi_model("DiscordUser", description="Represents a Discord user with normalized primitives.")
-@openapi_managed()
+@openapi.component("DiscordUser", description="Represents a Discord user with normalized primitives.")
+@openapi.openapi_managed()
 class DiscordUser:
     """Represents a Discord user or member with normalized primitives.
 

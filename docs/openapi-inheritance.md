@@ -15,7 +15,7 @@ This document describes how TacoBot's OpenAPI sync system handles class inherita
 
 ## Overview
 
-When a Python class decorated with `@openapi_model` inherits from another `@openapi_model` class, the OpenAPI schema generator automatically creates an `allOf` structure that references the base class schema and adds the subclass-specific properties.
+When a Python class decorated with `@openapi.component` inherits from another `@openapi.component` class, the OpenAPI schema generator automatically creates an `allOf` structure that references the base class schema and adds the subclass-specific properties.
 
 This follows the OpenAPI specification for schema composition and allows for:
 
@@ -30,16 +30,16 @@ This follows the OpenAPI specification for schema composition and allows for:
 ### Python Code
 
 ```python
-from bot.lib.models.openapi import openapi_model, openapi_managed
+from bot.lib.models.openapi import component, openapi_managed
 
-@openapi_model("BaseModel", description="Base model for common fields")
+@openapi.component("BaseModel", description="Base model for common fields")
 @openapi_managed()
 class BaseModel:
     def __init__(self, data: dict):
         self.id: int = data.get("id", 0)
         self.name: str = data.get("name", "")
 
-@openapi_model("ExtendedModel", description="Extended model with additional fields")
+@openapi.component("ExtendedModel", description="Extended model with additional fields")
 @openapi_managed()
 class ExtendedModel(BaseModel):
     def __init__(self, data: dict):
@@ -99,11 +99,11 @@ components:
 ```python
 from typing import TypeVar, Generic
 import typing
-from bot.lib.models.openapi import openapi_model, openapi_managed
+from bot.lib.models.openapi import component, openapi_managed
 
 T = TypeVar('T')
 
-@openapi_model("PagedResults", description="Generic paginated results container")
+@openapi.component("PagedResults", description="Generic paginated results container")
 @openapi_managed()
 class PagedResults(Generic[T]):
     def __init__(self, data: dict):
@@ -112,7 +112,7 @@ class PagedResults(Generic[T]):
         self.page: int = data.get("page", 1)
         self.page_size: int = data.get("page_size", 10)
 
-@openapi_model("PagedResultsUser", description="Paginated user results")
+@openapi.component("PagedResultsUser", description="Paginated user results")
 @openapi_managed()
 class PagedResultsUser(PagedResults):
     def __init__(self, data: dict):
@@ -176,18 +176,18 @@ The system supports multiple levels of inheritance (A → B → C):
 ### Multi-level Code Example
 
 ```python
-@openapi_model("GrandParent", description="Top level")
+@openapi.component("GrandParent", description="Top level")
 class GrandParent:
     def __init__(self, data: dict):
         self.id: int = data.get("id", 0)
 
-@openapi_model("Parent", description="Middle level")
+@openapi.component("Parent", description="Middle level")
 class Parent(GrandParent):
     def __init__(self, data: dict):
         super().__init__(data)
         self.name: str = data.get("name", "")
 
-@openapi_model("Child", description="Bottom level")
+@openapi.component("Child", description="Bottom level")
 class Child(Parent):
     def __init__(self, data: dict):
         super().__init__(data)
@@ -244,7 +244,7 @@ def _extract_openapi_base_classes(class_node: ast.ClassDef, typevars: set[str]) 
 - Excludes `Generic[T]` and similar generic type constructs
 - Excludes TypeVar names (e.g., `T`, `U`, `V`)
 - Excludes common base classes like `object`, `ABC`
-- Only includes base classes decorated with `@openapi_model`
+- Only includes base classes decorated with `@openapi.component`
 
 ### Schema Generation
 
@@ -324,7 +324,7 @@ python scripts/swagger_sync.py --fix
 ### DO
 
 - ✅ Use inheritance for true "is-a" relationships
-- ✅ Decorate both base and subclass with `@openapi_model`
+- ✅ Decorate both base and subclass with `@openapi.component`
 - ✅ Override generic type parameters with concrete types in subclasses
 - ✅ Use `@openapi_managed()` to track auto-generated schemas
 - ✅ Run `swagger_sync.py --check` before committing
@@ -342,12 +342,12 @@ python scripts/swagger_sync.py --fix
 
 ### Issue: Base class not appearing in allOf
 
-**Cause**: Base class may not be decorated with `@openapi_model`
+**Cause**: Base class may not be decorated with `@openapi.component`
 
 **Solution**: Ensure all classes in the inheritance chain are decorated:
 
 ```python
-@openapi_model("BaseClass", description="...")
+@openapi.component("BaseClass", description="...")
 class BaseClass:
     ...
 ```

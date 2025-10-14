@@ -2,12 +2,12 @@ from typing import TypeVar, Generic
 import typing
 
 from bot.lib.models.JoinWhitelistUser import JoinWhitelistUser
-from bot.lib.models.openapi import openapi_managed, openapi_model
+from bot.lib.models.openapi import openapi
 
 T = TypeVar('T')
 
-@openapi_model("PagedResults", description="Generic paginated results container.")
-@openapi_managed()
+@openapi.component("PagedResults", description="Generic paginated results container.")
+@openapi.openapi_managed()
 class PagedResults(Generic[T]):
     """
     Represents a generic paginated set of results.
@@ -33,8 +33,8 @@ class PagedResults(Generic[T]):
     def to_dict(self) -> dict:
         return self.__dict__
 
-@openapi_model("PagedResultsJoinWhitelistUser", description="Generic paginated results container.")
-@openapi_managed()
+@openapi.component("PagedResultsJoinWhitelistUser", description="Generic paginated results container.")
+@openapi.openapi_managed()
 class PagedResultsJoinWhitelistUser(PagedResults):
     def __init__(self, data: dict):
         super().__init__(data)
