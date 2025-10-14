@@ -1952,11 +1952,15 @@ components:
       properties:
         uuid:
           type: string
+          description: The user's UUID.
         username:
           type: string
+          description: The user's Minecraft username.
       required:
-        - uuid
         - username
+        - uuid
+      description: A user on the Minecraft whitelist.
+      x-tacobot-managed: true
     DiscordGuild:
       type: object
       properties:
@@ -2282,6 +2286,8 @@ components:
       oneOf:
         - $ref: '#/components/schemas/DiscordRole'
         - $ref: '#/components/schemas/DiscordUser'
+      description: Represents a Discord mentionable entity.
+      x-tacobot-managed: true
     DiscordMessage:
       type: object
       properties:
@@ -2667,6 +2673,16 @@ components:
         - stats
         - world_name
       description: Payload container for user stats by world.
+      x-tacobot-managed: true
+    TacoMinecraftWorlds:
+      type: string
+      enum:
+        - taco_atm10
+        - taco_atm10-2
+        - taco_atm8
+        - taco_atm9
+      description: Represents a Minecraft world managed by TacoBot.
+      default: taco_atm10-2
       x-tacobot-managed: true
   securitySchemes:
     X-AUTH-TOKEN:

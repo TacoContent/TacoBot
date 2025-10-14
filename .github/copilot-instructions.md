@@ -150,6 +150,7 @@ All new or modified code MUST have tests in `tests/`:
 - Regression tests when fixing bugs (reference issue ID in test name or docstring).
 - Do not run the VSCode Task to run tests; instead, run tests directly in the terminal after activating the virtual environment.
   - This has been observed to cause failures when run via the Task.
+- When creating testing models, place them in `tests/tmp_union_test_models.py` or similar test-only files to avoid polluting production code.
 
 Conventions:
 - Test file per module or feature: `test_<module>.py`.

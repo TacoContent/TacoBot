@@ -77,9 +77,19 @@ def openapi_type_alias(
     description: Optional[str] = None,
     default: Any = None,
     managed: bool = False,
+    anyof: bool = False,
     attributes: Optional[Dict[str, Any]] = None,
 ) -> Callable[[AttrT], AttrT]:
-    """Attach OpenAPI metadata to a typing.TypeAlias expression."""
+    """Attach OpenAPI metadata to a typing.TypeAlias expression.
+
+    Args:
+        name: The component name in OpenAPI spec
+        description: Human-readable description
+        default: Default value for the type
+        managed: If True, adds x-tacobot-managed extension flag
+        anyof: If True, generates anyOf instead of oneOf for Union types
+        attributes: Additional x- extension attributes
+    """
 
     def _wrap(alias: AttrT) -> AttrT:
         extensions: Dict[str, Any] = {}
@@ -93,6 +103,8 @@ def openapi_type_alias(
             meta['description'] = description
         if default is not None:
             meta['default'] = default
+        if anyof:
+            meta['anyof'] = True
         if extensions:
             meta['extensions'] = extensions
         _TYPE_ALIAS_REGISTRY[name] = meta

@@ -420,6 +420,15 @@ def _build_schema_from_annotation(anno_str: str) -> Dict[str, Any]:
     schema = _extract_literal_schema(anno_str) or {}
     if schema:
         return schema
+
+    # Unwrap Optional to detect nullable unions
+    unwrapped, is_nullable = _unwrap_optional(anno_str)
+
+    # Check for Union types (typing.Union or | operator)
+    union_schema = _extract_union_schema(unwrapped, nullable=is_nullable)
+    if union_schema:
+        return union_schema
+
     lower = anno_str.lower()
     if 'list' in anno_str or 'List' in anno_str:
         schema = {'type': 'array', 'items': {'type': 'string'}}
@@ -442,6 +451,290 @@ def _build_schema_from_annotation(anno_str: str) -> Dict[str, Any]:
         else:
             schema = {'type': 'string'}
     return schema
+
+
+def _unwrap_optional(anno_str: str) -> tuple[str, bool]:
+    """Unwrap Optional wrapper and detect if type is nullable.
+
+    Handles:
+    - Optional[Union[A, B]] -> (Union[A, B], True)
+    - typing.Optional[SomeType] -> (SomeType, True)
+    - Union[A, B, None] -> (Union[A, B], True)
+    - Regular types -> (type, False)
+
+    Args:
+        anno_str: The type annotation string to parse
+
+    Returns:
+        Tuple of (unwrapped_type_string, is_nullable)
+    """
+    if not anno_str:
+        return anno_str, False
+
+    anno_str = anno_str.strip()
+    is_nullable = False
+
+    # Pattern 1: Optional[...] wrapper
+    optional_pattern = r'^(?:typing\.)?Optional\s*\[\s*(.+)\s*\]$'
+    match = re.match(optional_pattern, anno_str)
+    if match:
+        inner_type = match.group(1).strip()
+        return inner_type, True
+
+    # Pattern 2: Union[..., None] - check if None is in the union
+    union_pattern = r'^(?:typing\.)?Union\s*\[\s*(.+)\s*\]$'
+    match = re.match(union_pattern, anno_str)
+    if match:
+        inner_types = match.group(1)
+        type_list = _split_union_types(inner_types)
+
+        # Check if None is one of the union members
+        has_none = any(t.strip() == 'None' for t in type_list)
+        if has_none:
+            # Remove None from the list
+            non_none_types = [t.strip() for t in type_list if t.strip() != 'None']
+            if len(non_none_types) == 1:
+                # Union[Type, None] -> just Type (nullable)
+                return non_none_types[0], True
+            elif len(non_none_types) > 1:
+                # Union[A, B, None] -> Union[A, B] (nullable)
+                reconstructed = f"Union[{', '.join(non_none_types)}]"
+                return reconstructed, True
+
+    # Pattern 3: Pipe union with None (e.g., A | B | None)
+    if '|' in anno_str and 'None' in anno_str:
+        parts = [p.strip() for p in anno_str.split('|')]
+        has_none = 'None' in parts
+        if has_none:
+            non_none_parts = [p for p in parts if p != 'None']
+            if len(non_none_parts) == 1:
+                return non_none_parts[0], True
+            elif len(non_none_parts) > 1:
+                reconstructed = ' | '.join(non_none_parts)
+                return reconstructed, True
+
+    return anno_str, False
+
+
+def _flatten_nested_unions(anno_str: str) -> str:
+    """Flatten nested Union types to a single Union.
+
+    Converts patterns like:
+    - Union[Union[A, B], C] -> Union[A, B, C]
+    - Union[A, Union[B, C]] -> Union[A, B, C]
+    - Union[Union[A, B], Union[C, D]] -> Union[A, B, C, D]
+    - A | (B | C) -> A | B | C (pipe syntax)
+
+    Args:
+        anno_str: The type annotation string potentially containing nested unions
+
+    Returns:
+        Flattened type annotation string
+    """
+    if not anno_str:
+        return anno_str
+
+    # Handle pipe syntax first (even if no Union keyword)
+    if '|' in anno_str and '(' in anno_str:
+        # Pattern to match (Type1 | Type2) where there are pipes inside parens
+        pipe_group_pattern = r'\(([^()]+\|[^()]+)\)'
+        max_paren_iterations = 10
+        paren_iteration = 0
+
+        while re.search(pipe_group_pattern, anno_str) and paren_iteration < max_paren_iterations:
+            anno_str = re.sub(pipe_group_pattern, r'\1', anno_str)
+            paren_iteration += 1
+
+    # If no Union keyword, we're done
+    if 'Union' not in anno_str:
+        return anno_str
+
+    # Recursive helper to extract all types from a Union, flattening nested ones
+    def extract_all_types(content: str) -> list[str]:
+        """Extract all types from Union content, recursively flattening nested Unions."""
+        types = _split_union_types(content)
+        flattened = []
+
+        for t in types:
+            t = t.strip()
+            # Check if this is a nested Union
+            nested_match = re.match(r'(?:typing\.)?Union\s*\[(.+)\]$', t, re.DOTALL)
+            if nested_match:
+                # Recursively flatten the nested union
+                nested_content = nested_match.group(1)
+                flattened.extend(extract_all_types(nested_content))
+            else:
+                flattened.append(t)
+
+        return flattened
+
+    # Keep flattening until no more nested unions are found
+    max_iterations = 10
+    iteration = 0
+
+    while 'Union[' in anno_str and iteration < max_iterations:
+        iteration += 1
+
+        # Find the outermost Union
+        outer_match = re.search(r'(?:typing\.)?Union\s*\[', anno_str)
+        if not outer_match:
+            break
+
+        # Find the matching closing bracket for this Union
+        start_pos = outer_match.end() - 1  # Position of '['
+        bracket_count = 1
+        end_pos = start_pos + 1
+
+        while end_pos < len(anno_str) and bracket_count > 0:
+            if anno_str[end_pos] == '[':
+                bracket_count += 1
+            elif anno_str[end_pos] == ']':
+                bracket_count -= 1
+            end_pos += 1
+
+        if bracket_count != 0:
+            # Malformed, give up
+            break
+
+        # Extract the full Union expression
+        union_start = outer_match.start()
+        full_union = anno_str[union_start:end_pos]
+        inner_content = anno_str[start_pos + 1:end_pos - 1]
+
+        # Check if there are nested unions
+        if 'Union[' in inner_content:
+            # Flatten all types
+            all_types = extract_all_types(inner_content)
+            flattened_content = ', '.join(all_types)
+
+            # Determine if we need typing prefix
+            prefix = 'typing.' if anno_str[union_start:union_start + 7] == 'typing.' else ''
+            flattened_union = f'{prefix}Union[{flattened_content}]'
+
+            # Replace the nested union with flattened version
+            anno_str = anno_str[:union_start] + flattened_union + anno_str[end_pos:]
+        else:
+            # No more nested unions at this level
+            break
+
+    return anno_str
+
+
+def _extract_union_schema(anno_str: str, anyof: bool = False, nullable: bool = False) -> Optional[Dict[str, Any]]:
+    """Extract oneOf or anyOf schema from Union type annotations.
+
+    Handles both typing.Union[A, B] and A | B syntax.
+    Supports Optional[Union[...]] patterns with nullable flag.
+    Automatically flattens nested unions before processing.
+
+    Args:
+        anno_str: The type annotation string to parse
+        anyof: If True, generates anyOf instead of oneOf for Union types
+        nullable: If True, adds nullable: true to the schema
+
+    Returns:
+        Dictionary with oneOf or anyOf key (and nullable if applicable), or None if not a Union type
+    """
+    if not anno_str:
+        return None
+
+    # Flatten nested unions first (Union[Union[A, B], C] -> Union[A, B, C])
+    anno_str = _flatten_nested_unions(anno_str)
+
+    # Determine composition key based on anyof flag
+    composition_key = 'anyOf' if anyof else 'oneOf'
+
+    # Pattern 1: typing.Union[Type1, Type2, ...]
+    union_pattern = r'(?:typing\.)?Union\s*\[\s*([^\]]+)\s*\]'
+    match = re.search(union_pattern, anno_str)
+
+    if match:
+        inner_types = match.group(1)
+        type_list = _split_union_types(inner_types)
+        refs = _extract_refs_from_types(type_list)
+        if refs:
+            schema: Dict[str, Any] = {composition_key: refs}
+            if nullable:
+                schema['nullable'] = True
+            return schema
+
+    # Pattern 2: Type1 | Type2 | ... (Python 3.10+ union syntax)
+    # Only process if we see the pipe operator and it looks like a type union
+    if '|' in anno_str and not any(kw in anno_str for kw in ['List[', 'Dict[', 'Tuple[', 'Set[']):
+        # Remove parentheses if present
+        cleaned = anno_str.strip()
+        if cleaned.startswith('(') and cleaned.endswith(')'):
+            cleaned = cleaned[1:-1].strip()
+
+        # Split by pipe operator
+        type_list = [t.strip() for t in cleaned.split('|')]
+        refs = _extract_refs_from_types(type_list)
+        if refs:
+            schema: Dict[str, Any] = {composition_key: refs}
+            if nullable:
+                schema['nullable'] = True
+            return schema
+
+    return None
+
+
+def _split_union_types(inner_types: str) -> list[str]:
+    """Split Union type arguments, respecting nested brackets."""
+    types: list[str] = []
+    current = []
+    depth = 0
+
+    for char in inner_types:
+        if char == '[':
+            depth += 1
+            current.append(char)
+        elif char == ']':
+            depth -= 1
+            current.append(char)
+        elif char == ',' and depth == 0:
+            types.append(''.join(current).strip())
+            current = []
+        else:
+            current.append(char)
+
+    if current:
+        types.append(''.join(current).strip())
+
+    return [t for t in types if t]
+
+
+def _extract_refs_from_types(type_list: list[str]) -> list[Dict[str, str]]:
+    """Extract $ref objects from a list of type strings.
+
+    Returns a list of {$ref: ...} dicts for model class types.
+    Filters out None, Optional wrappers, and primitive types.
+    """
+    refs: list[Dict[str, str]] = []
+    typing_keywords = {'Optional', 'Union', 'List', 'Dict', 'Any', 'Type', 'Callable', 'Tuple', 'Set', 'Literal', 'None'}
+
+    for type_str in type_list:
+        type_str = type_str.strip()
+
+        # Skip None type
+        if type_str == 'None' or not type_str:
+            continue
+
+        # Unwrap Optional[Type] -> Type
+        if type_str.startswith('Optional[') and type_str.endswith(']'):
+            type_str = type_str[9:-1].strip()
+
+        # Extract model class name (CamelCase pattern)
+        model_pattern = r'\b([A-Z][A-Za-z0-9_]*)\b'
+        matches = re.findall(model_pattern, type_str)
+
+        # Filter out typing keywords
+        potential_models = [m for m in matches if m not in typing_keywords]
+
+        if potential_models:
+            # Use the first model class found (should be the only one for simple refs)
+            refs.append({'$ref': f'#/components/schemas/{potential_models[0]}'})
+
+    return refs
 
 
 def _discover_attribute_aliases(models_root: pathlib.Path) -> Dict[str, Tuple[Optional[str], Any]]:
@@ -644,12 +937,16 @@ def _extract_openapi_base_classes(cls: ast.ClassDef, module_typevars: set[str]) 
 def _collect_type_aliases_from_ast(module: ast.AST, file_path: pathlib.Path) -> Dict[str, str]:
     global TYPE_ALIAS_METADATA, GLOBAL_TYPE_ALIASES
     alias_map: Dict[str, str] = {}
+
+    # First pass: collect TypeAlias assignments (both inline decorator and plain assignments)
     for node in getattr(module, 'body', []):
         if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
             if not _is_type_alias_annotation(node.annotation):
                 continue
             alias_name = node.target.id
             value_node = node.value
+
+            # Pattern 1: alias: TypeAlias = openapi_type_alias(...)(value)
             if isinstance(value_node, ast.Call) and isinstance(value_node.func, ast.Call):
                 factory_call = value_node.func
                 if _decorator_identifier(factory_call.func) == 'openapi_type_alias':
@@ -657,6 +954,7 @@ def _collect_type_aliases_from_ast(module: ast.AST, file_path: pathlib.Path) -> 
                     description: Optional[str] = None
                     default_value: Any = MISSING
                     managed_flag = False
+                    anyof_flag = False
                     attr_map: Dict[str, Any] = {}
                     if factory_call.args:
                         maybe_name = _extract_constant(factory_call.args[0])
@@ -677,6 +975,10 @@ def _collect_type_aliases_from_ast(module: ast.AST, file_path: pathlib.Path) -> 
                             maybe_managed = _extract_constant(kw.value)
                             if isinstance(maybe_managed, bool):
                                 managed_flag = maybe_managed
+                        elif kw.arg == 'anyof':
+                            maybe_anyof = _extract_constant(kw.value)
+                            if isinstance(maybe_anyof, bool):
+                                anyof_flag = maybe_anyof
                         elif kw.arg == 'attributes':
                             extracted = _extract_constant_dict(kw.value)
                             if extracted is not None:
@@ -696,6 +998,8 @@ def _collect_type_aliases_from_ast(module: ast.AST, file_path: pathlib.Path) -> 
                         meta['description'] = description
                     if default_value is not MISSING:
                         meta['default'] = default_value
+                    if anyof_flag:
+                        meta['anyof'] = True
                     extensions: Dict[str, Any] = {}
                     if managed_flag:
                         extensions['x-tacobot-managed'] = True
@@ -705,9 +1009,98 @@ def _collect_type_aliases_from_ast(module: ast.AST, file_path: pathlib.Path) -> 
                         meta['extensions'] = extensions
                     TYPE_ALIAS_METADATA[alias_name] = meta
                     continue
+
+            # Pattern 2: alias: TypeAlias = Union[...] (plain assignment, decorator comes later)
             value_str = _safe_unparse(node.value)
             if value_str:
                 alias_map[alias_name] = value_str
+
+    # Second pass: look for standalone openapi_type_alias()() calls that reference TypeAlias names
+    for node in getattr(module, 'body', []):
+        if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+            call_node = node.value
+            # Check for pattern: openapi_type_alias(...)(cast(Any, alias_name))
+            if isinstance(call_node.func, ast.Call):
+                factory_call = call_node.func
+                if _decorator_identifier(factory_call.func) == 'openapi_type_alias':
+                    # Extract metadata from decorator call
+                    component_name: Optional[str] = None
+                    description: Optional[str] = None
+                    default_value: Any = MISSING
+                    managed_flag = False
+                    anyof_flag = False
+                    attr_map: Dict[str, Any] = {}
+
+                    if factory_call.args:
+                        maybe_name = _extract_constant(factory_call.args[0])
+                        if isinstance(maybe_name, str):
+                            component_name = maybe_name
+
+                    for kw in factory_call.keywords or []:
+                        if kw.arg == 'name':
+                            maybe_name = _extract_constant(kw.value)
+                            if isinstance(maybe_name, str):
+                                component_name = maybe_name
+                        elif kw.arg == 'description':
+                            maybe_desc = _extract_constant(kw.value)
+                            if isinstance(maybe_desc, str):
+                                description = maybe_desc
+                        elif kw.arg == 'default':
+                            default_value = _extract_constant(kw.value)
+                        elif kw.arg == 'managed':
+                            maybe_managed = _extract_constant(kw.value)
+                            if isinstance(maybe_managed, bool):
+                                managed_flag = maybe_managed
+                        elif kw.arg == 'anyof':
+                            maybe_anyof = _extract_constant(kw.value)
+                            if isinstance(maybe_anyof, bool):
+                                anyof_flag = maybe_anyof
+                        elif kw.arg == 'attributes':
+                            extracted = _extract_constant_dict(kw.value)
+                            if extracted is not None:
+                                attr_map = extracted
+
+                    # Extract alias name from cast(..., alias_name) call
+                    alias_name: Optional[str] = None
+                    if call_node.args:
+                        cast_arg = call_node.args[0]
+                        # Handle cast(Any, alias_name)
+                        if isinstance(cast_arg, ast.Call):
+                            cast_func_id = _decorator_identifier(cast_arg.func)
+                            if cast_func_id == 'cast' and len(cast_arg.args) >= 2:
+                                if isinstance(cast_arg.args[1], ast.Name):
+                                    alias_name = cast_arg.args[1].id
+                        # Handle direct name reference
+                        elif isinstance(cast_arg, ast.Name):
+                            alias_name = cast_arg.id
+
+                    # If we found an alias name and it exists in alias_map, register metadata
+                    if alias_name and alias_name in alias_map:
+                        component_name = component_name or alias_name
+                        annotation_str = alias_map[alias_name]
+
+                        meta: Dict[str, Any] = {
+                            'alias': alias_name,
+                            'component': component_name,
+                            'annotation': annotation_str,
+                            'path': str(file_path.resolve()),
+                        }
+                        if description is not None:
+                            meta['description'] = description
+                        if default_value is not MISSING:
+                            meta['default'] = default_value
+                        if anyof_flag:
+                            meta['anyof'] = True
+
+                        extensions: Dict[str, Any] = {}
+                        if managed_flag:
+                            extensions['x-tacobot-managed'] = True
+                        for k, v in attr_map.items():
+                            extensions[_normalize_extension_key(k)] = v
+                        if extensions:
+                            meta['extensions'] = extensions
+
+                        TYPE_ALIAS_METADATA[alias_name] = meta
     for node in getattr(module, 'body', []):
         if isinstance(node, ast.ImportFrom):
             remote_aliases = _load_type_aliases_for_module(node.module, node.level, file_path)
@@ -1255,7 +1648,22 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
             continue
         annotation_str = alias_meta.get('annotation', '')
         expanded_annotation = _expand_type_aliases(annotation_str, GLOBAL_TYPE_ALIASES)
-        schema = _build_schema_from_annotation(expanded_annotation)
+
+        # Check if anyof flag is set in metadata
+        anyof_flag = alias_meta.get('anyof', False)
+
+        # Unwrap Optional to detect nullable unions
+        unwrapped_annotation, is_nullable = _unwrap_optional(expanded_annotation)
+
+        # Build schema with anyof context if Union type
+        if anyof_flag:
+            # For union types, extract with anyOf instead of oneOf
+            union_schema = _extract_union_schema(unwrapped_annotation, anyof=True, nullable=is_nullable)
+            schema = union_schema if union_schema else _build_schema_from_annotation(expanded_annotation)
+        else:
+            # Use unwrapped annotation for schema building (nullable already handled in _build_schema_from_annotation)
+            schema = _build_schema_from_annotation(expanded_annotation)
+
         description = str(alias_meta.get('description')) if 'description' in alias_meta else ''
         if isinstance(description, str):
             schema['description'] = description
