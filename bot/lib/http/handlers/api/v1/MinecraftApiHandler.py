@@ -40,6 +40,7 @@ import os
 import traceback
 import typing
 
+from lib.models.MinecraftUser import MinecraftUser
 import requests
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
 from bot.lib.http.handlers.api.v1.const import API_VERSION
@@ -473,7 +474,7 @@ class MinecraftApiHandler(BaseHttpHandler):
             response = requests.get(url)
             if response.status_code == 200:
                 data = response.json()
-                payload = {"uuid": data.get("id", ""), "name": data.get("name", "")}
+                payload = MinecraftUser(data)
                 return HttpResponse(200, headers, bytearray(json.dumps(payload, indent=4), "utf-8"))
             raise HttpResponseException(404, headers, b'{ "error": "No user found" }')
         except HttpResponseException as e:

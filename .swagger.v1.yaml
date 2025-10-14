@@ -1892,25 +1892,6 @@ components:
         - world
       description: Represents a Minecraft world managed by Taco.
       x-tacobot-managed: true
-    MinecraftUserStatsPayload:
-      type: object
-      properties:
-        world_name:
-          type: string
-          enum:
-            - taco_atm10
-            - taco_atm10-2
-            - taco_atm8
-            - taco_atm9
-          description: Enum identifying the Minecraft world
-        stats:
-          $ref: '#/components/schemas/MinecraftUserStats'
-          description: Container of user stats for the specified world
-      required:
-        - stats
-        - world_name
-      description: Payload container for user stats by world.
-      x-tacobot-managed: true
     MinecraftUserStats:
       type: object
       properties: {}
@@ -1931,204 +1912,41 @@ components:
         - event
       description: A Minecraft player event.
       x-tacobot-managed: true
-    MinecraftPlayerEventPayload:
-      type: object
-      properties:
-        guild_id:
-          type: string
-          description: Discord guild ID associated with the event.
-        payload:
-          type: object
-          nullable: true
-          description: Additional event-specific data (varies by event type).
-        event:
-          type: string
-          enum:
-            - death
-            - login
-            - logout
-            - unknown
-          description: Type of player event (login, logout, death).
-      required:
-        - event
-        - guild_id
-      description: Payload for Minecraft player events.
-      x-tacobot-managed: true
-    MinecraftDiscordUserStatsInfo:
-      type: object
-      properties:
-        world:
-          type: string
-          enum:
-            - taco_atm10
-            - taco_atm10-2
-            - taco_atm8
-            - taco_atm9
-          description: The name of the Minecraft world.
-        username:
-          type: string
-          description: The Minecraft username.
-        uuid:
-          type: string
-          description: The Minecraft UUID.
-        user_id:
-          type: string
-          description: The Discord user ID associated with this Minecraft account.
-        modified:
-          type: integer
-          description: Timestamp of the last modification to this record.
-        stats:
-          type: object
-          nullable: true
-          description: A dictionary of Minecraft stats.
-      required:
-        - modified
-        - user_id
-        - username
-        - uuid
-        - world
-      description: A Discord user's Minecraft stats info.
-      x-tacobot-managed: true
-    MinecraftServerSettings:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-          description: Whether the Minecraft server integration is enabled.
-        server:
-          type: string
-          description: The server address (IP or domain) and port.
-        forge_version:
-          type: string
-          description: The version of the Forge mod loader used by the server.
-        version:
-          type: string
-          description: The base version of the Minecraft server.
-        help:
-          type: string
-          description: A link to provide help information on connecting to the server.
-        mods:
-          type: array
-          items:
-            $ref: '#/components/schemas/TacoMinecraftServerSettingsMod'
-          description: A list of mods installed on the server.
-      required:
-        - enabled
-        - forge_version
-        - help
-        - mods
-        - server
-        - version
-      description: Configuration for the Minecraft Server.
-      x-tacobot-managed: true
-    TacoMinecraftServerSettingsMod:
-      type: object
-      properties:
-        name:
-          type: string
-          description: The name of the mod.
-        version:
-          type: string
-          description: The version of the mod.
-      required:
-        - name
-        - version
-      description: Represents a mod installed on the Minecraft server.
-      x-tacobot-managed: true
-    TacoMinecraftServerSettings:
-      type: object
-      properties:
-        guild_id:
-          type: string
-          description: The Discord guild ID associated with these settings.
-        name:
-          type: string
-          description: The name of the Minecraft server configuration.
-        settings:
-          $ref: '#/components/schemas/MinecraftServerSettings'
-          description: A dictionary containing various Minecraft server settings.
-        timestamp:
-          type: integer
-          description: The last updated timestamp for these settings (epoch seconds).
-      required:
-        - guild_id
-        - name
-        - settings
-        - timestamp
-      description: Represents the settings for a Minecraft server managed by TacoBot.
-      x-tacobot-managed: true
-    MinecraftServerStatus:
-      type: object
-      properties:
-        success:
-          type: boolean
-          description: Whether the status query was successful.
-        host:
-          type: string
-          description: The hostname or IP address of the Minecraft server.
-        status:
-          type: string
-          enum:
-            - offline
-            - online
-            - unknown
-          description: The current status of the server (e.g., online, offline, unknown).
-        description:
-          type: string
-          description: A brief description of the server.
-        motd:
-          $ref: '#/components/schemas/MinecraftServerStatusMotd'
-          description: The message of the day (MOTD) information.
-        online:
-          type: boolean
-          description: Whether the server is currently online.
-        latency:
-          type: integer
-          description: The latency to the server in milliseconds.
-        enforces_secure_chat:
-          type: boolean
-          description: Whether the server enforces secure chat.
-        icon:
-          type: string
-          description: The base64-encoded server icon image.
-        players:
-          $ref: '#/components/schemas/MinecraftServerStatusPlayers'
-          description: Player count information.
-        version:
-          $ref: '#/components/schemas/MinecraftServerStatusVersion'
-          description: Version information of the server.
-      required:
-        - description
-        - enforces_secure_chat
-        - host
-        - icon
-        - latency
-        - motd
-        - online
-        - players
-        - status
-        - success
-        - version
-      description: Represents the status of a Minecraft server.
-      x-tacobot-managed: true
     MinecraftUser:
       type: object
       properties:
         uuid:
           type: string
-        name:
+          description: The unique identifier for the Minecraft user.
+        username:
           type: string
+          description: The username of the Minecraft user.
+      required:
+        - username
+        - uuid
+      description: Represents a Minecraft user with a unique ID.
+      x-tacobot-managed: true
     MinecraftOpUser:
       type: object
       properties:
         uuid:
           type: string
+          description: The unique identifier for the Minecraft user.
         username:
           type: string
+          description: The username of the Minecraft user.
         level:
           type: integer
+          description: The operator level (e.g., 4 for admin, 2 for operator).
         bypassPlayerLimit:
           type: boolean
+      required:
+        - bypassPlayerLimit
+        - level
+        - username
+        - uuid
+      description: Represents a Minecraft user with operator permissions.
+      x-tacobot-managed: true
     MinecraftWhiteListUser:
       type: object
       properties:
@@ -2201,11 +2019,20 @@ components:
         channels:
           type: array
           items:
-            $ref: '#/components/schemas/DiscordCategory'
+            $ref: '#/components/schemas/DiscordChannel'
+          nullable: true
+          description: List of channels that are not under any category
         categories:
           type: array
           items:
             $ref: '#/components/schemas/DiscordCategory'
+          nullable: true
+          description: List of channel categories, each with its own channels
+      required:
+        - id
+        - name
+      description: Snapshot of a Discord guild's channels and categories.
+      x-tacobot-managed: true
     DiscordChannel:
       type: object
       properties:
@@ -2250,20 +2077,39 @@ components:
       properties:
         id:
           type: string
-        guild_id:
-          type: string
-        name:
-          type: string
-        position:
-          type: integer
+          description: The unique identifier for the category
         type:
           type: string
+          enum:
+            - category
+          description: The type of the channel, always 'category' for categories
+        guild_id:
+          type: string
+          description: The unique identifier for the guild this category belongs to
+        name:
+          type: string
+          description: The name of the category
+        position:
+          type: integer
+          description: The position of the category in the guild's channel list
         category_id:
           type: string
+          description: The ID of the parent category, if any
         channels:
           type: array
           items:
             $ref: '#/components/schemas/DiscordChannel'
+          description: List of channels under this category
+      required:
+        - category_id
+        - channels
+        - guild_id
+        - id
+        - name
+        - position
+        - type
+      description: Model for a Discord Category.
+      x-tacobot-managed: true
     DiscordEmoji:
       type: object
       properties:
@@ -2545,9 +2391,12 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/JoinWhitelistUser'
+          required:
+            - items
+      description: Generic paginated results container.
+      x-tacobot-managed: true
     PagedResults:
       type: object
-      description: Paginated results.
       properties:
         total:
           type: integer
@@ -2560,13 +2409,16 @@ components:
           description: Requested page size
         items:
           type: array
+          items:
+            type: object
           description: Page slice of items
-          items: {}
       required:
-        - total
+        - items
         - skip
         - take
-        - items
+        - total
+      description: Generic paginated results container.
+      x-tacobot-managed: true
     MinecraftServerStatusMotd:
       type: object
       properties:
@@ -2616,6 +2468,205 @@ components:
         - name
         - protocol
       description: Represents version information in a Minecraft server status response.
+      x-tacobot-managed: true
+    MinecraftDiscordUserStatsInfo:
+      type: object
+      properties:
+        world:
+          type: string
+          enum:
+            - taco_atm10
+            - taco_atm10-2
+            - taco_atm8
+            - taco_atm9
+          description: The name of the Minecraft world.
+        username:
+          type: string
+          description: The Minecraft username.
+        uuid:
+          type: string
+          description: The Minecraft UUID.
+        user_id:
+          type: string
+          description: The Discord user ID associated with this Minecraft account.
+        modified:
+          type: integer
+          description: Timestamp of the last modification to this record.
+        stats:
+          type: object
+          nullable: true
+          description: A dictionary of Minecraft stats.
+      required:
+        - modified
+        - user_id
+        - username
+        - uuid
+        - world
+      description: A Discord user's Minecraft stats info.
+      x-tacobot-managed: true
+    MinecraftPlayerEventPayload:
+      type: object
+      properties:
+        guild_id:
+          type: string
+          description: Discord guild ID associated with the event.
+        payload:
+          type: object
+          nullable: true
+          description: Additional event-specific data (varies by event type).
+        event:
+          type: string
+          enum:
+            - death
+            - login
+            - logout
+            - unknown
+          description: Type of player event (login, logout, death).
+      required:
+        - event
+        - guild_id
+      description: Payload for Minecraft player events.
+      x-tacobot-managed: true
+    MinecraftServerSettings:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Whether the Minecraft server integration is enabled.
+        server:
+          type: string
+          description: The server address (IP or domain) and port.
+        forge_version:
+          type: string
+          description: The version of the Forge mod loader used by the server.
+        version:
+          type: string
+          description: The base version of the Minecraft server.
+        help:
+          type: string
+          description: A link to provide help information on connecting to the server.
+        mods:
+          type: array
+          items:
+            $ref: '#/components/schemas/TacoMinecraftServerSettingsMod'
+          description: A list of mods installed on the server.
+      required:
+        - enabled
+        - forge_version
+        - help
+        - mods
+        - server
+        - version
+      description: Configuration for the Minecraft Server.
+      x-tacobot-managed: true
+    MinecraftServerStatus:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether the status query was successful.
+        host:
+          type: string
+          description: The hostname or IP address of the Minecraft server.
+        status:
+          type: string
+          enum:
+            - offline
+            - online
+            - unknown
+          description: The current status of the server (e.g., online, offline, unknown).
+        description:
+          type: string
+          description: A brief description of the server.
+        motd:
+          $ref: '#/components/schemas/MinecraftServerStatusMotd'
+          description: The message of the day (MOTD) information.
+        online:
+          type: boolean
+          description: Whether the server is currently online.
+        latency:
+          type: integer
+          description: The latency to the server in milliseconds.
+        enforces_secure_chat:
+          type: boolean
+          description: Whether the server enforces secure chat.
+        icon:
+          type: string
+          description: The base64-encoded server icon image.
+        players:
+          $ref: '#/components/schemas/MinecraftServerStatusPlayers'
+          description: Player count information.
+        version:
+          $ref: '#/components/schemas/MinecraftServerStatusVersion'
+          description: Version information of the server.
+      required:
+        - description
+        - enforces_secure_chat
+        - host
+        - icon
+        - latency
+        - motd
+        - online
+        - players
+        - status
+        - success
+        - version
+      description: Represents the status of a Minecraft server.
+      x-tacobot-managed: true
+    TacoMinecraftServerSettings:
+      type: object
+      properties:
+        guild_id:
+          type: string
+          description: The Discord guild ID associated with these settings.
+        name:
+          type: string
+          description: The name of the Minecraft server configuration.
+        settings:
+          $ref: '#/components/schemas/MinecraftServerSettings'
+          description: A dictionary containing various Minecraft server settings.
+        timestamp:
+          type: integer
+          description: The last updated timestamp for these settings (epoch seconds).
+      required:
+        - guild_id
+        - name
+        - settings
+        - timestamp
+      description: Represents the settings for a Minecraft server managed by TacoBot.
+      x-tacobot-managed: true
+    TacoMinecraftServerSettingsMod:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the mod.
+        version:
+          type: string
+          description: The version of the mod.
+      required:
+        - name
+        - version
+      description: Represents a mod installed on the Minecraft server.
+      x-tacobot-managed: true
+    MinecraftUserStatsPayload:
+      type: object
+      properties:
+        world_name:
+          type: string
+          enum:
+            - taco_atm10
+            - taco_atm10-2
+            - taco_atm8
+            - taco_atm9
+          description: Enum identifying the Minecraft world
+        stats:
+          $ref: '#/components/schemas/MinecraftUserStats'
+          description: Container of user stats for the specified world
+      required:
+        - stats
+        - world_name
+      description: Payload container for user stats by world.
       x-tacobot-managed: true
   securitySchemes:
     X-AUTH-TOKEN:

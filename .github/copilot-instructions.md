@@ -2,6 +2,18 @@
 
 This file provides architecture context and conventions so generated code aligns with the existing TacoBot Python project.
 
+- Always use this guide when generating new code or modifying existing code.
+- When in doubt, prefer explicitness, defensive error handling, and test coverage.
+- If you need clarification, ask for help rather than guessing.
+- Follow existing project structure and place new files in appropriate directories.
+- Follow existing conventions for naming, structure, and style.
+- Always use `LF` / `\n` line endings, even on Windows, to maintain consistency across environments.
+- Always run tests in the `.venv`. 
+- After making changes, run `scripts/sync_endpoints.py --check` to ensure OpenAPI spec is in sync.
+- Update relevant documentation files when adding features or changing behavior.
+- Ensure all new code is covered by tests.
+- Offer suggestions for further improvements or refactors when you see opportunities.
+
 ---
 ## 1. High-Level Architecture
 TacoBot is a Discord-focused automation and utility bot with an embedded HTTP API and metrics export.

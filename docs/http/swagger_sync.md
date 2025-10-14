@@ -331,7 +331,7 @@ Why a docstring block vs decorator `kwargs`? The block scales better for many fi
 
 ### 4.8 Decorator Vendor Extensions
 
-For concise vendor extension flags, decorate the model class with `@openapi_attribute("x-some-flag", value)` (or helper decorators such as `@openapi_managed()`). The generator surfaces these attributes as top-level schema keys. If the supplied name omits the required `x-` prefix, it is added automatically during generation.
+For concise vendor extension flags, decorate the model class with `@openapi_attribute("x-some-flag", value)` (or helper decorators such as `@openapi_managed()`, `@openapi_deprecated()`, and `@openapi_exclude()`). The generator surfaces these attributes as top-level schema keys. If the supplied name omits the required `x-` prefix, it is added automatically during generation.
 
 Example:
 
@@ -351,7 +351,66 @@ MinecraftPlayerEvent:
   ...
 ```
 
-Use these decorators for simple booleans/strings/numbers you want mirrored in the swagger component. Any helper that internally returns `openapi_attribute(...)` (like `openapi_managed`) is detected automatically, so additional wrappers do not require script changes. Prefer docstring metadata blocks for richer per-property annotations.
+#### Built-in Decorator Helpers
+
+**`@openapi_managed()`**  
+Marks a model as managed by TacoBot. Adds `x-tacobot-managed: true` to the schema. Use this for models that are owned and controlled by the bot's internal systems.
+
+**`@openapi_deprecated()`**  
+Marks a model as deprecated. Adds `x-tacobot-deprecated: true` to the schema. Use this for models being phased out or replaced, signaling to API consumers that they should migrate to alternatives.
+
+```python
+@openapi_model("LegacyUserModel", description="Deprecated user model")
+@openapi_deprecated()
+class LegacyUserModel:
+    def __init__(self, user_id: int):
+        self.user_id: int = user_id
+```
+
+> **Note**: See `tests/tmp_test_models.py` for complete working examples of both `@openapi_deprecated()` and `@openapi_exclude()` decorators.
+
+Produces:
+
+```yaml
+LegacyUserModel:
+  type: object
+  description: Deprecated user model
+  properties:
+    user_id:
+      type: integer
+  required:
+    - user_id
+  x-tacobot-deprecated: true
+```
+
+**`@openapi_exclude()`**  
+Completely excludes a model from OpenAPI schema generation. The decorated model will NOT appear in `components.schemas`. Use this for internal-only models, test fixtures, or models being removed from the public API.
+
+```python
+@openapi_model("InternalDebugModel", description="Should not appear in API")
+@openapi_exclude()
+class InternalDebugModel:
+    def __init__(self, debug_data: str):
+        self.debug_data: str = debug_data
+```
+
+Result: No schema generated for `InternalDebugModel`.
+
+**Combining Decorators**
+
+Decorators can be stacked. For example, a model can be both managed and deprecated:
+
+```python
+@openapi_model("LegacyManagedModel")
+@openapi_managed()
+@openapi_deprecated()
+class LegacyManagedModel:
+    ...
+```
+
+However, `@openapi_exclude()` takes priority and will prevent the model from appearing in the schema regardless of other decorators.
+
+Use these decorators for simple booleans/strings/numbers you want mirrored in the swagger component. Any helper that internally returns `openapi_attribute(...)` (like `openapi_managed`, `openapi_deprecated`, `openapi_exclude`) is detected automatically, so additional wrappers do not require script changes. Prefer docstring metadata blocks for richer per-property annotations.
 
 ### 4.9 Testing
 

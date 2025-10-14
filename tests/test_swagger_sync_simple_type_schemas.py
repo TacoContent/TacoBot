@@ -33,7 +33,7 @@ def test_simple_string_enum_schema():
                 '''
         """))
         
-        components = collect_model_components(models_dir)
+        components, _ = collect_model_components(models_dir)
         
         assert 'TestEnum' in components
         schema = components['TestEnum']
@@ -73,7 +73,7 @@ def test_simple_integer_with_minimum():
                 '''
         """))
         
-        components = collect_model_components(models_dir)
+        components, _ = collect_model_components(models_dir)
         
         assert 'TestInteger' in components
         schema = components['TestInteger']
@@ -111,7 +111,7 @@ def test_simple_boolean_schema():
                 '''
         """))
         
-        components = collect_model_components(models_dir)
+        components, _ = collect_model_components(models_dir)
         
         assert 'TestBoolean' in components
         schema = components['TestBoolean']
@@ -154,7 +154,7 @@ def test_object_schema_still_works():
                     self.name: str = name
         """))
         
-        components = collect_model_components(models_dir)
+        components, _ = collect_model_components(models_dir)
         
         assert 'TestObject' in components
         schema = components['TestObject']
@@ -186,7 +186,7 @@ def test_fallback_to_object_without_openapi_block():
                     self.value = value
         """))
         
-        components = collect_model_components(models_dir)
+        components, _ = collect_model_components(models_dir)
         
         assert 'TestStandard' in components
         schema = components['TestStandard']
@@ -220,7 +220,7 @@ def test_description_precedence():
                 '''
         """))
         
-        components = collect_model_components(models_dir)
+        components, _ = collect_model_components(models_dir)
         
         assert 'TestDescription' in components
         schema = components['TestDescription']
@@ -252,7 +252,7 @@ def test_schema_description_overrides_decorator():
                 '''
         """))
         
-        components = collect_model_components(models_dir)
+        components, _ = collect_model_components(models_dir)
         
         assert 'TestDescOverride' in components
         schema = components['TestDescOverride']

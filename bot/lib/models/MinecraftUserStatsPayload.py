@@ -1,6 +1,6 @@
 
 from bot.lib.models.MinecraftUserStats import MinecraftUserStats
-from bot.lib.models.openapi import openapi_managed, openapi_model
+from bot.lib.models.openapi import openapi_exclude, openapi_managed, openapi_model
 from bot.lib.models.TacoMinecraftWorlds import TacoMinecraftWorlds
 
 
@@ -18,5 +18,5 @@ class MinecraftUserStatsPayload:
         description: Container of user stats for the specified world
     <<<openapi"""
     def __init__(self, data: dict):
-        self.world_name: TacoMinecraftWorlds = TacoMinecraftWorlds().default
+        self.world_name: TacoMinecraftWorlds = data.get("world_name", "")
         self.stats: MinecraftUserStats = MinecraftUserStats(data.get("stats", {}))

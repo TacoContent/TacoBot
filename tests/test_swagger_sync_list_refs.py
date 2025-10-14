@@ -32,7 +32,7 @@ def test_list_model_class_generates_ref():
         """))
         
         # Collect model components
-        components = collect_model_components(models_root)
+        components, _ = collect_model_components(models_root)
         
         # Verify that both components were created
         assert "TestGame" in components
@@ -66,7 +66,7 @@ def test_list_primitive_uses_string():
         """))
         
         # Collect model components
-        components = collect_model_components(models_root)
+        components, _ = collect_model_components(models_root)
         
         # Verify the TestPayload tags field uses string type
         test_payload = components["TestPayload"]
@@ -81,7 +81,7 @@ def test_shift_code_models_specifically():
     """Test the specific ShiftCodePayload and ShiftCodeGame models work correctly."""
     # Use the actual models root
     models_root = pathlib.Path("bot/lib/models")
-    components = collect_model_components(models_root)
+    components, _ = collect_model_components(models_root)
     
     # Verify both components exist
     assert "ShiftCodePayload" in components

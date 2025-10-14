@@ -38,7 +38,7 @@ def openapi_model(name: str, description: str = None):
         openapi_file = models_root / "openapi.py"
         openapi_file.write_text(openapi_content)
 
-        comps = collect_model_components(models_root)
+        comps, _ = collect_model_components(models_root)
 
         assert 'ForwardRefModel' in comps, 'ForwardRefModel component missing'
         model_schema = comps['ForwardRefModel']
@@ -84,7 +84,7 @@ def openapi_model(name: str, description: str = None):
         openapi_file = models_root / "openapi.py"
         openapi_file.write_text(openapi_content)
 
-        comps = collect_model_components(models_root)
+        comps, _ = collect_model_components(models_root)
 
         assert 'NestedModel' in comps, 'NestedModel component missing'
         model_schema = comps['NestedModel']
@@ -128,7 +128,7 @@ def openapi_model(name: str, description: str = None):
         openapi_file = models_root / "openapi.py"
         openapi_file.write_text(openapi_content)
 
-        comps = collect_model_components(models_root)
+        comps, _ = collect_model_components(models_root)
 
         assert 'EdgeCaseModel' in comps, 'EdgeCaseModel component missing'
         model_schema = comps['EdgeCaseModel']
@@ -179,7 +179,7 @@ def openapi_model(name: str, description: str = None):
         openapi_file = models_root / "openapi.py"
         openapi_file.write_text(openapi_content)
 
-        comps = collect_model_components(models_root)
+        comps, _ = collect_model_components(models_root)
 
         assert 'CamelCaseModel' in comps, 'CamelCaseModel component missing'
         model_schema = comps['CamelCaseModel']
@@ -235,7 +235,7 @@ def openapi_model(name: str, description: str = None):
         openapi_file = models_root / "openapi.py"
         openapi_file.write_text(openapi_content)
 
-        comps = collect_model_components(models_root)
+        comps, _ = collect_model_components(models_root)
 
         assert 'MixedModel' in comps, 'MixedModel component missing'
         model_schema = comps['MixedModel']

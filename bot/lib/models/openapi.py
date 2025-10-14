@@ -52,6 +52,25 @@ def openapi_managed() -> Callable[[T], T]:
     return openapi_attribute('x-tacobot-managed', True)
 
 
+def openapi_deprecated() -> Callable[[T], T]:
+    """Decorator to mark a model class as deprecated.
+
+    This adds a custom attribute indicating the model is deprecated,
+    which will be reflected in the OpenAPI schema.
+    """
+    return openapi_attribute('x-tacobot-deprecated', True)
+
+
+def openapi_exclude() -> Callable[[T], T]:
+    """Decorator to mark a model class to be excluded from OpenAPI schema.
+
+    Models marked with this decorator will not be included in the
+    generated swagger components. Use this for internal models or
+    models being phased out.
+    """
+    return openapi_attribute('x-tacobot-exclude', True)
+
+
 def openapi_type_alias(
     name: str,
     *,
@@ -85,4 +104,4 @@ def openapi_type_alias(
 def get_openapi_type_alias_metadata(name: str) -> Optional[Dict[str, Any]]:
     return _TYPE_ALIAS_REGISTRY.get(name)
 
-__all__ = ['openapi_model', 'openapi_attribute', 'openapi_managed', 'openapi_type_alias', 'get_openapi_type_alias_metadata']
+__all__ = ['openapi_model', 'openapi_attribute', 'openapi_managed', 'openapi_deprecated', 'openapi_exclude', 'openapi_type_alias', 'get_openapi_type_alias_metadata']

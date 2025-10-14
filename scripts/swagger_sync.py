@@ -576,6 +576,71 @@ def _load_type_aliases_for_module(module_name: Optional[str], level: int, curren
     return _load_type_aliases_for_path(target)
 
 
+def _collect_typevars_from_ast(module: ast.AST) -> set[str]:
+    """Collect TypeVar names defined in a module.
+
+    Returns:
+        Set of TypeVar names (e.g., {'T', 'K', 'V'})
+    """
+    typevars: set[str] = set()
+    for node in getattr(module, 'body', []):
+        # Look for assignments like: T = TypeVar('T')
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    # Check if the value is a TypeVar() call
+                    if isinstance(node.value, ast.Call):
+                        func_name = _decorator_identifier(node.value.func)
+                        if func_name == 'TypeVar':
+                            typevars.add(target.id)
+    return typevars
+
+
+def _extract_openapi_base_classes(cls: ast.ClassDef, module_typevars: set[str]) -> list[str]:
+    """Extract base class names that could be OpenAPI model components.
+
+    Filters out:
+    - Generic type parameters (Generic[T])
+    - TypeVars
+    - Common base classes (object, ABC, etc.)
+
+    Returns:
+        List of potential OpenAPI model base class names
+    """
+    base_classes: list[str] = []
+    for base in cls.bases:
+        base_name = _safe_unparse(base)
+        if not base_name:
+            continue
+
+        # Skip Generic[T] pattern
+        if 'Generic[' in base_name or base_name == 'Generic':
+            continue
+
+        # Extract simple class name (e.g., "PagedResults" from "PagedResults" or module.PagedResults)
+        # Handle subscripted generics like PagedResults[T]
+        if '[' in base_name:
+            base_name = base_name.split('[')[0].strip()
+
+        # Get the last component if it's a qualified name
+        if '.' in base_name:
+            base_name = base_name.split('.')[-1]
+
+        # Skip if it's a TypeVar
+        if base_name in module_typevars:
+            continue
+
+        # Skip common base classes
+        if base_name in ('object', 'ABC', 'ABCMeta', 'type', 'Protocol'):
+            continue
+
+        # Only include if it looks like a class name (starts with uppercase)
+        if base_name and base_name[0].isupper():
+            base_classes.append(base_name)
+
+    return base_classes
+
+
 def _collect_type_aliases_from_ast(module: ast.AST, file_path: pathlib.Path) -> Dict[str, str]:
     global TYPE_ALIAS_METADATA, GLOBAL_TYPE_ALIASES
     alias_map: Dict[str, str] = {}
@@ -834,7 +899,7 @@ def collect_endpoints(handlers_root: pathlib.Path, *, strict: bool = False, igno
     return endpoints, ignored
 
 
-def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, Any]]:
+def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[str, Any]], set[str]]:
     """Collect model classes decorated with @openapi_model and derive naive schemas.
 
     Strategy (pure AST – no imports executed):
@@ -843,10 +908,14 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
     * Inside __init__, record any self.<attr> AnnAssign or Assign targets (skip private leading _).
     * Infer primitive types from annotations / literal defaults; mark non-optional as required.
     Limitations: nested / complex types collapsed to string; arrays default items.type=string.
+
+    Returns:
+        Tuple of (components_dict, excluded_component_names_set)
     """
     components: Dict[str, Dict[str, Any]] = {}
+    excluded_components: set[str] = set()
     if not models_root.exists():
-        return components
+        return components, excluded_components
     resolved_models_root = models_root.resolve()
     attribute_aliases = _discover_attribute_aliases(models_root)
     for py_file in models_root.rglob('*.py'):
@@ -861,6 +930,7 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
         except SyntaxError:
             continue
         type_alias_map = _register_type_aliases(py_file, module)
+        module_typevars = _collect_typevars_from_ast(module)
         for cls in [n for n in module.body if isinstance(n, ast.ClassDef)]:
             comp_name: Optional[str] = None
             description: str = ''
@@ -960,6 +1030,11 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
             if not comp_name:
                 continue
 
+            # Track models marked with openapi_exclude for removal from swagger
+            if decorator_extensions.get('x-tacobot-exclude'):
+                excluded_components.add(comp_name)
+                continue
+
             # If we have a full schema override, use it directly
             if full_schema_override is not None:
                 comp_schema = full_schema_override.copy()
@@ -1054,11 +1129,15 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
                         typing_keywords = {'Optional', 'Union', 'List', 'Dict', 'Any', 'Type', 'Callable', 'Tuple', 'Set', 'Literal'}
                         potential_models = [m for m in matches if m not in typing_keywords]
 
-                        # If we found a potential model class name, use it as a $ref
+                        # If we found a potential model class name, use it as a $ref (unless it's a TypeVar)
                         if potential_models:
                             # Use the first potential model (most common case: single class reference)
                             model_name = potential_models[0]
-                            schema = {'$ref': f'#/components/schemas/{model_name}'}
+                            # Check if this is a TypeVar - if so, treat as object
+                            if model_name in module_typevars:
+                                schema = {'type': 'object'}
+                            else:
+                                schema = {'$ref': f'#/components/schemas/{model_name}'}
                         else:
                             if typ == 'object':
                                 schema = {'type': 'object'}
@@ -1083,10 +1162,13 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
                         match = re.search(list_pattern, anno_str)
                         if match:
                             inner_type = match.group(1)
+                            # Check if inner_type is a TypeVar - if so, treat as object
+                            if inner_type in module_typevars:
+                                schema['items'] = {'type': 'object'}
                             # Check if this inner type will be or is a known component
                             # We need to look ahead in the processing or check if it's already processed
                             # For now, use heuristic: if it looks like a class name (CamelCase), assume it's a component
-                            if inner_type and inner_type[0].isupper():
+                            elif inner_type and inner_type[0].isupper():
                                 schema['items'] = {'$ref': f'#/components/schemas/{inner_type}'}
                             else:
                                 schema['items'] = {'type': items_type}
@@ -1113,13 +1195,45 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
                 props[attr] = schema
                 if not nullable:
                     required.append(attr)
-            comp_schema: Dict[str, Any] = {'type': 'object', 'properties': props}
-            if required:
-                comp_schema['required'] = sorted(required)
-            if description:
-                comp_schema['description'] = description
-            if decorator_extensions:
-                comp_schema.update(decorator_extensions)
+
+            # Check for base classes to determine if we should use allOf
+            openapi_base_classes = _extract_openapi_base_classes(cls, module_typevars)
+
+            # Build the schema
+            if openapi_base_classes:
+                # Use allOf structure for inheritance
+                comp_schema: Dict[str, Any] = {'allOf': []}
+
+                # Add references to base class schemas
+                for base_class_name in openapi_base_classes:
+                    comp_schema['allOf'].append({'$ref': f'#/components/schemas/{base_class_name}'})
+
+                # Add properties/required defined or overridden in this class
+                subclass_schema: Dict[str, Any] = {}
+                if props:
+                    subclass_schema['properties'] = props
+                if required:
+                    subclass_schema['required'] = sorted(required)
+
+                # Only add the subclass schema if it has content
+                if subclass_schema:
+                    comp_schema['allOf'].append(subclass_schema)
+
+                # Add description and extensions at the top level (not inside allOf)
+                if description:
+                    comp_schema['description'] = description
+                if decorator_extensions:
+                    comp_schema.update(decorator_extensions)
+            else:
+                # No inheritance - use standard object schema
+                comp_schema: Dict[str, Any] = {'type': 'object', 'properties': props}
+                if required:
+                    comp_schema['required'] = sorted(required)
+                if description:
+                    comp_schema['description'] = description
+                if decorator_extensions:
+                    comp_schema.update(decorator_extensions)
+
             components[comp_name] = comp_schema
     for alias_meta in TYPE_ALIAS_METADATA.values():
         defined_path_str = alias_meta.get('path')
@@ -1152,7 +1266,7 @@ def collect_model_components(models_root: pathlib.Path) -> Dict[str, Dict[str, A
         for ext_key, ext_value in extensions.items():
             schema[_normalize_extension_key(ext_key)] = ext_value
         components[component_name] = schema
-    return components
+    return components, excluded_components
 
 
 def load_swagger(swagger_file: pathlib.Path) -> Dict[str, Any]:
@@ -1517,11 +1631,13 @@ def main() -> None:
     swagger = load_swagger(swagger_path)
     # Model components (collect + track metrics)
     model_components: Dict[str, Dict[str, Any]] = {}
+    excluded_model_components: set[str] = set()
     model_components_updated: List[str] = []
+    model_components_removed: List[str] = []
     components_changed = False  # Track if components.schemas mutated so we persist swagger even w/o path diffs
     if not args.no_model_components:
-        model_components = collect_model_components(pathlib.Path(args.models_root))
-        if model_components:
+        model_components, excluded_model_components = collect_model_components(pathlib.Path(args.models_root))
+        if model_components or excluded_model_components:
             schemas = swagger.setdefault('components', {}).setdefault('schemas', {})
             for name, new_schema in model_components.items():
                 existing = schemas.get(name)
@@ -1555,8 +1671,35 @@ def main() -> None:
                     schemas[name] = new_schema
                     model_components_updated.append(name)
                     components_changed = True
+
+            # Remove excluded components from swagger
+            for excluded_name in excluded_model_components:
+                if excluded_name in schemas:
+                    from io import StringIO as StringIOModule
+                    existing_stream = StringIOModule()
+                    yaml.dump(schemas[excluded_name], existing_stream)
+                    existing_lines = existing_stream.getvalue().rstrip().splitlines()
+
+                    warn = f"Excluded model schema component '{excluded_name}' removed."
+                    if not DISABLE_COLOR:
+                        warn = f"{ANSI_YELLOW}WARNING: {warn}{ANSI_RESET}"
+                    else:
+                        warn = f"WARNING: {warn}"
+                    print(warn, file=sys.stderr)
+
+                    # Show diff with deletion
+                    diff = difflib.unified_diff(existing_lines, [], fromfile=f"a/components.schemas.{excluded_name}", tofile=f"b/components.schemas.{excluded_name}", lineterm='')
+                    for dl in _colorize_unified(list(diff)):
+                        print(dl, file=sys.stderr)
+
+                    del schemas[excluded_name]
+                    model_components_removed.append(excluded_name)
+                    components_changed = True
+
             if model_components_updated:
                 print(f"Model schemas updated: {', '.join(sorted(model_components_updated))}")
+            if model_components_removed:
+                print(f"Model schemas removed: {', '.join(sorted(model_components_removed))}")
     existing_schemas = swagger.get('components', {}).get('schemas', {}) if isinstance(swagger.get('components'), dict) else {}
     model_components_generated_count = len(model_components)
     model_components_existing_not_generated_count = sum(1 for k in existing_schemas.keys() if k not in model_components) if existing_schemas else 0

@@ -52,7 +52,7 @@ def openapi_model(name: str, description: str = None):
         openapi_file.write_text(openapi_content)
 
         # Collect the model components
-        comps = collect_model_components(models_root)
+        comps, _ = collect_model_components(models_root)
 
         # Verify both models were found
         assert 'TestUser' in comps, 'TestUser component missing'
@@ -108,7 +108,7 @@ def openapi_model(name: str, description: str = None):
         openapi_file = models_root / "openapi.py"
         openapi_file.write_text(openapi_content)
 
-        comps = collect_model_components(models_root)
+        comps, _ = collect_model_components(models_root)
 
         assert 'Product' in comps, 'Product component missing'
         product_schema = comps['Product']
@@ -163,7 +163,7 @@ def openapi_model(name: str, description: str = None):
         openapi_file = models_root / "openapi.py"
         openapi_file.write_text(openapi_content)
 
-        comps = collect_model_components(models_root)
+        comps, _ = collect_model_components(models_root)
 
         assert 'Article' in comps, 'Article component missing'
         article_schema = comps['Article']
@@ -222,7 +222,7 @@ def openapi_model(name: str, description: str = None):
         openapi_file = models_root / "openapi.py"
         openapi_file.write_text(openapi_content)
 
-        comps = collect_model_components(models_root)
+        comps, _ = collect_model_components(models_root)
 
         assert 'Person' in comps, 'Person component missing'
         person_schema = comps['Person']
@@ -279,7 +279,7 @@ def openapi_model(name: str, description: str = None):
         openapi_file = models_root / "openapi.py"
         openapi_file.write_text(openapi_content)
 
-        comps = collect_model_components(models_root)
+        comps, _ = collect_model_components(models_root)
 
         assert 'TestModel' in comps, 'TestModel component missing'
         test_model_schema = comps['TestModel']
@@ -334,7 +334,7 @@ def openapi_model(name: str, description: str = None):
         openapi_file = models_root / "openapi.py"
         openapi_file.write_text(openapi_content)
 
-        comps = collect_model_components(models_root)
+        comps, _ = collect_model_components(models_root)
 
         assert 'StatusModel' in comps, 'StatusModel component missing'
         status_model_schema = comps['StatusModel']
@@ -354,7 +354,7 @@ def test_real_world_tacowebhook_scenario():
     """Test the actual real-world scenario that prompted this enhancement."""
     # This test uses the actual models from the TacoBot project
     models_root = pathlib.Path('bot/lib/models')
-    comps = collect_model_components(models_root)
+    comps, _ = collect_model_components(models_root)
 
     # Verify both components exist
     assert 'TacoWebhookMinecraftTacosResponsePayload' in comps, 'TacoWebhookMinecraftTacosResponsePayload missing'

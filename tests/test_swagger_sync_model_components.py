@@ -13,7 +13,7 @@ from scripts.swagger_sync import collect_model_components
 
 def test_collect_model_components_discord_channel():
     models_root = pathlib.Path('bot/lib/models')
-    comps = collect_model_components(models_root)
+    comps, _ = collect_model_components(models_root)
     assert 'DiscordChannel' in comps, 'DiscordChannel component missing'
     schema = comps['DiscordChannel']
     props = schema['properties']
@@ -32,7 +32,7 @@ def test_collect_model_components_discord_channel():
 
 def test_collect_model_components_discord_message_list_of_dict_items_object():
     models_root = pathlib.Path('bot/lib/models')
-    comps = collect_model_components(models_root)
+    comps, _ = collect_model_components(models_root)
     assert 'DiscordMessage' in comps, 'DiscordMessage component missing'
     schema = comps['DiscordMessage']
     props = schema['properties']
@@ -46,7 +46,7 @@ def test_collect_model_components_discord_message_list_of_dict_items_object():
 
 def test_collect_model_components_discord_emoji_literal_enum():
     models_root = pathlib.Path('bot/lib/models')
-    comps = collect_model_components(models_root)
+    comps, _ = collect_model_components(models_root)
     assert 'DiscordEmoji' in comps, 'DiscordEmoji component missing'
     schema = comps['DiscordEmoji']
     props = schema['properties']
@@ -61,7 +61,7 @@ def test_collect_model_components_discord_emoji_literal_enum():
 
 def test_collect_model_components_join_whitelist_user_property_descriptions():
     models_root = pathlib.Path('bot/lib/models')
-    comps = collect_model_components(models_root)
+    comps, _ = collect_model_components(models_root)
     assert 'JoinWhitelistUser' in comps, 'JoinWhitelistUser component missing'
     schema = comps['JoinWhitelistUser']
     props = schema['properties']
@@ -74,7 +74,7 @@ def test_collect_model_components_join_whitelist_user_property_descriptions():
 
 def test_collect_model_components_metadata_merge_precedence():
     models_root = pathlib.Path('tests/tmp_model_components')
-    comps = collect_model_components(models_root)
+    comps, _ = collect_model_components(models_root)
     assert 'MergeMetadataExample' in comps, 'MergeMetadataExample component missing'
     schema = comps['MergeMetadataExample']
     props = schema['properties']
@@ -92,7 +92,7 @@ def test_collect_model_components_metadata_merge_precedence():
 
 def test_collect_model_components_openapi_attributes():
     models_root = pathlib.Path('bot/lib/models')
-    comps = collect_model_components(models_root)
+    comps, _ = collect_model_components(models_root)
     assert 'MinecraftPlayerEvent' in comps, 'MinecraftPlayerEvent component missing'
     schema = comps['MinecraftPlayerEvent']
     assert schema.get('x-tacobot-managed') is True, 'openapi_managed attribute missing on schema'
@@ -103,7 +103,7 @@ def test_collect_model_components_openapi_attributes():
 
 def test_collect_model_components_attribute_prefix_normalization():
     models_root = pathlib.Path('tests/tmp_model_components')
-    comps = collect_model_components(models_root)
+    comps, _ = collect_model_components(models_root)
     assert 'DecoratorAttributeExample' in comps, 'DecoratorAttributeExample component missing'
     schema = comps['DecoratorAttributeExample']
     assert schema.get('x-custom-flag') == 'enabled', 'Decorator attribute should be namespaced with x- prefix'
@@ -111,7 +111,7 @@ def test_collect_model_components_attribute_prefix_normalization():
 
 def test_collect_model_components_optional_dict_infers_object():
     models_root = pathlib.Path('bot/lib/models')
-    comps = collect_model_components(models_root)
+    comps, _ = collect_model_components(models_root)
     assert 'MinecraftPlayerEventPayload' in comps, 'MinecraftPlayerEventPayload component missing'
     schema = comps['MinecraftPlayerEventPayload']
     payload_schema = schema['properties']['payload']
