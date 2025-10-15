@@ -54,6 +54,7 @@ def get_guild_roles(self, request: HttpRequest, uri_variables: dict) -> HttpResp
 ```
 
 **Pros**:
+
 - Type-safe configuration with IDE autocomplete
 - No YAML parsing needed during sync
 - Easier to validate at import time
@@ -61,12 +62,14 @@ def get_guild_roles(self, request: HttpRequest, uri_variables: dict) -> HttpResp
 - Better integration with linters and formatters
 
 **Cons**:
+
 - Requires decorators to be importable/executable
 - More verbose for complex operations
 - Mixing decorator and docstring approaches could cause confusion
 - Need to establish decorator precedence rules
 
 **Implementation Complexity**: **Medium**
+
 - Add decorator class with storage of metadata
 - Modify AST parser to detect decorator usage
 - Handle decorator precedence vs docstring blocks
@@ -84,11 +87,13 @@ def get_guild_roles(self, request: HttpRequest, uri_variables: dict) -> HttpResp
 **Use Case**: Teams wanting to migrate from docstring-based config to decorator-based without manual refactoring.
 
 **Example**:
+
 ```bash
 python scripts/swagger_sync.py --generate-decorators --fix
 ```
 
 Output creates new files or modifies handlers:
+
 ```python
 # Before:
 @uri_variable_mapping(...)
@@ -107,16 +112,19 @@ def handler(self, ...):
 ```
 
 **Pros**:
+
 - Automated migration path
 - Ensures consistency across codebase
 - Reduces manual work
 
 **Cons**:
+
 - AST manipulation is complex and error-prone
 - May break existing code if not careful with formatting
 - Requires comprehensive testing
 
 **Implementation Complexity**: **High**
+
 - Parse docstring blocks as normal
 - Generate decorator AST nodes
 - Insert decorators above method definition
@@ -137,7 +145,8 @@ def handler(self, ...):
 **Use Case**: DevOps teams and developers want visual dashboards for tracking OpenAPI documentation quality over time.
 
 **Example Output Structure**:
-```
+
+``` text
 reports/openapi/
   ├── index.html              # Main dashboard
   ├── coverage.html           # Detailed coverage by endpoint
@@ -150,6 +159,7 @@ reports/openapi/
 ```
 
 **Dashboard Features**:
+
 - Coverage percentage gauge (visual progress bar)
 - Table of all endpoints with status badges (✓ documented, ⚠ missing, ⛔ orphaned)
 - Filterable/sortable tables by path, method, tag, file
@@ -158,17 +168,20 @@ reports/openapi/
 - Export to PDF functionality
 
 **Pros**:
+
 - Easy to understand for non-technical stakeholders
 - Shareable in team meetings/reports
 - Can be hosted on internal wiki/documentation site
 - Visual feedback encourages better documentation
 
 **Cons**:
+
 - Adds significant code to maintain (HTML/CSS/JS)
 - May require templating library dependency (Jinja2, etc.)
 - Larger file size for output artifacts
 
 **Implementation Complexity**: **Medium-High**
+
 - Create HTML templates with responsive design
 - Generate JSON data from existing coverage metrics
 - Add JavaScript for interactivity (filter/sort)
@@ -186,6 +199,7 @@ reports/openapi/
 **Use Case**: Track documentation quality across sprints, releases, or pull requests to ensure continuous improvement.
 
 **Example**:
+
 ```bash
 # Each run appends to history file
 python scripts/swagger_sync.py --check --track-history=reports/openapi/history.json
@@ -195,6 +209,7 @@ python scripts/swagger_sync.py --generate-trend-report
 ```
 
 **History File Format (JSON)**:
+
 ```json
 {
   "runs": [
@@ -215,23 +230,27 @@ python scripts/swagger_sync.py --generate-trend-report
 ```
 
 **Trend Report Output**:
+
 - Line chart showing coverage rate over time
 - Delta metrics (e.g., "+5 endpoints documented this week")
 - Regression alerts when coverage drops
 - Integration with GitHub Actions to comment trends on PRs
 
 **Pros**:
+
 - Encourages sustained documentation effort
 - Identifies regressions quickly
 - Useful for compliance/audit trails
 - Can be integrated into CI/CD quality gates
 
 **Cons**:
+
 - Requires persistent storage between runs
 - More complex to implement in stateless CI environments
 - May need cleanup/archival strategy for old data
 
 **Implementation Complexity**: **Medium**
+
 - Add `--track-history` flag with JSON file path
 - Load existing history, append current run, save
 - Add `--generate-trend-report` mode that reads history
@@ -249,7 +268,8 @@ python scripts/swagger_sync.py --generate-trend-report
 **Use Case**: Large codebases with multiple teams/modules benefit from granular coverage visibility.
 
 **Example Output**:
-```
+
+```text
 Coverage by File:
   bot/lib/http/handlers/api/v1/roles.py:     100% (5/5)
   bot/lib/http/handlers/api/v1/users.py:      80% (4/5)
@@ -325,13 +345,27 @@ Badge shows: `OpenAPI Coverage: 84%` with color-coded background (red <50%, yell
 
 ---
 
-## 3. YAML Configuration File
+## 3. YAML Configuration File ✅ IMPLEMENTED
 
-### 3.1 External Configuration (`swagger-sync.yaml`)
+**Status**: ✅ **IMPLEMENTED** (Version 1.0, 2025-01-XX)  
+**Implementation**: Complete with JSON Schema validation, environment profiles, and example generation  
+**Files**: `scripts/swagger_sync/config.py`, `scripts/swagger_sync/config_schema.json`, `tests/test_swagger_sync_config.py`  
+**Tests**: 42 comprehensive tests covering loading, validation, merging, CLI integration, and edge cases
+
+### 3.1 External Configuration (`swagger-sync.yaml`) ✅
 
 **Description**: Replace CLI argument sprawl with a YAML configuration file for project-wide settings.
 
 **Use Case**: Projects with many custom settings benefit from centralized, version-controlled configuration.
+
+**Implementation Details**:
+- Config file auto-detection (`swagger-sync.yaml`, `.swagger-sync.yaml`, `.yml` variants)
+- JSON Schema draft-07 validation with full property definitions
+- Environment profile system with selective overrides
+- CLI argument precedence (CLI > env profile > config file > defaults)
+- Example config generation with `--init-config`
+- Schema export for IDE integration with `--export-config-schema`
+- Comprehensive test coverage (42 tests)
 
 **Example File (`swagger-sync.yaml`)**:
 ```yaml
@@ -414,20 +448,184 @@ python scripts/swagger_sync.py --check --env=ci
 
 ---
 
-### 3.2 Config Validation and Schema
+### 3.2 Config Validation and Schema ✅
+
+**Status**: ✅ **IMPLEMENTED** as part of 3.1  
+**Implementation**: JSON Schema with full validation, IDE autocomplete support
 
 **Description**: Provide JSON schema for `swagger-sync.yaml` with validation and autocomplete in IDEs.
 
 **Use Case**: Prevent configuration errors and provide better developer experience.
+
+**Implementation Details**:
+- JSON Schema draft-07 specification in `scripts/swagger_sync/config_schema.json`
+- Schema ID: `https://tacobot.app/schemas/swagger-sync-config.json`
+- YAML-language-server integration via header comment
+- Validation on config load (can be disabled for performance)
+- Schema export command: `--export-config-schema`
+- Example config includes schema reference
 
 **Example**:
 ```bash
 # Validate config without running sync
 python scripts/swagger_sync.py --validate-config
 
-# Generate JSON schema
+# Generate JSON schema for IDE
 python scripts/swagger_sync.py --export-config-schema > schema.json
+
+# Create example config with schema reference
+python scripts/swagger_sync.py --init-config
 ```
+
+**IDE Integration** (automatic with YAML extension):
+```yaml
+# yaml-language-server: $schema=https://tacobot.app/schemas/swagger-sync-config.json
+version: '1.0'
+# ... IDE provides autocomplete and validation from here
+```
+
+---
+
+### 3.3 Future Enhancements for Config System
+
+The following enhancements could further improve the configuration system:
+
+#### 3.3.1 Config File Inheritance/Includes
+
+**Description**: Allow config files to extend or include other config files for better reusability.
+
+**Example**:
+```yaml
+# base-config.yaml
+extends: ../shared/swagger-base.yaml
+version: '1.0'
+swagger_file: .swagger.v1.yaml
+# ... project-specific overrides
+```
+
+**Pros**:
+- Reuse common settings across projects
+- Maintain DRY principle for multi-repo setups
+- Easier to standardize across team
+
+**Cons**:
+- Circular dependency risks
+- Path resolution complexity
+- Debugging can be harder
+
+**Complexity**: Medium
+
+---
+
+#### 3.3.2 Config Migration Tool
+
+**Description**: Automated tool to migrate config files between versions when schema changes.
+
+**Example**:
+```bash
+# Upgrade config from v1.0 to v2.0
+python scripts/swagger_sync.py --migrate-config swagger-sync.yaml --to-version=2.0
+```
+
+**Pros**:
+- Smooth upgrade path for users
+- Preserves comments and formatting
+- Reduces breaking changes impact
+
+**Cons**:
+- Maintenance overhead
+- Version tracking complexity
+
+**Complexity**: Medium
+
+---
+
+#### 3.3.3 Config Templates for Common Setups
+
+**Description**: Provide pre-made config templates for common project types.
+
+**Example**:
+```bash
+# Generate config from template
+python scripts/swagger_sync.py --init-config --template=fastapi
+python scripts/swagger_sync.py --init-config --template=flask
+python scripts/swagger_sync.py --init-config --template=django
+```
+
+**Pros**:
+- Faster onboarding
+- Best practices baked in
+- Reduces configuration errors
+
+**Cons**:
+- Template maintenance
+- May not fit all use cases
+
+**Complexity**: Low
+
+---
+
+#### 3.3.4 Pre-commit Hook Integration
+
+**Description**: Provide pre-commit hook configuration for automatic validation.
+
+**Example** (`.pre-commit-config.yaml`):
+```yaml
+repos:
+  - repo: local
+    hooks:
+      - id: swagger-sync-validate
+        name: Validate OpenAPI Sync
+        entry: python scripts/swagger_sync.py --check
+        language: system
+        pass_filenames: false
+```
+
+**Pros**:
+- Catch drift before commit
+- Enforces documentation standards
+- CI-like checks locally
+
+**Cons**:
+- Slows down commit process
+- Requires pre-commit installed
+
+**Complexity**: Low
+
+---
+
+#### 3.3.5 Config-Based Ignore Patterns (Gitignore-style)
+
+**Description**: Support `.swaggerignore` file similar to `.gitignore` for complex patterns.
+
+**Example** (`.swaggerignore`):
+```gitignore
+# Ignore all test files
+**/test_*.py
+**/*_test.py
+
+# Ignore internal APIs
+**/internal/**
+
+# Ignore specific handlers
+debug_*
+_internal_*
+```
+
+**Pros**:
+- Familiar syntax for developers
+- Easier to maintain large ignore lists
+- Can be shared/versioned separately
+
+**Cons**:
+- Another file to maintain
+- Pattern matching complexity
+
+**Complexity**: Low-Medium
+
+---
+
+##  4. Coverage and Reporting Enhancements
 
 **IDE Integration**: Add YAML schema reference to config files:
 ```yaml

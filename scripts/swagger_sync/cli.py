@@ -62,6 +62,16 @@ def main() -> None:
     handles all output formatting and exit codes.
     """
     parser = argparse.ArgumentParser(description="Sync handler docstring OpenAPI blocks to swagger file")
+    
+    # Configuration file arguments
+    config_group = parser.add_argument_group('Configuration')
+    config_group.add_argument('--config', metavar='PATH', help='Load configuration from YAML file (default: search for swagger-sync.yaml in current directory)')
+    config_group.add_argument('--env', metavar='NAME', help='Apply environment profile from config file (e.g., ci, local, prod)')
+    config_group.add_argument('--init-config', metavar='PATH', nargs='?', const='swagger-sync.yaml', help='Generate example configuration file and exit (default: swagger-sync.yaml)')
+    config_group.add_argument('--validate-config', action='store_true', help='Validate configuration file and exit')
+    config_group.add_argument('--export-config-schema', metavar='PATH', nargs='?', const='-', help='Export JSON schema for config file validation (default: stdout)')
+    
+    # Mode selection
     mode_group = parser.add_mutually_exclusive_group()
     mode_group.add_argument('--fix', action='store_true', help='Write changes instead of just checking for drift')
     mode_group.add_argument('--check', action='store_true', help='Explicitly run in check mode (default) and show diff')
@@ -91,6 +101,107 @@ def main() -> None:
         help='Color output mode: auto (default, only if TTY), always, never'
     )
     args = parser.parse_args()
+
+    # Handle config-only operations first
+    if args.init_config:
+        from .config import init_config_file
+        config_path = pathlib.Path(args.init_config)
+        try:
+            init_config_file(config_path)
+            print(f"✅ Generated example configuration file: {config_path}")
+            print(f"\nNext steps:")
+            print(f"  1. Edit {config_path} to match your project")
+            print(f"  2. Run: python scripts/swagger_sync.py --check")
+            print(f"  3. Use --env flag for environment-specific settings")
+            return
+        except FileExistsError as e:
+            raise SystemExit(f"❌ {e}")
+        except Exception as e:
+            raise SystemExit(f"❌ Failed to generate config: {e}")
+    
+    if args.export_config_schema:
+        from .config import export_schema
+        try:
+            schema_json = export_schema()
+            if args.export_config_schema == '-':
+                print(schema_json)
+            else:
+                export_path = pathlib.Path(args.export_config_schema)
+                export_path.write_text(schema_json, encoding='utf-8')
+                print(f"✅ Exported JSON schema to: {export_path}")
+            return
+        except Exception as e:
+            raise SystemExit(f"❌ Failed to export schema: {e}")
+    
+    # Load configuration from file if specified
+    config_dict = {}
+    if args.config or any([
+        pathlib.Path(p).exists() for p in [
+            'swagger-sync.yaml', 'swagger-sync.yml',
+            '.swagger-sync.yaml', '.swagger-sync.yml'
+        ]
+    ]):
+        from .config import load_config, merge_cli_args
+        try:
+            config_path = pathlib.Path(args.config) if args.config else None
+            config_dict = load_config(
+                config_path=config_path,
+                environment=args.env,
+                validate=True
+            )
+            
+            # Validate-only mode
+            if args.validate_config:
+                print(f"✅ Configuration is valid")
+                if args.env:
+                    print(f"   Environment: {args.env}")
+                if config_path:
+                    print(f"   Config file: {config_path}")
+                return
+            
+            # Merge CLI args into config (CLI takes precedence)
+            cli_args_dict = vars(args)
+            config_dict = merge_cli_args(config_dict, cli_args_dict)
+            
+            # Update args namespace with merged config
+            # This allows the rest of the code to work unchanged
+            for key, value in config_dict.items():
+                if key == 'output':
+                    for out_key, out_val in value.items():
+                        if out_key == 'directory':
+                            args.output_directory = out_val
+                        elif out_key == 'coverage_report':
+                            args.coverage_report = out_val
+                        elif out_key == 'coverage_format':
+                            args.coverage_format = out_val
+                        elif out_key == 'markdown_summary':
+                            args.markdown_summary = out_val
+                        elif out_key == 'badge':
+                            args.generate_badge = out_val
+                elif key == 'options':
+                    for opt_key, opt_val in value.items():
+                        setattr(args, opt_key, opt_val)
+                elif key == 'markers':
+                    for mark_key, mark_val in value.items():
+                        setattr(args, mark_key, mark_val)
+                elif key == 'mode':
+                    if value == 'fix':
+                        args.fix = True
+                        args.check = False
+                    else:
+                        args.check = True
+                        args.fix = False
+                elif key not in ('environments', 'version', 'ignore'):
+                    # Top-level config values
+                    setattr(args, key, value)
+            
+        except FileNotFoundError:
+            # No config file found, continue with CLI args only
+            pass
+        except Exception as e:
+            raise SystemExit(f"❌ Config error: {e}")
+    elif args.validate_config:
+        raise SystemExit("❌ No config file found. Use --config to specify one or create swagger-sync.yaml")
 
     handlers_root = pathlib.Path(args.handlers_root)
     swagger_path = pathlib.Path(args.swagger_file)

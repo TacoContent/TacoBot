@@ -1,0 +1,47 @@
+# OpenAPI/Swagger Synchronization Configuration
+# yaml-language-server: $schema=https://tacobot.app/schemas/swagger-sync-config.json
+#
+# This file configures the swagger_sync.py script for this project.
+# All paths are relative to the directory containing this file.
+#
+# Usage:
+#   python scripts/swagger_sync.py --check
+#   python scripts/swagger_sync.py --check --env=ci
+#   python scripts/swagger_sync.py --fix
+#
+
+version: '1.0'
+swagger_file: .swagger.v1.yaml
+handlers_root: bot/lib/http/handlers/
+models_root: bot/lib/models/
+output:
+  directory: ./reports/openapi/
+  coverage_report: openapi_coverage.json
+  coverage_format: json
+  markdown_summary: openapi_summary.md
+mode: check
+options:
+  strict: false
+  show_orphans: true
+  show_missing_blocks: true
+  verbose_coverage: true
+  color: auto
+markers:
+  openapi_start: '>>>openapi'
+  openapi_end: <<<openapi
+ignore:
+  files:
+  - '**/test_*.py'
+  - '**/__pycache__/**'
+  handlers:
+  - internal_health_check
+  - debug_endpoint
+environments:
+  ci:
+    options:
+      color: never
+      strict: true
+  local:
+    options:
+      show_orphans: false
+      verbose_coverage: true

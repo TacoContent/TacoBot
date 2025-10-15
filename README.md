@@ -210,7 +210,70 @@ For questions, issues, or contributions, please refer to the documentation or op
 Handler HTTP endpoints embed minimal OpenAPI fragments inside their docstrings between `>>>openapi` / `<<<openapi` markers.
 The `scripts/swagger_sync.py` utility keeps those fragments and the canonical `.swagger.v1.yaml` file in sync.
 
-Quick check (no write) using defaults:
+#### Configuration
+
+The script supports both CLI arguments and YAML configuration files. Using a config file is recommended for projects with many custom settings.
+
+**Generate Example Config**:
+```pwsh
+python scripts/swagger_sync.py --init-config
+# Creates swagger-sync.yaml with documented examples
+```
+
+**Using Config File**:
+```pwsh
+# Auto-detects swagger-sync.yaml or .swagger-sync.yaml
+python scripts/swagger_sync.py --check
+
+# Use custom config file
+python scripts/swagger_sync.py --check --config=custom-sync.yaml
+
+# Select environment profile (e.g., ci, local)
+python scripts/swagger_sync.py --check --env=ci
+```
+
+**Configuration Priority** (highest to lowest):
+1. CLI arguments (explicit overrides)
+2. Environment profile from config (via `--env`)
+3. Base configuration from YAML file
+4. Built-in defaults
+
+**Example Configuration** (`swagger-sync.yaml`):
+```yaml
+# yaml-language-server: $schema=https://tacobot.app/schemas/swagger-sync-config.json
+version: '1.0'
+swagger_file: .swagger.v1.yaml
+handlers_root: bot/lib/http/handlers/
+models_root: bot/lib/models/
+
+output:
+  directory: ./reports/openapi/
+  coverage_report: openapi_coverage.json
+  coverage_format: json
+  markdown_summary: openapi_summary.md
+
+mode: check
+
+options:
+  strict: true
+  show_orphans: true
+  verbose_coverage: true
+  color: auto
+
+# Environment-specific overrides
+environments:
+  ci:
+    options:
+      color: never
+      strict: true
+  local:
+    options:
+      verbose_coverage: false
+```
+
+#### Quick Start (CLI)
+
+Quick check (no write) using CLI arguments:
 
 ```pwsh
 python scripts/swagger_sync.py --check --handlers-root bot/lib/http/handlers/ --swagger-file .swagger.v1.yaml
@@ -221,6 +284,8 @@ Apply changes to the swagger file:
 ```pwsh
 python scripts/swagger_sync.py --fix --handlers-root bot/lib/http/handlers/ --swagger-file .swagger.v1.yaml
 ```
+
+#### Advanced Features
 
 Method-rooted blocks (multiple verbs in one docstring) are supported using top-level `get:`, `post:` etc. keys.
 Custom delimiters can be provided with `--openapi-start` / `--openapi-end` if you need a different embedding style.
@@ -235,7 +300,19 @@ Example strict run:
 python scripts/swagger_sync.py --check --strict --handlers-root bot/lib/http/handlers/ --swagger-file .swagger.v1.yaml
 ```
 
-See `tests/test_swagger_sync_method_rooted.py` and `tests/test_swagger_sync_strict_validation.py` for examples.
+**Additional Commands**:
+```pwsh
+# Validate config file without running sync
+python scripts/swagger_sync.py --validate-config
+
+# Export JSON schema for IDE integration
+python scripts/swagger_sync.py --export-config-schema > schema.json
+
+# Show coverage report
+python scripts/swagger_sync.py --check --verbose-coverage
+```
+
+See `tests/test_swagger_sync_method_rooted.py`, `tests/test_swagger_sync_strict_validation.py`, and `tests/test_swagger_sync_config.py` for examples.
 
 ## Contributing / Running Tests
 
