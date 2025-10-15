@@ -1,5 +1,7 @@
 # TacoBot
 
+![OpenAPI Coverage](docs/badges/openapi-coverage.svg)
+
 TacoBot is a feature-rich, modular Discord bot designed to enhance your server with a wide range of community, moderation, automation, and fun features. It supports advanced metrics, integrations, and custom automations to help manage and grow your Discord community.
 
 ## Features

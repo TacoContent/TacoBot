@@ -2,7 +2,7 @@
 from bot.lib.models.openapi import openapi
 
 @openapi.component("MinecraftUserStats", description="Payload for Minecraft user statistics.")
-@openapi.openapi_managed()
+@openapi.managed()
 class MinecraftUserStats(dict):
     """Payload for Minecraft user statistics.
 

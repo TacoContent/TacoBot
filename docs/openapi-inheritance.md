@@ -30,17 +30,17 @@ This follows the OpenAPI specification for schema composition and allows for:
 ### Python Code
 
 ```python
-from bot.lib.models.openapi import component, openapi_managed
+from bot.lib.models.openapi import component, managed
 
 @openapi.component("BaseModel", description="Base model for common fields")
-@openapi_managed()
+@managed()
 class BaseModel:
     def __init__(self, data: dict):
         self.id: int = data.get("id", 0)
         self.name: str = data.get("name", "")
 
 @openapi.component("ExtendedModel", description="Extended model with additional fields")
-@openapi_managed()
+@managed()
 class ExtendedModel(BaseModel):
     def __init__(self, data: dict):
         super().__init__(data)
@@ -99,12 +99,12 @@ components:
 ```python
 from typing import TypeVar, Generic
 import typing
-from bot.lib.models.openapi import component, openapi_managed
+from bot.lib.models.openapi import component, managed
 
 T = TypeVar('T')
 
 @openapi.component("PagedResults", description="Generic paginated results container")
-@openapi_managed()
+@managed()
 class PagedResults(Generic[T]):
     def __init__(self, data: dict):
         self.items: typing.List[T] = data.get("items", [])
@@ -113,7 +113,7 @@ class PagedResults(Generic[T]):
         self.page_size: int = data.get("page_size", 10)
 
 @openapi.component("PagedResultsUser", description="Paginated user results")
-@openapi_managed()
+@managed()
 class PagedResultsUser(PagedResults):
     def __init__(self, data: dict):
         super().__init__(data)
@@ -326,7 +326,7 @@ python scripts/swagger_sync.py --fix
 - ✅ Use inheritance for true "is-a" relationships
 - ✅ Decorate both base and subclass with `@openapi.component`
 - ✅ Override generic type parameters with concrete types in subclasses
-- ✅ Use `@openapi_managed()` to track auto-generated schemas
+- ✅ Use `@managed()` to track auto-generated schemas
 - ✅ Run `swagger_sync.py --check` before committing
 
 ### DON'T

@@ -23,14 +23,14 @@ def test_subclass_uses_allof_for_inheritance():
                 return cls
             return decorator
 
-        def openapi_managed():
+        def managed():
             def decorator(cls):
-                cls.__openapi_managed__ = True
+                cls.__managed__ = True
                 return cls
             return decorator
 
         @openapi.component("BaseModel", description="Base model for inheritance")
-        @openapi_managed()
+        @managed()
         class BaseModel:
             def __init__(self, data: dict):
                 self.id: int = data.get("id", 0)
@@ -39,10 +39,10 @@ def test_subclass_uses_allof_for_inheritance():
 
         # Create subclass
         sub_model = textwrap.dedent('''
-        from test_base import BaseModel, component, openapi_managed
+        from test_base import BaseModel, component, managed
 
         @openapi.component("SubModel", description="Subclass model")
-        @openapi_managed()
+        @managed()
         class SubModel(BaseModel):
             def __init__(self, data: dict):
                 super().__init__(data)
@@ -51,7 +51,7 @@ def test_subclass_uses_allof_for_inheritance():
 
         # Create openapi helper file
         openapi_content = textwrap.dedent('''
-        def openapi_attribute(name: str, value):
+        def attribute(name: str, value):
             def decorator(target):
                 if not hasattr(target, '__openapi_attributes__'):
                     target.__openapi_attributes__ = {}
@@ -66,8 +66,8 @@ def test_subclass_uses_allof_for_inheritance():
                 return cls
             return decorator
 
-        def openapi_managed():
-            return openapi_attribute('x-tacobot-managed', True)
+        def managed():
+            return attribute('x-tacobot-managed', True)
         ''')
 
         base_file = models_root / "test_base.py"
@@ -150,7 +150,7 @@ def test_generic_base_class_with_typevar():
         ''')
 
         openapi_content = textwrap.dedent('''
-        def openapi_attribute(name: str, value):
+        def attribute(name: str, value):
             def decorator(target):
                 if not hasattr(target, '__openapi_attributes__'):
                     target.__openapi_attributes__ = {}
@@ -233,7 +233,7 @@ def test_multiple_inheritance_levels():
         ''')
 
         openapi_content = textwrap.dedent('''
-        def openapi_attribute(name: str, value):
+        def attribute(name: str, value):
             def decorator(target):
                 if not hasattr(target, '__openapi_attributes__'):
                     target.__openapi_attributes__ = {}
@@ -298,7 +298,7 @@ def test_no_inheritance_standard_schema():
         ''')
 
         openapi_content = textwrap.dedent('''
-        def openapi_attribute(name: str, value):
+        def attribute(name: str, value):
             def decorator(target):
                 if not hasattr(target, '__openapi_attributes__'):
                     target.__openapi_attributes__ = {}

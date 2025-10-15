@@ -4,7 +4,7 @@ import typing
 from bot.lib.models.openapi import openapi
 
 @openapi.component("MinecraftServerStatusMotd", description="Represents the message of the day (MOTD) information in a Minecraft server status response.")
-@openapi.openapi_managed()
+@openapi.managed()
 class MinecraftServerStatusMotd:
     """Container for the "message of the day" (MOTD) information in a Minecraft server status response.
 
@@ -28,7 +28,7 @@ class MinecraftServerStatusMotd:
         self.ansi: str = data.get("ansi", "")
 
 @openapi.component("MinecraftServerStatusPlayers", description="Represents player count information in a Minecraft server status response.")
-@openapi.openapi_managed()
+@openapi.managed()
 class MinecraftServerStatusPlayers:
     """Container for player count information in a Minecraft server status response.
 
@@ -46,7 +46,7 @@ class MinecraftServerStatusPlayers:
         self.max: int = data.get("max", 0)
 
 @openapi.component("MinecraftServerStatusVersion", description="Represents version information in a Minecraft server status response.")
-@openapi.openapi_managed()
+@openapi.managed()
 class MinecraftServerStatusVersion:
     """Container for version information in a Minecraft server status response.
 
@@ -64,7 +64,7 @@ class MinecraftServerStatusVersion:
         self.protocol: int = data.get("protocol", 0)
 
 @openapi.component("MinecraftServerStatus", description="Represents the status of a Minecraft server.")
-@openapi.openapi_managed()
+@openapi.managed()
 class MinecraftServerStatus:
     """Container for the overall Minecraft server status response.
     >>>openapi

@@ -9,7 +9,7 @@ NOTE: This file follows the tmp_* naming convention used in tests for
       swagger sync since the --models-root defaults to bot/lib/models.
 """
 import typing
-from bot.lib.models.openapi import openapi_type_alias, component
+from bot.lib.models.openapi import openapi
 from bot.lib.models.DiscordRole import DiscordRole
 from bot.lib.models.DiscordUser import DiscordUser
 
@@ -41,7 +41,7 @@ SearchCriteria: typing.TypeAlias = typing.Union[
     SearchDateFilter, SearchAuthorFilter, SearchTagFilter
 ]
 
-openapi_type_alias(
+openapi.type_alias(
     "SearchCriteria",
     description="Search filters that can be combined - supports date range, author, and/or tag filters.",
     anyof=True,
@@ -52,7 +52,7 @@ openapi_type_alias(
 # Test 1: Optional[Union[...]] pattern - nullable discriminated union
 OptionalMentionable: typing.TypeAlias = typing.Optional[typing.Union[DiscordRole, DiscordUser]]
 
-openapi_type_alias(
+openapi.type_alias(
     "OptionalMentionable",
     description="An optional Discord mentionable entity (role, user, or null).",
     managed=True,
@@ -64,7 +64,7 @@ OptionalSearchCriteria: typing.TypeAlias = typing.Union[
     SearchDateFilter, SearchAuthorFilter, SearchTagFilter, None
 ]
 
-openapi_type_alias(
+openapi.type_alias(
     "OptionalSearchCriteria",
     description="Optional search filters that can be combined (date, author, tags, or null).",
     anyof=True,  # Composable filters use anyOf

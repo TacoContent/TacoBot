@@ -4,7 +4,7 @@ Test union type handling and oneOf schema generation.
 Tests the swagger_sync.py script's ability to:
 - Detect TypeAlias with Union types
 - Generate oneOf schemas from Union[A, B] syntax
-- Handle separate openapi_type_alias decorator calls
+- Handle separate openapi.type_alias decorator calls
 - Support managed flag and custom attributes on union types
 """
 

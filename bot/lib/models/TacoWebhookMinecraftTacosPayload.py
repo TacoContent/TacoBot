@@ -4,7 +4,7 @@ import typing
 from bot.lib.models.openapi import openapi
 
 @openapi.component("TacoWebhookMinecraftTacosPayload", description="Payload that is sent to give a Minecraft user tacos.")
-@openapi.openapi_managed()
+@openapi.managed()
 class TacoWebhookMinecraftTacosPayload:
     """
     Payload that is sent to give a Minecraft user tacos.

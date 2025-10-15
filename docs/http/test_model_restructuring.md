@@ -2,7 +2,7 @@
 
 ## What Was Done
 
-The example models for testing `@openapi_deprecated()` and `@openapi_exclude()` decorators have been moved from the production model directory to the test fixtures area.
+The example models for testing `@openapi.deprecated()` and `@openapi.exclude()` decorators have been moved from the production model directory to the test fixtures area.
 
 ## Changes Made
 

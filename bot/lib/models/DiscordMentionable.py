@@ -7,7 +7,7 @@ from bot.lib.models.openapi import openapi
 
 DiscordMentionable: typing.TypeAlias = typing.Union[DiscordRole, DiscordUser]
 
-openapi.openapi_type_alias(
+openapi.type_alias(
     "DiscordMentionable",
     description="Represents a Discord mentionable entity.",
     managed=True,

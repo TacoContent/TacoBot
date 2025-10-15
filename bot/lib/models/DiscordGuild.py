@@ -32,8 +32,8 @@ import typing
 
 from bot.lib.models.openapi import openapi
 
-@openapi.component("DiscordGuild", description="Snapshot of a Discord guild's core attributes.")
-@openapi.openapi_managed()
+@openapi.component("DiscordGuild", description="Discord guild (server) information")
+@openapi.managed()
 class DiscordGuild:
     """Represents a Discord guild snapshot.
 

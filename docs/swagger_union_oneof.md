@@ -10,13 +10,13 @@ The swagger_sync script now supports TypeAlias definitions with Union types, aut
 
 ```python
 import typing
-from lib.models.openapi import openapi_type_alias
+from lib.models.openapi import openapi
 from lib.models.DiscordRole import DiscordRole
 from lib.models.DiscordUser import DiscordUser
 
 DiscordMentionable: typing.TypeAlias = typing.Union[DiscordRole, DiscordUser]
 
-openapi_type_alias(
+openapi.type_alias(
     "DiscordMentionable",
     description="Represents a Discord mentionable entity.",
     managed=True,
@@ -39,13 +39,13 @@ DiscordMentionable:
 ```python
 MentionableType: typing.TypeAlias = DiscordRole | DiscordUser
 
-openapi_type_alias("MentionableType")(typing.cast(typing.Any, MentionableType))
+openapi.type_alias("MentionableType")(typing.cast(typing.Any, MentionableType))
 ```
 
 ### 3. Inline Decorator Pattern
 
 ```python
-UnionType: typing.TypeAlias = openapi_type_alias("UnionType", managed=True)(
+UnionType: typing.TypeAlias = openapi.type_alias("UnionType", managed=True)(
     typing.Union[TypeA, TypeB]
 )
 ```
@@ -64,7 +64,7 @@ The script uses a two-pass approach to detect Union types:
 
 #### Pass 2: Process Separate Decorator Calls
 
-- Scans for standalone `Expr` nodes containing `openapi_type_alias()()` calls
+- Scans for standalone `Expr` nodes containing `openapi.type_alias()()` calls
 - Extracts metadata (name, description, managed, attributes)
 - Links decorator calls to previously collected TypeAlias definitions via `cast(Any, alias_name)` pattern
 
@@ -104,7 +104,7 @@ The script supports both OpenAPI composition keywords for Union types:
   ```python
   # Discriminated union - entity is either a role OR a user, never both
   DiscordMentionable: typing.TypeAlias = typing.Union[DiscordRole, DiscordUser]
-  openapi_type_alias("DiscordMentionable", managed=True)(typing.cast(typing.Any, DiscordMentionable))
+  openapi.type_alias("DiscordMentionable", managed=True)(typing.cast(typing.Any, DiscordMentionable))
   ```
 
 - **anyOf**: For composable unions where multiple types can apply simultaneously
@@ -112,7 +112,7 @@ The script supports both OpenAPI composition keywords for Union types:
   ```python
   # Composable filters - search can match by date AND/OR author AND/OR tags
   SearchCriteria: typing.TypeAlias = typing.Union[SearchDateFilter, SearchAuthorFilter, SearchTagFilter]
-  openapi_type_alias("SearchCriteria", managed=True, anyof=True)(typing.cast(typing.Any, SearchCriteria))
+  openapi.type_alias("SearchCriteria", managed=True, anyof=True)(typing.cast(typing.Any, SearchCriteria))
   ```
 
 Set `anyof=True` in the decorator to generate `anyOf` instead of `oneOf`.
@@ -319,7 +319,7 @@ WebhookEventType: typing.TypeAlias = typing.Union[
     MemberJoin,
 ]
 
-openapi_type_alias(
+openapi.type_alias(
     "WebhookEventType",
     description="Possible webhook event types.",
     managed=True,
@@ -332,7 +332,7 @@ openapi_type_alias(
 ```python
 ApiResponse: typing.TypeAlias = SuccessResponse | ErrorResponse
 
-openapi_type_alias("ApiResponse", description="API response envelope")(
+openapi.type_alias("ApiResponse", description="API response envelope")(
     typing.cast(typing.Any, ApiResponse)
 )
 ```
@@ -342,7 +342,7 @@ openapi_type_alias("ApiResponse", description="API response envelope")(
 ```python
 PermissionTarget: typing.TypeAlias = typing.Union[DiscordRole, DiscordUser, DiscordChannel]
 
-openapi_type_alias("PermissionTarget", managed=True)(
+openapi.type_alias("PermissionTarget", managed=True)(
     typing.cast(typing.Any, PermissionTarget)
 )
 ```
@@ -364,7 +364,7 @@ In addition to `oneOf` for exclusive alternatives, the script now supports `anyO
 
 ```python
 import typing
-from lib.models.openapi import component, openapi_type_alias
+from lib.models.openapi import openapi
 
 @openapi.component()
 class SearchDateFilter:
@@ -384,7 +384,7 @@ SearchCriteria: typing.TypeAlias = typing.Union[
     SearchDateFilter, SearchAuthorFilter, SearchTagFilter
 ]
 
-openapi.openapi_type_alias(
+openapi.openapi.type_alias(
     "SearchCriteria",
     description="Search filters that can be combined - supports date range, author, and/or tag filters.",
     anyof=True,  # NEW: Generates anyOf instead of oneOf
@@ -433,14 +433,14 @@ The script now fully supports nullable unions with automatic `nullable: true` ge
 
 ```python
 import typing
-from lib.models.openapi import openapi_type_alias
+from lib.models.openapi import openapi
 from lib.models.DiscordRole import DiscordRole
 from lib.models.DiscordUser import DiscordUser
 
 # Nullable discriminated union
 OptionalMentionable: typing.TypeAlias = typing.Optional[typing.Union[DiscordRole, DiscordUser]]
 
-openapi_type_alias(
+openapi.type_alias(
     "OptionalMentionable",
     description="An optional Discord mentionable entity (role, user, or null).",
     managed=True,
@@ -467,7 +467,7 @@ OptionalSearchCriteria: typing.TypeAlias = typing.Union[
     SearchDateFilter, SearchAuthorFilter, SearchTagFilter, None
 ]
 
-openapi_type_alias(
+openapi.type_alias(
     "OptionalSearchCriteria",
     description="Optional search filters that can be combined (date, author, tags, or null).",
     anyof=True,  # Composable filters use anyOf
@@ -494,7 +494,7 @@ OptionalSearchCriteria:
 # Python 3.10+ pipe syntax
 OptionalType: typing.TypeAlias = TypeA | TypeB | None
 
-openapi_type_alias("OptionalType")(typing.cast(typing.Any, OptionalType))
+openapi.type_alias("OptionalType")(typing.cast(typing.Any, OptionalType))
 ```
 
 **All three patterns** produce the same result: Union schema with `nullable: true`.
@@ -532,7 +532,7 @@ Potential improvements for consideration:
 
 1. File must have `TypeAlias` annotation
 2. Must use `typing.Union[...]` or `A | B` syntax
-3. Must call `openapi_type_alias()()` decorator (either inline or separate)
+3. Must call `openapi.type_alias()()` decorator (either inline or separate)
 4. For separate decorator, use `cast(Any, alias_name)` pattern
 
 **Check**: Run with `--show-orphans` to see if component appears

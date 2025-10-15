@@ -10,7 +10,7 @@ from bot.lib.models.TacoWebhookMinecraftTacosPayload import TacoWebhookMinecraft
     "TacoWebhookMinecraftTacosResponsePayload",
     description="Represents a response payload for TacoWebhook Minecraft Tacos events.",
 )
-@openapi.openapi_managed()
+@openapi.managed()
 class TacoWebhookMinecraftTacosResponsePayload:
     """Response payload for TacoWebhook Minecraft Tacos events.
 

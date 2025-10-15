@@ -33,8 +33,8 @@ from bot.lib.models.openapi import openapi
 from discord import Member, User
 
 
-@openapi.component("DiscordUser", description="Represents a Discord user with normalized primitives.")
-@openapi.openapi_managed()
+@openapi.component("DiscordUser", description="Discord user information")
+@openapi.managed()
 class DiscordUser:
     """Represents a Discord user or member with normalized primitives.
 

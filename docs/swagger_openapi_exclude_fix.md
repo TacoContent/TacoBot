@@ -2,7 +2,7 @@
 
 ## Problem
 
-The `@openapi_exclude()` decorator was only preventing new components from being generated during swagger sync, but was not actively removing existing component definitions from `.swagger.v1.yaml`. This meant that once a component was added, marking it with `@openapi_exclude()` wouldn't remove it from the specification.
+The `@openapi.exclude()` decorator was only preventing new components from being generated during swagger sync, but was not actively removing existing component definitions from `.swagger.v1.yaml`. This meant that once a component was added, marking it with `@openapi.exclude()` wouldn't remove it from the specification.
 
 ## Solution
 
@@ -40,7 +40,7 @@ def collect_model_components(
 
 ### 2. Exclusion Tracking
 
-When a model with `@openapi_exclude()` is encountered, instead of skipping silently:
+When a model with `@openapi.exclude()` is encountered, instead of skipping silently:
 
 ```python
 if getattr(cls, '__openapi_exclude__', False):

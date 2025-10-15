@@ -2,13 +2,13 @@
 
 ## Overview
 
-Added two new decorators to the OpenAPI model system: `@openapi_deprecated()` and `@openapi_exclude()`, providing better lifecycle management for API models.
+Added two new decorators to the OpenAPI model system: `@openapi.deprecated()` and `@openapi.exclude()`, providing better lifecycle management for API models.
 
 ## Changes Implemented
 
 ### 1. New Decorators in `bot/lib/models/openapi/openapi.py`
 
-#### `@openapi_deprecated()`
+#### `@openapi.deprecated()`
 
 - Marks a model as deprecated
 - Adds `x-tacobot-deprecated: true` to the OpenAPI schema
@@ -17,13 +17,13 @@ Added two new decorators to the OpenAPI model system: `@openapi_deprecated()` an
 
 ```python
 @openapi.component("LegacyModel", description="Old model being replaced")
-@openapi_deprecated()
+@openapi.deprecated()
 class LegacyModel:
     def __init__(self, data: str):
         self.data: str = data
 ```
 
-#### `@openapi_exclude()`
+#### `@openapi.exclude()`
 
 - Completely excludes a model from OpenAPI schema generation
 - Model will NOT appear in `components.schemas`
@@ -32,7 +32,7 @@ class LegacyModel:
 
 ```python
 @openapi.component("InternalModel", description="Should not appear in API")
-@openapi_exclude()
+@openapi.exclude()
 class InternalModel:
     def __init__(self, secret: str):
         self.secret: str = secret
@@ -40,7 +40,7 @@ class InternalModel:
 
 ### 2. Updated `scripts/swagger_sync.py`
 
-- Added exclusion logic to skip models marked with `@openapi_exclude()`
+- Added exclusion logic to skip models marked with `@openapi.exclude()`
 - Exclusion check happens early in component collection process
 - Models with `x-tacobot-exclude: true` are completely skipped
 
@@ -126,8 +126,8 @@ ExampleDeprecatedModel:
 
 ```python
 @openapi.component("Model")
-@openapi_managed()
-@openapi_deprecated()  # ✓ Works - both flags present
+@openapi.managed()
+@openapi.deprecated()  # ✓ Works - both flags present
 class Model:
     pass
 ```
@@ -136,9 +136,9 @@ class Model:
 
 ```python
 @openapi.component("Model")
-@openapi_managed()
-@openapi_deprecated()
-@openapi_exclude()  # ✓ Takes priority - model not in schema
+@openapi.managed()
+@openapi.deprecated()
+@openapi.exclude()  # ✓ Takes priority - model not in schema
 class Model:
     pass
 ```
@@ -155,10 +155,10 @@ class Model:
 
 ### 1. Deprecation Metadata Enhancement
 
-Consider extending `@openapi_deprecated()` with optional metadata:
+Consider extending `@openapi.deprecated()` with optional metadata:
 
 ```python
-@openapi_deprecated(
+@openapi.deprecated(
     reason="Use NewUserModel instead",
     sunset_date="2025-12-31",
     replacement="NewUserModel"
@@ -179,11 +179,11 @@ x-deprecated-replacement: NewUserModel
 Consider also setting the OpenAPI-standard `deprecated: true` field (not just vendor extension):
 
 ```python
-def openapi_deprecated():
+def deprecated():
     def _wrap(target):
         # Add both standard and vendor extension
-        target = openapi_attribute('deprecated', True)(target)
-        target = openapi_attribute('x-tacobot-deprecated', True)(target)
+        target = openapi.attribute('deprecated', True)(target)
+        target = openapi.attribute('x-tacobot-deprecated', True)(target)
         return target
     return _wrap
 ```
@@ -244,7 +244,7 @@ Auto-generate migration documentation from deprecation metadata:
 
 Add checks to prevent common mistakes:
 
-- Warn if `@openapi_exclude()` is combined with other decorators (pointless)
+- Warn if `@openapi.exclude()` is combined with other decorators (pointless)
 - Warn if models are deprecated for > 6 months without removal
 
 ### 10. Metrics Integration

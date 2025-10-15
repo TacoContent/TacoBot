@@ -3,8 +3,8 @@ import typing
 from bot.lib.models.openapi import openapi
 from bot.lib.models.TacoMinecraftWorlds import TacoMinecraftWorlds
 
-@openapi.component("MinecraftDiscordUserStatsInfo", description="A Discord user's Minecraft stats info.")
-@openapi.openapi_managed()
+@openapi.component("MinecraftDiscordUserStatsInfo", description="Minecraft discord user stats info.")
+@openapi.managed()
 class MinecraftDiscordUserStatsInfo:
     """A Discord user's Minecraft stats info.
 

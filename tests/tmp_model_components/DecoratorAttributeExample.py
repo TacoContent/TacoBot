@@ -1,8 +1,8 @@
-from bot.lib.models.openapi import openapi_attribute, component
+from bot.lib.models.openapi import openapi
 
 
-@component("DecoratorAttributeExample")
-@openapi_attribute("custom-flag", "enabled")
+@openapi.component("DecoratorAttributeExample")
+@openapi.attribute("custom-flag", "enabled")
 class DecoratorAttributeExample:
     def __init__(self):
         self.primary = "value"

@@ -100,7 +100,7 @@ Demonstrates `Optional[Union[...]]` pattern with oneOf:
 ```python
 OptionalMentionable: typing.TypeAlias = typing.Optional[typing.Union[DiscordRole, DiscordUser]]
 
-openapi_type_alias(
+openapi.type_alias(
     "OptionalMentionable",
     description="An optional Discord mentionable entity (role, user, or null).",
     managed=True,
@@ -130,7 +130,7 @@ OptionalSearchCriteria: typing.TypeAlias = typing.Union[
     SearchDateFilter, SearchAuthorFilter, SearchTagFilter, None
 ]
 
-openapi_type_alias(
+openapi.type_alias(
     "OptionalSearchCriteria",
     description="Optional search filters that can be combined (date, author, tags, or null).",
     anyof=True,
@@ -252,7 +252,7 @@ All schemas verified in `.swagger.v1.yaml`:
 # API can return a mentionable entity or null
 MentionableResponse: typing.TypeAlias = typing.Optional[typing.Union[DiscordRole, DiscordUser]]
 
-openapi_type_alias("MentionableResponse", managed=True)(
+openapi.type_alias("MentionableResponse", managed=True)(
     typing.cast(typing.Any, MentionableResponse)
 )
 ```
@@ -263,7 +263,7 @@ openapi_type_alias("MentionableResponse", managed=True)(
 # API accepts filters or null to clear filters
 FilterInput: typing.TypeAlias = typing.Union[DateFilter, AuthorFilter, None]
 
-openapi_type_alias("FilterInput", anyof=True, managed=True)(
+openapi.type_alias("FilterInput", anyof=True, managed=True)(
     typing.cast(typing.Any, FilterInput)
 )
 ```
@@ -276,7 +276,7 @@ AssigneeInput: typing.TypeAlias = typing.Optional[typing.Union[
     RoleAssignment, UserAssignment
 ]]
 
-openapi_type_alias("AssigneeInput", managed=True)(
+openapi.type_alias("AssigneeInput", managed=True)(
     typing.cast(typing.Any, AssigneeInput)
 )
 ```

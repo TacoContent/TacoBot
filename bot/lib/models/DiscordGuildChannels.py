@@ -4,8 +4,8 @@ from bot.lib.models.DiscordCategory import DiscordCategory
 from bot.lib.models.DiscordChannel import DiscordChannel
 from bot.lib.models.openapi import openapi
 
-@openapi.component("DiscordGuildChannels", description="Snapshot of a Discord guild's channels and categories.")
-@openapi.openapi_managed()
+@openapi.component("DiscordGuildChannels", description="Discord guild channels information")
+@openapi.managed()
 class DiscordGuildChannels:
     """Model for Discord guild channels data.
 

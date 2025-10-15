@@ -34,7 +34,7 @@ from discord import Role
 from bot.lib.models.openapi import openapi
 
 @openapi.component("DiscordRole", description="Represents a Discord role with normalized primitive fields.")
-@openapi.openapi_managed()
+@openapi.managed()
 class DiscordRole:
     """Represents a Discord role with normalized primitive fields.
 

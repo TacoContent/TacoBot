@@ -95,7 +95,7 @@ def test_collect_model_components_openapi_attributes():
     comps, _ = collect_model_components(models_root)
     assert 'MinecraftPlayerEvent' in comps, 'MinecraftPlayerEvent component missing'
     schema = comps['MinecraftPlayerEvent']
-    assert schema.get('x-tacobot-managed') is True, 'openapi_managed attribute missing on schema'
+    assert schema.get('x-tacobot-managed') is True, 'managed attribute missing on schema'
     event_schema = schema['properties']['event']
     assert event_schema['type'] == 'string'
     assert event_schema.get('enum') == ['death', 'login', 'logout', 'unknown']

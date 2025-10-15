@@ -48,7 +48,7 @@ import discord
 from bot.lib.models.openapi import openapi
 
 @openapi.component("DiscordEmoji", description="Snapshot of a Discord emoji's core attributes.")
-@openapi.openapi_managed()
+@openapi.managed()
 class DiscordEmoji:
     """Represents a Discord custom (guild) emoji.
 

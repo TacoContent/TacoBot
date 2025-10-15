@@ -34,7 +34,7 @@ import typing
 from bot.lib.models.openapi import openapi
 
 @openapi.component("JoinWhitelistUser", description="Container for a guild-scoped join whitelist record.")
-@openapi.openapi_managed()
+@openapi.managed()
 class JoinWhitelistUser:
     """Container for a guild-scoped join whitelist record.
 

@@ -4,8 +4,8 @@ from bot.lib.models.DiscordChannel import DiscordChannel
 from bot.lib.models.openapi import openapi
 
 
-@openapi.component("DiscordCategory", description="Model for a Discord Category.")
-@openapi.openapi_managed()
+@openapi.component("DiscordCategory", description="Discord category information")
+@openapi.managed()
 class DiscordCategory:
     """Model for a Discord Category.
 

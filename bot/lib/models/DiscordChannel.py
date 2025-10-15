@@ -1,8 +1,8 @@
 import typing
 from bot.lib.models.openapi import openapi
 
-@openapi.component("DiscordChannel", description="Snapshot of a Discord channel's core attributes. (test)")
-@openapi.openapi_managed()
+@openapi.component("DiscordChannel", description="Discord channel information")
+@openapi.managed()
 class DiscordChannel:
     """Represents a Discord channel snapshot.
     Parameters

@@ -1,7 +1,7 @@
 """Temporary test models for OpenAPI decorator testing.
 
 This module contains example models used exclusively for testing the
-openapi_deprecated() and openapi_exclude() decorators. These should not
+deprecated() and exclude() decorators. These should not
 be imported or used in production code.
 
 NOTE: This file follows the tmp_* naming convention used in tests for
@@ -10,15 +10,15 @@ NOTE: This file follows the tmp_* naming convention used in tests for
       --models-root defaults to bot/lib/models.
 """
 import typing
-from bot.lib.models.openapi import component, openapi_deprecated, openapi_exclude
+from bot.lib.models.openapi import openapi
 
 
-@component("ExampleDeprecatedModel", description="An example model marked as deprecated for testing.")
-@openapi_deprecated()
+@openapi.component("ExampleDeprecatedModel", description="An example model marked as deprecated for testing.")
+@openapi.deprecated()
 class ExampleDeprecatedModel:
     """An example deprecated model.
 
-    This model demonstrates the use of the @openapi_deprecated() decorator.
+    This model demonstrates the use of the @openapi.deprecated() decorator.
     Used only for testing purposes.
     """
 
@@ -34,12 +34,12 @@ class ExampleDeprecatedModel:
         }
 
 
-@component("ExampleExcludedModel", description="This model should not appear in OpenAPI schema.")
-@openapi_exclude()
+@openapi.component("ExampleExcludedModel", description="This model should not appear in OpenAPI schema.")
+@openapi.exclude()
 class ExampleExcludedModel:
     """An example excluded model.
 
-    This model demonstrates the use of the @openapi_exclude() decorator.
+    This model demonstrates the use of the @openapi.exclude() decorator.
     It will not appear in the generated OpenAPI components.
     Used only for testing purposes.
     """

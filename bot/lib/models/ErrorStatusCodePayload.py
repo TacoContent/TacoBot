@@ -2,8 +2,8 @@ import typing
 
 from bot.lib.models.openapi import openapi
 
-@openapi.component("ErrorStatusCodePayload", description="Represents an error status code payload.")
-@openapi.openapi_managed()
+@openapi.component("ErrorStatusCodePayload", description="Error status code payload")
+@openapi.managed()
 class ErrorStatusCodePayload:
     """Model for error status code payloads.
     Represents an error message.

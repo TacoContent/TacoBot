@@ -26,8 +26,8 @@ from bot.lib.models.DiscordMessageReaction import DiscordMessageReaction
 from bot.lib.models.openapi import openapi
 
 
-@openapi.component("DiscordMessage", description="Snapshot of a Discord message.")
-@openapi.openapi_managed()
+@openapi.component("DiscordMessage", description="Discord message information")
+@openapi.managed()
 class DiscordMessage:
     """Represents a Discord message snapshot.
 

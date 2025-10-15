@@ -7,7 +7,7 @@ from bot.lib.models.openapi import openapi
 T = TypeVar('T')
 
 @openapi.component("PagedResults", description="Generic paginated results container.")
-@openapi.openapi_managed()
+@openapi.managed()
 class PagedResults(Generic[T]):
     """
     Represents a generic paginated set of results.
@@ -34,7 +34,7 @@ class PagedResults(Generic[T]):
         return self.__dict__
 
 @openapi.component("PagedResultsJoinWhitelistUser", description="Generic paginated results container.")
-@openapi.openapi_managed()
+@openapi.managed()
 class PagedResultsJoinWhitelistUser(PagedResults):
     def __init__(self, data: dict):
         super().__init__(data)

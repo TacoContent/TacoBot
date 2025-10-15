@@ -70,7 +70,7 @@ This document summarizes the complete implementation of Union type support with 
 **New Parameter**: `anyof: bool = False`
 
 ```python
-openapi_type_alias(
+openapi.type_alias(
     name: str,
     description: str = None,
     default: typing.Any = None,
@@ -109,7 +109,7 @@ SearchCriteria:
 
 ### 1. `bot/lib/models/openapi/openapi.py`
 
-- Added `anyof` parameter to `openapi_type_alias` decorator
+- Added `anyof` parameter to `openapi.type_alias` decorator
 - Updated docstring with anyof usage examples
 - Stores anyof flag in metadata dict when True
 
@@ -137,13 +137,13 @@ SearchCriteria:
 
 ```python
 import typing
-from bot.lib.models.openapi import openapi_type_alias
+from bot.lib.models.openapi import openapi
 from bot.lib.models.DiscordRole import DiscordRole
 from bot.lib.models.DiscordUser import DiscordUser
 
 DiscordMentionable: typing.TypeAlias = typing.Union[DiscordRole, DiscordUser]
 
-openapi_type_alias(
+openapi.type_alias(
     "DiscordMentionable",
     description="Represents a Discord mentionable entity.",
     managed=True,
@@ -156,7 +156,7 @@ openapi_type_alias(
 
 ```python
 import typing
-from bot.lib.models.openapi import openapi_type_alias
+from bot.lib.models.openapi import openapi
 
 SearchDateFilter: typing.TypeAlias = typing.TypedDict(
     "SearchDateFilter", {"start_date": str, "end_date": str}
@@ -172,7 +172,7 @@ SearchCriteria: typing.TypeAlias = typing.Union[
     SearchDateFilter, SearchAuthorFilter, SearchTagFilter
 ]
 
-openapi_type_alias(
+openapi.type_alias(
     "SearchCriteria",
     description="Search filters that can be combined - supports date range, author, and/or tag filters.",
     anyof=True,
@@ -186,14 +186,14 @@ openapi_type_alias(
 
 ```python
 import typing
-from bot.lib.models.openapi import openapi_type_alias
+from bot.lib.models.openapi import openapi
 from bot.lib.models.DiscordRole import DiscordRole
 from bot.lib.models.DiscordUser import DiscordUser
 
 # Optional[Union[A, B]] pattern - nullable discriminated union
 OptionalMentionable: typing.TypeAlias = typing.Optional[typing.Union[DiscordRole, DiscordUser]]
 
-openapi_type_alias(
+openapi.type_alias(
     "OptionalMentionable",
     description="An optional Discord mentionable entity (role, user, or null).",
     managed=True,
@@ -206,7 +206,7 @@ openapi_type_alias(
 
 ```python
 import typing
-from bot.lib.models.openapi import openapi_type_alias
+from bot.lib.models.openapi import openapi
 from tests.tmp_union_test_models import SearchDateFilter, SearchAuthorFilter, SearchTagFilter
 
 # Union[A, B, C, None] pattern - nullable composable union
@@ -214,7 +214,7 @@ OptionalSearchCriteria: typing.TypeAlias = typing.Union[
     SearchDateFilter, SearchAuthorFilter, SearchTagFilter, None
 ]
 
-openapi_type_alias(
+openapi.type_alias(
     "OptionalSearchCriteria",
     description="Optional search filters that can be combined (date, author, tags, or null).",
     anyof=True,  # Composable filters use anyOf
@@ -288,7 +288,7 @@ DiscordUser: typing.TypeAlias = ...
 DiscordMentionable: typing.TypeAlias = typing.Union[DiscordRole, DiscordUser]
 
 # Register with oneOf
-openapi_type_alias(
+openapi.type_alias(
     "DiscordMentionable",
     description="A mentionable entity (role or user).",
     managed=True,
@@ -309,7 +309,7 @@ SearchCriteria: typing.TypeAlias = typing.Union[
 ]
 
 # Register with anyOf
-openapi_type_alias(
+openapi.type_alias(
     "SearchCriteria",
     description="Combinable search filters.",
     anyof=True,  # KEY: Enable anyOf
@@ -372,7 +372,7 @@ pytest tests/ -vvv
 **Pass 2**: Link decorator metadata to TypeAlias
 
 ```python
-# Links: openapi_type_alias(...)(cast(Any, DiscordMentionable))
+# Links: openapi.type_alias(...)(cast(Any, DiscordMentionable))
 ```
 
 ### 2. Metadata Threading
@@ -381,7 +381,7 @@ pytest tests/ -vvv
 
 ```python
 # 1. Decorator call
-openapi_type_alias("Name", anyof=True)(...)
+openapi.type_alias("Name", anyof=True)(...)
 
 # 2. AST extraction
 anyof_flag = extract_boolean_from_keywords(node.keywords, "anyof")
@@ -487,7 +487,7 @@ OptionalSearchCriteria:
 # Separate TypeAlias and decorator (cleanest, most explicit)
 MyUnion: typing.TypeAlias = typing.Union[TypeA, TypeB]
 
-openapi_type_alias(
+openapi.type_alias(
     "MyUnion",
     description="Clear description of when to use oneOf vs anyOf.",
     anyof=False,  # Explicit is better than implicit
@@ -497,7 +497,7 @@ openapi_type_alias(
 # For nullable unions, use Optional wrapper
 OptionalUnion: typing.TypeAlias = typing.Optional[typing.Union[TypeA, TypeB]]
 
-openapi_type_alias(
+openapi.type_alias(
     "OptionalUnion",
     description="Optional union - can be TypeA, TypeB, or null.",
     managed=True,
@@ -527,7 +527,7 @@ openapi_type_alias(
 **Check**:
 
 1. TypeAlias annotation present: `MyType: typing.TypeAlias = ...`
-2. Decorator called correctly: `openapi_type_alias(...)(...)`
+2. Decorator called correctly: `openapi.type_alias(...)(...)`
 3. Cast pattern used: `typing.cast(typing.Any, MyType)`
 
 ### oneOf vs anyOf Wrong
@@ -536,10 +536,10 @@ openapi_type_alias(
 
 ```python
 # oneOf (default)
-openapi_type_alias("Name")(...)
+openapi.type_alias("Name")(...)
 
 # anyOf (explicit)
-openapi_type_alias("Name", anyof=True)(...)
+openapi.type_alias("Name", anyof=True)(...)
 ```
 
 ### Refs Missing

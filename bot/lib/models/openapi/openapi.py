@@ -34,7 +34,7 @@ def component(name: Optional[str] = None, description: Optional[str] = None) -> 
 
 
 
-def openapi_attribute(name: str, value: typing.Optional[typing.Union[str, bool, int, float]]) -> Callable[[AttrT], AttrT]:
+def attribute(name: str, value: typing.Optional[typing.Union[str, bool, int, float]]) -> Callable[[AttrT], AttrT]:
     def _wrap(attr: AttrT) -> AttrT:
         target = cast(Any, attr)
         if not hasattr(target, '__openapi_attributes__'):
@@ -43,35 +43,35 @@ def openapi_attribute(name: str, value: typing.Optional[typing.Union[str, bool, 
         return attr
     return _wrap
 
-def openapi_managed() -> Callable[[T], T]:
+def managed() -> Callable[[T], T]:
     """Decorator to mark a model class as managed by tacobot.
 
     This is a marker with no parameters or behavior; it is used by
     swagger_sync to exclude managed models from OpenAPI schema generation.
     """
-    return openapi_attribute('x-tacobot-managed', True)
+    return attribute('x-tacobot-managed', True)
 
 
-def openapi_deprecated() -> Callable[[T], T]:
+def deprecated() -> Callable[[T], T]:
     """Decorator to mark a model class as deprecated.
 
     This adds a custom attribute indicating the model is deprecated,
     which will be reflected in the OpenAPI schema.
     """
-    return openapi_attribute('x-tacobot-deprecated', True)
+    return attribute('x-tacobot-deprecated', True)
 
 
-def openapi_exclude() -> Callable[[T], T]:
+def exclude() -> Callable[[T], T]:
     """Decorator to mark a model class to be excluded from OpenAPI schema.
 
     Models marked with this decorator will not be included in the
     generated swagger components. Use this for internal models or
     models being phased out.
     """
-    return openapi_attribute('x-tacobot-exclude', True)
+    return attribute('x-tacobot-exclude', True)
 
 
-def openapi_type_alias(
+def type_alias(
     name: str,
     *,
     description: Optional[str] = None,
@@ -113,15 +113,15 @@ def openapi_type_alias(
     return _wrap
 
 
-def get_openapi_type_alias_metadata(name: str) -> Optional[Dict[str, Any]]:
+def get_type_alias_metadata(name: str) -> Optional[Dict[str, Any]]:
     return _TYPE_ALIAS_REGISTRY.get(name)
 
 __all__ = [
     'component',
-    'openapi_attribute',
-    'openapi_managed',
-    'openapi_deprecated',
-    'openapi_exclude',
-    'openapi_type_alias',
-    'get_openapi_type_alias_metadata'
+    'attribute',
+    'managed',
+    'deprecated',
+    'exclude',
+    'type_alias',
+    'get_type_alias_metadata'
 ]

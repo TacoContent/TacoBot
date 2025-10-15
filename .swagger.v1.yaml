@@ -1702,7 +1702,7 @@ components:
           description: Error code.
       required:
         - error
-      description: Represents an error status code payload.
+      description: Error status code payload
       x-tacobot-managed: true
     ShiftCodeGame:
       type: object
@@ -1910,7 +1910,7 @@ components:
           description: Type of player event (login, logout, death).
       required:
         - event
-      description: A Minecraft player event.
+      description: Minecraft player event
       x-tacobot-managed: true
     MinecraftUser:
       type: object
@@ -1945,7 +1945,7 @@ components:
         - level
         - username
         - uuid
-      description: Represents a Minecraft user with operator permissions.
+      description: Minecraft operator user.
       x-tacobot-managed: true
     MinecraftWhiteListUser:
       type: object
@@ -2009,7 +2009,7 @@ components:
       required:
         - id
         - name
-      description: Snapshot of a Discord guild's core attributes.
+      description: Discord guild (server) information
       x-tacobot-managed: true
     DiscordGuildChannels:
       type: object
@@ -2035,7 +2035,7 @@ components:
       required:
         - id
         - name
-      description: Snapshot of a Discord guild's channels and categories.
+      description: Discord guild channels information
       x-tacobot-managed: true
     DiscordChannel:
       type: object
@@ -2074,7 +2074,7 @@ components:
         - nsfw
         - position
         - type
-      description: Snapshot of a Discord channel's core attributes. (test)
+      description: Discord channel information
       x-tacobot-managed: true
     DiscordCategory:
       type: object
@@ -2112,7 +2112,7 @@ components:
         - name
         - position
         - type
-      description: Model for a Discord Category.
+      description: Discord category information
       x-tacobot-managed: true
     DiscordEmoji:
       type: object
@@ -2280,7 +2280,7 @@ components:
         - system
         - type
         - username
-      description: Represents a Discord user with normalized primitives.
+      description: Discord user information
       x-tacobot-managed: true
     DiscordMentionable:
       oneOf:
@@ -2353,7 +2353,7 @@ components:
         - message_type
         - pinned
         - type
-      description: Snapshot of a Discord message.
+      description: Discord message information
       x-tacobot-managed: true
     DiscordMessageReaction:
       type: object
@@ -2365,7 +2365,7 @@ components:
       required:
         - count
         - emoji
-      description: Snapshot of a Discord message reaction.
+      description: Discord message reaction information
       x-tacobot-managed: true
     JoinWhitelistUser:
       type: object
@@ -2508,7 +2508,7 @@ components:
         - username
         - uuid
         - world
-      description: A Discord user's Minecraft stats info.
+      description: Minecraft discord user stats info.
       x-tacobot-managed: true
     MinecraftPlayerEventPayload:
       type: object
@@ -2531,7 +2531,7 @@ components:
       required:
         - event
         - guild_id
-      description: Payload for Minecraft player events.
+      description: Minecraft player event payload
       x-tacobot-managed: true
     MinecraftServerSettings:
       type: object
@@ -2563,7 +2563,7 @@ components:
         - mods
         - server
         - version
-      description: Configuration for the Minecraft Server.
+      description: Minecraft server settings
       x-tacobot-managed: true
     MinecraftServerStatus:
       type: object

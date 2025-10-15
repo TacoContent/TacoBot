@@ -331,13 +331,13 @@ Why a docstring block vs decorator `kwargs`? The block scales better for many fi
 
 ### 4.8 Decorator Vendor Extensions
 
-For concise vendor extension flags, decorate the model class with `@openapi_attribute("x-some-flag", value)` (or helper decorators such as `@openapi_managed()`, `@openapi_deprecated()`, and `@openapi_exclude()`). The generator surfaces these attributes as top-level schema keys. If the supplied name omits the required `x-` prefix, it is added automatically during generation.
+For concise vendor extension flags, decorate the model class with `@openapi.attribute("x-some-flag", value)` (or helper decorators such as `@managed()`, `@openapi.deprecated()`, and `@openapi.exclude()`). The generator surfaces these attributes as top-level schema keys. If the supplied name omits the required `x-` prefix, it is added automatically during generation.
 
 Example:
 
 ```python
 @openapi.component("MinecraftPlayerEvent")
-@openapi_managed()
+@managed()
 class MinecraftPlayerEvent:
     ...
 ```
@@ -353,21 +353,21 @@ MinecraftPlayerEvent:
 
 #### Built-in Decorator Helpers
 
-**`@openapi_managed()`**  
+**`@managed()`**
 Marks a model as managed by TacoBot. Adds `x-tacobot-managed: true` to the schema. Use this for models that are owned and controlled by the bot's internal systems.
 
-**`@openapi_deprecated()`**  
+**`@openapi.deprecated()`**
 Marks a model as deprecated. Adds `x-tacobot-deprecated: true` to the schema. Use this for models being phased out or replaced, signaling to API consumers that they should migrate to alternatives.
 
 ```python
 @openapi.component("LegacyUserModel", description="Deprecated user model")
-@openapi_deprecated()
+@openapi.deprecated()
 class LegacyUserModel:
     def __init__(self, user_id: int):
         self.user_id: int = user_id
 ```
 
-> **Note**: See `tests/tmp_test_models.py` for complete working examples of both `@openapi_deprecated()` and `@openapi_exclude()` decorators.
+> **Note**: See `tests/tmp_test_models.py` for complete working examples of both `@openapi.deprecated()` and `@openapi.exclude()` decorators.
 
 Produces:
 
@@ -383,12 +383,12 @@ LegacyUserModel:
   x-tacobot-deprecated: true
 ```
 
-**`@openapi_exclude()`**  
+**`@openapi.exclude()`**
 Completely excludes a model from OpenAPI schema generation. The decorated model will NOT appear in `components.schemas`. Use this for internal-only models, test fixtures, or models being removed from the public API.
 
 ```python
 @openapi.component("InternalDebugModel", description="Should not appear in API")
-@openapi_exclude()
+@openapi.exclude()
 class InternalDebugModel:
     def __init__(self, debug_data: str):
         self.debug_data: str = debug_data
@@ -402,15 +402,15 @@ Decorators can be stacked. For example, a model can be both managed and deprecat
 
 ```python
 @openapi.component("LegacyManagedModel")
-@openapi_managed()
-@openapi_deprecated()
+@openapi.managed()
+@openapi.deprecated()
 class LegacyManagedModel:
     ...
 ```
 
-However, `@openapi_exclude()` takes priority and will prevent the model from appearing in the schema regardless of other decorators.
+However, `@openapi.exclude()` takes priority and will prevent the model from appearing in the schema regardless of other decorators.
 
-Use these decorators for simple booleans/strings/numbers you want mirrored in the swagger component. Any helper that internally returns `openapi_attribute(...)` (like `openapi_managed`, `openapi_deprecated`, `openapi_exclude`) is detected automatically, so additional wrappers do not require script changes. Prefer docstring metadata blocks for richer per-property annotations.
+Use these decorators for simple booleans/strings/numbers you want mirrored in the swagger component. Any helper that internally returns `openapi.attribute(...)` (like `managed`, `deprecated`, `exclude`) is detected automatically, so additional wrappers do not require script changes. Prefer docstring metadata blocks for richer per-property annotations.
 
 ### 4.9 Testing
 
@@ -438,6 +438,7 @@ General Options:
   --coverage-report FILE     Emit coverage report (format via --coverage-format).
   --coverage-format FORMAT   json|text|cobertura (default json).
   --fail-on-coverage-below N Fail if handler doc coverage < N (0-1 or 0-100).
+  --generate-badge FILE      Generate SVG badge showing coverage % and write to FILE.
   --markdown-summary FILE    Append GitHub-friendly markdown summary output.
   --output-directory DIR     Base directory for report outputs (coverage & summary). Default: current working directory.
   --color MODE               Color output: auto (default, only if TTY), always, never.
@@ -501,7 +502,42 @@ python scripts/swagger_sync.py --coverage-report coverage.txt --coverage-format 
 python scripts/swagger_sync.py --coverage-report coverage.xml --coverage-format cobertura
 ```
 
-### 5.6 Show Missing Blocks & Swagger Orphans Together
+### 5.6 Generate Coverage Badge
+
+```bash
+python scripts/swagger_sync.py --check --generate-badge=docs/badges/openapi-coverage.svg
+```
+
+Generates an SVG badge showing OpenAPI documentation coverage percentage. The badge uses color coding:
+- 🔴 Red (`#e05d44`): coverage < 50%
+- 🟡 Yellow (`#dfb317`): 50% ≤ coverage < 80%
+- 🟢 Green (`#4c1`): coverage ≥ 80%
+
+The badge can be embedded in README.md or other documentation:
+
+```markdown
+![OpenAPI Coverage](docs/badges/openapi-coverage.svg)
+```
+
+**Example Output**: `OpenAPI Coverage: 100.0%` with green background.
+
+**Typical Workflow**:
+```bash
+# Generate badge during CI or pre-commit
+python scripts/swagger_sync.py --check --generate-badge=docs/badges/openapi-coverage.svg
+
+# Commit badge alongside code changes
+git add docs/badges/openapi-coverage.svg README.md
+git commit -m "docs: update OpenAPI coverage badge"
+```
+
+**Notes**:
+- Badge generation does not require external dependencies; uses custom SVG template
+- Badge is created even if drift is detected (based on current coverage state)
+- Directory creation is automatic; `docs/badges/` will be created if it doesn't exist
+- Compatible with GitHub, GitLab, and other platforms that render SVG badges
+
+### 5.7 Show Missing Blocks & Swagger Orphans Together
 
 ```bash
 python scripts/swagger_sync.py --show-missing-blocks --show-orphans
@@ -513,7 +549,7 @@ This will show:
 - Path orphans (swagger paths without handlers)
 - Component orphans (swagger components without `@openapi.component` classes)
 
-### 5.7 Ignore Specific Files
+### 5.8 Ignore Specific Files
 
 ```bash
 python scripts/swagger_sync.py --ignore-file experimental_*.py --ignore-file LegacyHandler.py

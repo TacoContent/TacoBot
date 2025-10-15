@@ -4,7 +4,7 @@ from bot.lib.models.TacoMinecraftWorlds import TacoMinecraftWorlds
 
 
 @openapi.component("TacoMinecraftWorldInfo", description="Represents a Minecraft world managed by Taco.")
-@openapi.openapi_managed()
+@openapi.managed()
 class TacoMinecraftWorldInfo:
     """
     Represents a Minecraft world managed by Taco.

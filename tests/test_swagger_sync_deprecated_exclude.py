@@ -1,4 +1,4 @@
-"""Tests for openapi_deprecated and openapi_exclude decorators."""
+"""Tests for deprecated and exclude decorators."""
 
 import pathlib
 import tempfile
@@ -6,16 +6,16 @@ from scripts.swagger_sync import collect_model_components
 
 
 def test_openapi_deprecated_decorator():
-    """Test that @openapi_deprecated() adds x-tacobot-deprecated to schema."""
+    """Test that @openapi.deprecated() adds x-tacobot-deprecated to schema."""
     with tempfile.TemporaryDirectory() as temp_dir:
         models_root = pathlib.Path(temp_dir)
 
         deprecated_model = '''
 import typing
-from bot.lib.models.openapi import component, openapi_deprecated
+from bot.lib.models.openapi import openapi
 
 @openapi.component("DeprecatedModel", description="A deprecated model")
-@openapi_deprecated()
+@openapi.deprecated()
 class DeprecatedModel:
     """A model marked as deprecated."""
     def __init__(self, name: str):
@@ -34,7 +34,7 @@ def component(name: str, description: str = None):
         return cls
     return decorator
 
-def openapi_attribute(name: str, value: Any):
+def attribute(name: str, value: Any):
     def decorator(target):
         if not hasattr(target, '__openapi_attributes__'):
             target.__openapi_attributes__ = {}
@@ -42,8 +42,8 @@ def openapi_attribute(name: str, value: Any):
         return target
     return decorator
 
-def openapi_deprecated():
-    return openapi_attribute('x-tacobot-deprecated', True)
+def deprecated():
+    return attribute('x-tacobot-deprecated', True)
 '''
 
         test_file = models_root / "deprecated_model.py"
@@ -64,16 +64,16 @@ def openapi_deprecated():
 
 
 def test_openapi_exclude_decorator():
-    """Test that @openapi_exclude() prevents model from appearing in components."""
+    """Test that @openapi.exclude() prevents model from appearing in components."""
     with tempfile.TemporaryDirectory() as temp_dir:
         models_root = pathlib.Path(temp_dir)
 
         excluded_model = '''
 import typing
-from bot.lib.models.openapi import component, openapi_exclude
+from bot.lib.models.openapi import openapi
 
 @openapi.component("ExcludedModel", description="This should not appear")
-@openapi_exclude()
+@openapi.exclude()
 class ExcludedModel:
     """A model marked for exclusion."""
     def __init__(self, internal_id: int):
@@ -92,7 +92,7 @@ def component(name: str, description: str = None):
         return cls
     return decorator
 
-def openapi_attribute(name: str, value: Any):
+def attribute(name: str, value: Any):
     def decorator(target):
         if not hasattr(target, '__openapi_attributes__'):
             target.__openapi_attributes__ = {}
@@ -100,8 +100,8 @@ def openapi_attribute(name: str, value: Any):
         return target
     return decorator
 
-def openapi_exclude():
-    return openapi_attribute('x-tacobot-exclude', True)
+def exclude():
+    return attribute('x-tacobot-exclude', True)
 '''
 
         test_file = models_root / "excluded_model.py"
@@ -124,7 +124,7 @@ def test_multiple_models_mixed_decorators():
 
         models_content = '''
 import typing
-from bot.lib.models.openapi import component, openapi_deprecated, openapi_exclude, openapi_managed
+from bot.lib.models.openapi import openapi, exclude, managed
 
 @openapi.component("NormalModel", description="A normal model")
 class NormalModel:
@@ -132,20 +132,20 @@ class NormalModel:
         self.value: str = value
 
 @openapi.component("DeprecatedModel", description="A deprecated model")
-@openapi_deprecated()
+@openapi.deprecated()
 class DeprecatedModel:
     def __init__(self, old_field: str):
         self.old_field: str = old_field
 
 @openapi.component("ExcludedModel", description="Should not appear")
-@openapi_exclude()
+@openapi.exclude()
 class ExcludedModel:
     def __init__(self, secret: str):
         self.secret: str = secret
 
 @openapi.component("ManagedDeprecatedModel", description="Managed and deprecated")
-@openapi_managed()
-@openapi_deprecated()
+@managed()
+@openapi.deprecated()
 class ManagedDeprecatedModel:
     def __init__(self, legacy_data: str):
         self.legacy_data: str = legacy_data
@@ -163,7 +163,7 @@ def component(name: str, description: str = None):
         return cls
     return decorator
 
-def openapi_attribute(name: str, value: Any):
+def attribute(name: str, value: Any):
     def decorator(target):
         if not hasattr(target, '__openapi_attributes__'):
             target.__openapi_attributes__ = {}
@@ -171,14 +171,14 @@ def openapi_attribute(name: str, value: Any):
         return target
     return decorator
 
-def openapi_managed():
-    return openapi_attribute('x-tacobot-managed', True)
+def managed():
+    return attribute('x-tacobot-managed', True)
 
-def openapi_deprecated():
-    return openapi_attribute('x-tacobot-deprecated', True)
+def deprecated():
+    return attribute('x-tacobot-deprecated', True)
 
-def openapi_exclude():
-    return openapi_attribute('x-tacobot-exclude', True)
+def exclude():
+    return attribute('x-tacobot-exclude', True)
 '''
 
         test_file = models_root / "test_models.py"
@@ -222,10 +222,10 @@ def test_deprecated_with_properties():
 
         deprecated_model = '''
 import typing
-from bot.lib.models.openapi import component, openapi_deprecated
+from bot.lib.models.openapi import openapi
 
 @openapi.component("DetailedDeprecatedModel", description="Deprecated with complex properties")
-@openapi_deprecated()
+@openapi.deprecated()
 class DetailedDeprecatedModel:
     def __init__(self,
                  string_field: str,
@@ -250,7 +250,7 @@ def component(name: str, description: str = None):
         return cls
     return decorator
 
-def openapi_attribute(name: str, value: Any):
+def attribute(name: str, value: Any):
     def decorator(target):
         if not hasattr(target, '__openapi_attributes__'):
             target.__openapi_attributes__ = {}
@@ -258,8 +258,8 @@ def openapi_attribute(name: str, value: Any):
         return target
     return decorator
 
-def openapi_deprecated():
-    return openapi_attribute('x-tacobot-deprecated', True)
+def deprecated():
+    return attribute('x-tacobot-deprecated', True)
 '''
 
         test_file = models_root / "deprecated_model.py"
@@ -307,12 +307,12 @@ def test_exclude_priority_over_other_decorators():
 
         excluded_model = '''
 import typing
-from bot.lib.models.openapi import component, openapi_exclude, openapi_deprecated, openapi_managed
+from bot.lib.models.openapi import openapi, deprecated, managed
 
 @openapi.component("FullyDecoratedExcluded", description="Should not appear despite other decorators")
-@openapi_managed()
-@openapi_deprecated()
-@openapi_exclude()
+@managed()
+@openapi.deprecated()
+@openapi.exclude()
 class FullyDecoratedExcluded:
     def __init__(self, data: str):
         self.data: str = data
@@ -330,7 +330,7 @@ def component(name: str, description: str = None):
         return cls
     return decorator
 
-def openapi_attribute(name: str, value: Any):
+def attribute(name: str, value: Any):
     def decorator(target):
         if not hasattr(target, '__openapi_attributes__'):
             target.__openapi_attributes__ = {}
@@ -338,14 +338,14 @@ def openapi_attribute(name: str, value: Any):
         return target
     return decorator
 
-def openapi_managed():
-    return openapi_attribute('x-tacobot-managed', True)
+def managed():
+    return attribute('x-tacobot-managed', True)
 
-def openapi_deprecated():
-    return openapi_attribute('x-tacobot-deprecated', True)
+def deprecated():
+    return attribute('x-tacobot-deprecated', True)
 
-def openapi_exclude():
-    return openapi_attribute('x-tacobot-exclude', True)
+def exclude():
+    return attribute('x-tacobot-exclude', True)
 '''
 
         test_file = models_root / "excluded_model.py"

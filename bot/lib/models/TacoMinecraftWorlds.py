@@ -9,7 +9,7 @@ TacoMinecraftWorlds: typing.TypeAlias = typing.Literal[
     "taco_atm10-2",
 ]
 
-openapi.openapi_type_alias(
+openapi.type_alias(
     "TacoMinecraftWorlds",
     description="Represents a Minecraft world managed by TacoBot.",
     default="taco_atm10-2",

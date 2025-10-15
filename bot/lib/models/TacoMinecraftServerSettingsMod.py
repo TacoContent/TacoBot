@@ -1,7 +1,7 @@
 from bot.lib.models.openapi import openapi
 
 @openapi.component("TacoMinecraftServerSettingsMod", description="Represents a mod installed on the Minecraft server.")
-@openapi.openapi_managed()
+@openapi.managed()
 class TacoMinecraftServerSettingsMod:
     """Represents a mod installed on the Minecraft server.
 

@@ -6,7 +6,7 @@ from bot.lib.models.TacoMinecraftWorlds import TacoMinecraftWorlds
 
 
 @openapi.component("MinecraftUserStatsPayload", description="Payload container for user stats by world.")
-@openapi.openapi_managed()
+@openapi.managed()
 class MinecraftUserStatsPayload:
     """Payload container for user stats by world.
 
