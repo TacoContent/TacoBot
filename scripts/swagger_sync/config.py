@@ -118,31 +118,7 @@ class ConfigEnvironmentModel(Dict[str, ConfigModel]):
 
 
 # Default configuration values
-DEFAULT_CONFIG: Dict[str, Any] = {
-    'swagger_file': '.swagger.v1.yaml',
-    'handlers_root': 'bot/lib/http/handlers/',
-    'models_root': 'bot/lib/models/',
-    'output': {
-        'directory': './reports/openapi/',
-        'coverage_report': 'openapi_coverage.json',
-        'coverage_format': 'json',
-    },
-    'mode': 'check',
-    'options': {
-        'strict': False,
-        'show_orphans': False,
-        'show_ignored': False,
-        'show_missing_blocks': False,
-        'verbose_coverage': False,
-        'list_endpoints': False,
-        'no_model_components': False,
-        'color': 'auto',
-    },
-    'markers': {
-        'openapi_start': '>>>openapi',
-        'openapi_end': '<<<openapi',
-    },
-}
+DEFAULT_CONFIG: ConfigModel = ConfigModel({})
 
 
 def _load_schema() -> Dict[str, Any]:
@@ -215,7 +191,7 @@ def load_config(
 
     # Start with defaults, then merge loaded config
     import copy
-    config = merge_configs(copy.deepcopy(DEFAULT_CONFIG), loaded_config)
+    config = merge_configs(copy.deepcopy(DEFAULT_CONFIG.to_dict()), loaded_config)
 
     # Apply environment profile if specified
     if environment:
