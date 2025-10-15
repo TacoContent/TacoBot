@@ -29,7 +29,8 @@ Key Features
 * **Drift Detection**: Automatically detect when handler OpenAPI docstrings
   don't match the swagger specification file
 * **Auto-Sync**: Merge docstring OpenAPI blocks into swagger with --fix mode
-* **Coverage Reports**: Generate JSON, text, or Cobertura XML coverage reports
+* **Coverage Reports**: Generate JSON, text, markdown, or Cobertura XML coverage reports
+  with colorized terminal tables and emoji indicators for quality metrics
 * **Model Components**: Auto-generate component schemas from @openapi.component
   decorated classes
 * **CI Integration**: GitHub Actions summary support via GITHUB_STEP_SUMMARY
@@ -107,7 +108,12 @@ Paths:
 
 Coverage & Reporting:
   --coverage-report PATH          Output path for coverage report
-  --coverage-format {json,text,cobertura}
+  --coverage-format {json,text,markdown,cobertura}
+                                  Report format with enhanced visualizations:
+                                  • json: Structured data for automation
+                                  • text: Colorized terminal tables with emoji
+                                  • markdown: GitHub-ready tables with emoji
+                                  • cobertura: CI/CD compatible XML
   --fail-on-coverage-below PCT    Fail if coverage < threshold (0-1 or 0-100)
   --markdown-summary PATH         Generate markdown summary file
   --generate-badge PATH           Generate SVG coverage badge

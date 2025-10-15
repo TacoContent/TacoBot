@@ -1,0 +1,122 @@
+[1m[96m📊 OPENAPI COVERAGE REPORT[0m
+================================================================================
+
+[1m📈 COVERAGE SUMMARY[0m
+┌─────────────────────────────┬──────────┬─────────────────────────┐
+│ Metric                      │ Count    │ Coverage                │
+├─────────────────────────────┼──────────┼─────────────────────────┤
+│ Handlers (considered)       │       15 │                         │
+│ Ignored                     │       59 │                         │
+│ With OpenAPI block          │       15 │ 15/15 [92m(100.0%)[0m          │
+│ In swagger                  │       15 │ 15/15 [92m(100.0%)[0m          │
+│ Definition matches          │       15 │ 15/15 [92m(100.0%)[0m          │
+│ Swagger only operations     │       42 │                         │
+└─────────────────────────────┴──────────┴─────────────────────────┘
+
+[1m✨ DOCUMENTATION QUALITY METRICS[0m
+┌──────────────────────────┬──────────┬─────────────────────────┐
+│ Quality Indicator        │ Count    │ Rate                    │
+├──────────────────────────┼──────────┼─────────────────────────┤
+│ 📝 Summary                │       15 │ 15/15 [92m(100.0%)[0m          │
+│ 📄 Description            │       14 │ 14/15 [92m(93.3%)[0m           │
+│ 🔧 Parameters             │        9 │ 9/15 [93m(60.0%)[0m            │
+│ 📦 Request body           │        2 │ 2/15 [91m(13.3%)[0m            │
+│ 🔀 Multiple responses     │        9 │ 9/15 [93m(60.0%)[0m            │
+│ 💡 Examples               │        0 │ 0/15 [91m(0.0%)[0m             │
+└──────────────────────────┴──────────┴─────────────────────────┘
+
+[1m🔄 HTTP METHOD BREAKDOWN[0m
+┌──────────┬─────────────┬─────────────────────────┬─────────────┐
+│ Method   │ Total       │ Documented              │ In Swagger  │
+├──────────┼─────────────┼─────────────────────────┼─────────────┤
+│ 📖 GET    │          13 │ 13/13 [92m(100.0%)[0m          │          13 │
+│ 📥 POST   │           2 │ 2/2 [92m(100.0%)[0m            │           2 │
+└──────────┴─────────────┴─────────────────────────┴─────────────┘
+
+[1m🏷️  TAG COVERAGE[0m (Unique tags: 8)
+┌────────────────────────────┬──────────────┐
+│ Tag                        │ Endpoints    │
+├────────────────────────────┼──────────────┤
+│ channels                   │            4 │
+│ emojis                     │            3 │
+│ guilds                     │            7 │
+│ health                     │            3 │
+│ permissions                │            1 │
+│ settings                   │            1 │
+│ swagger                    │            2 │
+│ webhook                    │            1 │
+└────────────────────────────┴──────────────┘
+
+[1m📁 TOP FILES BY ENDPOINT COUNT[0m
+┌────────────────────────────────┬───────┬─────────────────────────┐
+│ File                           │ Total │ Documented              │
+├────────────────────────────────┼───────┼─────────────────────────┤
+│ GuildChannelsApiHandler.py     │     4 │ 4/4 [92m(100.0%)[0m            │
+│ GuildEmojisApiHandler.py       │     3 │ 3/3 [92m(100.0%)[0m            │
+│ HealthcheckApiHandler.py       │     3 │ 3/3 [92m(100.0%)[0m            │
+│ SwaggerHttpHandler.py          │     2 │ 2/2 [92m(100.0%)[0m            │
+│ FreeGameWebhookHandler.py      │     1 │ 1/1 [92m(100.0%)[0m            │
+│ SettingsApiHandler.py          │     1 │ 1/1 [92m(100.0%)[0m            │
+│ TacoPermissionsApiHandler.py   │     1 │ 1/1 [92m(100.0%)[0m            │
+└────────────────────────────────┴───────┴─────────────────────────┘
+
+Per-endpoint:
+ - POST /webhook/game :: BLOCK|SWAGGER|MATCH
+ - GET /api/v1/guild/{guild_id}/categories :: BLOCK|SWAGGER|MATCH
+ - GET /api/v1/guild/{guild_id}/category/{category_id} :: BLOCK|SWAGGER|MATCH
+ - GET /api/v1/guild/{guild_id}/channels :: BLOCK|SWAGGER|MATCH
+ - POST /api/v1/guild/{guild_id}/channels/batch/ids :: BLOCK|SWAGGER|MATCH
+ - GET /api/v1/guild/{guild_id}/emojis :: BLOCK|SWAGGER|MATCH
+ - GET /api/v1/guild/{guild_id}/emoji/id/{emoji_id} :: BLOCK|SWAGGER|MATCH
+ - GET /api/v1/guild/{guild_id}/emoji/name/{emoji_name} :: BLOCK|SWAGGER|MATCH
+ - GET /api/v1/health :: BLOCK|SWAGGER|MATCH
+ - GET /healthz :: BLOCK|SWAGGER|MATCH
+ - GET /health :: BLOCK|SWAGGER|MATCH
+ - GET /api/v1/settings/{section} :: BLOCK|SWAGGER|MATCH
+ - GET /swagger.yaml :: BLOCK|SWAGGER|MATCH
+ - GET /api/v1/swagger.yaml :: BLOCK|SWAGGER|MATCH
+ - GET /api/v1/permissions/{guildId}/{userId} :: BLOCK|SWAGGER|MATCH
+
+Swagger only:
+ - GET /api/v1/guilds
+ - GET /api/v1/guilds/lookup/{guild_id}
+ - GET /api/v1/guilds/lookup/batch/{guild_ids}
+ - GET /api/v1/guilds/lookup/batch
+ - POST /api/v1/guilds/lookup/batch
+ - GET /api/v1/guild/{guild_id}/channel/{channel_id}/messages
+ - GET /api/v1/guild/{guild_id}/channel/{channel_id}/message/{message_id}
+ - POST /api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/ids
+ - POST /api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/reactions
+ - POST /api/v1/guild/{guild_id}/emojis/ids/batch
+ - POST /api/v1/guild/{guild_id}/emojis/names/batch
+ - GET /api/v1/guild/{guild_id}/roles
+ - POST /api/v1/guild/{guild_id}/roles/batch/ids
+ - GET /api/v1/guild/{guild_id}/join-whitelist
+ - POST /api/v1/guild/{guild_id}/join-whitelist
+ - GET /api/v1/guild/{guild_id}/join-whitelist/page
+ - PUT /api/v1/guild/{guild_id}/join-whitelist/{user_id}
+ - DELETE /api/v1/guild/{guild_id}/join-whitelist/{user_id}
+ - POST /api/v1/guild/{guild_id}/mentionables/batch/ids
+ - GET /api/v1/guild/{guild_id}/mentionables
+ - GET /api/v1/minecraft/whitelist.json
+ - GET /api/v1/minecraft/ops.json
+ - GET /api/v1/minecraft/uuid/{username}
+ - GET /api/v1/minecraft/status
+ - GET /api/v1/minecraft/version
+ - POST /api/v1/minecraft/version
+ - GET /api/v1/minecraft/player/{user}/stats
+ - POST /api/v1/minecraft/player/{user}/stats
+ - GET /api/v1/minecraft/player/{username}/stats/{world}
+ - GET /api/v1/minecraft/world
+ - POST /api/v1/minecraft/world
+ - GET /api/v1/minecraft/worlds
+ - POST /tacobot/guild/{guild}/invite/{channel}
+ - GET /api/v1/minecraft/player/events
+ - GET /api/v1/minecraft/player/event/{event}
+ - POST /api/v1/permissions/{guildId}/{userId}/{permission}
+ - PUT /api/v1/permissions/{guildId}/{userId}/{permission}
+ - DELETE /api/v1/permissions/{guildId}/{userId}/{permission}
+ - POST /webhook/minecraft/tacos/{action}
+ - DELETE /webhook/minecraft/tacos/{action}
+ - POST /webhook/minecraft/player/event
+ - POST /webhook/shift

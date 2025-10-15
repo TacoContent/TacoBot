@@ -1400,6 +1400,380 @@ Based on value-to-effort ratio, here's a suggested implementation order:
 
 ---
 
+## 20. Enhanced Coverage Metrics and Reporting
+
+### 20.1 Advanced Coverage Tracking
+
+**Description**: Expand coverage reporting beyond simple "documented vs not documented" to track documentation quality metrics, trends over time, and granular breakdowns.
+
+**Use Case**: Teams want to measure not just whether endpoints are documented, but how well they're documented, and track improvement over time.
+
+**Current Limitations**:
+- Only tracks presence/absence of documentation blocks
+- No measurement of documentation quality or completeness
+- No historical tracking or trend analysis
+- Limited breakdown by file, method, or tag
+- No visual representation of coverage data
+
+**Proposed Enhancements**:
+
+#### A. Documentation Quality Metrics (✅ IMPLEMENTED)
+Track additional quality indicators for documented endpoints:
+- **Summary presence**: % of endpoints with summary field
+- **Description presence**: % of endpoints with description field
+- **Parameter documentation**: % of endpoints documenting their parameters
+- **Request body documentation**: % of POST/PUT/PATCH with requestBody
+- **Multiple response codes**: % of endpoints documenting error responses (not just 200)
+- **Examples included**: % of endpoints with example request/response data
+- **Tags assigned**: % of endpoints with proper tag categorization
+
+**Implementation Status**: ✅ Added to `coverage.py` module
+- Added quality metrics tracking in `_compute_coverage()`
+- Enhanced text report format with quality metrics section
+- Included in JSON output for programmatic access
+
+#### B. HTTP Method Breakdown (✅ IMPLEMENTED)
+Break down coverage statistics by HTTP method:
+- GET endpoints: X/Y documented (Z%)
+- POST endpoints: X/Y documented (Z%)
+- PUT endpoints: X/Y documented (Z%)
+- DELETE endpoints: X/Y documented (Z%)
+- etc.
+
+**Implementation Status**: ✅ Added to `coverage.py` module
+- Method statistics tracked during coverage computation
+- Included in text report with documentation rates
+- Available in JSON format for analysis
+
+#### C. File-Based Coverage (✅ IMPLEMENTED)
+Show which handler files have best/worst coverage:
+- Top 10 files by endpoint count
+- Files with 100% coverage
+- Files with <50% coverage needing attention
+- Coverage rate per file
+
+**Implementation Status**: ✅ Added to `coverage.py` module
+- File statistics tracked for each endpoint
+- Text report shows top 10 files by endpoint count
+- Full file stats available in JSON output
+
+#### D. Tag-Based Coverage (✅ IMPLEMENTED)
+Track coverage by OpenAPI tags:
+- List unique tags used
+- Number of endpoints per tag
+- Coverage rate per tag
+- Orphaned tags (in swagger but no handlers)
+
+**Implementation Status**: ✅ Added to `coverage.py` module
+- Tag coverage dictionary tracks endpoints per tag
+- Text report shows tag breakdown
+- Unique tag count included in summary
+
+### 20.2 Historical Tracking and Trends (TODO)
+
+**Description**: Track coverage metrics over time to show improvement or regression.
+
+**Proposed Features**:
+
+#### A. Coverage History Database
+- SQLite database storing coverage snapshots
+- Fields: timestamp, commit_hash, branch, metrics
+- Query interface for trend analysis
+- Retention policy (keep last N records or X days)
+
+**Benefits**:
+- Track progress toward documentation goals
+- Identify when coverage regresses
+- Correlate coverage with releases/sprints
+- Show team productivity metrics
+
+**Implementation Complexity**: Medium
+- Requires new database module
+- Need migration strategy for existing reports
+- Add CLI commands for history queries
+
+#### B. Trend Visualization
+Generate charts showing coverage over time:
+- Line chart: coverage % over last 30/60/90 days
+- Bar chart: quality metrics comparison
+- Diff view: changes since last week/month
+- Goal tracking: progress toward target coverage %
+
+**Output Formats**:
+- HTML with embedded Chart.js/D3.js
+- Markdown with ASCII charts for terminal
+- PNG/SVG for embedding in docs
+- Integration with CI dashboards (Codecov, etc.)
+
+**Implementation Complexity**: Medium-High
+- Requires charting library integration
+- HTML template generation
+- Optional: GitHub Actions workflow integration
+
+### 20.3 Coverage Goals and Alerts (TODO)
+
+**Description**: Allow teams to set coverage targets and get alerts when falling below thresholds.
+
+**Proposed Features**:
+
+#### A. Configurable Thresholds
+```yaml
+# .swagger.coverage.yaml
+goals:
+  minimum_coverage: 80%  # Overall documentation coverage
+  minimum_in_swagger: 90%  # Handlers in swagger file
+  minimum_quality:
+    summary: 95%  # Endpoints with summary
+    description: 80%  # Endpoints with description
+    examples: 50%  # Endpoints with examples
+  per_tag:
+    "roles": 100%  # Critical APIs must be fully documented
+    "experimental": 50%  # Experimental APIs less strict
+```
+
+#### B. Exit Code Based on Thresholds
+- Exit 0: All goals met
+- Exit 1: One or more goals not met
+- Useful for CI/CD pipeline gates
+
+#### C. Notification Integration
+- Slack webhook when coverage drops
+- GitHub PR comments showing coverage delta
+- Email reports for weekly summaries
+
+**Implementation Complexity**: Medium
+- Config file parsing
+- Threshold comparison logic
+- Webhook/notification clients
+
+### 20.4 Coverage Badge Generation (TODO)
+
+**Description**: Generate SVG badges showing coverage percentage for README files.
+
+**Example**:
+```markdown
+![OpenAPI Coverage](./docs/badges/openapi-coverage.svg)
+```
+
+Badge shows: `OpenAPI Coverage: 87%` with color coding:
+- Green: ≥80%
+- Yellow: 60-79%
+- Orange: 40-59%
+- Red: <40%
+
+**Implementation Complexity**: Low
+- SVG template generation
+- Shield.io API integration option
+- Update badge on each sync run
+
+**Benefits**:
+- Visual indication of documentation health
+- Quick assessment in README
+- Motivates maintaining high coverage
+
+### 20.5 Per-Endpoint Quality Scores (TODO)
+
+**Description**: Assign quality scores to each endpoint based on documentation completeness.
+
+**Scoring Criteria** (example):
+- Has summary: +10 points
+- Has description: +15 points
+- Has parameters (if applicable): +10 points
+- Has request body (POST/PUT): +10 points
+- Has multiple response codes: +15 points
+- Has examples: +20 points
+- Has tags: +5 points
+- Has operationId: +5 points
+- Has security definitions: +10 points
+- **Maximum**: 100 points
+
+**Output**:
+```text
+Per-endpoint quality scores:
+  GET /api/v1/guilds/{guild_id}/roles        95/100 ⭐⭐⭐⭐⭐
+  POST /api/v1/guilds/{guild_id}/roles       75/100 ⭐⭐⭐⭐
+  DELETE /api/v1/roles/{role_id}             45/100 ⭐⭐
+
+Average quality score: 71.7/100
+```
+
+**Benefits**:
+- Gamification encourages better documentation
+- Easy to identify poorly documented endpoints
+- Objective measurement of "good enough"
+
+**Implementation Complexity**: Low-Medium
+- Scoring algorithm
+- Report formatting
+- Optional: Minimum score threshold
+
+### 20.6 Coverage Diff Reports (TODO)
+
+**Description**: Show what changed in coverage between two runs (e.g., current vs main branch).
+
+**Example Output**:
+```diff
+Coverage Summary (beta vs main):
+  Total endpoints:        127 → 132  (+5)
+  Documented:             98 → 105   (+7, 82.7%)
+  In swagger:             110 → 115  (+5, 87.1%)
+
+Quality Metrics:
+  With summary:           95 → 100   (+5, 95.2%)
+  With examples:          48 → 55    (+7, 52.4% ↑)
+
+New Endpoints (not documented):
+  + POST /api/v1/guilds/{guild_id}/webhooks
+  + GET /api/v1/guilds/{guild_id}/audit-log
+
+Improved Documentation:
+  ✓ POST /api/v1/tacos/gift  (added examples)
+  ✓ GET /api/v1/users/{user_id}  (added description)
+```
+
+**Use Case**: 
+- PR reviews showing documentation impact
+- Release notes generation
+- Tracking progress between sprints
+
+**Implementation Complexity**: Medium
+- Requires storing/loading previous coverage data
+- Diff algorithm implementation
+- Formatted output generation
+
+### 20.7 Interactive HTML Coverage Report (TODO)
+
+**Description**: Generate rich HTML report with filtering, sorting, and drill-down capabilities.
+
+**Features**:
+- Sortable table of all endpoints
+- Filter by: documented/undocumented, HTTP method, tag, file
+- Click endpoint to see full OpenAPI definition
+- Search functionality
+- Export to CSV
+- Print-friendly version
+
+**Technology**:
+- HTML + Tailwind CSS for styling
+- Vanilla JS or Alpine.js for interactivity
+- No build step required (single HTML file)
+
+**Benefits**:
+- Better UX than text reports
+- Shareable across team
+- Easy to identify gaps
+
+**Implementation Complexity**: Medium
+- HTML template creation
+- JavaScript for filtering/sorting
+- Data serialization into HTML
+
+### 20.8 Coverage Analysis Recommendations (TODO)
+
+**Description**: AI/heuristic-based suggestions for improving coverage.
+
+**Example Output**:
+```text
+Coverage Recommendations:
+
+🎯 Quick Wins (high impact, low effort):
+  1. Add summaries to 8 endpoints in discord_roles.py (currently 85% complete)
+  2. Document error responses for POST endpoints (only 45% have 4xx/5xx)
+  3. Add examples to user lookup endpoints (0% currently)
+
+📊 Patterns Detected:
+  - DELETE endpoints have lowest documentation (67% vs 89% avg)
+  - "experimental" tag endpoints have poor coverage (45%)
+  - Files modified in last 7 days: 3 missing documentation
+
+🏆 Best Practices:
+  ✓ All GET endpoints have descriptions (100%)
+  ✓ "roles" tag has excellent coverage (98%)
+  ✓ Parameter documentation is strong (92%)
+
+⚠️ Attention Needed:
+  - 12 endpoints in swagger but not in code (orphans)
+  - 5 endpoints in code but not in swagger
+  - handler_tacos.py has declined from 95% to 78%
+```
+
+**Implementation Complexity**: Medium-High
+- Pattern detection algorithms
+- Recommendation engine
+- Natural language generation
+- Configurable rules
+
+### 20.9 Integration with Documentation Sites (TODO)
+
+**Description**: Export coverage data in formats compatible with documentation generators.
+
+**Supported Formats**:
+
+#### A. Redoc/Swagger UI Annotations
+Add custom extensions to OpenAPI spec:
+```yaml
+paths:
+  /api/v1/roles:
+    get:
+      x-coverage-score: 95
+      x-last-updated: "2025-01-15"
+      x-documented-by: "dev-team"
+```
+
+#### B. Docusaurus/MkDocs Integration
+Generate markdown files for static site generators:
+```markdown
+---
+sidebar_label: API Coverage
+---
+
+# API Documentation Coverage
+
+Current coverage: **87%** (110/127 endpoints)
+
+## By Category
+- Roles: 98% (45/46)
+- Users: 92% (23/25)
+- ...
+```
+
+#### C. OpenAPI Extensions
+Custom schema additions for coverage metadata.
+
+**Implementation Complexity**: Low-Medium
+- Format-specific serializers
+- Template generation
+- Documentation on integration
+
+---
+
+## Implementation Priority for Coverage Enhancements
+
+### Phase 1: Immediate (Already Implemented ✅)
+1. ✅ Documentation quality metrics
+2. ✅ HTTP method breakdown  
+3. ✅ File-based coverage
+4. ✅ Tag-based coverage
+
+### Phase 2: Short-term (Next Sprint)
+1. Coverage badge generation
+2. Per-endpoint quality scores
+3. Enhanced text report formatting
+
+### Phase 3: Medium-term (Next Quarter)
+1. Historical tracking database
+2. Coverage diff reports
+3. Configurable thresholds and alerts
+4. Interactive HTML reports
+
+### Phase 4: Long-term (Future Consideration)
+1. Trend visualization with charts
+2. Coverage analysis recommendations
+3. Integration with doc sites
+4. Notification systems (Slack, email, etc.)
+
+---
+
 ## Conclusion
 
 This document presents a comprehensive roadmap for enhancing the `swagger_sync.py` script. The suggestions range from quick wins (badge generation, config files) to ambitious long-term projects (VSCode extension, AI assistance). 
