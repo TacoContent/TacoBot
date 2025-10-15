@@ -6,6 +6,19 @@ This document outlines suggested enhancements, new features, and improvements fo
 
 ---
 
+## 0. Basic Improvement Topics
+
+- Add rich deprecation metadata (reason, sunset_date, replacement)
+- Support standard OpenAPI deprecated: true field
+- Add CI warnings for excessive deprecated models
+- Track exclusion reasons for auditing
+- Support environment-conditional exclusion
+- Implement property-level deprecation
+- Generate deprecation reports
+- Auto-generate migration guides
+- Add validation rules to prevent common mistakes
+- Integrate with metrics/monitoring for production usage tracking
+
 ## 1. Decorator-Based Endpoint Information
 
 ### 1.1 OpenAPI Decorator Alternative (`@openapi`)

@@ -336,6 +336,12 @@ try:
         resolve_path_literal,
     )
     from swagger_sync.model_components import collect_model_components
+    from swagger_sync.swagger_ops import (
+        merge,
+        detect_orphans,
+        _diff_operations,
+        DISABLE_COLOR,
+    )
 except ModuleNotFoundError:
     # When run from project root with scripts in path
     # Add scripts directory to path for imports
@@ -371,6 +377,13 @@ except ModuleNotFoundError:
         collect_endpoints,
         extract_openapi_block,
         resolve_path_literal,
+    )
+    from swagger_sync.model_components import collect_model_components
+    from swagger_sync.swagger_ops import (
+        merge,
+        detect_orphans,
+        _diff_operations,
+        DISABLE_COLOR,
     )
 
 # Default (new) delimiters and legacy fallback pattern. The regex will be built at runtime
@@ -480,97 +493,18 @@ def _extract_constant_dict(node: ast.AST) -> Optional[Dict[str, Any]]:
 # Model component collection function (collect_model_components)
 # has been extracted to swagger_sync/model_components.py and is imported above.
 
+# ────────────────────────────────────────────────────────────────────────────
+# Diff & Merging - Extracted to swagger_ops.py module
+# ────────────────────────────────────────────────────────────────────────────
+# Functions moved: merge, detect_orphans, _diff_operations, _dump_operation_yaml, _colorize_unified
+# Globals moved: DISABLE_COLOR, ANSI_GREEN, ANSI_CYAN
+# Note: ANSI_RED, ANSI_YELLOW, ANSI_RESET still used locally for other warnings
 
-ANSI_GREEN = "\x1b[32m"
+from swagger_sync.swagger_ops import _colorize_unified  # Import helper still needed for component diffs
+
 ANSI_RED = "\x1b[31m"
-ANSI_CYAN = "\x1b[36m"
 ANSI_YELLOW = "\x1b[33m"
 ANSI_RESET = "\x1b[0m"
-
-DISABLE_COLOR = False
-
-
-def _colorize_unified(diff_lines: List[str]) -> List[str]:
-    colored: List[str] = []
-    for line in diff_lines:
-        if DISABLE_COLOR:
-            colored.append(line)
-            continue
-        if line.startswith('+++ ') or line.startswith('--- ') or line.startswith('@@ '):
-            colored.append(f"{ANSI_CYAN}{line}{ANSI_RESET}")
-        elif line.startswith('+') and not line.startswith('+++ '):
-            colored.append(f"{ANSI_GREEN}{line}{ANSI_RESET}")
-        elif line.startswith('-') and not line.startswith('--- '):
-            colored.append(f"{ANSI_RED}{line}{ANSI_RESET}")
-        else:
-            colored.append(line)
-    return colored
-
-
-def _dump_operation_yaml(op: Dict[str, Any]) -> List[str]:
-    from io import StringIO as StringIOModule
-    stream = StringIOModule()
-    yaml.dump(op, stream)
-    dumped = stream.getvalue().rstrip().splitlines()
-    return [l if l.strip() else '' for l in dumped]
-
-
-def _diff_operations(existing: Optional[Dict[str, Any]], new: Dict[str, Any], *, op_id: str) -> List[str]:
-    if existing is None:
-        existing_lines: List[str] = []
-    else:
-        existing_lines = _dump_operation_yaml(existing)
-    new_lines = _dump_operation_yaml(new)
-    header_from = f"a/{op_id}"
-    header_to = f"b/{op_id}"
-    diff = list(difflib.unified_diff(existing_lines, new_lines, fromfile=header_from, tofile=header_to, lineterm=''))
-    if not diff:
-        return []
-    return _colorize_unified(diff)
-
-
-def merge(swagger: Dict[str, Any], endpoints: List[Endpoint]) -> Tuple[Dict[str, Any], bool, List[str], Dict[Tuple[str, str], List[str]]]:
-    paths = swagger.setdefault('paths', {})
-    changed = False
-    notes: List[str] = []
-    diffs: Dict[Tuple[str, str], List[str]] = {}
-    for ep in endpoints:
-        p_entry = paths.setdefault(ep.path, {})
-        new_op = ep.to_openapi_operation()
-        existing = p_entry.get(ep.method)
-        if existing != new_op:
-            op_id = f"{ep.path}#{ep.method}"
-            diff_lines = _diff_operations(existing, new_op, op_id=op_id)
-            diffs[(ep.path, ep.method)] = diff_lines
-            p_entry[ep.method] = new_op
-            changed = True
-            notes.append(f"Updated {ep.method.upper()} {ep.path} from {ep.file.name}:{ep.function}")
-    return swagger, changed, notes, diffs
-
-
-def detect_orphans(swagger: Dict[str, Any], endpoints: List[Endpoint], model_components: Optional[Dict[str, Dict[str, Any]]] = None) -> list[str]:
-    code_pairs = {(e.path, e.method) for e in endpoints}
-    orphan_notes: list[str] = []
-
-    # Check for orphaned paths (present in swagger but no handler)
-    for path, methods in swagger.get('paths', {}).items():
-        if not isinstance(methods, dict):
-            continue
-        for m in methods.keys():
-            if m.lower() in {"get","post","put","delete","patch","options","head"}:
-                if (path, m.lower()) not in code_pairs:
-                    orphan_notes.append(f"Path present only in swagger (no handler): {m.upper()} {path}")
-
-    # Check for orphaned components (present in swagger but no model class)
-    if model_components is not None:
-        swagger_components = swagger.get('components', {}).get('schemas', {})
-        if swagger_components:
-            model_component_names = set(model_components.keys())
-            for component_name in swagger_components.keys():
-                if component_name not in model_component_names:
-                    orphan_notes.append(f"Component present only in swagger (no model class): {component_name}")
-
-    return orphan_notes
 
 
 def _generate_coverage(endpoints: List[Endpoint], ignored: List[Tuple[str,str,pathlib.Path,str]], swagger: Dict[str, Any], *, report_path: pathlib.Path, fmt: str, extra_summary: Optional[Dict[str, Any]] = None) -> None:

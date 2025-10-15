@@ -44,6 +44,14 @@ from .endpoint_collector import (
     resolve_path_literal,
 )
 from .model_components import collect_model_components
+from .swagger_ops import (
+    merge,
+    detect_orphans,
+    _diff_operations,
+    _colorize_unified,
+    _dump_operation_yaml,
+    DISABLE_COLOR,
+)
 
 # For functions still in the main script, we need to be careful about imports
 # The main swagger_sync.py script will handle its own imports
@@ -51,13 +59,9 @@ from .model_components import collect_model_components
 
 # List of functions that are still in main script and need lazy loading
 _LAZY_IMPORTS = {
-    'detect_orphans',
-    'merge',
-    '_diff_operations',
     'main',
     '_generate_coverage',
     '_compute_coverage',
-    'DISABLE_COLOR',
 }
 
 # Cache for the main module to avoid repeated loading
@@ -158,11 +162,18 @@ __all__ = [
     'collect_endpoints',
     'extract_openapi_block',
     'resolve_path_literal',
-    # Lazy-loaded from main script
+    # Model components export
     'collect_model_components',
+    # Swagger operations exports
     'detect_orphans',
     'merge',
     '_diff_operations',
+    '_colorize_unified',
+    '_dump_operation_yaml',
+    'DISABLE_COLOR',
+    # Lazy-loaded from main script
     'main',
+    '_generate_coverage',
+    '_compute_coverage',
     '_get_main_module',  # Expose for tests that need direct module access
 ]

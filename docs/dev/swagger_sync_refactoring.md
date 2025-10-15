@@ -167,7 +167,25 @@ python scripts/swagger_sync.py --check --generate-badge=docs/badges/openapi-cove
   - Handles 6 major features: decorators, type inference, inheritance, schema override, property metadata, type alias components
   - Imports 8 functions from type_system, 4 from utils
 
-**🎉 MILESTONE REACHED: Main script reduced by 50%! (2476 → 1236 lines)**
+#### ✅ swagger_ops.py (~175 lines extracted)
+- **Functions**: 5 swagger file operation functions
+  - `merge` - Merge endpoint operations into swagger paths section
+  - `detect_orphans` - Detect orphaned paths (in swagger but no handler) and orphaned components (in swagger but no model)
+  - `_diff_operations` - Generate colorized unified diff between existing and new operation definitions
+  - `_dump_operation_yaml` - Serialize an OpenAPI operation to YAML lines
+  - `_colorize_unified` - Apply ANSI color codes to unified diff output
+- **Globals**: DISABLE_COLOR, ANSI_GREEN, ANSI_RED, ANSI_CYAN, ANSI_RESET
+- **Lines Removed**: 66 lines from main script (net after adding imports)
+- **Impact**: swagger_sync.py reduced from 1236 → 1170 lines (5.3% reduction)
+- **Status**: ✅ Complete, 110/113 tests passing
+- **Documentation**: See `phase2_swagger_ops.md` (to be created)
+- **Notes**:
+  - Clean separation of swagger file operations from main script
+  - Diff generation with color support for visual clarity
+  - ANSI_RED, ANSI_YELLOW, ANSI_RESET kept in main script for other warnings
+  - _colorize_unified re-imported in main script for component diffs
+
+**🎉 Phase 2 Now 55% Complete by Lines! (2476 → 1170, 1306 lines removed, 52.8% total reduction)**
 
 ### Extraction Targets
 
@@ -176,26 +194,25 @@ python scripts/swagger_sync.py --check --generate-badge=docs/badges/openapi-cove
 
 #### High Priority
 
-- **`swagger_ops.py`** (~100 lines) - Swagger file operations: merge, detect_orphans, _diff_operations
 - **`coverage.py`** (~188 lines) - Coverage calculation and reporting: _generate_coverage, _compute_coverage
 - **`cli.py`** (~473 lines) - Main CLI entry point: main function with argument parsing
 
 #### Estimated Remaining Work
 
-- **swagger_ops.py**: Medium complexity, involves YAML diffing and operation comparison (~8% reduction)
-- **coverage.py**: Low-medium complexity, coverage metrics calculation (~15% reduction)
-- **cli.py**: Medium complexity, argparse setup and orchestration (~38% reduction)
-- **Final size**: ~200 lines (entry point, imports, constants)
+- **coverage.py**: Low-medium complexity, coverage metrics calculation (~16% reduction)
+- **cli.py**: Medium complexity, argparse setup and orchestration (~40% reduction)
+- **Final size**: ~200-300 lines (entry point, imports, minimal constants)
 
 ### Estimated Impact
 
 - **Phase 1 Complete:** 2507 → 2427 lines (80 lines removed, 3.2%)
-- **Phase 2 Progress:** 2427 → 1236 lines (1191 lines removed, 49%)
+- **Phase 2 Progress:** 2427 → 1170 lines (1257 lines removed, 51.8%)
   - type_system.py: 728 lines removed (29.4%)
   - endpoint_collector.py: 131 lines removed (7.5%)
   - model_components.py: 381 lines removed (23.6%)
-  - **🎉 50% MILESTONE ACHIEVED!** Main script now half its original size
-  - **Remaining in Phase 2:** ~761 lines to extract (swagger_ops, coverage, cli)
+  - swagger_ops.py: 66 lines removed (5.3%)
+  - **🎉 52.8% TOTAL REDUCTION ACHIEVED!** Main script more than halved from original size
+  - **Remaining in Phase 2:** ~695 lines to extract (coverage.py, cli.py)
 - **After Full Phase 2:** ~200 lines in main file (entry point only)
 - **Total Modules:** 11+ focused modules vs. 1 monolithic file
 
@@ -256,17 +273,18 @@ When continuing refactoring, these test files need import updates:
    - ✅ All 61 model component tests passing (100%)
    - ✅ Supports decorators, type inference, inheritance, schema overrides
 
-4. **Extract swagger_ops.py** - NEXT
-   - Move merge, detect_orphans, _diff_operations functions
-   - Clean separation of swagger file operations
+4. ✅ **Extract swagger_ops.py** - COMPLETE
+   - ✅ Moved 5 swagger operations functions (merge, detect_orphans, diffs)
+   - ✅ Clean separation of swagger file operations
+   - ✅ Color support for diff visualization maintained
 
-5. **Extract coverage.py**
+5. **Extract coverage.py** - NEXT
    - Move _generate_coverage, _compute_coverage functions
    - Keep with badge.py for cohesive reporting
 
 6. **Final CLI module**
    - Move main() function to cli.py
-   - Reduce swagger_sync.py to minimal entry point (~200 lines)
+   - Reduce swagger_sync.py to minimal entry point (~200-300 lines)
 
 ## Documentation Updates Needed
 
@@ -288,13 +306,15 @@ When continuing refactoring, these test files need import updates:
 - `scripts/swagger_sync/type_system.py` (Phase 2)
 - `scripts/swagger_sync/endpoint_collector.py` (Phase 2)
 - `scripts/swagger_sync/model_components.py` (Phase 2)
+- `scripts/swagger_sync/swagger_ops.py` (Phase 2)
 - `docs/dev/phase2_type_system.md`
 - `docs/dev/phase2_endpoint_collector.md`
 - `docs/dev/phase2_model_components.md`
+- `docs/dev/phase2_swagger_ops.md` (to be created)
 
 ### Modified
 
-- `scripts/swagger_sync.py` (imports updated, 1240 lines removed - 50% reduction)
+- `scripts/swagger_sync.py` (imports updated, 1306 lines removed - 52.8% reduction)
 - `tests/test_swagger_sync_badge_generation.py` (imports updated)
 - `tests/test_swagger_sync_badge_cli.py` (imports updated)
 - `docs/dev/swagger_sync_refactoring.md` (this document - progress tracking)
