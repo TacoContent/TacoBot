@@ -7,6 +7,7 @@ import sys
 SCRIPT = pathlib.Path('scripts/swagger_sync.py')
 SWAGGER = pathlib.Path('.swagger.v1.yaml')
 MODELS_DIR = pathlib.Path('bot/lib/models')
+SWAGGER_SYNC_PKG = pathlib.Path('scripts/swagger_sync')
 
 
 def test_component_only_update_triggers_write(monkeypatch):
@@ -18,6 +19,8 @@ def test_component_only_update_triggers_write(monkeypatch):
         (tmp / 'bot/lib/models/openapi').mkdir(parents=True)
 
         shutil.copyfile(SCRIPT, tmp / 'scripts/swagger_sync.py')
+        # Copy the entire swagger_sync package directory
+        shutil.copytree(SWAGGER_SYNC_PKG, tmp / 'scripts/swagger_sync')
         shutil.copyfile(SWAGGER, tmp / '.swagger.v1.yaml')
         # Copy the openapi decorator helper so the import path resolves
         shutil.copyfile(MODELS_DIR / 'openapi/openapi.py', tmp / 'bot/lib/models/openapi/openapi.py')

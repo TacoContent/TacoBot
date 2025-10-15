@@ -68,8 +68,10 @@ def test_new_default_markers_parse():
 def test_custom_markers_parse(monkeypatch):
     # Override regex to a custom pair and re-collect only that file to ensure it works.
     custom_re = build_openapi_block_re('[[openapi', ']]openapi')
-    monkeypatch.setattr(swagger_sync, 'OPENAPI_BLOCK_RE', custom_re)
+    # Monkeypatch the endpoint_collector module where OPENAPI_BLOCK_RE is actually used
+    from scripts.swagger_sync import endpoint_collector
+    monkeypatch.setattr(endpoint_collector, 'OPENAPI_BLOCK_RE', custom_re)
     eps, _ = collect_endpoints(BASE)
     # Ensure the custom markers summary present
-    summary = next(e.meta.get('summary') for e in eps if e.path == '/custom-markers')
+    summary = next((e.meta.get('summary') for e in eps if e.path == '/custom-markers'), None)
     assert summary == 'Custom markers example'

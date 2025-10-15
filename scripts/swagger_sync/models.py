@@ -33,7 +33,17 @@ class Endpoint:
             OpenAPI operation dict with supported keys (summary, description, tags, etc.)
         """
         # Import at runtime to avoid circular dependency
-        from swagger_sync.constants import SUPPORTED_KEYS
+        try:
+            # Try package import first
+            from swagger_sync.constants import SUPPORTED_KEYS
+        except ImportError:
+            # Fallback for script context
+            import sys
+            from pathlib import Path
+            scripts_dir = Path(__file__).parent.parent
+            if str(scripts_dir) not in sys.path:
+                sys.path.insert(0, str(scripts_dir))
+            from swagger_sync.constants import SUPPORTED_KEYS
 
         op: Dict[str, Any] = {}
         for k in SUPPORTED_KEYS:

@@ -33,20 +33,22 @@ def test_no_color_flag_behavior():
     # Prepare new operation and produce raw diff twice with different color settings
     ep = endpoints[0]
     new_op = ep.to_openapi_operation()
+    # Need to access DISABLE_COLOR from the swagger_ops module where it's actually used
+    from scripts.swagger_sync import swagger_ops
     # With color enabled
-    se.DISABLE_COLOR = False
+    swagger_ops.DISABLE_COLOR = False
     colored = se._diff_operations(None, new_op, op_id=f"{ep.path}#{ep.method}")
     # Expect at least one green addition (since new op) and cyan header lines
     assert any('\x1b[32m' in l for l in colored), 'Expected green colored additions'
     assert any('\x1b[36m' in l for l in colored), 'Expected cyan colored header or hunk lines'
     # With color disabled
-    se.DISABLE_COLOR = True
+    swagger_ops.DISABLE_COLOR = True
     uncolored = se._diff_operations(None, new_op, op_id=f"{ep.path}#{ep.method}")
     assert all('\x1b[' not in l for l in uncolored)
 
     # Simulate conflicting flags resolution preference (disable wins)
     # Force a manual invocation of the internal logic: emulate user passing both flags
     # Here we just assert that if DISABLE_COLOR already True, colorization stays off.
-    se.DISABLE_COLOR = True
+    swagger_ops.DISABLE_COLOR = True
     reconfirm = se._diff_operations(None, new_op, op_id=f"{ep.path}#{ep.method}")
     assert all('\x1b[' not in l for l in reconfirm)

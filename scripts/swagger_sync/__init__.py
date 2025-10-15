@@ -6,6 +6,7 @@ OpenAPI blocks to swagger files and generating coverage reports.
 
 # Import from extracted modules
 from .badge import generate_coverage_badge
+from .cli import main
 from .constants import (
     DEFAULT_OPENAPI_START,
     DEFAULT_OPENAPI_END,
@@ -52,17 +53,15 @@ from .swagger_ops import (
     _dump_operation_yaml,
     DISABLE_COLOR,
 )
+from .coverage import (
+    _generate_coverage,
+    _compute_coverage,
+)
 
-# For functions still in the main script, we need to be careful about imports
-# The main swagger_sync.py script will handle its own imports
-# We'll defer the import to avoid circular dependencies
+# Functions from main script that need lazy loading (now empty - all extracted!)
+# Keeping the lazy loading mechanism for potential future use
+_LAZY_IMPORTS: set[str] = set()
 
-# List of functions that are still in main script and need lazy loading
-_LAZY_IMPORTS = {
-    'main',
-    '_generate_coverage',
-    '_compute_coverage',
-}
 
 # Cache for the main module to avoid repeated loading
 _main_module_cache = None
@@ -171,9 +170,10 @@ __all__ = [
     '_colorize_unified',
     '_dump_operation_yaml',
     'DISABLE_COLOR',
-    # Lazy-loaded from main script
-    'main',
+    # Coverage exports
     '_generate_coverage',
     '_compute_coverage',
+    # Lazy-loaded from main script
+    'main',
     '_get_main_module',  # Expose for tests that need direct module access
 ]

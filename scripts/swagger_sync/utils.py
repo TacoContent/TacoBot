@@ -7,6 +7,7 @@ import pathlib
 import re
 import textwrap
 from typing import Any, Dict, Optional
+import typing
 
 from .constants import MISSING, OPENAPI_BLOCK_RE
 
@@ -71,7 +72,7 @@ def _extract_literal_schema(anno_str: str) -> Optional[Dict[str, Any]]:
         return None
     inner = sub[len('Literal['):end_idx]
     raw_vals = [v.strip() for v in inner.split(',') if v.strip()]
-    enum_vals: List[str] = []
+    enum_vals: typing.List[str] = []
     for rv in raw_vals:
         if (rv.startswith("'") and rv.endswith("'")) or (rv.startswith('"') and rv.endswith('"')):
             rv_clean = rv[1:-1]
@@ -124,7 +125,7 @@ def resolve_path_literal(node: ast.AST) -> Optional[str]:
     if isinstance(node, ast.Constant) and isinstance(node.value, str):
         return node.value
     if isinstance(node, ast.JoinedStr):  # f-string
-        parts: List[str] = []
+        parts: typing.List[str] = []
         for value in node.values:
             if isinstance(value, ast.Constant) and isinstance(value.value, str):
                 parts.append(value.value)
@@ -141,5 +142,3 @@ def resolve_path_literal(node: ast.AST) -> Optional[str]:
                 return None
         return ''.join(parts)
     return None
-
-

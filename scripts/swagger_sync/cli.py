@@ -1,0 +1,538 @@
+"""Command-line interface for swagger_sync script.
+
+This module contains the main() function with argument parsing and orchestration
+logic for the OpenAPI/Swagger synchronization utility.
+
+Extracted from monolithic swagger_sync.py as part of Phase 2 refactoring.
+"""
+
+import argparse
+import difflib
+import os
+import pathlib
+import re
+import sys
+from io import StringIO as StringIOModule
+from typing import Any, Dict, List, Optional, Tuple
+
+from .badge import generate_coverage_badge
+from .coverage import _compute_coverage, _generate_coverage
+from .endpoint_collector import collect_endpoints
+from .model_components import collect_model_components
+from .swagger_ops import _colorize_unified, detect_orphans, merge, DISABLE_COLOR
+from .yaml_handler import load_swagger, yaml
+
+# Default paths and constants - needed by CLI
+DEFAULT_HANDLERS_ROOT = pathlib.Path("bot/lib/http/handlers/")
+DEFAULT_MODELS_ROOT = pathlib.Path("bot/lib/models/")
+DEFAULT_SWAGGER_FILE = pathlib.Path(".swagger.v1.yaml")
+DEFAULT_OPENAPI_START = ">>>openapi"
+DEFAULT_OPENAPI_END = "<<<openapi"
+
+# ANSI color codes for CLI output
+ANSI_RED = "\x1b[31m"
+ANSI_YELLOW = "\x1b[33m"
+ANSI_RESET = "\x1b[0m"
+
+
+def build_openapi_block_re(start_marker: str, end_marker: str):
+    """Build regex pattern for OpenAPI block delimiters.
+
+    Args:
+        start_marker: Start delimiter (e.g., ">>>openapi")
+        end_marker: End delimiter (e.g., "<<<openapi")
+
+    Returns:
+        Compiled regex pattern
+    """
+    sm = re.escape(start_marker)
+    em = re.escape(end_marker)
+    return re.compile(rf"{sm}\s*(.*?)\s*{em}", re.DOTALL | re.IGNORECASE)
+
+
+# Module-level default for import-time uses (tests may override)
+OPENAPI_BLOCK_RE = build_openapi_block_re(DEFAULT_OPENAPI_START, DEFAULT_OPENAPI_END)
+
+
+def main() -> None:
+    """Main CLI entry point for swagger_sync script.
+
+    Parses command-line arguments, collects endpoints and model components,
+    merges them into the swagger file, generates coverage reports, and
+    handles all output formatting and exit codes.
+    """
+    parser = argparse.ArgumentParser(description="Sync handler docstring OpenAPI blocks to swagger file")
+    mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument('--fix', action='store_true', help='Write changes instead of just checking for drift')
+    mode_group.add_argument('--check', action='store_true', help='Explicitly run in check mode (default) and show diff')
+    parser.add_argument('--show-orphans', action='store_true', help='List swagger paths and components that have no code handler/model')
+    parser.add_argument('--show-ignored', action='store_true', help='List endpoints skipped due to @openapi: ignore markers')
+    parser.add_argument('--coverage-report', help='Write an OpenAPI coverage report to the given path (json, text, or cobertura based on --coverage-format)')
+    parser.add_argument('--coverage-format', default='json', choices=['json','text','cobertura'], help='Coverage report format (default: json)')
+    parser.add_argument('--fail-on-coverage-below', type=float, help='Fail (non-zero exit) if documentation coverage (handlers with openapi blocks) is below this threshold (accepts 0-1 or 0-100)')
+    parser.add_argument('--verbose-coverage', action='store_true', default=False, help='Show per-endpoint coverage detail inline')
+    parser.add_argument('--show-missing-blocks', action='store_true', help='List endpoints missing an >>>openapi <<<openapi block')
+    parser.add_argument('--handlers-root', default=str(DEFAULT_HANDLERS_ROOT), help='Root directory containing HTTP handler Python files (default: bot/lib/http/handlers/api/v1)')
+    parser.add_argument('--swagger-file', default=str(DEFAULT_SWAGGER_FILE), help='Path to swagger file to sync (default: .swagger.v1.yaml)')
+    parser.add_argument('--ignore-file', action='append', default=[], help='Glob pattern (relative to handlers root) or filename to ignore (can be repeated)')
+    parser.add_argument('--markdown-summary', help='Write a GitHub Actions style Markdown summary to this file (in addition to console output)')
+    parser.add_argument('--generate-badge', help='Generate an SVG badge showing OpenAPI coverage percentage and write it to the given path (e.g., docs/badges/openapi-coverage.svg)')
+    parser.add_argument('--output-directory', default='.', help='Base directory to place output artifacts (coverage reports, markdown summary). Default: current working directory')
+    parser.add_argument('--strict', action='store_true', help='Treat docstring/decorator HTTP method mismatches as errors (default: warn and ignore extraneous methods)')
+    parser.add_argument('--openapi-start', default=DEFAULT_OPENAPI_START, help=f'Start delimiter for embedded OpenAPI blocks (default: {DEFAULT_OPENAPI_START!r})')
+    parser.add_argument('--openapi-end', default=DEFAULT_OPENAPI_END, help=f'End delimiter for embedded OpenAPI blocks (default: {DEFAULT_OPENAPI_END!r})')
+    parser.add_argument('--list-endpoints', action='store_true', help='Print collected handler endpoints (path method file:function) and exit (debug aid)')
+    parser.add_argument('--models-root', default=DEFAULT_MODELS_ROOT, help=f'Root directory to scan for @openapi.component decorated classes (default: {DEFAULT_MODELS_ROOT!r})')
+    parser.add_argument('--no-model-components', action='store_true', help='Disable automatic model component generation')
+    parser.add_argument(
+        '--color',
+        choices=['auto', 'always', 'never'],
+        default='auto',
+        help='Color output mode: auto (default, only if TTY), always, never'
+    )
+    args = parser.parse_args()
+
+    handlers_root = pathlib.Path(args.handlers_root)
+    swagger_path = pathlib.Path(args.swagger_file)
+    if not handlers_root.exists():
+        raise SystemExit(f"Handlers root does not exist: {handlers_root}")
+
+    # Determine color output mode
+    import swagger_sync.swagger_ops as swagger_ops_module
+    if args.color == 'always':
+        swagger_ops_module.DISABLE_COLOR = False
+        color_reason = 'enabled (mode=always)'
+    elif args.color == 'never':
+        swagger_ops_module.DISABLE_COLOR = True
+        color_reason = 'disabled (mode=never)'
+    else:
+        if sys.stdout.isatty():
+            swagger_ops_module.DISABLE_COLOR = False
+            color_reason = 'enabled (mode=auto, TTY)'
+        else:
+            swagger_ops_module.DISABLE_COLOR = True
+            color_reason = 'disabled (mode=auto, non-TTY)'
+
+    # Get current DISABLE_COLOR value for local use
+    disable_color = swagger_ops_module.DISABLE_COLOR
+
+    try:
+        # Rebuild regex with possibly customized markers before collecting endpoints.
+        import swagger_sync.endpoint_collector as endpoint_collector_module
+        endpoint_collector_module.OPENAPI_BLOCK_RE = build_openapi_block_re(args.openapi_start, args.openapi_end)
+        endpoints, ignored = collect_endpoints(handlers_root, strict=args.strict, ignore_file_globs=args.ignore_file)
+    except ValueError as e:
+        err_msg = f"ERROR: {e}"
+        if not disable_color:
+            err_msg = f"{ANSI_RED}{err_msg}{ANSI_RESET}"
+        print(err_msg, file=sys.stderr)
+        sys.exit(1)
+
+    if args.list_endpoints:
+        # Just list endpoints and exit early (no swagger load needed)
+        print("Collected endpoints:")
+        for ep in endpoints:
+            print(f" - {ep.method.upper()} {ep.path} ({ep.file}:{ep.function}) block={'yes' if ep.meta else 'no'}")
+        if ignored:
+            print("Ignored endpoints (@openapi: ignore):")
+            for (p,m,f,fn) in ignored:
+                print(f" - {m.upper()} {p} ({f}:{fn})")
+        sys.exit(0)
+
+    swagger = load_swagger(swagger_path)
+
+    # Model components (collect + track metrics)
+    model_components: Dict[str, Dict[str, Any]] = {}
+    excluded_model_components: set[str] = set()
+    model_components_updated: List[str] = []
+    model_components_removed: List[str] = []
+    components_changed = False  # Track if components.schemas mutated so we persist swagger even w/o path diffs
+
+    if not args.no_model_components:
+        model_components, excluded_model_components = collect_model_components(pathlib.Path(args.models_root))
+        if model_components or excluded_model_components:
+            schemas = swagger.setdefault('components', {}).setdefault('schemas', {})
+            for name, new_schema in model_components.items():
+                existing = schemas.get(name)
+                if existing != new_schema:
+                    # Compare schema differences using string representation
+                    if existing is not None:
+                        existing_stream = StringIOModule()
+                        yaml.dump(existing, existing_stream)
+                        existing_lines = existing_stream.getvalue().rstrip().splitlines()
+                    else:
+                        existing_lines = []
+
+                    new_stream = StringIOModule()
+                    yaml.dump(new_schema, new_stream)
+                    new_lines = new_stream.getvalue().rstrip().splitlines()
+                    # Show diff whenever existing differs from new OR when component is brand new
+                    if existing_lines != new_lines:
+                        if existing is not None:
+                            warn = f"Model schema drift detected for component '{name}'."
+                        else:
+                            warn = f"New model schema component '{name}' added."
+                        if not disable_color:
+                            warn = f"{ANSI_YELLOW}WARNING: {warn}{ANSI_RESET}"
+                        else:
+                            warn = f"WARNING: {warn}"
+                        print(warn, file=sys.stderr)
+                        diff = difflib.unified_diff(existing_lines, new_lines, fromfile=f"a/components.schemas.{name}", tofile=f"b/components.schemas.{name}", lineterm='')
+                        for dl in _colorize_unified(list(diff)):
+                            print(dl, file=sys.stderr)
+                    schemas[name] = new_schema
+                    model_components_updated.append(name)
+                    components_changed = True
+
+            # Remove excluded components from swagger
+            for excluded_name in excluded_model_components:
+                if excluded_name in schemas:
+                    existing_stream = StringIOModule()
+                    yaml.dump(schemas[excluded_name], existing_stream)
+                    existing_lines = existing_stream.getvalue().rstrip().splitlines()
+
+                    warn = f"Excluded model schema component '{excluded_name}' removed."
+                    if not disable_color:
+                        warn = f"{ANSI_YELLOW}WARNING: {warn}{ANSI_RESET}"
+                    else:
+                        warn = f"WARNING: {warn}"
+                    print(warn, file=sys.stderr)
+
+                    # Show diff with deletion
+                    diff = difflib.unified_diff(existing_lines, [], fromfile=f"a/components.schemas.{excluded_name}", tofile=f"b/components.schemas.{excluded_name}", lineterm='')
+                    for dl in _colorize_unified(list(diff)):
+                        print(dl, file=sys.stderr)
+
+                    del schemas[excluded_name]
+                    model_components_removed.append(excluded_name)
+                    components_changed = True
+
+            if model_components_updated:
+                print(f"Model schemas updated: {', '.join(sorted(model_components_updated))}")
+            if model_components_removed:
+                print(f"Model schemas removed: {', '.join(sorted(model_components_removed))}")
+
+    existing_schemas = swagger.get('components', {}).get('schemas', {}) if isinstance(swagger.get('components'), dict) else {}
+    model_components_generated_count = len(model_components)
+    model_components_existing_not_generated_count = sum(1 for k in existing_schemas.keys() if k not in model_components) if existing_schemas else 0
+    swagger_new, changed, notes, diffs = merge(swagger, endpoints)
+
+    orphans = detect_orphans(swagger_new, endpoints, model_components) if args.show_orphans else []
+    coverage_summary, coverage_records, coverage_swagger_only = _compute_coverage(endpoints, ignored, swagger_new)
+    # augment coverage summary with component metrics
+    coverage_summary['model_components_generated'] = model_components_generated_count
+    coverage_summary['model_components_existing_not_generated'] = model_components_existing_not_generated_count
+    output_dir = pathlib.Path(args.output_directory)
+    try:
+        output_dir.mkdir(parents=True, exist_ok=True)
+    except Exception as e:  # pragma: no cover
+        raise SystemExit(f"Failed to create output directory '{output_dir}': {e}")
+
+    def _resolve_output(p: Optional[str]) -> Optional[pathlib.Path]:
+        if not p:
+            return None
+        path_obj = pathlib.Path(p)
+        if path_obj.is_absolute():
+            return path_obj
+        return output_dir / path_obj
+
+    coverage_report_path = _resolve_output(args.coverage_report)
+    markdown_summary_path = _resolve_output(args.markdown_summary)
+
+    # Warn if artifacts risk accidental commit. Allow 'reports' root and any subdirectory underneath.
+    try:
+        repo_root = pathlib.Path.cwd().resolve()
+        out_resolved = output_dir.resolve()
+        if repo_root in out_resolved.parents:
+            # Determine if path is reports or inside reports
+            try:
+                rel = out_resolved.relative_to(repo_root)
+            except Exception:  # pragma: no cover
+                rel = None
+            if rel is not None:
+                parts = rel.parts
+                if not parts:
+                    # repo root itself – always warn if not explicitly reports
+                    if out_resolved.name != 'reports':
+                        warn_msg = f"WARNING: Output directory '{out_resolved}' is inside the repository and is not 'reports/'. Consider using 'reports/' to avoid accidental commits."
+                        if not disable_color:
+                            warn_msg = f"{ANSI_YELLOW}{warn_msg}{ANSI_RESET}"
+                        print(warn_msg, file=sys.stderr)
+                else:
+                    # Allow reports/ and any nested path under reports/
+                    if parts[0] != 'reports':
+                        warn_msg = f"WARNING: Output directory '{out_resolved}' is inside the repository and is not 'reports/'. Consider using 'reports/' to avoid accidental commits."
+                        if not disable_color:
+                            warn_msg = f"{ANSI_YELLOW}{warn_msg}{ANSI_RESET}"
+                        print(warn_msg, file=sys.stderr)
+    except Exception:  # pragma: no cover
+        pass
+
+    if coverage_report_path:
+        coverage_report_path.parent.mkdir(parents=True, exist_ok=True)
+        extra = {
+            'model_components_generated': model_components_generated_count,
+            'model_components_existing_not_generated': model_components_existing_not_generated_count,
+        }
+        _generate_coverage(endpoints, ignored, swagger_new, report_path=coverage_report_path, fmt=args.coverage_format, extra_summary=extra)
+
+    def print_coverage_summary(prefix: str = "OpenAPI Documentation Coverage Summary") -> None:
+        cs = coverage_summary
+        print(prefix + ":")
+        print(f"  Handlers considered:        {cs['handlers_total']}")
+        print(f"  Ignored handlers:           {cs['ignored_total']}")
+        print(f"  With doc blocks:            {cs['with_openapi_block']} ({cs['coverage_rate_handlers_with_block']:.1%})")
+        print(f"  Without doc blocks:         {cs['without_openapi_block']}")
+        print(f"  In swagger (handlers):      {cs['handlers_in_swagger']} ({cs['coverage_rate_handlers_in_swagger']:.1%})")
+        print(f"  Definition matches:         {cs['definition_matches']} / {cs['with_openapi_block']} ({cs['operation_definition_match_rate']:.1%})")
+        print(f"  Swagger only operations:    {cs['swagger_only_operations']}")
+        print(f"  Model components generated: {cs.get('model_components_generated', 0)}")
+        print(f"  Schemas not generated:      {cs.get('model_components_existing_not_generated', 0)}")
+        suggestions: List[str] = []
+        if cs['without_openapi_block'] > 0:
+            suggestions.append("Add >>>openapi <<<openapi blocks for undocumented handlers.")
+        if cs['swagger_only_operations'] > 0:
+            suggestions.append("Remove or implement swagger-only paths, or mark related handlers with @openapi: ignore if intentional.")
+        if suggestions:
+            print("  Suggestions:")
+            for s in suggestions:
+                print(f"    - {s}")
+        if args.show_missing_blocks and cs['without_openapi_block']:
+            print("\n  Endpoints missing >>>openapi <<<openapi block:")
+            for rec in coverage_records:
+                if not rec['ignored'] and not rec['has_openapi_block']:
+                    print(f"    - {rec['method'].upper()} {rec['path']} ({rec['file']}:{rec['function']})")
+        if args.verbose_coverage:
+            print("\n  Per-endpoint detail:")
+            for rec in coverage_records:
+                flags: List[str] = []
+                if rec['ignored']:
+                    flags.append('IGNORED')
+                if rec['has_openapi_block']:
+                    flags.append('BLOCK')
+                if rec['in_swagger']:
+                    flags.append('SWAGGER')
+                if rec['definition_matches']:
+                    flags.append('MATCH')
+                if rec['missing_in_swagger']:
+                    flags.append('MISSING_SWAGGER')
+                print(f"    - {rec['method'].upper()} {rec['path']} :: {'|'.join(flags) if flags else 'NONE'}")
+            if coverage_swagger_only:
+                print("\n  Swagger-only (no handler) operations:")
+                for so in coverage_swagger_only[:50]:
+                    print(f"    - {so['method'].upper()} {so['path']}")
+                if len(coverage_swagger_only) > 50:
+                    print(f"    ... ({len(coverage_swagger_only)-50} more)")
+
+    if args.fix:
+        if changed or components_changed:
+            # Write out even if only components changed (previously skipped)
+            stream = StringIOModule()
+            yaml.dump(swagger_new, stream)
+            swagger_path.write_text(stream.getvalue(), encoding='utf-8')
+            if changed and components_changed:
+                print("Swagger updated (endpoint operations + component schemas).")
+            elif changed and not components_changed:
+                print("Swagger updated (endpoint operations).")
+            elif components_changed and not changed:
+                print("Swagger updated (component schemas only – no endpoint operation changes).")
+            if notes:
+                for n in notes:
+                    print(f" - {n}")
+        else:
+            print("No endpoint or component schema changes needed.")
+        if args.show_ignored and ignored:
+            print("Ignored endpoints (@openapi: ignore):")
+            for (p, m, f, fn) in ignored:
+                print(f" - {m.upper()} {p} ({f.name}:{fn})")
+        if orphans:
+            print("Orphans:")
+            for o in orphans:
+                print(f" - {o}")
+        return
+
+    coverage_fail = False
+    if args.fail_on_coverage_below is not None:
+        threshold = args.fail_on_coverage_below
+        if threshold > 1:
+            threshold = threshold / 100.0
+        actual = coverage_summary['coverage_rate_handlers_with_block']
+        if actual + 1e-12 < threshold:
+            coverage_fail = True
+            msg = f"Coverage threshold not met: {actual:.2%} < {threshold:.2%}"
+            if not disable_color:
+                msg = f"{ANSI_RED}{msg}{ANSI_RESET}"
+            print(msg, file=sys.stderr)
+
+    def build_markdown_summary(*, changed: bool, coverage_fail: bool) -> str:
+        def _strip_ansi(s: str) -> str:
+            return re.sub(r"\x1b\[[0-9;]*m", "", s)
+        cs = coverage_summary
+        lines: List[str] = ["# OpenAPI Sync Result", ""]
+        if changed:
+            lines.append("**Status:** Drift detected. Please run the sync script with `--fix` and commit the updated swagger file.")
+        elif coverage_fail:
+            lines.append("**Status:** Coverage threshold failed.")
+        else:
+            lines.append("**Status:** In sync ✅")
+        lines.append("")
+        lines.append(f"_Diff color output: {color_reason}._")
+        lines.append("")
+        lines.append("## Coverage Summary")
+        lines.append("")
+        lines.append("| Metric | Value | Percent |")
+        lines.append("|--------|-------|---------|")
+        lines.append(f"| Handlers considered | {cs['handlers_total']} | - |")
+        lines.append(f"| Ignored handlers | {cs['ignored_total']} | - |")
+        lines.append(f"| With doc blocks | {cs['with_openapi_block']} | {cs['coverage_rate_handlers_with_block']:.1%} |")
+        lines.append(f"| In swagger (handlers) | {cs['handlers_in_swagger']} | {cs['coverage_rate_handlers_in_swagger']:.1%} |")
+        lines.append(f"| Definition matches | {cs['definition_matches']} / {cs['with_openapi_block']} | {cs['operation_definition_match_rate']:.1%} |")
+        lines.append(f"| Swagger only operations | {cs['swagger_only_operations']} | - |")
+        lines.append(f"| Model components generated | {cs.get('model_components_generated', 0)} | - |")
+        lines.append(f"| Schemas not generated | {cs.get('model_components_existing_not_generated', 0)} | - |")
+        lines.append("")
+        suggestions_md: List[str] = []
+        if cs['without_openapi_block'] > 0:
+            suggestions_md.append("Add `>>>openapi <<<openapi` blocks for handlers missing documentation.")
+        if cs['swagger_only_operations'] > 0:
+            suggestions_md.append("Remove, implement, or ignore swagger-only operations.")
+        if suggestions_md:
+            lines.append("## Suggestions")
+            lines.append("")
+            for s in suggestions_md:
+                lines.append(f"- {s}")
+            lines.append("")
+        if changed:
+            lines.append("## Proposed Operation Diffs")
+            lines.append("")
+            for (path, method), dlines in diffs.items():
+                lines.append(f"<details><summary>{method.upper()} {path}</summary>")
+                lines.append("")
+                lines.append("```diff")
+                for dl in dlines:
+                    lines.append(_strip_ansi(dl))
+                lines.append("```")
+                lines.append("</details>")
+            lines.append("")
+        if coverage_swagger_only:
+            lines.append("## Swagger-only Operations (no handler)")
+            lines.append("")
+            show = coverage_swagger_only[:25]
+            for so in show:
+                lines.append(f"- `{so['method'].upper()} {so['path']}`")
+            if len(coverage_swagger_only) > 25:
+                lines.append(f"... and {len(coverage_swagger_only)-25} more")
+            lines.append("")
+        if ignored:
+            lines.append("## Ignored Endpoints (@openapi: ignore)")
+            lines.append("")
+            for (p, m, f, fn) in ignored[:50]:
+                lines.append(f"- `{m.upper()} {p}` ({f.name}:{fn})")
+            if len(ignored) > 50:
+                lines.append(f"... and {len(ignored)-50} more")
+            lines.append("")
+        content = "\n".join(lines)
+        content = "\n".join(l.rstrip() for l in content.splitlines())
+        content = re.sub(r"\n{3,}", "\n\n", content)
+        if not content.endswith("\n"):
+            content += "\n"
+        return content
+
+    if changed or coverage_fail:
+        if changed:
+            drift_msg = "Drift detected between handlers and swagger. Run: python scripts/swagger_sync.py --fix"
+            if not disable_color:
+                drift_msg = f"{ANSI_RED}{drift_msg}{ANSI_RESET}"
+            print(drift_msg, file=sys.stderr)
+            for n in notes:
+                print(f" - {n}")
+            print("\nProposed changes:")
+            for (path, method), dlines in diffs.items():
+                print(f"{method.upper()} {path}")
+                for dl in dlines:
+                    print(dl)
+        elif coverage_fail:
+            msg = "Documentation coverage threshold not met."
+            if not disable_color:
+                msg = f"{ANSI_RED}{msg}{ANSI_RESET}"
+            print(msg, file=sys.stderr)
+        if orphans:
+            if args.show_orphans:
+                print("\nOrphans:")
+                for o in orphans:
+                    print(f" - {o}")
+            else:
+                print("\n(Info) Potential swagger-only paths (use --show-orphans for list)")
+        if args.show_ignored and ignored:
+            print("\nIgnored endpoints (@openapi: ignore):")
+            for (p, m, f, fn) in ignored:
+                print(f" - {m.upper()} {p} ({f.name}:{fn})")
+        print()
+        print_coverage_summary()
+        summary_targets: List[str] = []
+        step_summary = os.getenv("GITHUB_STEP_SUMMARY")
+        if step_summary:
+            summary_targets.append(step_summary)
+        if markdown_summary_path:
+            summary_targets.append(str(markdown_summary_path))
+        if summary_targets:
+            try:
+                content = build_markdown_summary(changed=changed, coverage_fail=coverage_fail)
+                for path_out in summary_targets:
+                    mode = 'a'
+                    if markdown_summary_path and path_out == str(markdown_summary_path):
+                        mode = 'w'
+                    with open(path_out, mode, encoding='utf-8') as fh:
+                        fh.write(content)
+            except Exception as e:  # pragma: no cover
+                print(f"WARNING: Failed writing markdown summary: {e}", file=sys.stderr)
+
+        # Generate badge if requested
+        if args.generate_badge:
+            try:
+                badge_path = pathlib.Path(args.generate_badge)
+                generate_coverage_badge(coverage_summary['coverage_rate_handlers_with_block'], badge_path)
+            except Exception as e:
+                print(f"WARNING: Failed to generate badge: {e}", file=sys.stderr)
+
+        sys.exit(1)
+    else:
+        print("Swagger paths are in sync with handlers.")
+        if orphans:
+            if args.show_orphans:
+                print("Orphans:")
+                for o in orphans:
+                    print(f" - {o}")
+            else:
+                print("(Info) Potential swagger-only paths and components (use --show-orphans for list)")
+        if args.show_ignored and ignored:
+            print("Ignored endpoints (@openapi: ignore):")
+            for (p, m, f, fn) in ignored:
+                print(f" - {m.upper()} {p} ({f.name}:{fn})")
+        print()
+        print_coverage_summary()
+        summary_targets: List[str] = []
+        step_summary = os.getenv("GITHUB_STEP_SUMMARY")
+        if step_summary:
+            summary_targets.append(step_summary)
+        if markdown_summary_path:
+            summary_targets.append(str(markdown_summary_path))
+        if summary_targets:
+            try:
+                content = build_markdown_summary(changed=False, coverage_fail=False)
+                for path_out in summary_targets:
+                    mode = 'a'
+                    if markdown_summary_path and path_out == str(markdown_summary_path):
+                        mode = 'w'
+                    with open(path_out, mode, encoding='utf-8') as fh:
+                        fh.write(content)
+            except Exception as e:  # pragma: no cover
+                print(f"WARNING: Failed writing markdown summary: {e}", file=sys.stderr)
+
+        # Generate badge if requested
+        if args.generate_badge:
+            try:
+                badge_path = pathlib.Path(args.generate_badge)
+                generate_coverage_badge(coverage_summary['coverage_rate_handlers_with_block'], badge_path)
+            except Exception as e:
+                print(f"WARNING: Failed to generate badge: {e}", file=sys.stderr)
