@@ -18,6 +18,8 @@ This document outlines suggested enhancements, new features, and improvements fo
 - Auto-generate migration guides
 - Add validation rules to prevent common mistakes
 - Integrate with metrics/monitoring for production usage tracking
+- Coverage should include schema components that do not have an `@openapi.component` associated to it
+- Coverage should include endpoints that are not managed by the python decorators.
 
 ## 1. Decorator-Based Endpoint Information
 

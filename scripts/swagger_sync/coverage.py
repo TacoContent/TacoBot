@@ -1,22 +1,44 @@
-"""Coverage calculation and reporting for OpenAPI documentation.
+"""Coverage calculation and reporting for OpenAPI documentation automation.
 
 This module provides functionality for computing and generating coverage reports
-that measure how well the codebase's HTTP handlers are documented in the OpenAPI
-specification. Coverage is calculated across two dimensions:
+that measure automation vs manual maintenance burden in the OpenAPI specification.
 
-1. Documentation presence: handlers with >>>openapi<<<openapi blocks
-2. Swagger integration: handlers present in the .swagger.v1.yaml file
+COVERAGE PARADIGM SHIFT (Updated):
+------------------------------------
+Instead of measuring what IS documented (documentation coverage), this module
+now focuses on what ISN'T automated (technical debt coverage):
+
+Key Metrics:
+1. **Orphaned Components**: Schemas in swagger WITHOUT @openapi.component decorators
+   - These are manual YAML definitions requiring manual maintenance
+   - Lower count = better automation
+
+2. **Orphaned Endpoints**: Paths in swagger WITHOUT Python handler decorators
+   - These are manual API definitions not synchronized from code
+   - Lower count = better automation
+
+3. **Automation Coverage Rate**: Percentage of swagger items managed by code
+   - Components: (automated / total_components) * 100%
+   - Endpoints: (automated / total_endpoints) * 100%
+   - Overall: (automated_items / total_items) * 100%
+   - Higher rate = less technical debt
+
+Legacy Metrics (Still Available):
+- Documentation presence: handlers with >>>openapi<<<openapi blocks
+- Swagger integration: handlers present in the .swagger.v1.yaml file
+- Quality indicators: summary, description, parameters, examples, etc.
 
 The module supports multiple output formats:
-- JSON: Detailed coverage metrics with per-endpoint records
-- Text: Human-readable coverage summary
-- Cobertura XML: Integration with CI/CD coverage dashboards
+- JSON: Detailed coverage metrics with orphan lists and per-endpoint records
+- Text: Human-readable coverage summary with colorized orphan warnings
+- Markdown: GitHub-ready tables with emoji and orphan sections
+- Cobertura XML: CI/CD integration with automation metrics as custom properties
 
 Extracted from monolithic swagger_sync.py as part of Phase 2 refactoring.
 
 Functions:
     _generate_coverage: Generate coverage reports in various formats
-    _compute_coverage: Calculate coverage metrics from endpoints and swagger spec
+    _compute_coverage: Calculate coverage metrics from endpoints, swagger, and models
 """
 
 import json
@@ -122,24 +144,29 @@ def _generate_coverage(
     endpoints: List[Endpoint],
     ignored: List[Tuple[str, str, pathlib.Path, str]],
     swagger: Dict[str, Any],
-    *,
     report_path: pathlib.Path,
     fmt: str,
     extra_summary: Optional[Dict[str, Any]] = None,
-) -> None:
-    """Generate coverage report in specified format.
+    model_components: Optional[Dict[str, Dict[str, Any]]] = None,
+):
+    """Generate coverage report focusing on UNMANAGED items (automation gaps).
 
-    Computes coverage metrics and writes them to the specified path in one of
-    three formats: json, text, or cobertura.
+    Computes coverage metrics highlighting manual maintenance burden and writes
+    them to the specified path in one of three formats: json, text, or cobertura.
+
+    Key focus: Orphaned components (no @openapi.component) and orphaned endpoints
+    (no Python decorators) as technical debt indicators.
 
     Args:
         endpoints: List of discovered endpoint objects from handler files
         ignored: List of (path, method, file, function) tuples for ignored endpoints
         swagger: Parsed swagger/OpenAPI specification dictionary
         report_path: Output file path for the coverage report
-        fmt: Output format - one of 'json', 'text', 'cobertura'
+        fmt: Output format - one of 'json', 'text', 'markdown', 'cobertura'
         extra_summary: Optional dict of additional metrics to merge into summary
-                      (e.g., model component counts)
+                      (e.g., legacy metrics for backward compatibility)
+        model_components: Optional dict of components from @openapi.component decorated classes
+                         (required for accurate orphan component detection)
 
     Raises:
         SystemExit: If unsupported format is specified or XML generation fails
@@ -147,7 +174,9 @@ def _generate_coverage(
     Side Effects:
         Writes coverage report to report_path
     """
-    summary, endpoint_records, swagger_only = _compute_coverage(endpoints, ignored, swagger)
+    summary, endpoint_records, swagger_only, orphaned_components = _compute_coverage(
+        endpoints, ignored, swagger, model_components
+    )
     if extra_summary:
         summary.update(extra_summary)
     if fmt == 'json':
@@ -156,6 +185,7 @@ def _generate_coverage(
             'summary': summary,
             'endpoints': endpoint_records,
             'swagger_only': swagger_only,
+            'orphaned_components': orphaned_components,  # NEW: Track orphaned schemas
             'generated_at': int(time.time()),
             'format': 'tacobot-openapi-coverage-v1',
         }
@@ -186,6 +216,71 @@ def _generate_coverage(
         lines.append(f"│ Swagger only operations     │ {summary['swagger_only_operations']:8d} │ {'':23s} │")
         lines.append("└─────────────────────────────┴──────────┴─────────────────────────┘")
         lines.append("")
+
+        # ========================================================================
+        # NEW: Automation Coverage Section (PRIMARY FOCUS)
+        # Shows technical debt: items NOT managed by code decorators
+        # ========================================================================
+        lines.append(f"{COLOR_BOLD}{COLOR_YELLOW}🤖 AUTOMATION COVERAGE (Technical Debt){COLOR_RESET}")
+        lines.append("┌─────────────────────────────┬──────────┬─────────────────────────┐")
+        lines.append("│ Item Type                   │ Count    │ Automation Rate         │")
+        lines.append("├─────────────────────────────┼──────────┼─────────────────────────┤")
+
+        # Component automation (inverse of orphaned)
+        comp_auto_rate = summary.get('component_automation_rate', 0.0)
+        comp_auto_display = _format_rate_colored(
+            summary.get('automated_components', 0),
+            summary.get('total_swagger_components', 0),
+            comp_auto_rate
+        )
+        lines.append(f"│ Components (automated)      │ {summary.get('automated_components', 0):8d} │ {comp_auto_display} │")
+        lines.append(f"│ Components (manual/orphan)  │ {summary.get('orphaned_components_count', 0):8d} │ {'⚠️  TECHNICAL DEBT ':24s} │")
+
+        # Endpoint automation (inverse of swagger_only)
+        ep_auto_rate = summary.get('endpoint_automation_rate', 0.0)
+        ep_auto_display = _format_rate_colored(
+            summary.get('automated_endpoints', 0),
+            summary.get('total_swagger_endpoints', 0),
+            ep_auto_rate
+        )
+        lines.append(f"│ Endpoints (automated)       │ {summary.get('automated_endpoints', 0):8d} │ {ep_auto_display} │")
+        lines.append(f"│ Endpoints (manual/orphan)   │ {summary.get('orphaned_endpoints_count', 0):8d} │ {'⚠️  TECHNICAL DEBT ':24s} │")
+
+        # Overall automation
+        overall_auto_rate = summary.get('automation_coverage_rate', 0.0)
+        overall_auto_display = _format_rate_colored(
+            summary.get('total_items', 0) - summary.get('total_orphans', 0),
+            summary.get('total_items', 0),
+            overall_auto_rate
+        )
+        lines.append("├─────────────────────────────┼──────────┼─────────────────────────┤")
+        # OVERALL AUTOMATION has bold formatting - need exactly 29 visible chars total
+        # "OVERALL AUTOMATION" = 18 chars + 1 space before = 19, so we need 9 spaces after for total 28 content + 1 trailing space = 29
+        overall_label = f"{COLOR_BOLD}OVERALL AUTOMATION{COLOR_RESET}"
+        lines.append(f"│ {overall_label}{' ' * 9} │ {COLOR_BOLD}{summary.get('total_items', 0) - summary.get('total_orphans', 0):8d}{COLOR_RESET} │ {COLOR_BOLD}{overall_auto_display}{COLOR_RESET} │")
+        # "Total orphans (debt)" = 20 chars + 1 space before = 21, so we need 7 spaces after for total 28 content + 1 trailing space = 29
+        orphan_label = f"{COLOR_RED}Total orphans (debt){COLOR_RESET}"
+        lines.append(f"│ {orphan_label}{' ' * 7} │ {COLOR_RED}{summary.get('total_orphans', 0):8d}{COLOR_RESET} │ {COLOR_RED}{'⚠️  NEEDS ATTENTION ':24s}{COLOR_RESET} │")
+        lines.append("└─────────────────────────────┴──────────┴─────────────────────────┘")
+        lines.append("")
+
+        # Orphaned items details
+        if orphaned_components:
+            lines.append(f"{COLOR_BOLD}{COLOR_RED}🚨 ORPHANED COMPONENTS (no @openapi.component){COLOR_RESET}")
+            lines.append("These schemas exist in swagger but have no corresponding Python model class:")
+            for comp_name in sorted(orphaned_components):
+                lines.append(f"  • {comp_name}")
+            lines.append("")
+
+        if swagger_only:
+            lines.append(f"{COLOR_BOLD}{COLOR_RED}🚨 ORPHANED ENDPOINTS (no Python decorator){COLOR_RESET}")
+            lines.append("These endpoints exist in swagger but have no corresponding handler:")
+            for op in sorted(swagger_only, key=lambda x: (x['path'], x['method'])):
+                lines.append(f"  • {op['method'].upper():7s} {op['path']}")
+            lines.append("")
+
+        # ========================================================================
+
 
         # Quality Metrics Table
         lines.append(f"{COLOR_BOLD}✨ DOCUMENTATION QUALITY METRICS{COLOR_RESET}")
@@ -308,6 +403,64 @@ def _generate_coverage(
         lines.append(f"| Swagger only operations | {summary['swagger_only_operations']} | - |")
         lines.append("")
 
+        # ========================================================================
+        # NEW: Automation Coverage Section (PRIMARY FOCUS)
+        # Shows technical debt: items NOT managed by code decorators
+        # ========================================================================
+        lines.append("## 🤖 Automation Coverage (Technical Debt)\n")
+        lines.append("> **Goal:** Minimize orphaned items (manual YAML definitions) by using decorators.\n")
+        lines.append("| Item Type | Count | Automation Rate |")
+        lines.append("|-----------|-------|-----------------|")
+
+        # Component automation
+        comp_auto_rate = summary.get('component_automation_rate', 0.0)
+        comp_auto_display = _format_rate_emoji(
+            summary.get('automated_components', 0),
+            summary.get('total_swagger_components', 0),
+            comp_auto_rate
+        )
+        lines.append(f"| Components (automated) | {summary.get('automated_components', 0)} | {comp_auto_display} |")
+        lines.append(f"| Components (manual/orphan) | {summary.get('orphaned_components_count', 0)} | ⚠️ TECHNICAL DEBT |")
+
+        # Endpoint automation
+        ep_auto_rate = summary.get('endpoint_automation_rate', 0.0)
+        ep_auto_display = _format_rate_emoji(
+            summary.get('automated_endpoints', 0),
+            summary.get('total_swagger_endpoints', 0),
+            ep_auto_rate
+        )
+        lines.append(f"| Endpoints (automated) | {summary.get('automated_endpoints', 0)} | {ep_auto_display} |")
+        lines.append(f"| Endpoints (manual/orphan) | {summary.get('orphaned_endpoints_count', 0)} | ⚠️ TECHNICAL DEBT |")
+
+        # Overall automation
+        overall_auto_rate = summary.get('automation_coverage_rate', 0.0)
+        overall_auto_display = _format_rate_emoji(
+            summary.get('total_items', 0) - summary.get('total_orphans', 0),
+            summary.get('total_items', 0),
+            overall_auto_rate
+        )
+        lines.append(f"| **OVERALL AUTOMATION** | **{summary.get('total_items', 0) - summary.get('total_orphans', 0)}** | **{overall_auto_display}** |")
+        lines.append(f"| **Total orphans (debt)** | **{summary.get('total_orphans', 0)}** | 🚨 **NEEDS ATTENTION** |")
+        lines.append("")
+
+        # Orphaned items details
+        if orphaned_components:
+            lines.append("### 🚨 Orphaned Components (no @openapi.component)\n")
+            lines.append("These schemas exist in swagger but have no corresponding Python model class:\n")
+            for comp_name in sorted(orphaned_components):
+                lines.append(f"- `{comp_name}`")
+            lines.append("")
+
+        if swagger_only:
+            lines.append("### 🚨 Orphaned Endpoints (no Python decorator)\n")
+            lines.append("These endpoints exist in swagger but have no corresponding handler:\n")
+            for op in sorted(swagger_only, key=lambda x: (x['path'], x['method'])):
+                lines.append(f"- `{op['method'].upper()}` {op['path']}")
+            lines.append("")
+
+        # ========================================================================
+
+
         # Quality Metrics Table
         lines.append("## ✨ Documentation Quality Metrics\n")
         lines.append("| Quality Indicator | Count | Rate |")
@@ -421,6 +574,18 @@ def _generate_coverage(
             'model_components_existing_not_generated',
             summary.get('model_components_existing_not_generated', 0),
         )
+        # NEW: Automation/orphan metrics (primary coverage indicators)
+        _prop('total_swagger_components', summary.get('total_swagger_components', 0))
+        _prop('automated_components', summary.get('automated_components', 0))
+        _prop('orphaned_components_count', summary.get('orphaned_components_count', 0))
+        _prop('component_automation_rate', f"{summary.get('component_automation_rate', 0.0):.4f}")
+        _prop('total_swagger_endpoints', summary.get('total_swagger_endpoints', 0))
+        _prop('automated_endpoints', summary.get('automated_endpoints', 0))
+        _prop('orphaned_endpoints_count', summary.get('orphaned_endpoints_count', 0))
+        _prop('endpoint_automation_rate', f"{summary.get('endpoint_automation_rate', 0.0):.4f}")
+        _prop('total_items', summary.get('total_items', 0))
+        _prop('total_orphans', summary.get('total_orphans', 0))
+        _prop('automation_coverage_rate', f"{summary.get('automation_coverage_rate', 0.0):.4f}")
         pkgs = SubElement(root, 'packages')
         pkg = SubElement(
             pkgs,
@@ -474,26 +639,32 @@ def _compute_coverage(
     endpoints: List[Endpoint],
     ignored: List[Tuple[str, str, pathlib.Path, str]],
     swagger: Dict[str, Any],
+    model_components: Optional[Dict[str, Dict[str, Any]]] = None,
 ):
-    """Compute coverage metrics comparing endpoints to swagger specification.
+    """Compute coverage metrics focusing on UNMANAGED items (technical debt).
 
-    Analyzes the relationship between discovered endpoints and the swagger spec
-    to determine:
-    - How many handlers have OpenAPI documentation blocks
-    - How many handlers are present in the swagger file
-    - How many definitions match exactly between code and swagger
-    - Which operations exist only in swagger (orphans)
+    Coverage paradigm shift: Instead of measuring what IS automated/documented,
+    this measures what ISN'T - highlighting manual maintenance burden and automation gaps.
+
+    Key metrics:
+    - Orphaned components: Schemas in swagger WITHOUT @openapi.component decorators (manual definitions)
+    - Orphaned endpoints: Paths in swagger WITHOUT Python handler decorators (manual API definitions)
+    - Automation coverage: Percentage of items managed by code decorators vs manual YAML
+
+    Lower orphan counts = better automation coverage = less technical debt.
 
     Args:
         endpoints: List of endpoint objects discovered from handler files
         ignored: List of (path, method, file, function) tuples for excluded endpoints
         swagger: Parsed swagger/OpenAPI specification dictionary
+        model_components: Optional dict of model components from @openapi.component classes
 
     Returns:
-        Tuple of (summary_dict, endpoint_records_list, swagger_only_list):
-        - summary_dict: Aggregate coverage metrics
+        Tuple of (summary_dict, endpoint_records_list, swagger_only_list, orphaned_components_list):
+        - summary_dict: Aggregate coverage metrics (now includes orphan/automation metrics)
         - endpoint_records_list: Per-endpoint coverage details
-        - swagger_only_list: Operations in swagger but not in code
+        - swagger_only_list: Operations in swagger but not in code (ORPHANED ENDPOINTS)
+        - orphaned_components_list: Components in swagger but not from models (ORPHANED SCHEMAS)
     """
     swagger_paths = swagger.get('paths', {}) or {}
     methods_set = {"get", "post", "put", "delete", "patch", "options", "head"}
@@ -631,6 +802,42 @@ def _compute_coverage(
     multi_response_rate = (endpoints_with_multiple_responses / with_block) if with_block else 0.0
     examples_rate = (endpoints_with_examples / with_block) if with_block else 0.0
 
+    # ============================================================================
+    # NEW: Calculate ORPHAN/AUTOMATION metrics (focus on unmanaged items)
+    # ============================================================================
+
+    # Orphaned components: Schemas in swagger WITHOUT @openapi.component decorators
+    swagger_components = swagger.get('components', {}).get('schemas', {})
+    total_swagger_components = len(swagger_components)
+    orphaned_components: List[str] = []
+
+    if model_components is not None:
+        model_component_names = set(model_components.keys())
+        for component_name in swagger_components.keys():
+            if component_name not in model_component_names:
+                orphaned_components.append(component_name)
+    else:
+        # If model_components not provided, assume all swagger components are orphaned
+        # (conservative approach - shows maximum technical debt)
+        orphaned_components = list(swagger_components.keys())
+
+    automated_components = total_swagger_components - len(orphaned_components)
+    component_automation_rate = (automated_components / total_swagger_components) if total_swagger_components else 1.0
+
+    # Orphaned endpoints: Already calculated as swagger_only above
+    # These are paths in swagger WITHOUT Python handler decorators
+    total_swagger_endpoints = len(swagger_ops)
+    orphaned_endpoints_count = len(swagger_only)
+    automated_endpoints = total_swagger_endpoints - orphaned_endpoints_count
+    endpoint_automation_rate = (automated_endpoints / total_swagger_endpoints) if total_swagger_endpoints else 1.0
+
+    # Overall automation coverage (combines components + endpoints)
+    total_items = total_swagger_components + total_swagger_endpoints
+    total_orphans = len(orphaned_components) + orphaned_endpoints_count
+    automation_coverage_rate = ((total_items - total_orphans) / total_items) if total_items else 1.0
+
+    # ============================================================================
+
     summary = {
         'handlers_total': total_considered,
         'ignored_total': len(ignored),
@@ -661,5 +868,17 @@ def _compute_coverage(
         'file_statistics': file_stats,
         'tag_coverage': tag_coverage,
         'unique_tags': len(tag_coverage),
+        # NEW: Automation/orphan metrics (primary focus)
+        'total_swagger_components': total_swagger_components,
+        'automated_components': automated_components,
+        'orphaned_components_count': len(orphaned_components),
+        'component_automation_rate': component_automation_rate,
+        'total_swagger_endpoints': total_swagger_endpoints,
+        'automated_endpoints': automated_endpoints,
+        'orphaned_endpoints_count': orphaned_endpoints_count,
+        'endpoint_automation_rate': endpoint_automation_rate,
+        'total_items': total_items,
+        'total_orphans': total_orphans,
+        'automation_coverage_rate': automation_coverage_rate,
     }
-    return summary, endpoint_records, swagger_only
+    return summary, endpoint_records, swagger_only, orphaned_components

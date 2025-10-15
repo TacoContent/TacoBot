@@ -62,7 +62,7 @@ def main() -> None:
     handles all output formatting and exit codes.
     """
     parser = argparse.ArgumentParser(description="Sync handler docstring OpenAPI blocks to swagger file")
-    
+
     # Configuration file arguments
     config_group = parser.add_argument_group('Configuration')
     config_group.add_argument('--config', metavar='PATH', help='Load configuration from YAML file (default: search for swagger-sync.yaml in current directory)')
@@ -70,7 +70,7 @@ def main() -> None:
     config_group.add_argument('--init-config', metavar='PATH', nargs='?', const='swagger-sync.yaml', help='Generate example configuration file and exit (default: swagger-sync.yaml)')
     config_group.add_argument('--validate-config', action='store_true', help='Validate configuration file and exit')
     config_group.add_argument('--export-config-schema', metavar='PATH', nargs='?', const='-', help='Export JSON schema for config file validation (default: stdout)')
-    
+
     # Mode selection
     mode_group = parser.add_mutually_exclusive_group()
     mode_group.add_argument('--fix', action='store_true', help='Write changes instead of just checking for drift')
@@ -118,7 +118,7 @@ def main() -> None:
             raise SystemExit(f"❌ {e}")
         except Exception as e:
             raise SystemExit(f"❌ Failed to generate config: {e}")
-    
+
     if args.export_config_schema:
         from .config import export_schema
         try:
@@ -132,7 +132,7 @@ def main() -> None:
             return
         except Exception as e:
             raise SystemExit(f"❌ Failed to export schema: {e}")
-    
+
     # Load configuration from file if specified
     config_dict = {}
     if args.config or any([
@@ -149,7 +149,7 @@ def main() -> None:
                 environment=args.env,
                 validate=True
             )
-            
+
             # Validate-only mode
             if args.validate_config:
                 print(f"✅ Configuration is valid")
@@ -158,11 +158,11 @@ def main() -> None:
                 if config_path:
                     print(f"   Config file: {config_path}")
                 return
-            
+
             # Merge CLI args into config (CLI takes precedence)
             cli_args_dict = vars(args)
             config_dict = merge_cli_args(config_dict, cli_args_dict)
-            
+
             # Update args namespace with merged config
             # This allows the rest of the code to work unchanged
             for key, value in config_dict.items():
@@ -194,7 +194,7 @@ def main() -> None:
                 elif key not in ('environments', 'version', 'ignore'):
                     # Top-level config values
                     setattr(args, key, value)
-            
+
         except FileNotFoundError:
             # No config file found, continue with CLI args only
             pass
@@ -329,7 +329,9 @@ def main() -> None:
     swagger_new, changed, notes, diffs = merge(swagger, endpoints)
 
     orphans = detect_orphans(swagger_new, endpoints, model_components) if args.show_orphans else []
-    coverage_summary, coverage_records, coverage_swagger_only = _compute_coverage(endpoints, ignored, swagger_new)
+    coverage_summary, coverage_records, coverage_swagger_only, orphaned_components = _compute_coverage(
+        endpoints, ignored, swagger_new, model_components
+    )
     # augment coverage summary with component metrics
     coverage_summary['model_components_generated'] = model_components_generated_count
     coverage_summary['model_components_existing_not_generated'] = model_components_existing_not_generated_count
@@ -385,7 +387,15 @@ def main() -> None:
             'model_components_generated': model_components_generated_count,
             'model_components_existing_not_generated': model_components_existing_not_generated_count,
         }
-        _generate_coverage(endpoints, ignored, swagger_new, report_path=coverage_report_path, fmt=args.coverage_format, extra_summary=extra)
+        _generate_coverage(
+            endpoints,
+            ignored,
+            swagger_new,
+            report_path=coverage_report_path,
+            fmt=args.coverage_format,
+            extra_summary=extra,
+            model_components=model_components,
+        )
 
     def print_coverage_summary(prefix: str = "OpenAPI Documentation Coverage Summary") -> None:
         cs = coverage_summary
