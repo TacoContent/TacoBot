@@ -180,5 +180,6 @@ After running `python scripts/swagger_sync.py --fix`, the component definition w
 4. **Clean Check**: After removal with `--fix`, running `--check` shows no drift.
 
 ## See Also
+
 - [swagger_sync.md](./swagger_sync.md) - Main swagger sync documentation
 - [swagger_openapi_decorators.md](./swagger_openapi_decorators.md) - Decorator usage guide
