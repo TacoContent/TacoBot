@@ -16,8 +16,8 @@ handlers_root: bot/lib/http/handlers/
 models_root: bot/lib/models/
 output:
   directory: ./reports/openapi/
-  coverage_report: openapi-coverage.json
-  coverage_format: json
+  coverage_report: openapi-coverage.xml
+  coverage_format: xml
   badge: ./docs/badges/openapi-coverage.svg
 mode: check
 options:

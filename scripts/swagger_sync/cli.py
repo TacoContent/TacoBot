@@ -591,13 +591,8 @@ def main() -> None:
         # ENHANCED COVERAGE SECTIONS (from coverage.py helpers)
         # ========================================================================
 
-        # 1. Coverage Summary (enhanced with emoji)
+        # 1. Coverage Summary (enhanced with emoji, includes model component metrics)
         lines.extend(_build_coverage_summary_markdown(cs))
-        lines.append("")
-
-        # Add model component metrics to coverage summary section
-        lines.append("| Model components generated | {} | - |".format(cs.get('model_components_generated', 0)))
-        lines.append("| Schemas not generated | {} | - |".format(cs.get('model_components_existing_not_generated', 0)))
         lines.append("")
 
         # 2. Automation Coverage (NEW - was missing)

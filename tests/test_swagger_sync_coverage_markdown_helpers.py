@@ -149,6 +149,56 @@ class TestBuildCoverageSummaryMarkdown:
         assert 'Swagger only operations' in line_str
         assert '3' in line_str
 
+    def test_model_components_generated_when_present(self):
+        """Should include model components generated row when key is present."""
+        summary = self._minimal_summary()
+        summary['model_components_generated'] = 36
+        lines = _build_coverage_summary_markdown(summary)
+        line_str = '\n'.join(lines)
+        assert 'Model components generated' in line_str
+        assert '36' in line_str
+
+    def test_model_components_not_generated_when_absent(self):
+        """Should not include model components row when key is absent."""
+        summary = self._minimal_summary()
+        # Explicitly exclude model_components_generated
+        lines = _build_coverage_summary_markdown(summary)
+        line_str = '\n'.join(lines)
+        assert 'Model components generated' not in line_str
+
+    def test_schemas_not_generated_when_present(self):
+        """Should include schemas not generated row when key is present."""
+        summary = self._minimal_summary()
+        summary['model_components_existing_not_generated'] = 5
+        lines = _build_coverage_summary_markdown(summary)
+        line_str = '\n'.join(lines)
+        assert 'Schemas not generated' in line_str
+        assert '5' in line_str
+
+    def test_schemas_not_generated_when_absent(self):
+        """Should not include schemas not generated row when key is absent."""
+        summary = self._minimal_summary()
+        # Explicitly exclude model_components_existing_not_generated
+        lines = _build_coverage_summary_markdown(summary)
+        line_str = '\n'.join(lines)
+        assert 'Schemas not generated' not in line_str
+
+    def test_both_model_metrics_present(self):
+        """Should include both model component metrics when both keys are present."""
+        summary = self._minimal_summary()
+        summary['model_components_generated'] = 36
+        summary['model_components_existing_not_generated'] = 0
+        lines = _build_coverage_summary_markdown(summary)
+        line_str = '\n'.join(lines)
+        assert 'Model components generated' in line_str
+        assert 'Schemas not generated' in line_str
+        assert '36' in line_str
+        # Check that table structure is maintained (proper number of pipe characters per row)
+        table_rows = [line for line in lines if line.startswith('|')]
+        for row in table_rows:
+            # Each row should have 4 pipes (3 columns + start/end)
+            assert row.count('|') == 4, f"Row has wrong number of pipes: {row}"
+
     @staticmethod
     def _minimal_summary():
         """Create minimal valid summary dict."""

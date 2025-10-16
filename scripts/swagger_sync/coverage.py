@@ -174,6 +174,12 @@ def _build_coverage_summary_markdown(summary: Dict[str, Any]) -> List[str]:
 
     lines.append(f"| Swagger only operations | {summary['swagger_only_operations']} | - |")
 
+    # Add model component metrics if present
+    if 'model_components_generated' in summary:
+        lines.append(f"| Model components generated | {summary.get('model_components_generated', 0)} | - |")
+    if 'model_components_existing_not_generated' in summary:
+        lines.append(f"| Schemas not generated | {summary.get('model_components_existing_not_generated', 0)} | - |")
+
     return lines
 
 
