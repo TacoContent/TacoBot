@@ -435,11 +435,12 @@ General Options:
   --show-ignored             List endpoints skipped via @openapi: ignore.
   --show-missing-blocks      List handlers without an ---openapi block.
   --verbose-coverage         Print per-endpoint coverage flags.
-  --coverage-report FILE     Emit coverage report (format via --coverage-format).
-  --coverage-format FORMAT   json|text|cobertura (default json).
+  --coverage-report FILE     Emit coverage report (extension auto-detected if not provided).
+  --coverage-format FORMAT   json|text|cobertura|xml (xml and cobertura are equivalent; default json).
   --fail-on-coverage-below N Fail if handler doc coverage < N (0-1 or 0-100).
   --generate-badge FILE      Generate SVG badge showing coverage % and write to FILE.
-  --markdown-summary FILE    Append GitHub-friendly markdown summary output.
+  --markdown-summary FILE    Generate comprehensive GitHub-friendly markdown summary with
+                             full coverage details (automation, quality, methods, tags, files).
   --output-directory DIR     Base directory for report outputs (coverage & summary). Default: current working directory.
   --color MODE               Color output: auto (default, only if TTY), always, never.
 
@@ -496,13 +497,50 @@ Accepts `95` or `0.95`. Failure exits with code 1.
 python scripts/swagger_sync.py --coverage-report coverage.txt --coverage-format text
 ```
 
-### 5.5 Cobertura (CI Metrics Dashboards)
+### 5.5 Cobertura XML (CI Metrics Dashboards)
 
 ```bash
+# Using 'cobertura' format
 python scripts/swagger_sync.py --coverage-report coverage.xml --coverage-format cobertura
+
+# Using 'xml' format (equivalent to cobertura)
+python scripts/swagger_sync.py --coverage-report coverage.xml --coverage-format xml
+
+# Auto-extension: omit .xml and it will be added automatically
+python scripts/swagger_sync.py --coverage-report coverage --coverage-format xml
 ```
 
-### 5.6 Generate Coverage Badge
+Both `cobertura` and `xml` formats generate the same Cobertura XML output. If you don't specify a file extension, `.xml` is added automatically.
+
+### 5.6 Comprehensive Markdown Summary
+
+```bash
+python scripts/swagger_sync.py --check --markdown-summary=openapi_summary.md
+```
+
+The markdown summary includes:
+- 📊 **Coverage Summary**: Basic handler/swagger metrics
+- 🤖 **Automation Coverage**: Technical debt analysis (orphaned components/endpoints)
+- ✨ **Documentation Quality**: Summary, descriptions, parameters, examples
+- 🔄 **HTTP Method Breakdown**: Per-method documentation rates
+- 🏷️ **Tag Coverage**: API organization metrics
+- 📁 **Top Files**: Most active handler files
+- 💡 **Suggestions**: Actionable improvement recommendations
+- 📝 **Proposed Diffs**: (when drift detected)
+- 🚫 **Ignored Endpoints**: (when present)
+
+> **Note**: The `markdown` format was removed from `--coverage-format` choices.
+> All markdown coverage content is now included in the `--markdown-summary` output.
+
+> **Auto Extensions**: When using `--coverage-report`, if you don't provide a file extension,
+> the appropriate extension is added automatically based on `--coverage-format`:
+> - `json` → `.json`
+> - `text` → `.txt`
+> - `cobertura` or `xml` → `.xml`
+>
+> If you provide an explicit extension, your choice is preserved.
+
+### 5.7 Generate Coverage Badge
 
 ```bash
 python scripts/swagger_sync.py --check --generate-badge=docs/badges/openapi-coverage.svg

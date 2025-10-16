@@ -460,6 +460,7 @@ python scripts/swagger_sync.py --check --env=ci
 **Use Case**: Prevent configuration errors and provide better developer experience.
 
 **Implementation Details**:
+
 - JSON Schema draft-07 specification in `scripts/swagger_sync/config_schema.json`
 - Schema ID: `https://tacobot.app/schemas/swagger-sync-config.json`
 - YAML-language-server integration via header comment
@@ -480,8 +481,9 @@ python scripts/swagger_sync.py --init-config
 ```
 
 **IDE Integration** (automatic with YAML extension):
+
 ```yaml
-# yaml-language-server: $schema=https://tacobot.app/schemas/swagger-sync-config.json
+# yaml-language-server: $schema=./scripts/swagger_sync/config_schema.json
 version: '1.0'
 # ... IDE provides autocomplete and validation from here
 ```
@@ -630,13 +632,15 @@ _internal_*
 ##  4. Coverage and Reporting Enhancements
 
 **IDE Integration**: Add YAML schema reference to config files:
+
 ```yaml
-# yaml-language-server: $schema=https://example.com/swagger-sync-schema.json
+# yaml-language-server: $schema=./scripts/swagger_sync/config_schema.json
 swagger_file: .swagger.v1.yaml
 ...
 ```
 
 **Pros**:
+
 - Catch config errors early
 - IDE autocomplete for config keys
 - Self-documenting configuration

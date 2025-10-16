@@ -30,6 +30,8 @@ from swagger_sync.config import (
     merge_cli_args,
     merge_configs,
     validate_config,
+    normalize_coverage_format,
+    ensure_coverage_report_extension,
 )
 
 
@@ -45,9 +47,9 @@ swagger_file: api.yaml
 handlers_root: handlers/
 models_root: models/
 """)
-        
+
         config = load_config(str(config_file))
-        
+
         assert config['version'] == '1.0'
         assert config['swagger_file'] == 'api.yaml'
         assert config['handlers_root'] == 'handlers/'
@@ -79,8 +81,8 @@ options:
   color: always
   fail_on_coverage_below: 80.0
 markers:
-  openapi_start: '>>>openapi'
-  openapi_end: '<<<openapi'
+  start: '>>>openapi'
+  end: '<<<openapi'
 ignore:
   files:
     - '**/test_*.py'
@@ -89,15 +91,15 @@ ignore:
   paths:
     - /internal/*
 """)
-        
+
         config = load_config(str(config_file))
-        
+
         assert config['version'] == '1.0'
         assert config['output']['directory'] == './reports/openapi/'
         assert config['output']['coverage_format'] == 'json'
         assert config['options']['strict'] is True
         assert config['options']['fail_on_coverage_below'] == 80.0
-        assert config['markers']['openapi_start'] == '>>>openapi'
+        assert config['markers']['start'] == '>>>openapi'
         assert '**/test_*.py' in config['ignore']['files']
         assert 'debug_endpoint' in config['ignore']['handlers']
 
@@ -114,7 +116,7 @@ version: '1.0'
   bad_indentation: value
     worse_indentation: value
 """)
-        
+
         with pytest.raises(ValueError, match="Failed to parse"):
             load_config(str(config_file))
 
@@ -139,12 +141,12 @@ environments:
       verbose_coverage: true
       show_orphans: false
 """)
-        
+
         # Load with CI environment
         config_ci = load_config(str(config_file), environment='ci')
         assert config_ci['options']['strict'] is True
         assert config_ci['options']['color'] == 'never'
-        
+
         # Load with local environment
         config_local = load_config(str(config_file), environment='local')
         assert config_local['options']['verbose_coverage'] is True
@@ -164,7 +166,7 @@ environments:
     options:
       strict: true
 """)
-        
+
         with pytest.raises(ValueError, match="Environment 'production' not found"):
             load_config(str(config_file), environment='production')
 
@@ -180,7 +182,7 @@ class TestConfigValidation:
             'handlers_root': 'handlers/',
             'models_root': 'models/',
         }
-        
+
         # Should not raise
         validate_config(config)
 
@@ -203,7 +205,7 @@ class TestConfigValidation:
                 'show_orphans': True,
             },
         }
-        
+
         # Should not raise
         validate_config(config)
 
@@ -215,7 +217,7 @@ class TestConfigValidation:
             'handlers_root': 'handlers/',
             'models_root': 'models/',
         }
-        
+
         # Should not raise - schema doesn't require swagger_file
         validate_config(config)
 
@@ -228,7 +230,7 @@ class TestConfigValidation:
             'models_root': 'models/',
             'mode': 'invalid_mode',  # Should be 'check' or 'fix'
         }
-        
+
         with pytest.raises(ValidationError):
             validate_config(config)
 
@@ -243,7 +245,7 @@ class TestConfigValidation:
                 'color': 'rainbow',  # Should be 'auto', 'always', or 'never'
             },
         }
-        
+
         with pytest.raises(ValidationError):
             validate_config(config)
 
@@ -255,10 +257,10 @@ class TestConfigValidation:
             'handlers_root': 'handlers/',
             'models_root': 'models/',
             'output': {
-                'coverage_format': 'xml',  # Should be 'json' or 'text'
+                'coverage_format': 'invalid',  # Should be 'json', 'text', 'cobertura', or 'xml'
             },
         }
-        
+
         with pytest.raises(ValidationError):
             validate_config(config)
 
@@ -271,7 +273,7 @@ class TestConfigValidation:
             'models_root': 'models/',
             'future_feature': 'some_value',  # Unknown property
         }
-        
+
         # Should not raise - schema allows additionalProperties
         validate_config(config)
 
@@ -283,9 +285,9 @@ class TestConfigMerging:
         """Test merging flat dictionaries."""
         base = {'a': 1, 'b': 2, 'c': 3}
         override = {'b': 20, 'd': 4}
-        
+
         result = merge_configs(base, override)
-        
+
         assert result == {'a': 1, 'b': 20, 'c': 3, 'd': 4}
 
     def test_merge_configs_nested(self):
@@ -308,9 +310,9 @@ class TestConfigMerging:
                 'strict': True,
             },
         }
-        
+
         result = merge_configs(base, override)
-        
+
         assert result['output']['directory'] == './custom-reports/'
         assert result['output']['coverage_report'] == 'coverage.json'  # Preserved
         assert result['options']['strict'] is True
@@ -329,9 +331,9 @@ class TestConfigMerging:
                 'files': ['custom_*.py'],
             },
         }
-        
+
         result = merge_configs(base, override)
-        
+
         # Lists should be replaced entirely
         assert result['ignore']['files'] == ['custom_*.py']
         assert result['ignore']['handlers'] == ['debug']  # Preserved
@@ -340,9 +342,9 @@ class TestConfigMerging:
         """Test handling of None values in merging."""
         base = {'a': 1, 'b': 2}
         override = {'b': None, 'c': 3}
-        
+
         result = merge_configs(base, override)
-        
+
         # None should override existing value
         assert result == {'a': 1, 'b': None, 'c': 3}
 
@@ -350,9 +352,9 @@ class TestConfigMerging:
         """Test merging with empty override."""
         base = {'a': 1, 'b': 2}
         override = {}
-        
+
         result = merge_configs(base, override)
-        
+
         assert result == {'a': 1, 'b': 2}
 
     def test_merge_configs_deep_nesting(self):
@@ -376,9 +378,9 @@ class TestConfigMerging:
                 },
             },
         }
-        
+
         result = merge_configs(base, override)
-        
+
         assert result['level1']['level2']['level3']['value'] == 'overridden'
         assert result['level1']['level2']['level3']['other'] == 'kept'
 
@@ -392,15 +394,15 @@ class TestCLIArgumentMerging:
             'swagger_file': 'api.yaml',
             'mode': 'check',
         }
-        
+
         class Args:
             swagger_file = 'custom.yaml'
             mode = 'fix'
             config = None
             env = None
-        
+
         result = merge_cli_args(config, Args())
-        
+
         assert result['swagger_file'] == 'custom.yaml'
         assert result['mode'] == 'fix'
 
@@ -411,16 +413,16 @@ class TestCLIArgumentMerging:
             'handlers_root': 'handlers/',
             'mode': 'check',
         }
-        
+
         class Args:
             swagger_file = None  # Not specified on CLI
             handlers_root = 'custom/'
             mode = None  # Not specified on CLI
             config = None
             env = None
-        
+
         result = merge_cli_args(config, Args())
-        
+
         assert result['swagger_file'] == 'api.yaml'  # Config value preserved
         assert result['handlers_root'] == 'custom/'  # CLI override
         assert result['mode'] == 'check'  # Config value preserved
@@ -434,7 +436,7 @@ class TestCLIArgumentMerging:
                 'color': 'auto',
             },
         }
-        
+
         class Args:
             strict = True
             show_orphans = True
@@ -442,9 +444,9 @@ class TestCLIArgumentMerging:
             verbose_coverage = None
             config = None
             env = None
-        
+
         result = merge_cli_args(config, Args())
-        
+
         assert result['options']['strict'] is True
         assert result['options']['show_orphans'] is True
         assert result['options']['color'] == 'never'
@@ -457,16 +459,16 @@ class TestCLIArgumentMerging:
                 'coverage_report': 'coverage.json',
             },
         }
-        
+
         class Args:
             output_directory = './custom-reports/'
             coverage_report = 'custom_coverage.json'
             markdown_summary = 'summary.md'
             config = None
             env = None
-        
+
         result = merge_cli_args(config, Args())
-        
+
         assert result['output']['directory'] == './custom-reports/'
         assert result['output']['coverage_report'] == 'custom_coverage.json'
         assert result['output']['markdown_summary'] == 'summary.md'
@@ -480,16 +482,16 @@ class TestCLIArgumentMerging:
                 'verbose_coverage': False,
             },
         }
-        
+
         class Args:
             strict = True
             show_orphans = False  # Explicitly set to False
             verbose_coverage = None  # Not specified
             config = None
             env = None
-        
+
         result = merge_cli_args(config, Args())
-        
+
         assert result['options']['strict'] is True
         # False is a valid override (not None)
         assert result['options']['show_orphans'] is False
@@ -503,15 +505,15 @@ class TestSchemaExport:
     def test_export_schema_to_file(self, tmp_path):
         """Test exporting schema to a file."""
         schema_file = tmp_path / "schema.json"
-        
+
         export_schema(str(schema_file))
-        
+
         assert schema_file.exists()
-        
+
         # Validate it's valid JSON
         with open(schema_file) as f:
             schema = json.load(f)
-        
+
         assert schema['$schema'] == 'http://json-schema.org/draft-07/schema#'
         assert schema['title'] == 'Swagger Sync Configuration'
         assert 'properties' in schema
@@ -520,9 +522,9 @@ class TestSchemaExport:
     def test_export_schema_creates_directory(self, tmp_path):
         """Test that export creates parent directories if needed."""
         schema_file = tmp_path / "nested" / "dir" / "schema.json"
-        
+
         export_schema(str(schema_file))
-        
+
         assert schema_file.exists()
         assert schema_file.parent.is_dir()
 
@@ -530,13 +532,13 @@ class TestSchemaExport:
         """Test that export overwrites existing file."""
         schema_file = tmp_path / "schema.json"
         schema_file.write_text("old content")
-        
+
         export_schema(str(schema_file))
-        
+
         # Should be valid JSON now (not "old content")
         with open(schema_file) as f:
             schema = json.load(f)
-        
+
         assert 'properties' in schema
 
 
@@ -546,19 +548,19 @@ class TestConfigFileGeneration:
     def test_init_config_creates_file(self, tmp_path):
         """Test that init creates a config file."""
         config_file = tmp_path / "swagger-sync.yaml"
-        
+
         init_config_file(str(config_file))
-        
+
         assert config_file.exists()
 
     def test_init_config_file_content(self, tmp_path):
         """Test that generated config has correct structure."""
         config_file = tmp_path / "swagger-sync.yaml"
-        
+
         init_config_file(str(config_file))
-        
+
         content = config_file.read_text()
-        
+
         # Check for key sections
         assert 'version:' in content
         assert 'swagger_file:' in content
@@ -570,7 +572,7 @@ class TestConfigFileGeneration:
         assert 'markers:' in content
         assert 'ignore:' in content
         assert 'environments:' in content
-        
+
         # Check for comments
         assert '# OpenAPI/Swagger Synchronization Configuration' in content
         assert 'yaml-language-server' in content
@@ -578,9 +580,9 @@ class TestConfigFileGeneration:
     def test_init_config_creates_directory(self, tmp_path):
         """Test that init creates parent directories."""
         config_file = tmp_path / "nested" / "config" / "swagger-sync.yaml"
-        
+
         init_config_file(str(config_file))
-        
+
         assert config_file.exists()
         assert config_file.parent.is_dir()
 
@@ -588,10 +590,10 @@ class TestConfigFileGeneration:
         """Test that init does not overwrite existing file."""
         config_file = tmp_path / "swagger-sync.yaml"
         config_file.write_text("existing content")
-        
+
         with pytest.raises(FileExistsError, match="already exists"):
             init_config_file(str(config_file))
-        
+
         # Original content should be preserved
         assert config_file.read_text() == "existing content"
 
@@ -599,9 +601,9 @@ class TestConfigFileGeneration:
         """Test that init can force overwrite with flag."""
         config_file = tmp_path / "swagger-sync.yaml"
         config_file.write_text("existing content")
-        
+
         init_config_file(str(config_file), force=True)
-        
+
         # Should be overwritten
         content = config_file.read_text()
         assert 'version:' in content
@@ -613,37 +615,37 @@ class TestDefaultConfig:
 
     def test_default_config_has_required_fields(self):
         """Test that DEFAULT_CONFIG contains all required fields."""
-        assert 'swagger_file' in DEFAULT_CONFIG
-        assert 'handlers_root' in DEFAULT_CONFIG
-        assert 'models_root' in DEFAULT_CONFIG
-        assert 'output' in DEFAULT_CONFIG
-        assert 'mode' in DEFAULT_CONFIG
-        assert 'options' in DEFAULT_CONFIG
-        assert 'markers' in DEFAULT_CONFIG
+        assert hasattr(DEFAULT_CONFIG, 'swagger_file')
+        assert hasattr(DEFAULT_CONFIG, 'handlers_root')
+        assert hasattr(DEFAULT_CONFIG, 'models_root')
+        assert hasattr(DEFAULT_CONFIG, 'output')
+        assert hasattr(DEFAULT_CONFIG, 'mode')
+        assert hasattr(DEFAULT_CONFIG, 'options')
+        assert hasattr(DEFAULT_CONFIG, 'markers')
 
     def test_default_mode_is_check(self):
         """Test that default mode is 'check'."""
-        assert DEFAULT_CONFIG['mode'] == 'check'
+        assert DEFAULT_CONFIG.mode == 'check'
 
     def test_default_markers_are_correct(self):
         """Test that default markers match project convention."""
-        assert DEFAULT_CONFIG['markers']['openapi_start'] == '>>>openapi'
-        assert DEFAULT_CONFIG['markers']['openapi_end'] == '<<<openapi'
+        assert DEFAULT_CONFIG.markers.start == '>>>openapi'
+        assert DEFAULT_CONFIG.markers.end == '<<<openapi'
 
     def test_default_output_structure(self):
         """Test default output configuration."""
-        output = DEFAULT_CONFIG['output']
-        assert 'directory' in output
-        assert 'coverage_report' in output
-        assert 'coverage_format' in output
+        output = DEFAULT_CONFIG.output
+        assert hasattr(output, 'directory')
+        assert hasattr(output, 'coverage_report')
+        assert hasattr(output, 'coverage_format')
 
     def test_default_options_structure(self):
         """Test default options configuration."""
-        options = DEFAULT_CONFIG['options']
-        assert 'strict' in options
-        assert 'show_orphans' in options
-        assert 'color' in options
-        assert isinstance(options['strict'], bool)
+        options = DEFAULT_CONFIG.options
+        assert hasattr(options, 'strict')
+        assert hasattr(options, 'show_orphans')
+        assert hasattr(options, 'color')
+        assert isinstance(options.strict, bool)
 
 
 class TestEdgeCases:
@@ -662,9 +664,9 @@ ignore:
   handlers: []
   paths: []
 """)
-        
+
         config = load_config(str(config_file))
-        
+
         assert config['ignore']['files'] == []
         assert config['ignore']['handlers'] == []
         assert config['ignore']['paths'] == []
@@ -672,7 +674,7 @@ ignore:
     def test_config_with_very_long_paths(self, tmp_path):
         """Test config with very long file paths."""
         long_path = '/'.join(['very_long_directory_name'] * 20) + '/file.yaml'
-        
+
         config_file = tmp_path / "long_paths.yaml"
         config_file.write_text(f"""
 version: '1.0'
@@ -680,9 +682,9 @@ swagger_file: {long_path}
 handlers_root: handlers/
 models_root: models/
 """)
-        
+
         config = load_config(str(config_file))
-        
+
         assert config['swagger_file'] == long_path
 
     def test_config_with_special_characters(self, tmp_path):
@@ -694,9 +696,9 @@ swagger_file: "api-v1.0_final(2).yaml"
 handlers_root: "handlers-[v1]/"
 models_root: "models_📦/"
 """, encoding='utf-8')
-        
+
         config = load_config(str(config_file))
-        
+
         assert config['swagger_file'] == "api-v1.0_final(2).yaml"
         assert config['handlers_root'] == "handlers-[v1]/"
         assert config['models_root'] == "models_📦/"
@@ -705,9 +707,9 @@ models_root: "models_📦/"
         """Test merging with numeric coverage threshold."""
         base = {'options': {'fail_on_coverage_below': 0.0}}
         override = {'options': {'fail_on_coverage_below': 85.5}}
-        
+
         result = merge_configs(base, override)
-        
+
         assert result['options']['fail_on_coverage_below'] == 85.5
 
     def test_environment_profile_deep_override(self, tmp_path):
@@ -727,9 +729,97 @@ environments:
       coverage_report: custom_coverage.json
       markdown_summary: custom_summary.md
 """)
-        
+
         config = load_config(str(config_file), environment='custom')
-        
+
         assert config['output']['directory'] == './reports/'  # Preserved
         assert config['output']['coverage_report'] == 'custom_coverage.json'  # Overridden
         assert config['output']['markdown_summary'] == 'custom_summary.md'  # Added
+
+
+class TestCoverageFormatHelpers:
+    """Test coverage format normalization and extension handling."""
+
+    def test_normalize_coverage_format_xml_to_cobertura(self):
+        """Test that 'xml' is normalized to 'cobertura'."""
+        assert normalize_coverage_format('xml') == 'cobertura'
+
+    def test_normalize_coverage_format_cobertura_unchanged(self):
+        """Test that 'cobertura' stays as 'cobertura'."""
+        assert normalize_coverage_format('cobertura') == 'cobertura'
+
+    def test_normalize_coverage_format_json_unchanged(self):
+        """Test that 'json' stays as 'json'."""
+        assert normalize_coverage_format('json') == 'json'
+
+    def test_normalize_coverage_format_text_unchanged(self):
+        """Test that 'text' stays as 'text'."""
+        assert normalize_coverage_format('text') == 'text'
+
+    def test_ensure_coverage_report_extension_none(self):
+        """Test that None input returns None."""
+        assert ensure_coverage_report_extension(None, 'json') is None
+
+    def test_ensure_coverage_report_extension_json_no_ext(self):
+        """Test adding .json extension when missing."""
+        assert ensure_coverage_report_extension('coverage', 'json') == 'coverage.json'
+
+    def test_ensure_coverage_report_extension_json_with_ext(self):
+        """Test that existing .json extension is preserved."""
+        assert ensure_coverage_report_extension('coverage.json', 'json') == 'coverage.json'
+
+    def test_ensure_coverage_report_extension_text_no_ext(self):
+        """Test adding .txt extension when missing."""
+        assert ensure_coverage_report_extension('coverage', 'text') == 'coverage.txt'
+
+    def test_ensure_coverage_report_extension_text_with_ext(self):
+        """Test that existing .txt extension is preserved."""
+        assert ensure_coverage_report_extension('coverage.txt', 'text') == 'coverage.txt'
+
+    def test_ensure_coverage_report_extension_cobertura_no_ext(self):
+        """Test adding .xml extension when missing for cobertura."""
+        assert ensure_coverage_report_extension('coverage', 'cobertura') == 'coverage.xml'
+
+    def test_ensure_coverage_report_extension_cobertura_with_ext(self):
+        """Test that existing .xml extension is preserved."""
+        assert ensure_coverage_report_extension('coverage.xml', 'cobertura') == 'coverage.xml'
+
+    def test_ensure_coverage_report_extension_user_choice_different(self):
+        """Test that user's explicit extension choice is preserved even if different."""
+        # User wants .log extension for json format - respect it
+        assert ensure_coverage_report_extension('coverage.log', 'json') == 'coverage.log'
+
+    def test_ensure_coverage_report_extension_with_path(self):
+        """Test extension handling with full paths."""
+        result1 = ensure_coverage_report_extension('./reports/coverage', 'json')
+        result2 = ensure_coverage_report_extension('./reports/coverage.json', 'json')
+        # Check that extension was added/preserved (normalize path separators for cross-platform)
+        assert result1.endswith('coverage.json')
+        assert result2.endswith('coverage.json')
+
+    def test_ensure_coverage_report_extension_case_insensitive(self):
+        """Test that extension matching is case-insensitive."""
+        assert ensure_coverage_report_extension('coverage.JSON', 'json') == 'coverage.JSON'
+        assert ensure_coverage_report_extension('coverage.XML', 'cobertura') == 'coverage.XML'
+
+    def test_merge_cli_args_with_null_output(self):
+        """Test that merge_cli_args handles None/null values in nested structures."""
+        # Simulate config with output set to None (like quiet environment)
+        config = {
+            'swagger_file': 'api.yaml',
+            'handlers_root': 'handlers/',
+            'output': None,  # Explicitly set to None
+            'options': {'strict': False},
+            'markers': None,  # Also test markers as None
+        }
+        
+        cli_args = {'strict': True, 'coverage_format': 'json'}
+        
+        # Should not raise "NoneType object does not support item assignment"
+        result = merge_cli_args(config, cli_args)
+        
+        # Should have created empty dicts for None values
+        assert isinstance(result['output'], dict)
+        assert isinstance(result['markers'], dict)
+        assert result['options']['strict'] is True
+        assert result['output']['coverage_format'] == 'json'

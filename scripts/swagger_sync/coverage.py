@@ -31,8 +31,10 @@ Legacy Metrics (Still Available):
 The module supports multiple output formats:
 - JSON: Detailed coverage metrics with orphan lists and per-endpoint records
 - Text: Human-readable coverage summary with colorized orphan warnings
-- Markdown: GitHub-ready tables with emoji and orphan sections
 - Cobertura XML: CI/CD integration with automation metrics as custom properties
+
+Note: Markdown coverage content is now integrated into the markdown_summary output
+file instead of being a separate coverage report format.
 
 Extracted from monolithic swagger_sync.py as part of Phase 2 refactoring.
 
@@ -157,12 +159,15 @@ def _generate_coverage(
     Key focus: Orphaned components (no @openapi.component) and orphaned endpoints
     (no Python decorators) as technical debt indicators.
 
+    Note: Markdown coverage content is now part of the markdown_summary output
+    instead of a separate coverage report format.
+
     Args:
         endpoints: List of discovered endpoint objects from handler files
         ignored: List of (path, method, file, function) tuples for ignored endpoints
         swagger: Parsed swagger/OpenAPI specification dictionary
         report_path: Output file path for the coverage report
-        fmt: Output format - one of 'json', 'text', 'markdown', 'cobertura'
+        fmt: Output format - one of 'json', 'text', 'cobertura'
         extra_summary: Optional dict of additional metrics to merge into summary
                       (e.g., legacy metrics for backward compatibility)
         model_components: Optional dict of components from @openapi.component decorated classes
@@ -173,6 +178,9 @@ def _generate_coverage(
 
     Side Effects:
         Writes coverage report to report_path
+        
+    Note:
+        Format should be normalized before calling (xml -> cobertura)
     """
     summary, endpoint_records, swagger_only, orphaned_components = _compute_coverage(
         endpoints, ignored, swagger, model_components
@@ -377,167 +385,6 @@ def _generate_coverage(
             lines.append("Swagger only:")
             for so in swagger_only:
                 lines.append(f" - {so['method'].upper()} {so['path']}")
-        report_path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
-    elif fmt == 'markdown':
-        lines = ["# 📊 OpenAPI Coverage Report", ""]
-
-        # Coverage Summary Table
-        lines.append("## 📈 Coverage Summary\n")
-        lines.append("| Metric | Count | Coverage |")
-        lines.append("|--------|-------|----------|")
-        lines.append(f"| Handlers (considered) | {summary['handlers_total']} | - |")
-        lines.append(f"| Ignored | {summary['ignored_total']} | - |")
-
-        block_rate = summary['coverage_rate_handlers_with_block']
-        block_display = _format_rate_emoji(summary['with_openapi_block'], summary['handlers_total'], block_rate)
-        lines.append(f"| With OpenAPI block | {summary['with_openapi_block']} | {block_display} |")
-
-        swagger_rate = summary['coverage_rate_handlers_in_swagger']
-        swagger_display = _format_rate_emoji(summary['handlers_in_swagger'], summary['handlers_total'], swagger_rate)
-        lines.append(f"| In swagger | {summary['handlers_in_swagger']} | {swagger_display} |")
-
-        match_rate = summary['operation_definition_match_rate']
-        match_display = _format_rate_emoji(summary['definition_matches'], summary['with_openapi_block'], match_rate)
-        lines.append(f"| Definition matches | {summary['definition_matches']} | {match_display} |")
-
-        lines.append(f"| Swagger only operations | {summary['swagger_only_operations']} | - |")
-        lines.append("")
-
-        # ========================================================================
-        # NEW: Automation Coverage Section (PRIMARY FOCUS)
-        # Shows technical debt: items NOT managed by code decorators
-        # ========================================================================
-        lines.append("## 🤖 Automation Coverage (Technical Debt)\n")
-        lines.append("> **Goal:** Minimize orphaned items (manual YAML definitions) by using decorators.\n")
-        lines.append("| Item Type | Count | Automation Rate |")
-        lines.append("|-----------|-------|-----------------|")
-
-        # Component automation
-        comp_auto_rate = summary.get('component_automation_rate', 0.0)
-        comp_auto_display = _format_rate_emoji(
-            summary.get('automated_components', 0),
-            summary.get('total_swagger_components', 0),
-            comp_auto_rate
-        )
-        lines.append(f"| Components (automated) | {summary.get('automated_components', 0)} | {comp_auto_display} |")
-        lines.append(f"| Components (manual/orphan) | {summary.get('orphaned_components_count', 0)} | ⚠️ TECHNICAL DEBT |")
-
-        # Endpoint automation
-        ep_auto_rate = summary.get('endpoint_automation_rate', 0.0)
-        ep_auto_display = _format_rate_emoji(
-            summary.get('automated_endpoints', 0),
-            summary.get('total_swagger_endpoints', 0),
-            ep_auto_rate
-        )
-        lines.append(f"| Endpoints (automated) | {summary.get('automated_endpoints', 0)} | {ep_auto_display} |")
-        lines.append(f"| Endpoints (manual/orphan) | {summary.get('orphaned_endpoints_count', 0)} | ⚠️ TECHNICAL DEBT |")
-
-        # Overall automation
-        overall_auto_rate = summary.get('automation_coverage_rate', 0.0)
-        overall_auto_display = _format_rate_emoji(
-            summary.get('total_items', 0) - summary.get('total_orphans', 0),
-            summary.get('total_items', 0),
-            overall_auto_rate
-        )
-        lines.append(f"| **OVERALL AUTOMATION** | **{summary.get('total_items', 0) - summary.get('total_orphans', 0)}** | **{overall_auto_display}** |")
-        lines.append(f"| **Total orphans (debt)** | **{summary.get('total_orphans', 0)}** | 🚨 **NEEDS ATTENTION** |")
-        lines.append("")
-
-        # Orphaned items details
-        if orphaned_components:
-            lines.append("### 🚨 Orphaned Components (no @openapi.component)\n")
-            lines.append("These schemas exist in swagger but have no corresponding Python model class:\n")
-            for comp_name in sorted(orphaned_components):
-                lines.append(f"- `{comp_name}`")
-            lines.append("")
-
-        if swagger_only:
-            lines.append("### 🚨 Orphaned Endpoints (no Python decorator)\n")
-            lines.append("These endpoints exist in swagger but have no corresponding handler:\n")
-            for op in sorted(swagger_only, key=lambda x: (x['path'], x['method'])):
-                lines.append(f"- `{op['method'].upper()}` {op['path']}")
-            lines.append("")
-
-        # ========================================================================
-
-
-        # Quality Metrics Table
-        lines.append("## ✨ Documentation Quality Metrics\n")
-        lines.append("| Quality Indicator | Count | Rate |")
-        lines.append("|-------------------|-------|------|")
-
-        total_block = summary['with_openapi_block']
-        quality_metrics = [
-            ('📝 Summary', summary['endpoints_with_summary'], summary['quality_rate_summary']),
-            ('📄 Description', summary['endpoints_with_description'], summary['quality_rate_description']),
-            ('🔧 Parameters', summary['endpoints_with_parameters'], summary['quality_rate_parameters']),
-            ('📦 Request body', summary['endpoints_with_request_body'], summary['quality_rate_request_body']),
-            ('🔀 Multiple responses', summary['endpoints_with_multiple_responses'], summary['quality_rate_multiple_responses']),
-            ('💡 Examples', summary['endpoints_with_examples'], summary['quality_rate_examples']),
-        ]
-
-        for label, count, rate in quality_metrics:
-            rate_display = _format_rate_emoji(count, total_block, rate)
-            lines.append(f"| {label} | {count} | {rate_display} |")
-
-        lines.append("")
-
-        # Method Breakdown Table
-        lines.append("## 🔄 HTTP Method Breakdown\n")
-        lines.append("| Method | Total | Documented | In Swagger |")
-        lines.append("|--------|-------|------------|------------|")
-
-        for method in sorted(summary['method_statistics'].keys()):
-            stats = summary['method_statistics'][method]
-            doc_rate = (stats['documented'] / stats['total']) if stats['total'] else 0.0
-            doc_display = _format_rate_emoji(stats['documented'], stats['total'], doc_rate)
-            emoji = '📥' if method == 'POST' else '📤' if method == 'PUT' else '🗑️' if method == 'DELETE' else '📖'
-            lines.append(f"| {emoji} {method} | {stats['total']} | {doc_display} | {stats['in_swagger']} |")
-
-        lines.append("")
-
-        # Tag Coverage Table
-        if summary['tag_coverage']:
-            lines.append(f"## 🏷️ Tag Coverage\n")
-            lines.append(f"**Unique tags:** {summary['unique_tags']}\n")
-            lines.append("| Tag | Endpoints |")
-            lines.append("|-----|-----------|")
-
-            for tag in sorted(summary['tag_coverage'].keys()):
-                count = summary['tag_coverage'][tag]
-                lines.append(f"| {tag} | {count} |")
-
-            lines.append("")
-
-        # File Statistics Table (top 10)
-        lines.append("## 📁 Top Files by Endpoint Count\n")
-        lines.append("| File | Total | Documented |")
-        lines.append("|------|-------|------------|")
-
-        file_list = [(f, s) for f, s in summary['file_statistics'].items()]
-        file_list.sort(key=lambda x: x[1]['total'], reverse=True)
-        for file_path, stats in file_list[:10]:
-            doc_rate = (stats['documented'] / stats['total']) if stats['total'] else 0.0
-            file_name = pathlib.Path(file_path).name
-            doc_display = _format_rate_emoji(stats['documented'], stats['total'], doc_rate)
-            lines.append(f"| {file_name} | {stats['total']} | {doc_display} |")
-
-        lines.append("")
-
-        # Per-endpoint details
-        lines.append("## 📋 Per-Endpoint Details\n")
-        lines.append("### Documented Endpoints\n")
-        for rec in endpoint_records:
-            if not rec['ignored'] and rec['has_openapi_block']:
-                status_emoji = '✅' if rec['definition_matches'] else '⚠️'
-                lines.append(f"- {status_emoji} `{rec['method'].upper()} {rec['path']}`")
-
-        if swagger_only:
-            lines.append("\n### 🔍 Swagger-Only Operations\n")
-            for so in swagger_only:
-                lines.append(f"- ❌ `{so['method'].upper()} {so['path']}`")
-
-        lines.append("")
         report_path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
     elif fmt == 'cobertura':
         try:

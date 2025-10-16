@@ -40,35 +40,38 @@ except ImportError:
 class ConfigModel:
 
     def __init__(self, data: Dict[str, Any]):
+        self.version: str = data.get('version', '1.0')
         self.swagger_file: str = data.get('swagger_file', '.swagger.v1.yaml')
         self.handlers_root: str = data.get('handlers_root', 'bot/lib/http/handlers/')
         self.models_root: str = data.get('models_root', 'bot/lib/models/')
         self.ignore_file: Optional[str] = data.get('ignore_file', None)
-        self.output: ConfigOutputModel = ConfigOutputModel(data.get('output', {}))
+        self.output: Optional[ConfigOutputModel] = ConfigOutputModel(data.get('output', {}))
         self.mode: Literal['check', 'fix'] = data.get('mode', 'check')
-        self.options: ConfigOptionsModel = ConfigOptionsModel(data.get('options', {}))
-        self.markers: ConfigMarkersModel = ConfigMarkersModel(data.get('markers', {}))
-        self.ignore: ConfigIgnoreModel = ConfigIgnoreModel(data.get('ignore', {}))
+        self.options: Optional[ConfigOptionsModel] = ConfigOptionsModel(data.get('options', {}))
+        self.markers: Optional[ConfigMarkersModel] = ConfigMarkersModel(data.get('markers', {}))
+        self.ignore: Optional[ConfigIgnoreModel] = ConfigIgnoreModel(data.get('ignore', {}))
         self.environments: Optional[ConfigEnvironmentModel] = None
         if 'environments' in data and isinstance(data['environments'], dict):
             self.environments = ConfigEnvironmentModel(data['environments'])
 
-        self.version: str = data.get('version', '1.0')
 
     def to_dict(self) -> Dict[str, Any]:
-        return self.__dict__
+        # this should return a dict suitable for dumping to YAML
+        # it should __dict__ recursively
+        # exclude None values
+        return {k: v.to_dict() if hasattr(v, 'to_dict') else v for k, v in self.__dict__.items() if v is not None}
 
 class ConfigOutputModel:
 
     def __init__(self, data: Dict[str, Any]):
         self.directory: str = data.get('directory', './reports/openapi/')
-        self.coverage_report: str = data.get('coverage_report', 'openapi_coverage.json')
-        self.coverage_format: Literal['json', 'text', 'markdown', 'xml'] = data.get('coverage_format', 'json')
+        self.coverage_report: Optional[str] = data.get('coverage_report', None)
+        self.coverage_format: Literal['json', 'text', 'cobertura', 'xml'] = data.get('coverage_format', 'json')
         self.markdown_summary: Optional[str] = data.get('markdown_summary', None)
         self.badge: Optional[str] = data.get('badge', None)
 
     def to_dict(self) -> Dict[str, Any]:
-        return self.__dict__
+        return {k: v.to_dict() if hasattr(v, 'to_dict') else v for k, v in self.__dict__.items() if v is not None}
 
 class ConfigOptionsModel:
 
@@ -84,7 +87,7 @@ class ConfigOptionsModel:
         self.fail_on_coverage_below: Optional[float] = data.get('fail_on_coverage_below', None)
 
     def to_dict(self) -> Dict[str, Any]:
-        return self.__dict__
+        return {k: v.to_dict() if hasattr(v, 'to_dict') else v for k, v in self.__dict__.items() if v is not None}
 
 class ConfigMarkersModel:
 
@@ -93,7 +96,7 @@ class ConfigMarkersModel:
         self.end: str = data.get('end', '<<<openapi')
 
     def to_dict(self) -> Dict[str, Any]:
-        return self.__dict__
+        return {k: v.to_dict() if hasattr(v, 'to_dict') else v for k, v in self.__dict__.items()}
 
 class ConfigIgnoreModel:
 
@@ -103,7 +106,7 @@ class ConfigIgnoreModel:
         self.paths: Optional[List[str]] = data.get('paths', None)
 
     def to_dict(self) -> Dict[str, Any]:
-        return self.__dict__
+        return {k: v.to_dict() if hasattr(v, 'to_dict') else v for k, v in self.__dict__.items() if v is not None}
 
 class ConfigEnvironmentModel(Dict[str, ConfigModel]):
 
@@ -113,11 +116,11 @@ class ConfigEnvironmentModel(Dict[str, ConfigModel]):
             self[env_name] = ConfigModel(env_data)
 
     def to_dict(self) -> Dict[str, Any]:
-        return {env_name: env_model.to_dict() for env_name, env_model in self.items()}
+        return {k: v.to_dict() if hasattr(v, 'to_dict') else v for k, v in self.__dict__.items()}
 
 
 
-# Default configuration values
+# Default configuration values - created from empty dict to use all class defaults
 DEFAULT_CONFIG: ConfigModel = ConfigModel({})
 
 
@@ -159,6 +162,7 @@ def validate_config(config: Dict[str, Any], schema: Optional[Dict[str, Any]] = N
 def load_config(
     config_path: Union[str, pathlib.Path],
     environment: Optional[str] = None,
+    validate: bool = True,
 ) -> Dict[str, Any]:
     """Load and validate configuration from YAML file.
 
@@ -202,9 +206,75 @@ def load_config(
         config = merge_configs(config, env_config)
 
     # Validate against schema
-    validate_config(config)
+    try:
+        validate_config(config)
+    except (jsonschema.ValidationError, jsonschema.SchemaError) as e:
+        if validate:
+            raise ValueError(f"Configuration validation error: {e}")
+        else:
+            print(f"Warning: Configuration validation error (ignored): {e}")
 
     return config
+
+
+def normalize_coverage_format(fmt: str) -> str:
+    """Normalize coverage format (xml -> cobertura).
+
+    Args:
+        fmt: Format string ('json', 'text', 'cobertura', 'xml')
+
+    Returns:
+        Normalized format ('xml' becomes 'cobertura')
+    """
+    return 'cobertura' if fmt == 'xml' else fmt
+
+
+def ensure_coverage_report_extension(report_path: Optional[str], fmt: str) -> Optional[str]:
+    """Ensure coverage report has correct extension for format.
+
+    If the report_path has no extension or wrong extension, add/fix it.
+    If report_path is None, return None.
+
+    Args:
+        report_path: Path to coverage report file (may be None)
+        fmt: Format string (already normalized)
+
+    Returns:
+        Path with correct extension or None
+
+    Example:
+        >>> ensure_coverage_report_extension('coverage', 'json')
+        'coverage.json'
+        >>> ensure_coverage_report_extension('coverage.json', 'json')
+        'coverage.json'
+        >>> ensure_coverage_report_extension('coverage', 'cobertura')
+        'coverage.xml'
+    """
+    if report_path is None:
+        return None
+
+    import pathlib
+    path = pathlib.Path(report_path)
+
+    # Map formats to extensions
+    extension_map = {
+        'json': '.json',
+        'text': '.txt',
+        'cobertura': '.xml',
+    }
+
+    expected_ext = extension_map.get(fmt, '')
+
+    # If path already has the expected extension, return as-is
+    if path.suffix.lower() == expected_ext:
+        return report_path
+
+    # If path has any extension, trust user's choice
+    if path.suffix:
+        return report_path
+
+    # No extension: add the correct one
+    return str(path) + expected_ext
 
 
 def merge_configs(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
@@ -265,12 +335,12 @@ def merge_cli_args(config: Dict[str, Any], cli_args: Dict[str, Any]) -> Dict[str
     import copy
     result = copy.deepcopy(config)
 
-    # Ensure nested structures exist
-    if 'output' not in result:
+    # Ensure nested structures exist (handle None values from config)
+    if 'output' not in result or result['output'] is None:
         result['output'] = {}
-    if 'options' not in result:
+    if 'options' not in result or result['options'] is None:
         result['options'] = {}
-    if 'markers' not in result:
+    if 'markers' not in result or result['markers'] is None:
         result['markers'] = {}
 
     # Map CLI args to config structure
@@ -322,10 +392,11 @@ def merge_cli_args(config: Dict[str, Any], cli_args: Dict[str, Any]) -> Dict[str
         if value is None:
             continue  # None means not specified on CLI
 
-        # Special handling for mode flags
-        if cli_key in ('check', 'fix') and value:
-            result['mode'] = config_path[1]
-            continue
+        # Special handling for mode flags (skip false values - they don't set mode)
+        if cli_key in ('check', 'fix'):
+            if value:
+                result['mode'] = config_path[1]
+            continue  # Always skip these, don't try to navigate into 'mode'
 
         # Apply to config structure
         target = result
@@ -361,14 +432,12 @@ def export_schema(output_path: Optional[pathlib.Path] = None) -> str:
 
 def init_config_file(
     output_path: Union[str, pathlib.Path] = 'swagger-sync.yaml',
-    include_examples: bool = True,
     force: bool = False,
 ) -> None:
     """Generate example configuration file with documentation.
 
     Args:
         output_path: Path for generated config file (string or Path)
-        include_examples: Whether to include example sections (environments, ignore)
         force: If True, overwrite existing file without raising error
 
     Raises:
@@ -396,55 +465,49 @@ def init_config_file(
         'swagger_file': '.swagger.v1.yaml',
         'handlers_root': 'bot/lib/http/handlers/',
         'models_root': 'bot/lib/models/',
-    }
-
-    config['output'] = {
-        'directory': './reports/openapi/',
-        'coverage_report': 'openapi_coverage.json',
-        'coverage_format': 'json',
-        'markdown_summary': 'openapi_summary.md',
-    }
-
-    config['mode'] = 'check'
-
-    config['options'] = {
-        'strict': False,
-        'show_orphans': True,
-        'show_missing_blocks': True,
-        'verbose_coverage': True,
-        'color': 'auto',
-    }
-
-    config['markers'] = {
-        'openapi_start': '>>>openapi',
-        'openapi_end': '<<<openapi',
-    }
-
-    if include_examples:
-        config['ignore'] = {
+        'output': {
+            'directory': './reports/openapi/',
+            'coverage_report': 'openapi_coverage.json',
+            'coverage_format': 'json',
+            'markdown_summary': 'openapi_summary.md',
+            'badge': 'openapi_coverage.svg',
+        },
+        'mode': 'check',
+        'options': {
+            'strict': False,
+            'show_orphans': True,
+            'show_missing_blocks': True,
+            'verbose_coverage': True,
+            'color': 'auto',
+        },
+        'markers': {
+            'start': '>>>openapi',
+            'end': '<<<openapi',
+        },
+        'ignore': {
             'files': ['**/test_*.py', '**/__pycache__/**'],
             'handlers': ['internal_health_check', 'debug_endpoint'],
-        }
-
-        config['environments'] = {
+        },
+        'environments': {
             'ci': {
                 'options': {
                     'color': 'never',
                     'strict': True,
-                }
+                },
             },
             'local': {
                 'options': {
                     'show_orphans': False,
                     'verbose_coverage': True,
-                }
-            }
-        }
+                },
+            },
+        },
+    }
 
     # Write config file with header comment
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write("# OpenAPI/Swagger Synchronization Configuration\n")
-        f.write("# yaml-language-server: $schema=https://tacobot.app/schemas/swagger-sync-config.json\n")
+        f.write("# yaml-language-server: $schema=./scripts/swagger_sync/config_schema.json\n")
         f.write("#\n")
         f.write("# This file configures the swagger_sync.py script for this project.\n")
         f.write("# All paths are relative to the directory containing this file.\n")

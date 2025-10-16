@@ -2,7 +2,7 @@
 
 ## Overview
 
-Enhanced the OpenAPI coverage report generation with **colorized terminal tables** and **emoji indicators** for both text and markdown formats, making coverage data more visually appealing and easier to interpret at a glance.
+Enhanced the OpenAPI coverage report generation with **colorized terminal tables** and **emoji indicators** for text format, and integrated comprehensive **markdown coverage content** into the markdown_summary output, making coverage data more visually appealing and easier to interpret at a glance.
 
 ## What Changed
 
@@ -17,33 +17,46 @@ The text format now uses:
   - 🟡 **YELLOW**: 60-89% coverage (good)
   - 🔴 **RED**: <60% coverage (needs improvement)
 
-### 2. **Enhanced Markdown Format** 📝
+### 2. **Comprehensive Markdown Summary** 📝
 
-The markdown format now includes:
-- **GitHub-compatible tables** with proper formatting
-- **Emoji indicators** for coverage levels
-- **Method-specific emoji** (📖 GET, 📥 POST, 📤 PUT, 🗑️ DELETE)
-- **Status emoji** for endpoints (✅ documented, ❌ swagger-only)
-- **Quality indicators** (📝 summary, 📄 description, 🔧 parameters, etc.)
+The `--markdown-summary` output now includes extensive coverage information:
+- **📊 Coverage Summary**: Basic handler/swagger metrics
+- **🤖 Automation Coverage**: Technical debt analysis (orphaned components/endpoints)
+- **✨ Documentation Quality**: Summary, descriptions, parameters, examples
+- **🔄 HTTP Method Breakdown**: Per-method documentation rates with emoji
+- **🏷️ Tag Coverage**: API organization metrics
+- **� Top Files**: Most active handler files by endpoint count
+- **💡 Suggestions**: Actionable improvement recommendations
+- **📝 Proposed Diffs**: (when drift detected)
+- **🚫 Ignored Endpoints**: (when present)
+
+> **Note**: The `markdown` format was **removed** from `--coverage-format` choices.
+> All markdown coverage content is now included in the `--markdown-summary` output file.
 
 ### 3. **New Helper Functions**
 
-Added utility functions in `coverage.py`:
+Added utility functions in `coverage.py` and `cli.py`:
 
 ```python
+# coverage.py
 def _get_color_for_rate(rate: float) -> str
 def _get_emoji_for_rate(rate: float) -> str
 def _format_rate_colored(count: int, total: int, rate: float) -> str
+
+# cli.py
 def _format_rate_emoji(count: int, total: int, rate: float) -> str
 ```
 
 ### 4. **Updated CLI Arguments**
 
-Extended `--coverage-format` choices to include `markdown`:
+**Coverage format choices** (for `--coverage-report`):
 - `json`: Structured data for automation
 - `text`: Colorized terminal tables with emoji
-- `markdown`: GitHub-ready tables with emoji (NEW!)
 - `cobertura`: CI/CD compatible XML
+
+**Markdown summary** (for `--markdown-summary`):
+- Comprehensive coverage report in GitHub-compatible markdown
+- Includes all coverage details, quality metrics, and visualizations
 
 ## Visual Comparison
 

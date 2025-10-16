@@ -46,7 +46,7 @@ def test_output_directory_relative_and_absolute(tmp_path):  # pytest fixture tmp
     swagger = {'openapi': '3.0.0', 'paths': {}}
     swagger_new, changed, notes, diffs = se.merge(swagger, endpoints)
     # Build coverage (ensures operation created)
-    summary, recs, swagger_only = se._compute_coverage(endpoints, ignored, swagger_new)
+    summary, recs, swagger_only, orphaned_components = se._compute_coverage(endpoints, ignored, swagger_new)
 
     # Emulate _resolve_output logic used in script
     def resolve(p: str) -> pathlib.Path:

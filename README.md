@@ -240,7 +240,7 @@ python scripts/swagger_sync.py --check --env=ci
 
 **Example Configuration** (`swagger-sync.yaml`):
 ```yaml
-# yaml-language-server: $schema=https://tacobot.app/schemas/swagger-sync-config.json
+# yaml-language-server: $schema=./scripts/swagger_sync/config_schema.json
 version: '1.0'
 swagger_file: .swagger.v1.yaml
 handlers_root: bot/lib/http/handlers/

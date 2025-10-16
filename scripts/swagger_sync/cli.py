@@ -87,7 +87,7 @@ def main() -> None:
     parser.add_argument('--ignore-file', action='append', default=[], help='Glob pattern (relative to handlers root) or filename to ignore (can be repeated)')
     parser.add_argument('--markdown-summary', help='Write a GitHub Actions style Markdown summary to this file (in addition to console output)')
     parser.add_argument('--generate-badge', help='Generate an SVG badge showing OpenAPI coverage percentage and write it to the given path (e.g., docs/badges/openapi-coverage.svg)')
-    parser.add_argument('--output-directory', default='.', help='Base directory to place output artifacts (coverage reports, markdown summary). Default: current working directory')
+    parser.add_argument('--output-directory', default=None, help='Base directory to place output artifacts (coverage reports, markdown summary). Default: current working directory')
     parser.add_argument('--strict', action='store_true', help='Treat docstring/decorator HTTP method mismatches as errors (default: warn and ignore extraneous methods)')
     parser.add_argument('--openapi-start', default=DEFAULT_OPENAPI_START, help=f'Start delimiter for embedded OpenAPI blocks (default: {DEFAULT_OPENAPI_START!r})')
     parser.add_argument('--openapi-end', default=DEFAULT_OPENAPI_END, help=f'End delimiter for embedded OpenAPI blocks (default: {DEFAULT_OPENAPI_END!r})')
@@ -143,7 +143,14 @@ def main() -> None:
     ]):
         from .config import load_config, merge_cli_args
         try:
-            config_path = pathlib.Path(args.config) if args.config else None
+            if args.config:
+                config_path = pathlib.Path(args.config)
+            else:
+                # Find first existing default config file
+                for default_name in ['swagger-sync.yaml', 'swagger-sync.yml', '.swagger-sync.yaml', '.swagger-sync.yml']:
+                    if pathlib.Path(default_name).exists():
+                        config_path = pathlib.Path(default_name)
+                        break
             config_dict = load_config(
                 config_path=config_path,
                 environment=args.env,
@@ -200,8 +207,47 @@ def main() -> None:
             pass
         except Exception as e:
             raise SystemExit(f"❌ Config error: {e}")
-    elif args.validate_config:
+    else:
+        # No config file - use base defaults from ConfigModel and merge with CLI args
+        from .config import DEFAULT_CONFIG, merge_cli_args
+        config_dict = DEFAULT_CONFIG.to_dict()
+        cli_args_dict = vars(args)
+        config_dict = merge_cli_args(config_dict, cli_args_dict)
+
+        # Update args namespace with merged config
+        for key, value in config_dict.items():
+            if key == 'output':
+                for out_key, out_val in value.items():
+                    if out_key == 'directory':
+                        args.output_directory = out_val
+                    elif out_key == 'coverage_report':
+                        args.coverage_report = out_val
+                    elif out_key == 'coverage_format':
+                        args.coverage_format = out_val
+                    elif out_key == 'markdown_summary':
+                        args.markdown_summary = out_val
+                    elif out_key == 'badge':
+                        args.generate_badge = out_val
+            elif key == 'options':
+                for opt_key, opt_val in value.items():
+                    setattr(args, opt_key, opt_val)
+            elif key == 'markers':
+                for mark_key, mark_val in value.items():
+                    setattr(args, mark_key, mark_val)
+            elif key == 'mode':
+                if value == 'fix':
+                    args.fix = True
+                    args.check = False
+                else:
+                    args.check = True
+                    args.fix = False
+            elif key not in ('environments', 'version', 'ignore'):
+                # Top-level config values
+                setattr(args, key, value)
+
+    if args.validate_config:
         raise SystemExit("❌ No config file found. Use --config to specify one or create swagger-sync.yaml")
+
 
     handlers_root = pathlib.Path(args.handlers_root)
     swagger_path = pathlib.Path(args.swagger_file)
@@ -335,6 +381,8 @@ def main() -> None:
     # augment coverage summary with component metrics
     coverage_summary['model_components_generated'] = model_components_generated_count
     coverage_summary['model_components_existing_not_generated'] = model_components_existing_not_generated_count
+
+    # output_directory is guaranteed to have a value from config merge (either from config file or DEFAULT_CONFIG)
     output_dir = pathlib.Path(args.output_directory)
     try:
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -345,12 +393,18 @@ def main() -> None:
         if not p:
             return None
         path_obj = pathlib.Path(p)
+        # Absolute paths (e.g., /abs/path or C:/path) use as-is
         if path_obj.is_absolute():
             return path_obj
+        # Paths starting with ./ or ../ are relative to CWD (project root), not output_dir
+        if p.startswith('./') or p.startswith('../') or p.startswith('.\\') or p.startswith('..\\'):
+            return path_obj
+        # Otherwise, relative to output_dir
         return output_dir / path_obj
 
     coverage_report_path = _resolve_output(args.coverage_report)
     markdown_summary_path = _resolve_output(args.markdown_summary)
+    badge_path = _resolve_output(args.generate_badge)
 
     # Warn if artifacts risk accidental commit. Allow 'reports' root and any subdirectory underneath.
     try:
@@ -609,9 +663,9 @@ def main() -> None:
                 print(f"WARNING: Failed writing markdown summary: {e}", file=sys.stderr)
 
         # Generate badge if requested
-        if args.generate_badge:
+        if badge_path:
             try:
-                badge_path = pathlib.Path(args.generate_badge)
+                badge_path.parent.mkdir(parents=True, exist_ok=True)
                 generate_coverage_badge(coverage_summary['coverage_rate_handlers_with_block'], badge_path)
             except Exception as e:
                 print(f"WARNING: Failed to generate badge: {e}", file=sys.stderr)
@@ -651,9 +705,9 @@ def main() -> None:
                 print(f"WARNING: Failed writing markdown summary: {e}", file=sys.stderr)
 
         # Generate badge if requested
-        if args.generate_badge:
+        if badge_path:
             try:
-                badge_path = pathlib.Path(args.generate_badge)
+                badge_path.parent.mkdir(parents=True, exist_ok=True)
                 generate_coverage_badge(coverage_summary['coverage_rate_handlers_with_block'], badge_path)
             except Exception as e:
                 print(f"WARNING: Failed to generate badge: {e}", file=sys.stderr)

@@ -16,9 +16,9 @@ handlers_root: bot/lib/http/handlers/
 models_root: bot/lib/models/
 output:
   directory: ./reports/openapi/
-  coverage_report: openapi_coverage.json
+  coverage_report: openapi-coverage.json
   coverage_format: json
-  markdown_summary: openapi_summary.md
+  badge: ./docs/badges/openapi-coverage.svg
 mode: check
 options:
   strict: false
@@ -27,8 +27,8 @@ options:
   verbose_coverage: true
   color: auto
 markers:
-  openapi_start: '>>>openapi'
-  openapi_end: <<<openapi
+  start: '>>>openapi'
+  end: <<<openapi
 ignore:
   files:
   - '**/test_*.py'
@@ -38,10 +38,32 @@ ignore:
   - debug_endpoint
 environments:
   ci:
+    mode: check
     options:
       color: never
       strict: true
+      show_orphans: true
+      show_missing_blocks: true
+      verbose_coverage: true
+    output:
+      markdown_summary: openapi-summary.md
+
   local:
+    mode: check
+    output:
+      markdown_summary: openapi-summary.md
+      coverage_report: openapi-coverage
+      coverage_format: json
+    options:
+      strict: true
+      show_orphans: true
+      show_missing_blocks: true
+      verbose_coverage: true
+  quiet:
+    mode: check
+    output: null
     options:
       show_orphans: false
-      verbose_coverage: true
+      show_missing_blocks: false
+      verbose_coverage: false
+      strict: false

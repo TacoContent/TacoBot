@@ -71,4 +71,3 @@ def generate_coverage_badge(coverage_rate: float, output_path: pathlib.Path) -> 
 
     # Write badge
     output_path.write_text(svg_template, encoding='utf-8')
-    print(f"Badge generated: {output_path}")

@@ -24,12 +24,13 @@
       "examples": ["bot/lib/models/", "src/models/"]
     },
     "ignore_file": {
-      "type": "string",
+      "type": ["string", "null"],
       "description": "Path to file containing ignore patterns (one per line)",
-      "examples": [".swaggerignore", "config/swagger-ignore.txt"]
+      "examples": [".swaggerignore", "config/swagger-ignore.txt"],
+      "nullable": true
     },
     "output": {
-      "type": "object",
+      "type": ["object", "null"],
       "description": "Output file and report generation settings",
       "properties": {
         "directory": {
@@ -39,23 +40,28 @@
           "examples": ["./reports/openapi/", "./build/swagger/"]
         },
         "coverage_report": {
-          "type": "string",
+          "type": ["string", "null"],
           "description": "Path for coverage report file (relative to directory or absolute)",
-          "examples": ["openapi_coverage.json", "coverage.xml", "coverage.txt", "coverage.md"]
+          "examples": [
+            "openapi_coverage.json",
+            "coverage.xml",
+            "coverage.txt",
+            "coverage.md"
+          ]
         },
         "coverage_format": {
-          "type": "string",
-          "description": "Format for coverage report",
-          "enum": ["json", "text", "markdown", "cobertura"],
+          "type": ["string", "null"],
+          "description": "Format for coverage report (xml and cobertura are equivalent)",
+          "enum": ["json", "text", "cobertura", "xml"],
           "default": "json"
         },
         "markdown_summary": {
-          "type": "string",
+          "type": ["string", "null"],
           "description": "Path for markdown summary file (for GitHub Actions integration)",
           "examples": ["openapi_summary.md", "summary.md"]
         },
         "badge": {
-          "type": "string",
+          "type": ["string", "null"],
           "description": "Path for SVG coverage badge generation",
           "examples": ["coverage-badge.svg", "badges/openapi.svg"]
         }
@@ -69,7 +75,7 @@
       "default": "check"
     },
     "options": {
-      "type": "object",
+      "type": [ "object", "null" ],
       "description": "General behavior options",
       "properties": {
         "strict": {
@@ -124,30 +130,28 @@
       "additionalProperties": false
     },
     "markers": {
-      "type": "object",
+      "type": ["object", "null"],
       "description": "Delimiter markers for OpenAPI blocks in docstrings",
       "properties": {
         "start": {
           "type": "string",
           "description": "Start marker for OpenAPI blocks",
-          "default": ">>>openapi",
-          "pattern": "^\\w+$"
+          "default": ">>>openapi"
         },
         "end": {
           "type": "string",
           "description": "End marker for OpenAPI blocks",
-          "default": "<<<openapi",
-          "pattern": "^\\w+$"
+          "default": "<<<openapi"
         }
       },
       "additionalProperties": false
     },
     "ignore": {
-      "type": "object",
+      "type": ["object", "null"],
       "description": "Patterns and explicit items to ignore during synchronization",
       "properties": {
         "files": {
-          "type": "array",
+          "type": ["array", "null"],
           "description": "File glob patterns to ignore (e.g., test files)",
           "items": {
             "type": "string"
@@ -158,7 +162,7 @@
           ]
         },
         "handlers": {
-          "type": "array",
+          "type": ["array", "null"],
           "description": "Specific handler function names to ignore",
           "items": {
             "type": "string"
@@ -169,7 +173,7 @@
           ]
         },
         "paths": {
-          "type": "array",
+          "type": ["array", "null"],
           "description": "Specific API paths to ignore",
           "items": {
             "type": "string"
@@ -183,7 +187,7 @@
       "additionalProperties": false
     },
     "environments": {
-      "type": "object",
+      "type": [ "object", "null" ],
       "description": "Environment-specific configuration profiles that override base settings",
       "patternProperties": {
         "^[a-zA-Z0-9_-]+$": {
