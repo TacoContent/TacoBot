@@ -22,7 +22,7 @@ import os
 import typing
 from collections.abc import Generator, KeysView
 from dataclasses import dataclass
-from http import HTTPStatus
+from http import HTTPStatus, HTTPMethod
 from time import monotonic
 from urllib.parse import parse_qs
 

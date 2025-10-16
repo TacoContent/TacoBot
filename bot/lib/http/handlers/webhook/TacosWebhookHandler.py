@@ -87,13 +87,18 @@ All exceptions are normalized into consistent JSON responses via
 ``HttpResponseException`` where possible.
 """
 
+from http import HTTPMethod
 import inspect
 import json
 import os
 import traceback
 
+from lib.models import openapi
+from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+
 from bot.lib.enums.tacotypes import TacoTypes
 from bot.lib.http.handlers.BaseWebhookHandler import BaseWebhookHandler
+from bot.lib.models.TacoWebhookMinecraftTacosPayload import TacoWebhookMinecraftTacosPayload
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.users_utils import UsersUtils
@@ -127,7 +132,22 @@ class TacosWebhookHandler(BaseWebhookHandler):
         self.tacos_db = TacosDatabase()
         self.users_utils = UsersUtils()
 
-    @uri_mapping("/webhook/minecraft/tacos", method="POST")
+    @uri_mapping("/webhook/minecraft/tacos", method=HTTPMethod.POST)
+    @openapi.response(
+        200,
+        description="Tacos successfully granted or removed",
+        contentType="application/json",
+        schema=TacoWebhookMinecraftTacosPayload,
+    )
+    @openapi.response(
+        [400, 401, 404, 500],
+        methods=[HTTPMethod.POST],
+        description="Bad request due to validation or limit error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.tags('webhook', 'minecraft')
+    @openapi.security('X-AUTH-TOKEN', 'X-TACOBOT-TOKEN')
     async def minecraft_give_tacos(self, request: HttpRequest) -> HttpResponse:
         """Alias endpoint for taco transfers originating from Minecraft events.
 

@@ -16,13 +16,92 @@ Rules / Conventions:
 """
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Optional, TypeVar, cast
+from typing import Any, Callable, Dict, List, Optional, TypeVar, cast, Union
+from http import HTTPMethod
+from types import FunctionType
 import typing
 
 T = TypeVar('T')
 AttrT = TypeVar('AttrT')
 
 _TYPE_ALIAS_REGISTRY: Dict[str, Dict[str, Any]] = {}
+
+
+def tags(*tags: str) -> Callable[[FunctionType], FunctionType]:
+    def _wrap(func: FunctionType) -> FunctionType:
+        if not hasattr(func, '__openapi_tags__'):
+            setattr(func, '__openapi_tags__', [])
+        func.__openapi_tags__.extend(tags)
+        return func
+    return _wrap
+
+
+def responseHeader() -> None:
+    pass  # TODO: implement response headers decorator
+
+def security(*schemes) -> Callable[[FunctionType], FunctionType]:
+    def _wrap(func: FunctionType) -> FunctionType:
+        if not hasattr(func, '__openapi_security__'):
+            setattr(func, '__openapi_security__', [])
+        func.__openapi_security__.extend(schemes)
+        return func
+    return _wrap
+
+def response(
+        status_codes: Union[typing.List[int], int],
+        *,
+        methods: Optional[Union[List[HTTPMethod], HTTPMethod]] = None,
+        description: Optional[str] = None,
+        summary: Optional[str] = None,
+        contentType: str,
+        schema: typing.Type,
+    ) -> Callable[[FunctionType], FunctionType]:
+    """Decorator to annotate a handler method with OpenAPI response metadata.
+
+    This decorator attaches OpenAPI response information to the decorated function,
+    which can be used by tools like swagger_sync to generate or update OpenAPI
+    documentation.
+
+    Parameters
+    ----------
+    status_codes : Union[typing.List[int], int]
+        The HTTP status code for the response (e.g., 200, 404).
+    methods : Optional[Union[List[HTTPMethod], HTTPMethod]], optional
+        The HTTP methods (e.g., GET, POST) this response applies to. If None,
+        defaults to [HTTPMethod.GET].
+    description : str
+        A brief description of the response.
+    contentType : str
+        The MIME type of the response content (e.g., "application/json").
+    schema : type
+        The schema or model class representing the structure of the response body.
+
+    Returns
+    -------
+    Callable[[FunctionType], FunctionType]
+        A decorator function that adds the OpenAPI response metadata to the decorated function.
+    """
+    def _wrap(func: FunctionType) -> FunctionType:
+        if not hasattr(func, '__openapi_responses__'):
+            setattr(func, '__openapi_responses__', [])
+        responses = getattr(func, '__openapi_responses__')
+        responses.append({
+            'status_code': status_codes if isinstance(status_codes, list) else [status_codes],
+            'methods': methods if isinstance(methods, list) else [methods] if methods else [HTTPMethod.GET],
+            'description': description,
+            'summary': summary,
+            # result should be a dict like {'application/json': {'schema': { '$ref': '#/components/schemas/<ModelClass>' }}}
+            'content': {
+                contentType: {
+                    'schema': {
+                        '$ref': f"#/components/schemas/{schema.__name__}"
+                    }
+                }
+            }
+        })
+        return func
+    return _wrap
+
 
 def component(name: Optional[str] = None, description: Optional[str] = None) -> Callable[[type], type]:
     def _wrap(cls: type) -> type:
@@ -33,7 +112,6 @@ def component(name: Optional[str] = None, description: Optional[str] = None) -> 
     return _wrap
 
 
-
 def attribute(name: str, value: typing.Optional[typing.Union[str, bool, int, float]]) -> Callable[[AttrT], AttrT]:
     def _wrap(attr: AttrT) -> AttrT:
         target = cast(Any, attr)
@@ -42,6 +120,7 @@ def attribute(name: str, value: typing.Optional[typing.Union[str, bool, int, flo
         target.__openapi_attributes__[name] = value
         return attr
     return _wrap
+
 
 def managed() -> Callable[[T], T]:
     """Decorator to mark a model class as managed by tacobot.
@@ -117,11 +196,14 @@ def get_type_alias_metadata(name: str) -> Optional[Dict[str, Any]]:
     return _TYPE_ALIAS_REGISTRY.get(name)
 
 __all__ = [
-    'component',
     'attribute',
-    'managed',
+    'component',
     'deprecated',
     'exclude',
+    'managed',
+    'response',
+    'security',
+    'tags',
     'type_alias',
     'get_type_alias_metadata'
 ]
