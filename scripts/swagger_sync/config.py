@@ -392,6 +392,15 @@ def merge_cli_args(config: Dict[str, Any], cli_args: Dict[str, Any]) -> Dict[str
         if value is None:
             continue  # None means not specified on CLI
 
+        # Special handling for boolean flags with store_true action:
+        # Skip False values (argparse defaults) to avoid overriding config
+        boolean_flags = {
+            'strict', 'show_orphans', 'show_ignored', 'show_missing_blocks',
+            'verbose_coverage', 'list_endpoints', 'no_model_components'
+        }
+        if cli_key in boolean_flags and value is False:
+            continue  # Don't override config with argparse default False
+
         # Special handling for mode flags (skip false values - they don't set mode)
         if cli_key in ('check', 'fix'):
             if value:

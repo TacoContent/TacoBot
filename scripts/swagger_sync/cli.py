@@ -606,6 +606,26 @@ def main() -> None:
             if len(ignored) > 50:
                 lines.append(f"... and {len(ignored)-50} more")
             lines.append("")
+        if args.verbose_coverage and coverage_records:
+            lines.append("## Per-Endpoint Coverage Detail")
+            lines.append("")
+            lines.append("| Method | Path | Status |")
+            lines.append("|--------|------|--------|")
+            for rec in coverage_records:
+                flags: List[str] = []
+                if rec['ignored']:
+                    flags.append('IGNORED')
+                if rec['has_openapi_block']:
+                    flags.append('BLOCK')
+                if rec['in_swagger']:
+                    flags.append('SWAGGER')
+                if rec['definition_matches']:
+                    flags.append('MATCH')
+                if rec['missing_in_swagger']:
+                    flags.append('MISSING_SWAGGER')
+                status = ' │ '.join(flags) if flags else 'NONE'
+                lines.append(f"| `{rec['method'].upper()}` | `{rec['path']}` | {status} |")
+            lines.append("")
         content = "\n".join(lines)
         content = "\n".join(l.rstrip() for l in content.splitlines())
         content = re.sub(r"\n{3,}", "\n\n", content)

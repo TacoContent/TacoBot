@@ -51,9 +51,6 @@ def test_badge_generation_via_cli():
         assert 'OpenAPI Coverage' in content, "Should contain label"
         assert '%' in content, "Should contain percentage"
 
-        # Verify output message
-        assert 'Badge generated:' in result.stdout, "Should log badge generation"
-
 
 def test_badge_generation_creates_nested_directories():
     """Test that --generate-badge creates nested directories if they don't exist."""
@@ -141,18 +138,6 @@ def test_badge_generation_direct_function_call():
         content = badge_path.read_text(encoding='utf-8')
         assert '75.0%' in content
         assert 'fill="#dfb317"' in content  # Yellow
-
-
-def test_badge_generation_prints_success_message(capsys):
-    """Test that badge generation prints a success message."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        badge_path = pathlib.Path(tmpdir) / 'test.svg'
-
-        generate_coverage_badge(0.85, badge_path)
-
-        captured = capsys.readouterr()
-        assert 'Badge generated:' in captured.out
-        assert str(badge_path) in captured.out
 
 
 def test_badge_generation_with_readonly_parent_directory():

@@ -47,12 +47,14 @@ environments:
       verbose_coverage: true
     output:
       markdown_summary: openapi-summary.md
+      coverage_report: openapi-coverage.json
+      coverage_format: json
 
   local:
     mode: check
     output:
       markdown_summary: openapi-summary.md
-      coverage_report: openapi-coverage
+      coverage_report: openapi-coverage.json
       coverage_format: json
     options:
       strict: true
