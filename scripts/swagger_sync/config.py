@@ -218,15 +218,19 @@ def load_config(
 
 
 def normalize_coverage_format(fmt: str) -> str:
-    """Normalize coverage format (xml -> cobertura).
+    """Normalize coverage format (xml and cobertura are aliases).
 
     Args:
         fmt: Format string ('json', 'text', 'cobertura', 'xml')
 
     Returns:
-        Normalized format ('xml' becomes 'cobertura')
+        The format as-is (both 'xml' and 'cobertura' are valid)
+
+    Note:
+        Previously this normalized 'xml' to 'cobertura', but now both
+        values are accepted as aliases for the same XML format.
     """
-    return 'cobertura' if fmt == 'xml' else fmt
+    return fmt  # Both 'xml' and 'cobertura' are valid aliases
 
 
 def ensure_coverage_report_extension(report_path: Optional[str], fmt: str) -> Optional[str]:
@@ -261,6 +265,7 @@ def ensure_coverage_report_extension(report_path: Optional[str], fmt: str) -> Op
         'json': '.json',
         'text': '.txt',
         'cobertura': '.xml',
+        'xml': '.xml',  # Alias for cobertura
     }
 
     expected_ext = extension_map.get(fmt, '')

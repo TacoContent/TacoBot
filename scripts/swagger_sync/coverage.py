@@ -624,7 +624,7 @@ def _generate_coverage(
             for so in swagger_only:
                 lines.append(f" - {so['method'].upper()} {so['path']}")
         report_path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
-    elif fmt == 'cobertura':
+    elif fmt in ('cobertura', 'xml'):  # Accept both 'cobertura' and 'xml' as aliases
         try:
             from xml.etree.ElementTree import Element, SubElement, tostring  # noqa: WPS433
         except Exception as e:  # pragma: no cover

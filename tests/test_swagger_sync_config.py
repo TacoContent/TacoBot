@@ -740,9 +740,9 @@ environments:
 class TestCoverageFormatHelpers:
     """Test coverage format normalization and extension handling."""
 
-    def test_normalize_coverage_format_xml_to_cobertura(self):
-        """Test that 'xml' is normalized to 'cobertura'."""
-        assert normalize_coverage_format('xml') == 'cobertura'
+    def test_normalize_coverage_format_xml_unchanged(self):
+        """Test that 'xml' stays as 'xml' (it's now an alias for cobertura)."""
+        assert normalize_coverage_format('xml') == 'xml'
 
     def test_normalize_coverage_format_cobertura_unchanged(self):
         """Test that 'cobertura' stays as 'cobertura'."""

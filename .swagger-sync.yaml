@@ -17,7 +17,7 @@ models_root: bot/lib/models/
 output:
   directory: ./reports/openapi/
   coverage_report: openapi-coverage.json
-  coverage_format: json
+  coverage_format: json  # Options: json, text, cobertura (or 'xml' as alias for cobertura)
   badge: ./docs/badges/openapi-coverage.svg
 mode: check
 options:
@@ -48,14 +48,14 @@ environments:
     output:
       markdown_summary: openapi-summary.md
       coverage_report: openapi-coverage.xml
-      coverage_format: xml
+      coverage_format: xml  # XML/cobertura format for CI/CD systems
 
   local:
     mode: check
     output:
       markdown_summary: openapi-summary.md
-      coverage_report: openapi-coverage.json
-      coverage_format: json
+      coverage_report: openapi-coverage.xml
+      coverage_format: xml  # XML/cobertura format for local testing
     options:
       strict: true
       show_orphans: true

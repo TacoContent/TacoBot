@@ -88,7 +88,7 @@ def main() -> None:
     parser.add_argument('--show-orphans', action='store_true', help='List swagger paths and components that have no code handler/model')
     parser.add_argument('--show-ignored', action='store_true', help='List endpoints skipped due to @openapi: ignore markers')
     parser.add_argument('--coverage-report', help='Write an OpenAPI coverage report to the given path (json, text, markdown, or cobertura based on --coverage-format)')
-    parser.add_argument('--coverage-format', default='json', choices=['json','text','markdown','cobertura'], help='Coverage report format (default: json)')
+    parser.add_argument('--coverage-format', default=None, choices=['json','text','xml','cobertura'], help='Coverage report format (default: json if not in config)')
     parser.add_argument('--fail-on-coverage-below', type=float, help='Fail (non-zero exit) if documentation coverage (handlers with openapi blocks) is below this threshold (accepts 0-1 or 0-100)')
     parser.add_argument('--verbose-coverage', action='store_true', default=False, help='Show per-endpoint coverage detail inline')
     parser.add_argument('--show-missing-blocks', action='store_true', help='List endpoints missing an >>>openapi <<<openapi block')
