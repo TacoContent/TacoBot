@@ -16,7 +16,17 @@ from io import StringIO as StringIOModule
 from typing import Any, Dict, List, Optional, Tuple
 
 from .badge import generate_coverage_badge
-from .coverage import _compute_coverage, _generate_coverage
+from .coverage import (
+    _compute_coverage,
+    _generate_coverage,
+    _build_coverage_summary_markdown,
+    _build_automation_coverage_markdown,
+    _build_quality_metrics_markdown,
+    _build_method_breakdown_markdown,
+    _build_tag_coverage_markdown,
+    _build_top_files_markdown,
+    _build_orphaned_warnings_markdown,
+)
 from .endpoint_collector import collect_endpoints
 from .model_components import collect_model_components
 from .swagger_ops import _colorize_unified, detect_orphans, merge, DISABLE_COLOR
@@ -540,10 +550,33 @@ def main() -> None:
             print(msg, file=sys.stderr)
 
     def build_markdown_summary(*, changed: bool, coverage_fail: bool) -> str:
+        """Build comprehensive markdown summary with enhanced coverage sections.
+
+        This function generates a markdown summary that includes:
+        - Status and diff information (unique to markdown summary)
+        - All coverage sections from coverage.py helpers (consolidated)
+        - Suggestions for improvements
+        - Proposed diffs (when drift detected)
+        - Orphaned items warnings
+        - Ignored endpoints list
+        - Per-endpoint detail (when verbose)
+
+        Args:
+            changed: Whether drift was detected between handlers and swagger
+            coverage_fail: Whether coverage threshold was not met
+
+        Returns:
+            Formatted markdown content ready to write to file
+        """
         def _strip_ansi(s: str) -> str:
             return re.sub(r"\x1b\[[0-9;]*m", "", s)
+
         cs = coverage_summary
         lines: List[str] = ["# OpenAPI Sync Result", ""]
+
+        # ========================================================================
+        # STATUS SECTION (unique to markdown summary)
+        # ========================================================================
         if changed:
             lines.append("**Status:** Drift detected. Please run the sync script with `--fix` and commit the updated swagger file.")
         elif coverage_fail:
@@ -553,32 +586,62 @@ def main() -> None:
         lines.append("")
         lines.append(f"_Diff color output: {color_reason}._")
         lines.append("")
-        lines.append("## Coverage Summary")
+
+        # ========================================================================
+        # ENHANCED COVERAGE SECTIONS (from coverage.py helpers)
+        # ========================================================================
+
+        # 1. Coverage Summary (enhanced with emoji)
+        lines.extend(_build_coverage_summary_markdown(cs))
         lines.append("")
-        lines.append("| Metric | Value | Percent |")
-        lines.append("|--------|-------|---------|")
-        lines.append(f"| Handlers considered | {cs['handlers_total']} | - |")
-        lines.append(f"| Ignored handlers | {cs['ignored_total']} | - |")
-        lines.append(f"| With doc blocks | {cs['with_openapi_block']} | {cs['coverage_rate_handlers_with_block']:.1%} |")
-        lines.append(f"| In swagger (handlers) | {cs['handlers_in_swagger']} | {cs['coverage_rate_handlers_in_swagger']:.1%} |")
-        lines.append(f"| Definition matches | {cs['definition_matches']} / {cs['with_openapi_block']} | {cs['operation_definition_match_rate']:.1%} |")
-        lines.append(f"| Swagger only operations | {cs['swagger_only_operations']} | - |")
-        lines.append(f"| Model components generated | {cs.get('model_components_generated', 0)} | - |")
-        lines.append(f"| Schemas not generated | {cs.get('model_components_existing_not_generated', 0)} | - |")
+
+        # Add model component metrics to coverage summary section
+        lines.append("| Model components generated | {} | - |".format(cs.get('model_components_generated', 0)))
+        lines.append("| Schemas not generated | {} | - |".format(cs.get('model_components_existing_not_generated', 0)))
         lines.append("")
+
+        # 2. Automation Coverage (NEW - was missing)
+        lines.extend(_build_automation_coverage_markdown(cs))
+        lines.append("")
+
+        # 3. Documentation Quality Metrics (NEW - was missing)
+        lines.extend(_build_quality_metrics_markdown(cs))
+        lines.append("")
+
+        # 4. HTTP Method Breakdown (NEW - was missing)
+        lines.extend(_build_method_breakdown_markdown(cs))
+        lines.append("")
+
+        # 5. Tag Coverage (NEW - was missing)
+        if cs['tag_coverage']:
+            lines.extend(_build_tag_coverage_markdown(cs))
+            lines.append("")
+
+        # 6. Top Files (NEW - was missing)
+        lines.extend(_build_top_files_markdown(cs))
+        lines.append("")
+
+        # ========================================================================
+        # UNIQUE MARKDOWN SUMMARY SECTIONS (keep existing)
+        # ========================================================================
+
+        # Suggestions (existing, enhanced with orphaned components)
         suggestions_md: List[str] = []
         if cs['without_openapi_block'] > 0:
             suggestions_md.append("Add `>>>openapi <<<openapi` blocks for handlers missing documentation.")
         if cs['swagger_only_operations'] > 0:
             suggestions_md.append("Remove, implement, or ignore swagger-only operations.")
+        if cs.get('orphaned_components_count', 0) > 0:
+            suggestions_md.append("Add @openapi.component decorators to model classes to automate component schema generation.")
         if suggestions_md:
-            lines.append("## Suggestions")
+            lines.append("## 💡 Suggestions")
             lines.append("")
             for s in suggestions_md:
                 lines.append(f"- {s}")
             lines.append("")
+        # Proposed diffs (UNIQUE - only in markdown summary, not in coverage reports)
         if changed:
-            lines.append("## Proposed Operation Diffs")
+            lines.append("## 📝 Proposed Operation Diffs")
             lines.append("")
             for (path, method), dlines in diffs.items():
                 lines.append(f"<details><summary>{method.upper()} {path}</summary>")
@@ -589,15 +652,9 @@ def main() -> None:
                 lines.append("```")
                 lines.append("</details>")
             lines.append("")
-        if coverage_swagger_only:
-            lines.append("## Swagger-only Operations (no handler)")
-            lines.append("")
-            show = coverage_swagger_only[:25]
-            for so in show:
-                lines.append(f"- `{so['method'].upper()} {so['path']}`")
-            if len(coverage_swagger_only) > 25:
-                lines.append(f"... and {len(coverage_swagger_only)-25} more")
-            lines.append("")
+
+        # Orphaned warnings (enhanced with components using helper)
+        lines.extend(_build_orphaned_warnings_markdown(orphaned_components, coverage_swagger_only))
         if ignored:
             lines.append("## Ignored Endpoints (@openapi: ignore)")
             lines.append("")

@@ -142,6 +142,238 @@ def _format_rate_emoji(count: int, total: int, rate: float) -> str:
     return f"{emoji} {count}/{total} ({rate:.1%})"
 
 
+def _build_coverage_summary_markdown(summary: Dict[str, Any]) -> List[str]:
+    """Build Coverage Summary section for markdown.
+
+    Generates a markdown table showing basic handler/swagger coverage metrics
+    with emoji indicators for coverage rates.
+
+    Args:
+        summary: Coverage summary dictionary from _compute_coverage
+
+    Returns:
+        List of markdown lines for the coverage summary section
+    """
+    lines = ["## 📊 Coverage Summary", ""]
+    lines.append("| Metric | Value | Coverage |")
+    lines.append("|--------|-------|----------|")
+    lines.append(f"| Handlers considered | {summary['handlers_total']} | - |")
+    lines.append(f"| Ignored handlers | {summary['ignored_total']} | - |")
+
+    block_rate = summary['coverage_rate_handlers_with_block']
+    block_display = _format_rate_emoji(summary['with_openapi_block'], summary['handlers_total'], block_rate)
+    lines.append(f"| With OpenAPI block | {summary['with_openapi_block']} | {block_display} |")
+
+    swagger_rate = summary['coverage_rate_handlers_in_swagger']
+    swagger_display = _format_rate_emoji(summary['handlers_in_swagger'], summary['handlers_total'], swagger_rate)
+    lines.append(f"| In swagger | {summary['handlers_in_swagger']} | {swagger_display} |")
+
+    match_rate = summary['operation_definition_match_rate']
+    match_display = _format_rate_emoji(summary['definition_matches'], summary['with_openapi_block'], match_rate)
+    lines.append(f"| Definition matches | {summary['definition_matches']} | {match_display} |")
+
+    lines.append(f"| Swagger only operations | {summary['swagger_only_operations']} | - |")
+
+    return lines
+
+
+def _build_automation_coverage_markdown(summary: Dict[str, Any]) -> List[str]:
+    """Build Automation Coverage section for markdown (technical debt analysis).
+
+    Shows how many components and endpoints are automated (managed by code decorators)
+    versus manual (orphaned YAML). Lower orphan counts = better automation.
+
+    Args:
+        summary: Coverage summary dictionary from _compute_coverage
+
+    Returns:
+        List of markdown lines for the automation coverage section
+    """
+    lines = ["## 🤖 Automation Coverage (Technical Debt)", ""]
+    lines.append("| Item Type | Count | Automation Rate |")
+    lines.append("|-----------|-------|-----------------|")
+
+    comp_auto_rate = summary.get('component_automation_rate', 0.0)
+    comp_display = _format_rate_emoji(
+        summary.get('automated_components', 0),
+        summary.get('total_swagger_components', 0),
+        comp_auto_rate
+    )
+    lines.append(f"| Components (automated) | {summary.get('automated_components', 0)} | {comp_display} |")
+    lines.append(f"| Components (manual/orphan) | {summary.get('orphaned_components_count', 0)} | ⚠️  TECHNICAL DEBT |")
+
+    ep_auto_rate = summary.get('endpoint_automation_rate', 0.0)
+    ep_display = _format_rate_emoji(
+        summary.get('automated_endpoints', 0),
+        summary.get('total_swagger_endpoints', 0),
+        ep_auto_rate
+    )
+    lines.append(f"| Endpoints (automated) | {summary.get('automated_endpoints', 0)} | {ep_display} |")
+    lines.append(f"| Endpoints (manual/orphan) | {summary.get('orphaned_endpoints_count', 0)} | ⚠️  TECHNICAL DEBT |")
+
+    overall_auto_rate = summary.get('automation_coverage_rate', 0.0)
+    overall_auto_display = _format_rate_emoji(
+        summary.get('total_items', 0) - summary.get('total_orphans', 0),
+        summary.get('total_items', 0),
+        overall_auto_rate
+    )
+    lines.append(f"| **OVERALL AUTOMATION** | **{summary.get('total_items', 0) - summary.get('total_orphans', 0)}** | **{overall_auto_display}** |")
+    lines.append(f"| **Total orphans (debt)** | **{summary.get('total_orphans', 0)}** | ⚠️  **NEEDS ATTENTION** |")
+
+    return lines
+
+
+def _build_quality_metrics_markdown(summary: Dict[str, Any]) -> List[str]:
+    """Build Documentation Quality Metrics section for markdown.
+
+    Shows how well-documented endpoints are in terms of summaries, descriptions,
+    parameters, examples, etc.
+
+    Args:
+        summary: Coverage summary dictionary from _compute_coverage
+
+    Returns:
+        List of markdown lines for the quality metrics section
+    """
+    lines = ["## ✨ Documentation Quality Metrics", ""]
+    lines.append("| Quality Indicator | Count | Rate |")
+    lines.append("|-------------------|-------|------|")
+
+    total_block = summary['with_openapi_block']
+    quality_metrics = [
+        ('📝 Summary', summary['endpoints_with_summary'], summary['quality_rate_summary']),
+        ('📄 Description', summary['endpoints_with_description'], summary['quality_rate_description']),
+        ('🔧 Parameters', summary['endpoints_with_parameters'], summary['quality_rate_parameters']),
+        ('📦 Request body', summary['endpoints_with_request_body'], summary['quality_rate_request_body']),
+        ('🔀 Multiple responses', summary['endpoints_with_multiple_responses'], summary['quality_rate_multiple_responses']),
+        ('💡 Examples', summary['endpoints_with_examples'], summary['quality_rate_examples']),
+    ]
+
+    for label, count, rate in quality_metrics:
+        rate_display = _format_rate_emoji(count, total_block, rate)
+        lines.append(f"| {label} | {count} | {rate_display} |")
+
+    return lines
+
+
+def _build_method_breakdown_markdown(summary: Dict[str, Any]) -> List[str]:
+    """Build HTTP Method Breakdown section for markdown.
+
+    Shows per-method statistics with emoji indicators for each HTTP method.
+
+    Args:
+        summary: Coverage summary dictionary from _compute_coverage
+
+    Returns:
+        List of markdown lines for the method breakdown section
+    """
+    lines = ["## 🔄 HTTP Method Breakdown", ""]
+    lines.append("| Method | Total | Documented | In Swagger |")
+    lines.append("|--------|-------|------------|------------|")
+
+    for method in sorted(summary['method_statistics'].keys()):
+        stats = summary['method_statistics'][method]
+        doc_rate = (stats['documented'] / stats['total']) if stats['total'] else 0.0
+        doc_display = _format_rate_emoji(stats['documented'], stats['total'], doc_rate)
+        emoji = '📥' if method == 'POST' else '📤' if method == 'PUT' else '🗑️' if method == 'DELETE' else '📖'
+        lines.append(f"| {emoji} {method.upper()} | {stats['total']} | {doc_display} | {stats['in_swagger']} |")
+
+    return lines
+
+
+def _build_tag_coverage_markdown(summary: Dict[str, Any]) -> List[str]:
+    """Build Tag Coverage section for markdown.
+
+    Shows which OpenAPI tags are used and how many endpoints have each tag.
+
+    Args:
+        summary: Coverage summary dictionary from _compute_coverage
+
+    Returns:
+        List of markdown lines for the tag coverage section (empty if no tags)
+    """
+    if not summary['tag_coverage']:
+        return []
+
+    lines = [f"## 🏷️ Tag Coverage (Unique tags: {summary['unique_tags']})", ""]
+    lines.append("| Tag | Endpoints |")
+    lines.append("|-----|-----------|")
+
+    for tag in sorted(summary['tag_coverage'].keys()):
+        count = summary['tag_coverage'][tag]
+        lines.append(f"| {tag} | {count} |")
+
+    return lines
+
+
+def _build_top_files_markdown(summary: Dict[str, Any]) -> List[str]:
+    """Build Top Files by Endpoint Count section for markdown.
+
+    Shows the handler files with the most endpoints (top 10).
+
+    Args:
+        summary: Coverage summary dictionary from _compute_coverage
+
+    Returns:
+        List of markdown lines for the top files section
+    """
+    lines = ["## 📁 Top Files by Endpoint Count", ""]
+    lines.append("| File | Total | Documented |")
+    lines.append("|------|-------|------------|")
+
+    file_list = [(f, s) for f, s in summary['file_statistics'].items()]
+    file_list.sort(key=lambda x: x[1]['total'], reverse=True)
+
+    for file_path, stats in file_list[:10]:
+        doc_rate = (stats['documented'] / stats['total']) if stats['total'] else 0.0
+        file_name = pathlib.Path(file_path).name
+        doc_display = _format_rate_emoji(stats['documented'], stats['total'], doc_rate)
+        lines.append(f"| {file_name} | {stats['total']} | {doc_display} |")
+
+    return lines
+
+
+def _build_orphaned_warnings_markdown(
+    orphaned_components: List[str],
+    swagger_only: List[Dict[str, str]]
+) -> List[str]:
+    """Build orphaned items warnings for markdown.
+
+    Shows schemas and endpoints that exist in swagger but lack corresponding
+    code decorators (technical debt).
+
+    Args:
+        orphaned_components: List of component names without @openapi.component
+        swagger_only: List of endpoint dicts without Python decorators
+
+    Returns:
+        List of markdown lines for orphaned warnings (empty if none)
+    """
+    lines = []
+
+    if orphaned_components:
+        lines.append("## 🚨 Orphaned Components (no @openapi.component)")
+        lines.append("")
+        lines.append("These schemas exist in swagger but have no corresponding Python model class:")
+        lines.append("")
+        for comp_name in sorted(orphaned_components):
+            lines.append(f"- `{comp_name}`")
+        lines.append("")
+
+    if swagger_only:
+        lines.append("## 🚨 Orphaned Endpoints (no Python decorator)")
+        lines.append("")
+        lines.append("These endpoints exist in swagger but have no corresponding handler:")
+        lines.append("")
+        for op in sorted(swagger_only, key=lambda x: (x['path'], x['method']))[:25]:
+            lines.append(f"- `{op['method'].upper()} {op['path']}`")
+        if len(swagger_only) > 25:
+            lines.append(f"... and {len(swagger_only) - 25} more")
+        lines.append("")
+
+    return lines
+
+
 def _generate_coverage(
     endpoints: List[Endpoint],
     ignored: List[Tuple[str, str, pathlib.Path, str]],
@@ -178,7 +410,7 @@ def _generate_coverage(
 
     Side Effects:
         Writes coverage report to report_path
-        
+
     Note:
         Format should be normalized before calling (xml -> cobertura)
     """

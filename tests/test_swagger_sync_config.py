@@ -812,12 +812,12 @@ class TestCoverageFormatHelpers:
             'options': {'strict': False},
             'markers': None,  # Also test markers as None
         }
-        
+
         cli_args = {'strict': True, 'coverage_format': 'json'}
-        
+
         # Should not raise "NoneType object does not support item assignment"
         result = merge_cli_args(config, cli_args)
-        
+
         # Should have created empty dicts for None values
         assert isinstance(result['output'], dict)
         assert isinstance(result['markers'], dict)

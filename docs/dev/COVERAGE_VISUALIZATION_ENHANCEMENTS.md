@@ -33,6 +33,10 @@ The `--markdown-summary` output now includes extensive coverage information:
 > **Note**: The `markdown` format was **removed** from `--coverage-format` choices.
 > All markdown coverage content is now included in the `--markdown-summary` output file.
 
+> **Phase 2 Update (2025-10-15)**: Markdown helper functions consolidated from `coverage.py`
+> into reusable utilities. The `build_markdown_summary()` in `cli.py` now uses these helpers
+> to eliminate code duplication and enhance the markdown summary with 5 additional coverage sections.
+
 ### 3. **New Helper Functions**
 
 Added utility functions in `coverage.py` and `cli.py`:
@@ -42,9 +46,17 @@ Added utility functions in `coverage.py` and `cli.py`:
 def _get_color_for_rate(rate: float) -> str
 def _get_emoji_for_rate(rate: float) -> str
 def _format_rate_colored(count: int, total: int, rate: float) -> str
-
-# cli.py
 def _format_rate_emoji(count: int, total: int, rate: float) -> str
+def _build_coverage_summary_markdown(summary: dict) -> str
+def _build_automation_coverage_markdown(summary: dict) -> str
+def _build_quality_metrics_markdown(summary: dict) -> str
+def _build_method_breakdown_markdown(summary: dict) -> str
+def _build_tag_coverage_markdown(summary: dict) -> str
+def _build_top_files_markdown(summary: dict) -> str
+def _build_orphaned_warnings_markdown(orphaned_components: list, swagger_only: list) -> str
+
+# cli.py (uses helpers from coverage.py)
+def build_markdown_summary(changed: dict, coverage_fail: bool) -> str
 ```
 
 ### 4. **Updated CLI Arguments**
@@ -241,23 +253,32 @@ See `docs/scripts/SUGGESTIONS.md` Section 20 for planned improvements:
 1. **`scripts/swagger_sync/coverage.py`**
    - Added color/emoji helper functions
    - Enhanced text format with tables
-   - Added markdown format support
+   - Added markdown format support (deprecated in favor of markdown_summary)
    - Preserved JSON and Cobertura formats
+   - **Phase 2**: Added 8 markdown helper functions for reusability
 
 2. **`scripts/swagger_sync/cli.py`**
-   - Added 'markdown' to coverage-format choices
+   - Added 'markdown' to coverage-format choices (deprecated)
    - Updated help text
+   - **Phase 2**: Rewrote `build_markdown_summary()` to use helpers from coverage.py
+   - **Phase 2**: Added 5 new coverage sections to markdown summary output
 
 3. **`scripts/swagger_sync.py`**
    - Updated module docstring
    - Enhanced usage documentation
 
+4. **`tests/test_swagger_sync_coverage_markdown_helpers.py`** *(Phase 2)*
+   - Added 59 unit tests for markdown helper functions
+   - 8 test classes covering all helper utilities
+   - 100% coverage of helper function edge cases
+
 ## Testing
 
-All 158 tests passing ✅
+All 283 tests passing ✅ *(updated 2025-10-15)*
 - No regressions introduced
 - Backward compatible with existing JSON/Cobertura workflows
 - Color codes only in text format (won't interfere with parsing)
+- **Phase 2**: 59 new tests for markdown helpers, all passing
 
 ---
 
