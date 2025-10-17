@@ -31,6 +31,11 @@ from .endpoint_collector import collect_endpoints
 from .model_components import collect_model_components
 from .swagger_ops import _colorize_unified, detect_orphans, merge, DISABLE_COLOR
 from .yaml_handler import load_swagger, yaml
+from .validator import (
+    validate_endpoint_metadata,
+    format_validation_report,
+    ValidationSeverity
+)
 
 # Default paths and constants - needed by CLI
 DEFAULT_HANDLERS_ROOT = pathlib.Path("bot/lib/http/handlers/")
@@ -104,6 +109,14 @@ def main() -> None:
     parser.add_argument('--list-endpoints', action='store_true', help='Print collected handler endpoints (path method file:function) and exit (debug aid)')
     parser.add_argument('--models-root', default=DEFAULT_MODELS_ROOT, help=f'Root directory to scan for @openapi.component decorated classes (default: {DEFAULT_MODELS_ROOT!r})')
     parser.add_argument('--no-model-components', action='store_true', help='Disable automatic model component generation')
+
+    # Validation arguments
+    validation_group = parser.add_argument_group('Validation')
+    validation_group.add_argument('--validate', action='store_true', help='Enable OpenAPI metadata validation (schema references, status codes, parameters)')
+    validation_group.add_argument('--validation-report', metavar='PATH', help='Write validation errors/warnings to specified file')
+    validation_group.add_argument('--fail-on-validation-errors', action='store_true', help='Exit with non-zero code if validation errors are found')
+    validation_group.add_argument('--show-validation-warnings', action='store_true', help='Display validation warnings in addition to errors')
+
     parser.add_argument(
         '--color',
         choices=['auto', 'always', 'never'],
@@ -387,6 +400,53 @@ def main() -> None:
     model_components_generated_count = len(model_components)
     model_components_existing_not_generated_count = sum(1 for k in existing_schemas.keys() if k not in model_components) if existing_schemas else 0
     swagger_new, changed, notes, diffs = merge(swagger, endpoints)
+
+    # Phase 4: Validate OpenAPI metadata if requested
+    validation_errors_all = []
+    if args.validate:
+        # Collect available schemas and security schemes for validation
+        available_schemas = set(swagger_new.get('components', {}).get('schemas', {}).keys())
+        available_security = set(swagger_new.get('components', {}).get('securitySchemes', {}).keys())
+
+        for endpoint in endpoints:
+            endpoint_id = f"{endpoint.method.upper()} {endpoint.path}"
+            metadata, _ = endpoint.get_merged_metadata()  # Returns (metadata, notes)
+
+            if metadata:
+                errors = validate_endpoint_metadata(
+                    metadata=metadata,
+                    endpoint_id=endpoint_id,
+                    available_schemas=available_schemas,
+                    available_security_schemes=available_security
+                )
+                validation_errors_all.extend(errors)
+
+        # Filter and report validation errors
+        error_count = sum(1 for e in validation_errors_all if e.severity == ValidationSeverity.ERROR)
+        warning_count = sum(1 for e in validation_errors_all if e.severity == ValidationSeverity.WARNING)
+
+        if validation_errors_all:
+            validation_report = format_validation_report(
+                validation_errors_all,
+                show_info=False
+            )
+
+            # Write to validation report file if specified
+            if args.validation_report:
+                validation_report_path = pathlib.Path(args.validation_report)
+                validation_report_path.parent.mkdir(parents=True, exist_ok=True)
+                validation_report_path.write_text(validation_report, encoding='utf-8')
+                print(f"Validation report written to: {validation_report_path}")
+
+            # Print to console if warnings are enabled or if there are errors
+            if args.show_validation_warnings or error_count > 0:
+                print("\n" + validation_report)
+
+            # Fail if requested and errors found
+            if args.fail_on_validation_errors and error_count > 0:
+                raise SystemExit(f"Validation failed with {error_count} error(s). Fix errors and re-run.")
+        else:
+            print("✅ No validation errors found.")
 
     orphans = detect_orphans(swagger_new, endpoints, model_components) if args.show_orphans else []
     coverage_summary, coverage_records, coverage_swagger_only, orphaned_components = _compute_coverage(

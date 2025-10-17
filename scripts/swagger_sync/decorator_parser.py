@@ -16,8 +16,7 @@ from typing import Any, Dict, List, Optional, Union
 class DecoratorMetadata:
     """Structured decorator metadata from a handler method.
 
-    This class will be expanded in future phases to include
-    additional OpenAPI metadata fields.
+    Includes all OpenAPI metadata extracted from @openapi.* decorators.
     """
 
     tags: List[str] = field(default_factory=list)
@@ -27,6 +26,11 @@ class DecoratorMetadata:
     description: Optional[str] = None
     operation_id: Optional[str] = None
     deprecated: bool = False
+    parameters: List[Dict[str, Any]] = field(default_factory=list)
+    request_body: Optional[Dict[str, Any]] = None
+    response_headers: List[Dict[str, Any]] = field(default_factory=list)
+    examples: List[Dict[str, Any]] = field(default_factory=list)
+    external_docs: Optional[Dict[str, str]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for merging with OpenAPI spec.
@@ -49,6 +53,17 @@ class DecoratorMetadata:
             result['operationId'] = self.operation_id
         if self.deprecated:
             result['deprecated'] = True
+        if self.parameters:
+            result['parameters'] = self.parameters
+        if self.request_body:
+            result['requestBody'] = self.request_body
+        if self.response_headers:
+            # Response headers are merged with responses
+            result['x-response-headers'] = self.response_headers
+        if self.examples:
+            result['x-examples'] = self.examples
+        if self.external_docs:
+            result['externalDocs'] = self.external_docs
         return result
 
     def _build_responses_dict(self) -> Dict[str, Any]:
@@ -104,6 +119,11 @@ def extract_decorator_metadata(func_node: ast.FunctionDef | ast.AsyncFunctionDef
     description = None
     operation_id = None
     deprecated = False
+    parameters = []
+    request_body = None
+    response_headers = []
+    examples = []
+    external_docs = None
 
     for decorator in func_node.decorator_list:
         # Only process @openapi.* decorators
@@ -130,6 +150,20 @@ def extract_decorator_metadata(func_node: ast.FunctionDef | ast.AsyncFunctionDef
             operation_id = _extract_operation_id(decorator)
         elif decorator_name == 'deprecated':
             deprecated = True
+        elif decorator_name == 'pathParameter':
+            parameters.append(_extract_path_parameter(decorator))
+        elif decorator_name == 'queryParameter':
+            parameters.append(_extract_query_parameter(decorator))
+        elif decorator_name == 'headerParameter':
+            parameters.append(_extract_header_parameter(decorator))
+        elif decorator_name == 'requestBody':
+            request_body = _extract_request_body(decorator)
+        elif decorator_name == 'responseHeader':
+            response_headers.append(_extract_response_header(decorator))
+        elif decorator_name == 'example':
+            examples.append(_extract_example(decorator))
+        elif decorator_name == 'externalDocs':
+            external_docs = _extract_external_docs(decorator)
 
     return DecoratorMetadata(
         tags=tags,
@@ -138,7 +172,12 @@ def extract_decorator_metadata(func_node: ast.FunctionDef | ast.AsyncFunctionDef
         summary=summary,
         description=description,
         operation_id=operation_id,
-        deprecated=deprecated
+        deprecated=deprecated,
+        parameters=parameters,
+        request_body=request_body,
+        response_headers=response_headers,
+        examples=examples,
+        external_docs=external_docs
     )
 
 
@@ -279,7 +318,30 @@ def _extract_response(decorator: ast.Call) -> Dict[str, Any]:
         key = keyword.arg
         value_node = keyword.value
 
-        if key == 'description':
+        if key == 'methods':
+            # Extract methods list/single value - supports both HTTPMethod enum and strings
+            # methods=HTTPMethod.POST → ['post']
+            # methods=[HTTPMethod.POST, HTTPMethod.GET] → ['post', 'get']
+            if isinstance(value_node, ast.List):
+                # List of methods
+                methods = []
+                for elt in value_node.elts:
+                    if isinstance(elt, ast.Attribute) and elt.attr:
+                        # HTTPMethod.POST → 'post'
+                        methods.append(elt.attr.lower())
+                    elif isinstance(elt, ast.Constant) and isinstance(elt.value, str):
+                        # 'POST' → 'post'
+                        methods.append(elt.value.lower())
+                if methods:
+                    result['methods'] = methods
+            elif isinstance(value_node, ast.Attribute) and value_node.attr:
+                # Single HTTPMethod enum value
+                result['methods'] = [value_node.attr.lower()]
+            elif isinstance(value_node, ast.Constant) and isinstance(value_node.value, str):
+                # Single string method
+                result['methods'] = [value_node.value.lower()]
+
+        elif key == 'description':
             if isinstance(value_node, ast.Constant):
                 result['description'] = value_node.value
 
@@ -355,4 +417,383 @@ def _extract_operation_id(decorator: ast.Call) -> Optional[str]:
         arg = decorator.args[0]
         if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
             return arg.value
+    return None
+
+
+def _extract_path_parameter(decorator: ast.Call) -> Dict[str, Any]:
+    """Extract path parameter from @openapi.pathParameter decorator.
+
+    Args:
+        decorator: AST Call node for @openapi.pathParameter(...)
+
+    Returns:
+        Dictionary with parameter metadata
+
+    Example:
+        @openapi.pathParameter(name="guild_id", schema=str, required=True, description="Guild ID")
+        → {
+            'in': 'path',
+            'name': 'guild_id',
+            'schema': {'type': 'string'},
+            'required': True,
+            'description': 'Guild ID'
+        }
+    """
+    param: Dict[str, Any] = {'in': 'path'}
+
+    # Extract keyword arguments
+    for keyword in decorator.keywords:
+        key = keyword.arg
+        value_node = keyword.value
+
+        if key == 'name':
+            if isinstance(value_node, ast.Constant):
+                param['name'] = value_node.value
+        elif key == 'schema':
+            param['schema'] = _extract_schema_type(value_node)
+        elif key == 'required':
+            if isinstance(value_node, ast.Constant):
+                param['required'] = value_node.value
+        elif key == 'description':
+            if isinstance(value_node, ast.Constant):
+                param['description'] = value_node.value
+
+    return param
+
+
+def _extract_query_parameter(decorator: ast.Call) -> Dict[str, Any]:
+    """Extract query parameter from @openapi.queryParameter decorator.
+
+    Args:
+        decorator: AST Call node for @openapi.queryParameter(...)
+
+    Returns:
+        Dictionary with parameter metadata
+
+    Example:
+        @openapi.queryParameter(name="limit", schema=int, required=False, default=10, description="Max results")
+        → {
+            'in': 'query',
+            'name': 'limit',
+            'schema': {'type': 'integer', 'default': 10},
+            'required': False,
+            'description': 'Max results'
+        }
+    """
+    param: Dict[str, Any] = {'in': 'query'}
+    schema: Dict[str, Any] = {}
+
+    # Extract keyword arguments
+    for keyword in decorator.keywords:
+        key = keyword.arg
+        value_node = keyword.value
+
+        if key == 'name':
+            if isinstance(value_node, ast.Constant):
+                param['name'] = value_node.value
+        elif key == 'schema':
+            schema = _extract_schema_type(value_node)
+        elif key == 'required':
+            if isinstance(value_node, ast.Constant):
+                param['required'] = value_node.value
+        elif key == 'default':
+            if isinstance(value_node, ast.Constant):
+                schema['default'] = value_node.value
+        elif key == 'description':
+            if isinstance(value_node, ast.Constant):
+                param['description'] = value_node.value
+
+    if schema:
+        param['schema'] = schema
+
+    return param
+
+
+def _extract_header_parameter(decorator: ast.Call) -> Dict[str, Any]:
+    """Extract header parameter from @openapi.headerParameter decorator.
+
+    Args:
+        decorator: AST Call node for @openapi.headerParameter(...)
+
+    Returns:
+        Dictionary with parameter metadata
+
+    Example:
+        @openapi.headerParameter(name="X-API-Version", schema=str, required=False, description="API version")
+        → {
+            'in': 'header',
+            'name': 'X-API-Version',
+            'schema': {'type': 'string'},
+            'required': False,
+            'description': 'API version'
+        }
+    """
+    param: Dict[str, Any] = {'in': 'header'}
+
+    # Extract keyword arguments
+    for keyword in decorator.keywords:
+        key = keyword.arg
+        value_node = keyword.value
+
+        if key == 'name':
+            if isinstance(value_node, ast.Constant):
+                param['name'] = value_node.value
+        elif key == 'schema':
+            param['schema'] = _extract_schema_type(value_node)
+        elif key == 'required':
+            if isinstance(value_node, ast.Constant):
+                param['required'] = value_node.value
+        elif key == 'description':
+            if isinstance(value_node, ast.Constant):
+                param['description'] = value_node.value
+
+    return param
+
+
+def _extract_request_body(decorator: ast.Call) -> Dict[str, Any]:
+    """Extract request body from @openapi.requestBody decorator.
+
+    Args:
+        decorator: AST Call node for @openapi.requestBody(...)
+
+    Returns:
+        Dictionary with request body metadata
+
+    Example:
+        @openapi.requestBody(schema=CreateRoleRequest, methods=[HTTPMethod.POST], contentType="application/json", required=True, description="Role data")
+        → {
+            'required': True,
+            'description': 'Role data',
+            'methods': ['post'],
+            'content': {
+                'application/json': {
+                    'schema': {'$ref': '#/components/schemas/CreateRoleRequest'}
+                }
+            }
+        }
+    """
+    body: Dict[str, Any] = {}
+    content_type = 'application/json'  # default
+    schema_name = None
+
+    # Extract keyword arguments
+    for keyword in decorator.keywords:
+        key = keyword.arg
+        value_node = keyword.value
+
+        if key == 'schema':
+            if isinstance(value_node, ast.Name):
+                schema_name = value_node.id
+        elif key == 'contentType':
+            if isinstance(value_node, ast.Constant):
+                content_type = value_node.value
+        elif key == 'required':
+            if isinstance(value_node, ast.Constant):
+                body['required'] = value_node.value
+        elif key == 'description':
+            if isinstance(value_node, ast.Constant):
+                body['description'] = value_node.value
+        elif key == 'methods':
+            # Extract methods list/single value - supports both HTTPMethod enum and strings
+            # methods=HTTPMethod.POST → ['post']
+            # methods=[HTTPMethod.POST, HTTPMethod.GET] → ['post', 'get']
+            if isinstance(value_node, ast.List):
+                # List of methods
+                methods = []
+                for elt in value_node.elts:
+                    if isinstance(elt, ast.Attribute) and elt.attr:
+                        # HTTPMethod.POST → 'post'
+                        methods.append(elt.attr.lower())
+                    elif isinstance(elt, ast.Constant) and isinstance(elt.value, str):
+                        # 'POST' → 'post'
+                        methods.append(elt.value.lower())
+                if methods:
+                    body['methods'] = methods
+            elif isinstance(value_node, ast.Attribute) and value_node.attr:
+                # Single HTTPMethod enum value
+                body['methods'] = [value_node.attr.lower()]
+            elif isinstance(value_node, ast.Constant) and isinstance(value_node.value, str):
+                # Single string method
+                body['methods'] = [value_node.value.lower()]
+
+    # Build content object
+    if schema_name:
+        body['content'] = {
+            content_type: {
+                'schema': {
+                    '$ref': f'#/components/schemas/{schema_name}'
+                }
+            }
+        }
+
+    return body
+
+
+def _extract_response_header(decorator: ast.Call) -> Dict[str, Any]:
+    """Extract response header from @openapi.responseHeader decorator.
+
+    Args:
+        decorator: AST Call node for @openapi.responseHeader(...)
+
+    Returns:
+        Dictionary with response header metadata
+
+    Example:
+        @openapi.responseHeader(name="X-RateLimit-Remaining", schema=int, description="Requests remaining")
+        → {
+            'name': 'X-RateLimit-Remaining',
+            'schema': {'type': 'integer'},
+            'description': 'Requests remaining'
+        }
+    """
+    header: Dict[str, Any] = {}
+
+    # Extract keyword arguments
+    for keyword in decorator.keywords:
+        key = keyword.arg
+        value_node = keyword.value
+
+        if key == 'name':
+            if isinstance(value_node, ast.Constant):
+                header['name'] = value_node.value
+        elif key == 'schema':
+            header['schema'] = _extract_schema_type(value_node)
+        elif key == 'description':
+            if isinstance(value_node, ast.Constant):
+                header['description'] = value_node.value
+
+    return header
+
+
+def _extract_example(decorator: ast.Call) -> Dict[str, Any]:
+    """Extract example from @openapi.example decorator.
+
+    Args:
+        decorator: AST Call node for @openapi.example(...)
+
+    Returns:
+        Dictionary with example metadata
+
+    Example:
+        @openapi.example(name="success", value={"id": "123", "name": "Admin"}, summary="Successful response")
+        → {
+            'name': 'success',
+            'value': {'id': '123', 'name': 'Admin'},
+            'summary': 'Successful response'
+        }
+    """
+    example: Dict[str, Any] = {}
+
+    # Extract keyword arguments
+    for keyword in decorator.keywords:
+        key = keyword.arg
+        value_node = keyword.value
+
+        if key == 'name':
+            if isinstance(value_node, ast.Constant):
+                example['name'] = value_node.value
+        elif key == 'value':
+            # Parse the value (dict or list)
+            example['value'] = _extract_literal_value(value_node)
+        elif key == 'summary':
+            if isinstance(value_node, ast.Constant):
+                example['summary'] = value_node.value
+        elif key == 'description':
+            if isinstance(value_node, ast.Constant):
+                example['description'] = value_node.value
+
+    return example
+
+
+def _extract_external_docs(decorator: ast.Call) -> Dict[str, str]:
+    """Extract external docs from @openapi.externalDocs decorator.
+
+    Args:
+        decorator: AST Call node for @openapi.externalDocs(...)
+
+    Returns:
+        Dictionary with external docs metadata
+
+    Example:
+        @openapi.externalDocs(url="https://docs.example.com", description="Detailed guide")
+        → {
+            'url': 'https://docs.example.com',
+            'description': 'Detailed guide'
+        }
+    """
+    docs: Dict[str, Any] = {}
+
+    # Extract keyword arguments
+    for keyword in decorator.keywords:
+        key = keyword.arg
+        value_node = keyword.value
+
+        if key == 'url':
+            if isinstance(value_node, ast.Constant):
+                docs['url'] = value_node.value
+        elif key == 'description':
+            if isinstance(value_node, ast.Constant):
+                docs['description'] = value_node.value
+
+    return docs
+
+
+def _extract_schema_type(type_node: ast.expr) -> Dict[str, str]:
+    """Extract OpenAPI schema type from Python type AST node.
+
+    Converts Python type references (str, int, bool, etc.) to OpenAPI schema types.
+
+    Args:
+        type_node: AST expression node representing a type
+
+    Returns:
+        Dictionary with OpenAPI type definition
+
+    Example:
+        str → {'type': 'string'}
+        int → {'type': 'integer'}
+    """
+    if isinstance(type_node, ast.Name):
+        type_name = type_node.id
+        type_mapping = {
+            'str': 'string',
+            'int': 'integer',
+            'float': 'number',
+            'bool': 'boolean',
+            'list': 'array',
+            'dict': 'object',
+        }
+        openapi_type = type_mapping.get(type_name, 'string')
+        return {'type': openapi_type}
+
+    # Default to string for unknown types
+    return {'type': 'string'}
+
+
+def _extract_literal_value(value_node: ast.expr) -> Any:
+    """Extract literal value from AST node.
+
+    Recursively parses dict, list, and constant values.
+
+    Args:
+        value_node: AST expression node
+
+    Returns:
+        Python value (dict, list, str, int, etc.)
+
+    Example:
+        ast.Dict with {'id': '123'} → {'id': '123'}
+        ast.List with [1, 2, 3] → [1, 2, 3]
+    """
+    if isinstance(value_node, ast.Constant):
+        return value_node.value
+    elif isinstance(value_node, ast.Dict):
+        result = {}
+        for key_node, val_node in zip(value_node.keys, value_node.values):
+            if isinstance(key_node, ast.Constant):
+                result[key_node.value] = _extract_literal_value(val_node)
+        return result
+    elif isinstance(value_node, ast.List):
+        return [_extract_literal_value(elt) for elt in value_node.elts]
+    # Return None for complex expressions we can't evaluate
     return None

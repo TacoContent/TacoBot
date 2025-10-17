@@ -212,13 +212,21 @@ def collect_endpoints(
                     methods: List[str] = ['get']
                     for kw in deco.keywords or []:
                         if kw.arg == 'method':
+                            # Handle string constant: method="POST"
                             if isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
                                 methods = [kw.value.value.lower()]
+                            # Handle enum value: method=HTTPMethod.POST
+                            elif isinstance(kw.value, ast.Attribute):
+                                if kw.value.attr:
+                                    methods = [kw.value.attr.lower()]
+                            # Handle list/tuple: method=["POST","GET"] or method=[HTTPMethod.POST, HTTPMethod.GET]
                             elif isinstance(kw.value, (ast.List, ast.Tuple)):
                                 collected: List[str] = []
                                 for elt in kw.value.elts:
                                     if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
                                         collected.append(elt.value.lower())
+                                    elif isinstance(elt, ast.Attribute) and elt.attr:
+                                        collected.append(elt.attr.lower())
                                 if collected:
                                     methods = collected
 

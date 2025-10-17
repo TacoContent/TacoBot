@@ -1600,24 +1600,46 @@ paths:
                 $ref: '#/components/schemas/TacoWebhookGamePayload'
   /webhook/shift:
     post:
-      security:
-        - X-TACOBOT-TOKEN: []
+      description: Receive SHiFT code webhook payloads, validate, and broadcast to subscribed guild channels.
       tags:
         - webhook
-      summary: Submit SHiFT Code Webhook
-      description: ''
+        - shift-codes
       requestBody:
+        required: true
+        description: SHiFT code webhook payload
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/ShiftCodePayload'
       responses:
         '200':
-          description: Successful operation
+          description: JSON echo of original payload or expiry message
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ShiftCodePayload'
+        '400':
+          description: Client error due to invalid/missing payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Client error due to invalid/missing payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '500':
+          description: Client error due to invalid/missing payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Ingest SHiFT code webhook payloads
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
   /healthz:
     get:
       description: Gets the health status of the service
@@ -1689,10 +1711,85 @@ paths:
       tags:
         - settings
   /webhook/minecraft/tacos:
-    get:
+    post:
       responses:
         '200':
-          description: OK
+          description: Tacos successfully granted or removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TacoWebhookMinecraftTacosPayload'
+        '400':
+          description: Bad request due to validation or limit error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Bad request due to validation or limit error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Bad request due to validation or limit error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '500':
+          description: Bad request due to validation or limit error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - webhook
+        - minecraft
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /webhook/tacos:
+    post:
+      responses:
+        '200':
+          description: Tacos successfully granted or removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TacoWebhookMinecraftTacosPayload'
+        '400':
+          description: Bad request due to validation or limit error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Bad request due to validation or limit error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Bad request due to validation or limit error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '500':
+          description: Bad request due to validation or limit error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Grant or revoke tacos between users via webhook
+      tags:
+        - webhook
+        - tacos
+      description: This endpoint allows for the granting or revocation of tacos between users through a webhook.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
 components:
   schemas:
     ErrorStatusCodePayload:

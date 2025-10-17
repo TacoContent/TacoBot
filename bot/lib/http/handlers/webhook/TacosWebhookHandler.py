@@ -103,7 +103,7 @@ from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.users_utils import UsersUtils
 from httpserver.EndpointDecorators import uri_mapping
-from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
+from httpserver.http_util import  HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException
 
 
@@ -134,14 +134,15 @@ class TacosWebhookHandler(BaseWebhookHandler):
 
     @uri_mapping("/webhook/minecraft/tacos", method=HTTPMethod.POST)
     @openapi.response(
-        200,
+        200, # it supports single method directly
+        methods=[HTTPMethod.POST], # this supports multiple methods as it should be applied for each method
         description="Tacos successfully granted or removed",
         contentType="application/json",
         schema=TacoWebhookMinecraftTacosPayload,
     )
     @openapi.response(
-        [400, 401, 404, 500],
-        methods=[HTTPMethod.POST],
+        [400, 401, 404, 500], # this supports multiple methods as it should be applied for each method
+        methods=HTTPMethod.POST, # it also supports single method directly
         description="Bad request due to validation or limit error",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
@@ -159,11 +160,28 @@ class TacosWebhookHandler(BaseWebhookHandler):
         request : HttpRequest
             Incoming HTTP request containing the JSON payload described in
             :meth:`give_tacos`.
-        openapi: ignore
         """
         return await self.give_tacos(request)
 
     @uri_mapping("/webhook/tacos", method="POST")
+    @openapi.response(
+        200,
+        description="Tacos successfully granted or removed",
+        contentType="application/json",
+        schema=TacoWebhookMinecraftTacosPayload,
+    )
+    @openapi.response(
+        [400, 401, 404, 500],
+        description="Bad request due to validation or limit error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.tags('webhook', 'tacos')
+    @openapi.security('X-AUTH-TOKEN', 'X-TACOBOT-TOKEN')
+    @openapi.summary("Grant or revoke tacos between users via webhook")
+    @openapi.description(
+        "This endpoint allows for the granting or revocation of tacos between users through a webhook."
+    )
     async def give_tacos(self, request: HttpRequest) -> HttpResponse:
         """Grant (or revoke) tacos between users.
 
@@ -195,7 +213,6 @@ class TacosWebhookHandler(BaseWebhookHandler):
         HttpResponse
             200 with success JSON when applied; otherwise an error status
             and JSON body ``{"error": "<message>"}``.
-        @openapi: ignore
         """
         _method = inspect.stack()[0][3]
 

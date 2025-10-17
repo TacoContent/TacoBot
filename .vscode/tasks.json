@@ -85,7 +85,7 @@
 		{
 			"label": "Swagger FIX",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python scripts/swagger_sync.py --fix --markdown-summary=openapi_summary.md --models-root=bot/lib/models --handlers-root=bot/lib/http/handlers/ --swagger-file=.swagger.v1.yaml --output-directory=./reports/openapi/ --coverage-report=openapi_coverage.json --show-missing-blocks --coverage-format=json --verbose-coverage --show-orphans --strict",
+			"command": "./.venv/scripts/Activate.ps1; python scripts/swagger_sync.py --fix --config=.swagger-sync.yaml --env=local",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"

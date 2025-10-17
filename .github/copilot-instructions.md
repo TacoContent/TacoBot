@@ -106,6 +106,90 @@ Guidelines:
 - Add a custom annotation to the openapi block to indicate that the information is auto-generated and should not be manually edited.
 - Always use `LF` line endings within the docstring block, even on Windows.
 
+#### 2.1.2 Using @openapi.* Decorators (Preferred Approach)
+
+**New in Phase 2:** TacoBot now supports Python decorators for OpenAPI documentation, providing a more maintainable and type-safe alternative to YAML docstrings.
+
+**Available Decorators** (from `bot.lib.models.openapi.openapi`):
+
+**High-Priority (Use for all endpoints):**
+- `@openapi.summary(text)` - Brief one-line description
+- `@openapi.description(text)` - Detailed multi-line explanation
+- `@openapi.pathParameter(name, schema, required, description)` - Path variable documentation
+- `@openapi.queryParameter(name, schema, required, default, description)` - Query parameter with optional default
+- `@openapi.requestBody(schema, contentType, required, description)` - Request body schema
+
+**Medium-Priority:**
+- `@openapi.operationId(op_id)` - Unique operation identifier
+- `@openapi.headerParameter(name, schema, required, description)` - Request header documentation
+
+**Low-Priority (Optional):**
+- `@openapi.responseHeader(name, schema, description)` - Response header documentation
+- `@openapi.example(name, value, summary, description)` - Example request/response
+- `@openapi.externalDocs(url, description)` - Link to external documentation
+
+**Existing Decorators:**
+- `@openapi.tags(*tags)` - Group endpoints by category
+- `@openapi.security(*schemes)` - Security requirements
+- `@openapi.response(status_code, schema, contentType, description)` - Response documentation
+- `@openapi.deprecated()` - Mark endpoint as deprecated
+
+**Example Usage:**
+
+```python
+from bot.lib.models.openapi import openapi
+from httpserver.EndpointDecorators import uri_variable_mapping
+
+class GuildRolesApiHandler:
+    @uri_variable_mapping(f"/api/{API_VERSION}/guilds/{{guild_id}}/roles", method="GET")
+    @openapi.tags('guilds', 'roles')
+    @openapi.summary("List guild roles")
+    @openapi.description("Retrieves all roles for the specified Discord guild")
+    @openapi.pathParameter(name="guild_id", schema=str, required=True, description="Discord guild ID")
+    @openapi.queryParameter(name="limit", schema=int, required=False, default=100, description="Maximum roles to return")
+    @openapi.response(200, schema=DiscordRole, contentType="application/json", description="List of roles")
+    @openapi.response(404, description="Guild not found")
+    def get_roles(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """Get all roles for a guild."""
+        guild_id = uri_variables.get('guild_id')
+        limit = int(request.query_params.get('limit', 100))
+        # ... implementation ...
+```
+
+**Best Practices:**
+1. **Always use decorators** for new endpoints instead of YAML docstrings
+2. **Stack decorators** in logical order: routing → tags → summary → parameters → responses
+3. **Use type hints** in schema parameters: `str`, `int`, `bool`, `float`, `list`, `dict`
+4. **Reference model classes** for complex schemas: `schema=DiscordRole` generates `$ref`
+5. **Document all parameters** including path, query, and header parameters
+6. **Provide examples** for complex request bodies using `@openapi.example()`
+7. **Link external docs** when endpoint behavior is complex or has caveats
+
+**Migration from YAML Docstrings:**
+- Decorators are parsed by the same sync script (`scripts/swagger_sync.py`)
+- Both approaches can coexist (decorators take precedence)
+- Gradually migrate existing endpoints by adding decorators and removing YAML blocks
+- Run `scripts/swagger_sync.py --fix` after adding decorators to update swagger spec
+
+**Type Mapping:**
+- `str` → `{"type": "string"}`
+- `int` → `{"type": "integer"}`
+- `float` → `{"type": "number"}`
+- `bool` → `{"type": "boolean"}`
+- `list` → `{"type": "array"}`
+- `dict` → `{"type": "object"}`
+- Model class names → `{"$ref": "#/components/schemas/ModelName"}`
+
+**Advantages over YAML Docstrings:**
+- ✅ Type-safe: Python type checker validates decorator arguments
+- ✅ IDE support: Autocomplete, refactoring, and go-to-definition
+- ✅ DRY: No duplication of parameter names/types already in function signature
+- ✅ Testable: Decorators attach metadata that can be unit tested
+- ✅ Maintainable: Refactoring tools can update decorator arguments
+- ✅ Gradual adoption: Can migrate one endpoint at a time
+
+See `docs/http/openapi_decorators.md` for complete examples and patterns.
+
 ### 2.2 Error Handling Pattern
 - Validate inputs early; raise `HttpResponseException(status, headers, body)` for 4xx conditions.
 - Catch broad exceptions last, log via `self.log.error`, and raise a 500 with a generic message (never leak stack details to client).
@@ -166,12 +250,26 @@ Conventions:
 
 ---
 ## 8. Adding a New Endpoint (Checklist)
-1. Implement handler method with decorator in correct versioned directory.
-2. Write docstring with `>>>openapi` block (as above) referencing existing schemas.
+1. Implement handler method with `@uri_variable_mapping` decorator in correct versioned directory.
+2. **Add @openapi.* decorators** (preferred) for all OpenAPI metadata: tags, summary, description, parameters, request body, responses.
+   - Alternative: Write docstring with `>>>openapi` YAML block (legacy approach).
 3. Add or update related models & component schemas (manual edit to swagger if new schema).
 4. Run sync script `--check`; if diff expected, run `--fix` and commit swagger.
 5. Add tests covering success + at least one 4xx path.
 6. Update user-facing docs in `docs/http/` if behavior is externally relevant.
+
+**Preferred decorator pattern:**
+```python
+@uri_variable_mapping(f"/api/{API_VERSION}/resource/{{id}}", method="GET")
+@openapi.tags('resource')
+@openapi.summary("Get resource by ID")
+@openapi.pathParameter(name="id", schema=str, required=True, description="Resource ID")
+@openapi.response(200, schema=ResourceModel, contentType="application/json", description="Success")
+@openapi.response(404, description="Not found")
+def get_resource(self, request, uri_variables):
+    """Retrieve a resource by ID."""
+    # implementation
+```
 
 ---
 ## 9. Cogs (Discord Features)

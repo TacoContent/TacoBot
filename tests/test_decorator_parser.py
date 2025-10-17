@@ -773,3 +773,488 @@ def func(): pass
 
         # String literal should not be processed as schema
         assert 'content' not in metadata.responses[0]
+
+
+class TestPathParameterExtraction:
+    """Test cases for _extract_path_parameter function."""
+
+    def test_complete_path_parameter(self):
+        """Test extracting a complete path parameter."""
+        from scripts.swagger_sync.decorator_parser import _extract_path_parameter
+
+        code = """
+@openapi.pathParameter(name="guild_id", schema=str, required=True, description="Guild ID")
+def func(): pass
+"""
+        tree = ast.parse(code)
+        func_node = tree.body[0]
+        assert isinstance(func_node, ast.FunctionDef)
+        decorator = func_node.decorator_list[0]
+        assert isinstance(decorator, ast.Call)
+
+        result = _extract_path_parameter(decorator)
+
+        assert result['in'] == 'path'
+        assert result['name'] == 'guild_id'
+        assert result['schema'] == {'type': 'string'}
+        assert result['required'] is True
+        assert result['description'] == 'Guild ID'
+
+    def test_path_parameter_minimal(self):
+        """Test path parameter with only required fields."""
+        from scripts.swagger_sync.decorator_parser import _extract_path_parameter
+
+        code = "@openapi.pathParameter(name='id', schema=int)\ndef func(): pass"
+        tree = ast.parse(code)
+        func_node_raw = tree.body[0]
+        assert isinstance(func_node_raw, ast.FunctionDef)
+        decorator = func_node_raw.decorator_list[0]
+        assert isinstance(decorator, ast.Call)
+
+        result = _extract_path_parameter(decorator)
+
+        assert result['in'] == 'path'
+        assert result['name'] == 'id'
+        assert result['schema'] == {'type': 'integer'}
+
+
+class TestQueryParameterExtraction:
+    """Test cases for _extract_query_parameter function."""
+
+    def test_complete_query_parameter(self):
+        """Test extracting a complete query parameter."""
+        from scripts.swagger_sync.decorator_parser import _extract_query_parameter
+
+        code = """
+@openapi.queryParameter(name="limit", schema=int, required=False, default=10, description="Max results")
+def func(): pass
+"""
+        tree = ast.parse(code)
+        func_node_raw = tree.body[0]
+        assert isinstance(func_node_raw, ast.FunctionDef)
+        decorator = func_node_raw.decorator_list[0]
+        assert isinstance(decorator, ast.Call)
+
+        result = _extract_query_parameter(decorator)
+
+        assert result['in'] == 'query'
+        assert result['name'] == 'limit'
+        assert result['schema'] == {'type': 'integer', 'default': 10}
+        assert result['required'] is False
+        assert result['description'] == 'Max results'
+
+    def test_query_parameter_with_string_default(self):
+        """Test query parameter with string default value."""
+        from scripts.swagger_sync.decorator_parser import _extract_query_parameter
+
+        code = "@openapi.queryParameter(name='sort', schema=str, default='name')\ndef func(): pass"
+        tree = ast.parse(code)
+        func_node_raw = tree.body[0]
+        assert isinstance(func_node_raw, ast.FunctionDef)
+        decorator = func_node_raw.decorator_list[0]
+        assert isinstance(decorator, ast.Call)
+
+        result = _extract_query_parameter(decorator)
+
+        assert result['schema'] == {'type': 'string', 'default': 'name'}
+
+
+class TestHeaderParameterExtraction:
+    """Test cases for _extract_header_parameter function."""
+
+    def test_complete_header_parameter(self):
+        """Test extracting a complete header parameter."""
+        from scripts.swagger_sync.decorator_parser import _extract_header_parameter
+
+        code = """
+@openapi.headerParameter(name="X-API-Version", schema=str, required=False, description="API version")
+def func(): pass
+"""
+        tree = ast.parse(code)
+        func_node_raw = tree.body[0]
+        assert isinstance(func_node_raw, ast.FunctionDef)
+        decorator = func_node_raw.decorator_list[0]
+        assert isinstance(decorator, ast.Call)
+
+        result = _extract_header_parameter(decorator)
+
+        assert result['in'] == 'header'
+        assert result['name'] == 'X-API-Version'
+        assert result['schema'] == {'type': 'string'}
+        assert result['required'] is False
+        assert result['description'] == 'API version'
+
+
+class TestRequestBodyExtraction:
+    """Test cases for _extract_request_body function."""
+
+    def test_complete_request_body(self):
+        """Test extracting a complete request body."""
+        from scripts.swagger_sync.decorator_parser import _extract_request_body
+
+        code = """
+@openapi.requestBody(schema=CreateRoleRequest, contentType="application/json", required=True, description="Role data")
+def func(): pass
+"""
+        tree = ast.parse(code)
+        func_node_raw = tree.body[0]
+        assert isinstance(func_node_raw, ast.FunctionDef)
+        decorator = func_node_raw.decorator_list[0]
+        assert isinstance(decorator, ast.Call)
+
+        result = _extract_request_body(decorator)
+
+        assert result['required'] is True
+        assert result['description'] == 'Role data'
+        assert 'content' in result
+        assert 'application/json' in result['content']
+        assert result['content']['application/json']['schema']['$ref'] == '#/components/schemas/CreateRoleRequest'
+
+    def test_request_body_different_content_type(self):
+        """Test request body with different content type."""
+        from scripts.swagger_sync.decorator_parser import _extract_request_body
+
+        code = "@openapi.requestBody(schema=FormData, contentType='application/x-www-form-urlencoded')\ndef func(): pass"
+        tree = ast.parse(code)
+        func_node_raw = tree.body[0]
+        assert isinstance(func_node_raw, ast.FunctionDef)
+        decorator = func_node_raw.decorator_list[0]
+        assert isinstance(decorator, ast.Call)
+
+        result = _extract_request_body(decorator)
+
+        assert 'application/x-www-form-urlencoded' in result['content']
+
+    def test_request_body_with_single_method(self):
+        """Test request body with single HTTPMethod enum."""
+        from scripts.swagger_sync.decorator_parser import _extract_request_body
+
+        code = "@openapi.requestBody(schema=CreateRequest, methods=HTTPMethod.POST)\ndef func(): pass"
+        tree = ast.parse(code)
+        func_node_raw = tree.body[0]
+        assert isinstance(func_node_raw, ast.FunctionDef)
+        decorator = func_node_raw.decorator_list[0]
+        assert isinstance(decorator, ast.Call)
+
+        result = _extract_request_body(decorator)
+
+        assert 'methods' in result
+        assert result['methods'] == ['post']
+
+    def test_request_body_with_multiple_methods(self):
+        """Test request body with list of HTTPMethod enums."""
+        from scripts.swagger_sync.decorator_parser import _extract_request_body
+
+        code = "@openapi.requestBody(schema=UpdateRequest, methods=[HTTPMethod.POST, HTTPMethod.PUT, HTTPMethod.PATCH])\ndef func(): pass"
+        tree = ast.parse(code)
+        func_node_raw = tree.body[0]
+        assert isinstance(func_node_raw, ast.FunctionDef)
+        decorator = func_node_raw.decorator_list[0]
+        assert isinstance(decorator, ast.Call)
+
+        result = _extract_request_body(decorator)
+
+        assert 'methods' in result
+        assert result['methods'] == ['post', 'put', 'patch']
+
+    def test_request_body_with_string_methods(self):
+        """Test request body with string methods."""
+        from scripts.swagger_sync.decorator_parser import _extract_request_body
+
+        code = "@openapi.requestBody(schema=DataRequest, methods=['POST', 'PUT'])\ndef func(): pass"
+        tree = ast.parse(code)
+        func_node_raw = tree.body[0]
+        assert isinstance(func_node_raw, ast.FunctionDef)
+        decorator = func_node_raw.decorator_list[0]
+        assert isinstance(decorator, ast.Call)
+
+        result = _extract_request_body(decorator)
+
+        assert 'methods' in result
+        assert result['methods'] == ['post', 'put']
+
+    def test_request_body_without_methods(self):
+        """Test request body without methods parameter (applies to all methods)."""
+        from scripts.swagger_sync.decorator_parser import _extract_request_body
+
+        code = "@openapi.requestBody(schema=GenericRequest)\ndef func(): pass"
+        tree = ast.parse(code)
+        func_node_raw = tree.body[0]
+        assert isinstance(func_node_raw, ast.FunctionDef)
+        decorator = func_node_raw.decorator_list[0]
+        assert isinstance(decorator, ast.Call)
+
+        result = _extract_request_body(decorator)
+
+        assert 'methods' not in result  # No methods field means applies to all
+
+
+class TestResponseHeaderExtraction:
+    """Test cases for _extract_response_header function."""
+
+    def test_complete_response_header(self):
+        """Test extracting a complete response header."""
+        from scripts.swagger_sync.decorator_parser import _extract_response_header
+
+        code = """
+@openapi.responseHeader(name="X-RateLimit-Remaining", schema=int, description="Requests remaining")
+def func(): pass
+"""
+        tree = ast.parse(code)
+        func_node_raw = tree.body[0]
+        assert isinstance(func_node_raw, ast.FunctionDef)
+        decorator = func_node_raw.decorator_list[0]
+        assert isinstance(decorator, ast.Call)
+
+        result = _extract_response_header(decorator)
+
+        assert result['name'] == 'X-RateLimit-Remaining'
+        assert result['schema'] == {'type': 'integer'}
+        assert result['description'] == 'Requests remaining'
+
+
+class TestExampleExtraction:
+    """Test cases for _extract_example function."""
+
+    def test_complete_example_with_dict(self):
+        """Test extracting an example with dict value."""
+        from scripts.swagger_sync.decorator_parser import _extract_example
+
+        code = """
+@openapi.example(name="success", value={"id": "123", "name": "Admin"}, summary="Successful response", description="Example of success")
+def func(): pass
+"""
+        tree = ast.parse(code)
+        func_node_raw = tree.body[0]
+        assert isinstance(func_node_raw, ast.FunctionDef)
+        decorator = func_node_raw.decorator_list[0]
+        assert isinstance(decorator, ast.Call)
+
+        result = _extract_example(decorator)
+
+        assert result['name'] == 'success'
+        assert result['value'] == {"id": "123", "name": "Admin"}
+        assert result['summary'] == 'Successful response'
+        assert result['description'] == 'Example of success'
+
+    def test_example_with_list_value(self):
+        """Test example with list value."""
+        from scripts.swagger_sync.decorator_parser import _extract_example
+
+        code = "@openapi.example(name='list', value=[1, 2, 3])\ndef func(): pass"
+        tree = ast.parse(code)
+        func_node_raw = tree.body[0]
+        assert isinstance(func_node_raw, ast.FunctionDef)
+        decorator = func_node_raw.decorator_list[0]
+        assert isinstance(decorator, ast.Call)
+
+        result = _extract_example(decorator)
+
+        assert result['value'] == [1, 2, 3]
+
+
+class TestExternalDocsExtraction:
+    """Test cases for _extract_external_docs function."""
+
+    def test_complete_external_docs(self):
+        """Test extracting complete external docs."""
+        from scripts.swagger_sync.decorator_parser import _extract_external_docs
+
+        code = """
+@openapi.externalDocs(url="https://docs.example.com", description="Detailed guide")
+def func(): pass
+"""
+        tree = ast.parse(code)
+        func_node_raw = tree.body[0]
+        assert isinstance(func_node_raw, ast.FunctionDef)
+        decorator = func_node_raw.decorator_list[0]
+        assert isinstance(decorator, ast.Call)
+
+        result = _extract_external_docs(decorator)
+
+        assert result['url'] == 'https://docs.example.com'
+        assert result['description'] == 'Detailed guide'
+
+    def test_external_docs_url_only(self):
+        """Test external docs with only URL."""
+        from scripts.swagger_sync.decorator_parser import _extract_external_docs
+
+        code = "@openapi.externalDocs(url='https://example.com')\ndef func(): pass"
+        tree = ast.parse(code)
+        func_node_raw = tree.body[0]
+        assert isinstance(func_node_raw, ast.FunctionDef)
+        decorator = func_node_raw.decorator_list[0]
+        assert isinstance(decorator, ast.Call)
+
+        result = _extract_external_docs(decorator)
+
+        assert result['url'] == 'https://example.com'
+        assert 'description' not in result
+
+
+class TestSchemaTypeExtraction:
+    """Test cases for _extract_schema_type function."""
+
+    def test_all_python_types(self):
+        """Test conversion of all supported Python types."""
+        from scripts.swagger_sync.decorator_parser import _extract_schema_type
+
+        type_map = [
+            ('str', 'string'),
+            ('int', 'integer'),
+            ('float', 'number'),
+            ('bool', 'boolean'),
+            ('list', 'array'),
+            ('dict', 'object'),
+        ]
+
+        for py_type, openapi_type in type_map:
+            code = f"type_ref = {py_type}"
+            tree = ast.parse(code)
+            assign_node = tree.body[0]
+            assert isinstance(assign_node, ast.Assign)
+            type_node = assign_node.value
+
+            result = _extract_schema_type(type_node)
+            assert result == {'type': openapi_type}, f"Failed for {py_type}"
+
+    def test_unknown_type_defaults_to_string(self):
+        """Test that unknown types default to string."""
+        from scripts.swagger_sync.decorator_parser import _extract_schema_type
+
+        code = "type_ref = CustomType"
+        tree = ast.parse(code)
+        assign_node = tree.body[0]
+        assert isinstance(assign_node, ast.Assign)
+        type_node = assign_node.value
+
+        result = _extract_schema_type(type_node)
+        assert result == {'type': 'string'}
+
+
+class TestLiteralValueExtraction:
+    """Test cases for _extract_literal_value function."""
+
+    def test_extract_dict(self):
+        """Test extracting dictionary literal."""
+        from scripts.swagger_sync.decorator_parser import _extract_literal_value
+
+        code = 'value = {"key": "value", "num": 123}'
+        tree = ast.parse(code)
+        assign_node = tree.body[0]
+        assert isinstance(assign_node, ast.Assign)
+
+        result = _extract_literal_value(assign_node.value)
+        assert result == {"key": "value", "num": 123}
+
+    def test_extract_list(self):
+        """Test extracting list literal."""
+        from scripts.swagger_sync.decorator_parser import _extract_literal_value
+
+        code = 'value = [1, "two", 3.0]'
+        tree = ast.parse(code)
+        assign_node = tree.body[0]
+        assert isinstance(assign_node, ast.Assign)
+
+        result = _extract_literal_value(assign_node.value)
+        assert result == [1, "two", 3.0]
+
+    def test_extract_nested_structures(self):
+        """Test extracting nested dict/list structures."""
+        from scripts.swagger_sync.decorator_parser import _extract_literal_value
+
+        code = 'value = {"list": [1, 2], "dict": {"nested": True}}'
+        tree = ast.parse(code)
+        assign_node = tree.body[0]
+        assert isinstance(assign_node, ast.Assign)
+
+        result = _extract_literal_value(assign_node.value)
+        assert result == {"list": [1, 2], "dict": {"nested": True}}
+
+    def test_extract_constant(self):
+        """Test extracting simple constant."""
+        from scripts.swagger_sync.decorator_parser import _extract_literal_value
+
+        code = 'value = "string"'
+        tree = ast.parse(code)
+        assign_node = tree.body[0]
+        assert isinstance(assign_node, ast.Assign)
+
+        result = _extract_literal_value(assign_node.value)
+        assert result == "string"
+
+
+class TestIntegrationWithAllNewDecorators:
+    """Integration tests for all new decorators working together."""
+
+    def test_handler_with_all_parameter_types(self):
+        """Test handler with path, query, and header parameters."""
+        code = """
+@openapi.pathParameter(name="guild_id", schema=str, required=True, description="Guild ID")
+@openapi.queryParameter(name="limit", schema=int, default=10, description="Max results")
+@openapi.headerParameter(name="X-API-Version", schema=str, required=False, description="API version")
+def handler(): pass
+"""
+        tree = ast.parse(code)
+        func_node_raw = tree.body[0]
+        assert isinstance(func_node_raw, ast.FunctionDef)
+        metadata = extract_decorator_metadata(func_node_raw)
+
+        assert len(metadata.parameters) == 3
+        assert metadata.parameters[0]['in'] == 'path'
+        assert metadata.parameters[1]['in'] == 'query'
+        assert metadata.parameters[2]['in'] == 'header'
+
+    def test_complete_crud_endpoint(self):
+        """Test a complete CRUD endpoint with all decorators."""
+        code = """
+@openapi.tags('guilds', 'roles')
+@openapi.security('X-AUTH-TOKEN')
+@openapi.summary("Create guild role")
+@openapi.description("Creates a new role in the specified guild")
+@openapi.operationId("createGuildRole")
+@openapi.externalDocs(url="https://docs.example.com/roles", description="Role guide")
+@openapi.pathParameter(name="guild_id", schema=str, required=True, description="Guild ID")
+@openapi.requestBody(schema=CreateRoleRequest, contentType="application/json", required=True, description="Role data")
+@openapi.response(201, schema=DiscordRole, contentType="application/json", description="Created")
+@openapi.response(400, description="Bad request")
+@openapi.responseHeader(name="X-RateLimit-Remaining", schema=int, description="Rate limit")
+@openapi.example(name="admin_role", value={"name": "Admin", "permissions": 8})
+def create_role(): pass
+"""
+        tree = ast.parse(code)
+        func_node_raw = tree.body[0]
+        assert isinstance(func_node_raw, ast.FunctionDef)
+        metadata = extract_decorator_metadata(func_node_raw)
+
+        assert metadata.tags == ['guilds', 'roles']
+        assert metadata.security == ['X-AUTH-TOKEN']
+        assert metadata.summary == "Create guild role"
+        assert metadata.description == "Creates a new role in the specified guild"
+        assert metadata.operation_id == "createGuildRole"
+        assert metadata.external_docs == {'url': 'https://docs.example.com/roles', 'description': 'Role guide'}
+        assert len(metadata.parameters) == 1
+        assert metadata.request_body is not None
+        assert len(metadata.responses) == 2
+        assert len(metadata.response_headers) == 1
+        assert len(metadata.examples) == 1
+
+    def test_to_dict_with_all_new_fields(self):
+        """Test to_dict includes all new fields."""
+        metadata = DecoratorMetadata(
+            tags=['test'],
+            parameters=[{'in': 'path', 'name': 'id', 'schema': {'type': 'string'}}],
+            request_body={'required': True, 'content': {}},
+            response_headers=[{'name': 'X-Header', 'schema': {'type': 'string'}}],
+            examples=[{'name': 'example1', 'value': {}}],
+            external_docs={'url': 'https://example.com'}
+        )
+
+        result = metadata.to_dict()
+
+        assert 'tags' in result
+        assert 'parameters' in result
+        assert 'requestBody' in result
+        assert 'x-response-headers' in result
+        assert 'x-examples' in result
+        assert 'externalDocs' in result

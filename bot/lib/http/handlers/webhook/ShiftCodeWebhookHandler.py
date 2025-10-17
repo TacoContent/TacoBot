@@ -27,13 +27,18 @@ Extensibility notes:
 """
 
 import html
+from http import HTTPMethod
 import inspect
 import json
 import os
 import traceback
 
+from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from lib.models.ShiftCodePayload import ShiftCodePayload
+
 from bot.lib import utils
 from bot.lib.http.handlers.BaseWebhookHandler import BaseWebhookHandler
+from bot.lib.models import openapi
 from bot.lib.mongodb.shift_codes import ShiftCodesDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.ui.MultipleExternalUrlButtonView import ButtonData, MultipleExternalUrlButtonView
@@ -63,7 +68,35 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
         self.tracking_db = TrackingDatabase()
         self.shift_codes_db = ShiftCodesDatabase()
 
-    @uri_mapping("/webhook/shift", method="POST")
+    @uri_mapping("/webhook/shift", method=HTTPMethod.POST)
+    @openapi.summary("Ingest SHiFT code webhook payloads")
+    @openapi.description(
+        "Receive SHiFT code webhook payloads, validate, and broadcast to subscribed guild channels."
+    )
+    @openapi.tags("webhook", "shift-codes")
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.managed()
+    @openapi.response(
+        200,
+        methods=[HTTPMethod.POST],
+        description="JSON echo of original payload or expiry message",
+        contentType="application/json",
+        schema=ShiftCodePayload,
+    )
+    @openapi.response(
+        [400, 401, 500],
+        methods=[HTTPMethod.POST],
+        description="Client error due to invalid/missing payload",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.requestBody(
+        schema=ShiftCodePayload,
+        methods=[HTTPMethod.POST],
+        contentType="application/json",
+        required=True,
+        description="SHiFT code webhook payload",
+    )
     async def shift_code(self, request: HttpRequest) -> HttpResponse:
         """Ingest and broadcast a SHiFT code webhook payload.
 
@@ -90,7 +123,6 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
             200: JSON echo of original payload or a message indicating expiry.
             400/401: JSON error for client issues.
             500: JSON error for unexpected failures.
-        @openapi: ignore
         """
         _method = inspect.stack()[0][3]
 
