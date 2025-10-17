@@ -1523,8 +1523,8 @@ paths:
     post:
       security:
         - X-TACOBOT-TOKEN: []
-      tags:
-        - webhook
+      # tags:
+      #   - webhook
       summary: Minecraft Webhook to give tacos to a user
       description: ''
       requestBody:
@@ -1688,6 +1688,11 @@ paths:
             type: string
       tags:
         - settings
+  /webhook/minecraft/tacos:
+    get:
+      responses:
+        '200':
+          description: OK
 components:
   schemas:
     ErrorStatusCodePayload:

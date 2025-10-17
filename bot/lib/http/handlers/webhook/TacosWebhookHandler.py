@@ -159,7 +159,7 @@ class TacosWebhookHandler(BaseWebhookHandler):
         request : HttpRequest
             Incoming HTTP request containing the JSON payload described in
             :meth:`give_tacos`.
-        @openapi: ignore
+        openapi: ignore
         """
         return await self.give_tacos(request)
 

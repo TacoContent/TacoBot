@@ -24,6 +24,7 @@ from typing import Any, Dict, List, Optional, Tuple
 # Import from other swagger_sync modules
 try:
     from .constants import IGNORE_MARKER, OPENAPI_BLOCK_RE
+    from .decorator_parser import extract_decorator_metadata
     from .models import Endpoint
     from .yaml_handler import yaml
 except ImportError:
@@ -32,6 +33,7 @@ except ImportError:
     if str(_scripts_dir) not in sys.path:
         sys.path.insert(0, str(_scripts_dir))
     from swagger_sync.constants import IGNORE_MARKER, OPENAPI_BLOCK_RE
+    from swagger_sync.decorator_parser import extract_decorator_metadata
     from swagger_sync.models import Endpoint
     from swagger_sync.yaml_handler import yaml
 
@@ -245,6 +247,15 @@ def collect_endpoints(
                             else:
                                 print(msg, file=sys.stderr)
 
+                    # Extract decorator metadata once per function (outside method loop)
+                    decorator_meta_dict = None
+                    try:
+                        decorator_meta = extract_decorator_metadata(fn)
+                        decorator_meta_dict = decorator_meta.to_dict()
+                    except Exception:
+                        # Silently ignore decorator parsing errors; fall back to no metadata
+                        pass
+
                     for m in methods:
                         if module_ignored or fn_ignored:
                             ignored.append((path_str, m, py_file, fn.name))
@@ -261,6 +272,13 @@ def collect_endpoints(
                         else:
                             meta = raw_meta_full if isinstance(raw_meta_full, dict) else {}
 
-                        endpoints.append(Endpoint(path=path_str, method=m, meta=meta, function=fn.name, file=py_file))
+                        endpoints.append(Endpoint(
+                            path=path_str,
+                            method=m,
+                            meta=meta,
+                            function=fn.name,
+                            file=py_file,
+                            decorator_metadata=decorator_meta_dict
+                        ))
 
     return endpoints, ignored

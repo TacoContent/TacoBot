@@ -20,6 +20,7 @@ class Endpoint:
     file: pathlib.Path  # Source file containing the handler
     function: str  # Function/method name implementing the endpoint
     meta: Dict[str, Any]  # Extracted OpenAPI block content (empty dict if no block)
+    decorator_metadata: Optional[Dict[str, Any]] = None  # Extracted @openapi.* decorator metadata
 
     def __repr__(self) -> str:
         """String representation for debugging."""

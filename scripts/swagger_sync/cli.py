@@ -184,17 +184,19 @@ def main() -> None:
             # This allows the rest of the code to work unchanged
             for key, value in config_dict.items():
                 if key == 'output':
-                    for out_key, out_val in value.items():
-                        if out_key == 'directory':
-                            args.output_directory = out_val
-                        elif out_key == 'coverage_report':
-                            args.coverage_report = out_val
-                        elif out_key == 'coverage_format':
-                            args.coverage_format = out_val
-                        elif out_key == 'markdown_summary':
-                            args.markdown_summary = out_val
-                        elif out_key == 'badge':
-                            args.generate_badge = out_val
+                    # Handle null output config (e.g., in quiet environment)
+                    if value is not None:
+                        for out_key, out_val in value.items():
+                            if out_key == 'directory':
+                                args.output_directory = out_val
+                            elif out_key == 'coverage_report':
+                                args.coverage_report = out_val
+                            elif out_key == 'coverage_format':
+                                args.coverage_format = out_val
+                            elif out_key == 'markdown_summary':
+                                args.markdown_summary = out_val
+                            elif out_key == 'badge':
+                                args.generate_badge = out_val
                 elif key == 'options':
                     for opt_key, opt_val in value.items():
                         setattr(args, opt_key, opt_val)
@@ -227,17 +229,19 @@ def main() -> None:
         # Update args namespace with merged config
         for key, value in config_dict.items():
             if key == 'output':
-                for out_key, out_val in value.items():
-                    if out_key == 'directory':
-                        args.output_directory = out_val
-                    elif out_key == 'coverage_report':
-                        args.coverage_report = out_val
-                    elif out_key == 'coverage_format':
-                        args.coverage_format = out_val
-                    elif out_key == 'markdown_summary':
-                        args.markdown_summary = out_val
-                    elif out_key == 'badge':
-                        args.generate_badge = out_val
+                # Handle null output config (e.g., in quiet environment)
+                if value is not None:
+                    for out_key, out_val in value.items():
+                        if out_key == 'directory':
+                            args.output_directory = out_val
+                        elif out_key == 'coverage_report':
+                            args.coverage_report = out_val
+                        elif out_key == 'coverage_format':
+                            args.coverage_format = out_val
+                        elif out_key == 'markdown_summary':
+                            args.markdown_summary = out_val
+                        elif out_key == 'badge':
+                            args.generate_badge = out_val
             elif key == 'options':
                 for opt_key, opt_val in value.items():
                     setattr(args, opt_key, opt_val)
@@ -392,8 +396,9 @@ def main() -> None:
     coverage_summary['model_components_generated'] = model_components_generated_count
     coverage_summary['model_components_existing_not_generated'] = model_components_existing_not_generated_count
 
-    # output_directory is guaranteed to have a value from config merge (either from config file or DEFAULT_CONFIG)
-    output_dir = pathlib.Path(args.output_directory)
+    # output_directory may be None if config sets output: null (e.g., quiet environment)
+    # Use current directory as fallback
+    output_dir = pathlib.Path(args.output_directory or '.')
     try:
         output_dir.mkdir(parents=True, exist_ok=True)
     except Exception as e:  # pragma: no cover

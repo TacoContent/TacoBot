@@ -36,8 +36,25 @@ def tags(*tags: str) -> Callable[[FunctionType], FunctionType]:
     return _wrap
 
 
+def summary(text: str) -> Callable[[AttrT], AttrT]:
+    return metadata('summary', text)
+
+
+def description(text: str) -> Callable[[AttrT], AttrT]:
+    return metadata('description', text)
+
+
+def operationId(id: str) -> Callable[[AttrT], AttrT]:
+    return metadata('operationId', id)
+
+
+def pathParameter() -> None:
+    pass  # TODO: implement path parameters decorator
+
+
 def responseHeader() -> None:
     pass  # TODO: implement response headers decorator
+
 
 def security(*schemes) -> Callable[[FunctionType], FunctionType]:
     def _wrap(func: FunctionType) -> FunctionType:
@@ -111,6 +128,15 @@ def component(name: Optional[str] = None, description: Optional[str] = None) -> 
         return cls
     return _wrap
 
+
+def metadata(name: str, value: typing.Optional[typing.Union[str, bool, int, float, typing.Dict[str, Any]]]) -> Callable[[AttrT], AttrT]:
+    def _wrap(attr: AttrT) -> AttrT:
+        target = cast(Any, attr)
+        if not hasattr(target, '__openapi_metadata__'):
+            setattr(target, '__openapi_metadata__', {})
+        target.__openapi_metadata__[name] = value
+        return attr
+    return _wrap
 
 def attribute(name: str, value: typing.Optional[typing.Union[str, bool, int, float]]) -> Callable[[AttrT], AttrT]:
     def _wrap(attr: AttrT) -> AttrT:
