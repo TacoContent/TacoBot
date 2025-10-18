@@ -1,0 +1,18 @@
+[html]
+directory = reports/pytest/html
+
+[xml]
+directory = reports/pytest/coverage.xml
+
+[json]
+directory = reports/pytest/coverage.json
+
+[lcov]
+directory = reports/pytest/coverage.lcov
+
+[report]
+format = text
+skip_covered = true
+show_missing = true
+skip_empty = true
+sort = Name

@@ -10,6 +10,7 @@ tacobot.egg-info/
 .env
 !.github/env/*.env
 COMMIT_MESSAGE.txt
+.coverage
 
 reports/*
 !reports/.gitkeep

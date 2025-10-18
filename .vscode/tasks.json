@@ -27,7 +27,7 @@
 		{
 			"label": "Python: Run Tests (Coverage)",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python -m pytest tests/ -x --cov=bot --cov-report=term-missing",
+			"command": "./.venv/scripts/Activate.ps1; python -m pytest tests/ -x --cov=html --cov=xml --cov=json --cov-config=.coveragerc --cov-report=term-missing",
 			"options": {
 				"env": {
 					"PYTHONPATH": "${workspaceFolder}/bot"
