@@ -64,7 +64,9 @@ def extract_openapi_block(doc: Optional[str]) -> Dict[str, Any]:
             raise ValueError("OpenAPI block must be a mapping")
         return data
     except Exception as e:
-        raise ValueError(f"Failed parsing >>>openapi <<<openapi block: {e}\nBlock contents:\n{textwrap.indent(raw, '    ')}") from e
+        raise ValueError(
+            f"Failed parsing >>>openapi <<<openapi block: {e}\nBlock contents:\n{textwrap.indent(raw, '    ')}"
+        ) from e
 
 
 def resolve_path_literal(node: ast.AST) -> Optional[str]:
@@ -98,15 +100,12 @@ def resolve_path_literal(node: ast.AST) -> Optional[str]:
                     return None
             else:
                 return None
-        return ''.join(parts)
+        return "".join(parts)
     return None
 
 
 def collect_endpoints(
-    handlers_root: pathlib.Path,
-    *,
-    strict: bool = False,
-    ignore_file_globs: Optional[List[str]] = None
+    handlers_root: pathlib.Path, *, strict: bool = False, ignore_file_globs: Optional[List[str]] = None
 ) -> Tuple[List[Endpoint], List[Tuple[str, str, pathlib.Path, str]]]:
     """Collect HTTP endpoints from handler files via AST analysis.
 
@@ -157,8 +156,9 @@ def collect_endpoints(
                    present in decorator method list
 
     Notes:
-        - Module-level @openapi: ignore marks all handlers in that file
-        - Function-level @openapi: ignore marks just that handler
+        - Module-level @openapi: ignore marks all handlers in that file (legacy)
+        - Function-level @openapi: ignore marks just that handler (legacy)
+        - @openapi.ignore() decorator marks that handler (preferred)
         - Syntax errors in handler files print warnings but don't fail
         - HTTP methods are normalized to lowercase
     """
@@ -167,8 +167,10 @@ def collect_endpoints(
     ignore_file_globs = ignore_file_globs or []
 
     for py_file in handlers_root.rglob("*.py"):
-        rel_str = str(py_file.relative_to(handlers_root)).replace('\\', '/')
-        if any(fnmatch.fnmatch(rel_str, pattern) or fnmatch.fnmatch(py_file.name, pattern) for pattern in ignore_file_globs):
+        rel_str = str(py_file.relative_to(handlers_root)).replace("\\", "/")
+        if any(
+            fnmatch.fnmatch(rel_str, pattern) or fnmatch.fnmatch(py_file.name, pattern) for pattern in ignore_file_globs
+        ):
             continue
 
         try:
@@ -198,8 +200,8 @@ def collect_endpoints(
                     if not isinstance(deco, ast.Call):
                         continue
 
-                    deco_name = getattr(deco.func, 'id', '')
-                    if deco_name not in {'uri_variable_mapping', 'uri_mapping', 'uri_pattern_mapping'}:
+                    deco_name = getattr(deco.func, "id", "")
+                    if deco_name not in {"uri_variable_mapping", "uri_mapping", "uri_pattern_mapping"}:
                         continue
 
                     if not deco.args:
@@ -209,9 +211,9 @@ def collect_endpoints(
                     if not path_str:
                         continue
 
-                    methods: List[str] = ['get']
+                    methods: List[str] = ["get"]
                     for kw in deco.keywords or []:
-                        if kw.arg == 'method':
+                        if kw.arg == "method":
                             # Handle string constant: method="POST"
                             if isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
                                 methods = [kw.value.value.lower()]
@@ -230,7 +232,7 @@ def collect_endpoints(
                                 if collected:
                                     methods = collected
 
-                    if deco_name == 'uri_pattern_mapping':
+                    if deco_name == "uri_pattern_mapping":
                         for m in methods:
                             ignored.append((path_str, m, py_file, fn.name))
                         continue
@@ -239,7 +241,11 @@ def collect_endpoints(
                     # 1. Flat operation keys (summary, tags, parameters, ...)
                     # 2. Method-rooted mapping (get: {...}, post: {...}, ...)
                     raw_meta_full = extract_openapi_block(fn_doc)
-                    http_method_keys = {k for k in (raw_meta_full.keys() if isinstance(raw_meta_full, dict) else []) if k.lower() in {"get","post","put","delete","patch","options","head"}}
+                    http_method_keys = {
+                        k
+                        for k in (raw_meta_full.keys() if isinstance(raw_meta_full, dict) else [])
+                        if k.lower() in {"get", "post", "put", "delete", "patch", "options", "head"}
+                    }
 
                     # Validation: if docstring declares method-rooted keys not present in decorator list.
                     if http_method_keys:
@@ -257,15 +263,17 @@ def collect_endpoints(
 
                     # Extract decorator metadata once per function (outside method loop)
                     decorator_meta_dict = None
+                    decorator_ignored = False
                     try:
                         decorator_meta = extract_decorator_metadata(fn)
                         decorator_meta_dict = decorator_meta.to_dict()
+                        decorator_ignored = decorator_meta.ignore
                     except Exception:
                         # Silently ignore decorator parsing errors; fall back to no metadata
                         pass
 
                     for m in methods:
-                        if module_ignored or fn_ignored:
+                        if module_ignored or fn_ignored or decorator_ignored:
                             ignored.append((path_str, m, py_file, fn.name))
                             continue
 
@@ -280,13 +288,15 @@ def collect_endpoints(
                         else:
                             meta = raw_meta_full if isinstance(raw_meta_full, dict) else {}
 
-                        endpoints.append(Endpoint(
-                            path=path_str,
-                            method=m,
-                            meta=meta,
-                            function=fn.name,
-                            file=py_file,
-                            decorator_metadata=decorator_meta_dict
-                        ))
+                        endpoints.append(
+                            Endpoint(
+                                path=path_str,
+                                method=m,
+                                meta=meta,
+                                function=fn.name,
+                                file=py_file,
+                                decorator_metadata=decorator_meta_dict,
+                            )
+                        )
 
     return endpoints, ignored

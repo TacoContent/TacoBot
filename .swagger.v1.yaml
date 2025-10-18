@@ -1560,24 +1560,50 @@ paths:
                 $ref: '#/components/schemas/TacoWebhookMinecraftTacosResponsePayload'
   /webhook/minecraft/player/event:
     post:
-      security:
-        - X-TACOBOT-TOKEN: []
-      tags:
-        - webhook
       summary: Minecraft Webhook to send player events
-      description: ''
+      responses:
+        '200':
+          description: 'Success: Event processed successfully'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftPlayerEventPayloadResponse'
+        '401':
+          description: 'Unauthorized: Invalid webhook token'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '400':
+          description: 'Bad Request: No payload found in the request'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: 'Not Found: Missing/invalid fields or unknown event'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '500':
+          description: 'Internal Server Error: Unexpected processing failure'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      description: Ingress point for Minecraft player events such as login, logout, and death.
       requestBody:
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/MinecraftPlayerEventPayload'
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MinecraftPlayerEventPayload'
+      tags:
+        - webhook
+        - minecraft
   /webhook/game:
     post:
       security:
@@ -1797,13 +1823,18 @@ components:
       properties:
         error:
           type: string
+          nullable: true
           description: Description of the error.
+        message:
+          type: string
+          nullable: true
         code:
           type: integer
           nullable: true
           description: Error code.
-      required:
-        - error
+        stacktrace:
+          type: string
+          nullable: true
       description: Error status code payload
       x-tacobot-managed: true
     ShiftCodeGame:
@@ -2615,6 +2646,9 @@ components:
     MinecraftPlayerEventPayload:
       type: object
       properties:
+        user_id:
+          type: string
+          description: Discord user ID of the player.
         guild_id:
           type: string
           description: Discord guild ID associated with the event.
@@ -2633,6 +2667,7 @@ components:
       required:
         - event
         - guild_id
+        - user_id
       description: Minecraft player event payload
       x-tacobot-managed: true
     MinecraftServerSettings:
@@ -2785,6 +2820,20 @@ components:
         - taco_atm9
       description: Represents a Minecraft world managed by TacoBot.
       default: taco_atm10-2
+      x-tacobot-managed: true
+    MinecraftPlayerEventPayloadResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+        data:
+          $ref: '#/components/schemas/MinecraftPlayerEventPayload'
+      required:
+        - data
+        - status
+      description: Response payload for Minecraft player event
       x-tacobot-managed: true
   securitySchemes:
     X-AUTH-TOKEN:

@@ -41,16 +41,21 @@ consistent JSON HTTP error responses (``{"error": "..."}``).
 """
 
 import inspect
+import json
 import os
 import random
 import string
 import traceback
+import typing
+
+from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from tacobot import TacoBot
 
 from bot.lib import discordhelper, logger, settings
 from bot.lib.enums import loglevel
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
-from httpserver.http_util import HttpRequest
+from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 
 
 class BaseWebhookHandler:
@@ -63,7 +68,7 @@ class BaseWebhookHandler:
         runtime context.
     """
 
-    def __init__(self, bot):
+    def __init__(self, bot: TacoBot, discord_helper: typing.Optional[discordhelper.DiscordHelper] = None):
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
@@ -183,3 +188,36 @@ class BaseWebhookHandler:
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
             return False
+
+
+    def _create_error_response(
+        self,
+        status_code: int,
+        error_message: str,
+        headers: HttpHeaders,
+        include_stacktrace: bool = False
+    ) -> HttpResponse:
+        """Create standardized error response.
+
+        Args:
+            status_code: HTTP status code
+            error_message: Human-readable error message
+            headers: HTTP headers to include
+            include_stacktrace: Whether to include exception stacktrace
+
+        Returns:
+            HttpResponse with ErrorStatusCodePayload body
+        """
+        err_data = {
+            "code": status_code,
+            "error": error_message,
+        }
+        if include_stacktrace:
+            err_data["stacktrace"] = traceback.format_exc()
+
+        err = ErrorStatusCodePayload(err_data)
+        return HttpResponse(
+            status_code,
+            headers,
+            json.dumps(err.to_dict()).encode("utf-8")
+        )

@@ -26,6 +26,7 @@ class DecoratorMetadata:
     description: Optional[str] = None
     operation_id: Optional[str] = None
     deprecated: bool = False
+    ignore: bool = False
     parameters: List[Dict[str, Any]] = field(default_factory=list)
     request_body: Optional[Dict[str, Any]] = None
     response_headers: List[Dict[str, Any]] = field(default_factory=list)
@@ -40,30 +41,30 @@ class DecoratorMetadata:
         """
         result = {}
         if self.tags:
-            result['tags'] = self.tags
+            result["tags"] = self.tags
         if self.security:
-            result['security'] = [{name: []} for name in self.security]
+            result["security"] = [{name: []} for name in self.security]
         if self.responses:
-            result['responses'] = self._build_responses_dict()
+            result["responses"] = self._build_responses_dict()
         if self.summary:
-            result['summary'] = self.summary
+            result["summary"] = self.summary
         if self.description:
-            result['description'] = self.description
+            result["description"] = self.description
         if self.operation_id:
-            result['operationId'] = self.operation_id
+            result["operationId"] = self.operation_id
         if self.deprecated:
-            result['deprecated'] = True
+            result["deprecated"] = True
         if self.parameters:
-            result['parameters'] = self.parameters
+            result["parameters"] = self.parameters
         if self.request_body:
-            result['requestBody'] = self.request_body
+            result["requestBody"] = self.request_body
         if self.response_headers:
             # Response headers are merged with responses
-            result['x-response-headers'] = self.response_headers
+            result["x-response-headers"] = self.response_headers
         if self.examples:
-            result['x-examples'] = self.examples
+            result["x-examples"] = self.examples
         if self.external_docs:
-            result['externalDocs'] = self.external_docs
+            result["externalDocs"] = self.external_docs
         return result
 
     def _build_responses_dict(self) -> Dict[str, Any]:
@@ -74,12 +75,10 @@ class DecoratorMetadata:
         """
         responses = {}
         for resp in self.responses:
-            for status_code in resp.get('status_code', []):
-                response_obj = {
-                    'description': resp.get('description', 'Response')
-                }
-                if 'content' in resp:
-                    response_obj['content'] = resp['content']
+            for status_code in resp.get("status_code", []):
+                response_obj = {"description": resp.get("description", "Response")}
+                if "content" in resp:
+                    response_obj["content"] = resp["content"]
                 responses[str(status_code)] = response_obj
         return responses
 
@@ -119,6 +118,7 @@ def extract_decorator_metadata(func_node: ast.FunctionDef | ast.AsyncFunctionDef
     description = None
     operation_id = None
     deprecated = False
+    ignore = False
     parameters = []
     request_body = None
     response_headers = []
@@ -136,33 +136,35 @@ def extract_decorator_metadata(func_node: ast.FunctionDef | ast.AsyncFunctionDef
 
         decorator_name = _get_decorator_name(decorator)
 
-        if decorator_name == 'tags':
+        if decorator_name == "tags":
             tags.extend(_extract_tags(decorator))
-        elif decorator_name == 'security':
+        elif decorator_name == "security":
             security.extend(_extract_security(decorator))
-        elif decorator_name == 'response':
+        elif decorator_name == "response":
             responses.append(_extract_response(decorator))
-        elif decorator_name == 'summary':
+        elif decorator_name == "summary":
             summary = _extract_summary(decorator)
-        elif decorator_name == 'description':
+        elif decorator_name == "description":
             description = _extract_description(decorator)
-        elif decorator_name == 'operationId':
+        elif decorator_name == "operationId":
             operation_id = _extract_operation_id(decorator)
-        elif decorator_name == 'deprecated':
+        elif decorator_name == "deprecated":
             deprecated = True
-        elif decorator_name == 'pathParameter':
+        elif decorator_name == "ignore":
+            ignore = True
+        elif decorator_name == "pathParameter":
             parameters.append(_extract_path_parameter(decorator))
-        elif decorator_name == 'queryParameter':
+        elif decorator_name == "queryParameter":
             parameters.append(_extract_query_parameter(decorator))
-        elif decorator_name == 'headerParameter':
+        elif decorator_name == "headerParameter":
             parameters.append(_extract_header_parameter(decorator))
-        elif decorator_name == 'requestBody':
+        elif decorator_name == "requestBody":
             request_body = _extract_request_body(decorator)
-        elif decorator_name == 'responseHeader':
+        elif decorator_name == "responseHeader":
             response_headers.append(_extract_response_header(decorator))
-        elif decorator_name == 'example':
+        elif decorator_name == "example":
             examples.append(_extract_example(decorator))
-        elif decorator_name == 'externalDocs':
+        elif decorator_name == "externalDocs":
             external_docs = _extract_external_docs(decorator)
 
     return DecoratorMetadata(
@@ -173,11 +175,12 @@ def extract_decorator_metadata(func_node: ast.FunctionDef | ast.AsyncFunctionDef
         description=description,
         operation_id=operation_id,
         deprecated=deprecated,
+        ignore=ignore,
         parameters=parameters,
         request_body=request_body,
         response_headers=response_headers,
         examples=examples,
-        external_docs=external_docs
+        external_docs=external_docs,
     )
 
 
@@ -199,7 +202,7 @@ def _is_openapi_decorator(decorator: ast.expr) -> bool:
         func = decorator.func
         if isinstance(func, ast.Attribute):
             if isinstance(func.value, ast.Name):
-                return func.value.id == 'openapi'
+                return func.value.id == "openapi"
     return False
 
 
@@ -216,7 +219,7 @@ def _get_decorator_name(decorator: ast.Call) -> str:
     """
     if isinstance(decorator.func, ast.Attribute):
         return decorator.func.attr
-    return ''
+    return ""
 
 
 def _extract_tags(decorator: ast.Call) -> List[str]:
@@ -298,27 +301,24 @@ def _extract_response(decorator: ast.Call) -> Dict[str, Any]:
     if decorator.args:
         status_arg = decorator.args[0]
         if isinstance(status_arg, ast.Constant):
-            result['status_code'] = [status_arg.value]
+            result["status_code"] = [status_arg.value]
         elif isinstance(status_arg, ast.List):
-            result['status_code'] = [
-                elt.value for elt in status_arg.elts
-                if isinstance(elt, ast.Constant)
-            ]
+            result["status_code"] = [elt.value for elt in status_arg.elts if isinstance(elt, ast.Constant)]
 
     # First pass: extract contentType if present (needed for schema processing)
-    content_type = 'application/json'  # default
+    content_type = "application/json"  # default
     for keyword in decorator.keywords:
-        if keyword.arg == 'contentType':
+        if keyword.arg == "contentType":
             if isinstance(keyword.value, ast.Constant):
                 content_type = keyword.value.value
-                result['contentType'] = content_type
+                result["contentType"] = content_type
 
     # Second pass: process all keyword arguments
     for keyword in decorator.keywords:
         key = keyword.arg
         value_node = keyword.value
 
-        if key == 'methods':
+        if key == "methods":
             # Extract methods list/single value - supports both HTTPMethod enum and strings
             # methods=HTTPMethod.POST → ['post']
             # methods=[HTTPMethod.POST, HTTPMethod.GET] → ['post', 'get']
@@ -333,29 +333,23 @@ def _extract_response(decorator: ast.Call) -> Dict[str, Any]:
                         # 'POST' → 'post'
                         methods.append(elt.value.lower())
                 if methods:
-                    result['methods'] = methods
+                    result["methods"] = methods
             elif isinstance(value_node, ast.Attribute) and value_node.attr:
                 # Single HTTPMethod enum value
-                result['methods'] = [value_node.attr.lower()]
+                result["methods"] = [value_node.attr.lower()]
             elif isinstance(value_node, ast.Constant) and isinstance(value_node.value, str):
                 # Single string method
-                result['methods'] = [value_node.value.lower()]
+                result["methods"] = [value_node.value.lower()]
 
-        elif key == 'description':
+        elif key == "description":
             if isinstance(value_node, ast.Constant):
-                result['description'] = value_node.value
+                result["description"] = value_node.value
 
-        elif key == 'schema':
+        elif key == "schema":
             # schema=ModelClass → get class name
             if isinstance(value_node, ast.Name):
                 schema_name = value_node.id
-                result['content'] = {
-                    content_type: {
-                        'schema': {
-                            '$ref': f'#/components/schemas/{schema_name}'
-                        }
-                    }
-                }
+                result["content"] = {content_type: {"schema": {"$ref": f"#/components/schemas/{schema_name}"}}}
 
     return result
 
@@ -439,24 +433,24 @@ def _extract_path_parameter(decorator: ast.Call) -> Dict[str, Any]:
             'description': 'Guild ID'
         }
     """
-    param: Dict[str, Any] = {'in': 'path'}
+    param: Dict[str, Any] = {"in": "path"}
 
     # Extract keyword arguments
     for keyword in decorator.keywords:
         key = keyword.arg
         value_node = keyword.value
 
-        if key == 'name':
+        if key == "name":
             if isinstance(value_node, ast.Constant):
-                param['name'] = value_node.value
-        elif key == 'schema':
-            param['schema'] = _extract_schema_type(value_node)
-        elif key == 'required':
+                param["name"] = value_node.value
+        elif key == "schema":
+            param["schema"] = _extract_schema_type(value_node)
+        elif key == "required":
             if isinstance(value_node, ast.Constant):
-                param['required'] = value_node.value
-        elif key == 'description':
+                param["required"] = value_node.value
+        elif key == "description":
             if isinstance(value_node, ast.Constant):
-                param['description'] = value_node.value
+                param["description"] = value_node.value
 
     return param
 
@@ -480,7 +474,7 @@ def _extract_query_parameter(decorator: ast.Call) -> Dict[str, Any]:
             'description': 'Max results'
         }
     """
-    param: Dict[str, Any] = {'in': 'query'}
+    param: Dict[str, Any] = {"in": "query"}
     schema: Dict[str, Any] = {}
 
     # Extract keyword arguments
@@ -488,23 +482,23 @@ def _extract_query_parameter(decorator: ast.Call) -> Dict[str, Any]:
         key = keyword.arg
         value_node = keyword.value
 
-        if key == 'name':
+        if key == "name":
             if isinstance(value_node, ast.Constant):
-                param['name'] = value_node.value
-        elif key == 'schema':
+                param["name"] = value_node.value
+        elif key == "schema":
             schema = _extract_schema_type(value_node)
-        elif key == 'required':
+        elif key == "required":
             if isinstance(value_node, ast.Constant):
-                param['required'] = value_node.value
-        elif key == 'default':
+                param["required"] = value_node.value
+        elif key == "default":
             if isinstance(value_node, ast.Constant):
-                schema['default'] = value_node.value
-        elif key == 'description':
+                schema["default"] = value_node.value
+        elif key == "description":
             if isinstance(value_node, ast.Constant):
-                param['description'] = value_node.value
+                param["description"] = value_node.value
 
     if schema:
-        param['schema'] = schema
+        param["schema"] = schema
 
     return param
 
@@ -528,24 +522,24 @@ def _extract_header_parameter(decorator: ast.Call) -> Dict[str, Any]:
             'description': 'API version'
         }
     """
-    param: Dict[str, Any] = {'in': 'header'}
+    param: Dict[str, Any] = {"in": "header"}
 
     # Extract keyword arguments
     for keyword in decorator.keywords:
         key = keyword.arg
         value_node = keyword.value
 
-        if key == 'name':
+        if key == "name":
             if isinstance(value_node, ast.Constant):
-                param['name'] = value_node.value
-        elif key == 'schema':
-            param['schema'] = _extract_schema_type(value_node)
-        elif key == 'required':
+                param["name"] = value_node.value
+        elif key == "schema":
+            param["schema"] = _extract_schema_type(value_node)
+        elif key == "required":
             if isinstance(value_node, ast.Constant):
-                param['required'] = value_node.value
-        elif key == 'description':
+                param["required"] = value_node.value
+        elif key == "description":
             if isinstance(value_node, ast.Constant):
-                param['description'] = value_node.value
+                param["description"] = value_node.value
 
     return param
 
@@ -573,7 +567,7 @@ def _extract_request_body(decorator: ast.Call) -> Dict[str, Any]:
         }
     """
     body: Dict[str, Any] = {}
-    content_type = 'application/json'  # default
+    content_type = "application/json"  # default
     schema_name = None
 
     # Extract keyword arguments
@@ -581,19 +575,19 @@ def _extract_request_body(decorator: ast.Call) -> Dict[str, Any]:
         key = keyword.arg
         value_node = keyword.value
 
-        if key == 'schema':
+        if key == "schema":
             if isinstance(value_node, ast.Name):
                 schema_name = value_node.id
-        elif key == 'contentType':
+        elif key == "contentType":
             if isinstance(value_node, ast.Constant):
                 content_type = value_node.value
-        elif key == 'required':
+        elif key == "required":
             if isinstance(value_node, ast.Constant):
-                body['required'] = value_node.value
-        elif key == 'description':
+                body["required"] = value_node.value
+        elif key == "description":
             if isinstance(value_node, ast.Constant):
-                body['description'] = value_node.value
-        elif key == 'methods':
+                body["description"] = value_node.value
+        elif key == "methods":
             # Extract methods list/single value - supports both HTTPMethod enum and strings
             # methods=HTTPMethod.POST → ['post']
             # methods=[HTTPMethod.POST, HTTPMethod.GET] → ['post', 'get']
@@ -608,23 +602,17 @@ def _extract_request_body(decorator: ast.Call) -> Dict[str, Any]:
                         # 'POST' → 'post'
                         methods.append(elt.value.lower())
                 if methods:
-                    body['methods'] = methods
+                    body["methods"] = methods
             elif isinstance(value_node, ast.Attribute) and value_node.attr:
                 # Single HTTPMethod enum value
-                body['methods'] = [value_node.attr.lower()]
+                body["methods"] = [value_node.attr.lower()]
             elif isinstance(value_node, ast.Constant) and isinstance(value_node.value, str):
                 # Single string method
-                body['methods'] = [value_node.value.lower()]
+                body["methods"] = [value_node.value.lower()]
 
     # Build content object
     if schema_name:
-        body['content'] = {
-            content_type: {
-                'schema': {
-                    '$ref': f'#/components/schemas/{schema_name}'
-                }
-            }
-        }
+        body["content"] = {content_type: {"schema": {"$ref": f"#/components/schemas/{schema_name}"}}}
 
     return body
 
@@ -653,14 +641,14 @@ def _extract_response_header(decorator: ast.Call) -> Dict[str, Any]:
         key = keyword.arg
         value_node = keyword.value
 
-        if key == 'name':
+        if key == "name":
             if isinstance(value_node, ast.Constant):
-                header['name'] = value_node.value
-        elif key == 'schema':
-            header['schema'] = _extract_schema_type(value_node)
-        elif key == 'description':
+                header["name"] = value_node.value
+        elif key == "schema":
+            header["schema"] = _extract_schema_type(value_node)
+        elif key == "description":
             if isinstance(value_node, ast.Constant):
-                header['description'] = value_node.value
+                header["description"] = value_node.value
 
     return header
 
@@ -689,18 +677,18 @@ def _extract_example(decorator: ast.Call) -> Dict[str, Any]:
         key = keyword.arg
         value_node = keyword.value
 
-        if key == 'name':
+        if key == "name":
             if isinstance(value_node, ast.Constant):
-                example['name'] = value_node.value
-        elif key == 'value':
+                example["name"] = value_node.value
+        elif key == "value":
             # Parse the value (dict or list)
-            example['value'] = _extract_literal_value(value_node)
-        elif key == 'summary':
+            example["value"] = _extract_literal_value(value_node)
+        elif key == "summary":
             if isinstance(value_node, ast.Constant):
-                example['summary'] = value_node.value
-        elif key == 'description':
+                example["summary"] = value_node.value
+        elif key == "description":
             if isinstance(value_node, ast.Constant):
-                example['description'] = value_node.value
+                example["description"] = value_node.value
 
     return example
 
@@ -728,12 +716,12 @@ def _extract_external_docs(decorator: ast.Call) -> Dict[str, str]:
         key = keyword.arg
         value_node = keyword.value
 
-        if key == 'url':
+        if key == "url":
             if isinstance(value_node, ast.Constant):
-                docs['url'] = value_node.value
-        elif key == 'description':
+                docs["url"] = value_node.value
+        elif key == "description":
             if isinstance(value_node, ast.Constant):
-                docs['description'] = value_node.value
+                docs["description"] = value_node.value
 
     return docs
 
@@ -756,18 +744,18 @@ def _extract_schema_type(type_node: ast.expr) -> Dict[str, str]:
     if isinstance(type_node, ast.Name):
         type_name = type_node.id
         type_mapping = {
-            'str': 'string',
-            'int': 'integer',
-            'float': 'number',
-            'bool': 'boolean',
-            'list': 'array',
-            'dict': 'object',
+            "str": "string",
+            "int": "integer",
+            "float": "number",
+            "bool": "boolean",
+            "list": "array",
+            "dict": "object",
         }
-        openapi_type = type_mapping.get(type_name, 'string')
-        return {'type': openapi_type}
+        openapi_type = type_mapping.get(type_name, "string")
+        return {"type": openapi_type}
 
     # Default to string for unknown types
-    return {'type': 'string'}
+    return {"type": "string"}
 
 
 def _extract_literal_value(value_node: ast.expr) -> Any:

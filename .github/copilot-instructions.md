@@ -190,6 +190,33 @@ class GuildRolesApiHandler:
 
 See `docs/http/openapi_decorators.md` for complete examples and patterns.
 
+#### 2.1.3 Ignoring Endpoints from OpenAPI Spec
+
+To exclude endpoints from OpenAPI documentation (e.g., internal/debug endpoints):
+
+**Preferred: Use @openapi.ignore() decorator:**
+```python
+from bot.lib.models.openapi import openapi
+
+@uri_variable_mapping(f"/api/{API_VERSION}/internal/debug", method="GET")
+@openapi.ignore()
+def debug_endpoint(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+    """Internal debug endpoint - not for public API."""
+    # implementation
+```
+
+**Legacy: Add `@openapi: ignore` to docstring:**
+```python
+def legacy_endpoint(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+    """Legacy endpoint.
+    
+    @openapi: ignore
+    """
+    # implementation
+```
+
+Ignored endpoints are excluded from swagger spec and coverage calculations but can be listed with `--show-ignored` flag.
+
 ### 2.2 Error Handling Pattern
 - Validate inputs early; raise `HttpResponseException(status, headers, body)` for 4xx conditions.
 - Catch broad exceptions last, log via `self.log.error`, and raise a 500 with a generic message (never leak stack details to client).

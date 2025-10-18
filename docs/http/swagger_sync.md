@@ -432,7 +432,7 @@ General Options:
   --swagger-file FILE        Path to swagger file (default .swagger.v1.yaml)
   --ignore-file GLOB         Glob (relative) or filename to skip; repeatable.
   --show-orphans             List swagger paths and components lacking handlers/models.
-  --show-ignored             List endpoints skipped via @openapi: ignore.
+  --show-ignored             List endpoints skipped via @openapi.ignore() decorator or @openapi: ignore docstring marker.
   --show-missing-blocks      List handlers without an ---openapi block.
   --verbose-coverage         Print per-endpoint coverage flags.
   --coverage-report FILE     Emit coverage report (extension auto-detected if not provided).
@@ -626,10 +626,37 @@ Example snippet (GitHub Actions job step):
 
 ## 6. Ignoring Endpoints
 
-Add `@openapi: ignore` to either:
+You can mark endpoints to be excluded from OpenAPI spec generation using either:
+
+### 6.1 Preferred: @openapi.ignore() Decorator
+
+```python
+from bot.lib.models.openapi import openapi
+
+@uri_variable_mapping(f"/api/{API_VERSION}/internal/endpoint", method="POST")
+@openapi.ignore()
+def internal_handler(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+    """Internal endpoint not for public API documentation."""
+    # implementation
+```
+
+### 6.2 Legacy: Docstring Marker
+
+For backward compatibility, you can add `@openapi: ignore` to either:
 
 1. Module docstring ⇒ all endpoints in file ignored.
 2. Individual function docstring ⇒ only that handler ignored.
+
+```python
+def legacy_handler(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+    """Legacy endpoint.
+    
+    @openapi: ignore
+    """
+    # implementation
+```
+
+**Note:** The decorator approach is preferred as it's more explicit, type-safe, and integrates better with IDE tooling.
 
 Ignored endpoints:
 
@@ -672,7 +699,7 @@ When orphans are detected but `--show-orphans` is not used, the script will show
 
 ```text
 Suggestions:
-  - Remove or implement swagger-only paths, or mark related handlers with @openapi: ignore if intentional.
+  - Remove or implement swagger-only paths, or mark related handlers with @openapi.ignore() decorator if intentional.
 ```
 
 ### 7.4 Orphan Output Format
@@ -693,7 +720,7 @@ Orphans:
 
 - **Remove** the path from swagger if the endpoint is no longer needed
 - **Implement** the missing handler if the endpoint should exist
-- **Mark ignored** with `@openapi: ignore` if the path is intentionally swagger-only
+- **Mark ignored** with `@openapi.ignore()` decorator if the path is intentionally swagger-only
 
 **Component Orphans:**
 
@@ -786,7 +813,7 @@ Markdown summaries always strip ANSI codes and note the effective color mode & r
 | Drift reported unexpectedly | Stale swagger entry differs from generated operation | Run with `--fix` and commit |
 | Endpoint missing from coverage | Missing `---openapi` block | Add block & re-run |
 | Endpoint totally absent from output | Decorator path not resolvable (dynamic f-string) | Simplify path or extend resolver function |
-| Tagged as ignored but still counted | Marker in a comment not docstring | Place `@openapi: ignore` inside actual module or function docstring |
+| Tagged as ignored but still counted | Marker in a comment not docstring | Use `@openapi.ignore()` decorator or place `@openapi: ignore` inside actual module or function docstring |
 | Swagger-only path not listed | Used `--fix` without `--show-orphans` | Re-run with `--show-orphans` |
 | Component orphan not detected | Component schema not in `components.schemas` or model class exists but not decorated with `@openapi.component` | Verify component location and ensure model class uses `@openapi.component` decorator |
 | Coverage threshold failing | Threshold too high for current docs | Add blocks or lower threshold intentionally |
@@ -808,7 +835,7 @@ Markdown summaries always strip ANSI codes and note the effective color mode & r
 ## 15. FAQ
 
 **Q: Do I need a block for internal / experimental endpoints?**
-Add one or mark with `@openapi: ignore`. Avoid silent omissions.
+Add one or mark with `@openapi.ignore()` decorator. Avoid silent omissions.
 
 **Q: Does `--fix` delete swagger-only paths?**
 No. It only updates / inserts operations. Remove obsolete paths manually (script will highlight them as orphans).

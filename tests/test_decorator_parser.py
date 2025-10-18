@@ -33,18 +33,16 @@ class TestDecoratorMetadata:
         assert metadata.description is None
         assert metadata.operation_id is None
         assert metadata.deprecated is False
+        assert metadata.ignore is False
 
     def test_metadata_with_values(self):
         """Test creating metadata with values."""
         metadata = DecoratorMetadata(
-            tags=['webhook', 'minecraft'],
-            security=['X-AUTH-TOKEN'],
-            summary='Test endpoint',
-            deprecated=True
+            tags=["webhook", "minecraft"], security=["X-AUTH-TOKEN"], summary="Test endpoint", deprecated=True
         )
-        assert metadata.tags == ['webhook', 'minecraft']
-        assert metadata.security == ['X-AUTH-TOKEN']
-        assert metadata.summary == 'Test endpoint'
+        assert metadata.tags == ["webhook", "minecraft"]
+        assert metadata.security == ["X-AUTH-TOKEN"]
+        assert metadata.summary == "Test endpoint"
         assert metadata.deprecated is True
 
     def test_to_dict_empty(self):
@@ -55,44 +53,39 @@ class TestDecoratorMetadata:
 
     def test_to_dict_with_tags(self):
         """Test converting metadata with tags to dict."""
-        metadata = DecoratorMetadata(tags=['webhook', 'minecraft'])
+        metadata = DecoratorMetadata(tags=["webhook", "minecraft"])
         result = metadata.to_dict()
-        assert result == {'tags': ['webhook', 'minecraft']}
+        assert result == {"tags": ["webhook", "minecraft"]}
 
     def test_to_dict_with_security(self):
         """Test converting metadata with security to dict."""
-        metadata = DecoratorMetadata(security=['X-AUTH-TOKEN', 'X-API-KEY'])
+        metadata = DecoratorMetadata(security=["X-AUTH-TOKEN", "X-API-KEY"])
         result = metadata.to_dict()
-        assert result == {
-            'security': [
-                {'X-AUTH-TOKEN': []},
-                {'X-API-KEY': []}
-            ]
-        }
+        assert result == {"security": [{"X-AUTH-TOKEN": []}, {"X-API-KEY": []}]}
 
     def test_to_dict_with_summary(self):
         """Test converting metadata with summary to dict."""
-        metadata = DecoratorMetadata(summary='Get guild roles')
+        metadata = DecoratorMetadata(summary="Get guild roles")
         result = metadata.to_dict()
-        assert result == {'summary': 'Get guild roles'}
+        assert result == {"summary": "Get guild roles"}
 
     def test_to_dict_with_description(self):
         """Test converting metadata with description to dict."""
-        metadata = DecoratorMetadata(description='Returns all roles')
+        metadata = DecoratorMetadata(description="Returns all roles")
         result = metadata.to_dict()
-        assert result == {'description': 'Returns all roles'}
+        assert result == {"description": "Returns all roles"}
 
     def test_to_dict_with_operation_id(self):
         """Test converting metadata with operation ID to dict."""
-        metadata = DecoratorMetadata(operation_id='getGuildRoles')
+        metadata = DecoratorMetadata(operation_id="getGuildRoles")
         result = metadata.to_dict()
-        assert result == {'operationId': 'getGuildRoles'}
+        assert result == {"operationId": "getGuildRoles"}
 
     def test_to_dict_with_deprecated(self):
         """Test converting metadata with deprecated flag to dict."""
         metadata = DecoratorMetadata(deprecated=True)
         result = metadata.to_dict()
-        assert result == {'deprecated': True}
+        assert result == {"deprecated": True}
 
     def test_to_dict_deprecated_false_omitted(self):
         """Test that deprecated=False is omitted from dict."""
@@ -100,71 +93,72 @@ class TestDecoratorMetadata:
         result = metadata.to_dict()
         assert result == {}
 
+    def test_to_dict_with_ignore(self):
+        """Test that ignore flag is NOT included in dict output."""
+        # Note: ignore is used internally for filtering, not part of OpenAPI spec
+        metadata = DecoratorMetadata(ignore=True)
+        result = metadata.to_dict()
+        assert result == {}
+
+    def test_to_dict_ignore_false_omitted(self):
+        """Test that ignore=False is omitted from dict."""
+        metadata = DecoratorMetadata(ignore=False)
+        result = metadata.to_dict()
+        assert result == {}
+
     def test_to_dict_with_responses(self):
         """Test converting metadata with responses to dict."""
-        metadata = DecoratorMetadata(responses=[
-            {
-                'status_code': [200],
-                'description': 'Success',
-                'content': {
-                    'application/json': {
-                        'schema': {'$ref': '#/components/schemas/Model'}
-                    }
+        metadata = DecoratorMetadata(
+            responses=[
+                {
+                    "status_code": [200],
+                    "description": "Success",
+                    "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Model"}}},
                 }
-            }
-        ])
+            ]
+        )
         result = metadata.to_dict()
-        assert 'responses' in result
-        assert '200' in result['responses']
-        assert result['responses']['200']['description'] == 'Success'
-        assert 'content' in result['responses']['200']
+        assert "responses" in result
+        assert "200" in result["responses"]
+        assert result["responses"]["200"]["description"] == "Success"
+        assert "content" in result["responses"]["200"]
 
     def test_to_dict_with_multiple_status_codes(self):
         """Test converting response with multiple status codes."""
-        metadata = DecoratorMetadata(responses=[
-            {
-                'status_code': [400, 401, 404],
-                'description': 'Error'
-            }
-        ])
+        metadata = DecoratorMetadata(responses=[{"status_code": [400, 401, 404], "description": "Error"}])
         result = metadata.to_dict()
-        assert '400' in result['responses']
-        assert '401' in result['responses']
-        assert '404' in result['responses']
-        assert result['responses']['400']['description'] == 'Error'
+        assert "400" in result["responses"]
+        assert "401" in result["responses"]
+        assert "404" in result["responses"]
+        assert result["responses"]["400"]["description"] == "Error"
 
     def test_to_dict_response_without_content(self):
         """Test response without content field."""
-        metadata = DecoratorMetadata(responses=[
-            {
-                'status_code': [204],
-                'description': 'No content'
-            }
-        ])
+        metadata = DecoratorMetadata(responses=[{"status_code": [204], "description": "No content"}])
         result = metadata.to_dict()
-        assert '204' in result['responses']
-        assert result['responses']['204']['description'] == 'No content'
-        assert 'content' not in result['responses']['204']
+        assert "204" in result["responses"]
+        assert result["responses"]["204"]["description"] == "No content"
+        assert "content" not in result["responses"]["204"]
 
     def test_to_dict_combined_fields(self):
         """Test converting metadata with multiple fields."""
         metadata = DecoratorMetadata(
-            tags=['webhook'],
-            security=['X-AUTH'],
-            summary='Test',
-            description='Test description',
-            operation_id='testOp',
+            tags=["webhook"],
+            security=["X-AUTH"],
+            summary="Test",
+            description="Test description",
+            operation_id="testOp",
             deprecated=True,
-            responses=[{'status_code': [200], 'description': 'OK'}]
+            responses=[{"status_code": [200], "description": "OK"}],
         )
         result = metadata.to_dict()
-        assert result['tags'] == ['webhook']
-        assert result['security'] == [{'X-AUTH': []}]
-        assert result['summary'] == 'Test'
-        assert result['description'] == 'Test description'
-        assert result['operationId'] == 'testOp'
-        assert result['deprecated'] is True
-        assert '200' in result['responses']
+        assert result["tags"] == ["webhook"]
+        assert result["security"] == [{"X-AUTH": []}]
+        assert result["summary"] == "Test"
+        assert result["description"] == "Test description"
+        assert result["operationId"] == "testOp"
+        assert result["deprecated"] is True
+        assert "200" in result["responses"]
 
 
 class TestIsOpenapiDecorator:
@@ -228,7 +222,7 @@ class TestGetDecoratorName:
         assert isinstance(func_node, ast.FunctionDef)
         decorator = func_node.decorator_list[0]
         assert isinstance(decorator, ast.Call)
-        assert _get_decorator_name(decorator) == 'tags'
+        assert _get_decorator_name(decorator) == "tags"
 
     def test_get_security_name(self):
         """Test extracting 'security' from @openapi.security."""
@@ -238,7 +232,7 @@ class TestGetDecoratorName:
         assert isinstance(func_node, ast.FunctionDef)
         decorator = func_node.decorator_list[0]
         assert isinstance(decorator, ast.Call)
-        assert _get_decorator_name(decorator) == 'security'
+        assert _get_decorator_name(decorator) == "security"
 
     def test_get_response_name(self):
         """Test extracting 'response' from @openapi.response."""
@@ -248,7 +242,7 @@ class TestGetDecoratorName:
         assert isinstance(func_node, ast.FunctionDef)
         decorator = func_node.decorator_list[0]
         assert isinstance(decorator, ast.Call)
-        assert _get_decorator_name(decorator) == 'response'
+        assert _get_decorator_name(decorator) == "response"
 
     def test_non_attribute_decorator(self):
         """Test handling decorator without attribute."""
@@ -258,7 +252,7 @@ class TestGetDecoratorName:
         assert isinstance(func_node, ast.FunctionDef)
         decorator = func_node.decorator_list[0]
         assert isinstance(decorator, ast.Call)
-        assert _get_decorator_name(decorator) == ''
+        assert _get_decorator_name(decorator) == ""
 
 
 class TestExtractTags:
@@ -273,7 +267,7 @@ class TestExtractTags:
         decorator = func_node.decorator_list[0]
         assert isinstance(decorator, ast.Call)
         tags = _extract_tags(decorator)
-        assert tags == ['webhook']
+        assert tags == ["webhook"]
 
     def test_multiple_tags(self):
         """Test extracting multiple tags."""
@@ -284,7 +278,7 @@ class TestExtractTags:
         decorator = func_node.decorator_list[0]
         assert isinstance(decorator, ast.Call)
         tags = _extract_tags(decorator)
-        assert tags == ['webhook', 'minecraft', 'tacos']
+        assert tags == ["webhook", "minecraft", "tacos"]
 
     def test_no_tags(self):
         """Test decorator with no arguments."""
@@ -306,7 +300,7 @@ class TestExtractTags:
         decorator = func_node.decorator_list[0]
         assert isinstance(decorator, ast.Call)
         tags = _extract_tags(decorator)
-        assert tags == ['valid']
+        assert tags == ["valid"]
 
 
 class TestExtractSecurity:
@@ -321,7 +315,7 @@ class TestExtractSecurity:
         decorator = func_node.decorator_list[0]
         assert isinstance(decorator, ast.Call)
         schemes = _extract_security(decorator)
-        assert schemes == ['X-AUTH-TOKEN']
+        assert schemes == ["X-AUTH-TOKEN"]
 
     def test_multiple_security_schemes(self):
         """Test extracting multiple security schemes."""
@@ -332,7 +326,7 @@ class TestExtractSecurity:
         decorator = func_node.decorator_list[0]
         assert isinstance(decorator, ast.Call)
         schemes = _extract_security(decorator)
-        assert schemes == ['X-AUTH-TOKEN', 'X-API-KEY']
+        assert schemes == ["X-AUTH-TOKEN", "X-API-KEY"]
 
     def test_no_security_schemes(self):
         """Test decorator with no arguments."""
@@ -358,7 +352,7 @@ class TestExtractResponse:
         decorator = func_node.decorator_list[0]
         assert isinstance(decorator, ast.Call)
         response = _extract_response(decorator)
-        assert response['status_code'] == [200]
+        assert response["status_code"] == [200]
 
     def test_response_with_multiple_status_codes(self):
         """Test extracting response with list of status codes."""
@@ -369,7 +363,7 @@ class TestExtractResponse:
         decorator = func_node.decorator_list[0]
         assert isinstance(decorator, ast.Call)
         response = _extract_response(decorator)
-        assert response['status_code'] == [400, 401, 404]
+        assert response["status_code"] == [400, 401, 404]
 
     def test_response_with_description(self):
         """Test extracting response with description."""
@@ -380,7 +374,7 @@ class TestExtractResponse:
         decorator = func_node.decorator_list[0]
         assert isinstance(decorator, ast.Call)
         response = _extract_response(decorator)
-        assert response['description'] == 'Success'
+        assert response["description"] == "Success"
 
     def test_response_with_content_type(self):
         """Test extracting response with contentType."""
@@ -391,7 +385,7 @@ class TestExtractResponse:
         decorator = func_node.decorator_list[0]
         assert isinstance(decorator, ast.Call)
         response = _extract_response(decorator)
-        assert response['contentType'] == 'application/json'
+        assert response["contentType"] == "application/json"
 
     def test_response_with_schema(self):
         """Test extracting response with schema reference."""
@@ -402,9 +396,9 @@ class TestExtractResponse:
         decorator = func_node.decorator_list[0]
         assert isinstance(decorator, ast.Call)
         response = _extract_response(decorator)
-        assert 'content' in response
-        assert 'application/json' in response['content']
-        assert response['content']['application/json']['schema']['$ref'] == '#/components/schemas/TacoPayload'
+        assert "content" in response
+        assert "application/json" in response["content"]
+        assert response["content"]["application/json"]["schema"]["$ref"] == "#/components/schemas/TacoPayload"
 
     def test_response_with_schema_and_content_type(self):
         """Test extracting response with schema and custom content type."""
@@ -415,22 +409,24 @@ class TestExtractResponse:
         decorator = func_node.decorator_list[0]
         assert isinstance(decorator, ast.Call)
         response = _extract_response(decorator)
-        assert 'content' in response
-        assert 'text/plain' in response['content']
+        assert "content" in response
+        assert "text/plain" in response["content"]
 
     def test_response_with_all_parameters(self):
         """Test extracting response with all parameters."""
-        code = "@openapi.response(200, description='OK', contentType='application/json', schema=Model)\ndef func(): pass"
+        code = (
+            "@openapi.response(200, description='OK', contentType='application/json', schema=Model)\ndef func(): pass"
+        )
         tree = ast.parse(code)
         func_node = tree.body[0]
         assert isinstance(func_node, ast.FunctionDef)
         decorator = func_node.decorator_list[0]
         assert isinstance(decorator, ast.Call)
         response = _extract_response(decorator)
-        assert response['status_code'] == [200]
-        assert response['description'] == 'OK'
-        assert response['contentType'] == 'application/json'
-        assert 'content' in response
+        assert response["status_code"] == [200]
+        assert response["description"] == "OK"
+        assert response["contentType"] == "application/json"
+        assert "content" in response
 
     def test_response_no_arguments(self):
         """Test response decorator with no arguments."""
@@ -456,7 +452,7 @@ class TestExtractSummary:
         decorator = func_node.decorator_list[0]
         assert isinstance(decorator, ast.Call)
         summary = _extract_summary(decorator)
-        assert summary == 'Get guild roles'
+        assert summary == "Get guild roles"
 
     def test_extract_summary_no_args(self):
         """Test summary decorator with no arguments."""
@@ -493,7 +489,7 @@ class TestExtractDescription:
         decorator = func_node.decorator_list[0]
         assert isinstance(decorator, ast.Call)
         description = _extract_description(decorator)
-        assert description == 'Returns all roles for the guild'
+        assert description == "Returns all roles for the guild"
 
     def test_extract_description_no_args(self):
         """Test description decorator with no arguments."""
@@ -519,7 +515,7 @@ class TestExtractOperationId:
         decorator = func_node.decorator_list[0]
         assert isinstance(decorator, ast.Call)
         operation_id = _extract_operation_id(decorator)
-        assert operation_id == 'getGuildRoles'
+        assert operation_id == "getGuildRoles"
 
     def test_extract_operation_id_no_args(self):
         """Test operationId decorator with no arguments."""
@@ -554,7 +550,7 @@ class TestExtractDecoratorMetadata:
         func_node = tree.body[0]
         assert isinstance(func_node, ast.FunctionDef)
         metadata = extract_decorator_metadata(func_node)
-        assert metadata.tags == ['webhook', 'minecraft']
+        assert metadata.tags == ["webhook", "minecraft"]
 
     def test_extract_single_security_decorator(self):
         """Test extracting single security decorator."""
@@ -563,7 +559,7 @@ class TestExtractDecoratorMetadata:
         func_node = tree.body[0]
         assert isinstance(func_node, ast.FunctionDef)
         metadata = extract_decorator_metadata(func_node)
-        assert metadata.security == ['X-AUTH-TOKEN']
+        assert metadata.security == ["X-AUTH-TOKEN"]
 
     def test_extract_single_response_decorator(self):
         """Test extracting single response decorator."""
@@ -573,7 +569,7 @@ class TestExtractDecoratorMetadata:
         assert isinstance(func_node, ast.FunctionDef)
         metadata = extract_decorator_metadata(func_node)
         assert len(metadata.responses) == 1
-        assert metadata.responses[0]['status_code'] == [200]
+        assert metadata.responses[0]["status_code"] == [200]
 
     def test_extract_multiple_response_decorators(self):
         """Test extracting multiple response decorators."""
@@ -596,7 +592,7 @@ def func(): pass
         func_node = tree.body[0]
         assert isinstance(func_node, ast.FunctionDef)
         metadata = extract_decorator_metadata(func_node)
-        assert metadata.summary == 'Get roles'
+        assert metadata.summary == "Get roles"
 
     def test_extract_description_decorator(self):
         """Test extracting description decorator."""
@@ -605,7 +601,7 @@ def func(): pass
         func_node = tree.body[0]
         assert isinstance(func_node, ast.FunctionDef)
         metadata = extract_decorator_metadata(func_node)
-        assert metadata.description == 'Returns all roles'
+        assert metadata.description == "Returns all roles"
 
     def test_extract_operation_id_decorator(self):
         """Test extracting operationId decorator."""
@@ -614,7 +610,7 @@ def func(): pass
         func_node = tree.body[0]
         assert isinstance(func_node, ast.FunctionDef)
         metadata = extract_decorator_metadata(func_node)
-        assert metadata.operation_id == 'getRoles'
+        assert metadata.operation_id == "getRoles"
 
     def test_extract_deprecated_decorator(self):
         """Test extracting deprecated decorator."""
@@ -624,6 +620,15 @@ def func(): pass
         assert isinstance(func_node, ast.FunctionDef)
         metadata = extract_decorator_metadata(func_node)
         assert metadata.deprecated is True
+
+    def test_extract_ignore_decorator(self):
+        """Test extracting ignore decorator."""
+        code = "@openapi.ignore()\ndef func(): pass"
+        tree = ast.parse(code)
+        func_node = tree.body[0]
+        assert isinstance(func_node, ast.FunctionDef)
+        metadata = extract_decorator_metadata(func_node)
+        assert metadata.ignore is True
 
     def test_extract_all_decorators_combined(self):
         """Test extracting all decorator types together."""
@@ -643,11 +648,11 @@ def func(): pass
         assert isinstance(func_node, ast.FunctionDef)
         metadata = extract_decorator_metadata(func_node)
 
-        assert metadata.tags == ['webhook', 'minecraft']
-        assert metadata.security == ['X-AUTH-TOKEN']
-        assert metadata.summary == 'Give tacos'
-        assert metadata.description == 'Webhook endpoint for giving tacos'
-        assert metadata.operation_id == 'giveTacos'
+        assert metadata.tags == ["webhook", "minecraft"]
+        assert metadata.security == ["X-AUTH-TOKEN"]
+        assert metadata.summary == "Give tacos"
+        assert metadata.description == "Webhook endpoint for giving tacos"
+        assert metadata.operation_id == "giveTacos"
         assert len(metadata.responses) == 2
         assert metadata.deprecated is True
 
@@ -665,7 +670,7 @@ def func(): pass
         metadata = extract_decorator_metadata(func_node)
 
         # Only openapi.tags should be extracted
-        assert metadata.tags == ['test']
+        assert metadata.tags == ["test"]
         assert len(func_node.decorator_list) == 3  # All decorators present
 
     def test_mixed_decorators_order_preserved(self):
@@ -682,8 +687,8 @@ def func(): pass
         assert isinstance(func_node, ast.FunctionDef)
         metadata = extract_decorator_metadata(func_node)
 
-        assert metadata.tags == ['test']
-        assert metadata.security == ['X-AUTH']
+        assert metadata.tags == ["test"]
+        assert metadata.security == ["X-AUTH"]
 
     def test_real_world_handler_example(self):
         """Test with realistic handler code."""
@@ -700,17 +705,17 @@ async def minecraft_give_tacos(self, request):
         assert isinstance(func_node, (ast.FunctionDef, ast.AsyncFunctionDef))
         metadata = extract_decorator_metadata(func_node)
 
-        assert metadata.tags == ['webhook', 'minecraft']
-        assert metadata.security == ['X-AUTH-TOKEN']
+        assert metadata.tags == ["webhook", "minecraft"]
+        assert metadata.security == ["X-AUTH-TOKEN"]
         assert len(metadata.responses) == 1
-        assert metadata.responses[0]['status_code'] == [200]
+        assert metadata.responses[0]["status_code"] == [200]
 
         # Convert to dict and verify structure
         result = metadata.to_dict()
-        assert 'tags' in result
-        assert 'security' in result
-        assert 'responses' in result
-        assert '200' in result['responses']
+        assert "tags" in result
+        assert "security" in result
+        assert "responses" in result
+        assert "200" in result["responses"]
 
     def test_unknown_decorator_name_ignored(self):
         """Test that unknown @openapi.* decorators are ignored."""
@@ -726,8 +731,8 @@ def func(): pass
         metadata = extract_decorator_metadata(func_node)
 
         # Only known decorators should be extracted
-        assert metadata.tags == ['test']
-        assert metadata.security == ['X-AUTH']
+        assert metadata.tags == ["test"]
+        assert metadata.security == ["X-AUTH"]
 
     def test_response_empty_status_list(self):
         """Test response with empty list of status codes."""
@@ -738,7 +743,7 @@ def func(): pass
         metadata = extract_decorator_metadata(func_node)
 
         assert len(metadata.responses) == 1
-        assert metadata.responses[0]['status_code'] == []
+        assert metadata.responses[0]["status_code"] == []
 
     def test_response_list_with_non_constants(self):
         """Test response list with non-constant elements."""
@@ -749,7 +754,7 @@ def func(): pass
         metadata = extract_decorator_metadata(func_node)
 
         # Only constant values should be extracted
-        assert metadata.responses[0]['status_code'] == [200, 404]
+        assert metadata.responses[0]["status_code"] == [200, 404]
 
     def test_decorator_with_only_keyword_args(self):
         """Test response decorator with only keyword arguments."""
@@ -760,8 +765,8 @@ def func(): pass
         metadata = extract_decorator_metadata(func_node)
 
         assert len(metadata.responses) == 1
-        assert metadata.responses[0].get('description') == 'OK'
-        assert 'content' in metadata.responses[0]
+        assert metadata.responses[0].get("description") == "OK"
+        assert "content" in metadata.responses[0]
 
     def test_response_schema_without_name_node(self):
         """Test response with schema that's not a Name node (edge case)."""
@@ -772,7 +777,7 @@ def func(): pass
         metadata = extract_decorator_metadata(func_node)
 
         # String literal should not be processed as schema
-        assert 'content' not in metadata.responses[0]
+        assert "content" not in metadata.responses[0]
 
 
 class TestPathParameterExtraction:
@@ -794,11 +799,11 @@ def func(): pass
 
         result = _extract_path_parameter(decorator)
 
-        assert result['in'] == 'path'
-        assert result['name'] == 'guild_id'
-        assert result['schema'] == {'type': 'string'}
-        assert result['required'] is True
-        assert result['description'] == 'Guild ID'
+        assert result["in"] == "path"
+        assert result["name"] == "guild_id"
+        assert result["schema"] == {"type": "string"}
+        assert result["required"] is True
+        assert result["description"] == "Guild ID"
 
     def test_path_parameter_minimal(self):
         """Test path parameter with only required fields."""
@@ -813,9 +818,9 @@ def func(): pass
 
         result = _extract_path_parameter(decorator)
 
-        assert result['in'] == 'path'
-        assert result['name'] == 'id'
-        assert result['schema'] == {'type': 'integer'}
+        assert result["in"] == "path"
+        assert result["name"] == "id"
+        assert result["schema"] == {"type": "integer"}
 
 
 class TestQueryParameterExtraction:
@@ -837,11 +842,11 @@ def func(): pass
 
         result = _extract_query_parameter(decorator)
 
-        assert result['in'] == 'query'
-        assert result['name'] == 'limit'
-        assert result['schema'] == {'type': 'integer', 'default': 10}
-        assert result['required'] is False
-        assert result['description'] == 'Max results'
+        assert result["in"] == "query"
+        assert result["name"] == "limit"
+        assert result["schema"] == {"type": "integer", "default": 10}
+        assert result["required"] is False
+        assert result["description"] == "Max results"
 
     def test_query_parameter_with_string_default(self):
         """Test query parameter with string default value."""
@@ -856,7 +861,7 @@ def func(): pass
 
         result = _extract_query_parameter(decorator)
 
-        assert result['schema'] == {'type': 'string', 'default': 'name'}
+        assert result["schema"] == {"type": "string", "default": "name"}
 
 
 class TestHeaderParameterExtraction:
@@ -878,11 +883,11 @@ def func(): pass
 
         result = _extract_header_parameter(decorator)
 
-        assert result['in'] == 'header'
-        assert result['name'] == 'X-API-Version'
-        assert result['schema'] == {'type': 'string'}
-        assert result['required'] is False
-        assert result['description'] == 'API version'
+        assert result["in"] == "header"
+        assert result["name"] == "X-API-Version"
+        assert result["schema"] == {"type": "string"}
+        assert result["required"] is False
+        assert result["description"] == "API version"
 
 
 class TestRequestBodyExtraction:
@@ -904,17 +909,19 @@ def func(): pass
 
         result = _extract_request_body(decorator)
 
-        assert result['required'] is True
-        assert result['description'] == 'Role data'
-        assert 'content' in result
-        assert 'application/json' in result['content']
-        assert result['content']['application/json']['schema']['$ref'] == '#/components/schemas/CreateRoleRequest'
+        assert result["required"] is True
+        assert result["description"] == "Role data"
+        assert "content" in result
+        assert "application/json" in result["content"]
+        assert result["content"]["application/json"]["schema"]["$ref"] == "#/components/schemas/CreateRoleRequest"
 
     def test_request_body_different_content_type(self):
         """Test request body with different content type."""
         from scripts.swagger_sync.decorator_parser import _extract_request_body
 
-        code = "@openapi.requestBody(schema=FormData, contentType='application/x-www-form-urlencoded')\ndef func(): pass"
+        code = (
+            "@openapi.requestBody(schema=FormData, contentType='application/x-www-form-urlencoded')\ndef func(): pass"
+        )
         tree = ast.parse(code)
         func_node_raw = tree.body[0]
         assert isinstance(func_node_raw, ast.FunctionDef)
@@ -923,7 +930,7 @@ def func(): pass
 
         result = _extract_request_body(decorator)
 
-        assert 'application/x-www-form-urlencoded' in result['content']
+        assert "application/x-www-form-urlencoded" in result["content"]
 
     def test_request_body_with_single_method(self):
         """Test request body with single HTTPMethod enum."""
@@ -938,8 +945,8 @@ def func(): pass
 
         result = _extract_request_body(decorator)
 
-        assert 'methods' in result
-        assert result['methods'] == ['post']
+        assert "methods" in result
+        assert result["methods"] == ["post"]
 
     def test_request_body_with_multiple_methods(self):
         """Test request body with list of HTTPMethod enums."""
@@ -954,8 +961,8 @@ def func(): pass
 
         result = _extract_request_body(decorator)
 
-        assert 'methods' in result
-        assert result['methods'] == ['post', 'put', 'patch']
+        assert "methods" in result
+        assert result["methods"] == ["post", "put", "patch"]
 
     def test_request_body_with_string_methods(self):
         """Test request body with string methods."""
@@ -970,8 +977,8 @@ def func(): pass
 
         result = _extract_request_body(decorator)
 
-        assert 'methods' in result
-        assert result['methods'] == ['post', 'put']
+        assert "methods" in result
+        assert result["methods"] == ["post", "put"]
 
     def test_request_body_without_methods(self):
         """Test request body without methods parameter (applies to all methods)."""
@@ -986,7 +993,7 @@ def func(): pass
 
         result = _extract_request_body(decorator)
 
-        assert 'methods' not in result  # No methods field means applies to all
+        assert "methods" not in result  # No methods field means applies to all
 
 
 class TestResponseHeaderExtraction:
@@ -1008,9 +1015,9 @@ def func(): pass
 
         result = _extract_response_header(decorator)
 
-        assert result['name'] == 'X-RateLimit-Remaining'
-        assert result['schema'] == {'type': 'integer'}
-        assert result['description'] == 'Requests remaining'
+        assert result["name"] == "X-RateLimit-Remaining"
+        assert result["schema"] == {"type": "integer"}
+        assert result["description"] == "Requests remaining"
 
 
 class TestExampleExtraction:
@@ -1032,10 +1039,10 @@ def func(): pass
 
         result = _extract_example(decorator)
 
-        assert result['name'] == 'success'
-        assert result['value'] == {"id": "123", "name": "Admin"}
-        assert result['summary'] == 'Successful response'
-        assert result['description'] == 'Example of success'
+        assert result["name"] == "success"
+        assert result["value"] == {"id": "123", "name": "Admin"}
+        assert result["summary"] == "Successful response"
+        assert result["description"] == "Example of success"
 
     def test_example_with_list_value(self):
         """Test example with list value."""
@@ -1050,7 +1057,7 @@ def func(): pass
 
         result = _extract_example(decorator)
 
-        assert result['value'] == [1, 2, 3]
+        assert result["value"] == [1, 2, 3]
 
 
 class TestExternalDocsExtraction:
@@ -1072,8 +1079,8 @@ def func(): pass
 
         result = _extract_external_docs(decorator)
 
-        assert result['url'] == 'https://docs.example.com'
-        assert result['description'] == 'Detailed guide'
+        assert result["url"] == "https://docs.example.com"
+        assert result["description"] == "Detailed guide"
 
     def test_external_docs_url_only(self):
         """Test external docs with only URL."""
@@ -1088,8 +1095,8 @@ def func(): pass
 
         result = _extract_external_docs(decorator)
 
-        assert result['url'] == 'https://example.com'
-        assert 'description' not in result
+        assert result["url"] == "https://example.com"
+        assert "description" not in result
 
 
 class TestSchemaTypeExtraction:
@@ -1100,12 +1107,12 @@ class TestSchemaTypeExtraction:
         from scripts.swagger_sync.decorator_parser import _extract_schema_type
 
         type_map = [
-            ('str', 'string'),
-            ('int', 'integer'),
-            ('float', 'number'),
-            ('bool', 'boolean'),
-            ('list', 'array'),
-            ('dict', 'object'),
+            ("str", "string"),
+            ("int", "integer"),
+            ("float", "number"),
+            ("bool", "boolean"),
+            ("list", "array"),
+            ("dict", "object"),
         ]
 
         for py_type, openapi_type in type_map:
@@ -1116,7 +1123,7 @@ class TestSchemaTypeExtraction:
             type_node = assign_node.value
 
             result = _extract_schema_type(type_node)
-            assert result == {'type': openapi_type}, f"Failed for {py_type}"
+            assert result == {"type": openapi_type}, f"Failed for {py_type}"
 
     def test_unknown_type_defaults_to_string(self):
         """Test that unknown types default to string."""
@@ -1129,7 +1136,7 @@ class TestSchemaTypeExtraction:
         type_node = assign_node.value
 
         result = _extract_schema_type(type_node)
-        assert result == {'type': 'string'}
+        assert result == {"type": "string"}
 
 
 class TestLiteralValueExtraction:
@@ -1201,9 +1208,9 @@ def handler(): pass
         metadata = extract_decorator_metadata(func_node_raw)
 
         assert len(metadata.parameters) == 3
-        assert metadata.parameters[0]['in'] == 'path'
-        assert metadata.parameters[1]['in'] == 'query'
-        assert metadata.parameters[2]['in'] == 'header'
+        assert metadata.parameters[0]["in"] == "path"
+        assert metadata.parameters[1]["in"] == "query"
+        assert metadata.parameters[2]["in"] == "header"
 
     def test_complete_crud_endpoint(self):
         """Test a complete CRUD endpoint with all decorators."""
@@ -1227,12 +1234,12 @@ def create_role(): pass
         assert isinstance(func_node_raw, ast.FunctionDef)
         metadata = extract_decorator_metadata(func_node_raw)
 
-        assert metadata.tags == ['guilds', 'roles']
-        assert metadata.security == ['X-AUTH-TOKEN']
+        assert metadata.tags == ["guilds", "roles"]
+        assert metadata.security == ["X-AUTH-TOKEN"]
         assert metadata.summary == "Create guild role"
         assert metadata.description == "Creates a new role in the specified guild"
         assert metadata.operation_id == "createGuildRole"
-        assert metadata.external_docs == {'url': 'https://docs.example.com/roles', 'description': 'Role guide'}
+        assert metadata.external_docs == {"url": "https://docs.example.com/roles", "description": "Role guide"}
         assert len(metadata.parameters) == 1
         assert metadata.request_body is not None
         assert len(metadata.responses) == 2
@@ -1242,19 +1249,19 @@ def create_role(): pass
     def test_to_dict_with_all_new_fields(self):
         """Test to_dict includes all new fields."""
         metadata = DecoratorMetadata(
-            tags=['test'],
-            parameters=[{'in': 'path', 'name': 'id', 'schema': {'type': 'string'}}],
-            request_body={'required': True, 'content': {}},
-            response_headers=[{'name': 'X-Header', 'schema': {'type': 'string'}}],
-            examples=[{'name': 'example1', 'value': {}}],
-            external_docs={'url': 'https://example.com'}
+            tags=["test"],
+            parameters=[{"in": "path", "name": "id", "schema": {"type": "string"}}],
+            request_body={"required": True, "content": {}},
+            response_headers=[{"name": "X-Header", "schema": {"type": "string"}}],
+            examples=[{"name": "example1", "value": {}}],
+            external_docs={"url": "https://example.com"},
         )
 
         result = metadata.to_dict()
 
-        assert 'tags' in result
-        assert 'parameters' in result
-        assert 'requestBody' in result
-        assert 'x-response-headers' in result
-        assert 'x-examples' in result
-        assert 'externalDocs' in result
+        assert "tags" in result
+        assert "parameters" in result
+        assert "requestBody" in result
+        assert "x-response-headers" in result
+        assert "x-examples" in result
+        assert "externalDocs" in result

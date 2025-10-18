@@ -91,7 +91,7 @@ def main() -> None:
     mode_group.add_argument('--fix', action='store_true', help='Write changes instead of just checking for drift')
     mode_group.add_argument('--check', action='store_true', help='Explicitly run in check mode (default) and show diff')
     parser.add_argument('--show-orphans', action='store_true', help='List swagger paths and components that have no code handler/model')
-    parser.add_argument('--show-ignored', action='store_true', help='List endpoints skipped due to @openapi: ignore markers')
+    parser.add_argument('--show-ignored', action='store_true', help='List endpoints skipped due to @openapi.ignore() decorator or @openapi: ignore docstring markers')
     parser.add_argument('--coverage-report', help='Write an OpenAPI coverage report to the given path (json, text, markdown, or cobertura based on --coverage-format)')
     parser.add_argument('--coverage-format', default=None, choices=['json','text','xml','cobertura'], help='Coverage report format (default: json if not in config)')
     parser.add_argument('--fail-on-coverage-below', type=float, help='Fail (non-zero exit) if documentation coverage (handlers with openapi blocks) is below this threshold (accepts 0-1 or 0-100)')
@@ -318,7 +318,7 @@ def main() -> None:
         for ep in endpoints:
             print(f" - {ep.method.upper()} {ep.path} ({ep.file}:{ep.function}) block={'yes' if ep.meta else 'no'}")
         if ignored:
-            print("Ignored endpoints (@openapi: ignore):")
+            print("Ignored endpoints (@openapi.ignore() or @openapi: ignore):")
             for (p,m,f,fn) in ignored:
                 print(f" - {m.upper()} {p} ({f}:{fn})")
         sys.exit(0)
@@ -542,7 +542,7 @@ def main() -> None:
         if cs['without_openapi_block'] > 0:
             suggestions.append("Add >>>openapi <<<openapi blocks for undocumented handlers.")
         if cs['swagger_only_operations'] > 0:
-            suggestions.append("Remove or implement swagger-only paths, or mark related handlers with @openapi: ignore if intentional.")
+            suggestions.append("Remove or implement swagger-only paths, or mark related handlers with @openapi.ignore() decorator if intentional.")
         if suggestions:
             print("  Suggestions:")
             for s in suggestions:
@@ -592,7 +592,7 @@ def main() -> None:
         else:
             print("No endpoint or component schema changes needed.")
         if args.show_ignored and ignored:
-            print("Ignored endpoints (@openapi: ignore):")
+            print("Ignored endpoints (@openapi.ignore() or @openapi: ignore):")
             for (p, m, f, fn) in ignored:
                 print(f" - {m.upper()} {p} ({f.name}:{fn})")
         if orphans:
@@ -716,7 +716,7 @@ def main() -> None:
         # Orphaned warnings (enhanced with components using helper)
         lines.extend(_build_orphaned_warnings_markdown(orphaned_components, coverage_swagger_only))
         if ignored:
-            lines.append("## Ignored Endpoints (@openapi: ignore)")
+            lines.append("## Ignored Endpoints (@openapi.ignore() or @openapi: ignore)")
             lines.append("")
             for (p, m, f, fn) in ignored[:50]:
                 lines.append(f"- `{m.upper()} {p}` ({f.name}:{fn})")
@@ -776,7 +776,7 @@ def main() -> None:
             else:
                 print("\n(Info) Potential swagger-only paths (use --show-orphans for list)")
         if args.show_ignored and ignored:
-            print("\nIgnored endpoints (@openapi: ignore):")
+            print("\nIgnored endpoints (@openapi.ignore() or @openapi: ignore):")
             for (p, m, f, fn) in ignored:
                 print(f" - {m.upper()} {p} ({f.name}:{fn})")
         print()
@@ -818,7 +818,7 @@ def main() -> None:
             else:
                 print("(Info) Potential swagger-only paths and components (use --show-orphans for list)")
         if args.show_ignored and ignored:
-            print("Ignored endpoints (@openapi: ignore):")
+            print("Ignored endpoints (@openapi.ignore() or @openapi: ignore):")
             for (p, m, f, fn) in ignored:
                 print(f" - {m.upper()} {p} ({f.name}:{fn})")
         print()

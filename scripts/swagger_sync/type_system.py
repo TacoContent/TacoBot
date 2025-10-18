@@ -379,11 +379,13 @@ def _extract_refs_from_types(type_list: list[str]) -> list[Dict[str, str]]:
 def _discover_attribute_aliases(models_root: pathlib.Path) -> Dict[str, Tuple[Optional[str], Any]]:
     alias_map: Dict[str, Tuple[Optional[str], Any]] = {}
     candidates: List[pathlib.Path] = []
-    potential = (models_root / 'openapi/openapi.py').resolve()
-    candidates.append(potential)
-    default_candidate = (DEFAULT_MODELS_ROOT / 'openapi/openapi.py').resolve()
-    if default_candidate not in candidates:
-        candidates.append(default_candidate)
+    # Check both openapi.py (main module) and core.py (refactored location)
+    for filename in ['openapi/openapi.py', 'openapi/core.py']:
+        potential = (models_root / filename).resolve()
+        candidates.append(potential)
+        default_candidate = (DEFAULT_MODELS_ROOT / filename).resolve()
+        if default_candidate not in candidates:
+            candidates.append(default_candidate)
     for candidate in candidates:
         if not candidate.exists():
             continue
