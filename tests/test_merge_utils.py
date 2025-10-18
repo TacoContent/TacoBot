@@ -398,11 +398,11 @@ class TestMergeEndpointMetadata:
                 'content': {'application/json': {'schema': {'$ref': '#/components/schemas/GenericRequest'}}}
             }
         }
-        
+
         # Test with different methods
         for method in ['get', 'post', 'put', 'delete', 'patch']:
             merged, _ = merge_endpoint_metadata(yaml, decorator, '/test', method)
-            
+
             # Should include requestBody for all methods since no filter
             assert 'requestBody' in merged
             assert merged['requestBody']['required'] is True

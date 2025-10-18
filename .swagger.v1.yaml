@@ -1606,17 +1606,15 @@ paths:
         - minecraft
   /webhook/game:
     post:
-      security:
-        - X-TACOBOT-TOKEN: []
-      tags:
-        - webhook
-      summary: Submit Free Game Webhook
-      description: ''
+      description: Handle inbound free game webhook event.
       requestBody:
+        required: true
+        description: Payload describing the free game offer.
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/TacoWebhookGamePayload'
+      summary: Submit Free Game Webhook
       responses:
         '200':
           description: Successful operation
@@ -1624,6 +1622,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TacoWebhookGamePayload'
+        '400':
+          description: Bad Request - Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized - Invalid Webhook Token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - webhook
+      security:
+        - X-TACOBOT-TOKEN: []
+        - X-AUTH-TOKEN: []
   /webhook/shift:
     post:
       description: Receive SHiFT code webhook payloads, validate, and broadcast to subscribed guild channels.

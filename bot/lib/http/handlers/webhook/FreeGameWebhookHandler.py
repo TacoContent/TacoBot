@@ -27,12 +27,18 @@ Extensibility Notes:
 """
 
 import html
+from http import HTTPMethod
 import inspect
 import json
 import os
 import traceback
 
+from lib import discordhelper
+from lib.models import openapi
+from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from lib.models.TacoWebhookGamePayload import TacoWebhookGamePayload
 import requests
+from tacobot import TacoBot
 from bot.lib import utils
 from bot.lib.enums.free_game_platforms import FreeGamePlatforms
 from bot.lib.enums.free_game_types import FreeGameTypes
@@ -57,8 +63,8 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
         * Record announcements in tracking DB to suppress duplicates.
     """
 
-    def __init__(self, bot):
-        super().__init__(bot)
+    def __init__(self, bot: TacoBot, discord_helper: discordhelper.DiscordHelper):
+        super().__init__(bot, discord_helper)
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
@@ -71,7 +77,47 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
             api_url=os.getenv("SHORTENER_API_URL", None), access_token=os.getenv("SHORTENER_ACCESS_TOKEN", None)
         )
 
-    @uri_mapping("/webhook/game", method="POST")
+    @uri_mapping("/webhook/game", method=HTTPMethod.POST)
+    @openapi.tags("webhook")
+    @openapi.requestBody(
+        methods=[HTTPMethod.POST],
+        schema=TacoWebhookGamePayload,
+        contentType="application/json",
+        required=True,
+        description="Payload describing the free game offer.",
+    )
+    @openapi.security("X-TACOBOT-TOKEN", "X-AUTH-TOKEN")
+    @openapi.summary("Submit Free Game Webhook")
+    @openapi.description("Handle inbound free game webhook event.")
+    @openapi.response(
+        200,
+        methods=[HTTPMethod.POST],
+        description="Successful operation",
+        schema=TacoWebhookGamePayload,
+        contentType="application/json",
+    )
+    @openapi.response(
+        400,
+        methods=[HTTPMethod.POST],
+        description="Bad Request - Client Error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        401,
+        methods=[HTTPMethod.POST],
+        description="Unauthorized - Invalid Webhook Token",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        500,
+        methods=HTTPMethod.POST,
+        description="Internal Server Error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.managed()
     async def game(self, request: HttpRequest) -> HttpResponse:
         """Handle inbound free game webhook event.
 
@@ -104,28 +150,6 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
             200 JSON echo of original payload on success.
             400 / 401 JSON error for client issues.
             500 JSON error for unexpected failures.
-
-        >>>openapi
-        post:
-          security:
-            - X-TACOBOT-TOKEN: []
-          tags:
-            - webhook
-          summary: Submit Free Game Webhook
-          description: ''
-          requestBody:
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/TacoWebhookGamePayload'
-          responses:
-            '200':
-              description: Successful operation
-              content:
-                application/json:
-                  schema:
-                    $ref: '#/components/schemas/TacoWebhookGamePayload'
-        <<<openapi
         """
         _method = inspect.stack()[0][3]
 
