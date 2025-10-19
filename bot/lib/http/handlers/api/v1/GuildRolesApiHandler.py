@@ -21,6 +21,7 @@ class GuildRolesApiHandler(BaseHttpHandler):
         super().__init__(bot, discord_helper)
         self._class = self.__class__.__name__
         self._module = os.path.basename(__file__)[:-3]
+        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/roles", method="GET")
     def get_guild_roles(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:

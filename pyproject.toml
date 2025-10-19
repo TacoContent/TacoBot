@@ -42,6 +42,7 @@ dev = [
   "black>=24.3.0,<25.0.0",
   "types-requests",
   "types-PyYAML",
+  "coverage>=7.11.0,<8.0.0",
 ]
 # Dependencies needed for building documentation (install via: pip install -e .[docs])
 docs = [
@@ -71,9 +72,14 @@ asyncio_mode = "auto"
 [tool.coverage.run]
 branch = true
 source = ["bot"]
+#   "httpserver",
+#   "metrics",
+#   "scripts",
+# ]
 omit = [
   "bot/**/__main__.py",
   "bot/**/migrations/*",
+  # "$TEMPDIR/*",
 ]
 
 [tool.coverage.report]

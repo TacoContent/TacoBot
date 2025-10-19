@@ -687,22 +687,23 @@ paths:
         - emojis
   /api/v1/guild/{guild_id}/emoji/id/{emoji_id}:
     get:
-      tags:
-        - guilds
-        - emojis
-      summary: Get an emoji by ID
-      description: Returns a single emoji object for the given emoji ID.
       parameters:
-        - name: guild_id
-          in: path
+        - in: path
           required: true
+          name: guild_id
+          description: The ID of the guild to retrieve the emoji from.
           schema:
             type: string
-        - name: emoji_id
-          in: path
+        - in: path
           required: true
+          name: emoji_id
+          description: The ID of the emoji to retrieve.
           schema:
             type: string
+      description: Returns a single emoji object for the given emoji ID.
+      security:
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
       responses:
         '200':
           description: Successful operation
@@ -716,30 +717,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
         '404':
           description: Guild or Emoji not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-  /api/v1/guild/{guild_id}/emoji/name/{emoji_name}:
-    get:
+        5XX:
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
       tags:
         - guilds
         - emojis
-      parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: emoji_name
-          in: path
-          required: true
-          schema:
-            type: string
-      summary: Get an emoji by name
-      description: Returns a single emoji object for the given emoji name.
+      summary: Get an emoji by ID
+  /api/v1/guild/{guild_id}/emoji/name/{emoji_name}:
+    get:
       responses:
         '200':
           description: Successful operation
@@ -753,61 +754,58 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
         '404':
           description: Guild or Emoji not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get an emoji by name
+      security:
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      description: Returns a single emoji object for the given emoji name.
+      tags:
+        - guilds
+        - emojis
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild to retrieve the emoji from.
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: emoji_name
+          description: The name of the emoji to retrieve.
+          schema:
+            type: string
   /api/v1/guild/{guild_id}/emojis/ids/batch:
     post:
-      tags:
-        - guilds
-        - emojis
-      summary: Get a batch of emojis by their IDs
-      description: 'Accepts either an array of emoji IDs as the JSON body or an object with an `ids` array field. Query parameter `ids` may also be provided multiple times.
-
-        '
-      parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: ids
-          in: query
-          required: false
-          description: Repeatable query parameter of emoji ids
-          schema:
-            type: array
-            items:
-              type: string
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              oneOf:
-                - type: array
-                  items:
-                    type: string
-                - type: object
-                  properties:
-                    ids:
-                      type: array
-                      items:
-                        type: string
       responses:
         '200':
           description: Successful operation
+        '400':
+          description: Invalid guild id or request body
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DiscordEmoji'
-        '400':
-          description: Invalid guild id or malformed body
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
           content:
             application/json:
               schema:
@@ -818,30 +816,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      requestBody:
+        description: List of emoji IDs to fetch.
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: array
+                  items:
+                    type: string
+                - $ref: '#/components/schemas/GuildItemIdBatchRequestBody'
+      summary: Batch fetch emojis by IDs
+      security:
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      description: Fetch multiple emojis by their IDs in a single request.
+      tags:
+        - guilds
+        - emojis
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild to retrieve emojis from.
+          schema:
+            type: string
   /api/v1/guild/{guild_id}/emojis/names/batch:
     post:
-      tags:
-        - guilds
-        - emojis
-      summary: Get a batch of emojis by their names
-      description: 'Accepts either an array of emoji names as the JSON body or an object with a `names` array field. Query parameter `names` may also be provided multiple times.
-
-        '
       parameters:
-        - name: guild_id
-          in: path
+        - in: path
           required: true
+          name: guild_id
+          description: The ID of the guild to retrieve emojis from.
           schema:
             type: string
-        - name: names
-          in: query
-          required: false
-          description: Repeatable query parameter of emoji names
-          schema:
-            type: array
-            items:
-              type: string
       requestBody:
+        description: List of emoji names to fetch.
         required: false
         content:
           application/json:
@@ -850,23 +866,18 @@ paths:
                 - type: array
                   items:
                     type: string
-                - type: object
-                  properties:
-                    names:
-                      type: array
-                      items:
-                        type: string
+                - $ref: '#/components/schemas/GuildItemNameBatchRequestBody'
       responses:
         '200':
           description: Successful operation
+        '400':
+          description: Invalid guild id or request body
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DiscordEmoji'
-        '400':
-          description: Invalid guild id or malformed body
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
           content:
             application/json:
               schema:
@@ -877,6 +888,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - guilds
+        - emojis
+      summary: Batch fetch emojis by names
+      description: Fetch multiple emojis by their names in a single request.
+      security:
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
   /api/v1/guild/{guild_id}/roles:
     get:
       tags:
@@ -1486,108 +1511,222 @@ paths:
                 $ref: '#/components/schemas/MinecraftPlayerEventPayload'
   /api/v1/permissions/{guildId}/{userId}:
     get:
-      summary: Get user permissions
       parameters:
-        - name: guildId
-          in: path
+        - in: path
           required: true
+          name: guildId
           schema:
             type: string
-        - name: userId
-          in: path
+          description: Discord guild ID
+        - in: path
           required: true
+          name: userId
           schema:
             type: string
+          description: Discord user ID
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
+      description: List permissions for a user.
+      summary: Get user permissions
+      tags:
+        - permissions
       responses:
         '200':
           description: Successful operation
+        '400':
+          description: Bad request
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: string
-        '500':
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
           description: Internal server error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-      tags:
-        - permissions
   /api/v1/permissions/{guildId}/{userId}/{permission}:
     post:
-      tags:
-        - permissions
-      summary: Add permission to user
-      parameters:
-        - name: guildId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: permission
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleStatusResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Add user permission
+      description: Add a permission to a user.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      parameters:
+        - in: path
+          required: true
+          name: guildId
+          schema:
+            type: string
+          description: Discord guild ID
+        - in: path
+          required: true
+          name: userId
+          schema:
+            type: string
+          description: Discord user ID
+        - in: path
+          required: true
+          name: permission
+          schema:
+            type: string
+          description: Permission to add
+      tags:
+        - permissions
     put:
+      summary: Add user permission
+      parameters:
+        - in: path
+          required: true
+          name: guildId
+          schema:
+            type: string
+          description: Discord guild ID
+        - in: path
+          required: true
+          name: userId
+          schema:
+            type: string
+          description: Discord user ID
+        - in: path
+          required: true
+          name: permission
+          schema:
+            type: string
+          description: Permission to add
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
       tags:
         - permissions
-      summary: Add permission to user
-      parameters:
-        - name: guildId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: permission
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleStatusResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Add (ensure) a permission for a user.
     delete:
-      tags:
-        - permissions
-      summary: Remove permission from user
-      parameters:
-        - name: guildId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: permission
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         '200':
           description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleStatusResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Delete user permission
+      description: Delete (remove) a permission from a user.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      parameters:
+        - in: path
+          required: true
+          name: guildId
+          schema:
+            type: string
+          description: Discord guild ID
+        - in: path
+          required: true
+          name: userId
+          schema:
+            type: string
+          description: Discord user ID
+        - in: path
+          required: true
+          name: permission
+          schema:
+            type: string
+          description: Permission to remove
+      tags:
+        - permissions
   /webhook/minecraft/tacos/{action}:
     parameters:
       - name: action
@@ -3037,6 +3176,26 @@ components:
       required:
         - ids
       description: Request body for batch fetching guild item by IDs
+      x-tacobot-managed: true
+    GuildItemNameBatchRequestBody:
+      type: object
+      properties:
+        names:
+          type: array
+          items:
+            type: string
+      required:
+        - names
+      description: Request body for batch fetching guild item by names
+      x-tacobot-managed: true
+    SimpleStatusResponse:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+      description: Simple status response with a status string
       x-tacobot-managed: true
   securitySchemes:
     X-AUTH-TOKEN:

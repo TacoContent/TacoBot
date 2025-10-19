@@ -7,7 +7,7 @@
 			"label": "TacoBot: Start Local Bot",
 			"type": "shell",
 			"command": "./.venv/scripts/Activate.ps1; python ${workspaceFolder}/main.py",
-			"presentation": {	
+			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"
 			},
@@ -121,6 +121,28 @@
 			"detail": "Run tests with coverage reports (HTML, XML, JSON)"
 		},
 		{
+			"label": "Python: Coverage Markdown Report",
+			"type": "shell",
+			"command": "./.venv/scripts/Activate.ps1; python -m pytest --cov=bot --cov=httpserver --cov=metrics --cov=scripts --cov-config=.coveragerc --cov-report=term-missing tests/; python -m coverage report --format=markdown > reports/pytest/coverage.md",
+			"options": {
+				"env": {
+					"PYTHONPATH": "${workspaceFolder}/bot"
+				}
+			},
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [
+				"$python"
+			],
+			"group": {
+				"kind": "test",
+				"isDefault": false
+			},
+			"detail": "Run all tests and output a markdown coverage report to reports/coverage.md"
+		},
+		{
 			"label": "Format Check (Black)",
 			"type": "shell",
 			"command": "black --check .",
@@ -172,6 +194,5 @@
 			"problemMatcher": [],
 			"detail": "Fix the OpenAPI (Swagger) specification file"
 		}
-
 	]
 }

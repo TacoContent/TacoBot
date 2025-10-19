@@ -82,6 +82,7 @@ class MinecraftApiHandler(BaseHttpHandler):
 
         self.minecraft_db = MinecraftDatabase()
         self.tracking_db = TrackingDatabase()
+        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
     # eventually this will be rewritten to do the work instead of pass on to NodeRED
     @uri_mapping(f"/api/{API_VERSION}/minecraft/whitelist.json", method="GET")

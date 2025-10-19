@@ -60,6 +60,7 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
         self._class = self.__class__.__name__
         self._module = os.path.basename(__file__)[:-3]
         self.whitelist_db = WhitelistDatabase()
+        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
     # ----------------------- helper methods -----------------------
     @staticmethod

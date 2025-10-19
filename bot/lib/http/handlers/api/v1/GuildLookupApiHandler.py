@@ -23,7 +23,6 @@ from httpserver.server import HttpResponseException
 class GuildLookupApiHandler(BaseHttpHandler):
     """Guild lookup endpoints.
 
-    @openapi: ignore
     Endpoints:
         Single guild lookup (resolve guild_id from path, query, or body):
             GET  /api/v1/guilds/lookup/{guild_id}
@@ -60,6 +59,7 @@ class GuildLookupApiHandler(BaseHttpHandler):
         self._module = os.path.basename(__file__)[:-3]
         self.settings = Settings()
         self.tracking_db = TrackingDatabase()
+        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
     @openapi.description("Lookup a single guild by ID.")
     @openapi.summary("Guild Lookup")
@@ -369,6 +369,10 @@ class GuildLookupApiHandler(BaseHttpHandler):
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
         try:
+
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, "Unauthorized: Missing or invalid API token.", headers)
+
             guild_ids: list[str] = []
             v_guild_ids: typing.Optional[str] = uri_variables.get("guild_ids")
             if v_guild_ids is not None:
@@ -376,11 +380,11 @@ class GuildLookupApiHandler(BaseHttpHandler):
             q_guild_ids: typing.Optional[list[str]] = request.query_params.get("ids")
             if q_guild_ids:
                 guild_ids.extend(q_guild_ids)
-            if request.body is not None and request.method == "POST":
+            if request.body is not None and request.method == HTTPMethod.POST:
                 try:
                     b_data = json.loads(request.body.decode("utf-8"))
                 except Exception:  # noqa: BLE001
-                    raise HttpResponseException(400, headers, bytearray('{"error": "invalid JSON body"}', 'utf-8'))
+                    return self._create_error_response(400, "invalid JSON body", headers)
                 if isinstance(b_data, list):
                     guild_ids.extend([g for g in b_data if isinstance(g, str)])
                 elif isinstance(b_data, dict) and isinstance(b_data.get("ids"), list):
@@ -421,11 +425,10 @@ class GuildLookupApiHandler(BaseHttpHandler):
                 result.append(payload)
             return HttpResponse(200, headers, bytearray(json.dumps(result), 'utf-8'))
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(exception=e)
         except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e))
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, 'utf-8'))
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers)
 
     @uri_mapping(f"/api/{API_VERSION}/guilds", method="GET")
     @openapi.description("List all guilds the bot is currently a member of.")

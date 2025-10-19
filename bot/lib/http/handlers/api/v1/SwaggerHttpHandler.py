@@ -58,6 +58,7 @@ class SwaggerHttpHandler(BaseHttpHandler):
         self.SETTINGS_SECTION = "http"
 
         self.tracking_db = TrackingDatabase()
+        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
     @uri_mapping("/swagger.yaml", method="GET")
     @uri_mapping(f"/api/{API_VERSION}/swagger.yaml", method="GET")

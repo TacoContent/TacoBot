@@ -60,6 +60,7 @@ class SettingsApiHandler(BaseHttpHandler):
 
         self.minecraft_db = MinecraftDatabase()
         self.tracking_db = TrackingDatabase()
+        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
     @uri_variable_mapping("/api/v1/settings/{section}", method="GET")
     def get_settings(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:

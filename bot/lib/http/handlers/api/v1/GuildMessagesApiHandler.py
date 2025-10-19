@@ -28,6 +28,7 @@ class GuildMessagesApiHandler(BaseHttpHandler):
         super().__init__(bot, discord_helper)
         self._class = self.__class__.__name__
         self._module = os.path.basename(__file__)[:-3]
+        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/channel/{{channel_id}}/messages", method="GET")
     async def get_channel_messages(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:

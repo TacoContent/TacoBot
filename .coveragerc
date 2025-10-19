@@ -4,6 +4,7 @@ source = bot
 omit =
     bot/**/__main__.py
     bot/**/migrations/*
+    ; $TEMPDIR/*
 
 [html]
 directory = reports/pytest/html
@@ -23,3 +24,8 @@ skip_covered = true
 show_missing = true
 skip_empty = true
 sort = Name
+omit =
+    bot/**/__main__.py
+    bot/**/migrations/*
+    */AppData/Local/Temp/*
+    */tmp*/

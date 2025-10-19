@@ -26,12 +26,16 @@ Error Handling Philosophy:
     500 JSON error consistent with the broader API.
 """
 
+from http import HTTPMethod
 import inspect
 import json
 import os
 import typing
 
 from lib import discordhelper
+from lib.models import ErrorStatusCodePayload
+from lib.models.SimpleStatusResponse import SimpleStatusResponse
+from lib.models.openapi import openapi
 from tacobot import TacoBot
 
 from bot.lib.enums.permissions import TacoPermissions
@@ -65,6 +69,7 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
 
         self.permissions_db = PermissionsDatabase()
         self.tracking_db = TrackingDatabase()
+        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
     async def _list_permissions(self, guildId: str, userId: str) -> typing.List[str]:
         """Return list of permission strings for a user.
@@ -89,7 +94,42 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{ex}")
         return []
 
-    @uri_variable_mapping("/api/v1/permissions/{guildId}/{userId}", method="GET")
+    @uri_variable_mapping("/api/v1/permissions/{guildId}/{userId}", method=HTTPMethod.GET)
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.tags("permissions")
+    @openapi.summary("Get user permissions")
+    @openapi.description("List permissions for a user.")
+    @openapi.pathParameter(name="guildId", schema=str, description="Discord guild ID", methods=HTTPMethod.GET)
+    @openapi.pathParameter(name="userId", schema=str, description="Discord user ID", methods=HTTPMethod.GET)
+    @openapi.response(
+        200,
+        description="Successful operation",
+        contentType="application/json",
+        schema=typing.List[str],
+        methods=HTTPMethod.GET,
+    )
+    @openapi.response(
+        400,
+        description="Bad request",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=HTTPMethod.GET,
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=HTTPMethod.GET,
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=HTTPMethod.GET,
+    )
+    @openapi.managed()
     async def get(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """List permissions for a user.
 
@@ -101,52 +141,20 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
             200 JSON array of permission strings (may be empty)
             500 JSON error on unexpected failure
 
-        >>>openapi
-        get:
-          security:
-            - X-AUTH-TOKEN: []
-            - X-TACOBOT-TOKEN: []
-          tags:
-            - permissions
-          summary: Get user permissions
-          parameters:
-          - name: guildId
-            in: path
-            required: true
-            schema:
-              type: string
-          - name: userId
-            in: path
-            required: true
-            schema:
-              type: string
-          responses:
-            '200':
-              description: Successful operation
-              content:
-                application/json:
-                  schema:
-                    type: array
-                    items:
-                      type: string
-            '500':
-              description: Internal server error
-              content:
-                application/json:
-                  schema:
-                    $ref: '#/components/schemas/ErrorStatusCodePayload'
-        <<<openapi
         """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
         try:
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, 'Invalid authentication token', headers)
+
             result = await self._list_permissions(uri_variables.get("guildId", "0"), uri_variables.get("userId", "0"))
+
             return HttpResponse(200, headers=headers, body=bytearray(json.dumps(result, indent=4), "utf-8"))
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{ex}")
-            err_msg = f'{{"error": "Internal server error: {str(ex)}" }}'
-            return HttpResponse(500, headers=headers, body=bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, f"Internal server error: {str(ex)}", headers)
 
     async def _remove_permission(self, guildId: str, userId: str, permission: str) -> bool:
         """Remove a permission flag from a user.
@@ -167,11 +175,53 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{ex}")
         return False
 
-    @uri_variable_mapping("/api/v1/permissions/{guildId}/{userId}/{permission}", method="DELETE")
+    @uri_variable_mapping("/api/v1/permissions/{guildId}/{userId}/{permission}", method=HTTPMethod.DELETE)
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.tags("permissions")
+    @openapi.summary("Delete user permission")
+    @openapi.description("Delete (remove) a permission from a user.")
+    @openapi.pathParameter(name="guildId", schema=str, description="Discord guild ID", methods=HTTPMethod.DELETE)
+    @openapi.pathParameter(name="userId", schema=str, description="Discord user ID", methods=HTTPMethod.DELETE)
+    @openapi.pathParameter(name="permission", schema=str, description="Permission to remove", methods=HTTPMethod.DELETE)
+    @openapi.response(
+        200,
+        description="Successful operation",
+        contentType="application/json",
+        schema=SimpleStatusResponse,
+        methods=HTTPMethod.DELETE,
+    )
+    @openapi.response(
+        400,
+        description="Bad request",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=HTTPMethod.DELETE,
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=HTTPMethod.DELETE,
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=HTTPMethod.DELETE,
+    )
+    @openapi.response(
+        404,
+        description="Not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=HTTPMethod.DELETE,
+    )
+    @openapi.managed()
     async def delete(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Delete (remove) a permission from a user.
 
-        @openapi: ignore
         Auth: Requires valid token.
         Returns:
             200 {"status": "ok"} on success
@@ -183,17 +233,19 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
         headers.add("Content-Type", "application/json")
         try:
             if not self.validate_auth_token(request):
-                return HttpResponse(404, headers, b'{"error": "Invalid authentication token"}')
+                return self._create_error_response(404, 'Invalid authentication token', headers)
+
             result = await self._remove_permission(
                 uri_variables.get("guildId", "0"), uri_variables.get("userId", "0"), uri_variables.get("permission", "")
             )
             if result:
-                return HttpResponse(200, headers, b'{"status": "ok"}')
-            return HttpResponse(404, headers, b'{"error": "Not found"}')
+                resp = SimpleStatusResponse({"status": "ok"})
+                return HttpResponse(200, headers, json.dumps(resp).encode("utf-8"))
+
+            return self._create_error_response(404, 'Not found', headers)
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{ex}")
-            err_msg = f'{{"error": "Internal server error: {str(ex)}" }}'
-            return HttpResponse(500, headers, bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, f"Internal server error: {str(ex)}", headers)
 
     async def _add_permission(self, guildId: str, userId: str, permission: str) -> bool:
         """Add a permission to a user. Returns True on success, False otherwise."""
@@ -210,11 +262,52 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{ex}")
         return False
 
-    @uri_variable_mapping("/api/v1/permissions/{guildId}/{userId}/{permission}", method="POST")
+    @uri_variable_mapping("/api/v1/permissions/{guildId}/{userId}/{permission}", method=HTTPMethod.POST)
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.tags("permissions")
+    @openapi.summary("Add user permission")
+    @openapi.description("Add a permission to a user.")
+    @openapi.pathParameter(name="guildId", schema=str, description="Discord guild ID", methods=HTTPMethod.POST)
+    @openapi.pathParameter(name="userId", schema=str, description="Discord user ID", methods=HTTPMethod.POST)
+    @openapi.pathParameter(name="permission", schema=str, description="Permission to add", methods=HTTPMethod.POST)
+    @openapi.response(
+        200,
+        description="Successful operation",
+        contentType="application/json",
+        schema=SimpleStatusResponse,
+        methods=HTTPMethod.POST,
+    )
+    @openapi.response(
+        400,
+        description="Bad request",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=HTTPMethod.POST,
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=HTTPMethod.POST,
+    )
+    @openapi.response(
+        404,
+        description="Not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=HTTPMethod.POST,
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=HTTPMethod.POST,
+    )
+    @openapi.managed()
     async def post(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Add a permission (non-idempotent, but multiple adds are harmless).
-
-        @openapi: ignore
         Auth required.
         Returns:
             200 {"status": "ok"}
@@ -226,23 +319,65 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
         headers.add("Content-Type", "application/json")
         try:
             if not self.validate_auth_token(request):
-                return HttpResponse(404, headers, b'{"error": "Invalid authentication token"}')
+                return self._create_error_response(401
+                                                   , 'Invalid authentication token', headers)
             result = await self._add_permission(
                 uri_variables.get("guildId", "0"), uri_variables.get("userId", "0"), uri_variables.get("permission", "")
             )
             if result:
-                return HttpResponse(200, headers, b'{"status": "ok"}')
-            return HttpResponse(404, headers, b'{"error": "Failed"}')
+                resp = SimpleStatusResponse({"status": "ok"})
+                return HttpResponse(200, headers, json.dumps(resp).encode("utf-8"))
+            return self._create_error_response(404, 'Not found', headers)
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{ex}")
-            err_msg = f'{{"error": "Internal server error: {str(ex)}" }}'
-            return HttpResponse(500, headers, bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, f"Internal server error: {str(ex)}", headers)
 
-    @uri_variable_mapping("/api/v1/permissions/{guildId}/{userId}/{permission}", method="PUT")
+    @uri_variable_mapping("/api/v1/permissions/{guildId}/{userId}/{permission}", method=HTTPMethod.PUT)
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.tags("permissions")
+    @openapi.summary("Add user permission")
+    @openapi.description("Add (ensure) a permission for a user.")
+    @openapi.pathParameter(name="guildId", schema=str, description="Discord guild ID", methods=[HTTPMethod.PUT])
+    @openapi.pathParameter(name="userId", schema=str, description="Discord user ID", methods=[HTTPMethod.PUT])
+    @openapi.pathParameter(name="permission", schema=str, description="Permission to add", methods=[HTTPMethod.PUT])
+    @openapi.response(
+        200,
+        description="Successful operation",
+        contentType="application/json",
+        schema=SimpleStatusResponse,
+        methods=[HTTPMethod.PUT],
+    )
+    @openapi.response(
+        400,
+        description="Bad request",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.PUT],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.PUT],
+    )
+    @openapi.response(
+        404,
+        description="Not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.PUT],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.PUT],
+    )
+    @openapi.managed()
     async def put(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Idempotent add (ensures a permission exists for a user).
-
-        @openapi: ignore
         Auth required.
         Returns follow POST semantics (200 ok / 404 invalid or failed / 500 error).
         """
@@ -251,14 +386,14 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
         headers.add("Content-Type", "application/json")
         try:
             if not self.validate_auth_token(request):
-                return HttpResponse(404, headers, b'{"error": "Invalid authentication token"}')
+                return self._create_error_response(401, 'Invalid authentication token', headers)
             result = await self._add_permission(
                 uri_variables.get("guildId", "0"), uri_variables.get("userId", "0"), uri_variables.get("permission", "")
             )
             if result:
-                return HttpResponse(200, headers, b'{"status": "ok"}')
-            return HttpResponse(404, headers, b'{"error": "Failed"}')
+                resp = SimpleStatusResponse({"status": "ok"})
+                return HttpResponse(200, headers, json.dumps(resp).encode("utf-8"))
+            return self._create_error_response(404, 'Not found', headers)
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{ex}")
-            err_msg = f'{{"error": "Internal server error: {str(ex)}" }}'
-            return HttpResponse(500, headers, bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, f"Internal server error: {str(ex)}", headers)

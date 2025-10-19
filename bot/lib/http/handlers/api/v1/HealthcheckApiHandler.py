@@ -65,6 +65,7 @@ class HealthcheckApiHandler(BaseHttpHandler):
 
         self.minecraft_db = MinecraftDatabase()
         self.tracking_db = TrackingDatabase()
+        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
     @uri_mapping(f"/api/{API_VERSION}/health", method="GET")
     @uri_mapping("/healthz", method="GET")
