@@ -31,6 +31,9 @@ import json
 import os
 import typing
 
+from lib import discordhelper
+from tacobot import TacoBot
+
 from bot.lib.enums.permissions import TacoPermissions
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
@@ -51,8 +54,8 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
         * Permissions are represented using ``TacoPermissions`` enum and converted to/from strings.
     """
 
-    def __init__(self, bot):
-        super().__init__(bot)
+    def __init__(self, bot: TacoBot, discord_helper: typing.Optional[discordhelper.DiscordHelper] = None):
+        super().__init__(bot, discord_helper)
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]

@@ -69,6 +69,9 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
         self.SETTINGS_SECTION = "shift_codes"
         self.REDEEM_URL = "https://shift.gearbox.com/rewards"
 
+        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
+
+
         self.tracking_db = TrackingDatabase()
         self.shift_codes_db = ShiftCodesDatabase()
 

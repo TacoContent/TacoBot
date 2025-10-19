@@ -9,6 +9,7 @@ OpenAPI documentation metadata without executing the code.
 
 import ast
 from dataclasses import dataclass, field
+import json
 from typing import Any, Dict, List, Optional, Union
 
 
@@ -578,9 +579,11 @@ def _extract_request_body(decorator: ast.Call) -> Dict[str, Any]:
         if key == "schema":
             if isinstance(value_node, ast.Name):
                 schema_name = value_node.id
+            # print(f"{json.dumps(value_node.__dict__)}")
         elif key == "contentType":
             if isinstance(value_node, ast.Constant):
                 content_type = value_node.value
+            # print(f"Content-Type: {content_type}")
         elif key == "required":
             if isinstance(value_node, ast.Constant):
                 body["required"] = value_node.value

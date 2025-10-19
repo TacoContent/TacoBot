@@ -1,8 +1,11 @@
 
 from http import HTTPMethod
-from typing import Any, Callable, List, Optional, Type, Union
-from types import FunctionType
-from .core import _python_type_to_openapi_schema
+from typing import Any, Callable, List, Literal, Optional, Type, Union
+from types import FunctionType, UnionType
+from .core import _python_type_to_openapi_schema, _schema_to_openapi
+
+HttpStatusCodes = Literal['1XX', '2XX', '3XX', '4XX', '5XX']
+StatusCodeType = Union[List[int], int, HttpStatusCodes, List[HttpStatusCodes]]
 
 
 def description(text: str) -> Callable[[FunctionType], FunctionType]:
@@ -121,7 +124,7 @@ def externalDocs(
 
 def headerParameter(
     name: str,
-    schema: type,
+    schema: type | UnionType,
     required: bool = False,
     description: str = ""
 ) -> Callable[[FunctionType], FunctionType]:
@@ -191,6 +194,7 @@ def operationId(id: str) -> Callable[[FunctionType], FunctionType]:
 def pathParameter(
     name: str,
     schema: type,
+    methods: Optional[Union[HTTPMethod, List[HTTPMethod]]] = None,
     required: bool = True,
     description: str = ""
 ) -> Callable[[FunctionType], FunctionType]:
@@ -212,6 +216,7 @@ def pathParameter(
         >>> @openapi.pathParameter(
         ...     name="guild_id",
         ...     schema=str,
+        ...     methods=[HTTPMethod.GET],
         ...     required=True,
         ...     description="Discord guild ID"
         ... )
@@ -224,6 +229,7 @@ def pathParameter(
         func.__openapi_parameters__.append({
             'in': 'path',
             'name': name,
+            'methods': methods if isinstance(methods, list) else [methods] if methods else [],
             'schema': _python_type_to_openapi_schema(schema),
             'required': required,  # Path parameters are always required in OpenAPI
             'description': description
@@ -231,9 +237,11 @@ def pathParameter(
         return func
     return _wrap
 
+
 def queryParameter(
     name: str,
     schema: type,
+    methods: Optional[Union[HTTPMethod, List[HTTPMethod]]] = None,
     required: bool = False,
     default: Any = None,
     description: str = ""
@@ -257,6 +265,7 @@ def queryParameter(
         >>> @openapi.queryParameter(
         ...     name="limit",
         ...     schema=int,
+        ...     methods=[HTTPMethod.GET],
         ...     required=False,
         ...     default=10,
         ...     description="Maximum number of results to return"
@@ -270,6 +279,7 @@ def queryParameter(
         param_def = {
             'in': 'query',
             'name': name,
+            'methods': methods if isinstance(methods, list) else [methods] if methods else [],
             'schema': _python_type_to_openapi_schema(schema),
             'required': required,
             'description': description
@@ -282,7 +292,7 @@ def queryParameter(
 
 
 def requestBody(
-    schema: type,
+    schema: type | UnionType,
     methods: Optional[Union[HTTPMethod, List[HTTPMethod]]] = HTTPMethod.POST,
     contentType: str = "application/json",
     required: bool = True,
@@ -323,9 +333,7 @@ def requestBody(
             'methods': methods if isinstance(methods, list) else [methods],
             'content': {
                 contentType: {
-                    'schema': {
-                        '$ref': f"#/components/schemas/{schema.__name__}"
-                    }
+                    'schema': _schema_to_openapi(schema)
                 }
             }
         }
@@ -334,7 +342,7 @@ def requestBody(
 
 
 def response(
-        status_codes: Union[List[int], int],
+        status_codes: StatusCodeType,
         *,
         methods: Optional[Union[List[HTTPMethod], HTTPMethod]] = None,
         description: Optional[str] = None,
@@ -350,7 +358,7 @@ def response(
 
     Parameters
     ----------
-    status_codes : Union[typing.List[int], int]
+    status_codes : StatusCodeType
         The HTTP status code for the response (e.g., 200, 404).
     methods : Optional[Union[List[HTTPMethod], HTTPMethod]], optional
         The HTTP methods (e.g., GET, POST) this response applies to. If None,
@@ -390,8 +398,11 @@ def response(
 
 
 def responseHeader(
+    status_codes: StatusCodeType,
+    *,
     name: str,
     schema: type,
+    methods: Optional[Union[HTTPMethod, List[HTTPMethod]]] = None,
     description: str = ""
 ) -> Callable[[FunctionType], FunctionType]:
     """Define response header.
@@ -402,6 +413,7 @@ def responseHeader(
 
     Args:
         name: Header name (conventionally in Title-Case or UPPER-CASE)
+        methods: HTTP methods (e.g., GET, POST) this header applies to
         schema: Python type (str, int, etc.) - converted to OpenAPI type
         description: Human-readable description of the header
 
@@ -411,6 +423,7 @@ def responseHeader(
     Example:
         >>> @openapi.responseHeader(
         ...     name="X-RateLimit-Remaining",
+        ...     methods=[HTTPMethod.GET],
         ...     schema=int,
         ...     description="Number of requests remaining in current window"
         ... )
@@ -422,6 +435,8 @@ def responseHeader(
             setattr(func, '__openapi_response_headers__', [])
         func.__openapi_response_headers__.append({
             'name': name,
+            'status_code': status_codes if isinstance(status_codes, list) else [status_codes],
+            'methods': methods if isinstance(methods, list) else [methods] if methods else [],
             'schema': _python_type_to_openapi_schema(schema),
             'description': description
         })
@@ -429,11 +444,20 @@ def responseHeader(
     return _wrap
 
 
-def security(*schemes) -> Callable[[FunctionType], FunctionType]:
+def security(*schemes, methods: Optional[Union[HTTPMethod, List[HTTPMethod]]] = None) -> Callable[[FunctionType], FunctionType]:
     def _wrap(func: FunctionType) -> FunctionType:
         if not hasattr(func, '__openapi_security__'):
             setattr(func, '__openapi_security__', [])
-        func.__openapi_security__.extend(schemes)
+        if methods:
+            if not hasattr(func, '__openapi_security_methods__'):
+                setattr(func, '__openapi_security_methods__', {})
+            # set the schemes for the specified methods
+            method_list = methods if isinstance(methods, list) else [methods]
+            for method in method_list:
+                func.__openapi_security_methods__[method] = schemes
+        else:
+            # set the schemes for all methods
+            func.__openapi_security__.extend(schemes)
         return func
     return _wrap
 

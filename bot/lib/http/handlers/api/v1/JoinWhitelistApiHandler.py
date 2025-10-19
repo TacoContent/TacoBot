@@ -40,6 +40,8 @@ import os
 import traceback
 import typing
 
+from lib import discordhelper
+
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.models.JoinWhitelistUser import JoinWhitelistUser
@@ -53,8 +55,8 @@ from httpserver.server import HttpResponseException
 class JoinWhitelistApiHandler(BaseHttpHandler):
     """REST endpoints for managing a guild's join whitelist."""
 
-    def __init__(self, bot: TacoBot):
-        super().__init__(bot)
+    def __init__(self, bot: TacoBot, discord_helper: typing.Optional[discordhelper.DiscordHelper] = None):
+        super().__init__(bot, discord_helper)
         self._class = self.__class__.__name__
         self._module = os.path.basename(__file__)[:-3]
         self.whitelist_db = WhitelistDatabase()

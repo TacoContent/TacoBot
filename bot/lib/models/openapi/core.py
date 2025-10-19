@@ -1,5 +1,5 @@
-from types import FunctionType
-from typing import Any, Callable, Dict, Optional, TypeVar, Union, cast
+from types import FunctionType, UnionType
+from typing import Any, Callable, Dict, List, Optional, TypeVar, Union, cast
 
 
 _TYPE_ALIAS_REGISTRY: Dict[str, Dict[str, Any]] = {}
@@ -107,7 +107,7 @@ def type_alias(
     return _wrap
 
 
-def _python_type_to_openapi_schema(python_type: type) -> Dict[str, str]:
+def _python_type_to_openapi_schema(python_type: type | UnionType) -> Union[Dict[str, str], List[Dict[str, str]]]:
     """Convert Python type to OpenAPI schema type.
 
     Args:
@@ -131,6 +131,12 @@ def _python_type_to_openapi_schema(python_type: type) -> Dict[str, str]:
         dict: {'type': 'object'},
     }
 
+    if isinstance(python_type, UnionType):
+       python_types = python_type.__args__
+       return {
+           'oneOf': [_python_type_to_openapi_schema(t) for t in python_types] # type: ignore
+       }
+
     # Handle the type directly
     if python_type in type_mapping:
         return type_mapping[python_type]
@@ -138,8 +144,29 @@ def _python_type_to_openapi_schema(python_type: type) -> Dict[str, str]:
     # Default to string for unknown types
     return {'type': 'string'}
 
+def _schema_to_openapi(schema):
+    import typing
+    from types import UnionType
+    if isinstance(schema, UnionType):
+        return {
+            'oneOf': [
+                {'$ref': f"#/components/schemas/{t.__name__}"}
+                for t in schema.__args__
+            ]
+        }
+    elif getattr(schema, '__origin__', None) is typing.Union:
+        return {
+            'oneOf': [
+                {'$ref': f"#/components/schemas/{t.__name__}"}
+                for t in schema.__args__
+            ]
+        }
+    else:
+        return {'$ref': f"#/components/schemas/{schema.__name__}"}
+
 __all__ = [
     '_python_type_to_openapi_schema',
+    '_schema_to_openapi',
     'attribute',
     'deprecated',
     'exclude',

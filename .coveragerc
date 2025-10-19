@@ -1,14 +1,21 @@
+[run]
+branch = true
+source = bot
+omit =
+    bot/**/__main__.py
+    bot/**/migrations/*
+
 [html]
 directory = reports/pytest/html
 
 [xml]
-directory = reports/pytest/coverage.xml
+output = reports/pytest/coverage.xml
 
 [json]
-directory = reports/pytest/coverage.json
+output = reports/pytest/coverage.json
 
 [lcov]
-directory = reports/pytest/coverage.lcov
+output = reports/pytest/coverage.lcov
 
 [report]
 format = text

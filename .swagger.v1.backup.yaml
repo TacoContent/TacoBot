@@ -350,8 +350,6 @@ paths:
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
-      requestBody:
-        required: false
       responses:
         '200':
           description: OK

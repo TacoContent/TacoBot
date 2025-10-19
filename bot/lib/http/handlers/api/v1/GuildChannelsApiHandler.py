@@ -1,7 +1,15 @@
+from http import HTTPMethod
 import inspect
 import json
 import os
 import typing
+
+from lib import discordhelper
+from lib.models.DiscordCategory import DiscordCategory
+from lib.models.DiscordChannel import DiscordChannel
+from lib.models.DiscordGuildChannels import DiscordGuildChannels
+from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from lib.models.GuildChannelsBatchRequestBody import GuildChannelsBatchRequestBody
 
 
 from bot.lib.http.handlers.api.v1.const import API_VERSION
@@ -14,12 +22,41 @@ from httpserver.server import HttpResponseException
 
 
 class GuildChannelsApiHandler(BaseHttpHandler):
-    def __init__(self, bot: TacoBot):
-        super().__init__(bot)
+    def __init__(self, bot: TacoBot, discord_helper: typing.Optional[discordhelper.DiscordHelper] = None):
+        super().__init__(bot, discord_helper)
         self._class = self.__class__.__name__
         self._module = os.path.basename(__file__)[:-3]
+        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
-    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/categories", method="GET")
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/categories", method=HTTPMethod.GET)
+    @openapi.managed()
+    @openapi.summary("List guild categories (with channels)")
+    @openapi.description(
+        "Returns all channel categories in the guild. Each category object embeds its child channels."
+    )
+    @openapi.tags("guilds", "channels")
+    @openapi.response(
+        [200],
+        methods=[HTTPMethod.GET],
+        contentType="application/json",
+        schema=typing.List[DiscordCategory],
+        description="Successful response with list of categories",
+    )
+    @openapi.response(
+        [404],
+        methods=[HTTPMethod.GET],
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        description="Guild not found"
+    )
+    @openapi.pathParameter(
+        name="guild_id",
+        description="Discord guild (server) ID",
+        methods=[HTTPMethod.GET],
+        schema=str,
+        required=True,
+    )
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     def get_guild_categories(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """List all channel categories in a guild including their child channels.
 
@@ -29,41 +66,15 @@ class GuildChannelsApiHandler(BaseHttpHandler):
         Errors:
                 400 - missing/invalid guild_id
                 404 - guild not found
-
-        >>>openapi
-        get:
-          summary: List guild categories (with channels)
-          description: >-
-            Returns all channel categories in the guild. Each category object embeds its child channels.
-          tags:
-            - guilds
-            - channels
-          parameters:
-            - in: path
-              name: guild_id
-              required: true
-              description: Discord guild (server) ID
-              schema: { type: string }
-          responses:
-            '200':
-              description: OK
-              content:
-                application/json:
-                  schema:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/DiscordCategory'
-            '404':
-                description: Guild not found
-                content:
-                  application/json:
-                    schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-        <<<openapi
         """
         _method = inspect.stack()[0][3]
         try:
             headers = HttpHeaders()
             headers.add("Content-Type", "application/json")
+
+            if not self.validate_auth_token(request):
+                self._create_error_response(401, "Unauthorized", headers=headers)
+
             guild_id: typing.Optional[str] = uri_variables.get("guild_id")
             if guild_id is None:
                 raise HttpResponseException(400, headers, bytearray('{"error": "guild_id is required"}', "utf-8"))
@@ -106,7 +117,54 @@ class GuildChannelsApiHandler(BaseHttpHandler):
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
 
-    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/category/{{category_id}}", method="GET")
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/category/{{category_id}}", method=HTTPMethod.GET)
+    @openapi.managed()
+    @openapi.summary("Get category (with channels)")
+    @openapi.description("Returns a single category and its child channels.")
+    @openapi.tags("guilds", "channels")
+    @openapi.pathParameter(
+        name="guild_id",
+        description="Discord guild (server) ID",
+        methods=[HTTPMethod.GET],
+        schema=str,
+        required=True,
+    )
+    @openapi.pathParameter(
+        name="category_id",
+        description="Discord category channel ID",
+        methods=[HTTPMethod.GET],
+        schema=str,
+        required=True,
+    )
+    @openapi.response(
+        200,
+        methods=[HTTPMethod.GET],
+        contentType="application/json",
+        schema=DiscordCategory,
+        description="Successful response with category and its channels",
+    )
+    @openapi.response(
+        404,
+        methods=[HTTPMethod.GET],
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        description="Guild or category not found"
+    )
+    @openapi.response(
+        400,
+        methods=[HTTPMethod.GET],
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        description="Missing or invalid guild_id or category_id",
+    )
+    @openapi.response(
+        '5XX',
+        methods=[HTTPMethod.GET],
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        description="Internal server error"
+    )
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     def get_guild_category(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Get a single category (and its channels) by ID.
 
@@ -116,33 +174,6 @@ class GuildChannelsApiHandler(BaseHttpHandler):
         Errors:
                 400 - missing/invalid guild_id
                 404 - guild or category not found
-
-        >>>openapi
-        get:
-          summary: Get category (with channels)
-          description: Returns a single category and its child channels.
-          tags: [guilds, channels]
-          parameters:
-            - in: path
-              name: guild_id
-              required: true
-              schema: { type: string }
-            - in: path
-              name: category_id
-              required: true
-              schema: { type: string }
-          responses:
-            '200':
-              description: OK
-              content:
-                application/json:
-                  schema: { $ref: '#/components/schemas/DiscordCategory' }
-            '404':
-              description: Guild or category not found
-              content:
-                application/json:
-                  schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-        <<<openapi
         """
         _method = inspect.stack()[0][3]
         try:
@@ -190,7 +221,56 @@ class GuildChannelsApiHandler(BaseHttpHandler):
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
 
-    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/channels", method="GET")
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/channels", method=HTTPMethod.GET)
+    @openapi.managed()
+    @openapi.summary("List top-level guild channels")
+    @openapi.description(
+        "Returns channels that are not within a category. Use categories endpoint for nested channels."
+    )
+    @openapi.tags("guilds", "channels")
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.pathParameter(
+        name="guild_id",
+        description="Discord guild (server) ID",
+        methods=[HTTPMethod.GET],
+        schema=str,
+        required=True,
+    )
+    @openapi.response(
+        200,
+        methods=[HTTPMethod.GET],
+        contentType="application/json",
+        schema=DiscordGuildChannels,
+        description="Successful response with top-level channels and categories",
+    )
+    @openapi.response(
+        404,
+        methods=[HTTPMethod.GET],
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        description="Guild or category not found"
+    )
+    @openapi.response(
+        400,
+        methods=[HTTPMethod.GET],
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        description="Missing or invalid guild_id or category_id",
+    )
+    @openapi.response(
+        401,
+        methods=[HTTPMethod.GET],
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        description="Unauthorized",
+    )
+    @openapi.response(
+        '5XX',
+        methods=[HTTPMethod.GET],
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        description="Internal server error"
+    )
     def get_guild_channels(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """List top-level (non-category) channels plus include category definitions.
 
@@ -201,34 +281,6 @@ class GuildChannelsApiHandler(BaseHttpHandler):
         Errors:
                 400 - missing/invalid guild_id
                 404 - guild not found
-
-        >>>openapi
-        get:
-          summary: List top-level guild channels
-          description: Returns channels that are not within a category. Use categories endpoint for nested channels.
-          tags: [guilds, channels]
-          security:
-            - X-AUTH-TOKEN: []
-            - X-TACOBOT-TOKEN: []
-          parameters:
-            - in: path
-              name: guild_id
-              required: true
-              schema: { type: string }
-          responses:
-            '200':
-              description: OK
-              content:
-                application/json:
-                  schema:
-                    type: array
-                    items: { $ref: '#/components/schemas/DiscordChannel' }
-            '404':
-              description: Guild not found
-              content:
-                application/json:
-                  schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-        <<<openapi
         """
         _method = inspect.stack()[0][3]
         try:
@@ -293,8 +345,32 @@ class GuildChannelsApiHandler(BaseHttpHandler):
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
 
-    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/channels/batch/ids", method="POST")
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/channels/batch/ids", method=HTTPMethod.POST)
     @openapi.managed()
+    @openapi.tags("guilds", "channels")
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.summary("Batch fetch channels by IDs")
+    @openapi.description("Retrieve multiple channels by their IDs.")
+    @openapi.pathParameter(
+        name="guild_id",
+        description="Discord guild (server) ID",
+        methods=[HTTPMethod.GET],
+        schema=str,
+        required=True,
+    )
+    @openapi.queryParameter(
+        name="ids",
+        description="Repeatable channel ID query parameter",
+        methods=[HTTPMethod.POST],
+        schema=typing.List[str],
+        required=False,
+    )
+    @openapi.requestBody(
+        required=False,
+        contentType="application/json",
+        methods=[HTTPMethod.POST],
+        schema=typing.Union[typing.List[str], GuildChannelsBatchRequestBody]
+    )
     def get_guild_channels_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Batch fetch specific channels by ID.
 
@@ -312,22 +388,6 @@ class GuildChannelsApiHandler(BaseHttpHandler):
         TODO: add ability to define some of the fields below via decorators
         >>>openapi
         post:
-          summary: Batch fetch channels by IDs
-          description: Retrieve multiple channels. Accepts array body or object with ids property; can also accept repeated query param ids.
-          tags: [guilds, channels]
-          security:
-            - X-AUTH-TOKEN: []
-            - X-TACOBOT-TOKEN: []
-          parameters:
-            - in: path
-              name: guild_id
-              required: true
-              schema: { type: string }
-            - in: query
-              name: ids
-              required: false
-              description: Repeatable channel ID query parameter
-              schema: { type: array, items: { type: string } }
           requestBody:
             required: false
             content:

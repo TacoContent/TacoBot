@@ -69,6 +69,7 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
         super().__init__(bot, discord_helper)
         self._class = self.__class__.__name__
         self.SETTINGS_SECTION = "webhook/minecraft/player"
+
         self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
     @uri_mapping("/webhook/minecraft/player/event", method=HTTPMethod.POST)

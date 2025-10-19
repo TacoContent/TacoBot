@@ -40,6 +40,7 @@ from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.mongodb.minecraft import MinecraftDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
+from httpserver.http_util import HttpRequest
 
 
 class ApiHttpHandler(BaseHttpHandler):

@@ -3,6 +3,8 @@ import json
 import os
 import typing
 
+from lib import discordhelper
+
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.models.DiscordEmoji import DiscordEmoji
@@ -13,8 +15,8 @@ from httpserver.server import HttpResponseException
 
 
 class GuildEmojisApiHandler(BaseHttpHandler):
-    def __init__(self, bot: TacoBot):
-        super().__init__(bot)
+    def __init__(self, bot: TacoBot, discord_helper: typing.Optional[discordhelper.DiscordHelper] = None):
+        super().__init__(bot, discord_helper)
         self._class = self.__class__.__name__
         self._module = os.path.basename(__file__)[:-3]
 
