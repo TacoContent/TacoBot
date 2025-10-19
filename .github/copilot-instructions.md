@@ -115,7 +115,7 @@ Guidelines:
 **High-Priority (Use for all endpoints):**
 - `@openapi.summary(text)` - Brief one-line description
 - `@openapi.description(text)` - Detailed multi-line explanation
-- `@openapi.pathParameter(name, schema, required, description)` - Path variable documentation
+- `@openapi.pathParameter(name, schema, description)` - Path variable documentation
 - `@openapi.queryParameter(name, schema, required, default, description)` - Query parameter with optional default
 - `@openapi.requestBody(schema, contentType, required, description)` - Request body schema
 
@@ -145,7 +145,7 @@ class GuildRolesApiHandler:
     @openapi.tags('guilds', 'roles')
     @openapi.summary("List guild roles")
     @openapi.description("Retrieves all roles for the specified Discord guild")
-    @openapi.pathParameter(name="guild_id", schema=str, required=True, description="Discord guild ID")
+    @openapi.pathParameter(name="guild_id", schema=str, description="Discord guild ID")
     @openapi.queryParameter(name="limit", schema=int, required=False, default=100, description="Maximum roles to return")
     @openapi.response(200, schema=DiscordRole, contentType="application/json", description="List of roles")
     @openapi.response(404, description="Guild not found")
@@ -290,7 +290,7 @@ Conventions:
 @uri_variable_mapping(f"/api/{API_VERSION}/resource/{{id}}", method="GET")
 @openapi.tags('resource')
 @openapi.summary("Get resource by ID")
-@openapi.pathParameter(name="id", schema=str, required=True, description="Resource ID")
+@openapi.pathParameter(name="id", schema=str, description="Resource ID")
 @openapi.response(200, schema=ResourceModel, contentType="application/json", description="Success")
 @openapi.response(404, description="Not found")
 def get_resource(self, request, uri_variables):

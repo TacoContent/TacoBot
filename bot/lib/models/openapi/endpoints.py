@@ -195,7 +195,6 @@ def pathParameter(
     name: str,
     schema: type,
     methods: Optional[Union[HTTPMethod, List[HTTPMethod]]] = None,
-    required: bool = True,
     description: str = ""
 ) -> Callable[[FunctionType], FunctionType]:
     """Define path parameter (e.g., {guild_id}).
@@ -231,7 +230,7 @@ def pathParameter(
             'name': name,
             'methods': methods if isinstance(methods, list) else [methods] if methods else [],
             'schema': _python_type_to_openapi_schema(schema),
-            'required': required,  # Path parameters are always required in OpenAPI
+            'required': True,  # Path parameters are always required in OpenAPI
             'description': description
         })
         return func

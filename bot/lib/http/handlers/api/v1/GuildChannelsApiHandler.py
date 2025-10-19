@@ -9,7 +9,7 @@ from lib.models.DiscordCategory import DiscordCategory
 from lib.models.DiscordChannel import DiscordChannel
 from lib.models.DiscordGuildChannels import DiscordGuildChannels
 from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
-from lib.models.GuildChannelsBatchRequestBody import GuildChannelsBatchRequestBody
+from lib.models.GuildItemIdBatchRequestBody import GuildItemIdBatchRequestBody
 
 
 from bot.lib.http.handlers.api.v1.const import API_VERSION
@@ -54,7 +54,6 @@ class GuildChannelsApiHandler(BaseHttpHandler):
         description="Discord guild (server) ID",
         methods=[HTTPMethod.GET],
         schema=str,
-        required=True,
     )
     @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     def get_guild_categories(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
@@ -127,14 +126,12 @@ class GuildChannelsApiHandler(BaseHttpHandler):
         description="Discord guild (server) ID",
         methods=[HTTPMethod.GET],
         schema=str,
-        required=True,
     )
     @openapi.pathParameter(
         name="category_id",
         description="Discord category channel ID",
         methods=[HTTPMethod.GET],
         schema=str,
-        required=True,
     )
     @openapi.response(
         200,
@@ -234,7 +231,6 @@ class GuildChannelsApiHandler(BaseHttpHandler):
         description="Discord guild (server) ID",
         methods=[HTTPMethod.GET],
         schema=str,
-        required=True,
     )
     @openapi.response(
         200,
@@ -356,7 +352,6 @@ class GuildChannelsApiHandler(BaseHttpHandler):
         description="Discord guild (server) ID",
         methods=[HTTPMethod.GET],
         schema=str,
-        required=True,
     )
     @openapi.queryParameter(
         name="ids",
@@ -369,8 +364,42 @@ class GuildChannelsApiHandler(BaseHttpHandler):
         required=False,
         contentType="application/json",
         methods=[HTTPMethod.POST],
-        # schema=typing.Union[typing.List[str], GuildChannelsBatchRequestBody]
-        schema=GuildChannelsBatchRequestBody
+        schema=typing.Union[typing.List[str], GuildItemIdBatchRequestBody]
+    )
+    @openapi.response(
+        200,
+        methods=[HTTPMethod.POST],
+        contentType="application/json",
+        schema=typing.List[DiscordChannel],
+        description="Successful response with list of channels",
+    )
+    @openapi.response(
+        400,
+        methods=[HTTPMethod.POST],
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        description="Missing/invalid guild_id or malformed body",
+    )
+    @openapi.response(
+        401,
+        methods=[HTTPMethod.POST],
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        description="Unauthorized",
+    )
+    @openapi.response(
+        404,
+        methods=[HTTPMethod.POST],
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        description="Guild not found",
+    )
+    @openapi.response(
+        '5XX',
+        methods=[HTTPMethod.POST],
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        description="Internal server error",
     )
     def get_guild_channels_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Batch fetch specific channels by ID.
@@ -385,38 +414,6 @@ class GuildChannelsApiHandler(BaseHttpHandler):
         Errors:
                 400 - missing/invalid guild_id or malformed body
                 404 - guild not found
-
-        TODO: add ability to define some of the fields below via decorators
-        >>>openapi
-        post:
-          requestBody:
-            required: false
-            content:
-              application/json:
-                schema:
-                  oneOf:
-                    - type: array
-                      items: { type: string }
-                    - type: object
-                      properties:
-                        ids:
-                          type: array
-                          items: { type: string }
-                      required: [ ids ]
-          responses:
-            '200':
-              description: OK
-              content:
-                application/json:
-                  schema:
-                    type: array
-                    items: { $ref: '#/components/schemas/DiscordChannel' }
-            '404':
-              description: Guild not found
-              content:
-                application/json:
-                  schema: { $ref: '#/components/schemas/ErrorStatusCodePayload' }
-        <<<openapi
         """
         _method = inspect.stack()[0][3]
         try:

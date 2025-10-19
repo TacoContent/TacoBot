@@ -1,9 +1,12 @@
+from http import HTTPMethod
 import inspect
 import json
 import os
 import typing
 
 from lib import discordhelper
+from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from lib.models.openapi import openapi
 
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
@@ -20,7 +23,52 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         self._class = self.__class__.__name__
         self._module = os.path.basename(__file__)[:-3]
 
-    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emojis", method="GET")
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emojis", method=HTTPMethod.GET)
+    @openapi.security("X-API-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.tags("guilds", "emojis")
+    @openapi.summary("Get the list of emojis for a guild")
+    @openapi.description("Returns all custom emojis for the specified guild.")
+    @openapi.pathParameter(
+        name="guild_id",
+        description="The ID of the guild to retrieve emojis from.",
+        schema=str,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        200,
+        description="Successful operation",
+        contentType="application/json",
+        schema=typing.List[DiscordEmoji],
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        400,
+        description="Invalid guild id",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        404,
+        description="Guild not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        '5XX',
+        description="Server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.managed()
     def get_guild_emojis(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """List all emojis in the specified guild.
 
@@ -32,42 +80,6 @@ class GuildEmojisApiHandler(BaseHttpHandler):
 
         Raises:
                 HttpResponseException: For validation, lookup, or internal errors.
-
-        >>>openapi
-        summary: Get the list of emojis for a guild
-        description: >-
-          Returns all custom emojis for the specified guild.
-        tags:
-          - guilds
-          - emojis
-        parameters:
-          - name: guild_id
-            in: path
-            required: true
-            schema:
-              type: string
-        responses:
-          '200':
-            description: Successful operation
-            content:
-              application/json:
-                schema:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/DiscordEmoji'
-          '400':
-            description: Invalid guild id
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorStatusCodePayload'
-          '404':
-            description: Guild not found
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorStatusCodePayload'
-        <<<openapi
         """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
@@ -90,7 +102,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
                 err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
                 raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
 
-    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emoji/id/{{emoji_id}}", method="GET")
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emoji/id/{{emoji_id}}", method=HTTPMethod.GET)
     def get_guild_emoji(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Get a single emoji by numeric ID.
 
@@ -169,7 +181,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
 
-    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emoji/name/{{emoji_name}}", method="GET")
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emoji/name/{{emoji_name}}", method=HTTPMethod.GET)
     def get_guild_emoji_by_name(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Get a single emoji by name.
 
@@ -247,7 +259,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
 
-    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emojis/ids/batch", method="POST")
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emojis/ids/batch", method=HTTPMethod.POST)
     def get_guild_emojis_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Batch fetch emojis by IDs.
 
@@ -303,7 +315,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
             err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
             raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
 
-    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emojis/names/batch", method="POST")
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emojis/names/batch", method=HTTPMethod.POST)
     def get_guild_emojis_batch_by_names(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Batch fetch emojis by names.
 

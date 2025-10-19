@@ -61,6 +61,7 @@ from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.tacobot import TacoBot
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
+from httpserver.server import HttpResponseException
 
 
 class BaseHttpHandler:
@@ -223,6 +224,37 @@ class BaseHttpHandler:
         err = ErrorStatusCodePayload(err_data)
         return HttpResponse(
             status_code,
+            headers,
+            json.dumps(err.to_dict()).encode("utf-8")
+        )
+
+    def _create_error_from_exception(
+        self,
+        exception: HttpResponseException,
+        include_stacktrace: bool = False
+    ) -> HttpResponse:
+        """Create standardized error response from exception.
+
+        Args:
+            status_code: HTTP status code
+            exception: Exception instance
+            headers: HTTP headers to include
+            include_stacktrace: Whether to include exception stacktrace
+        Returns:
+            HttpResponse with ErrorStatusCodePayload body
+        """
+        err_data = {
+            "code": exception.status_code,
+            "error": exception.body.decode("utf-8") if exception.body else "An error occurred",
+        }
+        if include_stacktrace:
+            err_data["stacktrace"] = traceback.format_exc()
+
+        err = ErrorStatusCodePayload(err_data)
+        headers = HttpHeaders()
+        [headers.add(k, v) for k, v in err_data.get("headers", {}).items()]
+        return HttpResponse(
+            err_data.get("code", 500),
             headers,
             json.dumps(err.to_dict()).encode("utf-8")
         )

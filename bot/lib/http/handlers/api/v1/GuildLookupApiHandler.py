@@ -1,9 +1,13 @@
+from http import HTTPMethod
 import inspect
 import json
 import os
 import typing
 
 from lib import discordhelper
+from lib.models import openapi
+from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from lib.models.GuildItemIdBatchRequestBody import GuildItemIdBatchRequestBody
 
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
@@ -57,13 +61,116 @@ class GuildLookupApiHandler(BaseHttpHandler):
         self.settings = Settings()
         self.tracking_db = TrackingDatabase()
 
-    @uri_mapping(f"/api/{API_VERSION}/guilds/lookup", method="GET")
-    @uri_variable_mapping(f"/api/{API_VERSION}/guilds/lookup/{{guild_id}}", method="GET")
-    @uri_mapping(f"/api/{API_VERSION}/guilds/lookup", method="POST")
-    def guild_lookup(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+    @openapi.description("Lookup a single guild by ID.")
+    @openapi.summary("Guild Lookup")
+    @openapi.security("X-API-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.response(
+        200,
+        description="Successful guild lookup",
+        contentType="application/json",
+        schema=DiscordGuild,
+        methods=[HTTPMethod.GET, HTTPMethod.POST],
+    )
+    @openapi.response(
+        400,
+        description="Bad request (missing/invalid guild_id)",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET, HTTPMethod.POST],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET, HTTPMethod.POST],
+    )
+    @openapi.response(
+        404,
+        description="Guild not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET, HTTPMethod.POST],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET, HTTPMethod.POST],
+    )
+    @openapi.tags("guilds")
+    # How do i restrict this to only the GET method that has the path variable?
+    # so i dont have to duplicate the entire guild_lookup method?
+    @openapi.pathParameter(
+        name="guild_id", # maybe look at the mapping and se if it has the variable?
+        description="The ID of the guild to look up.",
+        schema=str,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.managed()
+    @uri_variable_mapping(f"/api/{API_VERSION}/guilds/lookup/{{guild_id}}", method=HTTPMethod.GET)
+    async def guild_lookup_uri(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        return await self.guild_lookup(request, uri_variables)
+
+    @uri_mapping(f"/api/{API_VERSION}/guilds/lookup", method=[HTTPMethod.GET, HTTPMethod.POST])
+    @openapi.description("Lookup a single guild by ID.")
+    @openapi.summary("Guild Lookup")
+    @openapi.security("X-API-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.response(
+        200,
+        description="Successful guild lookup",
+        contentType="application/json",
+        schema=DiscordGuild,
+        methods=[HTTPMethod.GET, HTTPMethod.POST],
+    )
+    @openapi.response(
+        400,
+        description="Bad request (missing/invalid guild_id)",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET, HTTPMethod.POST],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET, HTTPMethod.POST],
+    )
+    @openapi.response(
+        404,
+        description="Guild not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET, HTTPMethod.POST],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET, HTTPMethod.POST],
+    )
+    @openapi.tags("guilds")
+    @openapi.queryParameter(
+        name="id",
+        description="The ID of the guild to look up.",
+        required=False,
+        schema=str,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.requestBody(
+        description="Request body for guild lookup by ID.",
+        required=False,
+        contentType="application/json",
+        schema=typing.Union[str],
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.managed()
+    async def guild_lookup(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Lookup a single guild by ID.
 
-        @openapi: ignore
         Supported request forms (all equivalent):
             GET  /api/v1/guilds/lookup/1234567890
             GET  /api/v1/guilds/lookup?id=1234567890
@@ -84,6 +191,10 @@ class GuildLookupApiHandler(BaseHttpHandler):
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
+
+        if not self.validate_auth_token(request):
+            return self._create_error_response(401, "Unauthorized: Missing or invalid API token.", headers)
+
         try:
             v_guild_id: typing.Optional[str] = uri_variables.get("guild_id")
             q_guild_id: typing.Optional[list[str]] = request.query_params.get("id")
@@ -106,14 +217,14 @@ class GuildLookupApiHandler(BaseHttpHandler):
             elif b_guild_id is not None:
                 guild_id = b_guild_id
             else:
-                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id is required"}', 'utf-8'))
+                return self._create_error_response(400, "guild_id is required", headers)
 
             if guild_id is None or not isinstance(guild_id, str) or not guild_id.isdigit():
-                raise HttpResponseException(400, headers, bytearray('{"error": "guild_id must be numeric"}', 'utf-8'))
+                return self._create_error_response(400, "guild_id must be numeric", headers)
 
             guild = self.bot.get_guild(int(guild_id))  # safe: validated numeric string
             if guild is None:
-                raise HttpResponseException(404, headers, bytearray('{"error": "guild not found"}', 'utf-8'))
+                return self._create_error_response(404, "guild not found", headers)
 
             payload = DiscordGuild(
                 {
@@ -133,21 +244,111 @@ class GuildLookupApiHandler(BaseHttpHandler):
                     "boost_count": guild.premium_subscription_count,
                 }
             ).to_dict()
-            return HttpResponse(200, headers, bytearray(json.dumps(payload), 'utf-8'))
+            return HttpResponse(200, headers, json.dumps(payload).encode('utf-8'))
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            xHeaders = HttpHeaders()
+            [xHeaders.add(k, v) for k, v in e.headers.items()] if e.headers else None
+            return self._create_error_response(
+                e.status_code, e.body.decode('utf-8') if e.body else "Unknown error", xHeaders
+            )
         except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e))
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, 'utf-8'))
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers)
 
-    @uri_mapping(f"/api/{API_VERSION}/guilds/lookup/batch", method="GET")
-    @uri_variable_mapping(f"/api/{API_VERSION}/guilds/lookup/batch/{{guild_ids}}", method="GET")
-    @uri_mapping(f"/api/{API_VERSION}/guilds/lookup/batch", method="POST")
+    @uri_variable_mapping(f"/api/{API_VERSION}/guilds/lookup/batch/{{guild_ids}}", method=HTTPMethod.GET)
+    @openapi.description("Lookup multiple guilds by ID.")
+    @openapi.summary("Batch Guild Lookup")
+    @openapi.security("X-API-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.response(
+        200,
+        description="Successful batch guild lookup",
+        contentType="application/json",
+        schema=typing.List[DiscordGuild],
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        400,
+        description="Bad request (invalid guild IDs)",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.tags("guilds")
+    @openapi.pathParameter(
+        name="guild_ids",
+        description="Comma-separated list of guild IDs to look up.",
+        schema=str,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.managed()
+    async def guild_lookup_batch_url(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        return await self.guild_lookup_batch(request, uri_variables)
+
+    @uri_mapping(f"/api/{API_VERSION}/guilds/lookup/batch", method=[HTTPMethod.GET, HTTPMethod.POST])
+    @openapi.description("Lookup multiple guilds by ID.")
+    @openapi.summary("Batch Guild Lookup")
+    @openapi.security("X-API-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.response(
+        200,
+        description="Successful batch guild lookup",
+        contentType="application/json",
+        schema=typing.List[DiscordGuild],
+        methods=[HTTPMethod.GET, HTTPMethod.POST],
+    )
+    @openapi.response(
+        400,
+        description="Bad request (invalid guild IDs)",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET, HTTPMethod.POST],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET, HTTPMethod.POST],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET, HTTPMethod.POST],
+    )
+    @openapi.tags("guilds")
+    @openapi.queryParameter(
+        name="ids",
+        description="Guild IDs to look up (can be specified multiple times).",
+        required=False,
+        schema=typing.List[str],
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.requestBody(
+        description="Request body for batch guild lookup by IDs.",
+        required=False,
+        contentType="application/json",
+        schema=typing.Union[typing.List[str], GuildItemIdBatchRequestBody],
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.managed()
     async def guild_lookup_batch(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Lookup multiple guilds by ID.
 
-        @openapi: ignore
         Supported request forms (merge all provided IDs):
             GET  /api/v1/guilds/lookup/batch/1,2,3
             GET  /api/v1/guilds/lookup/batch?ids=1&ids=2&ids=3
@@ -227,10 +428,35 @@ class GuildLookupApiHandler(BaseHttpHandler):
             raise HttpResponseException(500, headers, bytearray(err_msg, 'utf-8'))
 
     @uri_mapping(f"/api/{API_VERSION}/guilds", method="GET")
+    @openapi.description("List all guilds the bot is currently a member of.")
+    @openapi.summary("List Guilds")
+    @openapi.security("X-API-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.response(
+        200,
+        description="Successful guild list",
+        contentType="application/json",
+        schema=typing.List[DiscordGuild],
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.tags("guilds")
+    @openapi.managed()
     def get_guilds(self, request: HttpRequest) -> HttpResponse:
         """List all guilds the bot is currently a member of.
 
-        @openapi: ignore
         Path: /api/v1/guilds
         Method: GET
         Returns: Array[DiscordGuild]
@@ -239,9 +465,13 @@ class GuildLookupApiHandler(BaseHttpHandler):
         Notes: This reflects the real-time in-memory guild cache of the connected bot session.
         """
         _method = inspect.stack()[0][3]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+
         try:
-            headers = HttpHeaders()
-            headers.add("Content-Type", "application/json")
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, "Unauthorized: Missing or invalid API token.", headers)
+
             guilds = [
                 {
                     "id": str(guild.id),
@@ -263,8 +493,7 @@ class GuildLookupApiHandler(BaseHttpHandler):
             ]
             return HttpResponse(200, headers, bytearray(json.dumps(guilds), "utf-8"))
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(e, True)
         except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}")
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers)

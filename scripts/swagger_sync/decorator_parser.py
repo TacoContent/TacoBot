@@ -434,7 +434,7 @@ def _extract_path_parameter(decorator: ast.Call) -> Dict[str, Any]:
             'description': 'Guild ID'
         }
     """
-    param: Dict[str, Any] = {"in": "path"}
+    param: Dict[str, Any] = {"in": "path", "required": True}
 
     # Extract keyword arguments
     for keyword in decorator.keywords:
@@ -566,10 +566,25 @@ def _extract_request_body(decorator: ast.Call) -> Dict[str, Any]:
                 }
             }
         }
+
+        @openapi.requestBody(schema=typing.Union[typing.List[str], MyModel], ...)
+        → {
+            ...
+            'content': {
+                'application/json': {
+                    'schema': {
+                        'oneOf': [
+                            {'type': 'array', 'items': {'type': 'string'}},
+                            {'$ref': '#/components/schemas/MyModel'}
+                        ]
+                    }
+                }
+            }
+        }
     """
     body: Dict[str, Any] = {}
     content_type = "application/json"  # default
-    schema_name = None
+    schema_node = None
 
     # Extract keyword arguments
     for keyword in decorator.keywords:
@@ -577,9 +592,7 @@ def _extract_request_body(decorator: ast.Call) -> Dict[str, Any]:
         value_node = keyword.value
 
         if key == "schema":
-            if isinstance(value_node, ast.Name):
-                schema_name = value_node.id
-            # print(f"{json.dumps(value_node.__dict__)}")
+            schema_node = value_node
         elif key == "contentType":
             if isinstance(value_node, ast.Constant):
                 content_type = value_node.value
@@ -613,9 +626,10 @@ def _extract_request_body(decorator: ast.Call) -> Dict[str, Any]:
                 # Single string method
                 body["methods"] = [value_node.value.lower()]
 
-    # Build content object
-    if schema_name:
-        body["content"] = {content_type: {"schema": {"$ref": f"#/components/schemas/{schema_name}"}}}
+    # Build content object with schema
+    if schema_node:
+        schema = _extract_schema_reference(schema_node)
+        body["content"] = {content_type: {"schema": schema}}
 
     return body
 
@@ -759,6 +773,124 @@ def _extract_schema_type(type_node: ast.expr) -> Dict[str, str]:
 
     # Default to string for unknown types
     return {"type": "string"}
+
+
+def _extract_schema_reference(schema_node: ast.expr) -> Dict[str, Any]:
+    """Extract OpenAPI schema reference from AST node.
+
+    Handles simple model references, Union types (both typing.Union and | syntax),
+    and generic types like List[str].
+
+    Args:
+        schema_node: AST expression node representing a schema type
+
+    Returns:
+        Dictionary with OpenAPI schema definition (either $ref or oneOf)
+
+    Examples:
+        MyModel → {'$ref': '#/components/schemas/MyModel'}
+        typing.Union[ModelA, ModelB] → {'oneOf': [{'$ref': '...'}, {'$ref': '...'}]}
+        ModelA | ModelB → {'oneOf': [{'$ref': '...'}, {'$ref': '...'}]}
+        typing.List[str] → {'type': 'array', 'items': {'type': 'string'}}
+        list[str] → {'type': 'array', 'items': {'type': 'string'}}
+    """
+    # Handle simple Name references (e.g., MyModel or str/int/bool)
+    if isinstance(schema_node, ast.Name):
+        # Check if it's a primitive type
+        primitive_types = {"str", "int", "float", "bool", "list", "dict"}
+        if schema_node.id in primitive_types:
+            return _extract_schema_type(schema_node)
+        # Otherwise it's a model reference
+        return {"$ref": f"#/components/schemas/{schema_node.id}"}
+
+    # Handle typing.Union[A, B, C] or typing.List[T]
+    if isinstance(schema_node, ast.Subscript):
+        # Check if it's a Union type
+        if isinstance(schema_node.value, ast.Attribute):
+            # typing.Union, typing.List, etc.
+            if (isinstance(schema_node.value.value, ast.Name) and
+                schema_node.value.value.id == "typing" and
+                schema_node.value.attr == "Union"):
+                # Extract union members
+                return _extract_union_schemas(schema_node.slice)
+            elif (isinstance(schema_node.value.value, ast.Name) and
+                  schema_node.value.value.id == "typing" and
+                  schema_node.value.attr == "List"):
+                # typing.List[T]
+                item_schema = _extract_schema_reference(schema_node.slice)
+                return {"type": "array", "items": item_schema}
+
+        # Handle built-in generics: list[T], dict[K, V]
+        if isinstance(schema_node.value, ast.Name):
+            if schema_node.value.id == "list":
+                item_schema = _extract_schema_reference(schema_node.slice)
+                return {"type": "array", "items": item_schema}
+            elif schema_node.value.id == "dict":
+                # For dict, we'll just use object type
+                return {"type": "object"}
+
+    # Handle A | B union syntax (Python 3.10+)
+    if isinstance(schema_node, ast.BinOp) and isinstance(schema_node.op, ast.BitOr):
+        return _extract_union_from_binop(schema_node)
+
+    # Fallback: try to extract as a simple type
+    return _extract_schema_type(schema_node)
+
+
+def _extract_union_schemas(slice_node: ast.expr) -> Dict[str, Any]:
+    """Extract oneOf schemas from Union type slice.
+
+    Args:
+        slice_node: AST node representing the Union's type arguments
+
+    Returns:
+        Dictionary with oneOf array of schema references
+
+    Example:
+        Tuple(elts=[Name('ModelA'), Name('ModelB')])
+        → {'oneOf': [{'$ref': '...'}, {'$ref': '...'}]}
+    """
+    schemas = []
+
+    # Union has multiple args in a Tuple
+    if isinstance(slice_node, ast.Tuple):
+        for elt in slice_node.elts:
+            schemas.append(_extract_schema_reference(elt))
+    else:
+        # Single element (unusual but handle it)
+        schemas.append(_extract_schema_reference(slice_node))
+
+    return {"oneOf": schemas}
+
+
+def _extract_union_from_binop(binop_node: ast.BinOp) -> Dict[str, Any]:
+    """Extract oneOf schemas from A | B | C union syntax.
+
+    Recursively walks the binary operation tree to collect all union members.
+
+    Args:
+        binop_node: AST BinOp node with BitOr operator
+
+    Returns:
+        Dictionary with oneOf array of schema references
+
+    Example:
+        A | B | C → {'oneOf': [{'$ref': '...'}, {'$ref': '...'}, {'$ref': '...'}]}
+    """
+    schemas = []
+
+    def collect_union_members(node: ast.expr):
+        """Recursively collect all members of a | union."""
+        if isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr):
+            # Recursively process left and right
+            collect_union_members(node.left)
+            collect_union_members(node.right)
+        else:
+            # Leaf node - extract schema
+            schemas.append(_extract_schema_reference(node))
+
+    collect_union_members(binop_node)
+    return {"oneOf": schemas}
 
 
 def _extract_literal_value(value_node: ast.expr) -> Any:

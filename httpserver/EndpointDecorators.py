@@ -35,11 +35,14 @@ attempts to invoke the handler—keep handler parameter names aligned with varia
 
 """
 
+from http import HTTPMethod
 import inspect
 import re
 import types
+from typing_extensions import Literal
 
-from httpserver.UriRoute import UriRoute
+from httpserver.UriRoute import HTTP_METHODS, UriRoute
+
 
 def _uri_variable_to_pattern(uri: str):
     """Expand a variable path template to a compiled regex and ordered variable names.
@@ -83,7 +86,7 @@ def _uri_variable_to_pattern(uri: str):
 def _uri_route_decorator(
     f,
     path: str | re.Pattern,
-    http_method: str | list[str],
+    http_method: HTTP_METHODS | list[Literal[HTTP_METHODS]],
     uri_variables: list[str] | None = None,
     auth_callback: types.FunctionType | None = None,
 ):
@@ -116,7 +119,11 @@ def _uri_route_decorator(
     return f
 
 
-def uri_mapping(path: str, method: str | list[str] = 'GET', auth_callback: types.FunctionType | None = None):
+def uri_mapping(
+    path: str,
+    method: HTTP_METHODS | list[Literal[HTTP_METHODS]] = HTTPMethod.GET,
+    auth_callback: types.FunctionType | None = None
+):
     """Map a literal (static) path to a handler function.
 
     Parameters
@@ -140,7 +147,7 @@ def uri_mapping(path: str, method: str | list[str] = 'GET', auth_callback: types
     return lambda f: _uri_route_decorator(f, path, method, auth_callback=auth_callback)
 
 
-def uri_pattern_mapping(path: str, method: str | list[str] = 'GET'):
+def uri_pattern_mapping(path: str, method: HTTP_METHODS | list[Literal[HTTP_METHODS]] = HTTPMethod.GET):
     """Register a raw regular expression path.
 
     Use for advanced matching needs not expressible via simple `{var}` segments.
@@ -161,7 +168,7 @@ def uri_pattern_mapping(path: str, method: str | list[str] = 'GET'):
     return lambda f: _uri_route_decorator(f, re.compile(path), method)
 
 
-def uri_variable_mapping(path: str, method: str | list[str] = 'GET'):
+def uri_variable_mapping(path: str, method: HTTP_METHODS | list[Literal[HTTP_METHODS]] = HTTPMethod.GET):
     """Register a path template with `{variable}` substitutions.
 
     Each `{name}` becomes a named regex group capturing one path segment (no slashes)

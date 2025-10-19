@@ -1,13 +1,30 @@
+from http import HTTPMethod
 import re
 from dataclasses import dataclass
 from typing import Generator
 import types
 import typing
 
+HTTP_METHODS = typing.Literal[
+    "GET",
+    "POST",
+    "PUT",
+    "DELETE",
+    "PATCH",
+    "HEAD",
+    "OPTIONS",
+    HTTPMethod.GET,
+    HTTPMethod.POST,
+    HTTPMethod.PUT,
+    HTTPMethod.DELETE,
+    HTTPMethod.PATCH,
+    HTTPMethod.HEAD,
+    HTTPMethod.OPTIONS,
+]
 @dataclass
 class UriRoute:
     path: typing.Union[str, re.Pattern]
-    http_method: typing.Union[str, list[str]]
+    http_method: typing.Union[HTTP_METHODS, typing.List[HTTP_METHODS]]
     uri_variables: typing.Optional[list[str]]
     call_args: list[str]
     auth_callback: typing.Optional[types.FunctionType] = None
@@ -33,5 +50,5 @@ class UriRoute:
             return path == self.path
         if isinstance(self.path, re.Pattern):
             return self.path.match(path) is not None
-        
+
         return False

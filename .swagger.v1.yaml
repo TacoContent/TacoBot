@@ -63,170 +63,195 @@ paths:
       parameters: []
   /api/v1/guilds:
     get:
-      tags:
-        - guilds
-      summary: Get the list of guilds the bot is in
-      description: 'Gets the list of guilds the bot is in
-
-        '
-      parameters: []
+      description: List all guilds the bot is currently a member of.
+      security:
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
       responses:
         '200':
-          description: Successful operation
+          description: Successful guild list
+        '401':
+          description: Unauthorized
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                    name:
-                      type: string
-  /api/v1/guilds/lookup/{guild_id}:
-    get:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: List Guilds
       tags:
         - guilds
-      summary: Lookup a guild
-      description: 'Retrieves details for a single guild by its ID.
-
-        '
-      parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
-            type: string
+  /api/v1/guilds/lookup/{guild_id}:
+    get:
+      security:
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
       responses:
         '200':
-          description: Successful operation
+          description: Successful guild lookup
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/DiscordGuild'
+        '400':
+          description: Bad request (missing/invalid guild_id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
         '404':
           description: Guild not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-  /api/v1/guilds/lookup/batch/{guild_ids}:
-    get:
-      tags:
-        - guilds
-      summary: Get the guild information for multiple guilds
-      description: 'Gets the guild information for multiple guilds
-
-        '
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Guild Lookup
+      description: Lookup a single guild by ID.
       parameters:
-        - name: guild_ids
-          description: Comma separated list of guild IDs
-          in: path
+        - in: path
           required: true
+          name: guild_id
+          description: The ID of the guild to look up.
           schema:
             type: string
+  /api/v1/guilds/lookup/batch/{guild_ids}:
+    get:
+      parameters:
+        - in: path
+          required: true
+          name: guild_ids
+          description: Comma-separated list of guild IDs to look up.
+          schema:
+            type: string
+      description: Lookup multiple guilds by ID.
+      security:
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
       responses:
         '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DiscordGuild'
-        '404':
-          description: Guild not found
+          description: Successful batch guild lookup
+        '400':
+          description: Bad request (invalid guild IDs)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Batch Guild Lookup
+      tags:
+        - guilds
   /api/v1/guilds/lookup/batch:
     get:
-      tags:
-        - guilds
-      summary: Get the guild information for multiple guilds
-      description: 'Gets the guild information for multiple guilds
-
-        '
-      parameters:
-        - name: guild_ids
-          description: Comma separated list of guild IDs
-          in: query
+      parameters: &id001
+        - in: query
+          name: ids
+          description: Guild IDs to look up (can be specified multiple times).
+          required: false
           schema:
-            type: array
-            items:
-              type: string
+            type: string
+      description: Lookup multiple guilds by ID.
+      security: &id002
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
       responses:
         '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DiscordGuild'
-        '404':
-          description: Guild not found
+          description: Successful batch guild lookup
+        '400':
+          description: Bad request (invalid guild IDs)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-    post:
-      tags:
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Batch Guild Lookup
+      tags: &id003
         - guilds
-      summary: Get the guild information for multiple guilds
-      description: 'Gets the guild information for multiple guilds
-
-        '
-      parameters:
-        - name: guild_ids
-          description: Comma separated list of guild IDs
-          in: query
-          schema:
-            type: array
-            items:
-              type: string
+    post:
       requestBody:
+        description: Request body for batch guild lookup by IDs.
         required: false
         content:
           application/json:
             schema:
-              type: array
-              items:
-                type: string
+              oneOf:
+                - type: array
+                  items:
+                    type: string
+                - $ref: '#/components/schemas/GuildItemIdBatchRequestBody'
+      parameters: *id001
+      description: Lookup multiple guilds by ID.
+      security: *id002
       responses:
         '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DiscordGuild'
-        '404':
-          description: Guild not found
+          description: Successful batch guild lookup
+        '400':
+          description: Bad request (invalid guild IDs)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Batch Guild Lookup
+      tags: *id003
   /api/v1/guild/{guild_id}/categories:
     get:
-      tags:
-        - guilds
-        - channels
-      summary: List guild categories (with channels)
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
-      description: Returns all channel categories in the guild. Each category object embeds its child channels.
-      parameters:
-        - in: path
-          name: guild_id
-          description: Discord guild (server) ID
-          schema:
-            type: string
-          required: true
+      tags:
+        - guilds
+        - channels
       responses:
         '200':
           description: Successful response with list of categories
@@ -236,29 +261,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: List guild categories (with channels)
+      description: Returns all channel categories in the guild. Each category object embeds its child channels.
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: Discord guild (server) ID
+          schema:
+            type: string
   /api/v1/guild/{guild_id}/category/{category_id}:
     get:
-      description: Returns a single category and its child channels.
-      summary: Get category (with channels)
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
       tags:
         - guilds
         - channels
-      parameters:
-        - in: path
-          name: guild_id
-          description: Discord guild (server) ID
-          schema:
-            type: string
-          required: true
-        - in: path
-          name: category_id
-          description: Discord category channel ID
-          schema:
-            type: string
-          required: true
       responses:
         '200':
           description: Successful response with category and its channels
@@ -284,18 +303,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-  /api/v1/guild/{guild_id}/channels:
-    get:
+      summary: Get category (with channels)
+      description: Returns a single category and its child channels.
       parameters:
         - in: path
+          required: true
           name: guild_id
           description: Discord guild (server) ID
           schema:
             type: string
+        - in: path
           required: true
+          name: category_id
+          description: Discord category channel ID
+          schema:
+            type: string
+  /api/v1/guild/{guild_id}/channels:
+    get:
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
+        - channels
       responses:
         '200':
           description: Successful response with top-level channels and categories
@@ -327,11 +357,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-      tags:
-        - guilds
-        - channels
       summary: List top-level guild channels
       description: Returns channels that are not within a category. Use categories endpoint for nested channels.
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: Discord guild (server) ID
+          schema:
+            type: string
   /api/v1/guild/{guild_id}/channels/batch/ids:
     post:
       requestBody:
@@ -339,35 +373,53 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GuildChannelsBatchRequestBody'
+              oneOf:
+                - type: array
+                  items:
+                    type: string
+                - $ref: '#/components/schemas/GuildItemIdBatchRequestBody'
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
       tags:
         - guilds
         - channels
-      summary: Batch fetch channels by IDs
-      description: Retrieve multiple channels by their IDs.
       responses:
         '200':
-          description: OK
+          description: Successful response with list of channels
+        '400':
+          description: Missing/invalid guild_id or malformed body
           content:
             application/json:
               schema:
-                type: array
-                items: {$ref: '#/components/schemas/DiscordChannel'}
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
         '404':
           description: Guild not found
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/ErrorStatusCodePayload'}
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Batch fetch channels by IDs
+      description: Retrieve multiple channels by their IDs.
       parameters:
         - in: path
+          required: true
           name: guild_id
           description: Discord guild (server) ID
           schema:
             type: string
-          required: true
         - in: query
           name: ids
           description: Repeatable channel ID query parameter
@@ -591,21 +643,20 @@ paths:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
   /api/v1/guild/{guild_id}/emojis:
     get:
-      summary: Get the list of emojis for a guild
-      tags:
-        - guilds
-        - emojis
+      security:
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
       responses:
         '200':
           description: Successful operation
+        '400':
+          description: Invalid guild id
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DiscordEmoji'
-        '400':
-          description: Invalid guild id
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
           content:
             application/json:
               schema:
@@ -616,13 +667,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get the list of emojis for a guild
       description: Returns all custom emojis for the specified guild.
       parameters:
-        - name: guild_id
-          in: path
+        - in: path
           required: true
+          name: guild_id
+          description: The ID of the guild to retrieve emojis from.
           schema:
             type: string
+      tags:
+        - guilds
+        - emojis
   /api/v1/guild/{guild_id}/emoji/id/{emoji_id}:
     get:
       tags:
@@ -1854,6 +1916,98 @@ paths:
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
+  /api/v1/guilds/lookup:
+    get:
+      description: Lookup a single guild by ID.
+      summary: Guild Lookup
+      security: &id004
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      responses:
+        '200':
+          description: Successful guild lookup
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscordGuild'
+        '400':
+          description: Bad request (missing/invalid guild_id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags: &id005
+        - guilds
+      parameters: &id006
+        - in: query
+          name: id
+          description: The ID of the guild to look up.
+          required: false
+          schema:
+            type: string
+    post:
+      description: Lookup a single guild by ID.
+      summary: Guild Lookup
+      security: *id004
+      responses:
+        '200':
+          description: Successful guild lookup
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscordGuild'
+        '400':
+          description: Bad request (missing/invalid guild_id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags: *id005
+      parameters: *id006
+      requestBody:
+        description: Request body for guild lookup by ID.
+        required: false
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: string
 components:
   schemas:
     ErrorStatusCodePayload:
@@ -2873,7 +3027,7 @@ components:
         - status
       description: Response payload for Minecraft player event
       x-tacobot-managed: true
-    GuildChannelsBatchRequestBody:
+    GuildItemIdBatchRequestBody:
       type: object
       properties:
         ids:
@@ -2882,7 +3036,7 @@ components:
             type: string
       required:
         - ids
-      description: Request body for batch fetching guild channels by IDs
+      description: Request body for batch fetching guild item by IDs
       x-tacobot-managed: true
   securitySchemes:
     X-AUTH-TOKEN:
