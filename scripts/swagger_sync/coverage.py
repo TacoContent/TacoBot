@@ -1,27 +1,29 @@
 """Coverage calculation and reporting for OpenAPI documentation automation.
 
 This module provides functionality for computing and generating coverage reports
-that measure automation vs manual maintenance burden in the OpenAPI specification.
+that measure @openapi decorator usage across HTTP handlers.
 
 COVERAGE PARADIGM SHIFT (Updated):
 ------------------------------------
-Instead of measuring what IS documented (documentation coverage), this module
-now focuses on what ISN'T automated (technical debt coverage):
+Focuses on @openapi decorator usage rather than legacy YAML blocks:
 
 Key Metrics:
-1. **Orphaned Components**: Schemas in swagger WITHOUT @openapi.component decorators
-   - These are manual YAML definitions requiring manual maintenance
-   - Lower count = better automation
+1. **Decorator Coverage**: Handlers with ANY @openapi decorators
+   - Level 0: No decorators (needs attention)
+   - Level 1: Basic decorators (tags, summary, response)
+   - Level 2: Complete documentation (all applicable decorators)
 
-2. **Orphaned Endpoints**: Paths in swagger WITHOUT Python handler decorators
-   - These are manual API definitions not synchronized from code
-   - Lower count = better automation
+2. **Core Documentation**: Essential decorators present
+   - Tags: Groups endpoints by category
+   - Summary: One-line description
+   - Response: At least one response definition
 
-3. **Automation Coverage Rate**: Percentage of swagger items managed by code
-   - Components: (automated / total_components) * 100%
-   - Endpoints: (automated / total_endpoints) * 100%
-   - Overall: (automated_items / total_items) * 100%
-   - Higher rate = less technical debt
+3. **Complete Documentation**: All applicable decorators for endpoint
+   - Path parameters for variable paths
+   - Query parameters for query strings
+   - Request body for POST/PUT/PATCH
+   - Security requirements
+   - Examples and descriptions
 
 Legacy Metrics (Still Available):
 - Documentation presence: handlers with >>>openapi<<<openapi blocks
@@ -29,9 +31,10 @@ Legacy Metrics (Still Available):
 - Quality indicators: summary, description, parameters, examples, etc.
 
 The module supports multiple output formats:
-- JSON: Detailed coverage metrics with orphan lists and per-endpoint records
-- Text: Human-readable coverage summary with colorized orphan warnings
-- Cobertura XML: CI/CD integration with automation metrics as custom properties
+- JSON: Detailed coverage metrics with decorator breakdown
+- Text: Human-readable coverage summary with colorized decorator coverage
+- Markdown: GitHub-ready tables with emoji indicators for decorator usage
+- Cobertura XML: CI/CD integration with decorator coverage metrics
 
 Note: Markdown coverage content is now integrated into the markdown_summary output
 file instead of being a separate coverage report format.
@@ -160,16 +163,16 @@ def _build_coverage_summary_markdown(summary: Dict[str, Any]) -> List[str]:
     lines.append(f"| Handlers considered | {summary['handlers_total']} | - |")
     lines.append(f"| Ignored handlers | {summary['ignored_total']} | - |")
 
-    block_rate = summary['coverage_rate_handlers_with_block']
-    block_display = _format_rate_emoji(summary['with_openapi_block'], summary['handlers_total'], block_rate)
-    lines.append(f"| With OpenAPI block | {summary['with_openapi_block']} | {block_display} |")
+    block_rate = summary['decorator_coverage_rate']
+    block_display = _format_rate_emoji(summary['with_decorators'], summary['handlers_total'], block_rate)
+    lines.append(f"| With @openapi decorators | {summary['with_decorators']} | {block_display} |")
 
     swagger_rate = summary['coverage_rate_handlers_in_swagger']
     swagger_display = _format_rate_emoji(summary['handlers_in_swagger'], summary['handlers_total'], swagger_rate)
     lines.append(f"| In swagger | {summary['handlers_in_swagger']} | {swagger_display} |")
 
     match_rate = summary['operation_definition_match_rate']
-    match_display = _format_rate_emoji(summary['definition_matches'], summary['with_openapi_block'], match_rate)
+    match_display = _format_rate_emoji(summary['definition_matches'], summary['with_decorators'], match_rate)
     lines.append(f"| Definition matches | {summary['definition_matches']} | {match_display} |")
 
     lines.append(f"| Swagger only operations | {summary['swagger_only_operations']} | - |")
@@ -245,14 +248,14 @@ def _build_quality_metrics_markdown(summary: Dict[str, Any]) -> List[str]:
     lines.append("| Quality Indicator | Count | Rate |")
     lines.append("|-------------------|-------|------|")
 
-    total_block = summary['with_openapi_block']
+    total_block = summary['with_decorators']
     quality_metrics = [
-        ('📝 Summary', summary['endpoints_with_summary'], summary['quality_rate_summary']),
-        ('📄 Description', summary['endpoints_with_description'], summary['quality_rate_description']),
-        ('🔧 Parameters', summary['endpoints_with_parameters'], summary['quality_rate_parameters']),
-        ('📦 Request body', summary['endpoints_with_request_body'], summary['quality_rate_request_body']),
-        ('🔀 Multiple responses', summary['endpoints_with_multiple_responses'], summary['quality_rate_multiple_responses']),
-        ('💡 Examples', summary['endpoints_with_examples'], summary['quality_rate_examples']),
+        ('📝 Summary', summary['decorators_summary'], summary.get('rate_summary', 0.0)),
+        ('📄 Description', summary['decorators_description'], summary.get('rate_description', 0.0)),
+        ('🔧 Parameters', summary['decorators_path_parameter'] + summary['decorators_query_parameter'] + summary['decorators_header_parameter'], (summary['decorators_path_parameter'] + summary['decorators_query_parameter'] + summary['decorators_header_parameter']) / total_block if total_block else 0.0),
+        ('📦 Request body', summary['decorators_request_body'], summary.get('rate_requestBody', 0.0)),
+        ('🔀 Multiple responses', summary['decorators_response'], summary.get('rate_response', 0.0)),
+        ('💡 Examples', summary['decorators_example'], summary.get('rate_example', 0.0)),
     ]
 
     for label, count, rate in quality_metrics:
@@ -447,16 +450,16 @@ def _generate_coverage(
         lines.append(f"│ Handlers (considered)       │ {summary['handlers_total']:8d} │ {'':23s} │")
         lines.append(f"│ Ignored                     │ {summary['ignored_total']:8d} │ {'':23s} │")
 
-        block_rate = summary['coverage_rate_handlers_with_block']
-        block_display = _format_rate_colored(summary['with_openapi_block'], summary['handlers_total'], block_rate)
-        lines.append(f"│ With OpenAPI block          │ {summary['with_openapi_block']:8d} │ {block_display} │")
+        block_rate = summary['decorator_coverage_rate']
+        block_display = _format_rate_colored(summary['with_decorators'], summary['handlers_total'], block_rate)
+        lines.append(f"│ With @openapi decorators    │ {summary['with_decorators']:8d} │ {block_display} │")
 
         swagger_rate = summary['coverage_rate_handlers_in_swagger']
         swagger_display = _format_rate_colored(summary['handlers_in_swagger'], summary['handlers_total'], swagger_rate)
         lines.append(f"│ In swagger                  │ {summary['handlers_in_swagger']:8d} │ {swagger_display} │")
 
         match_rate = summary['operation_definition_match_rate']
-        match_display = _format_rate_colored(summary['definition_matches'], summary['with_openapi_block'], match_rate)
+        match_display = _format_rate_colored(summary['definition_matches'], summary['with_decorators'], match_rate)
         lines.append(f"│ Definition matches          │ {summary['definition_matches']:8d} │ {match_display} │")
 
         lines.append(f"│ Swagger only operations     │ {summary['swagger_only_operations']:8d} │ {'':23s} │")
@@ -534,14 +537,14 @@ def _generate_coverage(
         lines.append("│ Quality Indicator        │ Count    │ Rate                    │")
         lines.append("├──────────────────────────┼──────────┼─────────────────────────┤")
 
-        total_block = summary['with_openapi_block']
+        total_block = summary['with_decorators']
         quality_metrics = [
-            ('📝 Summary', summary['endpoints_with_summary'], summary['quality_rate_summary']),
-            ('📄 Description', summary['endpoints_with_description'], summary['quality_rate_description']),
-            ('🔧 Parameters', summary['endpoints_with_parameters'], summary['quality_rate_parameters']),
-            ('📦 Request body', summary['endpoints_with_request_body'], summary['quality_rate_request_body']),
-            ('🔀 Multiple responses', summary['endpoints_with_multiple_responses'], summary['quality_rate_multiple_responses']),
-            ('💡 Examples', summary['endpoints_with_examples'], summary['quality_rate_examples']),
+            ('📝 Summary', summary['decorators_summary'], summary.get('rate_summary', 0.0)),
+            ('📄 Description', summary['decorators_description'], summary.get('rate_description', 0.0)),
+            ('🔧 Parameters', summary['decorators_path_parameter'] + summary['decorators_query_parameter'] + summary['decorators_header_parameter'], (summary['decorators_path_parameter'] + summary['decorators_query_parameter'] + summary['decorators_header_parameter']) / total_block if total_block else 0.0),
+            ('📦 Request body', summary['decorators_request_body'], summary.get('rate_requestBody', 0.0)),
+            ('🔀 Multiple responses', summary['decorators_response'], summary.get('rate_response', 0.0)),
+            ('💡 Examples', summary['decorators_example'], summary.get('rate_example', 0.0)),
         ]
 
         for label, count, rate in quality_metrics:
@@ -607,8 +610,8 @@ def _generate_coverage(
             status = []
             if rec['ignored']:
                 status.append('IGNORED')
-            if rec['has_openapi_block']:
-                status.append('BLOCK')
+            if rec['has_decorators']:
+                status.append('DECORATORS')
             if rec['in_swagger']:
                 status.append('SWAGGER')
             if rec['definition_matches']:
@@ -630,7 +633,7 @@ def _generate_coverage(
         except Exception as e:  # pragma: no cover
             raise SystemExit(f"XML generation failed: {e}")
         lines_valid = summary['handlers_total'] + summary['swagger_only_operations']
-        lines_covered = summary['with_openapi_block']
+        lines_covered = summary['with_decorators']
         line_rate = (lines_covered / lines_valid) if lines_valid else 0.0
         root = Element(
             'coverage',
@@ -683,7 +686,7 @@ def _generate_coverage(
             if rec['ignored']:
                 continue
             line_number += 1
-            covered = '1' if (rec['has_openapi_block']) else '0'
+            covered = '1' if (rec['has_decorators']) else '0'
             cls = SubElement(
                 classes,
                 'class',
@@ -726,17 +729,28 @@ def _compute_coverage(
     swagger: Dict[str, Any],
     model_components: Optional[Dict[str, Dict[str, Any]]] = None,
 ):
-    """Compute coverage metrics focusing on UNMANAGED items (technical debt).
+    """Compute coverage metrics focusing on @openapi decorator usage.
 
-    Coverage paradigm shift: Instead of measuring what IS automated/documented,
-    this measures what ISN'T - highlighting manual maintenance burden and automation gaps.
+    Coverage paradigm shift: Instead of measuring what IS documented (legacy YAML blocks),
+    this measures @openapi decorator usage across handlers - highlighting automation gaps.
 
     Key metrics:
-    - Orphaned components: Schemas in swagger WITHOUT @openapi.component decorators (manual definitions)
-    - Orphaned endpoints: Paths in swagger WITHOUT Python handler decorators (manual API definitions)
-    - Automation coverage: Percentage of items managed by code decorators vs manual YAML
+    - Decorator Coverage: Handlers with ANY @openapi decorators
+      - Level 0: No decorators (needs attention)
+      - Level 1: Basic decorators (tags, summary, response)
+      - Level 2: Complete documentation (all applicable decorators)
 
-    Lower orphan counts = better automation coverage = less technical debt.
+    - Core Documentation: Essential decorators present
+      - Tags: Groups endpoints by category
+      - Summary: One-line description
+      - Response: At least one response definition
+
+    - Complete Documentation: All applicable decorators for endpoint
+      - Path parameters for variable paths
+      - Query parameters for query strings
+      - Request body for POST/PUT/PATCH
+      - Security requirements
+      - Examples and descriptions
 
     Args:
         endpoints: List of endpoint objects discovered from handler files
@@ -746,7 +760,7 @@ def _compute_coverage(
 
     Returns:
         Tuple of (summary_dict, endpoint_records_list, swagger_only_list, orphaned_components_list):
-        - summary_dict: Aggregate coverage metrics (now includes orphan/automation metrics)
+        - summary_dict: Aggregate coverage metrics (decorator usage focused)
         - endpoint_records_list: Per-endpoint coverage details
         - swagger_only_list: Operations in swagger but not in code (ORPHANED ENDPOINTS)
         - orphaned_components_list: Components in swagger but not from models (ORPHANED SCHEMAS)
@@ -763,7 +777,9 @@ def _compute_coverage(
                 swagger_ops.append((p, ml, opdef))
     endpoint_records = []
     ignored_set = {(p, m, f, fn) for (p, m, f, fn) in ignored}
-    with_block = 0
+    with_decorators = 0
+    with_core_decorators = 0
+    with_complete_decorators = 0
     definition_matches = 0
     total_considered = 0
     in_swagger = 0
@@ -772,12 +788,22 @@ def _compute_coverage(
     method_stats: Dict[str, Dict[str, int]] = {}
     file_stats: Dict[str, Dict[str, int]] = {}
     tag_coverage: Dict[str, int] = {}
-    endpoints_with_params = 0
-    endpoints_with_request_body = 0
-    endpoints_with_multiple_responses = 0
-    endpoints_with_examples = 0
-    endpoints_with_description = 0
-    endpoints_with_summary = 0
+    decorator_usage: Dict[str, int] = {}
+
+    # Decorator-specific counters
+    decorators_tags = 0
+    decorators_summary = 0
+    decorators_description = 0
+    decorators_response = 0
+    decorators_path_parameter = 0
+    decorators_query_parameter = 0
+    decorators_request_body = 0
+    decorators_security = 0
+    decorators_operation_id = 0
+    decorators_example = 0
+    decorators_external_docs = 0
+    decorators_header_parameter = 0
+    decorators_response_header = 0
 
     for ep in endpoints:
         is_ignored = any((ep.path, ep.method, ep.file, ep.function) == t for t in ignored_set)
@@ -789,49 +815,93 @@ def _compute_coverage(
                     'file': str(ep.file),
                     'function': ep.function,
                     'ignored': True,
-                    'has_openapi_block': bool(ep.meta),
+                    'has_decorators': False,
+                    'decorator_level': 0,
                     'in_swagger': False,
                     'definition_matches': False,
                     'missing_in_swagger': True,
+                    'decorators': [],
                 }
             )
             continue
         total_considered += 1
-        has_block = bool(ep.meta)
-        if has_block:
-            with_block += 1
 
-            # Track enhanced metrics for documented endpoints
-            if 'summary' in ep.meta:
-                endpoints_with_summary += 1
-            if 'description' in ep.meta:
-                endpoints_with_description += 1
-            if 'parameters' in ep.meta and ep.meta['parameters']:
-                endpoints_with_params += 1
-            if 'requestBody' in ep.meta:
-                endpoints_with_request_body += 1
-            if 'responses' in ep.meta and len(ep.meta.get('responses', {})) > 1:
-                endpoints_with_multiple_responses += 1
-            if 'tags' in ep.meta:
-                tags = ep.meta['tags'] if isinstance(ep.meta['tags'], list) else [ep.meta['tags']]
-                for tag in tags:
-                    tag_coverage[tag] = tag_coverage.get(tag, 0) + 1
+        # Check decorator metadata instead of YAML blocks
+        decorator_meta = ep.decorator_metadata or {}
+        has_decorators = bool(decorator_meta)
+        decorator_list = list(decorator_meta.keys())
 
-            # Check for examples in responses
-            responses = ep.meta.get('responses', {})
-            for resp_code, resp_def in responses.items():
-                if isinstance(resp_def, dict):
-                    content = resp_def.get('content', {})
-                    if any('example' in ct or 'examples' in ct for ct in content.values() if isinstance(ct, dict)):
-                        endpoints_with_examples += 1
-                        break
+        # Determine decorator coverage level
+        decorator_level = 0
+        if has_decorators:
+            with_decorators += 1
+            decorator_level = 1
+
+            # Check for core decorators (Level 1)
+            has_tags = 'tags' in decorator_meta
+            has_summary = 'summary' in decorator_meta
+            has_response = 'response' in decorator_meta
+
+            if has_tags and has_summary and has_response:
+                with_core_decorators += 1
+                decorator_level = 2
+
+                # Check for complete documentation (Level 2)
+                # Path parameters for variable paths
+                path_vars = ep.path.count('{')
+                has_path_params = 'pathParameter' in decorator_meta
+                if path_vars > 0 and not has_path_params:
+                    decorator_level = 1  # Missing required path parameters
+
+                # Query parameters if applicable
+                # Request body for POST/PUT/PATCH
+                method_needs_body = ep.method.lower() in ('post', 'put', 'patch')
+                has_request_body = 'requestBody' in decorator_meta
+                if method_needs_body and not has_request_body:
+                    decorator_level = 1  # Missing required request body
+
+                # If all checks pass, it's complete
+                if decorator_level == 2:
+                    with_complete_decorators += 1
+
+        # Track decorator usage counts
+        for decorator in decorator_list:
+            decorator_usage[decorator] = decorator_usage.get(decorator, 0) + 1
+
+        # Count specific decorator types
+        if 'tags' in decorator_meta:
+            decorators_tags += 1
+        if 'summary' in decorator_meta:
+            decorators_summary += 1
+        if 'description' in decorator_meta:
+            decorators_description += 1
+        if 'response' in decorator_meta:
+            decorators_response += 1
+        if 'pathParameter' in decorator_meta:
+            decorators_path_parameter += 1
+        if 'queryParameter' in decorator_meta:
+            decorators_query_parameter += 1
+        if 'requestBody' in decorator_meta:
+            decorators_request_body += 1
+        if 'security' in decorator_meta:
+            decorators_security += 1
+        if 'operationId' in decorator_meta:
+            decorators_operation_id += 1
+        if 'example' in decorator_meta:
+            decorators_example += 1
+        if 'externalDocs' in decorator_meta:
+            decorators_external_docs += 1
+        if 'headerParameter' in decorator_meta:
+            decorators_header_parameter += 1
+        if 'responseHeader' in decorator_meta:
+            decorators_response_header += 1
 
         # Track method statistics
         method_key = ep.method.upper()
         if method_key not in method_stats:
             method_stats[method_key] = {'total': 0, 'documented': 0, 'in_swagger': 0}
         method_stats[method_key]['total'] += 1
-        if has_block:
+        if has_decorators:
             method_stats[method_key]['documented'] += 1
 
         # Track file statistics
@@ -839,8 +909,17 @@ def _compute_coverage(
         if file_key not in file_stats:
             file_stats[file_key] = {'total': 0, 'documented': 0, 'in_swagger': 0}
         file_stats[file_key]['total'] += 1
-        if has_block:
+        if has_decorators:
             file_stats[file_key]['documented'] += 1
+
+        # Track tag coverage from decorators
+        if 'tags' in decorator_meta:
+            tags = decorator_meta['tags']
+            if isinstance(tags, list):
+                for tag in tags:
+                    tag_coverage[tag] = tag_coverage.get(tag, 0) + 1
+            else:
+                tag_coverage[tags] = tag_coverage.get(tags, 0) + 1
 
         swagger_op = swagger_paths.get(ep.path, {}).get(ep.method)
         op_matches = False
@@ -851,7 +930,7 @@ def _compute_coverage(
             generated = ep.to_openapi_operation()
             if swagger_op == generated:
                 op_matches = True
-                if has_block:
+                if has_decorators:
                     definition_matches += 1
         endpoint_records.append(
             {
@@ -860,10 +939,12 @@ def _compute_coverage(
                 'file': str(ep.file),
                 'function': ep.function,
                 'ignored': False,
-                'has_openapi_block': has_block,
+                'has_decorators': has_decorators,
+                'decorator_level': decorator_level,
                 'in_swagger': swagger_op is not None,
                 'definition_matches': op_matches,
                 'missing_in_swagger': swagger_op is None,
+                'decorators': decorator_list,
             }
         )
     swagger_only = []
@@ -875,17 +956,21 @@ def _compute_coverage(
     for (p, m, op) in swagger_ops:
         if (p, m) not in code_pairs:
             swagger_only.append({'path': p, 'method': m})
-    coverage_rate_handlers_with_block = (with_block / total_considered) if total_considered else 0.0
-    coverage_rate_handlers_in_swagger = (in_swagger / total_considered) if total_considered else 0.0
-    definition_match_rate = (definition_matches / with_block) if with_block else 0.0
 
-    # Calculate quality metrics rates
-    summary_rate = (endpoints_with_summary / with_block) if with_block else 0.0
-    description_rate = (endpoints_with_description / with_block) if with_block else 0.0
-    params_rate = (endpoints_with_params / with_block) if with_block else 0.0
-    request_body_rate = (endpoints_with_request_body / with_block) if with_block else 0.0
-    multi_response_rate = (endpoints_with_multiple_responses / with_block) if with_block else 0.0
-    examples_rate = (endpoints_with_examples / with_block) if with_block else 0.0
+    # Calculate decorator coverage rates
+    decorator_coverage_rate = (with_decorators / total_considered) if total_considered else 0.0
+    core_decorator_coverage_rate = (with_core_decorators / total_considered) if total_considered else 0.0
+    complete_decorator_coverage_rate = (with_complete_decorators / total_considered) if total_considered else 0.0
+
+    coverage_rate_handlers_in_swagger = (in_swagger / total_considered) if total_considered else 0.0
+    definition_match_rate = (definition_matches / with_decorators) if with_decorators else 0.0
+
+    # Calculate decorator usage rates
+    decorator_rates = {}
+    for decorator_name in decorator_usage.keys():
+        count = decorator_usage[decorator_name]
+        rate = (count / total_considered) if total_considered else 0.0
+        decorator_rates[f"rate_{decorator_name}"] = rate
 
     # ============================================================================
     # NEW: Calculate ORPHAN/AUTOMATION metrics (focus on unmanaged items)
@@ -926,34 +1011,42 @@ def _compute_coverage(
     summary = {
         'handlers_total': total_considered,
         'ignored_total': len(ignored),
-        'with_openapi_block': with_block,
-        'without_openapi_block': total_considered - with_block,
+        'with_decorators': with_decorators,
+        'with_core_decorators': with_core_decorators,
+        'with_complete_decorators': with_complete_decorators,
+        'without_decorators': total_considered - with_decorators,
         'swagger_operations_total': len(swagger_ops),
         'swagger_only_operations': len(swagger_only),
         'handlers_in_swagger': in_swagger,
         'definition_matches': definition_matches,
-        'coverage_rate_handlers_with_block': coverage_rate_handlers_with_block,
+        'decorator_coverage_rate': decorator_coverage_rate,
+        'core_decorator_coverage_rate': core_decorator_coverage_rate,
+        'complete_decorator_coverage_rate': complete_decorator_coverage_rate,
         'coverage_rate_handlers_in_swagger': coverage_rate_handlers_in_swagger,
         'operation_definition_match_rate': definition_match_rate,
-        # Quality metrics
-        'endpoints_with_summary': endpoints_with_summary,
-        'endpoints_with_description': endpoints_with_description,
-        'endpoints_with_parameters': endpoints_with_params,
-        'endpoints_with_request_body': endpoints_with_request_body,
-        'endpoints_with_multiple_responses': endpoints_with_multiple_responses,
-        'endpoints_with_examples': endpoints_with_examples,
-        'quality_rate_summary': summary_rate,
-        'quality_rate_description': description_rate,
-        'quality_rate_parameters': params_rate,
-        'quality_rate_request_body': request_body_rate,
-        'quality_rate_multiple_responses': multi_response_rate,
-        'quality_rate_examples': examples_rate,
+        # Decorator usage counts
+        'decorators_tags': decorators_tags,
+        'decorators_summary': decorators_summary,
+        'decorators_description': decorators_description,
+        'decorators_response': decorators_response,
+        'decorators_path_parameter': decorators_path_parameter,
+        'decorators_query_parameter': decorators_query_parameter,
+        'decorators_request_body': decorators_request_body,
+        'decorators_security': decorators_security,
+        'decorators_operation_id': decorators_operation_id,
+        'decorators_example': decorators_example,
+        'decorators_external_docs': decorators_external_docs,
+        'decorators_header_parameter': decorators_header_parameter,
+        'decorators_response_header': decorators_response_header,
+        # Decorator usage rates
+        **decorator_rates,
         # Breakdown statistics
         'method_statistics': method_stats,
         'file_statistics': file_stats,
         'tag_coverage': tag_coverage,
         'unique_tags': len(tag_coverage),
-        # NEW: Automation/orphan metrics (primary focus)
+        'decorator_usage': decorator_usage,
+        # Automation/orphan metrics (secondary focus)
         'total_swagger_components': total_swagger_components,
         'automated_components': automated_components,
         'orphaned_components_count': len(orphaned_components),

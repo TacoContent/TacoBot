@@ -347,10 +347,11 @@ def _extract_response(decorator: ast.Call) -> Dict[str, Any]:
                 result["description"] = value_node.value
 
         elif key == "schema":
-            # schema=ModelClass → get class name
-            if isinstance(value_node, ast.Name):
-                schema_name = value_node.id
-                result["content"] = {content_type: {"schema": {"$ref": f"#/components/schemas/{schema_name}"}}}
+            # Only process schema for valid schema references (Name, Subscript, etc.)
+            # Skip string literals and other invalid schema types
+            if isinstance(value_node, (ast.Name, ast.Subscript, ast.BinOp)):
+                schema = _extract_schema_reference(value_node)
+                result["content"] = {content_type: {"schema": schema}}
 
     return result
 

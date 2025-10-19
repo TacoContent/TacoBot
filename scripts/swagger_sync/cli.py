@@ -531,26 +531,28 @@ def main() -> None:
         print(prefix + ":")
         print(f"  Handlers considered:        {cs['handlers_total']}")
         print(f"  Ignored handlers:           {cs['ignored_total']}")
-        print(f"  With doc blocks:            {cs['with_openapi_block']} ({cs['coverage_rate_handlers_with_block']:.1%})")
-        print(f"  Without doc blocks:         {cs['without_openapi_block']}")
+        print(f"  With @openapi decorators:   {cs['with_decorators']} ({cs['decorator_coverage_rate']:.1%})")
+        print(f"  With core decorators:       {cs['with_core_decorators']} ({cs['core_decorator_coverage_rate']:.1%})")
+        print(f"  With complete decorators:   {cs['with_complete_decorators']} ({cs['complete_decorator_coverage_rate']:.1%})")
+        print(f"  Without decorators:         {cs['without_decorators']}")
         print(f"  In swagger (handlers):      {cs['handlers_in_swagger']} ({cs['coverage_rate_handlers_in_swagger']:.1%})")
-        print(f"  Definition matches:         {cs['definition_matches']} / {cs['with_openapi_block']} ({cs['operation_definition_match_rate']:.1%})")
+        print(f"  Definition matches:         {cs['definition_matches']} / {cs['with_decorators']} ({cs['operation_definition_match_rate']:.1%})")
         print(f"  Swagger only operations:    {cs['swagger_only_operations']}")
         print(f"  Model components generated: {cs.get('model_components_generated', 0)}")
         print(f"  Schemas not generated:      {cs.get('model_components_existing_not_generated', 0)}")
         suggestions: List[str] = []
-        if cs['without_openapi_block'] > 0:
-            suggestions.append("Add >>>openapi <<<openapi blocks for undocumented handlers.")
+        if cs['without_decorators'] > 0:
+            suggestions.append("Add @openapi decorators for undocumented handlers.")
         if cs['swagger_only_operations'] > 0:
             suggestions.append("Remove or implement swagger-only paths, or mark related handlers with @openapi.ignore() decorator if intentional.")
         if suggestions:
             print("  Suggestions:")
             for s in suggestions:
                 print(f"    - {s}")
-        if args.show_missing_blocks and cs['without_openapi_block']:
-            print("\n  Endpoints missing >>>openapi <<<openapi block:")
+        if args.show_missing_blocks and cs['without_decorators']:
+            print("\n  Endpoints missing @openapi decorators:")
             for rec in coverage_records:
-                if not rec['ignored'] and not rec['has_openapi_block']:
+                if not rec['ignored'] and not rec['has_decorators']:
                     print(f"    - {rec['method'].upper()} {rec['path']} ({rec['file']}:{rec['function']})")
         if args.verbose_coverage:
             print("\n  Per-endpoint detail:")
@@ -558,8 +560,8 @@ def main() -> None:
                 flags: List[str] = []
                 if rec['ignored']:
                     flags.append('IGNORED')
-                if rec['has_openapi_block']:
-                    flags.append('BLOCK')
+                if rec['has_decorators']:
+                    flags.append('DECORATORS')
                 if rec['in_swagger']:
                     flags.append('SWAGGER')
                 if rec['definition_matches']:
@@ -606,7 +608,7 @@ def main() -> None:
         threshold = args.fail_on_coverage_below
         if threshold > 1:
             threshold = threshold / 100.0
-        actual = coverage_summary['coverage_rate_handlers_with_block']
+        actual = coverage_summary['decorator_coverage_rate']
         if actual + 1e-12 < threshold:
             coverage_fail = True
             msg = f"Coverage threshold not met: {actual:.2%} < {threshold:.2%}"
@@ -687,8 +689,8 @@ def main() -> None:
 
         # Suggestions (existing, enhanced with orphaned components)
         suggestions_md: List[str] = []
-        if cs['without_openapi_block'] > 0:
-            suggestions_md.append("Add `>>>openapi <<<openapi` blocks for handlers missing documentation.")
+        if cs['without_decorators'] > 0:
+            suggestions_md.append("Add @openapi decorators for handlers missing documentation.")
         if cs['swagger_only_operations'] > 0:
             suggestions_md.append("Remove, implement, or ignore swagger-only operations.")
         if cs.get('orphaned_components_count', 0) > 0:
@@ -732,8 +734,8 @@ def main() -> None:
                 flags: List[str] = []
                 if rec['ignored']:
                     flags.append('IGNORED')
-                if rec['has_openapi_block']:
-                    flags.append('BLOCK')
+                if rec['has_decorators']:
+                    flags.append('DECORATORS')
                 if rec['in_swagger']:
                     flags.append('SWAGGER')
                 if rec['definition_matches']:
@@ -803,7 +805,7 @@ def main() -> None:
         if badge_path:
             try:
                 badge_path.parent.mkdir(parents=True, exist_ok=True)
-                generate_coverage_badge(coverage_summary['coverage_rate_handlers_with_block'], badge_path)
+                generate_coverage_badge(coverage_summary['decorator_coverage_rate'], badge_path)
             except Exception as e:
                 print(f"WARNING: Failed to generate badge: {e}", file=sys.stderr)
 
@@ -845,6 +847,6 @@ def main() -> None:
         if badge_path:
             try:
                 badge_path.parent.mkdir(parents=True, exist_ok=True)
-                generate_coverage_badge(coverage_summary['coverage_rate_handlers_with_block'], badge_path)
+                generate_coverage_badge(coverage_summary['decorator_coverage_rate'], badge_path)
             except Exception as e:
                 print(f"WARNING: Failed to generate badge: {e}", file=sys.stderr)

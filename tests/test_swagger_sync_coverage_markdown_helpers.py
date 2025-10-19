@@ -110,12 +110,12 @@ class TestBuildCoverageSummaryMarkdown:
     def test_with_openapi_block_includes_emoji(self):
         """Should include emoji for openapi block coverage."""
         summary = self._minimal_summary()
-        summary['with_openapi_block'] = 15
+        summary['with_decorators'] = 15
         summary['handlers_total'] = 15
-        summary['coverage_rate_handlers_with_block'] = 1.0
+        summary['decorator_coverage_rate'] = 1.0
         lines = _build_coverage_summary_markdown(summary)
         line_str = '\n'.join(lines)
-        assert 'With OpenAPI block' in line_str
+        assert 'With @openapi decorators' in line_str
         assert '🟢' in line_str  # 100% should be green
 
     def test_in_swagger_includes_emoji(self):
@@ -133,7 +133,7 @@ class TestBuildCoverageSummaryMarkdown:
         """Should include emoji for definition match rate."""
         summary = self._minimal_summary()
         summary['definition_matches'] = 8
-        summary['with_openapi_block'] = 10
+        summary['with_decorators'] = 10
         summary['operation_definition_match_rate'] = 0.8
         lines = _build_coverage_summary_markdown(summary)
         line_str = '\n'.join(lines)
@@ -205,11 +205,11 @@ class TestBuildCoverageSummaryMarkdown:
         return {
             'handlers_total': 15,
             'ignored_total': 0,
-            'with_openapi_block': 15,
+            'with_decorators': 15,
             'handlers_in_swagger': 15,
             'definition_matches': 15,
             'swagger_only_operations': 0,
-            'coverage_rate_handlers_with_block': 1.0,
+            'decorator_coverage_rate': 1.0,
             'coverage_rate_handlers_in_swagger': 1.0,
             'operation_definition_match_rate': 1.0,
         }
@@ -331,9 +331,9 @@ class TestBuildQualityMetricsMarkdown:
     def test_summary_row(self):
         """Should include summary quality row with emoji."""
         summary = self._minimal_summary()
-        summary['endpoints_with_summary'] = 10
-        summary['with_openapi_block'] = 10
-        summary['quality_rate_summary'] = 1.0
+        summary['decorators_summary'] = 10
+        summary['with_decorators'] = 10
+        summary['rate_summary'] = 1.0
         lines = _build_quality_metrics_markdown(summary)
         line_str = '\n'.join(lines)
         assert '📝 Summary' in line_str
@@ -379,19 +379,23 @@ class TestBuildQualityMetricsMarkdown:
     def _minimal_summary():
         """Create minimal valid summary dict."""
         return {
-            'with_openapi_block': 15,
-            'endpoints_with_summary': 15,
-            'endpoints_with_description': 12,
-            'endpoints_with_parameters': 10,
-            'endpoints_with_request_body': 5,
-            'endpoints_with_multiple_responses': 8,
-            'endpoints_with_examples': 3,
-            'quality_rate_summary': 1.0,
-            'quality_rate_description': 0.8,
-            'quality_rate_parameters': 0.67,
-            'quality_rate_request_body': 0.33,
-            'quality_rate_multiple_responses': 0.53,
-            'quality_rate_examples': 0.2,
+            'with_decorators': 15,
+            'decorators_summary': 15,
+            'decorators_description': 12,
+            'decorators_path_parameter': 6,
+            'decorators_query_parameter': 3,
+            'decorators_header_parameter': 1,
+            'decorators_request_body': 5,
+            'decorators_response': 8,
+            'decorators_example': 3,
+            'rate_summary': 1.0,
+            'rate_description': 0.8,
+            'rate_pathParameter': 0.4,
+            'rate_queryParameter': 0.2,
+            'rate_headerParameter': 0.067,
+            'rate_requestBody': 0.33,
+            'rate_response': 0.53,
+            'rate_example': 0.2,
         }
 
 

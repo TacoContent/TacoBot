@@ -1,3 +1,4 @@
+from http import HTTPMethod
 import inspect
 import json
 import os
@@ -5,6 +6,8 @@ import typing
 
 import discord
 from lib import discordhelper
+from lib.models import openapi
+from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.models.DiscordMessage import DiscordMessage
@@ -30,11 +33,70 @@ class GuildMessagesApiHandler(BaseHttpHandler):
         self._module = os.path.basename(__file__)[:-3]
         self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
-    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/channel/{{channel_id}}/messages", method="GET")
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/channel/{{channel_id}}/messages", method=HTTPMethod.GET)
+    @openapi.tags("guilds", "channels", "messages")
+    @openapi.summary("List recent messages from a text-capable channel")
+    @openapi.description(
+        "Returns up to the most recent 100 messages (default 50) for the specified text-capable channel in the guild."
+    )
+    @openapi.pathParameter(
+        name="guild_id",
+        description="The ID of the guild containing the channel.",
+        schema=str,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.pathParameter(
+        name="channel_id",
+        description="The ID of the text-capable channel to retrieve messages from.",
+        schema=str,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.queryParameter(
+        name="limit",
+        description="The number of most recent messages to retrieve (1-100, default 50).",
+        schema=int,
+        required=False,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        200,
+        description="An array of DiscordMessage objects representing the most recent messages, ordered newest first.",
+        contentType="application/json",
+        schema=typing.List[DiscordMessage],
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        400,
+        description="Bad Request - Missing/invalid IDs or unsupported channel type / bad limit.",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized - Missing or invalid authentication.",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        404,
+        description="Not Found - Guild or channel not found.",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal Server Error - Unexpected error occurred.",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.managed()
     async def get_channel_messages(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """List recent messages from a text-capable channel.
 
-        @openapi: ignore
         Path: /api/v1/guild/{guild_id}/channel/{channel_id}/messages?limit=50
         Method: GET
         Query Params:

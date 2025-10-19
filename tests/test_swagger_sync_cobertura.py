@@ -14,7 +14,16 @@ from scripts import swagger_sync as se
 
 def _make_handler(tmp: pathlib.Path) -> None:
     (tmp / '__init__.py').write_text('', encoding='utf-8')
-    code = """from httpserver.EndpointDecorators import uri_mapping\nclass H:\n    @uri_mapping('/cov-test', method='GET')\n    def h(self, request):\n        \"\"\"Doc\n\n>>>openapi\nsummary: Coverage Test\nresponses: { 200: { description: OK } }\n<<<openapi\n\"\"\"\n        pass\n"""
+    code = """from httpserver.EndpointDecorators import uri_mapping
+from bot.lib.models.openapi import openapi
+class H:
+    @uri_mapping('/cov-test', method='GET')
+    @openapi.summary("Coverage Test")
+    @openapi.response(200, description="OK")
+    def h(self, request):
+        \"\"\"Doc\"\"\"
+        pass
+"""
     (tmp / 'Handler.py').write_text(code, encoding='utf-8')
 
 

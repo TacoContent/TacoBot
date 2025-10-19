@@ -67,9 +67,18 @@ paths:
       security:
         - X-API-TOKEN: []
         - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
+      summary: List Guilds
       responses:
         '200':
           description: Successful guild list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordGuild'
         '401':
           description: Unauthorized
           content:
@@ -82,9 +91,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-      summary: List Guilds
-      tags:
-        - guilds
   /api/v1/guilds/lookup/{guild_id}:
     get:
       security:
@@ -134,6 +140,40 @@ paths:
             type: string
   /api/v1/guilds/lookup/batch/{guild_ids}:
     get:
+      description: Lookup multiple guilds by ID.
+      security:
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
+      summary: Batch Guild Lookup
+      responses:
+        '200':
+          description: Successful batch guild lookup
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordGuild'
+        '400':
+          description: Bad request (invalid guild IDs)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
       parameters:
         - in: path
           required: true
@@ -141,13 +181,24 @@ paths:
           description: Comma-separated list of guild IDs to look up.
           schema:
             type: string
+  /api/v1/guilds/lookup/batch:
+    get:
       description: Lookup multiple guilds by ID.
-      security:
+      security: &id001
         - X-API-TOKEN: []
         - X-TACOBOT-TOKEN: []
+      tags: &id002
+        - guilds
+      summary: Batch Guild Lookup
       responses:
         '200':
           description: Successful batch guild lookup
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordGuild'
         '400':
           description: Bad request (invalid guild IDs)
           content:
@@ -166,47 +217,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-      summary: Batch Guild Lookup
-      tags:
-        - guilds
-  /api/v1/guilds/lookup/batch:
-    get:
-      parameters: &id001
+      parameters: &id003
         - in: query
           name: ids
           description: Guild IDs to look up (can be specified multiple times).
           required: false
           schema:
             type: string
-      description: Lookup multiple guilds by ID.
-      security: &id002
-        - X-API-TOKEN: []
-        - X-TACOBOT-TOKEN: []
-      responses:
-        '200':
-          description: Successful batch guild lookup
-        '400':
-          description: Bad request (invalid guild IDs)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorStatusCodePayload'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorStatusCodePayload'
-        5XX:
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorStatusCodePayload'
-      summary: Batch Guild Lookup
-      tags: &id003
-        - guilds
     post:
+      description: Lookup multiple guilds by ID.
+      security: *id001
+      tags: *id002
       requestBody:
         description: Request body for batch guild lookup by IDs.
         required: false
@@ -218,12 +239,16 @@ paths:
                   items:
                     type: string
                 - $ref: '#/components/schemas/GuildItemIdBatchRequestBody'
-      parameters: *id001
-      description: Lookup multiple guilds by ID.
-      security: *id002
+      summary: Batch Guild Lookup
       responses:
         '200':
           description: Successful batch guild lookup
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordGuild'
         '400':
           description: Bad request (invalid guild IDs)
           content:
@@ -242,27 +267,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-      summary: Batch Guild Lookup
-      tags: *id003
+      parameters: *id003
   /api/v1/guild/{guild_id}/categories:
     get:
+      description: Returns all channel categories in the guild. Each category object embeds its child channels.
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
       tags:
         - guilds
         - channels
+      summary: List guild categories (with channels)
       responses:
         '200':
           description: Successful response with list of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordCategory'
         '404':
           description: Guild not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-      summary: List guild categories (with channels)
-      description: Returns all channel categories in the guild. Each category object embeds its child channels.
       parameters:
         - in: path
           required: true
@@ -368,6 +398,13 @@ paths:
             type: string
   /api/v1/guild/{guild_id}/channels/batch/ids:
     post:
+      description: Retrieve multiple channels by their IDs.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
+        - channels
       requestBody:
         required: false
         content:
@@ -378,15 +415,16 @@ paths:
                   items:
                     type: string
                 - $ref: '#/components/schemas/GuildItemIdBatchRequestBody'
-      security:
-        - X-AUTH-TOKEN: []
-        - X-TACOBOT-TOKEN: []
-      tags:
-        - guilds
-        - channels
+      summary: Batch fetch channels by IDs
       responses:
         '200':
           description: Successful response with list of channels
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordChannel'
         '400':
           description: Missing/invalid guild_id or malformed body
           content:
@@ -411,8 +449,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-      summary: Batch fetch channels by IDs
-      description: Retrieve multiple channels by their IDs.
       parameters:
         - in: path
           required: true
@@ -428,35 +464,15 @@ paths:
             type: string
   /api/v1/guild/{guild_id}/channel/{channel_id}/messages:
     get:
+      description: Returns up to the most recent 100 messages (default 50) for the specified text-capable channel in the guild.
       tags:
         - guilds
         - channels
         - messages
-      summary: List recent messages in a channel
-      description: Returns up to the most recent 100 messages (default 50) for the specified text channel.
-      parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: channel_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: limit
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 50
-          description: Max number of most recent messages to return (1-100, default 50)
+      summary: List recent messages from a text-capable channel
       responses:
         '200':
-          description: OK
+          description: An array of DiscordMessage objects representing the most recent messages, ordered newest first.
           content:
             application/json:
               schema:
@@ -464,17 +480,48 @@ paths:
                 items:
                   $ref: '#/components/schemas/DiscordMessage'
         '400':
-          description: Invalid guild/channel id or channel unsupported
+          description: Bad Request - Missing/invalid IDs or unsupported channel type / bad limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized - Missing or invalid authentication.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
         '404':
-          description: Guild or channel not found
+          description: Not Found - Guild or channel not found.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal Server Error - Unexpected error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild containing the channel.
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: channel_id
+          description: The ID of the text-capable channel to retrieve messages from.
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: The number of most recent messages to retrieve (1-100, default 50).
+          required: false
+          schema:
+            type: integer
   /api/v1/guild/{guild_id}/channel/{channel_id}/message/{message_id}:
     get:
       tags:
@@ -643,12 +690,23 @@ paths:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
   /api/v1/guild/{guild_id}/emojis:
     get:
+      description: Returns all custom emojis for the specified guild.
       security:
         - X-API-TOKEN: []
         - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
+        - emojis
+      summary: Get the list of emojis for a guild
       responses:
         '200':
           description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordEmoji'
         '400':
           description: Invalid guild id
           content:
@@ -673,8 +731,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-      summary: Get the list of emojis for a guild
-      description: Returns all custom emojis for the specified guild.
       parameters:
         - in: path
           required: true
@@ -682,9 +738,6 @@ paths:
           description: The ID of the guild to retrieve emojis from.
           schema:
             type: string
-      tags:
-        - guilds
-        - emojis
   /api/v1/guild/{guild_id}/emoji/id/{emoji_id}:
     get:
       parameters:
@@ -795,33 +848,13 @@ paths:
             type: string
   /api/v1/guild/{guild_id}/emojis/ids/batch:
     post:
-      responses:
-        '200':
-          description: Successful operation
-        '400':
-          description: Invalid guild id or request body
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorStatusCodePayload'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorStatusCodePayload'
-        '404':
-          description: Guild not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorStatusCodePayload'
-        5XX:
-          description: Server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Fetch multiple emojis by their IDs in a single request.
+      security:
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
+        - emojis
       requestBody:
         description: List of emoji IDs to fetch.
         content:
@@ -833,43 +866,15 @@ paths:
                     type: string
                 - $ref: '#/components/schemas/GuildItemIdBatchRequestBody'
       summary: Batch fetch emojis by IDs
-      security:
-        - X-API-TOKEN: []
-        - X-TACOBOT-TOKEN: []
-      description: Fetch multiple emojis by their IDs in a single request.
-      tags:
-        - guilds
-        - emojis
-      parameters:
-        - in: path
-          required: true
-          name: guild_id
-          description: The ID of the guild to retrieve emojis from.
-          schema:
-            type: string
-  /api/v1/guild/{guild_id}/emojis/names/batch:
-    post:
-      parameters:
-        - in: path
-          required: true
-          name: guild_id
-          description: The ID of the guild to retrieve emojis from.
-          schema:
-            type: string
-      requestBody:
-        description: List of emoji names to fetch.
-        required: false
-        content:
-          application/json:
-            schema:
-              oneOf:
-                - type: array
-                  items:
-                    type: string
-                - $ref: '#/components/schemas/GuildItemNameBatchRequestBody'
       responses:
         '200':
           description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordEmoji'
         '400':
           description: Invalid guild id or request body
           content:
@@ -894,14 +899,74 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-      tags:
-        - guilds
-        - emojis
-      summary: Batch fetch emojis by names
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild to retrieve emojis from.
+          schema:
+            type: string
+  /api/v1/guild/{guild_id}/emojis/names/batch:
+    post:
       description: Fetch multiple emojis by their names in a single request.
       security:
         - X-API-TOKEN: []
         - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
+        - emojis
+      requestBody:
+        description: List of emoji names to fetch.
+        required: false
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: array
+                  items:
+                    type: string
+                - $ref: '#/components/schemas/GuildItemNameBatchRequestBody'
+      summary: Batch fetch emojis by names
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordEmoji'
+        '400':
+          description: Invalid guild id or request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild to retrieve emojis from.
+          schema:
+            type: string
   /api/v1/guild/{guild_id}/roles:
     get:
       tags:
@@ -1511,29 +1576,22 @@ paths:
                 $ref: '#/components/schemas/MinecraftPlayerEventPayload'
   /api/v1/permissions/{guildId}/{userId}:
     get:
-      parameters:
-        - in: path
-          required: true
-          name: guildId
-          schema:
-            type: string
-          description: Discord guild ID
-        - in: path
-          required: true
-          name: userId
-          schema:
-            type: string
-          description: Discord user ID
+      description: List permissions for a user.
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
-      description: List permissions for a user.
-      summary: Get user permissions
       tags:
         - permissions
+      summary: Get user permissions
       responses:
         '200':
           description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
         '400':
           description: Bad request
           content:
@@ -1552,6 +1610,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+      parameters:
+        - in: path
+          required: true
+          name: guildId
+          schema:
+            type: string
+          description: Discord guild ID
+        - in: path
+          required: true
+          name: userId
+          schema:
+            type: string
+          description: Discord user ID
   /api/v1/permissions/{guildId}/{userId}/{permission}:
     post:
       responses:
