@@ -334,24 +334,20 @@ paths:
       description: Returns channels that are not within a category. Use categories endpoint for nested channels.
   /api/v1/guild/{guild_id}/channels/batch/ids:
     post:
-      parameters:
-        - in: path
-          name: guild_id
-          description: Discord guild (server) ID
-          schema:
-            type: string
-          required: true
-        - in: query
-          name: ids
-          description: Repeatable channel ID query parameter
-          required: false
-          schema:
-            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuildChannelsBatchRequestBody'
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
-      requestBody:
-        required: false
+      tags:
+        - guilds
+        - channels
+      summary: Batch fetch channels by IDs
+      description: Retrieve multiple channels by their IDs.
       responses:
         '200':
           description: OK
@@ -365,11 +361,19 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/ErrorStatusCodePayload'}
-      tags:
-        - guilds
-        - channels
-      summary: Batch fetch channels by IDs
-      description: Retrieve multiple channels by their IDs.
+      parameters:
+        - in: path
+          name: guild_id
+          description: Discord guild (server) ID
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: ids
+          description: Repeatable channel ID query parameter
+          required: false
+          schema:
+            type: string
   /api/v1/guild/{guild_id}/channel/{channel_id}/messages:
     get:
       tags:

@@ -369,7 +369,8 @@ class GuildChannelsApiHandler(BaseHttpHandler):
         required=False,
         contentType="application/json",
         methods=[HTTPMethod.POST],
-        schema=typing.Union[typing.List[str], GuildChannelsBatchRequestBody]
+        # schema=typing.Union[typing.List[str], GuildChannelsBatchRequestBody]
+        schema=GuildChannelsBatchRequestBody
     )
     def get_guild_channels_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Batch fetch specific channels by ID.
