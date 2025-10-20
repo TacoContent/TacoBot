@@ -804,11 +804,11 @@ def _extract_schema_reference(schema_node: ast.expr) -> Dict[str, Any]:
         # Otherwise it's a model reference
         return {"$ref": f"#/components/schemas/{schema_node.id}"}
 
-    # Handle typing.Union[A, B, C] or typing.List[T]
+    # Handle typing.Union[A, B, C] or typing.List[T] or typing.Optional[T]
     if isinstance(schema_node, ast.Subscript):
         # Check if it's a Union type
         if isinstance(schema_node.value, ast.Attribute):
-            # typing.Union, typing.List, etc.
+            # typing.Union, typing.List, typing.Optional, etc.
             if (isinstance(schema_node.value.value, ast.Name) and
                 schema_node.value.value.id == "typing" and
                 schema_node.value.attr == "Union"):
@@ -816,10 +816,22 @@ def _extract_schema_reference(schema_node: ast.expr) -> Dict[str, Any]:
                 return _extract_union_schemas(schema_node.slice)
             elif (isinstance(schema_node.value.value, ast.Name) and
                   schema_node.value.value.id == "typing" and
+                  schema_node.value.attr == "Optional"):
+                # typing.Optional[T] is equivalent to Union[T, None]
+                # Extract the wrapped type and create oneOf with None
+                wrapped_schema = _extract_schema_reference(schema_node.slice)
+                return {"oneOf": [wrapped_schema, {"type": "null"}]}
+            elif (isinstance(schema_node.value.value, ast.Name) and
+                  schema_node.value.value.id == "typing" and
                   schema_node.value.attr == "List"):
                 # typing.List[T]
                 item_schema = _extract_schema_reference(schema_node.slice)
                 return {"type": "array", "items": item_schema}
+            elif (isinstance(schema_node.value.value, ast.Name) and
+                  schema_node.value.value.id == "typing" and
+                  schema_node.value.attr == "Dict"):
+                # typing.Dict[K, V] - extract value type for additionalProperties
+                return _extract_dict_schema(schema_node.slice)
 
         # Handle built-in generics: list[T], dict[K, V]
         if isinstance(schema_node.value, ast.Name):
@@ -827,8 +839,8 @@ def _extract_schema_reference(schema_node: ast.expr) -> Dict[str, Any]:
                 item_schema = _extract_schema_reference(schema_node.slice)
                 return {"type": "array", "items": item_schema}
             elif schema_node.value.id == "dict":
-                # For dict, we'll just use object type
-                return {"type": "object"}
+                # dict[K, V] - extract value type for additionalProperties
+                return _extract_dict_schema(schema_node.slice)
 
     # Handle A | B union syntax (Python 3.10+)
     if isinstance(schema_node, ast.BinOp) and isinstance(schema_node.op, ast.BitOr):
@@ -836,6 +848,40 @@ def _extract_schema_reference(schema_node: ast.expr) -> Dict[str, Any]:
 
     # Fallback: try to extract as a simple type
     return _extract_schema_type(schema_node)
+
+
+def _extract_dict_schema(slice_node: ast.expr) -> Dict[str, Any]:
+    """Extract OpenAPI schema for Dict/dict type with additionalProperties.
+
+    For Dict[str, T] or dict[str, T], generates schema with additionalProperties
+    following OpenAPI dictionary/hashmap specification.
+
+    Args:
+        slice_node: AST node representing the Dict's type arguments (key, value)
+
+    Returns:
+        Dictionary with type: object and additionalProperties for value type
+
+    Examples:
+        Dict[str, str] → {'type': 'object', 'additionalProperties': {'type': 'string'}}
+        Dict[str, List[Model]] → {'type': 'object', 'additionalProperties': {'type': 'array', 'items': {'$ref': '...'}}}
+        Dict[str, Model] → {'type': 'object', 'additionalProperties': {'$ref': '#/components/schemas/Model'}}
+
+    Note:
+        Only string keys are supported (OpenAPI limitation). Value can be any schema type.
+    """
+    # Dict has two args: key type and value type
+    if isinstance(slice_node, ast.Tuple) and len(slice_node.elts) >= 2:
+        # First arg is key type (should be str), second is value type
+        value_node = slice_node.elts[1]
+        value_schema = _extract_schema_reference(value_node)
+        return {
+            "type": "object",
+            "additionalProperties": value_schema
+        }
+
+    # Fallback: if slice is not a tuple or has wrong number of args, return generic object
+    return {"type": "object"}
 
 
 def _extract_union_schemas(slice_node: ast.expr) -> Dict[str, Any]:

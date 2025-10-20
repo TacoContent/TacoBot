@@ -588,33 +588,13 @@ paths:
       description: Returns the specified message from the text-capable channel in the guild.
   /api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/ids:
     post:
+      description: Fetches multiple messages by their IDs from the specified text-capable channel in the guild.
       tags:
         - guilds
         - channels
         - messages
-      summary: Batch fetch messages by IDs
-      description: Retrieve multiple messages. Accepts an array body or object with ids property; can also accept repeated query param ids.
-      parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: channel_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: ids
-          in: query
-          required: false
-          schema:
-            type: array
-            items:
-              type: string
-          description: Repeatable message ID query parameter
       requestBody:
-        required: false
+        description: Request body containing an array of message IDs or an object with an 'ids' field.
         content:
           application/json:
             schema:
@@ -622,17 +602,14 @@ paths:
                 - type: array
                   items:
                     type: string
-                - type: object
-                  properties:
-                    ids:
-                      type: array
-                      items:
-                        type: string
-                  required:
-                    - ids
+                - $ref: '#/components/schemas/GuildItemIdBatchRequestBody'
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      summary: Batch fetch multiple messages by IDs
       responses:
         '200':
-          description: OK
+          description: An array of DiscordMessage objects representing the fetched messages.
           content:
             application/json:
               schema:
@@ -640,55 +617,60 @@ paths:
                 items:
                   $ref: '#/components/schemas/DiscordMessage'
         '400':
-          description: Invalid ids or malformed body
+          description: Bad Request - Missing/invalid IDs or invalid JSON body.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized - Missing or invalid authentication.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
         '404':
-          description: Guild or channel not found
+          description: Not Found - Guild or channel not found.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal Server Error - Unexpected error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild containing the channel.
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: channel_id
+          description: The ID of the text-capable channel to retrieve messages from.
+          schema:
+            type: string
   /api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/reactions:
     post:
-      tags:
-        - guilds
-        - channels
-        - messages
-        - reactions
-      summary: Get reactions for a batch of messages (per-message grouping)
-      description: 'Returns a mapping of message IDs to their reactions arrays. Each reactions array contains
-
-        objects with the emoji (custom emoji mention format or unicode) and the count for that message.
-
-        Missing / inaccessible messages are silently omitted. Duplicate message IDs are de-duplicated.
-
-        '
-      parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: channel_id
-          in: path
-          required: true
-          schema:
-            type: string
       requestBody:
-        required: true
+        description: Request body containing an array of message IDs or an object with an 'ids' field.
         content:
           application/json:
             schema:
-              type: array
-              items:
-                type: string
-              description: Array of message IDs
+              oneOf:
+                - type: array
+                  items:
+                    type: string
+                - $ref: '#/components/schemas/GuildItemIdBatchRequestBody'
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
       responses:
         '200':
-          description: OK
+          description: A JSON object keyed by message ID with arrays of DiscordMessageReaction objects.
           content:
             application/json:
               schema:
@@ -698,17 +680,54 @@ paths:
                   items:
                     $ref: '#/components/schemas/DiscordMessageReaction'
         '400':
-          description: Invalid ids or malformed body
+          description: Bad Request - Missing/invalid IDs or invalid JSON body.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized - Missing or invalid authentication.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
         '404':
-          description: Guild or channel not found
+          description: Not Found - Guild or channel not found.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal Server Error - Unexpected error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Fetches reactions for multiple messages by their IDs from the specified text-capable channel in the guild.
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild containing the channel.
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: channel_id
+          description: The ID of the text-capable channel to retrieve messages from.
+          schema:
+            type: string
+        - in: query
+          name: ids
+          description: Message IDs to fetch reactions for (merged with body / de-duped preserving order).
+          schema:
+            type: string
+      tags:
+        - guilds
+        - channels
+        - messages
+        - reactions
+      summary: Batch fetch reactions grouped per message
   /api/v1/guild/{guild_id}/emojis:
     get:
       description: Returns all custom emojis for the specified guild.

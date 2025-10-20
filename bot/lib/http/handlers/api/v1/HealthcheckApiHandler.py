@@ -27,12 +27,15 @@ Design Notes:
         JSON object enumerating subsystem statuses.
 """
 
+from http import HTTPMethod
 import inspect
 import os
 import traceback
 import typing
 
 from lib import discordhelper
+from lib.models import ErrorStatusCodePayload
+from lib.models.openapi import openapi
 
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
@@ -67,9 +70,29 @@ class HealthcheckApiHandler(BaseHttpHandler):
         self.tracking_db = TrackingDatabase()
         self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
-    @uri_mapping(f"/api/{API_VERSION}/health", method="GET")
-    @uri_mapping("/healthz", method="GET")
-    @uri_mapping("/health", method="GET")
+    @uri_mapping(f"/api/{API_VERSION}/health", method=HTTPMethod.GET)
+    @uri_mapping("/healthz", method=HTTPMethod.GET)
+    @uri_mapping("/health", method=HTTPMethod.GET)
+    @openapi.summary("Get the health status of the service")
+    @openapi.response(
+        200, description="Service is healthy", contentType="plain/text", schema=str, methods=[HTTPMethod.GET]
+    )
+    @openapi.response(
+        '5XX',
+        description="Service is unhealthy",
+        contentType="plain/text",
+        schema=str,
+        methods=HTTPMethod.GET,
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=HTTPMethod.GET,
+    )
+
+    @openapi.managed()
     def healthcheck(self, request: HttpRequest) -> HttpResponse:
         """Return basic service health status.
 
@@ -92,27 +115,6 @@ class HealthcheckApiHandler(BaseHttpHandler):
 
         Notes:
             Response bodies for success/failure are plain strings (probe friendly).
-
-        >>>openapi
-        get:
-          tags:
-            - health
-          summary: Get the health status of the service
-          description: >-
-            Gets the health status of the service
-          parameters: []
-          responses:
-            '200':
-              description: Successful operation
-              content:
-                application/json:
-                  schema:
-                    type: object
-                    properties:
-                      status:
-                        type: string
-                        example: ok
-        <<<openapi
         """
         _method = inspect.stack()[0][3]
         try:
