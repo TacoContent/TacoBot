@@ -465,10 +465,6 @@ paths:
   /api/v1/guild/{guild_id}/channel/{channel_id}/messages:
     get:
       description: Returns up to the most recent 100 messages (default 50) for the specified text-capable channel in the guild.
-      tags:
-        - guilds
-        - channels
-        - messages
       summary: List recent messages from a text-capable channel
       responses:
         '200':
@@ -522,49 +518,74 @@ paths:
           required: false
           schema:
             type: integer
-  /api/v1/guild/{guild_id}/channel/{channel_id}/message/{message_id}:
-    get:
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
       tags:
         - guilds
         - channels
         - messages
-      summary: Get a single message
-      description: Fetch a single message by its ID.
-      parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: channel_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: message_id
-          in: path
-          required: true
-          schema:
-            type: string
+  /api/v1/guild/{guild_id}/channel/{channel_id}/message/{message_id}:
+    get:
       responses:
         '200':
-          description: OK
+          description: A DiscordMessage object representing the requested message.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/DiscordMessage'
         '400':
-          description: Invalid ids
+          description: Bad Request - Missing/invalid IDs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized - Missing or invalid authentication.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
         '404':
-          description: Guild, channel, or message not found
+          description: Not Found - Guild, channel or message not found.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal Server Error - Unexpected error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - guilds
+        - channels
+        - messages
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild containing the channel.
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: channel_id
+          description: The ID of the text-capable channel containing the message.
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: message_id
+          description: The ID of the message to retrieve.
+          schema:
+            type: string
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      summary: Fetch a single message by ID
+      description: Returns the specified message from the text-capable channel in the guild.
   /api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/ids:
     post:
       tags:

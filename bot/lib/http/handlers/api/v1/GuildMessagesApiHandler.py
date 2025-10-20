@@ -8,6 +8,7 @@ import discord
 from lib import discordhelper
 from lib.models import openapi
 from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from lib.models.GuildItemIdBatchRequestBody import GuildItemIdBatchRequestBody
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.models.DiscordMessage import DiscordMessage
@@ -35,6 +36,7 @@ class GuildMessagesApiHandler(BaseHttpHandler):
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/channel/{{channel_id}}/messages", method=HTTPMethod.GET)
     @openapi.tags("guilds", "channels", "messages")
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     @openapi.summary("List recent messages from a text-capable channel")
     @openapi.description(
         "Returns up to the most recent 100 messages (default 50) for the specified text-capable channel in the guild."
@@ -163,12 +165,68 @@ class GuildMessagesApiHandler(BaseHttpHandler):
             raise HttpResponseException(500, headers, bytearray(err_msg, 'utf-8'))
 
     @uri_variable_mapping(
-        f"/api/{API_VERSION}/guild/{{guild_id}}/channel/{{channel_id}}/message/{{message_id}}", method="GET"
+        f"/api/{API_VERSION}/guild/{{guild_id}}/channel/{{channel_id}}/message/{{message_id}}", method=HTTPMethod.GET
     )
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.tags("guilds", "channels", "messages")
+    @openapi.summary("Fetch a single message by ID")
+    @openapi.description("Returns the specified message from the text-capable channel in the guild.")
+    @openapi.pathParameter(
+        name="guild_id",
+        description="The ID of the guild containing the channel.",
+        schema=str,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.pathParameter(
+        name="channel_id",
+        description="The ID of the text-capable channel containing the message.",
+        schema=str,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.pathParameter(
+        name="message_id",
+        description="The ID of the message to retrieve.",
+        schema=str,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        200,
+        description="A DiscordMessage object representing the requested message.",
+        contentType="application/json",
+        schema=DiscordMessage,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        400,
+        description="Bad Request - Missing/invalid IDs.",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized - Missing or invalid authentication.",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        404,
+        description="Not Found - Guild, channel or message not found.",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal Server Error - Unexpected error occurred.",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.managed()
     async def get_channel_message(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:  # noqa: ARG002
         """Fetch a single message by ID.
-
-        @openapi: ignore
         Path: /api/v1/guild/{guild_id}/channel/{channel_id}/message/{message_id}
         Method: GET
         Returns: DiscordMessage
@@ -181,54 +239,108 @@ class GuildMessagesApiHandler(BaseHttpHandler):
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
         try:
+
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, 'Invalid authentication token', headers)
+
             guild_id: typing.Optional[str] = uri_variables.get("guild_id")
             channel_id: typing.Optional[str] = uri_variables.get("channel_id")
             message_id: typing.Optional[str] = uri_variables.get("message_id")
             if guild_id is None or channel_id is None or message_id is None:
-                raise HttpResponseException(
-                    400, headers, bytearray('{"error": "guild_id, channel_id and message_id are required"}', 'utf-8')
-                )
+                return self._create_error_response(400, 'guild_id, channel_id and message_id are required', headers)
             if not guild_id.isdigit() or not channel_id.isdigit() or not message_id.isdigit():
-                raise HttpResponseException(400, headers, bytearray('{"error": "ids must be numeric"}', 'utf-8'))
+                return self._create_error_response(400, 'ids must be numeric', headers)
 
             guild = self.bot.get_guild(int(guild_id))
             if guild is None:
-                raise HttpResponseException(404, headers, bytearray('{"error": "guild not found"}', 'utf-8'))
+                return self._create_error_response(404, 'guild not found', headers)
             channel = self.bot.get_channel(int(channel_id))
             ch_guild = getattr(channel, 'guild', None) if channel else None
             if channel is None or ch_guild is None or str(getattr(ch_guild, 'id', '0')) != guild_id:
-                raise HttpResponseException(404, headers, bytearray('{"error": "channel not found"}', 'utf-8'))
+                return self._create_error_response(404, 'channel not found', headers)
             if not hasattr(channel, 'fetch_message'):
-                raise HttpResponseException(
-                    400, headers, bytearray('{"error": "channel does not support fetching messages"}', 'utf-8')
-                )
+                return self._create_error_response(400, 'channel does not support fetching messages', headers)
             try:
                 message = await channel.fetch_message(int(message_id))  # type: ignore[attr-defined]
             except discord.NotFound:  # type: ignore[attr-defined]
-                raise HttpResponseException(
-                    404, headers, bytearray('{"error": "message not found"}', 'utf-8')
-                ) from None
+                return self._create_error_response(404, 'message not found', headers)
             except discord.Forbidden as e:  # type: ignore[attr-defined]
-                raise HttpResponseException(
-                    404, headers, bytearray(f'{{"error": "message not accessible: {str(e)}"}}', 'utf-8')
-                ) from None
+                return self._create_error_response(404, f'message not accessible: {str(e)}', headers)
 
             payload = DiscordMessage.fromMessage(message).to_dict()
-            return HttpResponse(200, headers, bytearray(json.dumps(payload), 'utf-8'))
+            return HttpResponse(200, headers, json.dumps(payload).encode('utf-8'))
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(e)
         except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e))
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, 'utf-8'))
+            return self._create_error_response(500, f'Internal server error: {str(e)}', headers)
 
     @uri_variable_mapping(
-        f"/api/{API_VERSION}/guild/{{guild_id}}/channel/{{channel_id}}/messages/batch/ids", method="POST"
+        f"/api/{API_VERSION}/guild/{{guild_id}}/channel/{{channel_id}}/messages/batch/ids", method=HTTPMethod.POST
     )
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.tags("guilds", "channels", "messages")
+    @openapi.summary("Batch fetch multiple messages by IDs")
+    @openapi.description(
+        "Fetches multiple messages by their IDs from the specified text-capable channel in the guild."
+    )
+    @openapi.pathParameter(
+        name="guild_id",
+        description="The ID of the guild containing the channel.",
+        schema=str,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.pathParameter(
+        name="channel_id",
+        description="The ID of the text-capable channel to retrieve messages from.",
+        schema=str,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.requestBody(
+        description="Request body containing an array of message IDs or an object with an 'ids' field.",
+        contentType="application/json",
+        schema=typing.Union[typing.List[str], GuildItemIdBatchRequestBody],
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        200,
+        description="An array of DiscordMessage objects representing the fetched messages.",
+        contentType="application/json",
+        schema=typing.List[DiscordMessage],
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        400,
+        description="Bad Request - Missing/invalid IDs or invalid JSON body.",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized - Missing or invalid authentication.",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        404,
+        description="Not Found - Guild or channel not found.",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal Server Error - Unexpected error occurred.",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.managed()
     async def get_channel_messages_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Batch fetch multiple messages by IDs.
 
-        @openapi: ignore
         Path: /api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/ids
         Method: POST
         Body (one of):
@@ -245,26 +357,26 @@ class GuildMessagesApiHandler(BaseHttpHandler):
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
         try:
+
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, 'Invalid authentication token', headers)
+
             guild_id: typing.Optional[str] = uri_variables.get("guild_id")
             channel_id: typing.Optional[str] = uri_variables.get("channel_id")
             if guild_id is None or channel_id is None:
-                raise HttpResponseException(
-                    400, headers, bytearray('{"error": "guild_id and channel_id are required"}', 'utf-8')
-                )
+                return self._create_error_response(400, 'guild_id and channel_id are required', headers)
             if not guild_id.isdigit() or not channel_id.isdigit():
-                raise HttpResponseException(400, headers, bytearray('{"error": "ids must be numeric"}', 'utf-8'))
+                return self._create_error_response(400, 'ids must be numeric', headers)
 
             guild = self.bot.get_guild(int(guild_id))
             if guild is None:
-                raise HttpResponseException(404, headers, bytearray('{"error": "guild not found"}', 'utf-8'))
+                return self._create_error_response(404, 'guild not found', headers)
             channel = self.bot.get_channel(int(channel_id))
             ch_guild = getattr(channel, 'guild', None) if channel else None
             if channel is None or ch_guild is None or str(getattr(ch_guild, 'id', '0')) != guild_id:
-                raise HttpResponseException(404, headers, bytearray('{"error": "channel not found"}', 'utf-8'))
+                return self._create_error_response(404, 'channel not found', headers)
             if not hasattr(channel, 'fetch_message'):
-                raise HttpResponseException(
-                    400, headers, bytearray('{"error": "channel does not support fetching messages"}', 'utf-8')
-                )
+                return self._create_error_response(400, 'channel does not support fetching messages', headers)
 
             query_ids: typing.Optional[list[str]] = request.query_params.get('ids')
             body_ids: typing.Optional[list[str]] = None
@@ -272,7 +384,7 @@ class GuildMessagesApiHandler(BaseHttpHandler):
                 try:
                     b_data = json.loads(request.body.decode('utf-8'))
                 except Exception:  # noqa: BLE001
-                    raise HttpResponseException(400, headers, bytearray('{"error": "invalid JSON body"}', 'utf-8'))
+                    return self._create_error_response(400, 'invalid JSON body', headers)
                 if isinstance(b_data, list):
                     body_ids = [i for i in b_data if isinstance(i, str)]
                 elif isinstance(b_data, dict) and isinstance(b_data.get('ids'), list):
@@ -339,19 +451,83 @@ class GuildMessagesApiHandler(BaseHttpHandler):
                         continue
             return HttpResponse(200, headers, bytearray(json.dumps(result), 'utf-8'))
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(e)
         except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e))
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, 'utf-8'))
+            return self._create_error_response(500, f'Internal server error: {str(e)}', headers)
 
     @uri_variable_mapping(
-        f"/api/{API_VERSION}/guild/{{guild_id}}/channel/{{channel_id}}/messages/batch/reactions", method="POST"
+        f"/api/{API_VERSION}/guild/{{guild_id}}/channel/{{channel_id}}/messages/batch/reactions", method=HTTPMethod.POST
     )
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.tags("guilds", "channels", "messages", "reactions")
+    @openapi.summary("Batch fetch reactions grouped per message")
+    @openapi.description(
+        "Fetches reactions for multiple messages by their IDs from the specified text-capable channel in the guild."
+    )
+    @openapi.pathParameter(
+        name="guild_id",
+        description="The ID of the guild containing the channel.",
+        schema=str,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.pathParameter(
+        name="channel_id",
+        description="The ID of the text-capable channel to retrieve messages from.",
+        schema=str,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.queryParameter(
+        name="ids",
+        description="Message IDs to fetch reactions for (merged with body / de-duped preserving order).",
+        schema=str,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.requestBody(
+        description="Request body containing an array of message IDs or an object with an 'ids' field.",
+        contentType="application/json",
+        schema=typing.Union[typing.List[str], GuildItemIdBatchRequestBody],
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        200,
+        description="A JSON object keyed by message ID with arrays of DiscordMessageReaction objects.",
+        contentType="application/json",
+        schema=typing.Dict[str, typing.List[DiscordMessageReaction]],
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        400,
+        description="Bad Request - Missing/invalid IDs or invalid JSON body.",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized - Missing or invalid authentication.",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        404,
+        description="Not Found - Guild or channel not found.",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal Server Error - Unexpected error occurred.",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.managed()
     async def get_reactions_for_messages_batch_by_ids(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Batch fetch reactions grouped per message.
 
-        @openapi: ignore
         Path: /api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/reactions
         Method: POST
         Body (one of):
@@ -375,26 +551,26 @@ class GuildMessagesApiHandler(BaseHttpHandler):
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
         try:
+
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, 'Invalid authentication token', headers)
+
             guild_id: typing.Optional[str] = uri_variables.get("guild_id")
             channel_id: typing.Optional[str] = uri_variables.get("channel_id")
             if guild_id is None or channel_id is None:
-                raise HttpResponseException(
-                    400, headers, bytearray('{"error": "guild_id and channel_id are required"}', 'utf-8')
-                )
+                return self._create_error_response(400, 'guild_id and channel_id are required', headers)
             if not guild_id.isdigit() or not channel_id.isdigit():
-                raise HttpResponseException(400, headers, bytearray('{"error": "ids must be numeric"}', 'utf-8'))
+                return self._create_error_response(400, 'ids must be numeric', headers)
 
             guild = self.bot.get_guild(int(guild_id))
             if guild is None:
-                raise HttpResponseException(404, headers, bytearray('{"error": "guild not found"}', 'utf-8'))
+                return self._create_error_response(404, 'guild not found', headers)
             channel = self.bot.get_channel(int(channel_id))
             ch_guild = getattr(channel, 'guild', None) if channel else None
             if channel is None or ch_guild is None or str(getattr(ch_guild, 'id', '0')) != guild_id:
-                raise HttpResponseException(404, headers, bytearray('{"error": "channel not found"}', 'utf-8'))
+                return self._create_error_response(404, 'channel not found', headers)
             if not hasattr(channel, 'fetch_message'):
-                raise HttpResponseException(
-                    400, headers, bytearray('{"error": "channel does not support fetching messages"}', 'utf-8')
-                )
+                return self._create_error_response(400, 'channel does not support fetching messages', headers)
 
             query_ids: typing.Optional[list[str]] = request.query_params.get('ids')
             body_ids: typing.Optional[list[str]] = None
@@ -402,7 +578,7 @@ class GuildMessagesApiHandler(BaseHttpHandler):
                 try:
                     b_data = json.loads(request.body.decode('utf-8'))
                 except Exception:  # noqa: BLE001
-                    raise HttpResponseException(400, headers, bytearray('{"error": "invalid JSON body"}', 'utf-8'))
+                    return self._create_error_response(400, 'invalid JSON body', headers)
                 if isinstance(b_data, list):
                     body_ids = [i for i in b_data if isinstance(i, str)]
                 elif isinstance(b_data, dict) and isinstance(b_data.get('ids'), list):
@@ -421,7 +597,7 @@ class GuildMessagesApiHandler(BaseHttpHandler):
                     seen.add(mid)
                     ordered_ids.append(mid)
             if len(ordered_ids) == 0:
-                return HttpResponse(200, headers, bytearray('[]', 'utf-8'))
+                return HttpResponse(200, headers, json.dumps([]).encode('utf-8'))
 
             # Per message reaction grouping
             per_message: dict[str, list[dict]] = {}
@@ -470,10 +646,9 @@ class GuildMessagesApiHandler(BaseHttpHandler):
                 filtered.sort(key=lambda r: (-r.count, r.emoji))
                 per_message[str(mid)] = [r.to_dict() for r in filtered]
 
-            return HttpResponse(200, headers, bytearray(json.dumps(per_message), 'utf-8'))
+            return HttpResponse(200, headers, json.dumps(per_message).encode('utf-8'))
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(e)
         except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e))
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, 'utf-8'))
+            return self._create_error_response(500, 'Internal server error', headers)
