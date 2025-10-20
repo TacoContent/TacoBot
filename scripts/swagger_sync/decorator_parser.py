@@ -71,16 +71,51 @@ class DecoratorMetadata:
     def _build_responses_dict(self) -> Dict[str, Any]:
         """Build OpenAPI responses object from decorator metadata.
 
+        Handles multiple @openapi.response decorators with the same status code
+        but different content types by merging them into a single response with
+        multiple content types.
+
         Returns:
             Dictionary mapping status codes to response objects
+
+        Example:
+            Multiple decorators:
+                @openapi.response(200, contentType="text/plain", schema=str)
+                @openapi.response(200, contentType="application/json", schema=ErrorPayload)
+
+            Generates:
+                {
+                    "200": {
+                        "description": "Response",
+                        "content": {
+                            "text/plain": {"schema": {"type": "string"}},
+                            "application/json": {"schema": {"$ref": "#/components/schemas/ErrorPayload"}}
+                        }
+                    }
+                }
         """
         responses = {}
         for resp in self.responses:
             for status_code in resp.get("status_code", []):
-                response_obj = {"description": resp.get("description", "Response")}
+                status_key = str(status_code)
+
+                # Initialize response object if not exists
+                if status_key not in responses:
+                    responses[status_key] = {
+                        "description": resp.get("description", "Response"),
+                        "content": {}
+                    }
+
+                # Merge content types for the same status code
                 if "content" in resp:
-                    response_obj["content"] = resp["content"]
-                responses[str(status_code)] = response_obj
+                    # resp["content"] is a dict like {"application/json": {"schema": {...}}}
+                    for content_type, content_schema in resp["content"].items():
+                        responses[status_key]["content"][content_type] = content_schema
+
+                # Update description if the new one is more specific (not default)
+                if resp.get("description") and resp.get("description") != "Response":
+                    responses[status_key]["description"] = resp["description"]
+
         return responses
 
 

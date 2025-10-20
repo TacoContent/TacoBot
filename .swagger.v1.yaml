@@ -45,22 +45,23 @@ paths:
       description: Gets the swagger file
   /api/v1/health:
     get:
-      description: Gets the health status of the service
-      tags:
-        - health
+      summary: Get the health status of the service
       responses:
         '200':
-          description: Successful operation
+          description: Service is healthy
           content:
+            plain/text:
+              schema:
+                type: string
+        5XX:
+          description: Internal server error
+          content:
+            plain/text:
+              schema:
+                type: string
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: ok
-      summary: Get the health status of the service
-      parameters: []
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
   /api/v1/guilds:
     get:
       description: List all guilds the bot is currently a member of.
@@ -2018,40 +2019,42 @@ paths:
         - X-TACOBOT-TOKEN: []
   /healthz:
     get:
-      description: Gets the health status of the service
-      tags:
-        - health
+      summary: Get the health status of the service
       responses:
         '200':
-          description: Successful operation
+          description: Service is healthy
           content:
+            plain/text:
+              schema:
+                type: string
+        5XX:
+          description: Internal server error
+          content:
+            plain/text:
+              schema:
+                type: string
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: ok
-      summary: Get the health status of the service
-      parameters: []
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
   /health:
     get:
-      description: Gets the health status of the service
-      tags:
-        - health
+      summary: Get the health status of the service
       responses:
         '200':
-          description: Successful operation
+          description: Service is healthy
           content:
+            plain/text:
+              schema:
+                type: string
+        5XX:
+          description: Internal server error
+          content:
+            plain/text:
+              schema:
+                type: string
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: ok
-      summary: Get the health status of the service
-      parameters: []
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
   /api/v1/settings/{section}:
     get:
       summary: Get settings for a guild and section
