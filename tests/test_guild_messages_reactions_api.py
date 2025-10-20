@@ -25,6 +25,7 @@ import asyncio
 import json
 from types import SimpleNamespace
 from typing import Any, Dict, List
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -111,6 +112,7 @@ async def test_reactions_batch_basic():
     channel = StubChannel(2, messages)
     bot = StubBot(1, channel)
     handler = GuildMessagesApiHandler(bot)  # type: ignore[arg-type]
+    handler.validate_auth_token = MagicMock(return_value=True)
 
     req = make_request(["100", "101"])  # list body
     resp = await handler.get_reactions_for_messages_batch_by_ids(req, {"guild_id": "1", "channel_id": "2"})
@@ -133,6 +135,7 @@ async def test_reactions_batch_duplicates_and_non_numeric():
     channel = StubChannel(2, messages)
     bot = StubBot(1, channel)
     handler = GuildMessagesApiHandler(bot)  # type: ignore[arg-type]
+    handler.validate_auth_token = MagicMock(return_value=True)
 
     # duplicates of 100, plus non-numeric 'abc'
     req = make_request(["100", "100", "abc"])  # duplicates + invalid
@@ -147,6 +150,7 @@ async def test_reactions_batch_missing_messages():
     channel = StubChannel(2, messages, not_found=[101])
     bot = StubBot(1, channel)
     handler = GuildMessagesApiHandler(bot)  # type: ignore[arg-type]
+    handler.validate_auth_token = MagicMock(return_value=True)
 
     req = make_request(["100", "101"])  # 101 triggers NotFound
     resp = await handler.get_reactions_for_messages_batch_by_ids(req, {"guild_id": "1", "channel_id": "2"})
@@ -158,6 +162,7 @@ async def test_reactions_batch_empty_ids():
     channel = StubChannel(2, {})
     bot = StubBot(1, channel)
     handler = GuildMessagesApiHandler(bot)  # type: ignore[arg-type]
+    handler.validate_auth_token = MagicMock(return_value=True)
 
     req = make_request([])
     resp = await handler.get_reactions_for_messages_batch_by_ids(req, {"guild_id": "1", "channel_id": "2"})
@@ -181,6 +186,7 @@ async def test_reactions_batch_invalid_json_body():
     channel = StubChannel(2, {})
     bot = StubBot(1, channel)
     handler = GuildMessagesApiHandler(bot)  # type: ignore[arg-type]
+    handler.validate_auth_token = MagicMock(return_value=True)
 
     resp = await handler.get_reactions_for_messages_batch_by_ids(bad_req, {"guild_id": "1", "channel_id": "2"})
     assert resp.status_code == 400

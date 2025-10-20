@@ -74,6 +74,7 @@ class HealthcheckApiHandler(BaseHttpHandler):
     @uri_mapping("/healthz", method=HTTPMethod.GET)
     @uri_mapping("/health", method=HTTPMethod.GET)
     @openapi.summary("Get the health status of the service")
+    @openapi.description("Returns the health status of the service")
     @openapi.response(
         200, description="Service is healthy", contentType="plain/text", schema=str, methods=[HTTPMethod.GET]
     )
@@ -119,7 +120,7 @@ class HealthcheckApiHandler(BaseHttpHandler):
         _method = inspect.stack()[0][3]
         try:
             headers = HttpHeaders()
-            headers.add("Content-Type", "application/json")
+            headers.add("Content-Type", "text/plain")
 
             whitelist = self.minecraft_db.get_whitelist(self.settings.primary_guild_id)
             success = whitelist is not None and len(list(whitelist)) > 0 and self.bot.is_ready()
@@ -129,8 +130,9 @@ class HealthcheckApiHandler(BaseHttpHandler):
 
             return HttpResponse(500, headers, bytearray("Unhealthy!", "utf-8"))
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(exception=e)
         except Exception as e:  # noqa: BLE001
+            headers = HttpHeaders()
+            headers.add("Content-Type", "application/json")
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers)

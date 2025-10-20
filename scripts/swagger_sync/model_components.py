@@ -148,6 +148,7 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                     except Exception:
                         continue  # Try next block if present
             decorator_extensions: Dict[str, Any] = {}
+            property_decorators: Dict[str, Dict[str, Any]] = {}  # Track @openapi.property decorators
             for deco in cls.decorator_list:
                 deco_call: Optional[ast.Call] = deco if isinstance(deco, ast.Call) else None
                 deco_name = None
@@ -157,7 +158,36 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                     deco_name = _decorator_identifier(deco)
                 if not deco_name:
                     continue
-                if deco_name == 'component':
+                if deco_name == 'property':
+                    # Handle @openapi.property(property=..., name=..., value=...) or positional args
+                    if not deco_call:
+                        continue
+
+                    prop_name: Optional[str] = None
+                    key_name: Optional[str] = None
+                    key_value: Any = None
+
+                    # Try positional arguments first (legacy support)
+                    if len(deco_call.args) >= 3:
+                        prop_name = _extract_constant(deco_call.args[0])
+                        key_name = _extract_constant(deco_call.args[1])
+                        key_value = _extract_constant(deco_call.args[2])
+
+                    # Check keyword arguments (preferred)
+                    for kw in deco_call.keywords or []:
+                        if kw.arg == 'property':
+                            prop_name = _extract_constant(kw.value)
+                        elif kw.arg == 'name':
+                            key_name = _extract_constant(kw.value)
+                        elif kw.arg == 'value':
+                            key_value = _extract_constant(kw.value)
+
+                    if not isinstance(prop_name, str) or not isinstance(key_name, str):
+                        continue
+                    if prop_name not in property_decorators:
+                        property_decorators[prop_name] = {}
+                    property_decorators[prop_name][key_name] = key_value
+                elif deco_name == 'component':
                     if deco_call and deco_call.args:
                         first_arg = _extract_constant(deco_call.args[0])
                         if isinstance(first_arg, str):
@@ -370,6 +400,13 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                     for extra_k, extra_v in meta.items():
                         if extra_k not in schema:
                             schema[extra_k] = extra_v
+
+                # Merge in @openapi.property decorator metadata
+                if attr in property_decorators:
+                    for key, value in property_decorators[attr].items():
+                        if key not in schema or schema.get(key) is None:
+                            schema[key] = value
+
                 props[attr] = schema
                 if not nullable:
                     required.append(attr)

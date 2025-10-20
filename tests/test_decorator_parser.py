@@ -439,6 +439,44 @@ class TestExtractResponse:
         response = _extract_response(decorator)
         assert response == {}
 
+    def test_response_keyword_status_codes_single_no_schema(self):
+        """Response with keyword status_codes and no schema should be preserved."""
+        code = "@openapi.response(status_codes=204, description='No content')\ndef func(): pass"
+        tree = ast.parse(code)
+        func_node = tree.body[0]
+        assert isinstance(func_node, ast.FunctionDef)
+        decorator = func_node.decorator_list[0]
+        assert isinstance(decorator, ast.Call)
+        response = _extract_response(decorator)
+        assert response["status_code"] == [204]
+        assert response["description"] == "No content"
+        # Should not include content when no schema provided
+        assert "content" not in response
+
+    def test_response_keyword_status_codes_list_no_schema(self):
+        """Response with keyword list of status codes and no schema should be preserved."""
+        code = "@openapi.response(status_codes=[200, 304], description='OK')\ndef func(): pass"
+        tree = ast.parse(code)
+        func_node = tree.body[0]
+        assert isinstance(func_node, ast.FunctionDef)
+        decorator = func_node.decorator_list[0]
+        assert isinstance(decorator, ast.Call)
+        response = _extract_response(decorator)
+        assert response["status_code"] == [200, 304]
+        assert response["description"] == "OK"
+
+    def test_response_status_code_string_pattern(self):
+        """Support string status code patterns like '2XX'."""
+        code = "@openapi.response('2XX', description='Any 2xx response')\ndef func(): pass"
+        tree = ast.parse(code)
+        func_node = tree.body[0]
+        assert isinstance(func_node, ast.FunctionDef)
+        decorator = func_node.decorator_list[0]
+        assert isinstance(decorator, ast.Call)
+        response = _extract_response(decorator)
+        assert response["status_code"] == ["2XX"]
+        assert response["description"] == "Any 2xx response"
+
 
 class TestExtractSummary:
     """Test cases for _extract_summary function."""
@@ -689,6 +727,24 @@ def func(): pass
 
         assert metadata.tags == ["test"]
         assert metadata.security == ["X-AUTH"]
+
+    def test_to_dict_with_keyword_status_codes_and_no_schema(self):
+        """Ensure schema-less responses are included when using keyword status_codes."""
+        code = """
+@openapi.response(status_codes=[200, 304], description='OK')
+def func(): pass
+"""
+        tree = ast.parse(code)
+        func_node = tree.body[0]
+        assert isinstance(func_node, ast.FunctionDef)
+        metadata = extract_decorator_metadata(func_node)
+        # Build dict and validate responses included with description only
+        result = metadata.to_dict()
+        assert "responses" in result
+        assert "200" in result["responses"]
+        assert "304" in result["responses"]
+        assert result["responses"]["200"]["description"] == "OK"
+        assert "content" not in result["responses"]["200"]
 
     def test_real_world_handler_example(self):
         """Test with realistic handler code."""

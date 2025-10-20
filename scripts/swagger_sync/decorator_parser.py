@@ -102,13 +102,13 @@ class DecoratorMetadata:
                 # Initialize response object if not exists
                 if status_key not in responses:
                     responses[status_key] = {
-                        "description": resp.get("description", "Response"),
-                        "content": {}
+                        "description": resp.get("description", "Response")
                     }
 
                 # Merge content types for the same status code
                 if "content" in resp:
                     # resp["content"] is a dict like {"application/json": {"schema": {...}}}
+                    responses[status_key].setdefault("content", {})
                     for content_type, content_schema in resp["content"].items():
                         responses[status_key]["content"][content_type] = content_schema
 
@@ -331,15 +331,20 @@ def _extract_response(decorator: ast.Call) -> Dict[str, Any]:
             }
         }
     """
-    result = {}
+    result: Dict[str, Any] = {}
 
-    # First positional arg: status_code (int or list)
+    # First positional arg: status_code (int, str like '2XX', or list)
     if decorator.args:
         status_arg = decorator.args[0]
         if isinstance(status_arg, ast.Constant):
+            # Accept int or str (e.g., '2XX')
             result["status_code"] = [status_arg.value]
         elif isinstance(status_arg, ast.List):
-            result["status_code"] = [elt.value for elt in status_arg.elts if isinstance(elt, ast.Constant)]
+            collected = []
+            for elt in status_arg.elts:
+                if isinstance(elt, ast.Constant):
+                    collected.append(elt.value)
+            result["status_code"] = collected
 
     # First pass: extract contentType if present (needed for schema processing)
     content_type = "application/json"  # default
@@ -353,6 +358,18 @@ def _extract_response(decorator: ast.Call) -> Dict[str, Any]:
     for keyword in decorator.keywords:
         key = keyword.arg
         value_node = keyword.value
+
+        # Support keyword form for status codes: status_codes=200 or [200, '2XX']
+        if key in ("status_codes", "status_code", "status", "code", "codes"):
+            if isinstance(value_node, ast.Constant):
+                result["status_code"] = [value_node.value]
+            elif isinstance(value_node, ast.List):
+                vals = []
+                for elt in value_node.elts:
+                    if isinstance(elt, ast.Constant):
+                        vals.append(elt.value)
+                result["status_code"] = vals
+            # Continue processing other keys as well
 
         if key == "methods":
             # Extract methods list/single value - supports both HTTPMethod enum and strings
@@ -471,6 +488,7 @@ def _extract_path_parameter(decorator: ast.Call) -> Dict[str, Any]:
         }
     """
     param: Dict[str, Any] = {"in": "path", "required": True}
+    options: Dict[str, Any] = {}
 
     # Extract keyword arguments
     for keyword in decorator.keywords:
@@ -488,6 +506,14 @@ def _extract_path_parameter(decorator: ast.Call) -> Dict[str, Any]:
         elif key == "description":
             if isinstance(value_node, ast.Constant):
                 param["description"] = value_node.value
+        elif key == "options":
+            # Extract options dict to merge into schema
+            if isinstance(value_node, ast.Dict):
+                options = _extract_literal_value(value_node)
+
+    # Merge options into schema if both exist
+    if options and "schema" in param:
+        param["schema"].update(options)
 
     return param
 
@@ -513,6 +539,7 @@ def _extract_query_parameter(decorator: ast.Call) -> Dict[str, Any]:
     """
     param: Dict[str, Any] = {"in": "query"}
     schema: Dict[str, Any] = {}
+    options: Dict[str, Any] = {}
 
     # Extract keyword arguments
     for keyword in decorator.keywords:
@@ -533,6 +560,14 @@ def _extract_query_parameter(decorator: ast.Call) -> Dict[str, Any]:
         elif key == "description":
             if isinstance(value_node, ast.Constant):
                 param["description"] = value_node.value
+        elif key == "options":
+            # Extract options dict to merge into schema
+            if isinstance(value_node, ast.Dict):
+                options = _extract_literal_value(value_node)
+
+    # Merge options into schema
+    if options:
+        schema.update(options)
 
     if schema:
         param["schema"] = schema
@@ -560,6 +595,7 @@ def _extract_header_parameter(decorator: ast.Call) -> Dict[str, Any]:
         }
     """
     param: Dict[str, Any] = {"in": "header"}
+    options: Dict[str, Any] = {}
 
     # Extract keyword arguments
     for keyword in decorator.keywords:
@@ -577,6 +613,14 @@ def _extract_header_parameter(decorator: ast.Call) -> Dict[str, Any]:
         elif key == "description":
             if isinstance(value_node, ast.Constant):
                 param["description"] = value_node.value
+        elif key == "options":
+            # Extract options dict to merge into schema
+            if isinstance(value_node, ast.Dict):
+                options = _extract_literal_value(value_node)
+
+    # Merge options into schema if both exist
+    if options and "schema" in param:
+        param["schema"].update(options)
 
     return param
 

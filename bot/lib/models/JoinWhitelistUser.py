@@ -34,6 +34,26 @@ import typing
 from bot.lib.models.openapi import openapi
 
 @openapi.component("JoinWhitelistUser", description="Container for a guild-scoped join whitelist record.")
+@openapi.property(
+    property="guild_id",
+    name="description",
+    value="Discord guild (server) identifier scoping the whitelist entry.",
+)
+@openapi.property(
+    property="user_id",
+    name="description",
+    value="Discord user identifier for the whitelisted user.",
+)
+@openapi.property(
+    property="added_by",
+    name="description",
+    value="Discord user id (or system marker) of the actor who added the entry.",
+)
+@openapi.property(
+    property="timestamp",
+    name="description",
+    value="Creation timestamp (seconds since epoch, or milliseconds depending on writer).",
+)
 @openapi.managed()
 class JoinWhitelistUser:
     """Container for a guild-scoped join whitelist record.
@@ -47,18 +67,6 @@ class JoinWhitelistUser:
         The ID of the user who added the whitelist entry, or None if added by the system.
     - timestamp:
         The timestamp when the whitelist entry was created, or None if not set.
-
-    >>>openapi
-    properties:
-        guild_id:
-            description: Discord guild (server) identifier scoping the whitelist entry.
-        user_id:
-            description: Discord user identifier for the whitelisted user.
-        added_by:
-            description: Discord user id (or system marker) of the actor who added the entry.
-        timestamp:
-            description: Creation timestamp (seconds since epoch, or milliseconds depending on writer).
-    <<<openapi
     """
 
     def __init__(self, data: dict):
@@ -78,4 +86,22 @@ class JoinWhitelistUser:
             "user_id": self.user_id,
             "added_by": self.added_by,
             "timestamp": self.timestamp,
+        }
+
+@openapi.component("JoinWhitelistAddedBy", description="Container for the 'added_by' field of a join whitelist entry.")
+@openapi.property(
+    property="added_by",
+    name="description",
+    value="Discord user id (or system marker) of the actor who added the entry.",
+)
+@openapi.managed()
+class JoinWhitelistAddedBy:
+
+    def __init__(self, data: typing.Dict[str, typing.Any]):
+        self.added_by: typing.Optional[str] = data.get("added_by", None)
+
+    def to_dict(self) -> dict:
+        """Return a dictionary suitable for JSON / API responses."""
+        return {
+            "added_by": self.added_by,
         }

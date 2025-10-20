@@ -20,6 +20,8 @@ def property(
         target = typing.cast(typing.Any, attr)
         if not hasattr(target, '__openapi_properties__'):
             setattr(target, '__openapi_properties__', {})
+        if property not in target.__openapi_properties__:
+            target.__openapi_properties__[property] = {}
         target.__openapi_properties__[property][name] = value
         return attr
     return _wrap

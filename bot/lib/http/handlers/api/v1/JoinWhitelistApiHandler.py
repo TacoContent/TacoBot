@@ -34,6 +34,7 @@ Invalid or out-of-range values produce a 400 error.
 
 from __future__ import annotations
 
+from http import HTTPMethod
 import inspect
 import json
 import os
@@ -41,10 +42,13 @@ import traceback
 import typing
 
 from lib import discordhelper
+from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from lib.models.PagedResults import PagedResultsJoinWhitelistUser
+from lib.models.openapi import openapi
 
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
-from bot.lib.models.JoinWhitelistUser import JoinWhitelistUser
+from bot.lib.models.JoinWhitelistUser import JoinWhitelistAddedBy, JoinWhitelistUser
 from bot.lib.mongodb.whitelist import WhitelistDatabase
 from bot.tacobot import TacoBot
 from httpserver.EndpointDecorators import uri_variable_mapping
@@ -112,11 +116,34 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
         return out
 
     # ----------------------- endpoints -----------------------
-    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/join-whitelist", method="GET")
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/join-whitelist", method=HTTPMethod.GET)
+    @openapi.summary("Get the complete join whitelist for a guild")
+    @openapi.description("For large lists, prefer the paginated variant.")
+    @openapi.response(
+        200,
+        description="Array of JoinWhitelistUser objects",
+        contentType="application/json",
+        schema=typing.List[JoinWhitelistUser],
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized - missing or invalid auth token",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal Server Error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.managed()
     def list_join_whitelist(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:  # noqa: ARG002
         """Return the complete join whitelist for a guild.
 
-        @openapi: ignore
         Path: /api/v1/guild/{guild_id}/join-whitelist
         Method: GET
         Returns: Array[JoinWhitelistUser]
@@ -126,21 +153,76 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
         try:
+
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, "Unauthorized", headers)
+
             guild_id = self._validate_guild_id(headers, uri_variables)
             data = self._list_all_internal(guild_id)
-            return HttpResponse(200, headers, bytearray(json.dumps(data), "utf-8"))
+
+            return HttpResponse(200, headers, json.dumps(data).encode("utf-8"))
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(e)
         except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, "Internal Server Error", headers)
 
-    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/join-whitelist/page", method="GET")
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/join-whitelist/page", method=HTTPMethod.GET)
+    @openapi.summary("Get a paginated subset of the join whitelist for a guild")
+    @openapi.description("Supports skip & take query parameters for pagination.")
+    @openapi.pathParameter(
+        name="guild_id",
+        description="The ID of the guild to retrieve the join whitelist for",
+        schema=int,
+    )
+    @openapi.response(
+        200,
+        description="Paginated join whitelist response",
+        contentType="application/json",
+        schema=PagedResultsJoinWhitelistUser,
+    )
+    @openapi.response(
+        400,
+        description="Bad Request - invalid skip/take parameters",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized - missing or invalid auth token",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal Server Error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.queryParameter(
+        name="skip",
+        description="Number of entries to skip from the start (default 0)",
+        schema=int,
+        required=False,
+        options={
+            "minimum": 0
+        },
+        default=0,
+    )
+    @openapi.queryParameter(
+        name="take",
+        description="Number of entries to return (default 50, max 200)",
+        schema=int,
+        required=False,
+        options={
+            "minimum": 1,
+            "maximum": 200
+        },
+        default=50,
+    )
+    @openapi.managed()
     def list_join_whitelist_paged(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Return a paginated subset of the join whitelist.
-
-        @openapi: ignore
         Query Parameters:
             skip (int, default 0)
             take (int, default 50, max 200)
@@ -149,6 +231,10 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
         try:
+
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, "Unauthorized", headers)
+
             guild_id = self._validate_guild_id(headers, uri_variables)
             skip_raw = request.query_params.get("skip", ["0"])  # framework stores lists
             take_raw = request.query_params.get("take", ["50"])  # type: ignore
@@ -156,29 +242,60 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
                 skip = int(skip_raw[0]) if skip_raw else 0
                 take = int(take_raw[0]) if take_raw else 50
             except ValueError:
-                raise HttpResponseException(400, headers, bytearray(b'{"error": "skip and take must be integers"}'))
+                return self._create_error_response(400, "skip and take must be integers", headers)
             if skip < 0:
-                raise HttpResponseException(400, headers, bytearray(b'{"error": "skip must be >= 0"}'))
+                return self._create_error_response(400, "skip must be >= 0", headers)
             if take <= 0:
-                raise HttpResponseException(400, headers, bytearray(b'{"error": "take must be > 0"}'))
+                return self._create_error_response(400, "take must be > 0", headers)
             if take > 200:
                 take = 200
             full = self._list_all_internal(guild_id)
             page = self._paginate(full, skip, take)
-            resp = {"total": len(full), "skip": skip, "take": take, "items": page}
-            return HttpResponse(200, headers, bytearray(json.dumps(resp), "utf-8"))
+            resp = PagedResultsJoinWhitelistUser({"total": len(full), "skip": skip, "take": take, "items": page})
+            return HttpResponse(200, headers, json.dumps(resp).encode("utf-8"))
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(exception=e)
         except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, "Internal Server Error", headers)
 
-    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/join-whitelist", method="POST")
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/join-whitelist", method=HTTPMethod.POST)
+    @openapi.summary("Add (upsert) a user to the join whitelist")
+    @openapi.description("If the user is already whitelisted, this updates their entry.")
+    @openapi.requestBody(
+        description="Join whitelist user to add",
+        contentType="application/json",
+        schema=JoinWhitelistUser,
+        required=True,
+    )
+    @openapi.response(
+        201,
+        description="The created JoinWhitelistUser object",
+        contentType="application/json",
+        schema=JoinWhitelistUser,
+    )
+    @openapi.response(
+        400,
+        description="Bad Request - missing or invalid body",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized - missing or invalid auth token",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal Server Error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.managed()
     def add_join_whitelist_user(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Add (upsert) a user to the join whitelist.
 
-        @openapi: ignore
         Body JSON:
             { "user_id": "123", "added_by": "456" }
         """
@@ -186,32 +303,50 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
         try:
+
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, "Unauthorized", headers)
             guild_id = self._validate_guild_id(headers, uri_variables)
             if request.body is None:
-                raise HttpResponseException(400, headers, bytearray(b'{"error": "Body required"}'))
+                return self._create_error_response(400, "Body required", headers)
             try:
                 body = json.loads(request.body.decode("utf-8"))
             except Exception:
-                raise HttpResponseException(400, headers, bytearray(b'{"error": "Invalid JSON body"}'))
+                return self._create_error_response(400, "Invalid JSON body", headers)
             user_id = self._validate_user_id(headers, body.get("user_id"))
             added_by = body.get("added_by", user_id)
             self.whitelist_db.add_user_to_join_whitelist(guild_id, int(user_id), int(added_by))
             # fetch resultant
             data = self._list_all_internal(guild_id)
             entry = next((d for d in data if d["user_id"] == user_id), None)
-            return HttpResponse(201, headers, bytearray(json.dumps(entry), "utf-8"))
+            return HttpResponse(201, headers, json.dumps(entry).encode("utf-8"))
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(exception=e)
         except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, "Internal Server Error", headers)
 
-    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/join-whitelist/{{user_id}}", method="PUT")
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/join-whitelist/{{user_id}}", method=HTTPMethod.PUT)
+    @openapi.summary("Update (re-add) a whitelist entry for a user")
+    @openapi.description("If the user is not already whitelisted, this adds them.")
+    @openapi.pathParameter(
+        name="guild_id",
+        description="The ID of the guild to update the join whitelist for",
+        schema=str,
+    )
+    @openapi.pathParameter(
+        name="user_id",
+        description="The ID of the user to update in the join whitelist",
+        schema=str,
+    )
+    @openapi.requestBody(
+        description="Optional body to specify 'added_by' user ID",
+        contentType="application/json",
+        schema=JoinWhitelistAddedBy,
+        required=False,
+    )
     def update_join_whitelist_user(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Update (re-add) a whitelist entry for a user.
-
-        @openapi: ignore
         Body can include:
             { "added_by": "<id>" }
         If omitted, added_by defaults to target user (self-added scenario).
@@ -220,6 +355,9 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
         try:
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, "Unauthorized", headers)
+
             guild_id = self._validate_guild_id(headers, uri_variables)
             user_id = self._validate_user_id(headers, uri_variables.get("user_id"))
             body = {}
@@ -227,35 +365,66 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
                 try:
                     body = json.loads(request.body.decode("utf-8"))
                 except Exception:
-                    raise HttpResponseException(400, headers, bytearray(b'{"error": "Invalid JSON body"}'))
+                    return self._create_error_response(400, "Invalid JSON body", headers)
             added_by = body.get("added_by", user_id)
             self.whitelist_db.add_user_to_join_whitelist(guild_id, int(user_id), int(added_by))
             data = self._list_all_internal(guild_id)
             entry = next((d for d in data if d["user_id"] == user_id), None)
             return HttpResponse(200, headers, bytearray(json.dumps(entry), "utf-8"))
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(e)
         except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, "Internal server error", headers)
 
-    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/join-whitelist/{{user_id}}", method="DELETE")
+    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/join-whitelist/{{user_id}}", method=HTTPMethod.DELETE)
+    @openapi.summary("Remove a user from the join whitelist")
+    @openapi.description("Removes a user from the join whitelist for a specific guild.")
+    @openapi.pathParameter(
+        name="guild_id",
+        description="The ID of the guild to remove the user from the join whitelist",
+        schema=str,
+    )
+    @openapi.pathParameter(
+        name="user_id",
+        description="The ID of the user to remove from the join whitelist",
+        schema=str,
+    )
+    @openapi.response(
+        204,
+        description="No Content - user successfully removed",
+        methods=[HTTPMethod.DELETE],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized - missing or invalid auth token",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal Server Error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.managed()
     def delete_join_whitelist_user(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:  # noqa: ARG002
         """Remove a user from the join whitelist.
-        @openapi: ignore
         """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
         try:
+
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, "Unauthorized", headers)
+
             guild_id = self._validate_guild_id(headers, uri_variables)
             user_id = self._validate_user_id(headers, uri_variables.get("user_id"))
             self.whitelist_db.remove_user_from_join_whitelist(guild_id, int(user_id))
             return HttpResponse(204, headers, bytearray(b""))
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(e)
         except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, "Internal server error", headers)

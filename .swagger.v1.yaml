@@ -45,7 +45,7 @@ paths:
       description: Gets the swagger file
   /api/v1/health:
     get:
-      summary: Get the health status of the service
+      description: Returns the health status of the service
       responses:
         '200':
           description: Service is healthy
@@ -62,6 +62,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get the health status of the service
   /api/v1/guilds:
     get:
       description: List all guilds the bot is currently a member of.
@@ -1010,332 +1011,417 @@ paths:
             type: string
   /api/v1/guild/{guild_id}/roles:
     get:
+      description: List all roles in a guild
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
       tags:
         - guilds
         - roles
-      summary: List guild roles
-      parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         '200':
-          description: OK
+          description: Array of guild roles
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/DiscordRole'
-        '404':
-          description: Guild not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorStatusCodePayload'
-  /api/v1/guild/{guild_id}/roles/batch/ids:
-    post:
-      tags:
-        - guilds
-        - roles
-      summary: Batch fetch roles by IDs
-      parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              oneOf:
-                - type: array
-                  items:
-                    type: string
-                - type: object
-                  properties:
-                    ids:
-                      type: array
-                      items:
-                        type: string
-                  required:
-                    - ids
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DiscordRole'
-        '404':
-          description: Guild not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorStatusCodePayload'
-  /api/v1/guild/{guild_id}/join-whitelist:
-    get:
-      tags:
-        - guilds
-        - whitelist
-      summary: List all join whitelist entries
-      description: Returns the complete join whitelist for the guild. For large lists, prefer the paginated endpoint.
-      parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/JoinWhitelistUser'
-        '400':
-          description: Invalid guild id
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorStatusCodePayload'
-    post:
-      tags:
-        - guilds
-        - whitelist
-      summary: Add (upsert) a user to join whitelist
-      description: 'Provide JSON body: { "user_id": "<id>", "added_by": "<id>" }
-
-
-        The "added_by" field is optional and defaults to the same value as "user_id" when omitted.
-
-        '
-      parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                user_id:
-                  type: string
-                added_by:
-                  type: string
-              required:
-                - user_id
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JoinWhitelistUser'
-        '400':
-          description: Invalid input
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorStatusCodePayload'
-  /api/v1/guild/{guild_id}/join-whitelist/page:
-    get:
-      tags:
-        - guilds
-        - whitelist
-      summary: List paginated join whitelist entries
-      description: Returns a page of join whitelist entries. Accepts query params skip (default 0) and take (default 50, max 200).
-      parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: skip
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 0
-            default: 0
-        - name: take
-          in: query
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 200
-            default: 50
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PagedResults'
-        '400':
-          description: Invalid pagination parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorStatusCodePayload'
-  /api/v1/guild/{guild_id}/join-whitelist/{user_id}:
-    put:
-      tags:
-        - guilds
-        - whitelist
-      summary: Update (re-add) a join whitelist entry
-      description: "Upserts a specific user.\n\nOptional body example:\n  { \"added_by\": \"<id>\" }\n"
-      parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: user_id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                added_by:
-                  type: string
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JoinWhitelistUser'
-        '400':
-          description: Invalid input
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorStatusCodePayload'
-    delete:
-      tags:
-        - guilds
-        - whitelist
-      summary: Delete a join whitelist entry
-      description: Removes a user from the whitelist.
-      parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: user_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '204':
-          description: No Content (deleted)
-        '400':
-          description: Invalid input
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorStatusCodePayload'
-  /api/v1/guild/{guild_id}/mentionables/batch/ids:
-    post:
-      tags:
-        - guilds
-        - mentionables
-      summary: Batch fetch mentionables (roles or users) by IDs
-      description: Returns role and/or user payloads for provided IDs. Accepts array or object with ids property.
-      parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              oneOf:
-                - type: array
-                  items:
-                    type: string
-                - type: object
-                  properties:
-                    ids:
-                      type: array
-                      items:
-                        type: string
-                  required:
-                    - ids
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DiscordMentionable'
-        '404':
-          description: Guild not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorStatusCodePayload'
-  /api/v1/guild/{guild_id}/mentionables:
-    get:
-      tags:
-        - guilds
-        - mentionables
-      summary: List guild mentionables (roles + members)
-      description: Returns all roles and members for the specified guild as mentionable union objects.
-      parameters:
-        - name: guild_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DiscordMentionable'
         '400':
           description: Missing or invalid guild id
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
         '404':
           description: Guild not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: List guild roles
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          schema:
+            type: string
+          description: Discord guild id
+  /api/v1/guild/{guild_id}/roles/batch/ids:
+    post:
+      description: Batch fetch roles by IDs
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: array
+                  items:
+                    type: string
+                - $ref: '#/components/schemas/GuildItemIdBatchRequestBody'
+      tags:
+        - guilds
+        - roles
+      responses:
+        '200':
+          description: Array of guild roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordRole'
+        '400':
+          description: Missing or invalid guild id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Batch fetch guild roles by IDs
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          schema:
+            type: string
+          description: Discord guild id
+        - in: query
+          name: ids
+          description: Role IDs to fetch (can be provided in query string or request body)
+          required: false
+          schema:
+            type: string
+  /api/v1/guild/{guild_id}/join-whitelist:
+    get:
+      summary: Get the complete join whitelist for a guild
+      responses:
+        '200':
+          description: Array of JoinWhitelistUser objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JoinWhitelistUser'
+        '401':
+          description: Unauthorized - missing or invalid auth token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: For large lists, prefer the paginated variant.
+    post:
+      responses:
+        '201':
+          description: The created JoinWhitelistUser object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JoinWhitelistUser'
+        '400':
+          description: Bad Request - missing or invalid body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized - missing or invalid auth token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      requestBody:
+        description: Join whitelist user to add
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JoinWhitelistUser'
+      description: If the user is already whitelisted, this updates their entry.
+      summary: Add (upsert) a user to the join whitelist
+  /api/v1/guild/{guild_id}/join-whitelist/page:
+    get:
+      summary: Get a paginated subset of the join whitelist for a guild
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild to retrieve the join whitelist for
+          schema:
+            type: integer
+        - in: query
+          name: skip
+          description: Number of entries to skip from the start (default 0)
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - in: query
+          name: take
+          description: Number of entries to return (default 50, max 200)
+          required: false
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 200
+      responses:
+        '200':
+          description: Paginated join whitelist response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResultsJoinWhitelistUser'
+        '400':
+          description: Bad Request - invalid skip/take parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized - missing or invalid auth token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Supports skip & take query parameters for pagination.
+  /api/v1/guild/{guild_id}/join-whitelist/{user_id}:
+    put:
+      summary: Update (re-add) a whitelist entry for a user
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild to update the join whitelist for
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: user_id
+          description: The ID of the user to update in the join whitelist
+          schema:
+            type: string
+      description: If the user is not already whitelisted, this adds them.
+      requestBody:
+        description: Optional body to specify 'added_by' user ID
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JoinWhitelistAddedBy'
+      responses:
+        '200':
+          description: OK
+    delete:
+      description: Removes a user from the join whitelist for a specific guild.
+      responses:
+        '204':
+          description: No Content - user successfully removed
+        '401':
+          description: Unauthorized - missing or invalid auth token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild to remove the user from the join whitelist
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: user_id
+          description: The ID of the user to remove from the join whitelist
+          schema:
+            type: string
+      summary: Remove a user from the join whitelist
+  /api/v1/guild/{guild_id}/mentionables/batch/ids:
+    post:
+      description: Batch fetch mentionables (roles or users) by IDs
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: array
+                  items:
+                    type: string
+                - $ref: '#/components/schemas/GuildItemIdBatchRequestBody'
+      tags:
+        - guilds
+        - roles
+        - users
+        - mentionables
+      responses:
+        '200':
+          description: Array of mentionable roles and users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  oneOf:
+                    - $ref: '#/components/schemas/DiscordRole'
+                    - $ref: '#/components/schemas/DiscordUser'
+        '400':
+          description: Missing or invalid guild id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Batch fetch guild mentionables by IDs
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          schema:
+            type: string
+          description: Discord guild id
+        - in: query
+          name: ids
+          description: Role/User IDs to fetch (can be provided in query string or request body)
+          required: false
+          schema:
+            type: string
+  /api/v1/guild/{guild_id}/mentionables:
+    get:
+      description: List all mentionables (roles and users) in a guild
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
+        - roles
+        - users
+        - mentionables
+      responses:
+        '200':
+          description: Array of mentionable role and user objects
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      oneOf:
+                        - $ref: '#/components/schemas/DiscordRole'
+                        - $ref: '#/components/schemas/DiscordUser'
+                  - $ref: '#/components/schemas/DiscordMentionable'
+        '400':
+          description: Missing or invalid guild id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: List guild mentionables (roles + members)
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          schema:
+            type: string
+          description: Discord guild id
   /api/v1/minecraft/whitelist.json:
     get:
       tags:
@@ -2019,7 +2105,7 @@ paths:
         - X-TACOBOT-TOKEN: []
   /healthz:
     get:
-      summary: Get the health status of the service
+      description: Returns the health status of the service
       responses:
         '200':
           description: Service is healthy
@@ -2036,9 +2122,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get the health status of the service
   /health:
     get:
-      summary: Get the health status of the service
+      description: Returns the health status of the service
       responses:
         '200':
           description: Service is healthy
@@ -2055,6 +2142,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get the health status of the service
   /api/v1/settings/{section}:
     get:
       summary: Get settings for a guild and section
@@ -3310,6 +3398,15 @@ components:
       required:
         - status
       description: Simple status response with a status string
+      x-tacobot-managed: true
+    JoinWhitelistAddedBy:
+      type: object
+      properties:
+        added_by:
+          type: string
+          nullable: true
+          description: Discord user id (or system marker) of the actor who added the entry.
+      description: Container for the 'added_by' field of a join whitelist entry.
       x-tacobot-managed: true
   securitySchemes:
     X-AUTH-TOKEN:

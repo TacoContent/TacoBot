@@ -1,6 +1,6 @@
 
 from http import HTTPMethod
-from typing import Any, Callable, List, Literal, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Type, Union
 from types import FunctionType, UnionType
 from .core import _python_type_to_openapi_schema, _schema_to_openapi
 
@@ -126,7 +126,8 @@ def headerParameter(
     name: str,
     schema: type | UnionType,
     required: bool = False,
-    description: str = ""
+    description: str = "",
+    options: Optional[Dict[str, Any]] = None,
 ) -> Callable[[FunctionType], FunctionType]:
     """Define header parameter.
 
@@ -147,7 +148,8 @@ def headerParameter(
         ...     name="X-API-Version",
         ...     schema=str,
         ...     required=False,
-        ...     description="API version to use"
+        ...     description="API version to use",
+        ...     options={"enum": ['v1', 'v2']}
         ... )
         ... def get_roles(self, request, uri_variables):
         ...     pass
@@ -162,6 +164,8 @@ def headerParameter(
             'required': required,
             'description': description
         })
+        if options:
+            func.__openapi_parameters__[-1]['schema'].update(options)
         return func
     return _wrap
 
@@ -195,7 +199,8 @@ def pathParameter(
     name: str,
     schema: type,
     methods: Optional[Union[HTTPMethod, List[HTTPMethod]]] = None,
-    description: str = ""
+    description: str = "",
+    options: Optional[Dict[str, Any]] = None,
 ) -> Callable[[FunctionType], FunctionType]:
     """Define path parameter (e.g., {guild_id}).
 
@@ -217,7 +222,8 @@ def pathParameter(
         ...     schema=str,
         ...     methods=[HTTPMethod.GET],
         ...     required=True,
-        ...     description="Discord guild ID"
+        ...     description="Discord guild ID",
+        ...     options={"enum": ['abc', 'def', 'ghi']}
         ... )
         ... def get_roles(self, request, uri_variables):
         ...     pass
@@ -233,6 +239,8 @@ def pathParameter(
             'required': True,  # Path parameters are always required in OpenAPI
             'description': description
         })
+        if options:
+            func.__openapi_parameters__[-1]['schema'].update(options)
         return func
     return _wrap
 
@@ -242,8 +250,9 @@ def queryParameter(
     schema: type,
     methods: Optional[Union[HTTPMethod, List[HTTPMethod]]] = None,
     required: bool = False,
-    default: Any = None,
-    description: str = ""
+    default: Optional[Any] = None,
+    description: str = "",
+    options: Optional[Dict[str, Any]] = None,
 ) -> Callable[[FunctionType], FunctionType]:
     """Define query parameter (e.g., ?limit=10).
 
@@ -256,6 +265,7 @@ def queryParameter(
         required: Whether parameter is required (default: False)
         default: Default value if not provided
         description: Human-readable description of the parameter
+        options: Additional options for the parameter schema (e.g., enum values)
 
     Returns:
         Decorator function that adds query parameter metadata to the handler
@@ -267,7 +277,12 @@ def queryParameter(
         ...     methods=[HTTPMethod.GET],
         ...     required=False,
         ...     default=10,
-        ...     description="Maximum number of results to return"
+        ...     description="Maximum number of results to return",
+        ...     options={
+        ...         'enum': [10, 20, 50, 100],
+        ...         'minimum': 1,
+        ...         'maximum': 100
+        ...     }
         ... )
         ... def get_roles(self, request, uri_variables):
         ...     pass
@@ -281,10 +296,12 @@ def queryParameter(
             'methods': methods if isinstance(methods, list) else [methods] if methods else [],
             'schema': _python_type_to_openapi_schema(schema),
             'required': required,
-            'description': description
+            'description': description,
         }
         if default is not None:
             param_def['schema']['default'] = default
+        if options:
+            param_def['schema'].update(options)
         func.__openapi_parameters__.append(param_def)
         return func
     return _wrap
@@ -346,8 +363,8 @@ def response(
         methods: Optional[Union[List[HTTPMethod], HTTPMethod]] = None,
         description: Optional[str] = None,
         summary: Optional[str] = None,
-        contentType: str,
-        schema: Type,
+        contentType: Optional[str] = "application/json",
+        schema: Optional[Type | UnionType] = None,
     ) -> Callable[[FunctionType], FunctionType]:
     """Decorator to annotate a handler method with OpenAPI response metadata.
 
@@ -378,20 +395,23 @@ def response(
         if not hasattr(func, '__openapi_responses__'):
             setattr(func, '__openapi_responses__', [])
         responses = getattr(func, '__openapi_responses__')
-        responses.append({
+
+        model = {
             'status_code': status_codes if isinstance(status_codes, list) else [status_codes],
             'methods': methods if isinstance(methods, list) else [methods] if methods else [HTTPMethod.GET],
             'description': description,
             'summary': summary,
+        }
+
+        if schema is not None:
             # result should be a dict like {'application/json': {'schema': { '$ref': '#/components/schemas/<ModelClass>' }}}
-            'content': {
+            model['content'] = {
                 contentType: {
-                    'schema': {
-                        '$ref': f"#/components/schemas/{schema.__name__}"
-                    }
+                    'schema': _schema_to_openapi(schema)
                 }
             }
-        })
+
+        responses.append(model)
         return func
     return _wrap
 
