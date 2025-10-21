@@ -74,6 +74,79 @@ except ImportError:
     )
 
 
+def _resolve_hint_to_schema(hint_value: Any) -> Optional[Dict[str, Any]]:
+    """Resolve a hint kwarg value to an OpenAPI schema.
+    
+    Supports:
+    - Type objects (list, dict, str, int, bool, float)
+    - Typing module types (List[Any], Dict[str, Any], etc.)
+    - String annotations (e.g., "List[Dict[str, Any]]")
+    
+    Args:
+        hint_value: The hint value from @openapi.property decorator
+        
+    Returns:
+        OpenAPI schema dict if hint can be resolved, None otherwise
+    """
+    if hint_value is None:
+        return None
+        
+    # Case 1: String annotation - enhanced processing for nested types
+    if isinstance(hint_value, str):
+        # Use existing _build_schema_from_annotation as base
+        schema = _build_schema_from_annotation(hint_value)
+        
+        # Enhanced detection for List[Dict[...]] pattern
+        if schema.get('type') == 'array':
+            # Check if it's List[Dict[...]] or List[dict]
+            lowered = hint_value.lower()
+            if 'dict' in lowered or 'mapping' in lowered:
+                # Override default string items with object
+                schema['items'] = {'type': 'object'}
+        
+        return schema
+    
+    # Case 2: Type object (list, dict, str, int, bool, float)
+    if isinstance(hint_value, type):
+        type_name = hint_value.__name__.lower()
+        if type_name == 'list':
+            return {'type': 'array', 'items': {'type': 'string'}}
+        elif type_name == 'dict':
+            return {'type': 'object'}
+        elif type_name in ['str', 'string']:
+            return {'type': 'string'}
+        elif type_name in ['int', 'integer']:
+            return {'type': 'integer'}
+        elif type_name == 'bool':
+            return {'type': 'boolean'}
+        elif type_name == 'float':
+            return {'type': 'number'}
+        else:
+            # Unknown type - might be a model class
+            # Check if it's CamelCase (likely a model)
+            if type_name and type_name[0].isupper():
+                return {'$ref': f'#/components/schemas/{hint_value.__name__}'}
+            return None
+    
+    # Case 3: Typing module types (List[Any], Dict[str, Any], etc.)
+    # These have a __module__ attribute and string repr we can parse
+    if hasattr(hint_value, '__module__') and hint_value.__module__ == 'typing':
+        # Convert to string representation and parse
+        hint_str = str(hint_value)
+        # Clean up typing. prefix if present
+        hint_str = hint_str.replace('typing.', '')
+        return _resolve_hint_to_schema(hint_str)  # Recursively process as string
+    
+    # Case 4: Try converting to string as last resort
+    try:
+        hint_str = str(hint_value)
+        # Remove typing. prefix if present
+        hint_str = hint_str.replace('typing.', '')
+        return _resolve_hint_to_schema(hint_str)  # Recursively process as string
+    except Exception:
+        return None
+
+
 def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[str, Any]], set[str]]:
     """Collect model classes decorated with @openapi.component and derive naive schemas.
 
@@ -192,6 +265,13 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                         elif kw.arg == 'value':
                             # Legacy form: value kwarg for attribute value
                             key_value = _extract_constant(kw.value)
+                        elif kw.arg == 'hint':
+                            # Special handling for hint kwarg - convert AST node to string
+                            # hint can be a complex type expression (Dict[str, Any], List[Any], etc.)
+                            hint_str = _safe_unparse(kw.value)
+                            if hint_str:
+                                # Store the unparsed string representation
+                                additional_kwargs['hint'] = hint_str
                         elif kw.arg:  # Only process if kw.arg is not None
                             # Collect all other kwargs (description, minimum, maximum, etc.)
                             kwarg_value = _extract_constant(kw.value)
@@ -363,20 +443,34 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                         if potential_models:
                             # Use the first potential model (most common case: single class reference)
                             model_name = potential_models[0]
-                            # Check if this is a TypeVar - if so, treat as object
+                            # Check if this is a TypeVar - if so, check for hint, otherwise treat as object
                             if model_name in module_typevars:
-                                schema = {'type': 'object'}
+                                # Check if property decorator has a 'hint' kwarg
+                                hint_value = property_decorators.get(attr, {}).get('hint')
+                                if hint_value is not None:
+                                    # Resolve hint to schema
+                                    hint_schema = _resolve_hint_to_schema(hint_value)
+                                    if hint_schema:
+                                        schema = hint_schema
+                                    else:
+                                        # Hint couldn't be resolved, fall back to object
+                                        schema = {'type': 'object'}
+                                else:
+                                    # No hint provided, default to object
+                                    schema = {'type': 'object'}
                             else:
                                 schema = {'$ref': f'#/components/schemas/{model_name}'}
                         else:
+                            # No TypeVar or model detected - default typ to 'string'
+                            typ = 'string'
                             if typ == 'object':
                                 schema = {'type': 'object'}
                             else:
                                 # Default to string type
                                 schema = {'type': typ}
 
-                    # Only set type if we don't have a $ref
-                    if '$ref' not in schema:
+                    # Only set type if we don't have a $ref and schema wasn't already set (e.g., from hint)
+                    if not schema and '$ref' not in schema:
                         schema['type'] = typ
                 if typ == 'array':
                     # Default item type is string, but upgrade to object if annotation implies list/dict of dicts
@@ -392,9 +486,26 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                         match = re.search(list_pattern, anno_str)
                         if match:
                             inner_type = match.group(1)
-                            # Check if inner_type is a TypeVar - if so, treat as object
+                            # Check if inner_type is a TypeVar - if so, check for hint, otherwise treat as object
                             if inner_type in module_typevars:
-                                schema['items'] = {'type': 'object'}
+                                # Check if property decorator has a 'hint' kwarg
+                                hint_value = property_decorators.get(attr, {}).get('hint')
+                                if hint_value is not None:
+                                    # Resolve hint to schema
+                                    hint_schema = _resolve_hint_to_schema(hint_value)
+                                    if hint_schema:
+                                        # Extract items schema from hint if it's an array
+                                        if hint_schema.get('type') == 'array' and 'items' in hint_schema:
+                                            schema['items'] = hint_schema['items']
+                                        else:
+                                            # Hint is not an array, use it as items type
+                                            schema['items'] = hint_schema
+                                    else:
+                                        # Hint couldn't be resolved, fall back to object
+                                        schema['items'] = {'type': 'object'}
+                                else:
+                                    # No hint provided, default to object
+                                    schema['items'] = {'type': 'object'}
                             # Check if this inner type will be or is a known component
                             # We need to look ahead in the processing or check if it's already processed
                             # For now, use heuristic: if it looks like a class name (CamelCase), assume it's a component
@@ -424,8 +535,11 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                             schema[extra_k] = extra_v
 
                 # Merge in @openapi.property decorator metadata
+                # Skip 'hint' since it's only for type inference, not OpenAPI spec
                 if attr in property_decorators:
                     for key, value in property_decorators[attr].items():
+                        if key == 'hint':
+                            continue  # hint is meta-attribute, not OpenAPI spec
                         if key not in schema or schema.get(key) is None:
                             schema[key] = value
 

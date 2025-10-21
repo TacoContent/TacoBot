@@ -3299,12 +3299,17 @@ components:
         total:
           type: integer
           description: Total number of matching items (unpaged)
+          default: 0
         skip:
           type: integer
           description: Number of items skipped (offset)
+          default: 0
+          minimum: 0
         take:
           type: integer
           description: Requested page size
+          default: 0
+          minimum: 0
         items:
           type: array
           items:
@@ -3649,6 +3654,27 @@ components:
         - settings
       description: Payload for updating Minecraft settings for a guild.
       x-tacobot-managed: true
+    TacoSettingsModel:
+      type: object
+      properties:
+        guild_id:
+          type: string
+          description: The ID of the guild.
+        name:
+          type: string
+          description: The name of the settings.
+        metadata:
+          type: object
+          description: Additional metadata for the settings.
+        settings:
+          type: object
+          description: The settings data.
+      required:
+        - guild_id
+        - metadata
+        - name
+        - settings
+      description: Generic Taco Settings Model
   securitySchemes:
     X-AUTH-TOKEN:
       type: apiKey

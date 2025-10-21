@@ -6,11 +6,11 @@ from lib.models.openapi import openapi
 T = TypeVar('T')
 
 
-# @openapi.component("TacoSettingsModel", description="Generic Taco Settings Model")
-# @openapi.property("guild_id", description="The ID of the guild.")
-# @openapi.property("name", description="The name of the settings.")
-# @openapi.property("metadata", description="Additional metadata for the settings.")
-# @openapi.property("settings", description="The settings data.", hint=Dict[str, Any])
+@openapi.component("TacoSettingsModel", description="Generic Taco Settings Model")
+@openapi.property("guild_id", description="The ID of the guild.")
+@openapi.property("name", description="The name of the settings.")
+@openapi.property("metadata", description="Additional metadata for the settings.")
+@openapi.property("settings", hint=Dict[str, Any], description="The settings data.")
 class TacoSettingsModel(Generic[T]):
   
     def __init__(self, data: dict):
