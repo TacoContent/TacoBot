@@ -48,9 +48,11 @@ from lib.models.MinecraftServerSettings import MinecraftServerSettings, Minecraf
 from lib.models.MinecraftServerStatus import MinecraftServerStatus
 from lib.models.MinecraftSettingsUpdatePayload import MinecraftSettingsUpdatePayload
 from lib.models.MinecraftUser import MinecraftUser
+from lib.models.MinecraftUserStats import MinecraftUserStats
 from lib.models.MinecraftWhiteListUser import MinecraftWhiteListUser
 from lib.models.SimpleStatusResponse import SimpleStatusResponse
 from lib.models.TacoMinecraftWorldInfo import TacoMinecraftWorldInfo
+from lib.models.TacoMinecraftWorlds import TacoMinecraftWorlds
 from lib.models.TacoSettingsModel import TacoSettingsModel
 from lib.models.openapi import openapi
 import requests
@@ -661,13 +663,43 @@ class MinecraftApiHandler(BaseHttpHandler):
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
 
-    @uri_variable_mapping("/tacobot/minecraft/uuid/{username}", method="GET")
-    @uri_variable_mapping("/taco/minecraft/uuid/{username}", method="GET")
-    @uri_variable_mapping(f"/api/{API_VERSION}/minecraft/uuid/{{username}}", method="GET")
+    @uri_variable_mapping("/tacobot/minecraft/uuid/{username}", method=HTTPMethod.GET)
+    @uri_variable_mapping("/taco/minecraft/uuid/{username}", method=HTTPMethod.GET)
+    @uri_variable_mapping(f"/api/{API_VERSION}/minecraft/uuid/{{username}}", method=HTTPMethod.GET)
+    @openapi.tags("minecraft")
+    @openapi.summary("Mojang username to UUID lookup")
+    @openapi.description("Translate a Mojang / Minecraft username into a UUID.")
+    @openapi.pathParameter(
+        name="username",
+        description="Mojang account name",
+        schema=str,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        200,
+        description="Minecraft user with UUID and name",
+        contentType="application/json",
+        schema=MinecraftUser,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        404,
+        description="Username missing or user not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.managed()
     def minecraft_mojang_lookup(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Translate a Mojang / Minecraft username into a UUID.
 
-        @openapi: ignore
         Path Parameters:
             username: Mojang account name.
 
@@ -686,18 +718,262 @@ class MinecraftApiHandler(BaseHttpHandler):
         try:
             username: typing.Optional[str] = uri_variables.get("username", None)
             if not username:
-                raise HttpResponseException(404, headers, b'{ "error": "No username provided" }')
+                return self._create_error_response(400, "No username provided", headers=headers)
 
             url = f"https://api.mojang.com/users/profiles/minecraft/{username}"
             response = requests.get(url)
             if response.status_code == 200:
                 data = response.json()
                 payload = MinecraftUser(data)
-                return HttpResponse(200, headers, bytearray(json.dumps(payload, indent=4), "utf-8"))
-            raise HttpResponseException(404, headers, b'{ "error": "No user found" }')
+                return HttpResponse(200, headers, json.dumps(payload, indent=4).encode("utf-8"))
+            return self._create_error_response(404, "No user found", headers=headers)
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(exception=e)
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
+
+
+    @uri_variable_mapping("/tacobot/minecraft/player/{identifier}/stats", method=HTTPMethod.POST)
+    @uri_variable_mapping("/taco/minecraft/player/{identifier}/stats", method=HTTPMethod.POST)
+    @uri_variable_mapping(f"/api/{API_VERSION}/minecraft/player/{{identifier}}/stats", method=HTTPMethod.POST)
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.tags("minecraft")
+    @openapi.summary("Push Minecraft player statistics (Placeholder)")
+    @openapi.description("(Placeholder) Push Minecraft player statistics.")
+    @openapi.pathParameter(
+        name="identifier",
+        description="Mojang account UUID/username or discord user ID",
+        schema=str,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.requestBody(
+        description="Player statistics payload (TBD)",
+        contentType="application/json",
+        schema=MinecraftUserStats,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        200,
+        description="Player statistics (TBD)",
+        contentType="application/json",
+        schema=typing.Dict[str, typing.Any],
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        400,
+        description="Bad request",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        404,
+        description="UUID missing or user not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    def push_minecraft_player_stats(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """(Placeholder) Push Minecraft player statistics.
+
+        Path Parameters:
+            uuid: Mojang account UUID.
+
+        Returns:
+            200 JSON with player statistics (TBD).
+            400 JSON error if request body is invalid.
+            401 JSON error if authentication fails.
+            404 JSON error if UUID missing or user not found.
+            500 JSON error on unexpected failure.
+
+        Notes:
+            This endpoint is a placeholder for future implementation.
+        """
+        _method = inspect.stack()[0][3]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+        try:
+
+            if not self.validate_auth_token(request):
+                self.log.error(0, f"{self._module}.{self._class}.{_method}", "Invalid authentication token")
+                return self._create_error_response(401, "Invalid authentication token", headers=headers)
+            
+            if not request.body:
+                return self._create_error_response(400, "No body provided", headers=headers)
+            
+            data = None
+            try:
+                # parse body (not used in placeholder)
+                data = json.loads(request.body.decode("utf-8"))
+            except json.JSONDecodeError:
+                return self._create_error_response(400, "Invalid JSON body", headers=headers)
+            
+            if data is None:
+                return self._create_error_response(400, "No data provided", headers=headers)
+
+            uuid: typing.Optional[str] = uri_variables.get("uuid", None)
+            if not uuid:
+                return self._create_error_response(404, "No UUID provided", headers=headers)
+
+            # Placeholder logic for future implementation
+            payload = {"message": f"Player statistics for {uuid} are not yet implemented."}
+            return HttpResponse(200, headers, json.dumps(payload, indent=4).encode("utf-8"))
+        except HttpResponseException as e:
+            return self._create_error_from_exception(exception=e)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
+
+    @uri_variable_mapping("/tacobot/minecraft/player/{identifier}/stats", method=HTTPMethod.GET)
+    @uri_variable_mapping("/taco/minecraft/player/{identifier}/stats", method=HTTPMethod.GET)
+    @uri_variable_mapping(f"/api/{API_VERSION}/minecraft/player/{{identifier}}/stats", method=HTTPMethod.GET)
+    @openapi.tags("minecraft")
+    @openapi.summary("Get Minecraft player statistics (Placeholder)")
+    @openapi.description("(Placeholder) Get Minecraft player statistics.")
+    @openapi.pathParameter(
+        name="identifier",
+        description="Mojang account UUID/username or discord user ID",
+        schema=str,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        200,
+        description="Player statistics (TBD)",
+        contentType="application/json",
+        schema=MinecraftUserStats,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        404,
+        description="Identifier missing or user not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.managed()
+    def get_minecraft_player_stats(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """(Placeholder) Get Minecraft player statistics.
+
+        Path Parameters:
+            identifier: Mojang account UUID or username.
+
+        Returns:
+            200 JSON with player statistics (TBD).
+            404 JSON error if identifier missing or user not found.
+            500 JSON error on unexpected failure.
+
+        Notes:
+            This method is a placeholder for future implementation.
+        """
+        _method = inspect.stack()[0][3]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+        try:
+            uuid: typing.Optional[str] = uri_variables.get("uuid", None)
+            if not uuid:
+                return self._create_error_response(404, "No UUID provided", headers=headers)
+
+            # Placeholder logic for future implementation
+            payload = {"message": f"Player statistics for {uuid} are not yet implemented."}
+            return HttpResponse(200, headers, json.dumps(payload, indent=4).encode("utf-8"))
+        except HttpResponseException as e:
+            return self._create_error_from_exception(exception=e)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
+
+    @uri_variable_mapping(f"/api/{API_VERSION}/minecraft/player/{{identifier}}/stats/{{world}}", method=HTTPMethod.GET)
+    @openapi.tags("minecraft")
+    @openapi.summary("Get Minecraft player statistics by world (Placeholder)")
+    @openapi.description("(Placeholder) Get Minecraft player statistics by world.")
+    @openapi.pathParameter(
+        name="identifier",
+        description="Mojang account UUID/username or discord user ID",
+        schema=str,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.pathParameter(
+        name="world",
+        description="World identifier",
+        schema=TacoMinecraftWorlds,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        200,
+        description="Player statistics by world (TBD)",
+        contentType="application/json",
+        schema=MinecraftUserStats,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        404,
+        description="World ID missing or not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.managed()
+    def get_minecraft_player_stats_by_world(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """(Placeholder) Get Minecraft player statistics by world.
+
+        Path Parameters:
+            identifier: Mojang account UUID/username or discord user ID.
+            world: World identifier.
+
+        Returns:
+            200 JSON with player statistics by world (TBD).
+            404 JSON error if world_id missing or not found.
+            500 JSON error on unexpected failure.
+
+        Notes:
+            This method is a placeholder for future implementation.
+        """
+        _method = inspect.stack()[0][3]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+        try:
+            identifier: typing.Optional[str] = uri_variables.get("identifier", None)
+            if not identifier:
+                return self._create_error_response(404, "No identifier provided", headers=headers)
+
+            world: typing.Optional[str] = uri_variables.get("world", None)
+            if not world:
+                return self._create_error_response(404, "No world provided", headers=headers)
+
+            # Placeholder logic for future implementation
+            payload = {"message": f"Player statistics for world {world} are not yet implemented."}
+            return HttpResponse(200, headers, json.dumps(payload, indent=4).encode("utf-8"))
+        except HttpResponseException as e:
+            return self._create_error_from_exception(exception=e)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)

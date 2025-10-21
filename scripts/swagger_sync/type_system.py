@@ -538,6 +538,7 @@ def _extract_openapi_base_classes(cls: ast.ClassDef, module_typevars: set[str]) 
     - Generic type parameters (Generic[T])
     - TypeVars
     - Common base classes (object, ABC, etc.)
+    - Built-in typing classes (Dict, List, etc.)
 
     Returns:
         List of potential OpenAPI model base class names
@@ -569,11 +570,62 @@ def _extract_openapi_base_classes(cls: ast.ClassDef, module_typevars: set[str]) 
         if base_name in ('object', 'ABC', 'ABCMeta', 'type', 'Protocol'):
             continue
 
+        # Skip built-in typing classes (these should be handled via additionalProperties, not allOf)
+        if base_name in ('Dict', 'List', 'Tuple', 'Set', 'Mapping', 'Sequence', 'Iterable'):
+            continue
+
         # Only include if it looks like a class name (starts with uppercase)
         if base_name and base_name[0].isupper():
             base_classes.append(base_name)
 
     return base_classes
+
+
+def _extract_dict_inheritance_schema(cls: ast.ClassDef) -> Optional[Dict[str, Any]]:
+    """Extract additionalProperties schema from Dict[K, V] base class.
+
+    When a class inherits from typing.Dict[str, ValueType] or dict[str, ValueType],
+    this extracts the value type and generates an OpenAPI schema with additionalProperties.
+
+    Args:
+        cls: The class definition AST node
+
+    Returns:
+        Schema dict with additionalProperties if Dict inheritance detected, None otherwise
+
+    Examples:
+        class Foo(typing.Dict[str, int]): ... → {'type': 'object', 'additionalProperties': {'type': 'integer'}}
+        class Bar(Dict[str, MyModel]): ... → {'type': 'object', 'additionalProperties': {'$ref': '...'}}
+        class Baz(dict[str, float]): ... → {'type': 'object', 'additionalProperties': {'type': 'number'}}
+    """
+    from .decorator_parser import _extract_dict_schema
+
+    for base in cls.bases:
+        base_str = _safe_unparse(base)
+        if not base_str:
+            continue
+
+        # Check if base is Dict/dict or typing.Dict with type arguments
+        # Match both uppercase Dict[...] and lowercase dict[...]
+        if 'Dict[' in base_str or 'dict[' in base_str:
+            # Parse the subscript to extract value type
+            # Handle typing.Dict[K, V], Dict[K, V], and dict[K, V]
+            try:
+                # Parse the base as an expression to get AST node
+                import ast as ast_module
+                base_expr = ast_module.parse(base_str, mode='eval').body
+                
+                # Check if it's a subscript (Dict[...] or dict[...])
+                if isinstance(base_expr, ast_module.Subscript):
+                    # Extract the schema using existing decorator parser logic
+                    # This handles Dict[str, T] → additionalProperties: T
+                    schema = _extract_dict_schema(base_expr.slice)
+                    return schema
+            except Exception:
+                # If parsing fails, fall through
+                pass
+
+    return None
 
 
 def _collect_type_aliases_from_ast(module: ast.AST, file_path: pathlib.Path) -> Dict[str, str]:

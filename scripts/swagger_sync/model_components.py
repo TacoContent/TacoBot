@@ -36,6 +36,7 @@ try:
         _collect_typevars_from_ast,
         _expand_type_aliases,
         _extract_openapi_base_classes,
+        _extract_dict_inheritance_schema,
         _build_schema_from_annotation,
         _unwrap_optional,
         _extract_union_schema,
@@ -62,6 +63,7 @@ except ImportError:
         _collect_typevars_from_ast,
         _expand_type_aliases,
         _extract_openapi_base_classes,
+        _extract_dict_inheritance_schema,
         _build_schema_from_annotation,
         _unwrap_optional,
         _extract_union_schema,
@@ -547,43 +549,63 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                 if not nullable:
                     required.append(attr)
 
-            # Check for base classes to determine if we should use allOf
-            openapi_base_classes = _extract_openapi_base_classes(cls, module_typevars)
-
-            # Build the schema
-            if openapi_base_classes:
-                # Use allOf structure for inheritance
-                comp_schema: Dict[str, Any] = {'allOf': []}
-
-                # Add references to base class schemas
-                for base_class_name in openapi_base_classes:
-                    comp_schema['allOf'].append({'$ref': f'#/components/schemas/{base_class_name}'})
-
-                # Add properties/required defined or overridden in this class
-                subclass_schema: Dict[str, Any] = {}
+            # Check if class inherits from Dict[K, V] for additionalProperties schema
+            dict_schema = _extract_dict_inheritance_schema(cls)
+            
+            if dict_schema:
+                # Class inherits from Dict - use additionalProperties pattern
+                comp_schema: Dict[str, Any] = dict_schema.copy()
+                
+                # Add description and extensions
+                if description:
+                    comp_schema['description'] = description
+                if decorator_extensions:
+                    comp_schema.update(decorator_extensions)
+                
+                # If class has additional properties beyond Dict, include them
                 if props:
-                    subclass_schema['properties'] = props
-                if required:
-                    subclass_schema['required'] = sorted(required)
-
-                # Only add the subclass schema if it has content
-                if subclass_schema:
-                    comp_schema['allOf'].append(subclass_schema)
-
-                # Add description and extensions at the top level (not inside allOf)
-                if description:
-                    comp_schema['description'] = description
-                if decorator_extensions:
-                    comp_schema.update(decorator_extensions)
+                    # Merge properties into the schema (rare for Dict subclasses but possible)
+                    comp_schema['properties'] = props
+                    if required:
+                        comp_schema['required'] = sorted(required)
             else:
-                # No inheritance - use standard object schema
-                comp_schema: Dict[str, Any] = {'type': 'object', 'properties': props}
-                if required:
-                    comp_schema['required'] = sorted(required)
-                if description:
-                    comp_schema['description'] = description
-                if decorator_extensions:
-                    comp_schema.update(decorator_extensions)
+                # Check for base classes to determine if we should use allOf
+                openapi_base_classes = _extract_openapi_base_classes(cls, module_typevars)
+
+                # Build the schema
+                if openapi_base_classes:
+                    # Use allOf structure for inheritance
+                    comp_schema: Dict[str, Any] = {'allOf': []}
+
+                    # Add references to base class schemas
+                    for base_class_name in openapi_base_classes:
+                        comp_schema['allOf'].append({'$ref': f'#/components/schemas/{base_class_name}'})
+
+                    # Add properties/required defined or overridden in this class
+                    subclass_schema: Dict[str, Any] = {}
+                    if props:
+                        subclass_schema['properties'] = props
+                    if required:
+                        subclass_schema['required'] = sorted(required)
+
+                    # Only add the subclass schema if it has content
+                    if subclass_schema:
+                        comp_schema['allOf'].append(subclass_schema)
+
+                    # Add description and extensions at the top level (not inside allOf)
+                    if description:
+                        comp_schema['description'] = description
+                    if decorator_extensions:
+                        comp_schema.update(decorator_extensions)
+                else:
+                    # No inheritance - use standard object schema
+                    comp_schema: Dict[str, Any] = {'type': 'object', 'properties': props}
+                    if required:
+                        comp_schema['required'] = sorted(required)
+                    if description:
+                        comp_schema['description'] = description
+                    if decorator_extensions:
+                        comp_schema.update(decorator_extensions)
 
             components[comp_name] = comp_schema
     for alias_meta in TYPE_ALIAS_METADATA.values():

@@ -140,6 +140,164 @@ def merge_responses(
     return result
 
 
+def merge_examples_into_spec(
+    result: Dict[str, Any],
+    examples_list: List[Dict[str, Any]],
+    endpoint_method: str
+) -> None:
+    """Merge examples from decorator metadata into the appropriate OpenAPI spec locations.
+
+    Examples are placed based on their 'placement' field:
+    - 'parameter': → parameters[name].examples
+    - 'requestBody': → requestBody.content[contentType].examples
+    - 'response': → responses[statusCode].content[contentType].examples
+    - 'schema': → kept in x-examples for now (schema-level examples)
+
+    Args:
+        result: The merged endpoint metadata dict (modified in-place)
+        examples_list: List of example dicts from @openapi.example decorators
+        endpoint_method: HTTP method (e.g., 'get', 'post') for method filtering
+
+    Example:
+        >>> result = {'parameters': [{'name': 'guild_id', 'in': 'path', 'schema': {'type': 'string'}}]}
+        >>> examples = [
+        ...     {'name': 'example1', 'placement': 'parameter', 'parameter_name': 'guild_id', 'value': '123'}
+        ... ]
+        >>> merge_examples_into_spec(result, examples, 'get')
+        >>> result['parameters'][0]['examples']
+        {'example1': {'value': '123'}}
+    """
+    if not examples_list:
+        return
+
+    for example in examples_list:
+        placement = example.get('placement')
+        name = example.get('name')
+        
+        if not placement or not name:
+            continue
+
+        # Filter by HTTP methods if specified
+        if 'methods' in example:
+            allowed_methods = example.get('methods', [])
+            if endpoint_method not in allowed_methods:
+                continue
+
+        # Build the example object (without placement metadata)
+        example_obj = {}
+        if 'value' in example:
+            example_obj['value'] = example['value']
+        elif 'externalValue' in example:
+            example_obj['externalValue'] = example['externalValue']
+        elif '$ref' in example:
+            example_obj['$ref'] = example['$ref']
+        
+        # Add optional metadata
+        if 'summary' in example:
+            example_obj['summary'] = example['summary']
+        if 'description' in example:
+            example_obj['description'] = example['description']
+
+        # Add any custom extension fields (x-*)
+        for key, value in example.items():
+            if key.startswith('x-'):
+                example_obj[key] = value
+
+        # Place example based on placement type
+        if placement == 'parameter':
+            _merge_parameter_example(result, example, name, example_obj)
+        elif placement == 'requestBody':
+            _merge_request_body_example(result, example, name, example_obj)
+        elif placement == 'response':
+            _merge_response_example(result, example, name, example_obj)
+        elif placement == 'schema':
+            # Schema-level examples kept in x-examples for now
+            # TODO: Implement schema-level example placement in components/schemas
+            result.setdefault('x-schema-examples', []).append(example)
+
+
+def _merge_parameter_example(
+    result: Dict[str, Any],
+    example: Dict[str, Any],
+    name: str,
+    example_obj: Dict[str, Any]
+) -> None:
+    """Merge a parameter example into the parameters list.
+
+    Args:
+        result: Endpoint metadata dict
+        example: Full example dict with metadata
+        name: Example name
+        example_obj: Cleaned example object to insert
+    """
+    parameter_name = example.get('parameter_name')
+    if not parameter_name:
+        return
+
+    parameters = result.setdefault('parameters', [])
+    
+    # Find the parameter by name
+    for param in parameters:
+        if param.get('name') == parameter_name:
+            param.setdefault('examples', {})[name] = example_obj
+            break
+
+
+def _merge_request_body_example(
+    result: Dict[str, Any],
+    example: Dict[str, Any],
+    name: str,
+    example_obj: Dict[str, Any]
+) -> None:
+    """Merge a request body example into requestBody.content.
+
+    Args:
+        result: Endpoint metadata dict
+        example: Full example dict with metadata
+        name: Example name
+        example_obj: Cleaned example object to insert
+    """
+    content_type = example.get('contentType', 'application/json')
+    
+    request_body = result.setdefault('requestBody', {})
+    content = request_body.setdefault('content', {})
+    content_schema = content.setdefault(content_type, {})
+    content_schema.setdefault('examples', {})[name] = example_obj
+
+
+def _merge_response_example(
+    result: Dict[str, Any],
+    example: Dict[str, Any],
+    name: str,
+    example_obj: Dict[str, Any]
+) -> None:
+    """Merge a response example into responses[statusCode].content.
+
+    Args:
+        result: Endpoint metadata dict
+        example: Full example dict with metadata
+        name: Example name
+        example_obj: Cleaned example object to insert
+    """
+    status_code = example.get('status_code')
+    if status_code is None:
+        return
+
+    status_key = str(status_code)
+    content_type = example.get('contentType', 'application/json')
+
+    responses = result.setdefault('responses', {})
+    response_obj = responses.setdefault(status_key, {})
+    
+    # Ensure description exists (required by OpenAPI spec)
+    if 'description' not in response_obj:
+        response_obj['description'] = 'Response'
+    
+    content = response_obj.setdefault('content', {})
+    content_schema = content.setdefault(content_type, {})
+    content_schema.setdefault('examples', {})[name] = example_obj
+
+
 def detect_conflicts(
     yaml_meta: Dict[str, Any],
     decorator_meta: Dict[str, Any],
@@ -309,10 +467,12 @@ def merge_endpoint_metadata(
     if decorator_responses or yaml_responses:
         result['responses'] = merge_responses(yaml_responses, decorator_responses, endpoint_method)
 
+    # Merge examples into the appropriate spec locations
+    if 'x-examples' in decorator_meta:
+        merge_examples_into_spec(result, decorator_meta['x-examples'], endpoint_method)
+
     # Merge custom extension fields
     if 'x-response-headers' in decorator_meta:
         result['x-response-headers'] = decorator_meta['x-response-headers']
-    if 'x-examples' in decorator_meta:
-        result['x-examples'] = decorator_meta['x-examples']
 
     return result, warnings

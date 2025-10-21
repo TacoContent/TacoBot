@@ -1472,32 +1472,36 @@ paths:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
   /api/v1/minecraft/uuid/{username}:
     get:
-      tags:
-        - minecraft
-      summary: Get userid from username
-      description: 'Gets JSON payload of userid from username
-
-        '
       parameters:
-        - name: username
-          description: Minecraft username
-          in: path
+        - in: path
           required: true
+          name: username
+          description: Mojang account name
           schema:
             type: string
+      tags:
+        - minecraft
+      summary: Mojang username to UUID lookup
       responses:
         '200':
-          description: Successful operation
+          description: Minecraft user with UUID and name
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MinecraftUser'
-        '500':
-          description: Server Error
+        '404':
+          description: Username missing or user not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Translate a Mojang / Minecraft username into a UUID.
   /api/v1/minecraft/status:
     get:
       responses:
@@ -1582,45 +1586,9 @@ paths:
         - X-TACOBOT-TOKEN: []
       tags:
         - minecraft
-  /api/v1/minecraft/player/{user}/stats:
-    get:
-      parameters:
-        - name: user
-          description: The users minecraft username
-          in: path
-          required: true
-          schema:
-            type: string
-      tags:
-        - minecraft
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MinecraftDiscordUserStatsInfo'
-    post:
-      parameters:
-        - name: user
-          description: The users minecraft uuid
-          in: path
-          required: true
-          schema:
-            type: string
-      tags:
-        - minecraft
-      responses:
-        '200':
-          description: Successful operation
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/MinecraftUserStatsPayload'
-  /api/v1/minecraft/player/{username}/stats/{world}:
+  /api/v1/minecraft/player/{identifier}/stats/{world}:
     parameters:
-      - name: username
+      - name: identifier
         in: path
         required: true
         schema:
@@ -1633,13 +1601,45 @@ paths:
     get:
       tags:
         - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: world
+          description: World identifier
+          schema:
+            type: string
+            enum:
+              - taco_atm10
+              - taco_atm10-2
+              - taco_atm8
+              - taco_atm9
       responses:
         '200':
-          description: Successful operation
+          description: Player statistics by world (TBD)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MinecraftDiscordUserStatsInfo'
+                $ref: '#/components/schemas/MinecraftUserStats'
+        '404':
+          description: World ID missing or not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: (Placeholder) Get Minecraft player statistics by world.
+      summary: Get Minecraft player statistics by world (Placeholder)
   /api/v1/minecraft/world:
     get:
       responses:
@@ -1803,13 +1803,9 @@ paths:
         - nodered
   /api/v1/permissions/{guildId}/{userId}:
     get:
-      description: List permissions for a user.
-      security:
-        - X-AUTH-TOKEN: []
-        - X-TACOBOT-TOKEN: []
+      summary: Get user permissions
       tags:
         - permissions
-      summary: Get user permissions
       responses:
         '200':
           description: Successful operation
@@ -1819,6 +1815,20 @@ paths:
                 type: array
                 items:
                   type: string
+              examples:
+                admin_permissions:
+                  value:
+                    - permission_manage_server
+                    - permission_manage_users
+                    - permission_view_logs
+                  summary: Admin user with multiple permissions
+                single_permission:
+                  value:
+                    - permission_use_tacos
+                  summary: Regular user with single permission
+                no_permissions:
+                  value: []
+                  summary: User with no permissions (empty array)
         '400':
           description: Bad request
           content:
@@ -1831,12 +1841,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+              examples:
+                unauthorized_error:
+                  value:
+                    error: Invalid authentication token
+                  summary: Authentication failure
         5XX:
           description: Internal server error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: List permissions for a user.
       parameters:
         - in: path
           required: true
@@ -1844,12 +1860,23 @@ paths:
           schema:
             type: string
           description: Discord guild ID
+          examples:
+            guild_id_example:
+              value: '123456789012345678'
+              summary: Example Discord guild ID (18-digit snowflake)
         - in: path
           required: true
           name: userId
           schema:
             type: string
           description: Discord user ID
+          examples:
+            user_id_example:
+              value: '987654321098765432'
+              summary: Example Discord user ID (18-digit snowflake)
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
   /api/v1/permissions/{guildId}/{userId}/{permission}:
     post:
       responses:
@@ -3035,6 +3062,325 @@ paths:
           description: If called directly to TacoBot, it will redirect to Node-RED.
       summary: Redirect Twitch guild invite to Node-RED
       description: This endpoint redirects to a Node-RED flow.
+  /tacobot/minecraft/uuid/{username}:
+    get:
+      parameters:
+        - in: path
+          required: true
+          name: username
+          description: Mojang account name
+          schema:
+            type: string
+      tags:
+        - minecraft
+      summary: Mojang username to UUID lookup
+      responses:
+        '200':
+          description: Minecraft user with UUID and name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftUser'
+        '404':
+          description: Username missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Translate a Mojang / Minecraft username into a UUID.
+  /taco/minecraft/uuid/{username}:
+    get:
+      parameters:
+        - in: path
+          required: true
+          name: username
+          description: Mojang account name
+          schema:
+            type: string
+      tags:
+        - minecraft
+      summary: Mojang username to UUID lookup
+      responses:
+        '200':
+          description: Minecraft user with UUID and name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftUser'
+        '404':
+          description: Username missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Translate a Mojang / Minecraft username into a UUID.
+  /tacobot/minecraft/player/{identifier}/stats:
+    get:
+      tags:
+        - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Player statistics (TBD)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftUserStats'
+        '404':
+          description: Identifier missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: (Placeholder) Get Minecraft player statistics.
+      summary: Get Minecraft player statistics (Placeholder)
+    post:
+      tags:
+        - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      requestBody:
+        description: Player statistics payload (TBD)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftUserStats'
+      responses:
+        '200':
+          description: Player statistics (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: UUID missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: (Placeholder) Push Minecraft player statistics.
+      summary: Push Minecraft player statistics (Placeholder)
+  /api/v1/minecraft/player/{identifier}/stats:
+    get:
+      tags:
+        - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Player statistics (TBD)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftUserStats'
+        '404':
+          description: Identifier missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: (Placeholder) Get Minecraft player statistics.
+      summary: Get Minecraft player statistics (Placeholder)
+    post:
+      tags:
+        - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      requestBody:
+        description: Player statistics payload (TBD)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftUserStats'
+      responses:
+        '200':
+          description: Player statistics (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: UUID missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: (Placeholder) Push Minecraft player statistics.
+      summary: Push Minecraft player statistics (Placeholder)
+  /taco/minecraft/player/{identifier}/stats:
+    post:
+      tags:
+        - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      requestBody:
+        description: Player statistics payload (TBD)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftUserStats'
+      responses:
+        '200':
+          description: Player statistics (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: UUID missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: (Placeholder) Push Minecraft player statistics.
+      summary: Push Minecraft player statistics (Placeholder)
+    get:
+      tags:
+        - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Player statistics (TBD)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftUserStats'
+        '404':
+          description: Identifier missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: (Placeholder) Get Minecraft player statistics.
+      summary: Get Minecraft player statistics (Placeholder)
 components:
   schemas:
     ErrorStatusCodePayload:
@@ -3246,7 +3592,8 @@ components:
       x-tacobot-managed: true
     MinecraftUserStats:
       type: object
-      properties: {}
+      additionalProperties:
+        $ref: '#/components/schemas/MinecraftUserStatsItem'
       description: Payload for Minecraft user statistics.
       x-tacobot-managed: true
     MinecraftPlayerEvent:
@@ -3270,11 +3617,11 @@ components:
         uuid:
           type: string
           description: The unique identifier for the Minecraft user.
-        username:
+        name:
           type: string
           description: The username of the Minecraft user.
       required:
-        - username
+        - name
         - uuid
       description: Represents a Minecraft user with a unique ID.
       x-tacobot-managed: true
@@ -4145,6 +4492,12 @@ components:
           required:
             - settings
       description: Generic Taco Settings Model
+    MinecraftUserStatsItem:
+      type: object
+      additionalProperties:
+        type: integer
+      description: TypedDict for individual Minecraft user statistics item.
+      x-tacobot-managed: true
   securitySchemes:
     X-AUTH-TOKEN:
       type: apiKey

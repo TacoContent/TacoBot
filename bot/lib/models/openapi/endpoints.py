@@ -7,6 +7,9 @@ from .core import _python_type_to_openapi_schema, _schema_to_openapi
 HttpStatusCodes = Literal['1XX', '2XX', '3XX', '4XX', '5XX']
 StatusCodeType = Union[List[int], int, HttpStatusCodes, List[HttpStatusCodes]]
 
+# Sentinel value to detect when a parameter was not provided
+_NOT_PROVIDED = object()
+
 
 def description(text: str) -> Callable[[FunctionType], FunctionType]:
     """Set operation description (multi-line detailed documentation).
@@ -37,53 +40,206 @@ def description(text: str) -> Callable[[FunctionType], FunctionType]:
     return _wrap
 
 
-
 def example(
     name: str,
-    value: dict,
+    *,
+    value: Any = _NOT_PROVIDED,
+    externalValue: Optional[str] = None,
+    ref: Optional[str] = None,
     summary: str = "",
-    description: str = ""
+    description: str = "",
+    placement: Literal['parameter', 'requestBody', 'response', 'schema'] = 'response',
+    status_code: Optional[Union[int, str]] = None,
+    parameter_name: Optional[str] = None,
+    contentType: str = "application/json",
+    methods: Optional[Union[HTTPMethod, List[HTTPMethod]]] = None,
+    **kwargs,
 ) -> Callable[[FunctionType], FunctionType]:
-    """Add example request/response.
+    """Add OpenAPI example for parameters, request/response bodies, or schemas.
 
-    Provides concrete examples of requests or responses for the operation.
-    Examples help API consumers understand the expected data format and
-    appear in API documentation tools like Swagger UI.
+    Provides concrete examples that help API consumers understand expected data formats.
+    Supports inline values, external files, and component references per OpenAPI 3.0 spec.
+
+    OpenAPI 3.0 Compliance:
+        - value and externalValue are mutually exclusive
+        - Examples can reference components via ref parameter
+        - Examples can be placed in parameters, request bodies, responses, or schemas
+        - Multiple examples with distinct names are supported
 
     Args:
-        name: Unique name for this example (e.g., "successful_response")
-        value: Dictionary containing the example data
-        summary: Short summary of the example (optional)
-        description: Detailed description of what the example demonstrates (optional)
+        name: Unique identifier for this example (e.g., "success_response")
+        value: Embedded literal example data (mutually exclusive with externalValue and ref)
+            Can be any JSON-serializable value including None
+        externalValue: URL to external example file (mutually exclusive with value and ref)
+        ref: Reference to component example (e.g., "UserExample" -> "#/components/examples/UserExample")
+        summary: Short description of the example
+        description: Detailed explanation of what the example demonstrates (supports CommonMark)
+        placement: Where to place the example in the OpenAPI spec:
+            - 'parameter': In parameter examples (requires parameter_name)
+            - 'requestBody': In request body media type examples (requires contentType)
+            - 'response': In response media type examples (requires status_code, contentType)
+            - 'schema': In schema-level example (single example only)
+        status_code: HTTP status code for response examples (required if placement='response')
+        parameter_name: Parameter name for parameter examples (required if placement='parameter')
+        contentType: Media type for request/response body examples (default: "application/json")
+        methods: HTTP methods this example applies to (optional filter)
+        **kwargs: Additional custom fields (for future extensibility)
 
     Returns:
         Decorator function that adds example metadata to the handler
 
-    Example:
+    Raises:
+        ValueError: If mutually exclusive fields are used together, or required placement fields are missing
+
+    Examples:
+        Inline value example for response:
         >>> @openapi.example(
         ...     name="success",
-        ...     value={"id": "123", "name": "Admin"},
+        ...     value={"id": "123", "name": "Admin", "permissions": ["read", "write"]},
         ...     summary="Successful role retrieval",
-        ...     description="Example of a successful response"
+        ...     description="Example of a role with multiple permissions",
+        ...     placement='response',
+        ...     status_code=200
         ... )
         ... def get_role(self, request, uri_variables):
         ...     pass
+
+        External file example:
+        >>> @openapi.example(
+        ...     name="large_dataset",
+        ...     externalValue="https://example.com/examples/roles.json",
+        ...     summary="Large role dataset",
+        ...     placement='response',
+        ...     status_code=200
+        ... )
+        ... def get_roles(self, request, uri_variables):
+        ...     pass
+
+        Component reference example:
+        >>> @openapi.example(
+        ...     name="admin_user",
+        ...     ref="AdminUserExample",
+        ...     summary="Admin user with elevated permissions",
+        ...     placement='response',
+        ...     status_code=200
+        ... )
+        ... def get_user(self, request, uri_variables):
+        ...     pass
+
+        Parameter example:
+        >>> @openapi.example(
+        ...     name="limit_100",
+        ...     value=100,
+        ...     summary="Limit to 100 results",
+        ...     placement='parameter',
+        ...     parameter_name='limit'
+        ... )
+        ... def get_roles(self, request, uri_variables):
+        ...     pass
+
+        Request body example:
+        >>> @openapi.example(
+        ...     name="create_role",
+        ...     value={"name": "Moderator", "permissions": ["read", "moderate"]},
+        ...     summary="Create moderator role",
+        ...     placement='requestBody',
+        ...     contentType="application/json"
+        ... )
+        ... def create_role(self, request, uri_variables):
+        ...     pass
+
+        Multiple examples for different scenarios:
+        >>> @openapi.example(
+        ...     name="empty_response",
+        ...     value=[],
+        ...     summary="No roles found",
+        ...     placement='response',
+        ...     status_code=200
+        ... )
+        ... @openapi.example(
+        ...     name="populated_response",
+        ...     value=[{"id": "1", "name": "Admin"}, {"id": "2", "name": "User"}],
+        ...     summary="Multiple roles returned",
+        ...     placement='response',
+        ...     status_code=200
+        ... )
+        ... def get_roles(self, request, uri_variables):
+        ...     pass
+
+        Example with None value (null in JSON):
+        >>> @openapi.example(
+        ...     name="null_result",
+        ...     value=None,
+        ...     summary="Null response",
+        ...     placement='response',
+        ...     status_code=204
+        ... )
+        ... def delete_resource(self, request, uri_variables):
+        ...     pass
     """
+    # Validation: Check mutual exclusivity using sentinel pattern
+    has_value = value is not _NOT_PROVIDED
+    has_external = externalValue is not None
+    has_ref = ref is not None
+    
+    provided_sources = sum([has_value, has_external, has_ref])
+    
+    if provided_sources == 0:
+        raise ValueError("One of 'value', 'externalValue', or 'ref' must be provided")
+    if provided_sources > 1:
+        raise ValueError("Only one of 'value', 'externalValue', or 'ref' can be provided (mutually exclusive)")
+
+    # Validation: Check placement-specific requirements
+    if placement == 'response' and status_code is None:
+        raise ValueError("status_code is required when placement='response'")
+    if placement == 'parameter' and parameter_name is None:
+        raise ValueError("parameter_name is required when placement='parameter'")
+
     def _wrap(func: FunctionType) -> FunctionType:
         if not hasattr(func, '__openapi_examples__'):
             setattr(func, '__openapi_examples__', [])
-        example_def = {
+
+        # Build example definition according to OpenAPI 3.0 spec
+        example_def: Dict[str, Any] = {
             'name': name,
-            'value': value
+            'placement': placement,
         }
+
+        # Add the example content (value, externalValue, or $ref)
+        if has_value:
+            example_def['value'] = value
+        elif has_external:
+            example_def['externalValue'] = externalValue
+        elif has_ref:
+            # Auto-format as component reference if not already formatted
+            ref_str = ref if ref is not None else ''  # Type narrowing for linter
+            if not ref_str.startswith('#/'):
+                example_def['$ref'] = f"#/components/examples/{ref_str}"
+            else:
+                example_def['$ref'] = ref_str
+
+        # Add optional metadata
         if summary:
             example_def['summary'] = summary
         if description:
             example_def['description'] = description
+
+        # Add placement-specific metadata
+        if status_code is not None:
+            example_def['status_code'] = status_code
+        if parameter_name is not None:
+            example_def['parameter_name'] = parameter_name
+        if contentType:
+            example_def['contentType'] = contentType
+        if methods:
+            example_def['methods'] = methods if isinstance(methods, list) else [methods]
+
+        # Add any additional custom fields from **kwargs
+        example_def.update(kwargs)
+
         func.__openapi_examples__.append(example_def)
         return func
     return _wrap
-
 
 
 def externalDocs(

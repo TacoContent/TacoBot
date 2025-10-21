@@ -101,6 +101,50 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
     @openapi.description("List permissions for a user.")
     @openapi.pathParameter(name="guildId", schema=str, description="Discord guild ID", methods=HTTPMethod.GET)
     @openapi.pathParameter(name="userId", schema=str, description="Discord user ID", methods=HTTPMethod.GET)
+    # Parameter examples
+    @openapi.example(
+        name="guild_id_example",
+        value="123456789012345678",
+        placement="parameter",
+        parameter_name="guildId",
+        summary="Example Discord guild ID (18-digit snowflake)"
+    )
+    @openapi.example(
+        name="user_id_example",
+        value="987654321098765432",
+        placement="parameter",
+        parameter_name="userId",
+        summary="Example Discord user ID (18-digit snowflake)"
+    )
+    # Response examples
+    @openapi.example(
+        name="admin_permissions",
+        value=["permission_manage_server", "permission_manage_users", "permission_view_logs"],
+        placement="response",
+        status_code=200,
+        summary="Admin user with multiple permissions"
+    )
+    @openapi.example(
+        name="single_permission",
+        value=["permission_use_tacos"],
+        placement="response",
+        status_code=200,
+        summary="Regular user with single permission"
+    )
+    @openapi.example(
+        name="no_permissions",
+        value=[],
+        placement="response",
+        status_code=200,
+        summary="User with no permissions (empty array)"
+    )
+    @openapi.example(
+        name="unauthorized_error",
+        value={"error": "Invalid authentication token"},
+        placement="response",
+        status_code=401,
+        summary="Authentication failure"
+    )
     @openapi.response(
         200,
         description="Successful operation",

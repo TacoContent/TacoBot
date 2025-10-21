@@ -885,21 +885,59 @@ def _extract_response_header(decorator: ast.Call) -> Dict[str, Any]:
 def _extract_example(decorator: ast.Call) -> Dict[str, Any]:
     """Extract example from @openapi.example decorator.
 
+    Supports full OpenAPI 3.0 Example Object specification with placement types,
+    value sources (value/externalValue/ref), and placement-specific metadata.
+
     Args:
         decorator: AST Call node for @openapi.example(...)
 
     Returns:
-        Dictionary with example metadata
+        Dictionary with example metadata including:
+        - name: Example identifier
+        - placement: Where to place example (parameter/requestBody/response/schema)
+        - value/externalValue/$ref: Example content (mutually exclusive)
+        - summary/description: Optional documentation
+        - status_code: Required for response placement
+        - parameter_name: Required for parameter placement
+        - contentType: Optional content type filter
+        - methods: Optional HTTP method filter
+        - Any additional **kwargs fields
 
-    Example:
-        @openapi.example(name="success", value={"id": "123", "name": "Admin"}, summary="Successful response")
+    Examples:
+        @openapi.example(
+            name="success",
+            value={"id": "123", "name": "Admin"},
+            placement="response",
+            status_code=200,
+            summary="Successful response"
+        )
         → {
             'name': 'success',
+            'placement': 'response',
             'value': {'id': '123', 'name': 'Admin'},
+            'status_code': 200,
             'summary': 'Successful response'
+        }
+
+        @openapi.example(
+            name="user_ref",
+            ref="StandardUser",
+            placement="response",
+            status_code=200
+        )
+        → {
+            'name': 'user_ref',
+            'placement': 'response',
+            '$ref': '#/components/examples/StandardUser',
+            'status_code': 200
         }
     """
     example: Dict[str, Any] = {}
+
+    # Extract positional argument (name)
+    if decorator.args:
+        if isinstance(decorator.args[0], ast.Constant):
+            example["name"] = decorator.args[0].value
 
     # Extract keyword arguments
     for keyword in decorator.keywords:
@@ -909,15 +947,57 @@ def _extract_example(decorator: ast.Call) -> Dict[str, Any]:
         if key == "name":
             if isinstance(value_node, ast.Constant):
                 example["name"] = value_node.value
+        elif key == "placement":
+            if isinstance(value_node, ast.Constant):
+                example["placement"] = value_node.value
         elif key == "value":
-            # Parse the value (dict or list)
+            # Parse the value (dict, list, str, int, bool, None, etc.)
             example["value"] = _extract_literal_value(value_node)
+        elif key == "externalValue":
+            if isinstance(value_node, ast.Constant):
+                example["externalValue"] = value_node.value
+        elif key == "ref":
+            # Handle component reference
+            if isinstance(value_node, ast.Constant) and isinstance(value_node.value, str):
+                ref_value = value_node.value
+                # Auto-format as component reference if not already formatted
+                if not ref_value.startswith('#/'):
+                    example["$ref"] = f"#/components/examples/{ref_value}"
+                else:
+                    example["$ref"] = ref_value
         elif key == "summary":
             if isinstance(value_node, ast.Constant):
                 example["summary"] = value_node.value
         elif key == "description":
             if isinstance(value_node, ast.Constant):
                 example["description"] = value_node.value
+        elif key == "status_code":
+            if isinstance(value_node, ast.Constant):
+                example["status_code"] = value_node.value
+        elif key == "parameter_name":
+            if isinstance(value_node, ast.Constant):
+                example["parameter_name"] = value_node.value
+        elif key == "contentType":
+            if isinstance(value_node, ast.Constant):
+                example["contentType"] = value_node.value
+        elif key == "methods":
+            # Can be a single string or list of strings
+            if isinstance(value_node, ast.Constant):
+                example["methods"] = [value_node.value]
+            elif isinstance(value_node, (ast.List, ast.Tuple)):
+                methods = []
+                for elt in value_node.elts:
+                    if isinstance(elt, ast.Constant):
+                        methods.append(elt.value)
+                example["methods"] = methods
+        else:
+            # Handle any additional **kwargs fields (custom extensions)
+            if key:  # Type narrowing: ensure key is not None
+                try:
+                    example[key] = _extract_literal_value(value_node)
+                except Exception:
+                    # If we can't extract the value, skip it
+                    pass
 
     return example
 
@@ -1024,7 +1104,7 @@ def _extract_schema_reference(schema_node: ast.expr) -> Dict[str, Any]:
     """Extract OpenAPI schema reference from AST node.
 
     Handles simple model references, Union types (both typing.Union and | syntax),
-    and generic types like List[str].
+    generic types like List[str], and string literal forward references.
 
     Args:
         schema_node: AST expression node representing a schema type
@@ -1034,11 +1114,30 @@ def _extract_schema_reference(schema_node: ast.expr) -> Dict[str, Any]:
 
     Examples:
         MyModel → {'$ref': '#/components/schemas/MyModel'}
+        'MyModel' → {'$ref': '#/components/schemas/MyModel'} (string literal forward ref)
         typing.Union[ModelA, ModelB] → {'oneOf': [{'$ref': '...'}, {'$ref': '...'}]}
         ModelA | ModelB → {'oneOf': [{'$ref': '...'}, {'$ref': '...'}]}
         typing.List[str] → {'type': 'array', 'items': {'type': 'string'}}
         list[str] → {'type': 'array', 'items': {'type': 'string'}}
     """
+    # Handle string literal forward references (e.g., 'MyModel')
+    if isinstance(schema_node, ast.Constant) and isinstance(schema_node.value, str):
+        model_name = schema_node.value
+        # Check if it's a primitive type name
+        primitive_types = {"str", "int", "float", "bool", "list", "dict"}
+        if model_name in primitive_types:
+            type_mapping = {
+                "str": "string",
+                "int": "integer",
+                "float": "number",
+                "bool": "boolean",
+                "list": "array",
+                "dict": "object",
+            }
+            return {"type": type_mapping[model_name]}
+        # Otherwise treat as model reference
+        return {"$ref": f"#/components/schemas/{model_name}"}
+
     # Handle simple Name references (e.g., MyModel or str/int/bool)
     if isinstance(schema_node, ast.Name):
         # Check if it's a primitive type
