@@ -144,9 +144,16 @@ class TacosWebhookHandler(BaseWebhookHandler):
         schema=TacoWebhookMinecraftTacosPayload,
     )
     @openapi.response(
-        [400, 401, 404, 500], # this supports multiple methods as it should be applied for each method
+        [400, 401, 404], # this supports multiple methods as it should be applied for each method
         methods=HTTPMethod.POST, # it also supports single method directly
         description="Bad request due to validation or limit error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        ['5XX'], # this supports multiple methods as it should be applied for each method
+        methods=HTTPMethod.POST, # it also supports single method directly
+        description="Internal server error",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
     )
@@ -174,8 +181,14 @@ class TacosWebhookHandler(BaseWebhookHandler):
         schema=TacoWebhookMinecraftTacosPayload,
     )
     @openapi.response(
-        [400, 401, 404, 500],
+        [400, 401, 404],
         description="Bad request due to validation or limit error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        ['5XX'],
+        description="Internal server error",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
     )

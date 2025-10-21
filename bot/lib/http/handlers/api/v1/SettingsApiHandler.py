@@ -19,12 +19,15 @@ Error Model:
     maintain consistency across the API surface.
 """
 
+from http import HTTPMethod
 import inspect
 import json
 import os
 import typing
 
 from lib import discordhelper
+from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from lib.models.openapi import openapi
 from tacobot import TacoBot
 
 from bot.lib.http.handlers.api.v1.const import API_VERSION
@@ -62,7 +65,66 @@ class SettingsApiHandler(BaseHttpHandler):
         self.tracking_db = TrackingDatabase()
         self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
-    @uri_variable_mapping("/api/v1/settings/{section}", method="GET")
+    def _get_settings_for_guild(self, guild_id: int, section: str) -> typing.Optional[dict]:
+        """Retrieve settings document for a guild and section.
+
+        Args:
+            guild_id (int): Discord guild ID.
+            section (str): Logical settings section name.
+        Returns:
+            dict: Settings document if found, else None.
+        """
+
+        return self.settings.get_settings(guild_id, section)
+
+    @uri_variable_mapping("/api/v1/settings/{section}", method=HTTPMethod.GET)
+    @openapi.summary("Get settings for a guild and section")
+    @openapi.description("Retrieves the settings document for the primary guild and the specified section.")
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.tags("settings")
+    @openapi.pathParameter(
+        name="section",
+        description="Logical settings section name.",
+        schema=str,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        200,
+        description="Successful operation",
+        contentType="application/json",
+        schema=typing.Dict[str, typing.Any],
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        400,
+        description="Bad Request",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        404,
+        description="Guild or Settings not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.managed()
+    @openapi.deprecated()
     def get_settings(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Retrieve a settings document for the primary guild.
 
@@ -75,63 +137,102 @@ class SettingsApiHandler(BaseHttpHandler):
 
         Returns:
             200 JSON object (may be empty dict) representing stored settings.
-            404 JSON {"error": "Invalid authentication token"}
+            401 JSON {"error": "Invalid authentication token"}
+            404 JSON {"error": "Settings not found"}
             500 JSON {"error": "Internal server error: <details>"}
+        """
+        return self.get_guild_settings(
+            request,
+            {"section": uri_variables.get("section", ""), "guild_id": str(self.settings.primary_guild_id or "0")},
+        )
 
-        >>>openapi
-        get:
-          security:
-            - X-AUTH-TOKEN: []
-            - X-TACOBOT-TOKEN: []
-          tags:
-            - settings
-          summary: Get settings for a guild and section
-          description: >-
-            Retrieves the settings document for the primary guild and the specified section.
-          parameters:
-            - name: section
-              in: path
-              required: true
-              schema:
-                type: string
-          responses:
-            '200':
-              description: Successful operation
-              content:
-                application/json:
-                  schema:
-                    type: object
-            '404':
-              description: Guild or Emoji not found
-              content:
-                application/json:
-                  schema:
-                    $ref: '#/components/schemas/ErrorStatusCodePayload'
-            '500':
-              description: Internal server error
-              content:
-                application/json:
-                  schema:
-                    $ref: '#/components/schemas/ErrorStatusCodePayload'
-        <<<openapi
+
+    @uri_variable_mapping("/api/v1/guilds/{guild_id}/settings/{section}", method=HTTPMethod.GET)
+    @openapi.summary("Get settings for a guild and section")
+    @openapi.description("Retrieves the settings document for the guild and the specified section.")
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.tags("settings")
+    @openapi.pathParameter(
+        name="section",
+        description="Logical settings section name.",
+        schema=str,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.pathParameter(
+        name="guild_id",
+        description="Discord Guild ID.",
+        schema=int,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        200,
+        description="Successful operation",
+        contentType="application/json",
+        schema=typing.Dict[str, typing.Any],
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        400,
+        description="Bad Request",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        404,
+        description="Guild or Settings not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.managed()
+    def get_guild_settings(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """Retrieve a settings document for the specified guild.
+
+        Path Parameters:
+            section (str): Logical settings section name.
+            guild_id (int): Discord Guild ID.
+
+        Authentication:
+            Requires a valid authentication token. If invalid, a 404 JSON error
+            is returned instead of 401 to avoid disclosing resource details.
+
+        Returns:
+            200 JSON object (may be empty dict) representing stored settings.
+            401 JSON {"error": "Invalid authentication token"}
+            404 JSON {"error": "Settings not found"}
+            500 JSON {"error": "Internal server error: <details>"}
         """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
         try:
             if not self.validate_auth_token(request):
-                return HttpResponse(404, headers, b'{"error": "Invalid authentication token"}')
+                return self._create_error_response(401, "Invalid authentication token", headers)
 
             section = uri_variables.get("section", "")
-            guild_id = int(self.settings.primary_guild_id or "0")
+            guild_id = int(uri_variables.get("guild_id", self.settings.primary_guild_id or "0"))
 
-            data = self.settings.get_settings(guild_id, section)
-            # Ensure a JSON object (never None) for consistency
+            data = self._get_settings_for_guild(guild_id, section)
+
             if data is None:
-                data = {}
+                return self._create_error_response(404, "Settings not found", headers)
 
             return HttpResponse(200, headers, bytearray(json.dumps(data, indent=4), "utf-8"))
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{ex}")
-            err_msg = f'{{"error": "Internal server error: {str(ex)}" }}'
-            return HttpResponse(500, headers, bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, f"Internal server error: {str(ex)}", headers)

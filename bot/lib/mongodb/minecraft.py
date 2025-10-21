@@ -24,7 +24,7 @@ class MinecraftDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            result = self.connection.minecraft_users.find_one({"user_id": str(userId), "guild_id": str(guildId)})
+            result = self.connection.minecraft_users.find_one({"user_id": str(userId), "guild_id": str(guildId)}) # type: ignore
             if result:
                 return result
             return None

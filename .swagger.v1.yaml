@@ -17,32 +17,42 @@ servers:
 paths:
   /api/v1/swagger.yaml:
     get:
+      summary: Serve the OpenAPI/Swagger YAML document
+      description: Serve the OpenAPI/Swagger YAML document
       tags:
         - swagger
-      parameters: []
       responses:
         '200':
           description: Successful operation
           content:
-            application/yaml:
+            text/vnd.yaml:
               schema:
                 type: string
-      summary: Get the swagger file
-      description: Gets the swagger file
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
   /swagger.yaml:
     get:
+      summary: Serve the OpenAPI/Swagger YAML document
+      description: Serve the OpenAPI/Swagger YAML document
       tags:
         - swagger
-      parameters: []
       responses:
         '200':
           description: Successful operation
           content:
-            application/yaml:
+            text/vnd.yaml:
               schema:
                 type: string
-      summary: Get the swagger file
-      description: Gets the swagger file
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
   /api/v1/health:
     get:
       description: Returns the health status of the service
@@ -1424,40 +1434,42 @@ paths:
           description: Discord guild id
   /api/v1/minecraft/whitelist.json:
     get:
-      tags:
-        - minecraft
-      summary: Get the whitelist JSON
-      description: 'Gets JSON formatted whitelist configuration
-
-        '
-      parameters: []
+      summary: Get Minecraft whitelist
+      description: Return the current Minecraft whitelist.
       responses:
         '200':
-          description: Successful operation
+          description: Array of whitelisted Minecraft users
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/MinecraftWhiteListUser'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
   /api/v1/minecraft/ops.json:
     get:
-      tags:
-        - minecraft
-      summary: Get the ops list JSON
-      description: 'Gets JSON formatted OPS configuration
-
-        '
-      parameters: []
+      summary: Get Minecraft operator list
+      description: Return enabled operator (op) entries.
       responses:
         '200':
-          description: Successful operation
+          description: Array of enabled Minecraft operator users
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/MinecraftOpUser'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
   /api/v1/minecraft/uuid/{username}:
     get:
       tags:
@@ -1488,19 +1500,15 @@ paths:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
   /api/v1/minecraft/status:
     get:
-      tags:
-        - minecraft
-      summary: Get the server status information
-      description: 'Gets information on the server.
-
-        '
       responses:
         '200':
-          description: Successful operation
+          description: Live Minecraft server status
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MinecraftServerStatus'
+      description: Return live Minecraft server status summary.
+      summary: Get live Minecraft server status
   /api/v1/minecraft/version:
     get:
       tags:
@@ -1514,24 +1522,44 @@ paths:
               schema:
                 $ref: '#/components/schemas/TacoMinecraftServerSettings'
     post:
+      responses:
+        '200':
+          description: Simple status response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleStatusResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      requestBody:
+        description: Minecraft settings update payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftSettingsUpdatePayload'
+      description: Update Minecraft settings document for a guild.
+      summary: Update Minecraft settings
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
       tags:
         - minecraft
-      summary: Set the minecraft server version information
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TacoMinecraftServerSettings'
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TacoMinecraftServerSettings'
   /api/v1/minecraft/player/{user}/stats:
     get:
       parameters:
@@ -1925,55 +1953,7 @@ paths:
           description: Permission to remove
       tags:
         - permissions
-  /webhook/minecraft/tacos/{action}:
-    parameters:
-      - name: action
-        in: path
-        required: true
-        description: What action was taken
-        schema:
-          type: string
-          enum:
-            - login
-            - custom
-    post:
-      security:
-        - X-TACOBOT-TOKEN: []
-      # tags:
-      #   - webhook
-      summary: Minecraft Webhook to give tacos to a user
-      description: ''
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TacoWebhookMinecraftTacosPayload'
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TacoWebhookMinecraftTacosResponsePayload'
-    delete:
-      security:
-        - X-TACOBOT-TOKEN: []
-      tags:
-        - webhook
-      summary: Minecraft Webhook to remove tacos from a user
-      description: ''
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TacoWebhookMinecraftTacosPayload'
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TacoWebhookMinecraftTacosResponsePayload'
+
   /webhook/minecraft/player/event:
     post:
       summary: Minecraft Webhook to send player events
@@ -2145,10 +2125,6 @@ paths:
       summary: Get the health status of the service
   /api/v1/settings/{section}:
     get:
-      summary: Get settings for a guild and section
-      security:
-        - X-AUTH-TOKEN: []
-        - X-TACOBOT-TOKEN: []
       responses:
         '200':
           description: Successful operation
@@ -2156,29 +2132,50 @@ paths:
             application/json:
               schema:
                 type: object
-        '404':
-          description: Guild or Emoji not found
+                additionalProperties: true
+        '400':
+          description: Bad Request
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-        '500':
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild or Settings not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
           description: Internal server error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-      description: Retrieves the settings document for the primary guild and the specified section.
       parameters:
-        - name: section
-          in: path
+        - in: path
           required: true
+          name: section
+          description: Logical settings section name.
           schema:
             type: string
+      description: Retrieves the settings document for the primary guild and the specified section.
       tags:
         - settings
+      summary: Get settings for a guild and section
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
   /webhook/minecraft/tacos:
     post:
+      tags:
+        - webhook
+        - minecraft
       responses:
         '200':
           description: Tacos successfully granted or removed
@@ -2204,20 +2201,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-        '500':
-          description: Bad request due to validation or limit error
+        5XX:
+          description: Internal server error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-      tags:
-        - webhook
-        - minecraft
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
   /webhook/tacos:
     post:
+      tags:
+        - webhook
+        - tacos
+      description: This endpoint allows for the granting or revocation of tacos between users through a webhook.
+      summary: Grant or revoke tacos between users via webhook
       responses:
         '200':
           description: Tacos successfully granted or removed
@@ -2243,17 +2242,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-        '500':
-          description: Bad request due to validation or limit error
+        5XX:
+          description: Internal server error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-      summary: Grant or revoke tacos between users via webhook
-      tags:
-        - webhook
-        - tacos
-      description: This endpoint allows for the granting or revocation of tacos between users through a webhook.
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
@@ -2349,6 +2343,238 @@ paths:
             schema:
               oneOf:
                 - type: string
+  /api/v1/guilds/{guild_id}/settings/{section}:
+    get:
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild or Settings not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      parameters:
+        - in: path
+          required: true
+          name: section
+          description: Logical settings section name.
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: guild_id
+          description: Discord Guild ID.
+          schema:
+            type: integer
+      description: Retrieves the settings document for the guild and the specified section.
+      tags:
+        - settings
+      summary: Get settings for a guild and section
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /tacobot/minecraft/whitelist.json:
+    get:
+      summary: Get Minecraft whitelist
+      description: Return the current Minecraft whitelist.
+      responses:
+        '200':
+          description: Array of whitelisted Minecraft users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MinecraftWhiteListUser'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /taco/minecraft/whitelist.json:
+    get:
+      summary: Get Minecraft whitelist
+      description: Return the current Minecraft whitelist.
+      responses:
+        '200':
+          description: Array of whitelisted Minecraft users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MinecraftWhiteListUser'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /tacobot/minecraft/ops.json:
+    get:
+      summary: Get Minecraft operator list
+      description: Return enabled operator (op) entries.
+      responses:
+        '200':
+          description: Array of enabled Minecraft operator users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MinecraftOpUser'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /taco/minecraft/ops.json:
+    get:
+      summary: Get Minecraft operator list
+      description: Return enabled operator (op) entries.
+      responses:
+        '200':
+          description: Array of enabled Minecraft operator users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MinecraftOpUser'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /tacobot/minecraft/status:
+    get:
+      responses:
+        '200':
+          description: Live Minecraft server status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftServerStatus'
+      description: Return live Minecraft server status summary.
+      summary: Get live Minecraft server status
+  /taco/minecraft/status:
+    get:
+      responses:
+        '200':
+          description: Live Minecraft server status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftServerStatus'
+      description: Return live Minecraft server status summary.
+      summary: Get live Minecraft server status
+  /tacobot/minecraft/version:
+    post:
+      responses:
+        '200':
+          description: Simple status response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleStatusResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      requestBody:
+        description: Minecraft settings update payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftSettingsUpdatePayload'
+      description: Update Minecraft settings document for a guild.
+      summary: Update Minecraft settings
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - minecraft
+  /taco/minecraft/version:
+    post:
+      responses:
+        '200':
+          description: Simple status response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleStatusResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      requestBody:
+        description: Minecraft settings update payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftSettingsUpdatePayload'
+      description: Update Minecraft settings document for a guild.
+      summary: Update Minecraft settings
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - minecraft
 components:
   schemas:
     ErrorStatusCodePayload:
@@ -2598,7 +2824,7 @@ components:
         uuid:
           type: string
           description: The unique identifier for the Minecraft user.
-        username:
+        name:
           type: string
           description: The username of the Minecraft user.
         level:
@@ -2609,7 +2835,7 @@ components:
       required:
         - bypassPlayerLimit
         - level
-        - username
+        - name
         - uuid
       description: Minecraft operator user.
       x-tacobot-managed: true
@@ -2619,11 +2845,11 @@ components:
         uuid:
           type: string
           description: The user's UUID.
-        username:
+        name:
           type: string
           description: The user's Minecraft username.
       required:
-        - username
+        - name
         - uuid
       description: A user on the Minecraft whitelist.
       x-tacobot-managed: true
@@ -3395,6 +3621,7 @@ components:
       properties:
         status:
           type: string
+          description: The status message.
       required:
         - status
       description: Simple status response with a status string
@@ -3407,6 +3634,20 @@ components:
           nullable: true
           description: Discord user id (or system marker) of the actor who added the entry.
       description: Container for the 'added_by' field of a join whitelist entry.
+      x-tacobot-managed: true
+    MinecraftSettingsUpdatePayload:
+      type: object
+      properties:
+        guild_id:
+          type: string
+          description: The ID of the guild for which to update Minecraft settings.
+        settings:
+          type: string
+          description: The Minecraft settings to update.
+      required:
+        - guild_id
+        - settings
+      description: Payload for updating Minecraft settings for a guild.
       x-tacobot-managed: true
   securitySchemes:
     X-AUTH-TOKEN:

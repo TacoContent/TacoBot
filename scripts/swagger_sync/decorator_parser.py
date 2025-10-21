@@ -913,13 +913,21 @@ def _extract_schema_reference(schema_node: ast.expr) -> Dict[str, Any]:
                 return _extract_dict_schema(schema_node.slice)
 
         # Handle built-in generics: list[T], dict[K, V]
+        # Also handle imported typing generics: List[T], Dict[K, V], Union[...], Optional[T]
         if isinstance(schema_node.value, ast.Name):
-            if schema_node.value.id == "list":
+            if schema_node.value.id in ("list", "List"):
                 item_schema = _extract_schema_reference(schema_node.slice)
                 return {"type": "array", "items": item_schema}
-            elif schema_node.value.id == "dict":
-                # dict[K, V] - extract value type for additionalProperties
+            elif schema_node.value.id in ("dict", "Dict"):
+                # dict[K, V] or Dict[K, V] - extract value type for additionalProperties
                 return _extract_dict_schema(schema_node.slice)
+            elif schema_node.value.id == "Union":
+                # Union[A, B, C] (imported from typing)
+                return _extract_union_schemas(schema_node.slice)
+            elif schema_node.value.id == "Optional":
+                # Optional[T] (imported from typing)
+                wrapped_schema = _extract_schema_reference(schema_node.slice)
+                return {"oneOf": [wrapped_schema, {"type": "null"}]}
 
     # Handle A | B union syntax (Python 3.10+)
     if isinstance(schema_node, ast.BinOp) and isinstance(schema_node.op, ast.BitOr):
@@ -943,16 +951,35 @@ def _extract_dict_schema(slice_node: ast.expr) -> Dict[str, Any]:
 
     Examples:
         Dict[str, str] → {'type': 'object', 'additionalProperties': {'type': 'string'}}
+        Dict[str, Any] → {'type': 'object', 'additionalProperties': True}
         Dict[str, List[Model]] → {'type': 'object', 'additionalProperties': {'type': 'array', 'items': {'$ref': '...'}}}
         Dict[str, Model] → {'type': 'object', 'additionalProperties': {'$ref': '#/components/schemas/Model'}}
 
     Note:
         Only string keys are supported (OpenAPI limitation). Value can be any schema type.
+        When value type is typing.Any, additionalProperties is set to True per OpenAPI spec.
     """
     # Dict has two args: key type and value type
     if isinstance(slice_node, ast.Tuple) and len(slice_node.elts) >= 2:
         # First arg is key type (should be str), second is value type
         value_node = slice_node.elts[1]
+
+        # Check if value type is typing.Any or Any
+        is_any = False
+        if isinstance(value_node, ast.Name) and value_node.id == 'Any':
+            is_any = True
+        elif isinstance(value_node, ast.Attribute):
+            if value_node.attr == 'Any' and isinstance(value_node.value, ast.Name) and value_node.value.id == 'typing':
+                is_any = True
+
+        if is_any:
+            # For typing.Any, use additionalProperties: true per OpenAPI spec
+            return {
+                "type": "object",
+                "additionalProperties": True
+            }
+
+        # For specific types, extract the schema
         value_schema = _extract_schema_reference(value_node)
         return {
             "type": "object",

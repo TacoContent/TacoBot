@@ -10,9 +10,9 @@ class MinecraftWhiteListUser:
     properties:
       uuid:
         description: The user's UUID.
-      username:
+      name:
         description: The user's Minecraft username.
     <<<openapi"""
     def __init__(self, data: dict):
         self.uuid: str = data.get('uuid', '')
-        self.username: str = data.get('username', '')
+        self.name: str = data.get('name', '')

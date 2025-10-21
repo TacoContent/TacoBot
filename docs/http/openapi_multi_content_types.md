@@ -276,5 +276,6 @@ def handler():
 ## See Also
 
 - [OpenAPI Decorators Guide](./openapi_decorators.md)
+- [Dict Type Schema Support](./dict_type_schemas.md)
 - [OpenAPI 3.0 Specification - Describing Responses](https://swagger.io/docs/specification/v3_0/describing-responses/)
 - [Swagger Sync Script Documentation](../../scripts/README.md)

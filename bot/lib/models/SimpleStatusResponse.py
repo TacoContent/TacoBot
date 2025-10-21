@@ -2,6 +2,7 @@ from lib.models.openapi import openapi
 
 
 @openapi.component("SimpleStatusResponse", description="Simple status response with a status string")
+@openapi.property("status", description="The status message.")
 @openapi.managed()
 class SimpleStatusResponse:
     def __init__(self, status: str):

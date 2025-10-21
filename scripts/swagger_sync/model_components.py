@@ -159,34 +159,56 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                 if not deco_name:
                     continue
                 if deco_name == 'property':
-                    # Handle @openapi.property(property=..., name=..., value=...) or positional args
+                    # Handle @openapi.property with multiple usage patterns:
+                    # 1. Legacy: @openapi.property("prop", "name", "value")
+                    # 2. New kwargs: @openapi.property("prop", description="...")
+                    # 3. All kwargs: @openapi.property(property="prop", description="...")
                     if not deco_call:
                         continue
 
                     prop_name: Optional[str] = None
                     key_name: Optional[str] = None
                     key_value: Any = None
+                    additional_kwargs: Dict[str, Any] = {}
 
-                    # Try positional arguments first (legacy support)
-                    if len(deco_call.args) >= 3:
+                    # Handle positional arguments
+                    if len(deco_call.args) >= 1:
+                        # First positional arg is always the property name
                         prop_name = _extract_constant(deco_call.args[0])
+                    
+                    # Legacy 3-arg form: @openapi.property("prop", "name", "value")
+                    if len(deco_call.args) >= 3:
                         key_name = _extract_constant(deco_call.args[1])
                         key_value = _extract_constant(deco_call.args[2])
 
-                    # Check keyword arguments (preferred)
+                    # Check keyword arguments (may override positional property name)
                     for kw in deco_call.keywords or []:
                         if kw.arg == 'property':
+                            # property kwarg overrides positional arg
                             prop_name = _extract_constant(kw.value)
                         elif kw.arg == 'name':
+                            # Legacy form: name kwarg for attribute name
                             key_name = _extract_constant(kw.value)
                         elif kw.arg == 'value':
+                            # Legacy form: value kwarg for attribute value
                             key_value = _extract_constant(kw.value)
+                        elif kw.arg:  # Only process if kw.arg is not None
+                            # Collect all other kwargs (description, minimum, maximum, etc.)
+                            kwarg_value = _extract_constant(kw.value)
+                            if kwarg_value is not None:
+                                additional_kwargs[kw.arg] = kwarg_value
 
-                    if not isinstance(prop_name, str) or not isinstance(key_name, str):
+                    if not isinstance(prop_name, str):
                         continue
                     if prop_name not in property_decorators:
                         property_decorators[prop_name] = {}
-                    property_decorators[prop_name][key_name] = key_value
+                    
+                    # Handle legacy name/value pair if present
+                    if isinstance(key_name, str):
+                        property_decorators[prop_name][key_name] = key_value
+                    
+                    # Add all additional kwargs (preferred form)
+                    property_decorators[prop_name].update(additional_kwargs)
                 elif deco_name == 'component':
                     if deco_call and deco_call.args:
                         first_arg = _extract_constant(deco_call.args[0])

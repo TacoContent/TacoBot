@@ -6,13 +6,13 @@ from bot.lib.models.openapi import openapi
 
 @openapi.component("DiscordCategory", description="Discord category information")
 @openapi.managed()
-@openapi.property("id", "description", "The unique identifier for the category")
-@openapi.property("type", "description", "The type of the channel, always 'category' for categories")
-@openapi.property("guild_id", "description", "The unique identifier for the guild this category belongs to")
-@openapi.property("name", "description", "The name of the category")
-@openapi.property("position", "description", "The position of the category in the guild's channel list")
-@openapi.property("category_id", "description", "The ID of the parent category, if any")
-@openapi.property("channels", "description", "List of channels under this category")
+@openapi.property("id", description="The unique identifier for the category")
+@openapi.property("type", description="The type of the channel, always 'category' for categories")
+@openapi.property("guild_id", description="The unique identifier for the guild this category belongs to")
+@openapi.property("name", description="The name of the category")
+@openapi.property("position", description="The position of the category in the guild's channel list")
+@openapi.property("category_id", description="The ID of the parent category, if any")
+@openapi.property("channels", description="List of channels under this category")
 class DiscordCategory:
     """Model for a Discord Category.
 

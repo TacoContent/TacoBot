@@ -161,3 +161,36 @@ class TestDictSchemaExtraction:
             "type": "object",
             "additionalProperties": {"type": "number"}
         }
+
+    def test_typing_dict_str_typing_any(self):
+        """Test typing.Dict[str, typing.Any] generates additionalProperties: True."""
+        code = "typing.Dict[str, typing.Any]"
+        node = ast.parse(code, mode='eval').body
+        result = _extract_schema_reference(node)
+
+        assert result == {
+            "type": "object",
+            "additionalProperties": True
+        }
+
+    def test_dict_str_any(self):
+        """Test Dict[str, Any] (with Any imported) generates additionalProperties: True."""
+        code = "Dict[str, Any]"
+        node = ast.parse(code, mode='eval').body
+        result = _extract_schema_reference(node)
+
+        assert result == {
+            "type": "object",
+            "additionalProperties": True
+        }
+
+    def test_builtin_dict_str_any(self):
+        """Test dict[str, Any] generates additionalProperties: True."""
+        code = "dict[str, Any]"
+        node = ast.parse(code, mode='eval').body
+        result = _extract_schema_reference(node)
+
+        assert result == {
+            "type": "object",
+            "additionalProperties": True
+        }

@@ -23,12 +23,14 @@ Notes:
         becomes large or frequently requested; omitted here for simplicity.
 """
 
+from http import HTTPMethod
 import inspect
 import os
 import traceback
 import typing
 
 from lib import discordhelper
+from lib.models import ErrorStatusCodePayload, openapi
 from tacobot import TacoBot
 
 from bot.lib.http.handlers.api.v1.const import API_VERSION  # noqa: F401
@@ -60,8 +62,26 @@ class SwaggerHttpHandler(BaseHttpHandler):
         self.tracking_db = TrackingDatabase()
         self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
-    @uri_mapping("/swagger.yaml", method="GET")
-    @uri_mapping(f"/api/{API_VERSION}/swagger.yaml", method="GET")
+    @uri_mapping("/swagger.yaml", method=HTTPMethod.GET)
+    @uri_mapping(f"/api/{API_VERSION}/swagger.yaml", method=HTTPMethod.GET)
+    @openapi.tags("swagger")
+    @openapi.summary("Serve the OpenAPI/Swagger YAML document")
+    @openapi.description("Serve the OpenAPI/Swagger YAML document")
+    @openapi.response(
+        200,
+        description="Successful operation",
+        contentType="text/vnd.yaml",
+        schema=str,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.managed()
     async def swagger(self, request: HttpRequest) -> HttpResponse:
         """Serve the OpenAPI/Swagger YAML document.
 
@@ -73,22 +93,6 @@ class SwaggerHttpHandler(BaseHttpHandler):
             The file lookup is synchronous; given its small size this is
             acceptable. If expanded substantially consider async file IO or
             caching the contents in memory on first request.
-        >>>openapi
-        get:
-          tags:
-            - swagger
-          summary: Get the swagger file
-          description: >-
-            Gets the swagger file
-          parameters: []
-          responses:
-            '200':
-              description: Successful operation
-              content:
-                application/yaml:
-                  schema:
-                    type: string
-        <<<openapi
         """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
@@ -98,8 +102,7 @@ class SwaggerHttpHandler(BaseHttpHandler):
                 swagger = file.read()
             return HttpResponse(200, headers, bytearray(swagger, "utf-8"))
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(exception=e)
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers)

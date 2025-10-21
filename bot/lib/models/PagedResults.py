@@ -7,10 +7,10 @@ from bot.lib.models.openapi import openapi
 T = TypeVar('T')
 
 @openapi.component("PagedResults", description="Generic paginated results container.")
-@openapi.property("total", "description", "Total number of matching items (unpaged)")
-@openapi.property("skip", "description", "Number of items skipped (offset)")
-@openapi.property("take", "description", "Requested page size")
-@openapi.property("items", "description", "Page slice of items")
+@openapi.property("total", description="Total number of matching items (unpaged)", default=0)
+@openapi.property("skip", description="Number of items skipped (offset)", default=0, minimum=0)
+@openapi.property("take", description="Requested page size", default=0, minimum=0)
+# @openapi.property("items", description="Page slice of items", hint=typing.List[typing.Any])
 @openapi.managed()
 class PagedResults(Generic[T]):
     """

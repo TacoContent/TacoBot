@@ -16,12 +16,14 @@ def attribute(name: str, value: Optional[Union[str, bool, int, float]]) -> Calla
     return _wrap
 
 
-def deprecated() -> Callable[[T], T]:
+def deprecated(message: Optional[str] = None) -> Callable[[T], T]:
     """Decorator to mark a model class as deprecated.
 
     This adds a custom attribute indicating the model is deprecated,
     which will be reflected in the OpenAPI schema.
     """
+    if message:
+        return attribute('x-tacobot-deprecated', message)
     return attribute('x-tacobot-deprecated', True)
 
 

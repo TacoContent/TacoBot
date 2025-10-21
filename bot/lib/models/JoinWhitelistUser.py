@@ -36,23 +36,19 @@ from bot.lib.models.openapi import openapi
 @openapi.component("JoinWhitelistUser", description="Container for a guild-scoped join whitelist record.")
 @openapi.property(
     property="guild_id",
-    name="description",
-    value="Discord guild (server) identifier scoping the whitelist entry.",
+    description="Discord guild (server) identifier scoping the whitelist entry.",
 )
 @openapi.property(
     property="user_id",
-    name="description",
-    value="Discord user identifier for the whitelisted user.",
+    description="Discord user identifier for the whitelisted user.",
 )
 @openapi.property(
     property="added_by",
-    name="description",
-    value="Discord user id (or system marker) of the actor who added the entry.",
+    description="Discord user id (or system marker) of the actor who added the entry.",
 )
 @openapi.property(
     property="timestamp",
-    name="description",
-    value="Creation timestamp (seconds since epoch, or milliseconds depending on writer).",
+    description="Creation timestamp (seconds since epoch, or milliseconds depending on writer).",
 )
 @openapi.managed()
 class JoinWhitelistUser:

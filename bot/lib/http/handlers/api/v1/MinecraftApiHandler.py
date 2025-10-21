@@ -34,6 +34,7 @@ Legacy Aliases:
     `/taco/` for backward compatibility with older clients / dashboards.
 """
 
+from http import HTTPMethod
 import inspect
 import json
 import os
@@ -41,7 +42,15 @@ import traceback
 import typing
 
 from lib import discordhelper
+from lib.models import ErrorStatusCodePayload
+from lib.models.MinecraftOpUser import MinecraftOpUser
+from lib.models.MinecraftServerSettings import MinecraftServerSettings
+from lib.models.MinecraftServerStatus import MinecraftServerStatus
+from lib.models.MinecraftSettingsUpdatePayload import MinecraftSettingsUpdatePayload
 from lib.models.MinecraftUser import MinecraftUser
+from lib.models.MinecraftWhiteListUser import MinecraftWhiteListUser
+from lib.models.SimpleStatusResponse import SimpleStatusResponse
+from lib.models.openapi import openapi
 import requests
 from tacobot import TacoBot
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
@@ -84,15 +93,30 @@ class MinecraftApiHandler(BaseHttpHandler):
         self.tracking_db = TrackingDatabase()
         self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
-    # eventually this will be rewritten to do the work instead of pass on to NodeRED
-    @uri_mapping(f"/api/{API_VERSION}/minecraft/whitelist.json", method="GET")
-    @uri_mapping("/tacobot/minecraft/whitelist.json", method="GET")
-    @uri_mapping("/taco/minecraft/whitelist.json", method="GET")
+    @uri_mapping(f"/api/{API_VERSION}/minecraft/whitelist.json", method=HTTPMethod.GET)
+    @uri_mapping("/tacobot/minecraft/whitelist.json", method=HTTPMethod.GET)
+    @uri_mapping("/taco/minecraft/whitelist.json", method=HTTPMethod.GET)
+    @openapi.summary("Get Minecraft whitelist")
+    @openapi.description("Return the current Minecraft whitelist.")
+    @openapi.response(
+        200,
+        description="Array of whitelisted Minecraft users",
+        contentType="application/json",
+        schema=typing.List[MinecraftWhiteListUser],
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.managed()
     def minecraft_whitelist(self, request: HttpRequest) -> HttpResponse:
         """Return the current Minecraft whitelist.
 
-        @openapi: ignore
-        Response: Array[{ "uuid": str, "name": str }]
+        Response: List[MinecraftWhiteListUser]
         Filtering: none (full list for the primary guild)
         Errors:
             500 - Internal server error
@@ -104,25 +128,40 @@ class MinecraftApiHandler(BaseHttpHandler):
 
             whitelist = self.minecraft_db.get_whitelist(self.settings.primary_guild_id)
 
-            payload = []
+            payload: typing.List[MinecraftWhiteListUser] = []
             for user in whitelist:
-                payload.append({"uuid": user.uuid, "name": user.username})
+                payload.append(MinecraftWhiteListUser({"uuid": user.uuid, "name": user.username}))
 
             return HttpResponse(200, headers, bytearray(json.dumps(payload, indent=4), "utf-8"))
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(exception=e)
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.minecraft_whitelist", f"{str(e)}", traceback.format_exc())
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
 
-    @uri_mapping("/tacobot/minecraft/ops.json", method="GET")
-    @uri_mapping("/taco/minecraft/ops.json", method="GET")
-    @uri_mapping(f"/api/{API_VERSION}/minecraft/ops.json", method="GET")
+    @uri_mapping("/tacobot/minecraft/ops.json", method=HTTPMethod.GET)
+    @uri_mapping("/taco/minecraft/ops.json", method=HTTPMethod.GET)
+    @uri_mapping(f"/api/{API_VERSION}/minecraft/ops.json", method=HTTPMethod.GET)
+    @openapi.summary("Get Minecraft operator list")
+    @openapi.description("Return enabled operator (op) entries.")
+    @openapi.response(
+        200,
+        description="Array of enabled Minecraft operator users",
+        contentType="application/json",
+        schema=typing.List[MinecraftOpUser],
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.managed()
     def minecraft_oplist(self, request: HttpRequest) -> HttpResponse:
         """Return enabled operator (op) entries.
 
-        @openapi: ignore
         Only ops whose stored `op.enabled` flag is true are included. Each op
         includes level and bypassPlayerLimit fields from persisted metadata.
         Response: Array[{ uuid, name, level, bypassPlayerLimit }]
@@ -138,29 +177,37 @@ class MinecraftApiHandler(BaseHttpHandler):
             for user in oplist:
                 if user.op is not None and user.op.get('enabled', False):
                     payload.append(
-                        {
-                            "uuid": user.uuid,
-                            "name": user.username,
-                            "level": user.op.get('level', 0),
-                            "bypassPlayerLimit": user.op.get('bypassPlayerLimit', False),
-                        }
+                        MinecraftOpUser(
+                            {
+                                "uuid": user.uuid,
+                                "name": user.username,
+                                "level": user.op.get('level', 0),
+                                "bypassPlayerLimit": user.op.get('bypassPlayerLimit', False),
+                            }
+                        )
                     )
 
-            return HttpResponse(200, headers, bytearray(json.dumps(payload, indent=4), "utf-8"))
+            return HttpResponse(200, headers, json.dumps(payload, indent=4).encode("utf-8"))
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(exception=e)
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.minecraft_oplist", f"{str(e)}", traceback.format_exc())
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
 
-    @uri_mapping("/tacobot/minecraft/status", method="GET")
-    @uri_mapping("/taco/minecraft/status", method="GET")
-    @uri_mapping(f"/api/{API_VERSION}/minecraft/status", method="GET")
+    @uri_mapping("/tacobot/minecraft/status", method=HTTPMethod.GET)
+    @uri_mapping("/taco/minecraft/status", method=HTTPMethod.GET)
+    @uri_mapping(f"/api/{API_VERSION}/minecraft/status", method=HTTPMethod.GET)
+    @openapi.summary("Get live Minecraft server status")
+    @openapi.description("Return live Minecraft server status summary.")
+    @openapi.response(
+        200,
+        description="Live Minecraft server status",
+        contentType="application/json",
+        schema=MinecraftServerStatus,
+        methods=[HTTPMethod.GET],
+    )
     def minecraft_server_status(self, request: HttpRequest) -> HttpResponse:
         """Return live Minecraft server status summary.
-
-        @openapi: ignore
         Performs a basic status query (host + port) and returns normalized
         structure including: version, player counts, MOTD (multiple formats),
         latency, secure chat enforcement, favicon/icon, and success/online flags.
@@ -171,15 +218,19 @@ class MinecraftApiHandler(BaseHttpHandler):
             500 - Server unreachable or unexpected error.
         """
         _method = inspect.stack()[0][3]
+
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
         try:
             minecraft_host_internal = "vader.bit13.local"
             minecraft_host_external = "mc.fuku.io"
             status = MinecraftStatus(minecraft_host_internal, 25565)
             result = status.get()
             if result is None:
-                return HttpResponse(500, HttpHeaders(), b'{"success": false, "online": false, "version": "OFFLINE"}')
+                resp_payload: MinecraftServerStatus = MinecraftServerStatus({"success": False, "online": False, "version": "OFFLINE"})
+                return HttpResponse(500, headers, json.dumps(resp_payload, indent=4).encode("utf-8"))
             else:
-                payload = {
+                payload: MinecraftServerStatus = MinecraftServerStatus({
                     "success": True,
                     "online": True,
                     "status": "online",
@@ -196,19 +247,58 @@ class MinecraftApiHandler(BaseHttpHandler):
                     "latency": result.latency,
                     "enforces_secure_chat": result.enforces_secure_chat,
                     "icon": result.icon,
-                }
-                return HttpResponse(200, HttpHeaders(), bytearray(json.dumps(payload, indent=4), "utf-8"))
+                })
+                return HttpResponse(200, headers, json.dumps(payload, indent=4).encode("utf-8"))
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
-            return HttpResponse(500, HttpHeaders(), b'{"success": false, "online": false, "version": "OFFLINE"}')
+            resp_payload: MinecraftServerStatus = MinecraftServerStatus({"success": False, "online": False, "version": "OFFLINE"})
+            return HttpResponse(500, headers, json.dumps(resp_payload, indent=4).encode("utf-8"))
 
-    @uri_mapping("/tacobot/minecraft/version", method="POST")
-    @uri_mapping("/taco/minecraft/version", method="POST")
-    @uri_mapping(f"/api/{API_VERSION}/minecraft/version", method="POST")
+    @uri_mapping("/tacobot/minecraft/version", method=HTTPMethod.POST)
+    @uri_mapping("/taco/minecraft/version", method=HTTPMethod.POST)
+    @uri_mapping(f"/api/{API_VERSION}/minecraft/version", method=HTTPMethod.POST)
+    @openapi.summary("Update Minecraft settings")
+    @openapi.description("Update Minecraft settings document for a guild.")
+    @openapi.requestBody(
+        description="Minecraft settings update payload",
+        contentType="application/json",
+        schema=MinecraftSettingsUpdatePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        200,
+        description="Simple status response",
+        contentType="application/json",
+        schema=SimpleStatusResponse,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        400,
+        description="Bad request",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.tags("minecraft")
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.managed()
     def minecraft_update_settings(self, request: HttpRequest) -> HttpResponse:
         """Update Minecraft settings document for a guild.
 
-        @openapi: ignore
         Authentication:
             Requires a valid auth token (``validate_auth_token``). If the token
             is invalid a 404 (intentionally obscuring) is returned.
@@ -234,21 +324,21 @@ class MinecraftApiHandler(BaseHttpHandler):
         try:
             if not self.validate_auth_token(request):
                 self.log.error(0, f"{self._module}.{self._class}.{_method}", "Invalid authentication token")
-                raise HttpResponseException(404, headers, b'{ "error": "Invalid authentication token" }')
+                return self._create_error_response(401, "Invalid authentication token", headers=headers)
             if not request.body:
-                raise HttpResponseException(404, headers, b'{ "error": "No body provided" }')
+                return self._create_error_response(400, "No body provided", headers=headers)
 
             data = json.loads(request.body.decode("utf-8"))
 
             # validate the required payload
             if not data.get("guild_id", None):
-                raise HttpResponseException(404, headers, b'{ "error": "No guild_id found in the payload" }')
+                return self._create_error_response(400, "No guild_id found in the payload", headers=headers)
 
             target_guild_id = int(data.get("guild_id", 0))
             # MINECRAFT_SETTINGS_SECTION = "minecraft"
             payload = data.get("settings", None)
             if not payload:
-                raise HttpResponseException(404, headers, b'{ "error": "No settings found in the payload" }')
+                return self._create_error_response(400, "No settings found in the payload", headers=headers)
 
             self.log.debug(
                 0, f"{self._module}.{self._class}.{_method}", f"Updating settings for guild {target_guild_id}"
@@ -258,22 +348,31 @@ class MinecraftApiHandler(BaseHttpHandler):
             #   {"guild_id": target_guild_id, "name": MINECRAFT_SETTINGS_SECTION},
             #   payload=payload,
             # )
-
-            return HttpResponse(200, headers, b'{ "status": "ok" }')
+            result = SimpleStatusResponse({"status": "ok"})
+            return HttpResponse(200, headers, json.dumps(result, indent=4).encode("utf-8"))
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(exception=e)
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
 
-    @uri_mapping("/tacobot/minecraft/version", method="GET")
-    @uri_mapping("/taco/minecraft/version", method="GET")
-    @uri_mapping(f"/api/{API_VERSION}/minecraft/version", method="GET")
+    @uri_mapping("/tacobot/minecraft/version", method=HTTPMethod.GET)
+    @uri_mapping("/taco/minecraft/version", method=HTTPMethod.GET)
+    @uri_mapping(f"/api/{API_VERSION}/minecraft/version", method=HTTPMethod.GET)
+    @openapi.summary("Get Minecraft settings")
+    @openapi.description("Fetch Minecraft settings for the primary guild.")
+    @openapi.response(
+        200,
+        description="Minecraft settings object",
+        contentType="application/json",
+        schema=MinecraftServerSettings,
+        # schema=typing.Dict[str, typing.Any],
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.ignore()
     def minecraft_get_settings(self, request: HttpRequest) -> HttpResponse:
         """Fetch Minecraft settings for the primary guild.
 
-        @openapi: ignore
         Response: JSON object representing stored settings (with internal _id removed).
         Errors:
             500 - internal server error
@@ -296,7 +395,7 @@ class MinecraftApiHandler(BaseHttpHandler):
             #     "settings": data,
             # }
 
-            return HttpResponse(200, headers, bytearray(json.dumps(data, indent=4), "utf-8"))
+            return HttpResponse(200, headers, json.dumps(data, indent=4).encode("utf-8"))
         except HttpResponseException as e:
             return HttpResponse(e.status_code, e.headers, e.body)
         except Exception as e:
