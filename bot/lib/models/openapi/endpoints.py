@@ -197,7 +197,7 @@ def operationId(id: str) -> Callable[[FunctionType], FunctionType]:
 
 def pathParameter(
     name: str,
-    schema: type,
+    schema: Optional[Type | UnionType] = None,
     methods: Optional[Union[HTTPMethod, List[HTTPMethod]]] = None,
     description: str = "",
     options: Optional[Dict[str, Any]] = None,
@@ -247,7 +247,7 @@ def pathParameter(
 
 def queryParameter(
     name: str,
-    schema: type,
+    schema: Optional[Type | UnionType] = None,
     methods: Optional[Union[HTTPMethod, List[HTTPMethod]]] = None,
     required: bool = False,
     default: Optional[Any] = None,
@@ -308,7 +308,7 @@ def queryParameter(
 
 
 def requestBody(
-    schema: type | UnionType,
+    schema: Optional[Type | UnionType] = None,
     methods: Optional[Union[HTTPMethod, List[HTTPMethod]]] = HTTPMethod.POST,
     contentType: str = "application/json",
     required: bool = True,

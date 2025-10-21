@@ -1507,20 +1507,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MinecraftServerStatus'
-      description: Return live Minecraft server status summary.
-      summary: Get live Minecraft server status
-  /api/v1/minecraft/version:
-    get:
-      tags:
-        - minecraft
-      summary: Get the minecraft server version information
-      responses:
-        '200':
-          description: Successful operation
+        '500':
+          description: Internal server error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TacoMinecraftServerSettings'
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get live Minecraft server status
+      description: Return live Minecraft server status summary.
+  /api/v1/minecraft/version:
+    get:
+      responses:
+        '200':
+          description: Minecraft settings object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftServerSettingsSettingsModel'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get Minecraft settings
+      tags:
+        - minecraft
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      description: Fetch Minecraft settings for the primary guild.
     post:
       responses:
         '200':
@@ -1620,115 +1642,165 @@ paths:
                 $ref: '#/components/schemas/MinecraftDiscordUserStatsInfo'
   /api/v1/minecraft/world:
     get:
-      tags:
-        - minecraft
-      summary: Get the active minecraft server world information
       responses:
         '200':
-          description: Successful operation
+          description: Active World object
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TacoMinecraftWorldInfo'
-    post:
+        '404':
+          description: No active worlds found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Return the currently active world for the primary guild.
+      summary: Get the currently active Minecraft world
       tags:
         - minecraft
-      summary: Set the active minecraft server world
+    post:
+      responses:
+        '200':
+          description: Simple status response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleStatusResponse'
+        '404':
+          description: World ID missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Set (and activate) a world for a guild.
+      tags:
+        - minecraft
       requestBody:
+        description: World activation payload
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                guild_id:
-                  type: string
-                  description: Discord Guild ID
-                world:
-                  $ref: '#/components/schemas/TacoMinecraftWorlds'
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TacoMinecraftWorldInfo'
+              $ref: '#/components/schemas/TacoMinecraftWorldInfo'
+      summary: Set the active Minecraft world
   /api/v1/minecraft/worlds:
     get:
-      tags:
-        - minecraft
-      summary: Get the active minecraft server world information
       responses:
         '200':
-          description: Successful operation
+          description: Array of World objects
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/TacoMinecraftWorldInfo'
-  /tacobot/guild/{guild}/invite/{channel}:
-    post:
-      security:
-        - X-AUTH-TOKEN: []
-      tags:
-        - twitch
-      summary: Invite Bot to twitch channel
-      description: ''
-      parameters:
-        - name: guild
-          in: path
-          description: The GUILD ID
-          required: true
-          schema:
-            type: string
-            format: ''
-        - name: channel
-          in: path
-          description: The name of the twitch channel
-          required: true
-          schema:
-            type: string
-            format: ''
-      responses:
-        '200':
-          description: Successful operation
-  /api/v1/minecraft/player/events:
-    get:
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: List all known worlds for the primary guild.
       tags:
         - minecraft
-      summary: Get the minecraft player events
+      summary: List all known Minecraft worlds
+  /tacobot/guild/{guild}/invite/{channel}:
+    post:
+      parameters:
+        - in: path
+          required: true
+          name: guild
+          schema:
+            type: string
+          description: ID of the guild to invite.
+        - in: path
+          required: true
+          name: channel
+          schema:
+            type: string
+          description: ID of the channel to invite.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - minecraft
+        - nodered
       responses:
         '200':
-          description: Successful operation
+          description: Successful trigger of the event.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '302':
+          description: If called directly to TacoBot, it will redirect to Node-RED.
+      summary: Redirect Twitch guild invite to Node-RED
+      description: This endpoint redirects to a Node-RED flow.
+  /api/v1/minecraft/player/events:
+    get:
+      responses:
+        '200':
+          description: Array of lowercase event names
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/MinecraftPlayerEvent'
-  /api/v1/minecraft/player/event/{event}:
-    get:
+                  type: string
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get supported Minecraft player events
       tags:
         - minecraft
-      summary: Get the minecraft player event
+      description: Enumerate supported Minecraft player event identifiers.
+  /api/v1/minecraft/player/event/{event}:
+    get:
+      summary: Redirect Minecraft player event to Node-RED
+      description: This endpoint redirects Minecraft player events to a Node-RED flow.
       parameters:
-        - name: event
-          in: path
+        - in: path
           required: true
-          description: The event type. Values can be pulled from the /tacobot/minecraft/player/events endpoint
+          name: event
           schema:
             type: string
             enum:
+              - death
               - login
               - logout
-              - death
+              - unknown
+          description: Type of Minecraft player event to redirect.
       responses:
         '200':
-          description: Successful operation
+          description: Successful trigger of the event.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MinecraftPlayerEventPayload'
+        '302':
+          description: If called directly to TacoBot, it will redirect to Node-RED.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - minecraft
+        - nodered
   /api/v1/permissions/{guildId}/{userId}:
     get:
       description: List permissions for a user.
@@ -2482,8 +2554,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MinecraftServerStatus'
-      description: Return live Minecraft server status summary.
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
       summary: Get live Minecraft server status
+      description: Return live Minecraft server status summary.
   /taco/minecraft/status:
     get:
       responses:
@@ -2493,8 +2571,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MinecraftServerStatus'
-      description: Return live Minecraft server status summary.
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
       summary: Get live Minecraft server status
+      description: Return live Minecraft server status summary.
   /tacobot/minecraft/version:
     post:
       responses:
@@ -2535,6 +2619,33 @@ paths:
         - X-TACOBOT-TOKEN: []
       tags:
         - minecraft
+    get:
+      responses:
+        '200':
+          description: Minecraft settings object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftServerSettingsSettingsModel'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get Minecraft settings
+      tags:
+        - minecraft
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      description: Fetch Minecraft settings for the primary guild.
   /taco/minecraft/version:
     post:
       responses:
@@ -2575,6 +2686,355 @@ paths:
         - X-TACOBOT-TOKEN: []
       tags:
         - minecraft
+    get:
+      responses:
+        '200':
+          description: Minecraft settings object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftServerSettingsSettingsModel'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get Minecraft settings
+      tags:
+        - minecraft
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      description: Fetch Minecraft settings for the primary guild.
+  /tacobot/minecraft/player/events:
+    get:
+      responses:
+        '200':
+          description: Array of lowercase event names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get supported Minecraft player events
+      tags:
+        - minecraft
+      description: Enumerate supported Minecraft player event identifiers.
+  /taco/minecraft/player/events:
+    get:
+      responses:
+        '200':
+          description: Array of lowercase event names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get supported Minecraft player events
+      tags:
+        - minecraft
+      description: Enumerate supported Minecraft player event identifiers.
+  /tacobot/minecraft/worlds:
+    get:
+      responses:
+        '200':
+          description: Array of World objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TacoMinecraftWorldInfo'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: List all known worlds for the primary guild.
+      tags:
+        - minecraft
+      summary: List all known Minecraft worlds
+  /taco/minecraft/worlds:
+    get:
+      responses:
+        '200':
+          description: Array of World objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TacoMinecraftWorldInfo'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: List all known worlds for the primary guild.
+      tags:
+        - minecraft
+      summary: List all known Minecraft worlds
+  /tacobot/minecraft/world:
+    get:
+      responses:
+        '200':
+          description: Active World object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TacoMinecraftWorldInfo'
+        '404':
+          description: No active worlds found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Return the currently active world for the primary guild.
+      summary: Get the currently active Minecraft world
+      tags:
+        - minecraft
+    post:
+      responses:
+        '200':
+          description: Simple status response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleStatusResponse'
+        '404':
+          description: World ID missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Set (and activate) a world for a guild.
+      tags:
+        - minecraft
+      requestBody:
+        description: World activation payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TacoMinecraftWorldInfo'
+      summary: Set the active Minecraft world
+  /taco/minecraft/world:
+    get:
+      responses:
+        '200':
+          description: Active World object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TacoMinecraftWorldInfo'
+        '404':
+          description: No active worlds found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Return the currently active world for the primary guild.
+      summary: Get the currently active Minecraft world
+      tags:
+        - minecraft
+    post:
+      responses:
+        '200':
+          description: Simple status response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleStatusResponse'
+        '404':
+          description: World ID missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Set (and activate) a world for a guild.
+      tags:
+        - minecraft
+      requestBody:
+        description: World activation payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TacoMinecraftWorldInfo'
+      summary: Set the active Minecraft world
+  /tacobot/minecraft/player/event/{event}:
+    get:
+      summary: Redirect Minecraft player event to Node-RED
+      description: This endpoint redirects Minecraft player events to a Node-RED flow.
+      parameters:
+        - in: path
+          required: true
+          name: event
+          schema:
+            type: string
+            enum:
+              - death
+              - login
+              - logout
+              - unknown
+          description: Type of Minecraft player event to redirect.
+      responses:
+        '200':
+          description: Successful trigger of the event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftPlayerEventPayload'
+        '302':
+          description: If called directly to TacoBot, it will redirect to Node-RED.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - minecraft
+        - nodered
+  /taco/minecraft/player/event/{event}:
+    get:
+      summary: Redirect Minecraft player event to Node-RED
+      description: This endpoint redirects Minecraft player events to a Node-RED flow.
+      parameters:
+        - in: path
+          required: true
+          name: event
+          schema:
+            type: string
+            enum:
+              - death
+              - login
+              - logout
+              - unknown
+          description: Type of Minecraft player event to redirect.
+      responses:
+        '200':
+          description: Successful trigger of the event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftPlayerEventPayload'
+        '302':
+          description: If called directly to TacoBot, it will redirect to Node-RED.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - minecraft
+        - nodered
+  /taco/guild/{guild}/invite/{channel}:
+    post:
+      parameters:
+        - in: path
+          required: true
+          name: guild
+          schema:
+            type: string
+          description: ID of the guild to invite.
+        - in: path
+          required: true
+          name: channel
+          schema:
+            type: string
+          description: ID of the channel to invite.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - minecraft
+        - nodered
+      responses:
+        '200':
+          description: Successful trigger of the event.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '302':
+          description: If called directly to TacoBot, it will redirect to Node-RED.
+      summary: Redirect Twitch guild invite to Node-RED
+      description: This endpoint redirects to a Node-RED flow.
+  /api/v1/guild/{guild}/invite/{channel}:
+    post:
+      parameters:
+        - in: path
+          required: true
+          name: guild
+          schema:
+            type: string
+          description: ID of the guild to invite.
+        - in: path
+          required: true
+          name: channel
+          schema:
+            type: string
+          description: ID of the channel to invite.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - minecraft
+        - nodered
+      responses:
+        '200':
+          description: Successful trigger of the event.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '302':
+          description: If called directly to TacoBot, it will redirect to Node-RED.
+      summary: Redirect Twitch guild invite to Node-RED
+      description: This endpoint redirects to a Node-RED flow.
 components:
   schemas:
     ErrorStatusCodePayload:
@@ -2770,7 +3230,7 @@ components:
           description: This is the world identifier
         name:
           type: string
-          description: The display name of the world
+          description: The display name of the world.
         active:
           type: boolean
           description: Indicates if the world is the active world
@@ -3668,12 +4128,22 @@ components:
           description: Additional metadata for the settings.
         settings:
           type: object
-          description: The settings data.
+          description: The specific settings data.
       required:
         - guild_id
         - metadata
         - name
         - settings
+      description: Generic Taco Settings Model
+    MinecraftServerSettingsSettingsModel:
+      allOf:
+        - $ref: '#/components/schemas/TacoSettingsModel'
+        - properties:
+            settings:
+              $ref: '#/components/schemas/MinecraftServerSettings'
+              description: The settings data.
+          required:
+            - settings
       description: Generic Taco Settings Model
   securitySchemes:
     X-AUTH-TOKEN:

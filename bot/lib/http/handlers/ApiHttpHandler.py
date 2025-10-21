@@ -35,7 +35,9 @@ Potential Future Enhancements
 import os
 import typing
 
+from lib import discordhelper
 import requests
+from tacobot import TacoBot
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.mongodb.minecraft import MinecraftDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
@@ -53,14 +55,15 @@ class ApiHttpHandler(BaseHttpHandler):
     downstream services.
     """
 
-    def __init__(self, bot):
-        super().__init__(bot)
+    def __init__(self, bot: TacoBot, discord_helper: typing.Optional[discordhelper.DiscordHelper] = None):
+        super().__init__(bot, discord_helper)
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.SETTINGS_SECTION = "http"
         self.NODERED_URL = "https://nodered.bit13.local"
 
+        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
         self.settings = Settings()
 
         self.minecraft_db = MinecraftDatabase()

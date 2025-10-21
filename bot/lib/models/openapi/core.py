@@ -1,5 +1,6 @@
 from types import FunctionType, UnionType
-from typing import Any, Callable, Dict, List, Optional, TypeVar, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, cast
+import typing
 
 
 _TYPE_ALIAS_REGISTRY: Dict[str, Dict[str, Any]] = {}
@@ -109,7 +110,7 @@ def type_alias(
     return _wrap
 
 
-def _python_type_to_openapi_schema(python_type: type | UnionType) -> Union[Dict[str, str], List[Dict[str, str]]]:
+def _python_type_to_openapi_schema(python_type: type | UnionType | None) -> Union[Dict[str, str], List[Dict[str, str]]]:
     """Convert Python type to OpenAPI schema type.
 
     Args:

@@ -265,7 +265,7 @@ def collect_endpoints(
                     decorator_meta_dict = None
                     decorator_ignored = False
                     try:
-                        decorator_meta = extract_decorator_metadata(fn)
+                        decorator_meta = extract_decorator_metadata(fn, module_ast=module)
                         decorator_meta_dict = decorator_meta.to_dict()
                         decorator_ignored = decorator_meta.ignore
                     except Exception:

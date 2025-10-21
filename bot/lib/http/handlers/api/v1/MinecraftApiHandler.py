@@ -44,12 +44,14 @@ import typing
 from lib import discordhelper
 from lib.models import ErrorStatusCodePayload
 from lib.models.MinecraftOpUser import MinecraftOpUser
-from lib.models.MinecraftServerSettings import MinecraftServerSettings
+from lib.models.MinecraftServerSettings import MinecraftServerSettings, MinecraftServerSettingsSettingsModel
 from lib.models.MinecraftServerStatus import MinecraftServerStatus
 from lib.models.MinecraftSettingsUpdatePayload import MinecraftSettingsUpdatePayload
 from lib.models.MinecraftUser import MinecraftUser
 from lib.models.MinecraftWhiteListUser import MinecraftWhiteListUser
 from lib.models.SimpleStatusResponse import SimpleStatusResponse
+from lib.models.TacoMinecraftWorldInfo import TacoMinecraftWorldInfo
+from lib.models.TacoSettingsModel import TacoSettingsModel
 from lib.models.openapi import openapi
 import requests
 from tacobot import TacoBot
@@ -206,6 +208,13 @@ class MinecraftApiHandler(BaseHttpHandler):
         schema=MinecraftServerStatus,
         methods=[HTTPMethod.GET],
     )
+    @openapi.response(
+        500,
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
     def minecraft_server_status(self, request: HttpRequest) -> HttpResponse:
         """Return live Minecraft server status summary.
         Performs a basic status query (host + port) and returns normalized
@@ -359,22 +368,39 @@ class MinecraftApiHandler(BaseHttpHandler):
     @uri_mapping("/tacobot/minecraft/version", method=HTTPMethod.GET)
     @uri_mapping("/taco/minecraft/version", method=HTTPMethod.GET)
     @uri_mapping(f"/api/{API_VERSION}/minecraft/version", method=HTTPMethod.GET)
+    @openapi.tags("minecraft")
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     @openapi.summary("Get Minecraft settings")
     @openapi.description("Fetch Minecraft settings for the primary guild.")
     @openapi.response(
         200,
         description="Minecraft settings object",
         contentType="application/json",
-        schema=MinecraftServerSettings,
+        schema=MinecraftServerSettingsSettingsModel,
         # schema=typing.Dict[str, typing.Any],
         methods=[HTTPMethod.GET],
     )
-    @openapi.ignore()
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.managed()
     def minecraft_get_settings(self, request: HttpRequest) -> HttpResponse:
         """Fetch Minecraft settings for the primary guild.
 
         Response: JSON object representing stored settings (with internal _id removed).
         Errors:
+            401 - invalid authentication token
             500 - internal server error
         """
         _method = inspect.stack()[0][3]
@@ -382,12 +408,19 @@ class MinecraftApiHandler(BaseHttpHandler):
             headers = HttpHeaders()
             headers.add("Content-Type", "application/json")
 
+            if not self.validate_auth_token(request):
+                self.log.error(0, f"{self._module}.{self._class}.{_method}", "Invalid authentication token")
+                return self._create_error_response(401, "Invalid authentication token", headers=headers)
+
             target_guild_id = self.settings.primary_guild_id
             SETTINGS_SECTION = "minecraft"
 
             data = self.settings.get_settings(target_guild_id, SETTINGS_SECTION)
             if data and data.get("_id", None):
                 del data["_id"]
+
+            if not data:
+                return self._create_error_response(404, "No settings found", headers=headers)
 
             # payload = {
             #     "guild_id": target_guild_id,
@@ -397,19 +430,35 @@ class MinecraftApiHandler(BaseHttpHandler):
 
             return HttpResponse(200, headers, json.dumps(data, indent=4).encode("utf-8"))
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(exception=e)
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
 
-    @uri_mapping("/tacobot/minecraft/player/events", method="GET")
-    @uri_mapping("/taco/minecraft/player/events", method="GET")
-    @uri_mapping(f"/api/{API_VERSION}/minecraft/player/events", method="GET")
+    @uri_mapping("/tacobot/minecraft/player/events", method=HTTPMethod.GET)
+    @uri_mapping("/taco/minecraft/player/events", method=HTTPMethod.GET)
+    @uri_mapping(f"/api/{API_VERSION}/minecraft/player/events", method=HTTPMethod.GET)
+    @openapi.tags("minecraft")
+    @openapi.summary("Get supported Minecraft player events")
+    @openapi.description("Enumerate supported Minecraft player event identifiers.")
+    @openapi.response(
+        200,
+        description="Array of lowercase event names",
+        contentType="application/json",
+        schema=typing.List[str],
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.managed()
     def minecraft_player_events(self, request: HttpRequest) -> HttpResponse:
         """Enumerate supported Minecraft player event identifiers.
 
-        @openapi: ignore
         Excludes enum members whose value is 0 (treated as sentinel / NONE).
         Response: Array[str] of lowercase event names.
         Errors:
@@ -428,19 +477,35 @@ class MinecraftApiHandler(BaseHttpHandler):
 
             return HttpResponse(200, headers, bytearray(json.dumps(payload, indent=4), "utf-8"))
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(exception=e)
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
 
-    @uri_mapping("/tacobot/minecraft/worlds", method="GET")
-    @uri_mapping("/taco/minecraft/worlds", method="GET")
-    @uri_mapping(f"/api/{API_VERSION}/minecraft/worlds", method="GET")
+    @uri_mapping("/tacobot/minecraft/worlds", method=HTTPMethod.GET)
+    @uri_mapping("/taco/minecraft/worlds", method=HTTPMethod.GET)
+    @uri_mapping(f"/api/{API_VERSION}/minecraft/worlds", method=HTTPMethod.GET)
+    @openapi.tags("minecraft")
+    @openapi.summary("List all known Minecraft worlds")
+    @openapi.description("List all known worlds for the primary guild.")
+    @openapi.response(
+        200,
+        description="Array of World objects",
+        contentType="application/json",
+        schema=typing.List[TacoMinecraftWorldInfo],
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.managed()
     def minecraft_worlds(self, request: HttpRequest) -> HttpResponse:
         """List all known worlds for the primary guild.
 
-        @openapi: ignore
         Response: Array[World] (serialized via model .to_dict()).
         Errors:
             500 - internal server error
@@ -458,19 +523,42 @@ class MinecraftApiHandler(BaseHttpHandler):
 
             return HttpResponse(200, headers, bytearray(json.dumps(payload, indent=4), "utf-8"))
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(exception=e)
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
 
-    @uri_mapping("/tacobot/minecraft/world", method="GET")
-    @uri_mapping("/taco/minecraft/world", method="GET")
-    @uri_mapping(f"/api/{API_VERSION}/minecraft/world", method="GET")
+    @uri_mapping("/tacobot/minecraft/world", method=HTTPMethod.GET)
+    @uri_mapping("/taco/minecraft/world", method=HTTPMethod.GET)
+    @uri_mapping(f"/api/{API_VERSION}/minecraft/world", method=HTTPMethod.GET)
+    @openapi.tags("minecraft")
+    @openapi.summary("Get the currently active Minecraft world")
+    @openapi.description("Return the currently active world for the primary guild.")
+    @openapi.response(
+        200,
+        description="Active World object",
+        contentType="application/json",
+        schema=TacoMinecraftWorldInfo,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        404,
+        description="No active worlds found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.managed()
     def minecraft_active_world(self, request: HttpRequest) -> HttpResponse:
         """Return the currently active world for the primary guild.
 
-        @openapi: ignore
         Response: World (single object) when active world exists.
         Errors:
             404 - no active worlds
@@ -480,29 +568,59 @@ class MinecraftApiHandler(BaseHttpHandler):
         try:
             headers = HttpHeaders()
             headers.add("Content-Type", "application/json")
+
+            # create endpoint to allow passing guild_id?
             guild_id = self.settings.primary_guild_id
             # guild_id = 935294040386183228
             worlds = self.minecraft_db.get_worlds(guild_id, active=True)
             if len(worlds) == 0:
-                raise HttpResponseException(404, headers, b'{ "error": "No active worlds found" }')
-
+                return self._create_error_response(404, "No active worlds found", headers=headers)
             payload = worlds[0].to_dict()
 
-            return HttpResponse(200, headers, bytearray(json.dumps(payload, indent=4), "utf-8"))
+            return HttpResponse(200, headers, json.dumps(payload, indent=4).encode("utf-8"))
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(exception=e)
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
 
-    @uri_mapping("/tacobot/minecraft/world", method="POST")
-    @uri_mapping("/taco/minecraft/world", method="POST")
-    @uri_mapping(f"/api/{API_VERSION}/minecraft/world", method="POST")
+    @uri_mapping("/tacobot/minecraft/world", method=HTTPMethod.POST)
+    @uri_mapping("/taco/minecraft/world", method=HTTPMethod.POST)
+    @uri_mapping(f"/api/{API_VERSION}/minecraft/world", method=HTTPMethod.POST)
+    @openapi.tags("minecraft")
+    @openapi.summary("Set the active Minecraft world")
+    @openapi.description("Set (and activate) a world for a guild.")
+    @openapi.requestBody(
+        description="World activation payload",
+        contentType="application/json",
+        schema=TacoMinecraftWorldInfo,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        200,
+        description="Simple status response",
+        contentType="application/json",
+        schema=SimpleStatusResponse,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        404,
+        description="World ID missing",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.managed()
     def minecraft_set_active_world(self, request: HttpRequest) -> HttpResponse:
         """Set (and activate) a world for a guild.
 
-        @openapi: ignore
         Request JSON Body:
             {
                 "world": "<world id>",
@@ -522,28 +640,26 @@ class MinecraftApiHandler(BaseHttpHandler):
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
         try:
-            guild_id = self.settings.primary_guild_id
+            # AUTH?
             if not request.body:
-                raise HttpResponseException(404, headers, b'{ "error": "No body provided" }')
+                return self._create_error_response(400, "No body provided", headers=headers)
 
             data = json.loads(request.body.decode("utf-8"))
+            info = TacoMinecraftWorldInfo(data)
 
-            world_id = data.get("world", None)
-            guild_id = data.get("guild_id", guild_id)
-            name = data.get("name", None)
+            if not info or not info.world:
+                return self._create_error_response(404, "No world_id found in the payload", headers=headers)
 
-            if not world_id:
-                raise HttpResponseException(404, headers, b'{ "error": "No world_id found in the payload" }')
+            self.minecraft_db.set_active_world(info.guild_id, info.world, info.name, True)
 
-            self.minecraft_db.set_active_world(guild_id, world_id, name, True)
-
-            return HttpResponse(200, headers, b'{ "status": "ok" }')
+            return HttpResponse(
+                200, headers, json.dumps(SimpleStatusResponse({"status": "ok"}), indent=4).encode("utf-8")
+            )
         except HttpResponseException as e:
-            return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(exception=e)
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-            raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
 
     @uri_variable_mapping("/tacobot/minecraft/uuid/{username}", method="GET")
     @uri_variable_mapping("/taco/minecraft/uuid/{username}", method="GET")

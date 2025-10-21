@@ -21,21 +21,13 @@ class MinecraftPlayerEventPayloadResponse:
         return {k: v.to_dict() if hasattr(v, 'to_dict') else v for k, v in self.__dict__.items() if v is not None}
 
 @openapi.component("MinecraftPlayerEventPayload", description="Minecraft player event payload")
+@openapi.property("user_id", description="Discord user ID of the player.")
+@openapi.property("guild_id", description="Discord guild ID associated with the event.")
+@openapi.property("payload", description="Additional event-specific data (varies by event type).")
+@openapi.property("event", description="Type of player event (login, logout, death).")
 @openapi.managed()
 class MinecraftPlayerEventPayload:
-    """Payload for Minecraft player events.
-    >>>openapi
-    properties:
-      user_id:
-        description: Discord user ID of the player.
-      guild_id:
-        description: Discord guild ID associated with the event.
-      payload:
-        description: Additional event-specific data (varies by event type).
-      event:
-        description: Type of player event (login, logout, death).
-    <<<openapi
-    """
+    """Payload for Minecraft player events."""
     def __init__(self, data: typing.Dict[str, typing.Any]):
         self.user_id: str = str(data.get("user_id", ""))
         self.guild_id: str = str(data.get("guild_id", ""))

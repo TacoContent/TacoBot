@@ -12,6 +12,8 @@ from dataclasses import dataclass, field
 import json
 from typing import Any, Dict, List, Optional, Union
 
+from .utils import _extract_literal_schema, _safe_unparse
+
 
 @dataclass
 class DecoratorMetadata:
@@ -119,7 +121,10 @@ class DecoratorMetadata:
         return responses
 
 
-def extract_decorator_metadata(func_node: ast.FunctionDef | ast.AsyncFunctionDef) -> DecoratorMetadata:
+def extract_decorator_metadata(
+    func_node: ast.FunctionDef | ast.AsyncFunctionDef,
+    module_ast: Optional[ast.Module] = None
+) -> DecoratorMetadata:
     """Extract @openapi.* decorator metadata from function AST node.
 
     This function parses the decorator list of a function definition and
@@ -127,6 +132,7 @@ def extract_decorator_metadata(func_node: ast.FunctionDef | ast.AsyncFunctionDef
 
     Args:
         func_node: AST FunctionDef or AsyncFunctionDef node representing handler method
+        module_ast: Optional module AST for resolving TypeAliases and imports
 
     Returns:
         DecoratorMetadata object with extracted values
@@ -147,6 +153,11 @@ def extract_decorator_metadata(func_node: ast.FunctionDef | ast.AsyncFunctionDef
         >>> metadata.security
         ['X-AUTH-TOKEN']
     """
+    # Build TypeAlias lookup from module if provided
+    type_alias_map: Dict[str, ast.expr] = {}
+    if module_ast:
+        type_alias_map = _build_type_alias_map(module_ast)
+
     tags = []
     security = []
     responses = []
@@ -189,11 +200,11 @@ def extract_decorator_metadata(func_node: ast.FunctionDef | ast.AsyncFunctionDef
         elif decorator_name == "ignore":
             ignore = True
         elif decorator_name == "pathParameter":
-            parameters.append(_extract_path_parameter(decorator))
+            parameters.append(_extract_path_parameter(decorator, type_alias_map))
         elif decorator_name == "queryParameter":
-            parameters.append(_extract_query_parameter(decorator))
+            parameters.append(_extract_query_parameter(decorator, type_alias_map))
         elif decorator_name == "headerParameter":
-            parameters.append(_extract_header_parameter(decorator))
+            parameters.append(_extract_header_parameter(decorator, type_alias_map))
         elif decorator_name == "requestBody":
             request_body = _extract_request_body(decorator)
         elif decorator_name == "responseHeader":
@@ -218,6 +229,124 @@ def extract_decorator_metadata(func_node: ast.FunctionDef | ast.AsyncFunctionDef
         examples=examples,
         external_docs=external_docs,
     )
+
+
+def _resolve_imported_typealias(module_path: str) -> Optional[ast.expr]:
+    """Attempt to resolve an imported TypeAlias by reading its source module.
+
+    Args:
+        module_path: Fully qualified module path (e.g., "lib.enums.minecraft_player_events.MinecraftPlayerEventLiteral")
+
+    Returns:
+        AST expression node for the TypeAlias value, or None if not found
+    """
+    try:
+        # Split module path into module and name
+        parts = module_path.rsplit(".", 1)
+        if len(parts) != 2:
+            return None
+
+        module_name, alias_name = parts
+
+        # Convert module path to file path relative to project root
+        # Assumes standard Python package structure
+        import pathlib
+        module_file_parts = module_name.split(".")
+
+        # Try to find the module file
+        current_dir = pathlib.Path(__file__).parent.parent.parent  # Go up to project root (from scripts/swagger_sync/)
+
+        # Try multiple search paths (bot/, direct)
+        search_prefixes = [pathlib.Path("bot"), pathlib.Path(".")]
+
+        module_file = None
+        for prefix in search_prefixes:
+            # Build path using Path.joinpath for cross-platform support
+            module_dir = current_dir / prefix
+            for part in module_file_parts:
+                module_dir = module_dir / part
+
+            candidate = module_dir.with_suffix(".py")
+            if candidate.exists():
+                module_file = candidate
+                break
+
+            # Try as package directory with __init__.py
+            candidate = module_dir / "__init__.py"
+            if candidate.exists():
+                module_file = candidate
+                break
+
+        # If module file wasn't found in any search path
+        if module_file is None or not module_file.exists():
+            return None        # Parse the imported module
+        source = module_file.read_text(encoding="utf-8")
+        imported_ast = ast.parse(source)
+
+        # Find the TypeAlias in the imported module
+        for node in imported_ast.body:
+            if isinstance(node, ast.AnnAssign):
+                if isinstance(node.target, ast.Name) and node.target.id == alias_name and node.value:
+                    return node.value
+            elif isinstance(node, ast.Assign):
+                if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+                    if node.targets[0].id == alias_name and isinstance(node.value, ast.Subscript):
+                        return node.value
+
+        return None
+
+    except Exception:
+        # Silently fail if we can't resolve the import
+        return None
+
+
+def _build_type_alias_map(module_ast: ast.Module) -> Dict[str, ast.expr]:
+    """Build a mapping of TypeAlias names to their definitions from module AST.
+
+    Parses module-level assignments of the form:
+        TypeName: TypeAlias = typing.Literal[...]
+        TypeName = typing.Literal[...]  # implicit TypeAlias
+
+    Also attempts to resolve imported TypeAliases by reading their source modules.
+
+    Args:
+        module_ast: Module AST node
+
+    Returns:
+        Dictionary mapping TypeAlias names to their value AST nodes
+    """
+    type_map: Dict[str, ast.expr] = {}
+    import_map: Dict[str, str] = {}  # name -> module path
+
+    for node in module_ast.body:
+        # Track imports: from X import Y
+        if isinstance(node, ast.ImportFrom):
+            module_path = node.module or ""
+            for alias in node.names:
+                import_name = alias.asname if alias.asname else alias.name
+                import_map[import_name] = f"{module_path}.{alias.name}"
+
+        # Look for annotated assignments: Name: TypeAlias = value
+        elif isinstance(node, ast.AnnAssign):
+            if isinstance(node.target, ast.Name) and node.value:
+                # Check if annotation contains TypeAlias
+                anno_str = _safe_unparse(node.annotation)
+                if anno_str and 'TypeAlias' in anno_str:
+                    type_map[node.target.id] = node.value
+        # Also handle implicit TypeAlias: Name = typing.Literal[...]
+        elif isinstance(node, ast.Assign):
+            if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+                # Check if value looks like a type expression (Subscript with typing. prefix)
+                if isinstance(node.value, ast.Subscript):
+                    type_map[node.targets[0].id] = node.value
+
+    # Resolve imported TypeAliases
+    for import_name, module_path in import_map.items():
+        resolved = _resolve_imported_typealias(module_path)
+        if resolved:
+            type_map[import_name] = resolved
+
+    return type_map
 
 
 def _is_openapi_decorator(decorator: ast.expr) -> bool:
@@ -468,11 +597,12 @@ def _extract_operation_id(decorator: ast.Call) -> Optional[str]:
     return None
 
 
-def _extract_path_parameter(decorator: ast.Call) -> Dict[str, Any]:
+def _extract_path_parameter(decorator: ast.Call, type_alias_map: Optional[Dict[str, ast.expr]] = None) -> Dict[str, Any]:
     """Extract path parameter from @openapi.pathParameter decorator.
 
     Args:
         decorator: AST Call node for @openapi.pathParameter(...)
+        type_alias_map: Optional mapping of TypeAlias names to definitions
 
     Returns:
         Dictionary with parameter metadata
@@ -499,7 +629,7 @@ def _extract_path_parameter(decorator: ast.Call) -> Dict[str, Any]:
             if isinstance(value_node, ast.Constant):
                 param["name"] = value_node.value
         elif key == "schema":
-            param["schema"] = _extract_schema_type(value_node)
+            param["schema"] = _extract_schema_type(value_node, type_alias_map)
         elif key == "required":
             if isinstance(value_node, ast.Constant):
                 param["required"] = value_node.value
@@ -518,11 +648,12 @@ def _extract_path_parameter(decorator: ast.Call) -> Dict[str, Any]:
     return param
 
 
-def _extract_query_parameter(decorator: ast.Call) -> Dict[str, Any]:
+def _extract_query_parameter(decorator: ast.Call, type_alias_map: Optional[Dict[str, ast.expr]] = None) -> Dict[str, Any]:
     """Extract query parameter from @openapi.queryParameter decorator.
 
     Args:
         decorator: AST Call node for @openapi.queryParameter(...)
+        type_alias_map: Optional mapping of TypeAlias names to definitions
 
     Returns:
         Dictionary with parameter metadata
@@ -550,7 +681,7 @@ def _extract_query_parameter(decorator: ast.Call) -> Dict[str, Any]:
             if isinstance(value_node, ast.Constant):
                 param["name"] = value_node.value
         elif key == "schema":
-            schema = _extract_schema_type(value_node)
+            schema = _extract_schema_type(value_node, type_alias_map)
         elif key == "required":
             if isinstance(value_node, ast.Constant):
                 param["required"] = value_node.value
@@ -575,11 +706,12 @@ def _extract_query_parameter(decorator: ast.Call) -> Dict[str, Any]:
     return param
 
 
-def _extract_header_parameter(decorator: ast.Call) -> Dict[str, Any]:
+def _extract_header_parameter(decorator: ast.Call, type_alias_map: Optional[Dict[str, ast.expr]] = None) -> Dict[str, Any]:
     """Extract header parameter from @openapi.headerParameter decorator.
 
     Args:
         decorator: AST Call node for @openapi.headerParameter(...)
+        type_alias_map: Optional mapping of TypeAlias names to definitions
 
     Returns:
         Dictionary with parameter metadata
@@ -606,7 +738,7 @@ def _extract_header_parameter(decorator: ast.Call) -> Dict[str, Any]:
             if isinstance(value_node, ast.Constant):
                 param["name"] = value_node.value
         elif key == "schema":
-            param["schema"] = _extract_schema_type(value_node)
+            param["schema"] = _extract_schema_type(value_node, type_alias_map)
         elif key == "required":
             if isinstance(value_node, ast.Constant):
                 param["required"] = value_node.value
@@ -823,13 +955,16 @@ def _extract_external_docs(decorator: ast.Call) -> Dict[str, str]:
     return docs
 
 
-def _extract_schema_type(type_node: ast.expr) -> Dict[str, str]:
+def _extract_schema_type(type_node: ast.expr, type_alias_map: Optional[Dict[str, ast.expr]] = None) -> Dict[str, Any]:
     """Extract OpenAPI schema type from Python type AST node.
 
     Converts Python type references (str, int, bool, etc.) to OpenAPI schema types.
+    Also handles typing.Literal[...] and Literal[...] to generate enum schemas.
+    Resolves TypeAliases when type_alias_map is provided.
 
     Args:
         type_node: AST expression node representing a type
+        type_alias_map: Optional mapping of TypeAlias names to their definitions
 
     Returns:
         Dictionary with OpenAPI type definition
@@ -837,7 +972,37 @@ def _extract_schema_type(type_node: ast.expr) -> Dict[str, str]:
     Example:
         str → {'type': 'string'}
         int → {'type': 'integer'}
+        Literal["a", "b"] → {'type': 'string', 'enum': ['a', 'b']}
+        MinecraftEventLiteral (TypeAlias) → {'type': 'string', 'enum': [...]}
     """
+    # Resolve TypeAlias if this is a Name node
+    if isinstance(type_node, ast.Name) and type_alias_map:
+        if type_node.id in type_alias_map:
+            # Recursively extract from the resolved TypeAlias value
+            resolved = type_alias_map[type_node.id]
+            return _extract_schema_type(resolved, type_alias_map)
+
+    # Handle typing.Literal[...] or Literal[...]
+    if isinstance(type_node, ast.Subscript):
+        if isinstance(type_node.value, ast.Attribute):
+            # typing.Literal
+            if (isinstance(type_node.value.value, ast.Name) and
+                type_node.value.value.id == "typing" and
+                type_node.value.attr == "Literal"):
+                # Extract enum values from Literal
+                anno_str = _safe_unparse(type_node)
+                if anno_str:
+                    literal_schema = _extract_literal_schema(anno_str)
+                    if literal_schema:
+                        return literal_schema
+        elif isinstance(type_node.value, ast.Name) and type_node.value.id == "Literal":
+            # Literal (without typing prefix)
+            anno_str = _safe_unparse(type_node)
+            if anno_str:
+                literal_schema = _extract_literal_schema(anno_str)
+                if literal_schema:
+                    return literal_schema
+
     if isinstance(type_node, ast.Name):
         type_name = type_node.id
         type_mapping = {

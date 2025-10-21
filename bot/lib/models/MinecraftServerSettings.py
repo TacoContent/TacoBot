@@ -1,6 +1,8 @@
 
 import typing
 
+from lib.models.TacoSettingsModel import TacoSettingsModel
+
 from bot.lib.models.openapi import openapi
 from bot.lib.models.TacoMinecraftServerSettingsMod import TacoMinecraftServerSettingsMod
 
@@ -10,7 +12,7 @@ from bot.lib.models.TacoMinecraftServerSettingsMod import TacoMinecraftServerSet
 @openapi.property("version", description="The base version of the Minecraft server.")
 @openapi.property("forge_version", description="The version of the Forge mod loader used by the server.")
 @openapi.property("server", description="The server address (IP or domain) and port.")
-@openapi.property("mods", description="A list of mods installed on the server.")
+@openapi.property("mods", description="A list of mods installed on the server.", hint=typing.List[TacoMinecraftServerSettingsMod])
 @openapi.managed()
 class MinecraftServerSettings:
   """Configuration for the Minecraft Server.
@@ -30,3 +32,16 @@ class MinecraftServerSettings:
     self.version: str = data.get("version", "")
     self.help: str = data.get("help", "")
     self.mods: typing.List[TacoMinecraftServerSettingsMod] = []
+
+
+@openapi.component("MinecraftServerSettingsSettingsModel", description="Generic Taco Settings Model")
+@openapi.property("settings", description="The settings data.")
+class MinecraftServerSettingsSettingsModel(TacoSettingsModel):
+    """Taco settings model for Minecraft server settings.
+        Attributes:
+            settings (MinecraftServerSettings): The Minecraft server settings.
+    """
+
+    def __init__(self, data: dict):
+        super().__init__(data)
+        self.settings: MinecraftServerSettings = MinecraftServerSettings(data.get("settings", {}))
