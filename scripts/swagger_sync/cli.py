@@ -15,6 +15,7 @@ import sys
 from io import StringIO as StringIOModule
 from typing import Any, Dict, List, Optional, Tuple
 
+
 from .badge import generate_coverage_badge
 from .coverage import (
     _compute_coverage,
@@ -31,11 +32,7 @@ from .endpoint_collector import collect_endpoints
 from .model_components import collect_model_components
 from .swagger_ops import _colorize_unified, detect_orphans, merge, DISABLE_COLOR
 from .yaml_handler import load_swagger, yaml
-from .validator import (
-    validate_endpoint_metadata,
-    format_validation_report,
-    ValidationSeverity
-)
+from .validator import validate_endpoint_metadata, format_validation_report, ValidationSeverity
 
 # Default paths and constants - needed by CLI
 DEFAULT_HANDLERS_ROOT = pathlib.Path("bot/lib/http/handlers/")
@@ -80,54 +77,152 @@ def main() -> None:
 
     # Configuration file arguments
     config_group = parser.add_argument_group('Configuration')
-    config_group.add_argument('--config', metavar='PATH', help='Load configuration from YAML file (default: search for swagger-sync.yaml in current directory)')
-    config_group.add_argument('--env', metavar='NAME', help='Apply environment profile from config file (e.g., ci, local, prod)')
-    config_group.add_argument('--init-config', metavar='PATH', nargs='?', const='swagger-sync.yaml', help='Generate example configuration file and exit (default: swagger-sync.yaml)')
+    config_group.add_argument(
+        '--config',
+        metavar='PATH',
+        help='Load configuration from YAML file (default: search for swagger-sync.yaml in current directory)',
+    )
+    config_group.add_argument(
+        '--env', metavar='NAME', help='Apply environment profile from config file (e.g., ci, local, prod)'
+    )
+    config_group.add_argument(
+        '--init-config',
+        metavar='PATH',
+        nargs='?',
+        const='swagger-sync.yaml',
+        help='Generate example configuration file and exit (default: swagger-sync.yaml)',
+    )
     config_group.add_argument('--validate-config', action='store_true', help='Validate configuration file and exit')
-    config_group.add_argument('--export-config-schema', metavar='PATH', nargs='?', const='-', help='Export JSON schema for config file validation (default: stdout)')
+    config_group.add_argument(
+        '--export-config-schema',
+        metavar='PATH',
+        nargs='?',
+        const='-',
+        help='Export JSON schema for config file validation (default: stdout)',
+    )
 
     # Mode selection
     mode_group = parser.add_mutually_exclusive_group()
     mode_group.add_argument('--fix', action='store_true', help='Write changes instead of just checking for drift')
     mode_group.add_argument('--check', action='store_true', help='Explicitly run in check mode (default) and show diff')
-    parser.add_argument('--show-orphans', action='store_true', help='List swagger paths and components that have no code handler/model')
-    parser.add_argument('--show-ignored', action='store_true', help='List endpoints skipped due to @openapi.ignore() decorator or @openapi: ignore docstring markers')
-    parser.add_argument('--coverage-report', help='Write an OpenAPI coverage report to the given path (json, text, markdown, or cobertura based on --coverage-format)')
-    parser.add_argument('--coverage-format', default=None, choices=['json','text','xml','cobertura'], help='Coverage report format (default: json if not in config)')
-    parser.add_argument('--fail-on-coverage-below', type=float, help='Fail (non-zero exit) if documentation coverage (handlers with openapi blocks) is below this threshold (accepts 0-1 or 0-100)')
-    parser.add_argument('--verbose-coverage', action='store_true', default=False, help='Show per-endpoint coverage detail inline')
-    parser.add_argument('--show-missing-blocks', action='store_true', help='List endpoints missing an >>>openapi <<<openapi block')
-    parser.add_argument('--handlers-root', default=str(DEFAULT_HANDLERS_ROOT), help='Root directory containing HTTP handler Python files (default: bot/lib/http/handlers/api/v1)')
-    parser.add_argument('--swagger-file', default=str(DEFAULT_SWAGGER_FILE), help='Path to swagger file to sync (default: .swagger.v1.yaml)')
-    parser.add_argument('--ignore-file', action='append', default=[], help='Glob pattern (relative to handlers root) or filename to ignore (can be repeated)')
-    parser.add_argument('--markdown-summary', help='Write a GitHub Actions style Markdown summary to this file (in addition to console output)')
-    parser.add_argument('--generate-badge', help='Generate an SVG badge showing OpenAPI coverage percentage and write it to the given path (e.g., docs/badges/openapi-coverage.svg)')
-    parser.add_argument('--output-directory', default=None, help='Base directory to place output artifacts (coverage reports, markdown summary). Default: current working directory')
-    parser.add_argument('--strict', action='store_true', help='Treat docstring/decorator HTTP method mismatches as errors (default: warn and ignore extraneous methods)')
-    parser.add_argument('--openapi-start', default=DEFAULT_OPENAPI_START, help=f'Start delimiter for embedded OpenAPI blocks (default: {DEFAULT_OPENAPI_START!r})')
-    parser.add_argument('--openapi-end', default=DEFAULT_OPENAPI_END, help=f'End delimiter for embedded OpenAPI blocks (default: {DEFAULT_OPENAPI_END!r})')
-    parser.add_argument('--list-endpoints', action='store_true', help='Print collected handler endpoints (path method file:function) and exit (debug aid)')
-    parser.add_argument('--models-root', default=DEFAULT_MODELS_ROOT, help=f'Root directory to scan for @openapi.component decorated classes (default: {DEFAULT_MODELS_ROOT!r})')
-    parser.add_argument('--no-model-components', action='store_true', help='Disable automatic model component generation')
+    parser.add_argument(
+        '--show-orphans', action='store_true', help='List swagger paths and components that have no code handler/model'
+    )
+    parser.add_argument(
+        '--show-ignored',
+        action='store_true',
+        help='List endpoints skipped due to @openapi.ignore() decorator or @openapi: ignore docstring markers',
+    )
+    parser.add_argument(
+        '--coverage-report',
+        help='Write an OpenAPI coverage report to the given path (json, text, markdown, or cobertura based on --coverage-format)',
+    )
+    parser.add_argument(
+        '--coverage-format',
+        default=None,
+        choices=['json', 'text', 'xml', 'cobertura'],
+        help='Coverage report format (default: json if not in config)',
+    )
+    parser.add_argument(
+        '--fail-on-coverage-below',
+        type=float,
+        help='Fail (non-zero exit) if documentation coverage (handlers with openapi blocks) is below this threshold (accepts 0-1 or 0-100)',
+    )
+    parser.add_argument(
+        '--verbose-coverage', action='store_true', default=False, help='Show per-endpoint coverage detail inline'
+    )
+    parser.add_argument(
+        '--show-missing-blocks', action='store_true', help='List endpoints missing an >>>openapi <<<openapi block'
+    )
+    parser.add_argument(
+        '--handlers-root',
+        default=str(DEFAULT_HANDLERS_ROOT),
+        help='Root directory containing HTTP handler Python files (default: bot/lib/http/handlers/api/v1)',
+    )
+    parser.add_argument(
+        '--swagger-file',
+        default=str(DEFAULT_SWAGGER_FILE),
+        help='Path to swagger file to sync (default: .swagger.v1.yaml)',
+    )
+    parser.add_argument(
+        '--ignore-file',
+        action='append',
+        default=[],
+        help='Glob pattern (relative to handlers root) or filename to ignore (can be repeated)',
+    )
+    parser.add_argument(
+        '--markdown-summary',
+        help='Write a GitHub Actions style Markdown summary to this file (in addition to console output)',
+    )
+    parser.add_argument(
+        '--generate-badge',
+        help='Generate an SVG badge showing OpenAPI coverage percentage and write it to the given path (e.g., docs/badges/openapi-coverage.svg)',
+    )
+    parser.add_argument(
+        '--output-directory',
+        default=None,
+        help='Base directory to place output artifacts (coverage reports, markdown summary). Default: current working directory',
+    )
+    parser.add_argument(
+        '--strict',
+        action='store_true',
+        help='Treat docstring/decorator HTTP method mismatches as errors (default: warn and ignore extraneous methods)',
+    )
+    parser.add_argument(
+        '--openapi-start',
+        default=DEFAULT_OPENAPI_START,
+        help=f'Start delimiter for embedded OpenAPI blocks (default: {DEFAULT_OPENAPI_START!r})',
+    )
+    parser.add_argument(
+        '--openapi-end',
+        default=DEFAULT_OPENAPI_END,
+        help=f'End delimiter for embedded OpenAPI blocks (default: {DEFAULT_OPENAPI_END!r})',
+    )
+    parser.add_argument(
+        '--list-endpoints',
+        action='store_true',
+        help='Print collected handler endpoints (path method file:function) and exit (debug aid)',
+    )
+    parser.add_argument(
+        '--models-root',
+        default=DEFAULT_MODELS_ROOT,
+        help=f'Root directory to scan for @openapi.component decorated classes (default: {DEFAULT_MODELS_ROOT!r})',
+    )
+    parser.add_argument(
+        '--no-model-components', action='store_true', help='Disable automatic model component generation'
+    )
 
     # Validation arguments
     validation_group = parser.add_argument_group('Validation')
-    validation_group.add_argument('--validate', action='store_true', help='Enable OpenAPI metadata validation (schema references, status codes, parameters)')
-    validation_group.add_argument('--validation-report', metavar='PATH', help='Write validation errors/warnings to specified file')
-    validation_group.add_argument('--fail-on-validation-errors', action='store_true', help='Exit with non-zero code if validation errors are found')
-    validation_group.add_argument('--show-validation-warnings', action='store_true', help='Display validation warnings in addition to errors')
+    validation_group.add_argument(
+        '--validate',
+        action='store_true',
+        help='Enable OpenAPI metadata validation (schema references, status codes, parameters)',
+    )
+    validation_group.add_argument(
+        '--validation-report', metavar='PATH', help='Write validation errors/warnings to specified file'
+    )
+    validation_group.add_argument(
+        '--fail-on-validation-errors',
+        action='store_true',
+        help='Exit with non-zero code if validation errors are found',
+    )
+    validation_group.add_argument(
+        '--show-validation-warnings', action='store_true', help='Display validation warnings in addition to errors'
+    )
 
     parser.add_argument(
         '--color',
         choices=['auto', 'always', 'never'],
         default='auto',
-        help='Color output mode: auto (default, only if TTY), always, never'
+        help='Color output mode: auto (default, only if TTY), always, never',
     )
     args = parser.parse_args()
 
     # Handle config-only operations first
     if args.init_config:
         from .config import init_config_file
+
         config_path = pathlib.Path(args.init_config)
         try:
             init_config_file(config_path)
@@ -144,6 +239,7 @@ def main() -> None:
 
     if args.export_config_schema:
         from .config import export_schema
+
         try:
             schema_json = export_schema()
             if args.export_config_schema == '-':
@@ -158,27 +254,29 @@ def main() -> None:
 
     # Load configuration from file if specified
     config_dict = {}
-    if args.config or any([
-        pathlib.Path(p).exists() for p in [
-            'swagger-sync.yaml', 'swagger-sync.yml',
-            '.swagger-sync.yaml', '.swagger-sync.yml'
+    if args.config or any(
+        [
+            pathlib.Path(p).exists()
+            for p in ['swagger-sync.yaml', 'swagger-sync.yml', '.swagger-sync.yaml', '.swagger-sync.yml']
         ]
-    ]):
+    ):
         from .config import load_config, merge_cli_args
+
         try:
             if args.config:
                 config_path = pathlib.Path(args.config)
             else:
                 # Find first existing default config file
-                for default_name in ['swagger-sync.yaml', 'swagger-sync.yml', '.swagger-sync.yaml', '.swagger-sync.yml']:
+                for default_name in [
+                    'swagger-sync.yaml',
+                    'swagger-sync.yml',
+                    '.swagger-sync.yaml',
+                    '.swagger-sync.yml',
+                ]:
                     if pathlib.Path(default_name).exists():
                         config_path = pathlib.Path(default_name)
                         break
-            config_dict = load_config(
-                config_path=config_path,
-                environment=args.env,
-                validate=True
-            )
+            config_dict = load_config(config_path=config_path, environment=args.env, validate=True)
 
             # Validate-only mode
             if args.validate_config:
@@ -235,6 +333,7 @@ def main() -> None:
     else:
         # No config file - use base defaults from ConfigModel and merge with CLI args
         from .config import DEFAULT_CONFIG, merge_cli_args
+
         config_dict = DEFAULT_CONFIG.to_dict()
         cli_args_dict = vars(args)
         config_dict = merge_cli_args(config_dict, cli_args_dict)
@@ -275,7 +374,6 @@ def main() -> None:
     if args.validate_config:
         raise SystemExit("❌ No config file found. Use --config to specify one or create swagger-sync.yaml")
 
-
     handlers_root = pathlib.Path(args.handlers_root)
     swagger_path = pathlib.Path(args.swagger_file)
     if not handlers_root.exists():
@@ -283,6 +381,7 @@ def main() -> None:
 
     # Determine color output mode
     import swagger_sync.swagger_ops as swagger_ops_module
+
     if args.color == 'always':
         swagger_ops_module.DISABLE_COLOR = False
         color_reason = 'enabled (mode=always)'
@@ -303,6 +402,7 @@ def main() -> None:
     try:
         # Rebuild regex with possibly customized markers before collecting endpoints.
         import swagger_sync.endpoint_collector as endpoint_collector_module
+
         endpoint_collector_module.OPENAPI_BLOCK_RE = build_openapi_block_re(args.openapi_start, args.openapi_end)
         endpoints, ignored = collect_endpoints(handlers_root, strict=args.strict, ignore_file_globs=args.ignore_file)
     except ValueError as e:
@@ -319,7 +419,7 @@ def main() -> None:
             print(f" - {ep.method.upper()} {ep.path} ({ep.file}:{ep.function}) block={'yes' if ep.meta else 'no'}")
         if ignored:
             print("Ignored endpoints (@openapi.ignore() or @openapi: ignore):")
-            for (p,m,f,fn) in ignored:
+            for p, m, f, fn in ignored:
                 print(f" - {m.upper()} {p} ({f}:{fn})")
         sys.exit(0)
 
@@ -361,7 +461,13 @@ def main() -> None:
                         else:
                             warn = f"WARNING: {warn}"
                         print(warn, file=sys.stderr)
-                        diff = difflib.unified_diff(existing_lines, new_lines, fromfile=f"a/components.schemas.{name}", tofile=f"b/components.schemas.{name}", lineterm='')
+                        diff = difflib.unified_diff(
+                            existing_lines,
+                            new_lines,
+                            fromfile=f"a/components.schemas.{name}",
+                            tofile=f"b/components.schemas.{name}",
+                            lineterm='',
+                        )
                         for dl in _colorize_unified(list(diff)):
                             print(dl, file=sys.stderr)
                     schemas[name] = new_schema
@@ -383,7 +489,13 @@ def main() -> None:
                     print(warn, file=sys.stderr)
 
                     # Show diff with deletion
-                    diff = difflib.unified_diff(existing_lines, [], fromfile=f"a/components.schemas.{excluded_name}", tofile=f"b/components.schemas.{excluded_name}", lineterm='')
+                    diff = difflib.unified_diff(
+                        existing_lines,
+                        [],
+                        fromfile=f"a/components.schemas.{excluded_name}",
+                        tofile=f"b/components.schemas.{excluded_name}",
+                        lineterm='',
+                    )
                     for dl in _colorize_unified(list(diff)):
                         print(dl, file=sys.stderr)
 
@@ -396,9 +508,13 @@ def main() -> None:
             if model_components_removed:
                 print(f"Model schemas removed: {', '.join(sorted(model_components_removed))}")
 
-    existing_schemas = swagger.get('components', {}).get('schemas', {}) if isinstance(swagger.get('components'), dict) else {}
+    existing_schemas = (
+        swagger.get('components', {}).get('schemas', {}) if isinstance(swagger.get('components'), dict) else {}
+    )
     model_components_generated_count = len(model_components)
-    model_components_existing_not_generated_count = sum(1 for k in existing_schemas.keys() if k not in model_components) if existing_schemas else 0
+    model_components_existing_not_generated_count = (
+        sum(1 for k in existing_schemas.keys() if k not in model_components) if existing_schemas else 0
+    )
     swagger_new, changed, notes, diffs = merge(swagger, endpoints)
 
     # Phase 4: Validate OpenAPI metadata if requested
@@ -417,7 +533,7 @@ def main() -> None:
                     metadata=metadata,
                     endpoint_id=endpoint_id,
                     available_schemas=available_schemas,
-                    available_security_schemes=available_security
+                    available_security_schemes=available_security,
                 )
                 validation_errors_all.extend(errors)
 
@@ -426,10 +542,7 @@ def main() -> None:
         warning_count = sum(1 for e in validation_errors_all if e.severity == ValidationSeverity.WARNING)
 
         if validation_errors_all:
-            validation_report = format_validation_report(
-                validation_errors_all,
-                show_info=False
-            )
+            validation_report = format_validation_report(validation_errors_all, show_info=False)
 
             # Write to validation report file if specified
             if args.validation_report:
@@ -533,10 +646,16 @@ def main() -> None:
         print(f"  Ignored handlers:           {cs['ignored_total']}")
         print(f"  With @openapi decorators:   {cs['with_decorators']} ({cs['decorator_coverage_rate']:.1%})")
         print(f"  With core decorators:       {cs['with_core_decorators']} ({cs['core_decorator_coverage_rate']:.1%})")
-        print(f"  With complete decorators:   {cs['with_complete_decorators']} ({cs['complete_decorator_coverage_rate']:.1%})")
+        print(
+            f"  With complete decorators:   {cs['with_complete_decorators']} ({cs['complete_decorator_coverage_rate']:.1%})"
+        )
         print(f"  Without decorators:         {cs['without_decorators']}")
-        print(f"  In swagger (handlers):      {cs['handlers_in_swagger']} ({cs['coverage_rate_handlers_in_swagger']:.1%})")
-        print(f"  Definition matches:         {cs['definition_matches']} / {cs['with_decorators']} ({cs['operation_definition_match_rate']:.1%})")
+        print(
+            f"  In swagger (handlers):      {cs['handlers_in_swagger']} ({cs['coverage_rate_handlers_in_swagger']:.1%})"
+        )
+        print(
+            f"  Definition matches:         {cs['definition_matches']} / {cs['with_decorators']} ({cs['operation_definition_match_rate']:.1%})"
+        )
         print(f"  Swagger only operations:    {cs['swagger_only_operations']}")
         print(f"  Model components generated: {cs.get('model_components_generated', 0)}")
         print(f"  Schemas not generated:      {cs.get('model_components_existing_not_generated', 0)}")
@@ -544,7 +663,9 @@ def main() -> None:
         if cs['without_decorators'] > 0:
             suggestions.append("Add @openapi decorators for undocumented handlers.")
         if cs['swagger_only_operations'] > 0:
-            suggestions.append("Remove or implement swagger-only paths, or mark related handlers with @openapi.ignore() decorator if intentional.")
+            suggestions.append(
+                "Remove or implement swagger-only paths, or mark related handlers with @openapi.ignore() decorator if intentional."
+            )
         if suggestions:
             print("  Suggestions:")
             for s in suggestions:
@@ -595,7 +716,7 @@ def main() -> None:
             print("No endpoint or component schema changes needed.")
         if args.show_ignored and ignored:
             print("Ignored endpoints (@openapi.ignore() or @openapi: ignore):")
-            for (p, m, f, fn) in ignored:
+            for p, m, f, fn in ignored:
                 print(f" - {m.upper()} {p} ({f.name}:{fn})")
         if orphans:
             print("Orphans:")
@@ -635,6 +756,7 @@ def main() -> None:
         Returns:
             Formatted markdown content ready to write to file
         """
+
         def _strip_ansi(s: str) -> str:
             return re.sub(r"\x1b\[[0-9;]*m", "", s)
 
@@ -645,7 +767,9 @@ def main() -> None:
         # STATUS SECTION (unique to markdown summary)
         # ========================================================================
         if changed:
-            lines.append("**Status:** Drift detected. Please run the sync script with `--fix` and commit the updated swagger file.")
+            lines.append(
+                "**Status:** Drift detected. Please run the sync script with `--fix` and commit the updated swagger file."
+            )
         elif coverage_fail:
             lines.append("**Status:** Coverage threshold failed.")
         else:
@@ -694,7 +818,9 @@ def main() -> None:
         if cs['swagger_only_operations'] > 0:
             suggestions_md.append("Remove, implement, or ignore swagger-only operations.")
         if cs.get('orphaned_components_count', 0) > 0:
-            suggestions_md.append("Add @openapi.component decorators to model classes to automate component schema generation.")
+            suggestions_md.append(
+                "Add @openapi.component decorators to model classes to automate component schema generation."
+            )
         if suggestions_md:
             lines.append("## 💡 Suggestions")
             lines.append("")
@@ -720,7 +846,7 @@ def main() -> None:
         if ignored:
             lines.append("## Ignored Endpoints (@openapi.ignore() or @openapi: ignore)")
             lines.append("")
-            for (p, m, f, fn) in ignored[:50]:
+            for p, m, f, fn in ignored[:50]:
                 lines.append(f"- `{m.upper()} {p}` ({f.name}:{fn})")
             if len(ignored) > 50:
                 lines.append(f"... and {len(ignored)-50} more")
@@ -779,7 +905,7 @@ def main() -> None:
                 print("\n(Info) Potential swagger-only paths (use --show-orphans for list)")
         if args.show_ignored and ignored:
             print("\nIgnored endpoints (@openapi.ignore() or @openapi: ignore):")
-            for (p, m, f, fn) in ignored:
+            for p, m, f, fn in ignored:
                 print(f" - {m.upper()} {p} ({f.name}:{fn})")
         print()
         print_coverage_summary()
@@ -821,7 +947,7 @@ def main() -> None:
                 print("(Info) Potential swagger-only paths and components (use --show-orphans for list)")
         if args.show_ignored and ignored:
             print("Ignored endpoints (@openapi.ignore() or @openapi: ignore):")
-            for (p, m, f, fn) in ignored:
+            for p, m, f, fn in ignored:
                 print(f" - {m.upper()} {p} ({f.name}:{fn})")
         print()
         print_coverage_summary()

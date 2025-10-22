@@ -5,6 +5,17 @@ target-versions = ["py310", "py311", "py312", "py313"]
 skip-string-normalization = true
 skip-magic-trailing-comma = true
 verbose = true
-diff = false
-check = true
+diff = true
+check = false
 color = true
+exclude = '''
+/(
+    \.git
+  | tests
+  | \.mypy_cache
+  | \.venv
+  | _build
+  | build
+  | dist
+)/
+'''

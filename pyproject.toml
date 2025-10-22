@@ -39,7 +39,7 @@ dev = [
   "pytest-cov>=4.1.0,<5.0.0",
   "mypy>=1.10.0,<2.0.0",
   "ruff>=0.6.0,<0.7.0",
-  "black>=24.3.0,<25.0.0",
+  "black>=25.9.0,<26.0.0",
   "types-requests",
   "types-PyYAML",
   "coverage>=7.11.0,<8.0.0",
@@ -93,8 +93,25 @@ exclude_lines = [
 [tool.ruff]
 line-length = 120
 target-version = "py313"
-src = ["bot", "tests"]
+src = ["bot"]
 
 [tool.black]
 line-length = 120
 target-version = ["py310", "py311", "py312", "py313"]
+skip-string-normalization = true
+skip-magic-trailing-comma = true
+verbose = true
+diff = true
+check = true
+color = true
+exclude = '''
+/(
+    \.git
+  | tests
+  | \.mypy_cache
+  | \.venv
+  | _build
+  | build
+  | dist
+)/
+'''

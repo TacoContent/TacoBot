@@ -71,14 +71,15 @@ def get_data(self, request, uri_variables):
     assert example["status_code"] == 200
 
 
-def test_extract_component_ref_example():
-    """Test extraction of component reference example with auto-formatting."""
+def test_extract_component_schema_example():
+    """Test extraction of schema reference example."""
     code = '''
 from bot.lib.models.openapi import openapi
+from bot.lib.models.discord import DiscordUser
 
 @openapi.example(
     name="standard_user",
-    ref="UserExample",
+    schema=DiscordUser,
     placement="response",
     status_code=200
 )
@@ -87,39 +88,40 @@ def get_user(self, request, uri_variables):
     pass
 '''
     tree = ast.parse(code)
-    func_node = tree.body[1]
+    func_node = tree.body[2]  # Skip the two imports
     metadata = extract_decorator_metadata(func_node)
     
     assert len(metadata.examples) == 1
     example = metadata.examples[0]
     assert example["name"] == "standard_user"
-    assert example["$ref"] == "#/components/examples/UserExample"  # Auto-formatted
+    assert example["$ref"] == "#/components/schemas/DiscordUser"  # Schema reference
     assert example["placement"] == "response"
     assert example["status_code"] == 200
 
 
-def test_extract_full_component_ref():
-    """Test extraction of full component reference path (not auto-formatted)."""
+def test_extract_schema_with_different_model():
+    """Test extraction of schema with different model class."""
     code = '''
 from bot.lib.models.openapi import openapi
+from bot.lib.models.discord import DiscordRole
 
 @openapi.example(
-    name="user_example",
-    ref="#/components/examples/StandardUser",
+    name="role_example",
+    schema=DiscordRole,
     placement="response",
     status_code=200
 )
-def get_user(self, request, uri_variables):
-    """Get user."""
+def get_role(self, request, uri_variables):
+    """Get role."""
     pass
 '''
     tree = ast.parse(code)
-    func_node = tree.body[1]
+    func_node = tree.body[2]  # Skip the two imports
     metadata = extract_decorator_metadata(func_node)
     
     assert len(metadata.examples) == 1
     example = metadata.examples[0]
-    assert example["$ref"] == "#/components/examples/StandardUser"  # Not modified
+    assert example["$ref"] == "#/components/schemas/DiscordRole"
 
 
 def test_extract_parameter_example():

@@ -106,6 +106,7 @@ def _visible_length(text: str) -> int:
         Visible character count (excluding ANSI codes)
     """
     import re
+
     # Remove ANSI escape sequences
     ansi_escape = re.compile(r'\x1b\[[0-9;]*m')
     return len(ansi_escape.sub('', text))
@@ -204,18 +205,14 @@ def _build_automation_coverage_markdown(summary: Dict[str, Any]) -> List[str]:
 
     comp_auto_rate = summary.get('component_automation_rate', 0.0)
     comp_display = _format_rate_emoji(
-        summary.get('automated_components', 0),
-        summary.get('total_swagger_components', 0),
-        comp_auto_rate
+        summary.get('automated_components', 0), summary.get('total_swagger_components', 0), comp_auto_rate
     )
     lines.append(f"| Components (automated) | {summary.get('automated_components', 0)} | {comp_display} |")
     lines.append(f"| Components (manual/orphan) | {summary.get('orphaned_components_count', 0)} | ⚠️  TECHNICAL DEBT |")
 
     ep_auto_rate = summary.get('endpoint_automation_rate', 0.0)
     ep_display = _format_rate_emoji(
-        summary.get('automated_endpoints', 0),
-        summary.get('total_swagger_endpoints', 0),
-        ep_auto_rate
+        summary.get('automated_endpoints', 0), summary.get('total_swagger_endpoints', 0), ep_auto_rate
     )
     lines.append(f"| Endpoints (automated) | {summary.get('automated_endpoints', 0)} | {ep_display} |")
     lines.append(f"| Endpoints (manual/orphan) | {summary.get('orphaned_endpoints_count', 0)} | ⚠️  TECHNICAL DEBT |")
@@ -224,9 +221,11 @@ def _build_automation_coverage_markdown(summary: Dict[str, Any]) -> List[str]:
     overall_auto_display = _format_rate_emoji(
         summary.get('total_items', 0) - summary.get('total_orphans', 0),
         summary.get('total_items', 0),
-        overall_auto_rate
+        overall_auto_rate,
     )
-    lines.append(f"| **OVERALL AUTOMATION** | **{summary.get('total_items', 0) - summary.get('total_orphans', 0)}** | **{overall_auto_display}** |")
+    lines.append(
+        f"| **OVERALL AUTOMATION** | **{summary.get('total_items', 0) - summary.get('total_orphans', 0)}** | **{overall_auto_display}** |"
+    )
     lines.append(f"| **Total orphans (debt)** | **{summary.get('total_orphans', 0)}** | ⚠️  **NEEDS ATTENTION** |")
 
     return lines
@@ -252,7 +251,22 @@ def _build_quality_metrics_markdown(summary: Dict[str, Any]) -> List[str]:
     quality_metrics = [
         ('📝 Summary', summary['decorators_summary'], summary.get('rate_summary', 0.0)),
         ('📄 Description', summary['decorators_description'], summary.get('rate_description', 0.0)),
-        ('🔧 Parameters', summary['decorators_path_parameter'] + summary['decorators_query_parameter'] + summary['decorators_header_parameter'], (summary['decorators_path_parameter'] + summary['decorators_query_parameter'] + summary['decorators_header_parameter']) / total_block if total_block else 0.0),
+        (
+            '🔧 Parameters',
+            summary['decorators_path_parameter']
+            + summary['decorators_query_parameter']
+            + summary['decorators_header_parameter'],
+            (
+                (
+                    summary['decorators_path_parameter']
+                    + summary['decorators_query_parameter']
+                    + summary['decorators_header_parameter']
+                )
+                / total_block
+                if total_block
+                else 0.0
+            ),
+        ),
         ('📦 Request body', summary['decorators_request_body'], summary.get('rate_requestBody', 0.0)),
         ('🔀 Multiple responses', summary['decorators_response'], summary.get('rate_response', 0.0)),
         ('💡 Examples', summary['decorators_example'], summary.get('rate_example', 0.0)),
@@ -342,10 +356,7 @@ def _build_top_files_markdown(summary: Dict[str, Any]) -> List[str]:
     return lines
 
 
-def _build_orphaned_warnings_markdown(
-    orphaned_components: List[str],
-    swagger_only: List[Dict[str, str]]
-) -> List[str]:
+def _build_orphaned_warnings_markdown(orphaned_components: List[str], swagger_only: List[Dict[str, str]]) -> List[str]:
     """Build orphaned items warnings for markdown.
 
     Shows schemas and endpoints that exist in swagger but lack corresponding
@@ -440,7 +451,7 @@ def _generate_coverage(
         }
         report_path.write_text(json.dumps(payload, indent=2), encoding='utf-8')
     elif fmt == 'text':
-        lines = [f"{COLOR_BOLD}{COLOR_CYAN}📊 OPENAPI COVERAGE REPORT{COLOR_RESET}", "="*80, ""]
+        lines = [f"{COLOR_BOLD}{COLOR_CYAN}📊 OPENAPI COVERAGE REPORT{COLOR_RESET}", "=" * 80, ""]
 
         # Coverage Summary Table
         lines.append(f"{COLOR_BOLD}📈 COVERAGE SUMMARY{COLOR_RESET}")
@@ -478,38 +489,46 @@ def _generate_coverage(
         # Component automation (inverse of orphaned)
         comp_auto_rate = summary.get('component_automation_rate', 0.0)
         comp_auto_display = _format_rate_colored(
-            summary.get('automated_components', 0),
-            summary.get('total_swagger_components', 0),
-            comp_auto_rate
+            summary.get('automated_components', 0), summary.get('total_swagger_components', 0), comp_auto_rate
         )
-        lines.append(f"│ Components (automated)      │ {summary.get('automated_components', 0):8d} │ {comp_auto_display} │")
-        lines.append(f"│ Components (manual/orphan)  │ {summary.get('orphaned_components_count', 0):8d} │ {'⚠️  TECHNICAL DEBT ':24s} │")
+        lines.append(
+            f"│ Components (automated)      │ {summary.get('automated_components', 0):8d} │ {comp_auto_display} │"
+        )
+        lines.append(
+            f"│ Components (manual/orphan)  │ {summary.get('orphaned_components_count', 0):8d} │ {'⚠️  TECHNICAL DEBT ':24s} │"
+        )
 
         # Endpoint automation (inverse of swagger_only)
         ep_auto_rate = summary.get('endpoint_automation_rate', 0.0)
         ep_auto_display = _format_rate_colored(
-            summary.get('automated_endpoints', 0),
-            summary.get('total_swagger_endpoints', 0),
-            ep_auto_rate
+            summary.get('automated_endpoints', 0), summary.get('total_swagger_endpoints', 0), ep_auto_rate
         )
-        lines.append(f"│ Endpoints (automated)       │ {summary.get('automated_endpoints', 0):8d} │ {ep_auto_display} │")
-        lines.append(f"│ Endpoints (manual/orphan)   │ {summary.get('orphaned_endpoints_count', 0):8d} │ {'⚠️  TECHNICAL DEBT ':24s} │")
+        lines.append(
+            f"│ Endpoints (automated)       │ {summary.get('automated_endpoints', 0):8d} │ {ep_auto_display} │"
+        )
+        lines.append(
+            f"│ Endpoints (manual/orphan)   │ {summary.get('orphaned_endpoints_count', 0):8d} │ {'⚠️  TECHNICAL DEBT ':24s} │"
+        )
 
         # Overall automation
         overall_auto_rate = summary.get('automation_coverage_rate', 0.0)
         overall_auto_display = _format_rate_colored(
             summary.get('total_items', 0) - summary.get('total_orphans', 0),
             summary.get('total_items', 0),
-            overall_auto_rate
+            overall_auto_rate,
         )
         lines.append("├─────────────────────────────┼──────────┼─────────────────────────┤")
         # OVERALL AUTOMATION has bold formatting - need exactly 29 visible chars total
         # "OVERALL AUTOMATION" = 18 chars + 1 space before = 19, so we need 9 spaces after for total 28 content + 1 trailing space = 29
         overall_label = f"{COLOR_BOLD}OVERALL AUTOMATION{COLOR_RESET}"
-        lines.append(f"│ {overall_label}{' ' * 9} │ {COLOR_BOLD}{summary.get('total_items', 0) - summary.get('total_orphans', 0):8d}{COLOR_RESET} │ {COLOR_BOLD}{overall_auto_display}{COLOR_RESET} │")
+        lines.append(
+            f"│ {overall_label}{' ' * 9} │ {COLOR_BOLD}{summary.get('total_items', 0) - summary.get('total_orphans', 0):8d}{COLOR_RESET} │ {COLOR_BOLD}{overall_auto_display}{COLOR_RESET} │"
+        )
         # "Total orphans (debt)" = 20 chars + 1 space before = 21, so we need 7 spaces after for total 28 content + 1 trailing space = 29
         orphan_label = f"{COLOR_RED}Total orphans (debt){COLOR_RESET}"
-        lines.append(f"│ {orphan_label}{' ' * 7} │ {COLOR_RED}{summary.get('total_orphans', 0):8d}{COLOR_RESET} │ {COLOR_RED}{'⚠️  NEEDS ATTENTION ':24s}{COLOR_RESET} │")
+        lines.append(
+            f"│ {orphan_label}{' ' * 7} │ {COLOR_RED}{summary.get('total_orphans', 0):8d}{COLOR_RESET} │ {COLOR_RED}{'⚠️  NEEDS ATTENTION ':24s}{COLOR_RESET} │"
+        )
         lines.append("└─────────────────────────────┴──────────┴─────────────────────────┘")
         lines.append("")
 
@@ -530,7 +549,6 @@ def _generate_coverage(
 
         # ========================================================================
 
-
         # Quality Metrics Table
         lines.append(f"{COLOR_BOLD}✨ DOCUMENTATION QUALITY METRICS{COLOR_RESET}")
         lines.append("┌──────────────────────────┬──────────┬─────────────────────────┐")
@@ -541,7 +559,22 @@ def _generate_coverage(
         quality_metrics = [
             ('📝 Summary', summary['decorators_summary'], summary.get('rate_summary', 0.0)),
             ('📄 Description', summary['decorators_description'], summary.get('rate_description', 0.0)),
-            ('🔧 Parameters', summary['decorators_path_parameter'] + summary['decorators_query_parameter'] + summary['decorators_header_parameter'], (summary['decorators_path_parameter'] + summary['decorators_query_parameter'] + summary['decorators_header_parameter']) / total_block if total_block else 0.0),
+            (
+                '🔧 Parameters',
+                summary['decorators_path_parameter']
+                + summary['decorators_query_parameter']
+                + summary['decorators_header_parameter'],
+                (
+                    (
+                        summary['decorators_path_parameter']
+                        + summary['decorators_query_parameter']
+                        + summary['decorators_header_parameter']
+                    )
+                    / total_block
+                    if total_block
+                    else 0.0
+                ),
+            ),
             ('📦 Request body', summary['decorators_request_body'], summary.get('rate_requestBody', 0.0)),
             ('🔀 Multiple responses', summary['decorators_response'], summary.get('rate_response', 0.0)),
             ('💡 Examples', summary['decorators_example'], summary.get('rate_example', 0.0)),
@@ -618,9 +651,7 @@ def _generate_coverage(
                 status.append('MATCH')
             if rec['missing_in_swagger']:
                 status.append('MISSING_SWAGGER')
-            lines.append(
-                f" - {rec['method'].upper()} {rec['path']} :: {'|'.join(status) if status else 'NONE'}"
-            )
+            lines.append(f" - {rec['method'].upper()} {rec['path']} :: {'|'.join(status) if status else 'NONE'}")
         if swagger_only:
             lines.append("")
             lines.append("Swagger only:")
@@ -658,10 +689,7 @@ def _generate_coverage(
         _prop('ignored_handlers', summary['ignored_total'])
         _prop('swagger_only_operations', summary['swagger_only_operations'])
         _prop('model_components_generated', summary.get('model_components_generated', 0))
-        _prop(
-            'model_components_existing_not_generated',
-            summary.get('model_components_existing_not_generated', 0),
-        )
+        _prop('model_components_existing_not_generated', summary.get('model_components_existing_not_generated', 0))
         # NEW: Automation/orphan metrics (primary coverage indicators)
         _prop('total_swagger_components', summary.get('total_swagger_components', 0))
         _prop('automated_components', summary.get('automated_components', 0))
@@ -699,9 +727,7 @@ def _generate_coverage(
                 },
             )
             lines_el = SubElement(cls, 'lines')
-            SubElement(
-                lines_el, 'line', {'number': str(line_number), 'hits': covered, 'branch': 'false'}
-            )
+            SubElement(lines_el, 'line', {'number': str(line_number), 'hits': covered, 'branch': 'false'})
         for so in swagger_only:
             line_number += 1
             cls = SubElement(
@@ -953,7 +979,7 @@ def _compute_coverage(
         for e in endpoints
         if not any((e.path, e.method, e.file, e.function) == t for t in ignored_set)
     }
-    for (p, m, op) in swagger_ops:
+    for p, m, op in swagger_ops:
         if (p, m) not in code_pairs:
             swagger_only.append({'path': p, 'method': m})
 

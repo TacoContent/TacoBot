@@ -104,17 +104,21 @@ def create_role(self, request, uri_variables):
 
 HANDLER_WITH_COMPONENT_REF = '''
 from bot.lib.models.openapi import openapi
+from bot.lib.models.discord import DiscordUser
+
+class MockDeletedUser:
+    pass
 
 @openapi.example(
     name="standard_user",
-    ref="StandardUser",
+    schema=DiscordUser,
     placement="response",
     status_code=200,
     summary="Standard user object"
 )
 @openapi.example(
     name="deleted_user",
-    ref="#/components/examples/DeletedUser",
+    schema=MockDeletedUser,
     placement="response",
     status_code=200,
     summary="Deleted user object"
@@ -294,8 +298,8 @@ class TestComponentReferenceIntegration:
         
         # Verify extraction and auto-formatting
         assert len(metadata.examples) == 2
-        assert metadata.examples[0]['$ref'] == '#/components/examples/StandardUser'
-        assert metadata.examples[1]['$ref'] == '#/components/examples/DeletedUser'
+        assert metadata.examples[0]['$ref'] == '#/components/schemas/DiscordUser'
+        assert metadata.examples[1]['$ref'] == '#/components/schemas/MockDeletedUser'
 
         # Merge
         decorator_dict = metadata.to_dict()
@@ -306,8 +310,8 @@ class TestComponentReferenceIntegration:
         content = merged['responses']['200']['content']['application/json']
         assert 'standard_user' in content['examples']
         assert 'deleted_user' in content['examples']
-        assert content['examples']['standard_user']['$ref'] == '#/components/examples/StandardUser'
-        assert content['examples']['deleted_user']['$ref'] == '#/components/examples/DeletedUser'
+        assert content['examples']['standard_user']['$ref'] == '#/components/schemas/DiscordUser'
+        assert content['examples']['deleted_user']['$ref'] == '#/components/schemas/MockDeletedUser'
         # Should not have 'value' field
         assert 'value' not in content['examples']['standard_user']
         assert 'value' not in content['examples']['deleted_user']

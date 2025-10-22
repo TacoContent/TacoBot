@@ -920,15 +920,15 @@ def _extract_example(decorator: ast.Call) -> Dict[str, Any]:
         }
 
         @openapi.example(
-            name="user_ref",
-            ref="StandardUser",
+            name="user_schema",
+            schema=DiscordUser,
             placement="response",
             status_code=200
         )
         → {
-            'name': 'user_ref',
+            'name': 'user_schema',
             'placement': 'response',
-            '$ref': '#/components/examples/StandardUser',
+            '$ref': '#/components/schemas/DiscordUser',
             'status_code': 200
         }
     """
@@ -956,15 +956,12 @@ def _extract_example(decorator: ast.Call) -> Dict[str, Any]:
         elif key == "externalValue":
             if isinstance(value_node, ast.Constant):
                 example["externalValue"] = value_node.value
-        elif key == "ref":
-            # Handle component reference
-            if isinstance(value_node, ast.Constant) and isinstance(value_node.value, str):
-                ref_value = value_node.value
-                # Auto-format as component reference if not already formatted
-                if not ref_value.startswith('#/'):
-                    example["$ref"] = f"#/components/examples/{ref_value}"
-                else:
-                    example["$ref"] = ref_value
+        elif key == "schema":
+            # Handle schema type reference (Name node or Attribute node)
+            # This extracts the class name and converts to OpenAPI $ref
+            schema_ref = _extract_schema_reference(value_node)
+            if schema_ref:
+                example["$ref"] = schema_ref.get("$ref", "")
         elif key == "summary":
             if isinstance(value_node, ast.Constant):
                 example["summary"] = value_node.value
@@ -981,14 +978,22 @@ def _extract_example(decorator: ast.Call) -> Dict[str, Any]:
             if isinstance(value_node, ast.Constant):
                 example["contentType"] = value_node.value
         elif key == "methods":
-            # Can be a single string or list of strings
+            # Can be a single string, enum value, or list of strings/enum values
             if isinstance(value_node, ast.Constant):
                 example["methods"] = [value_node.value]
+            elif isinstance(value_node, ast.Attribute):
+                # Handle enum values like HTTPMethod.PUT → "PUT"
+                if isinstance(value_node.attr, str):
+                    example["methods"] = [value_node.attr]
             elif isinstance(value_node, (ast.List, ast.Tuple)):
                 methods = []
                 for elt in value_node.elts:
                     if isinstance(elt, ast.Constant):
                         methods.append(elt.value)
+                    elif isinstance(elt, ast.Attribute):
+                        # Handle enum values like HTTPMethod.PUT → "PUT"
+                        if isinstance(elt.attr, str):
+                            methods.append(elt.attr)
                 example["methods"] = methods
         else:
             # Handle any additional **kwargs fields (custom extensions)

@@ -145,7 +145,7 @@
 		{
 			"label": "Format Check (Black)",
 			"type": "shell",
-			"command": "black --check .",
+			"command": "./.venv/scripts/Activate.ps1; python -m black --config .github/linters/.python-black ./bot/lib/models/MinecraftServerStatus.py",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"

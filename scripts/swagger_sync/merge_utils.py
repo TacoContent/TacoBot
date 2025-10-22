@@ -177,10 +177,12 @@ def merge_examples_into_spec(
         if not placement or not name:
             continue
 
-        # Filter by HTTP methods if specified
+        # Filter by HTTP method if specified
         if 'methods' in example:
             allowed_methods = example.get('methods', [])
-            if endpoint_method not in allowed_methods:
+            # Case-insensitive comparison (endpoint_method is lowercase, enum values are uppercase)
+            allowed_methods_lower = [m.lower() if isinstance(m, str) else str(m).lower() for m in allowed_methods]
+            if endpoint_method.lower() not in allowed_methods_lower:
                 continue
 
         # Build the example object (without placement metadata)

@@ -376,7 +376,7 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{ex}")
             return self._create_error_response(500, f"Internal server error: {str(ex)}", headers)
 
-    @uri_variable_mapping("/api/v1/permissions/{guildId}/{userId}/{permission}", method=HTTPMethod.PUT)
+    @uri_variable_mapping(f"/api/{API_VERSION}/permissions/{{guildId}}/{{userId}}/{{permission}}", method=HTTPMethod.PUT)
     @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     @openapi.tags("permissions")
     @openapi.summary("Add user permission")
@@ -418,6 +418,22 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
         contentType="application/json",
         schema=ErrorStatusCodePayload,
         methods=[HTTPMethod.PUT],
+    )
+    @openapi.example(
+        "permission_parameter_example",
+        value="permission_manage_server",
+        placement="parameter",
+        parameter_name="permission",
+        methods=[HTTPMethod.PUT],
+        summary="Example permission to add"
+    )
+    @openapi.example(
+        name="successful_put",
+        value={"status": "ok"},
+        placement="response",
+        status_code=200,
+        methods=[HTTPMethod.PUT],
+        summary="Successfully ensured permission exists"
     )
     @openapi.managed()
     async def put(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:

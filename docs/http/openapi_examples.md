@@ -115,28 +115,28 @@ Reference an external URL containing the example:
 )
 ```
 
-### 3. Component Reference (`ref`)
+### 3. Schema Reference (`schema`)
 
-Reference a reusable example defined in `components/examples`:
+Reference a Python model class to generate component schema reference:
 
 ```python
-@openapi.example(
-    name="standard_user",
-    ref="UserExample",  # Auto-formatted to "#/components/examples/UserExample"
-    placement="response",
-    status_code=200
-)
+from bot.lib.models.discord import DiscordUser
 
-# Or with full reference path:
 @openapi.example(
     name="standard_user",
-    ref="#/components/examples/UserExample",
+    schema=DiscordUser,  # Converted to "$ref": "#/components/schemas/DiscordUser"
     placement="response",
     status_code=200
 )
 ```
 
-**Validation:** Only one of `value`, `externalValue`, or `ref` can be provided per example.
+**Benefits:**
+- Type-safe: Uses actual Python classes instead of strings
+- IDE support: Autocomplete and refactoring work
+- Consistent with other decorators (`@openapi.pathParameter`, `@openapi.response`)
+- Automatic `$ref` generation to `#/components/schemas/<ClassName>`
+
+**Validation:** Only one of `value`, `externalValue`, or `schema` can be provided per example.
 
 ---
 
@@ -454,7 +454,7 @@ components:
 ```python
 @openapi.example(
     name="user_response",
-    ref="StandardUser",  # References components/examples/StandardUser
+    schema=StandardUser,  # References components/examples/StandardUser
     placement="response",
     status_code=200
 )
@@ -464,7 +464,7 @@ def get_user(self, request, uri_variables):
 
 @openapi.example(
     name="deleted_user_response",
-    ref="DeletedUser",
+    schema=DeletedUser,
     placement="response",
     status_code=200
 )
@@ -575,7 +575,7 @@ Help users understand what each example represents:
 If the same example is used across multiple endpoints, define it once in `components/examples` and reference it:
 
 ```python
-@openapi.example(name="standard_user", ref="StandardUser", placement="response", status_code=200)
+@openapi.example(name="standard_user", schema=StandardUser, placement="response", status_code=200)
 ```
 
 ### 5. Test Your Examples
@@ -607,7 +607,7 @@ def test_example_matches_actual_response():
 @openapi.example(
     name="example",
     value={"data": 123},
-    ref="StandardExample",  # Can't have both
+    schema=StandardExample,  # Can't have both
     placement="response",
     status_code=200
 )
@@ -615,7 +615,7 @@ def test_example_matches_actual_response():
 # ✅ Good
 @openapi.example(
     name="example",
-    value={"data": 123},  # OR ref="StandardExample", but not both
+    value={"data": 123},  # OR schema=StandardExample, but not both
     placement="response",
     status_code=200
 )

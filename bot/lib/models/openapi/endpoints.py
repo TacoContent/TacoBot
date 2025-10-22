@@ -45,7 +45,7 @@ def example(
     *,
     value: Any = _NOT_PROVIDED,
     externalValue: Optional[str] = None,
-    ref: Optional[str] = None,
+    schema: Optional[Type | UnionType] = None,
     summary: str = "",
     description: str = "",
     placement: Literal['parameter', 'requestBody', 'response', 'schema'] = 'response',
@@ -68,10 +68,11 @@ def example(
 
     Args:
         name: Unique identifier for this example (e.g., "success_response")
-        value: Embedded literal example data (mutually exclusive with externalValue and ref)
+        value: Embedded literal example data (mutually exclusive with externalValue and schema)
             Can be any JSON-serializable value including None
-        externalValue: URL to external example file (mutually exclusive with value and ref)
-        ref: Reference to component example (e.g., "UserExample" -> "#/components/examples/UserExample")
+        externalValue: URL to external example file (mutually exclusive with value and schema)
+        schema: Python type or model class reference for component example (e.g., DiscordRole)
+            Automatically formatted to OpenAPI $ref (mutually exclusive with value and externalValue)
         summary: Short description of the example
         description: Detailed explanation of what the example demonstrates (supports CommonMark)
         placement: Where to place the example in the OpenAPI spec:
@@ -118,7 +119,7 @@ def example(
         Component reference example:
         >>> @openapi.example(
         ...     name="admin_user",
-        ...     ref="AdminUserExample",
+        ...     schema=DiscordUser,
         ...     summary="Admin user with elevated permissions",
         ...     placement='response',
         ...     status_code=200
@@ -180,14 +181,14 @@ def example(
     # Validation: Check mutual exclusivity using sentinel pattern
     has_value = value is not _NOT_PROVIDED
     has_external = externalValue is not None
-    has_ref = ref is not None
+    has_schema = schema is not None
     
-    provided_sources = sum([has_value, has_external, has_ref])
+    provided_sources = sum([has_value, has_external, has_schema])
     
     if provided_sources == 0:
-        raise ValueError("One of 'value', 'externalValue', or 'ref' must be provided")
+        raise ValueError("One of 'value', 'externalValue', or 'schema' must be provided")
     if provided_sources > 1:
-        raise ValueError("Only one of 'value', 'externalValue', or 'ref' can be provided (mutually exclusive)")
+        raise ValueError("Only one of 'value', 'externalValue', or 'schema' can be provided (mutually exclusive)")
 
     # Validation: Check placement-specific requirements
     if placement == 'response' and status_code is None:
@@ -205,18 +206,20 @@ def example(
             'placement': placement,
         }
 
-        # Add the example content (value, externalValue, or $ref)
+        # Add the example content (value, externalValue, or $ref from schema)
         if has_value:
             example_def['value'] = value
         elif has_external:
             example_def['externalValue'] = externalValue
-        elif has_ref:
-            # Auto-format as component reference if not already formatted
-            ref_str = ref if ref is not None else ''  # Type narrowing for linter
-            if not ref_str.startswith('#/'):
-                example_def['$ref'] = f"#/components/examples/{ref_str}"
+        elif has_schema:
+            # Convert Python type to OpenAPI $ref
+            schema_openapi = _schema_to_openapi(schema)
+            if '$ref' in schema_openapi:
+                # Use the component reference directly
+                example_def['$ref'] = schema_openapi['$ref']
             else:
-                example_def['$ref'] = ref_str
+                # Inline schema (for primitive types, arrays, etc.)
+                example_def['schema'] = schema_openapi
 
         # Add optional metadata
         if summary:

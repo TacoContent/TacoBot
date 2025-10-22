@@ -1937,26 +1937,8 @@ paths:
       tags:
         - permissions
     put:
+      description: Add (ensure) a permission for a user.
       summary: Add user permission
-      parameters:
-        - in: path
-          required: true
-          name: guildId
-          schema:
-            type: string
-          description: Discord guild ID
-        - in: path
-          required: true
-          name: userId
-          schema:
-            type: string
-          description: Discord user ID
-        - in: path
-          required: true
-          name: permission
-          schema:
-            type: string
-          description: Permission to add
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
@@ -1969,6 +1951,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SimpleStatusResponse'
+              examples:
+                successful_put:
+                  value:
+                    status: ok
+                  summary: Successfully ensured permission exists
         '400':
           description: Bad request
           content:
@@ -1993,7 +1980,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-      description: Add (ensure) a permission for a user.
+      parameters:
+        - in: path
+          required: true
+          name: guildId
+          schema:
+            type: string
+          description: Discord guild ID
+        - in: path
+          required: true
+          name: userId
+          schema:
+            type: string
+          description: Discord user ID
+        - in: path
+          required: true
+          name: permission
+          schema:
+            type: string
+          description: Permission to add
+          examples:
+            permission_parameter_example:
+              value: permission_manage_server
+              summary: Example permission to add
     delete:
       responses:
         '200':

@@ -11,6 +11,17 @@ from http import HTTPMethod
 from bot.lib.models.openapi.endpoints import example
 
 
+# Mock model classes for testing schema parameter
+class MockUser:
+    """Mock user model for testing."""
+    pass
+
+
+class MockRole:
+    """Mock role model for testing."""
+    pass
+
+
 def test_example_inline_value():
     """Test example with inline value (most common case)."""
     @example(
@@ -55,10 +66,10 @@ def test_example_external_value():
 
 
 def test_example_component_reference():
-    """Test example with $ref to component."""
+    """Test example with schema reference to component."""
     @example(
         name="admin_user",
-        ref="AdminUserExample",
+        schema=MockUser,
         summary="Admin user reference",
         placement='response',
         status_code=200
@@ -69,16 +80,16 @@ def test_example_component_reference():
     examples = handler.__openapi_examples__
     assert len(examples) == 1
     assert '$ref' in examples[0]
-    assert examples[0]['$ref'] == "#/components/examples/AdminUserExample"
+    assert examples[0]['$ref'] == "#/components/schemas/MockUser"
     assert 'value' not in examples[0]
     assert 'externalValue' not in examples[0]
 
 
-def test_example_component_reference_full_path():
-    """Test example with full $ref path."""
+def test_example_schema_with_different_model():
+    """Test example with different schema model."""
     @example(
-        name="user",
-        ref="#/components/examples/CustomUserExample",
+        name="role_example",
+        schema=MockRole,
         placement='response',
         status_code=200
     )
@@ -86,7 +97,7 @@ def test_example_component_reference_full_path():
         pass
 
     examples = handler.__openapi_examples__
-    assert examples[0]['$ref'] == "#/components/examples/CustomUserExample"
+    assert examples[0]['$ref'] == "#/components/schemas/MockRole"
 
 
 def test_example_parameter_placement():
@@ -233,8 +244,8 @@ def test_example_with_kwargs():
 
 
 def test_example_no_source_raises_error():
-    """Test that missing value/externalValue/ref raises ValueError."""
-    with pytest.raises(ValueError, match="One of 'value', 'externalValue', or 'ref' must be provided"):
+    """Test that missing value/externalValue/schema raises ValueError."""
+    with pytest.raises(ValueError, match="One of 'value', 'externalValue', or 'schema' must be provided"):
         @example(
             name="invalid",
             placement='response',
@@ -246,7 +257,7 @@ def test_example_no_source_raises_error():
 
 def test_example_multiple_sources_raises_error():
     """Test that providing multiple sources raises ValueError."""
-    with pytest.raises(ValueError, match="Only one of 'value', 'externalValue', or 'ref' can be provided"):
+    with pytest.raises(ValueError, match="Only one of 'value', 'externalValue', or 'schema' can be provided"):
         @example(
             name="invalid",
             value={"test": "data"},
