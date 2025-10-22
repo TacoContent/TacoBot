@@ -26,23 +26,14 @@ Extensibility Notes:
         * Future localization could parameterize static strings (e.g. "Ends", "FREE").
 """
 
-import html
-from http import HTTPMethod
 import inspect
 import json
 import os
 import traceback
 import typing
+from http import HTTPMethod
 
 import discord
-from lib import discordhelper
-from lib.http.handlers.webhook.helpers.GuildResolver import GuildResolver, ResolvedGuild
-from lib.http.handlers.webhook.helpers.OfferMessageFormatter import FormattedOffer, OfferMessageFormatter
-from lib.http.handlers.webhook.helpers.OfferUrlEnricher import EnrichedUrl, OfferUrlEnricher
-from lib.models import openapi
-from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
-from lib.models.TacoWebhookGamePayload import TacoWebhookGamePayload
-from tacobot import TacoBot
 from bot.lib.http.handlers.BaseWebhookHandler import BaseWebhookHandler
 from bot.lib.mongodb.free_game_keys import FreeGameKeysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
@@ -51,6 +42,14 @@ from bot.ui.ExternalUrlButtonView import ExternalUrlButtonView
 from httpserver.EndpointDecorators import uri_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException
+from lib import discordhelper
+from lib.http.handlers.webhook.helpers.GuildResolver import GuildResolver, ResolvedGuild
+from lib.http.handlers.webhook.helpers.OfferMessageFormatter import FormattedOffer, OfferMessageFormatter
+from lib.http.handlers.webhook.helpers.OfferUrlEnricher import EnrichedUrl, OfferUrlEnricher
+from lib.models import openapi
+from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from lib.models.TacoWebhookGamePayload import TacoWebhookGamePayload
+from tacobot import TacoBot
 
 
 class FreeGameWebhookHandler(BaseWebhookHandler):

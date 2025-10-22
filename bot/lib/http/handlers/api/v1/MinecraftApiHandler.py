@@ -34,29 +34,14 @@ Legacy Aliases:
     `/taco/` for backward compatibility with older clients / dashboards.
 """
 
-from http import HTTPMethod
 import inspect
 import json
 import os
 import traceback
 import typing
+from http import HTTPMethod
 
-from lib import discordhelper
-from lib.models import ErrorStatusCodePayload
-from lib.models.MinecraftOpUser import MinecraftOpUser
-from lib.models.MinecraftServerSettings import MinecraftServerSettings, MinecraftServerSettingsSettingsModel
-from lib.models.MinecraftServerStatus import MinecraftServerStatus
-from lib.models.MinecraftSettingsUpdatePayload import MinecraftSettingsUpdatePayload
-from lib.models.MinecraftUser import MinecraftUser
-from lib.models.MinecraftUserStats import MinecraftUserStats
-from lib.models.MinecraftWhiteListUser import MinecraftWhiteListUser
-from lib.models.SimpleStatusResponse import SimpleStatusResponse
-from lib.models.TacoMinecraftWorldInfo import TacoMinecraftWorldInfo
-from lib.models.TacoMinecraftWorlds import TacoMinecraftWorlds
-from lib.models.TacoSettingsModel import TacoSettingsModel
-from lib.models.openapi import openapi
 import requests
-from tacobot import TacoBot
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
@@ -67,6 +52,21 @@ from bot.lib.settings import Settings
 from httpserver.EndpointDecorators import uri_mapping, uri_variable_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException
+from lib import discordhelper
+from lib.models import ErrorStatusCodePayload
+from lib.models.MinecraftOpUser import MinecraftOpUser
+from lib.models.MinecraftServerSettings import MinecraftServerSettings, MinecraftServerSettingsSettingsModel
+from lib.models.MinecraftServerStatus import MinecraftServerStatus
+from lib.models.MinecraftSettingsUpdatePayload import MinecraftSettingsUpdatePayload
+from lib.models.MinecraftUser import MinecraftUser
+from lib.models.MinecraftUserStats import MinecraftUserStats
+from lib.models.MinecraftWhiteListUser import MinecraftWhiteListUser
+from lib.models.openapi import openapi
+from lib.models.SimpleStatusResponse import SimpleStatusResponse
+from lib.models.TacoMinecraftWorldInfo import TacoMinecraftWorldInfo
+from lib.models.TacoMinecraftWorlds import TacoMinecraftWorlds
+from lib.models.TacoSettingsModel import TacoSettingsModel
+from tacobot import TacoBot
 
 
 class MinecraftApiHandler(BaseHttpHandler):
@@ -238,31 +238,37 @@ class MinecraftApiHandler(BaseHttpHandler):
             status = MinecraftStatus(minecraft_host_internal, 25565)
             result = status.get()
             if result is None:
-                resp_payload: MinecraftServerStatus = MinecraftServerStatus({"success": False, "online": False, "version": "OFFLINE"})
+                resp_payload: MinecraftServerStatus = MinecraftServerStatus(
+                    {"success": False, "online": False, "version": "OFFLINE"}
+                )
                 return HttpResponse(500, headers, json.dumps(resp_payload, indent=4).encode("utf-8"))
             else:
-                payload: MinecraftServerStatus = MinecraftServerStatus({
-                    "success": True,
-                    "online": True,
-                    "status": "online",
-                    "host": minecraft_host_external,
-                    "version": {"name": result.version.name, "protocol": result.version.protocol},
-                    "players": {"online": result.players.online, "max": result.players.max},
-                    "description": result.motd.to_plain(),
-                    "motd": {
-                        "plain": result.motd.to_plain(),
-                        "ansi": result.motd.to_ansi(),
-                        "html": result.motd.to_html(),
-                        "raw": result.motd.to_minecraft(),
-                    },
-                    "latency": result.latency,
-                    "enforces_secure_chat": result.enforces_secure_chat,
-                    "icon": result.icon,
-                })
+                payload: MinecraftServerStatus = MinecraftServerStatus(
+                    {
+                        "success": True,
+                        "online": True,
+                        "status": "online",
+                        "host": minecraft_host_external,
+                        "version": {"name": result.version.name, "protocol": result.version.protocol},
+                        "players": {"online": result.players.online, "max": result.players.max},
+                        "description": result.motd.to_plain(),
+                        "motd": {
+                            "plain": result.motd.to_plain(),
+                            "ansi": result.motd.to_ansi(),
+                            "html": result.motd.to_html(),
+                            "raw": result.motd.to_minecraft(),
+                        },
+                        "latency": result.latency,
+                        "enforces_secure_chat": result.enforces_secure_chat,
+                        "icon": result.icon,
+                    }
+                )
                 return HttpResponse(200, headers, json.dumps(payload, indent=4).encode("utf-8"))
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
-            resp_payload: MinecraftServerStatus = MinecraftServerStatus({"success": False, "online": False, "version": "OFFLINE"})
+            resp_payload: MinecraftServerStatus = MinecraftServerStatus(
+                {"success": False, "online": False, "version": "OFFLINE"}
+            )
             return HttpResponse(500, headers, json.dumps(resp_payload, indent=4).encode("utf-8"))
 
     @uri_mapping("/tacobot/minecraft/version", method=HTTPMethod.POST)
@@ -669,12 +675,7 @@ class MinecraftApiHandler(BaseHttpHandler):
     @openapi.tags("minecraft")
     @openapi.summary("Mojang username to UUID lookup")
     @openapi.description("Translate a Mojang / Minecraft username into a UUID.")
-    @openapi.pathParameter(
-        name="username",
-        description="Mojang account name",
-        schema=str,
-        methods=[HTTPMethod.GET],
-    )
+    @openapi.pathParameter(name="username", description="Mojang account name", schema=str, methods=[HTTPMethod.GET])
     @openapi.response(
         200,
         description="Minecraft user with UUID and name",
@@ -732,7 +733,6 @@ class MinecraftApiHandler(BaseHttpHandler):
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
-
 
     @uri_variable_mapping("/tacobot/minecraft/player/{identifier}/stats", method=HTTPMethod.POST)
     @uri_variable_mapping("/taco/minecraft/player/{identifier}/stats", method=HTTPMethod.POST)
@@ -812,17 +812,17 @@ class MinecraftApiHandler(BaseHttpHandler):
             if not self.validate_auth_token(request):
                 self.log.error(0, f"{self._module}.{self._class}.{_method}", "Invalid authentication token")
                 return self._create_error_response(401, "Invalid authentication token", headers=headers)
-            
+
             if not request.body:
                 return self._create_error_response(400, "No body provided", headers=headers)
-            
+
             data = None
             try:
                 # parse body (not used in placeholder)
                 data = json.loads(request.body.decode("utf-8"))
             except json.JSONDecodeError:
                 return self._create_error_response(400, "Invalid JSON body", headers=headers)
-            
+
             if data is None:
                 return self._create_error_response(400, "No data provided", headers=headers)
 
@@ -915,10 +915,7 @@ class MinecraftApiHandler(BaseHttpHandler):
         methods=[HTTPMethod.GET],
     )
     @openapi.pathParameter(
-        name="world",
-        description="World identifier",
-        schema=TacoMinecraftWorlds,
-        methods=[HTTPMethod.GET],
+        name="world", description="World identifier", schema=TacoMinecraftWorlds, methods=[HTTPMethod.GET]
     )
     @openapi.response(
         200,

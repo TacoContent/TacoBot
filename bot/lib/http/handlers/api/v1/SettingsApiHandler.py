@@ -19,16 +19,11 @@ Error Model:
     maintain consistency across the API surface.
 """
 
-from http import HTTPMethod
 import inspect
 import json
 import os
 import typing
-
-from lib import discordhelper
-from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
-from lib.models.openapi import openapi
-from tacobot import TacoBot
+from http import HTTPMethod
 
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
@@ -37,6 +32,10 @@ from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
 from httpserver.EndpointDecorators import uri_variable_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
+from lib import discordhelper
+from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from lib.models.openapi import openapi
+from tacobot import TacoBot
 
 
 class SettingsApiHandler(BaseHttpHandler):

@@ -10,6 +10,7 @@ import typing
 
 from lib.http.handlers.webhook.helpers.launchers.LauncherStrategies import LauncherStrategy
 
+
 # Automatically discover all LauncherStrategy subclasses
 def get_launcher_strategies() -> typing.Dict[str, typing.Type[LauncherStrategy]]:
     """Dynamically find all LauncherStrategy subclasses in this module."""

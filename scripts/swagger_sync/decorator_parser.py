@@ -8,8 +8,8 @@ OpenAPI documentation metadata without executing the code.
 """
 
 import ast
-from dataclasses import dataclass, field
 import json
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
 from .utils import _extract_literal_schema, _safe_unparse
@@ -103,9 +103,7 @@ class DecoratorMetadata:
 
                 # Initialize response object if not exists
                 if status_key not in responses:
-                    responses[status_key] = {
-                        "description": resp.get("description", "Response")
-                    }
+                    responses[status_key] = {"description": resp.get("description", "Response")}
 
                 # Merge content types for the same status code
                 if "content" in resp:
@@ -122,8 +120,7 @@ class DecoratorMetadata:
 
 
 def extract_decorator_metadata(
-    func_node: ast.FunctionDef | ast.AsyncFunctionDef,
-    module_ast: Optional[ast.Module] = None
+    func_node: ast.FunctionDef | ast.AsyncFunctionDef, module_ast: Optional[ast.Module] = None
 ) -> DecoratorMetadata:
     """Extract @openapi.* decorator metadata from function AST node.
 
@@ -251,6 +248,7 @@ def _resolve_imported_typealias(module_path: str) -> Optional[ast.expr]:
         # Convert module path to file path relative to project root
         # Assumes standard Python package structure
         import pathlib
+
         module_file_parts = module_name.split(".")
 
         # Try to find the module file
@@ -279,7 +277,7 @@ def _resolve_imported_typealias(module_path: str) -> Optional[ast.expr]:
 
         # If module file wasn't found in any search path
         if module_file is None or not module_file.exists():
-            return None        # Parse the imported module
+            return None  # Parse the imported module
         source = module_file.read_text(encoding="utf-8")
         imported_ast = ast.parse(source)
 
@@ -597,7 +595,9 @@ def _extract_operation_id(decorator: ast.Call) -> Optional[str]:
     return None
 
 
-def _extract_path_parameter(decorator: ast.Call, type_alias_map: Optional[Dict[str, ast.expr]] = None) -> Dict[str, Any]:
+def _extract_path_parameter(
+    decorator: ast.Call, type_alias_map: Optional[Dict[str, ast.expr]] = None
+) -> Dict[str, Any]:
     """Extract path parameter from @openapi.pathParameter decorator.
 
     Args:
@@ -648,7 +648,9 @@ def _extract_path_parameter(decorator: ast.Call, type_alias_map: Optional[Dict[s
     return param
 
 
-def _extract_query_parameter(decorator: ast.Call, type_alias_map: Optional[Dict[str, ast.expr]] = None) -> Dict[str, Any]:
+def _extract_query_parameter(
+    decorator: ast.Call, type_alias_map: Optional[Dict[str, ast.expr]] = None
+) -> Dict[str, Any]:
     """Extract query parameter from @openapi.queryParameter decorator.
 
     Args:
@@ -706,7 +708,9 @@ def _extract_query_parameter(decorator: ast.Call, type_alias_map: Optional[Dict[
     return param
 
 
-def _extract_header_parameter(decorator: ast.Call, type_alias_map: Optional[Dict[str, ast.expr]] = None) -> Dict[str, Any]:
+def _extract_header_parameter(
+    decorator: ast.Call, type_alias_map: Optional[Dict[str, ast.expr]] = None
+) -> Dict[str, Any]:
     """Extract header parameter from @openapi.headerParameter decorator.
 
     Args:
@@ -1071,9 +1075,11 @@ def _extract_schema_type(type_node: ast.expr, type_alias_map: Optional[Dict[str,
     if isinstance(type_node, ast.Subscript):
         if isinstance(type_node.value, ast.Attribute):
             # typing.Literal
-            if (isinstance(type_node.value.value, ast.Name) and
-                type_node.value.value.id == "typing" and
-                type_node.value.attr == "Literal"):
+            if (
+                isinstance(type_node.value.value, ast.Name)
+                and type_node.value.value.id == "typing"
+                and type_node.value.attr == "Literal"
+            ):
                 # Extract enum values from Literal
                 anno_str = _safe_unparse(type_node)
                 if anno_str:
@@ -1157,27 +1163,35 @@ def _extract_schema_reference(schema_node: ast.expr) -> Dict[str, Any]:
         # Check if it's a Union type
         if isinstance(schema_node.value, ast.Attribute):
             # typing.Union, typing.List, typing.Optional, etc.
-            if (isinstance(schema_node.value.value, ast.Name) and
-                schema_node.value.value.id == "typing" and
-                schema_node.value.attr == "Union"):
+            if (
+                isinstance(schema_node.value.value, ast.Name)
+                and schema_node.value.value.id == "typing"
+                and schema_node.value.attr == "Union"
+            ):
                 # Extract union members
                 return _extract_union_schemas(schema_node.slice)
-            elif (isinstance(schema_node.value.value, ast.Name) and
-                  schema_node.value.value.id == "typing" and
-                  schema_node.value.attr == "Optional"):
+            elif (
+                isinstance(schema_node.value.value, ast.Name)
+                and schema_node.value.value.id == "typing"
+                and schema_node.value.attr == "Optional"
+            ):
                 # typing.Optional[T] is equivalent to Union[T, None]
                 # Extract the wrapped type and create oneOf with None
                 wrapped_schema = _extract_schema_reference(schema_node.slice)
                 return {"oneOf": [wrapped_schema, {"type": "null"}]}
-            elif (isinstance(schema_node.value.value, ast.Name) and
-                  schema_node.value.value.id == "typing" and
-                  schema_node.value.attr == "List"):
+            elif (
+                isinstance(schema_node.value.value, ast.Name)
+                and schema_node.value.value.id == "typing"
+                and schema_node.value.attr == "List"
+            ):
                 # typing.List[T]
                 item_schema = _extract_schema_reference(schema_node.slice)
                 return {"type": "array", "items": item_schema}
-            elif (isinstance(schema_node.value.value, ast.Name) and
-                  schema_node.value.value.id == "typing" and
-                  schema_node.value.attr == "Dict"):
+            elif (
+                isinstance(schema_node.value.value, ast.Name)
+                and schema_node.value.value.id == "typing"
+                and schema_node.value.attr == "Dict"
+            ):
                 # typing.Dict[K, V] - extract value type for additionalProperties
                 return _extract_dict_schema(schema_node.slice)
 
@@ -1243,17 +1257,11 @@ def _extract_dict_schema(slice_node: ast.expr) -> Dict[str, Any]:
 
         if is_any:
             # For typing.Any, use additionalProperties: true per OpenAPI spec
-            return {
-                "type": "object",
-                "additionalProperties": True
-            }
+            return {"type": "object", "additionalProperties": True}
 
         # For specific types, extract the schema
         value_schema = _extract_schema_reference(value_node)
-        return {
-            "type": "object",
-            "additionalProperties": value_schema
-        }
+        return {"type": "object", "additionalProperties": value_schema}
 
     # Fallback: if slice is not a tuple or has wrong number of args, return generic object
     return {"type": "object"}

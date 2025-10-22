@@ -12,6 +12,7 @@ from typing import Any, Dict
 
 try:
     from ruamel.yaml import YAML  # type: ignore
+
     # Create a YAML instance with better formatting and comment preservation
     yaml = YAML()
     yaml.preserve_quotes = True

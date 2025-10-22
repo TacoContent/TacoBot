@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from typing import List, Optional
+
 import discord
 from bot.lib.mongodb.free_game_keys import FreeGameKeysDatabase
 

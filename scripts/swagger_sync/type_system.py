@@ -19,6 +19,7 @@ import pathlib
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
+
 # Import from other swagger_sync modules
 try:
     from .constants import DEFAULT_MODELS_ROOT
@@ -26,13 +27,14 @@ try:
         _decorator_identifier,
         _extract_constant,
         _extract_constant_dict,
-        _safe_unparse,
-        _normalize_extension_key,
         _extract_literal_schema,
+        _normalize_extension_key,
+        _safe_unparse,
     )
 except ImportError:
     # Fallback for script execution
     import sys
+
     _scripts_dir = pathlib.Path(__file__).parent.parent
     if str(_scripts_dir) not in sys.path:
         sys.path.insert(0, str(_scripts_dir))
@@ -41,9 +43,9 @@ except ImportError:
         _decorator_identifier,
         _extract_constant,
         _extract_constant_dict,
-        _safe_unparse,
-        _normalize_extension_key,
         _extract_literal_schema,
+        _normalize_extension_key,
+        _safe_unparse,
     )
 
 # Sentinel value for missing defaults
@@ -238,7 +240,7 @@ def _flatten_nested_unions(anno_str: str) -> str:
         # Extract the full Union expression
         union_start = outer_match.start()
         full_union = anno_str[union_start:end_pos]
-        inner_content = anno_str[start_pos + 1:end_pos - 1]
+        inner_content = anno_str[start_pos + 1 : end_pos - 1]
 
         # Check if there are nested unions
         if 'Union[' in inner_content:
@@ -247,7 +249,7 @@ def _flatten_nested_unions(anno_str: str) -> str:
             flattened_content = ', '.join(all_types)
 
             # Determine if we need typing prefix
-            prefix = 'typing.' if anno_str[union_start:union_start + 7] == 'typing.' else ''
+            prefix = 'typing.' if anno_str[union_start : union_start + 7] == 'typing.' else ''
             flattened_union = f'{prefix}Union[{flattened_content}]'
 
             # Replace the nested union with flattened version
@@ -349,7 +351,19 @@ def _extract_refs_from_types(type_list: list[str]) -> list[Dict[str, str]]:
     Filters out None, Optional wrappers, and primitive types.
     """
     refs: list[Dict[str, str]] = []
-    typing_keywords = {'Optional', 'Union', 'List', 'Dict', 'Any', 'Type', 'Callable', 'Tuple', 'Set', 'Literal', 'None'}
+    typing_keywords = {
+        'Optional',
+        'Union',
+        'List',
+        'Dict',
+        'Any',
+        'Type',
+        'Callable',
+        'Tuple',
+        'Set',
+        'Literal',
+        'None',
+    }
 
     for type_str in type_list:
         type_str = type_str.strip()
@@ -613,8 +627,9 @@ def _extract_dict_inheritance_schema(cls: ast.ClassDef) -> Optional[Dict[str, An
             try:
                 # Parse the base as an expression to get AST node
                 import ast as ast_module
+
                 base_expr = ast_module.parse(base_str, mode='eval').body
-                
+
                 # Check if it's a subscript (Dict[...] or dict[...])
                 if isinstance(base_expr, ast_module.Subscript):
                     # Extract the schema using existing decorator parser logic

@@ -11,21 +11,22 @@ Validation Categories:
 5. Security Scheme Validation - Check security references
 """
 
-from typing import Any, Dict, List, Optional, Set
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any, Dict, List, Optional, Set
 
 
 class ValidationSeverity(Enum):
     """Validation message severity levels."""
-    ERROR = "ERROR"      # Blocks generation, must be fixed
+    ERROR = "ERROR"  # Blocks generation, must be fixed
     WARNING = "WARNING"  # Should be reviewed, but allowed
-    INFO = "INFO"        # Informational, best practice suggestions
+    INFO = "INFO"  # Informational, best practice suggestions
 
 
 @dataclass
 class ValidationError:
     """Represents a validation error or warning."""
+
     severity: ValidationSeverity
     message: str
     endpoint: str  # Endpoint identifier (e.g., "GET /api/v1/users")
@@ -40,24 +41,78 @@ class ValidationError:
 # Standard HTTP status codes (informational + success + redirection + client/server errors)
 STANDARD_STATUS_CODES = {
     # 1xx Informational
-    100, 101, 102, 103,
+    100,
+    101,
+    102,
+    103,
     # 2xx Success
-    200, 201, 202, 203, 204, 205, 206, 207, 208, 226,
+    200,
+    201,
+    202,
+    203,
+    204,
+    205,
+    206,
+    207,
+    208,
+    226,
     # 3xx Redirection
-    300, 301, 302, 303, 304, 305, 306, 307, 308,
+    300,
+    301,
+    302,
+    303,
+    304,
+    305,
+    306,
+    307,
+    308,
     # 4xx Client Error
-    400, 401, 402, 403, 404, 405, 406, 407, 408, 409,
-    410, 411, 412, 413, 414, 415, 416, 417, 418, 421,
-    422, 423, 424, 425, 426, 428, 429, 431, 451,
+    400,
+    401,
+    402,
+    403,
+    404,
+    405,
+    406,
+    407,
+    408,
+    409,
+    410,
+    411,
+    412,
+    413,
+    414,
+    415,
+    416,
+    417,
+    418,
+    421,
+    422,
+    423,
+    424,
+    425,
+    426,
+    428,
+    429,
+    431,
+    451,
     # 5xx Server Error
-    500, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511
+    500,
+    501,
+    502,
+    503,
+    504,
+    505,
+    506,
+    507,
+    508,
+    510,
+    511,
 }
 
 
 def validate_schema_references(
-    metadata: Dict[str, Any],
-    available_schemas: Set[str],
-    endpoint_id: str
+    metadata: Dict[str, Any], available_schemas: Set[str], endpoint_id: str
 ) -> List[ValidationError]:
     """Validate that all schema references exist in components/schemas.
 
@@ -95,12 +150,14 @@ def validate_schema_references(
                 if ref.startswith('#/components/schemas/'):
                     schema_name = ref.split('/')[-1]
                     if schema_name not in available_schemas:
-                        errors.append(ValidationError(
-                            severity=ValidationSeverity.ERROR,
-                            message=f"Unknown schema reference: {schema_name}",
-                            endpoint=endpoint_id,
-                            field=f"responses.{status_code}.content.{media_type}.schema"
-                        ))
+                        errors.append(
+                            ValidationError(
+                                severity=ValidationSeverity.ERROR,
+                                message=f"Unknown schema reference: {schema_name}",
+                                endpoint=endpoint_id,
+                                field=f"responses.{status_code}.content.{media_type}.schema"
+                            )
+                        )
 
     # Check request body for schema references
     request_body = metadata.get('requestBody', {})
@@ -116,12 +173,14 @@ def validate_schema_references(
                 if ref.startswith('#/components/schemas/'):
                     schema_name = ref.split('/')[-1]
                     if schema_name not in available_schemas:
-                        errors.append(ValidationError(
-                            severity=ValidationSeverity.ERROR,
-                            message=f"Unknown schema reference: {schema_name}",
-                            endpoint=endpoint_id,
-                            field=f"requestBody.content.{media_type}.schema"
-                        ))
+                        errors.append(
+                            ValidationError(
+                                severity=ValidationSeverity.ERROR,
+                                message=f"Unknown schema reference: {schema_name}",
+                                endpoint=endpoint_id,
+                                field=f"requestBody.content.{media_type}.schema"
+                            )
+                        )
 
     # Check parameters for schema references
     parameters = metadata.get('parameters', [])
@@ -136,20 +195,19 @@ def validate_schema_references(
                 schema_name = ref.split('/')[-1]
                 if schema_name not in available_schemas:
                     param_name = param.get('name', f'parameter[{idx}]')
-                    errors.append(ValidationError(
-                        severity=ValidationSeverity.ERROR,
-                        message=f"Unknown schema reference in parameter '{param_name}': {schema_name}",
-                        endpoint=endpoint_id,
-                        field=f"parameters[{idx}].schema"
-                    ))
+                    errors.append(
+                        ValidationError(
+                            severity=ValidationSeverity.ERROR,
+                            message=f"Unknown schema reference in parameter '{param_name}': {schema_name}",
+                            endpoint=endpoint_id,
+                            field=f"parameters[{idx}].schema"
+                        )
+                    )
 
     return errors
 
 
-def validate_status_codes(
-    metadata: Dict[str, Any],
-    endpoint_id: str
-) -> List[ValidationError]:
+def validate_status_codes(metadata: Dict[str, Any], endpoint_id: str) -> List[ValidationError]:
     """Validate HTTP status codes are standard and appropriate.
 
     Args:
@@ -171,29 +229,30 @@ def validate_status_codes(
         try:
             status_code = int(status_code_str)
             if status_code not in STANDARD_STATUS_CODES:
-                errors.append(ValidationError(
-                    severity=ValidationSeverity.WARNING,
-                    message=f"Non-standard HTTP status code: {status_code}",
-                    endpoint=endpoint_id,
-                    field=f"responses.{status_code_str}"
-                ))
+                errors.append(
+                    ValidationError(
+                        severity=ValidationSeverity.WARNING,
+                        message=f"Non-standard HTTP status code: {status_code}",
+                        endpoint=endpoint_id,
+                        field=f"responses.{status_code_str}"
+                    )
+                )
         except ValueError:
             # Status code is not a number (e.g., 'default')
             if status_code_str not in ('default', 'xx'):
-                errors.append(ValidationError(
-                    severity=ValidationSeverity.WARNING,
-                    message=f"Invalid status code format: {status_code_str}",
-                    endpoint=endpoint_id,
-                    field=f"responses.{status_code_str}"
-                ))
+                errors.append(
+                    ValidationError(
+                        severity=ValidationSeverity.WARNING,
+                        message=f"Invalid status code format: {status_code_str}",
+                        endpoint=endpoint_id,
+                        field=f"responses.{status_code_str}"
+                    )
+                )
 
     return errors
 
 
-def validate_parameters(
-    metadata: Dict[str, Any],
-    endpoint_id: str
-) -> List[ValidationError]:
+def validate_parameters(metadata: Dict[str, Any], endpoint_id: str) -> List[ValidationError]:
     """Validate parameters have required fields and valid values.
 
     Args:
@@ -213,69 +272,78 @@ def validate_parameters(
     parameters = metadata.get('parameters', [])
     for idx, param in enumerate(parameters):
         if not isinstance(param, dict):
-            errors.append(ValidationError(
-                severity=ValidationSeverity.ERROR,
-                message=f"Parameter must be an object, got {type(param).__name__}",
-                endpoint=endpoint_id,
-                field=f"parameters[{idx}]"
-            ))
+            errors.append(
+                ValidationError(
+                    severity=ValidationSeverity.ERROR,
+                    message=f"Parameter must be an object, got {type(param).__name__}",
+                    endpoint=endpoint_id,
+                    field=f"parameters[{idx}]"
+                )
+            )
             continue
 
         param_name = param.get('name', f'parameter[{idx}]')
 
         # Check required fields
         if 'name' not in param:
-            errors.append(ValidationError(
-                severity=ValidationSeverity.ERROR,
-                message=f"Parameter missing required field 'name'",
-                endpoint=endpoint_id,
-                field=f"parameters[{idx}]"
-            ))
+            errors.append(
+                ValidationError(
+                    severity=ValidationSeverity.ERROR,
+                    message=f"Parameter missing required field 'name'",
+                    endpoint=endpoint_id,
+                    field=f"parameters[{idx}]"
+                )
+            )
 
         if 'in' not in param:
-            errors.append(ValidationError(
-                severity=ValidationSeverity.ERROR,
-                message=f"Parameter '{param_name}' missing required field 'in'",
-                endpoint=endpoint_id,
-                field=f"parameters[{idx}].in"
-            ))
+            errors.append(
+                ValidationError(
+                    severity=ValidationSeverity.ERROR,
+                    message=f"Parameter '{param_name}' missing required field 'in'",
+                    endpoint=endpoint_id,
+                    field=f"parameters[{idx}].in"
+                )
+            )
         else:
             # Validate 'in' value
             valid_in_values = {'path', 'query', 'header', 'cookie'}
             param_in = param.get('in')
             if param_in not in valid_in_values:
-                errors.append(ValidationError(
-                    severity=ValidationSeverity.ERROR,
-                    message=f"Parameter '{param_name}' has invalid 'in' value: {param_in}. Must be one of {valid_in_values}",
-                    endpoint=endpoint_id,
-                    field=f"parameters[{idx}].in"
-                ))
+                errors.append(
+                    ValidationError(
+                        severity=ValidationSeverity.ERROR,
+                        message=f"Parameter '{param_name}' has invalid 'in' value: {param_in}. Must be one of {valid_in_values}",
+                        endpoint=endpoint_id,
+                        field=f"parameters[{idx}].in"
+                    )
+                )
 
             # Path parameters must be required
             if param_in == 'path' and not param.get('required', False):
-                errors.append(ValidationError(
-                    severity=ValidationSeverity.ERROR,
-                    message=f"Path parameter '{param_name}' must have required=true",
-                    endpoint=endpoint_id,
-                    field=f"parameters[{idx}].required"
-                ))
+                errors.append(
+                    ValidationError(
+                        severity=ValidationSeverity.ERROR,
+                        message=f"Path parameter '{param_name}' must have required=true",
+                        endpoint=endpoint_id,
+                        field=f"parameters[{idx}].required"
+                    )
+                )
 
         # Check schema or content exists
         if 'schema' not in param and 'content' not in param:
-            errors.append(ValidationError(
-                severity=ValidationSeverity.ERROR,
-                message=f"Parameter '{param_name}' must have either 'schema' or 'content'",
-                endpoint=endpoint_id,
-                field=f"parameters[{idx}]"
-            ))
+            errors.append(
+                ValidationError(
+                    severity=ValidationSeverity.ERROR,
+                    message=f"Parameter '{param_name}' must have either 'schema' or 'content'",
+                    endpoint=endpoint_id,
+                    field=f"parameters[{idx}]"
+                )
+            )
 
     return errors
 
 
-def validate_responses(
-    metadata: Dict[str, Any],
-    endpoint_id: str
-) -> List[ValidationError]:
+def validate_responses(metadata: Dict[str, Any], endpoint_id: str) -> List[ValidationError]:
     """Validate responses have required fields and valid structure.
 
     Args:
@@ -291,40 +359,44 @@ def validate_responses(
 
     # Check that at least one response is defined
     if not responses:
-        errors.append(ValidationError(
-            severity=ValidationSeverity.WARNING,
-            message="No responses defined for endpoint",
-            endpoint=endpoint_id,
-            field="responses"
-        ))
+        errors.append(
+            ValidationError(
+                severity=ValidationSeverity.WARNING,
+                message="No responses defined for endpoint",
+                endpoint=endpoint_id,
+                field="responses"
+            )
+        )
         return errors
 
     for status_code, response in responses.items():
         if not isinstance(response, dict):
-            errors.append(ValidationError(
-                severity=ValidationSeverity.ERROR,
-                message=f"Response for status {status_code} must be an object",
-                endpoint=endpoint_id,
-                field=f"responses.{status_code}"
-            ))
+            errors.append(
+                ValidationError(
+                    severity=ValidationSeverity.ERROR,
+                    message=f"Response for status {status_code} must be an object",
+                    endpoint=endpoint_id,
+                    field=f"responses.{status_code}"
+                )
+            )
             continue
 
         # Check required 'description' field
         if 'description' not in response:
-            errors.append(ValidationError(
-                severity=ValidationSeverity.ERROR,
-                message=f"Response {status_code} missing required 'description' field",
-                endpoint=endpoint_id,
-                field=f"responses.{status_code}.description"
-            ))
+            errors.append(
+                ValidationError(
+                    severity=ValidationSeverity.ERROR,
+                    message=f"Response {status_code} missing required 'description' field",
+                    endpoint=endpoint_id,
+                    field=f"responses.{status_code}.description"
+                )
+            )
 
     return errors
 
 
 def validate_security_schemes(
-    metadata: Dict[str, Any],
-    available_schemes: Set[str],
-    endpoint_id: str
+    metadata: Dict[str, Any], available_schemes: Set[str], endpoint_id: str
 ) -> List[ValidationError]:
     """Validate security scheme references exist.
 
@@ -345,12 +417,14 @@ def validate_security_schemes(
 
         for scheme_name in security_req.keys():
             if scheme_name not in available_schemes:
-                errors.append(ValidationError(
-                    severity=ValidationSeverity.ERROR,
-                    message=f"Unknown security scheme: {scheme_name}",
-                    endpoint=endpoint_id,
-                    field=f"security[{idx}].{scheme_name}"
-                ))
+                errors.append(
+                    ValidationError(
+                        severity=ValidationSeverity.ERROR,
+                        message=f"Unknown security scheme: {scheme_name}",
+                        endpoint=endpoint_id,
+                        field=f"security[{idx}].{scheme_name}"
+                    )
+                )
 
     return errors
 
@@ -359,7 +433,7 @@ def validate_endpoint_metadata(
     metadata: Dict[str, Any],
     endpoint_id: str,
     available_schemas: Optional[Set[str]] = None,
-    available_security_schemes: Optional[Set[str]] = None
+    available_security_schemes: Optional[Set[str]] = None,
 ) -> List[ValidationError]:
     """Validate complete endpoint metadata.
 
@@ -400,10 +474,7 @@ def validate_endpoint_metadata(
     return all_errors
 
 
-def format_validation_report(
-    errors: List[ValidationError],
-    show_info: bool = False
-) -> str:
+def format_validation_report(errors: List[ValidationError], show_info: bool = False) -> str:
     """Format validation errors into a readable report.
 
     Args:
@@ -417,11 +488,7 @@ def format_validation_report(
         return "✅ No validation errors found."
 
     # Group by severity
-    by_severity = {
-        ValidationSeverity.ERROR: [],
-        ValidationSeverity.WARNING: [],
-        ValidationSeverity.INFO: []
-    }
+    by_severity = {ValidationSeverity.ERROR: [], ValidationSeverity.WARNING: [], ValidationSeverity.INFO: []}
 
     for error in errors:
         by_severity[error.severity].append(error)

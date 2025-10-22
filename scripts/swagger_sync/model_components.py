@@ -24,80 +24,72 @@ import pathlib
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
+
 # Import from other swagger_sync modules
 try:
     from .constants import MISSING
-    from .yaml_handler import yaml
     from .type_system import (
-        TYPE_ALIAS_METADATA,
         GLOBAL_TYPE_ALIASES,
-        _discover_attribute_aliases,
-        _register_type_aliases,
-        _collect_typevars_from_ast,
-        _expand_type_aliases,
-        _extract_openapi_base_classes,
-        _extract_dict_inheritance_schema,
+        TYPE_ALIAS_METADATA,
         _build_schema_from_annotation,
-        _unwrap_optional,
+        _collect_typevars_from_ast,
+        _discover_attribute_aliases,
+        _expand_type_aliases,
+        _extract_dict_inheritance_schema,
+        _extract_openapi_base_classes,
         _extract_union_schema,
+        _register_type_aliases,
+        _unwrap_optional,
     )
-    from .utils import (
-        _decorator_identifier,
-        _extract_constant,
-        _normalize_extension_key,
-        _safe_unparse,
-    )
+    from .utils import _decorator_identifier, _extract_constant, _normalize_extension_key, _safe_unparse
+    from .yaml_handler import yaml
 except ImportError:
     # Fallback for script execution
     import sys
+
     _parent = pathlib.Path(__file__).parent
     if str(_parent) not in sys.path:
         sys.path.insert(0, str(_parent))
     from constants import MISSING
-    from yaml_handler import yaml
     from type_system import (
-        TYPE_ALIAS_METADATA,
         GLOBAL_TYPE_ALIASES,
-        _discover_attribute_aliases,
-        _register_type_aliases,
-        _collect_typevars_from_ast,
-        _expand_type_aliases,
-        _extract_openapi_base_classes,
-        _extract_dict_inheritance_schema,
+        TYPE_ALIAS_METADATA,
         _build_schema_from_annotation,
-        _unwrap_optional,
+        _collect_typevars_from_ast,
+        _discover_attribute_aliases,
+        _expand_type_aliases,
+        _extract_dict_inheritance_schema,
+        _extract_openapi_base_classes,
         _extract_union_schema,
+        _register_type_aliases,
+        _unwrap_optional,
     )
-    from utils import (
-        _decorator_identifier,
-        _extract_constant,
-        _normalize_extension_key,
-        _safe_unparse,
-    )
+    from utils import _decorator_identifier, _extract_constant, _normalize_extension_key, _safe_unparse
+    from yaml_handler import yaml
 
 
 def _resolve_hint_to_schema(hint_value: Any) -> Optional[Dict[str, Any]]:
     """Resolve a hint kwarg value to an OpenAPI schema.
-    
+
     Supports:
     - Type objects (list, dict, str, int, bool, float)
     - Typing module types (List[Any], Dict[str, Any], etc.)
     - String annotations (e.g., "List[Dict[str, Any]]")
-    
+
     Args:
         hint_value: The hint value from @openapi.property decorator
-        
+
     Returns:
         OpenAPI schema dict if hint can be resolved, None otherwise
     """
     if hint_value is None:
         return None
-        
+
     # Case 1: String annotation - enhanced processing for nested types
     if isinstance(hint_value, str):
         # Use existing _build_schema_from_annotation as base
         schema = _build_schema_from_annotation(hint_value)
-        
+
         # Enhanced detection for List[Dict[...]] pattern
         if schema.get('type') == 'array':
             # Check if it's List[Dict[...]] or List[dict]
@@ -105,9 +97,9 @@ def _resolve_hint_to_schema(hint_value: Any) -> Optional[Dict[str, Any]]:
             if 'dict' in lowered or 'mapping' in lowered:
                 # Override default string items with object
                 schema['items'] = {'type': 'object'}
-        
+
         return schema
-    
+
     # Case 2: Type object (list, dict, str, int, bool, float)
     if isinstance(hint_value, type):
         type_name = hint_value.__name__.lower()
@@ -129,7 +121,7 @@ def _resolve_hint_to_schema(hint_value: Any) -> Optional[Dict[str, Any]]:
             if type_name and type_name[0].isupper():
                 return {'$ref': f'#/components/schemas/{hint_value.__name__}'}
             return None
-    
+
     # Case 3: Typing module types (List[Any], Dict[str, Any], etc.)
     # These have a __module__ attribute and string repr we can parse
     if hasattr(hint_value, '__module__') and hint_value.__module__ == 'typing':
@@ -138,7 +130,7 @@ def _resolve_hint_to_schema(hint_value: Any) -> Optional[Dict[str, Any]]:
         # Clean up typing. prefix if present
         hint_str = hint_str.replace('typing.', '')
         return _resolve_hint_to_schema(hint_str)  # Recursively process as string
-    
+
     # Case 4: Try converting to string as last resort
     try:
         hint_str = str(hint_value)
@@ -250,7 +242,7 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                     if len(deco_call.args) >= 1:
                         # First positional arg is always the property name
                         prop_name = _extract_constant(deco_call.args[0])
-                    
+
                     # Legacy 3-arg form: @openapi.property("prop", "name", "value")
                     if len(deco_call.args) >= 3:
                         key_name = _extract_constant(deco_call.args[1])
@@ -284,11 +276,11 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                         continue
                     if prop_name not in property_decorators:
                         property_decorators[prop_name] = {}
-                    
+
                     # Handle legacy name/value pair if present
                     if isinstance(key_name, str):
                         property_decorators[prop_name][key_name] = key_value
-                    
+
                     # Add all additional kwargs (preferred form)
                     property_decorators[prop_name].update(additional_kwargs)
                 elif deco_name == 'component':
@@ -363,23 +355,37 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
             for node in cls.body:
                 if isinstance(node, ast.FunctionDef) and node.name == '__init__':
                     for stmt in node.body:
-                        if isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Attribute) and isinstance(stmt.target.value, ast.Name) and stmt.target.value.id == 'self':
+                        if (
+                            isinstance(stmt, ast.AnnAssign)
+                            and isinstance(stmt.target, ast.Attribute)
+                            and isinstance(stmt.target.value, ast.Name)
+                            and stmt.target.value.id == 'self'
+                        ):
                             attr = stmt.target.attr
-                            if attr.startswith('_'): continue
+                            if attr.startswith('_'):
+                                continue
                             anno = _safe_unparse(stmt.annotation) or ''
                             anno = _expand_type_aliases(anno, type_alias_map)
                             annotations[attr] = anno or 'string'
                         elif isinstance(stmt, ast.Assign):
                             for tgt in stmt.targets:
-                                if isinstance(tgt, ast.Attribute) and isinstance(tgt.value, ast.Name) and tgt.value.id == 'self':
+                                if (
+                                    isinstance(tgt, ast.Attribute)
+                                    and isinstance(tgt.value, ast.Name)
+                                    and tgt.value.id == 'self'
+                                ):
                                     attr = tgt.attr
-                                    if attr.startswith('_'): continue
+                                    if attr.startswith('_'):
+                                        continue
                                     if attr not in annotations:
                                         inferred = 'string'
                                         if isinstance(stmt.value, ast.Constant):
-                                            if isinstance(stmt.value.value, bool): inferred = 'boolean'
-                                            elif isinstance(stmt.value.value, int): inferred = 'integer'
-                                            elif isinstance(stmt.value.value, float): inferred = 'number'
+                                            if isinstance(stmt.value.value, bool):
+                                                inferred = 'boolean'
+                                            elif isinstance(stmt.value.value, int):
+                                                inferred = 'integer'
+                                            elif isinstance(stmt.value.value, float):
+                                                inferred = 'number'
                                         annotations[attr] = inferred
             props: Dict[str, Any] = {}
             required: List[str] = []
@@ -401,18 +407,20 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                         # find matching closing bracket
                         end_idx = sub.find(']')
                         if end_idx != -1:
-                            inner = sub[len('Literal['):end_idx]
+                            inner = sub[len('Literal[') : end_idx]
                             # Split by comma, strip spaces/quotes
                             raw_vals = [v.strip() for v in inner.split(',') if v.strip()]
                             enum_vals: List[str] = []
                             for rv in raw_vals:
                                 # Remove surrounding quotes if present
-                                if (rv.startswith("'") and rv.endswith("'")) or (rv.startswith('"') and rv.endswith('"')):
+                                if (rv.startswith("'") and rv.endswith("'")) or (
+                                    rv.startswith('"') and rv.endswith('"')
+                                ):
                                     rv_clean = rv[1:-1]
                                 else:
                                     rv_clean = rv
                                 # Only include primitive literal strings (skip complex expressions)
-                                if rv_clean and all(c.isalnum() or c in ('-','_','.') for c in rv_clean):
+                                if rv_clean and all(c.isalnum() or c in ('-', '_', '.') for c in rv_clean):
                                     enum_vals.append(rv_clean)
                             if enum_vals:
                                 # If all literals are strings, ensure base type string
@@ -438,7 +446,18 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                         matches = re.findall(model_pattern, anno_str)
 
                         # Filter out common typing keywords and look for actual model class names
-                        typing_keywords = {'Optional', 'Union', 'List', 'Dict', 'Any', 'Type', 'Callable', 'Tuple', 'Set', 'Literal'}
+                        typing_keywords = {
+                            'Optional',
+                            'Union',
+                            'List',
+                            'Dict',
+                            'Any',
+                            'Type',
+                            'Callable',
+                            'Tuple',
+                            'Set',
+                            'Literal',
+                        }
                         potential_models = [m for m in matches if m not in typing_keywords]
 
                         # If we found a potential model class name, use it as a $ref (unless it's a TypeVar)
@@ -551,17 +570,17 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
 
             # Check if class inherits from Dict[K, V] for additionalProperties schema
             dict_schema = _extract_dict_inheritance_schema(cls)
-            
+
             if dict_schema:
                 # Class inherits from Dict - use additionalProperties pattern
                 comp_schema: Dict[str, Any] = dict_schema.copy()
-                
+
                 # Add description and extensions
                 if description:
                     comp_schema['description'] = description
                 if decorator_extensions:
                     comp_schema.update(decorator_extensions)
-                
+
                 # If class has additional properties beyond Dict, include them
                 if props:
                     # Merge properties into the schema (rare for Dict subclasses but possible)

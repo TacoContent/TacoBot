@@ -24,18 +24,13 @@ from typing import Any, Dict, List, Literal, Optional, Union
 try:
     from ruamel.yaml import YAML
 except ImportError:
-    raise ImportError(
-        "ruamel.yaml is required for config file support. "
-        "Install with: pip install ruamel.yaml"
-    )
+    raise ImportError("ruamel.yaml is required for config file support.\nInstall with: pip install ruamel.yaml")
 
 try:
     import jsonschema
 except ImportError:
-    raise ImportError(
-        "jsonschema is required for config validation. "
-        "Install with: pip install jsonschema"
-    )
+    raise ImportError("jsonschema is required for config validation.\nInstall with: pip install jsonschema")
+
 
 class ConfigModel:
 
@@ -54,12 +49,12 @@ class ConfigModel:
         if 'environments' in data and isinstance(data['environments'], dict):
             self.environments = ConfigEnvironmentModel(data['environments'])
 
-
     def to_dict(self) -> Dict[str, Any]:
         # this should return a dict suitable for dumping to YAML
         # it should __dict__ recursively
         # exclude None values
         return {k: v.to_dict() if hasattr(v, 'to_dict') else v for k, v in self.__dict__.items() if v is not None}
+
 
 class ConfigOutputModel:
 
@@ -72,6 +67,7 @@ class ConfigOutputModel:
 
     def to_dict(self) -> Dict[str, Any]:
         return {k: v.to_dict() if hasattr(v, 'to_dict') else v for k, v in self.__dict__.items() if v is not None}
+
 
 class ConfigOptionsModel:
 
@@ -89,6 +85,7 @@ class ConfigOptionsModel:
     def to_dict(self) -> Dict[str, Any]:
         return {k: v.to_dict() if hasattr(v, 'to_dict') else v for k, v in self.__dict__.items() if v is not None}
 
+
 class ConfigMarkersModel:
 
     def __init__(self, data: Dict[str, Any]):
@@ -97,6 +94,7 @@ class ConfigMarkersModel:
 
     def to_dict(self) -> Dict[str, Any]:
         return {k: v.to_dict() if hasattr(v, 'to_dict') else v for k, v in self.__dict__.items()}
+
 
 class ConfigIgnoreModel:
 
@@ -108,6 +106,7 @@ class ConfigIgnoreModel:
     def to_dict(self) -> Dict[str, Any]:
         return {k: v.to_dict() if hasattr(v, 'to_dict') else v for k, v in self.__dict__.items() if v is not None}
 
+
 class ConfigEnvironmentModel(Dict[str, ConfigModel]):
 
     def __init__(self, data: Dict[str, Any]):
@@ -117,7 +116,6 @@ class ConfigEnvironmentModel(Dict[str, ConfigModel]):
 
     def to_dict(self) -> Dict[str, Any]:
         return {k: v.to_dict() if hasattr(v, 'to_dict') else v for k, v in self.__dict__.items()}
-
 
 
 # Default configuration values - created from empty dict to use all class defaults
@@ -160,9 +158,7 @@ def validate_config(config: Dict[str, Any], schema: Optional[Dict[str, Any]] = N
 
 
 def load_config(
-    config_path: Union[str, pathlib.Path],
-    environment: Optional[str] = None,
-    validate: bool = True,
+    config_path: Union[str, pathlib.Path], environment: Optional[str] = None, validate: bool = True
 ) -> Dict[str, Any]:
     """Load and validate configuration from YAML file.
 
@@ -195,6 +191,7 @@ def load_config(
 
     # Start with defaults, then merge loaded config
     import copy
+
     config = merge_configs(copy.deepcopy(DEFAULT_CONFIG.to_dict()), loaded_config)
 
     # Apply environment profile if specified
@@ -258,15 +255,11 @@ def ensure_coverage_report_extension(report_path: Optional[str], fmt: str) -> Op
         return None
 
     import pathlib
+
     path = pathlib.Path(report_path)
 
     # Map formats to extensions
-    extension_map = {
-        'json': '.json',
-        'text': '.txt',
-        'cobertura': '.xml',
-        'xml': '.xml',  # Alias for cobertura
-    }
+    extension_map = {'json': '.json', 'text': '.txt', 'cobertura': '.xml', 'xml': '.xml'}
 
     expected_ext = extension_map.get(fmt, '')
 
@@ -302,6 +295,7 @@ def merge_configs(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, A
         {'a': 1, 'b': {'c': 99, 'd': 3}, 'e': 4}
     """
     import copy
+
     result = copy.deepcopy(base)
 
     for key, value in override.items():
@@ -338,6 +332,7 @@ def merge_cli_args(config: Dict[str, Any], cli_args: Dict[str, Any]) -> Dict[str
         {'options': {'strict': True}}
     """
     import copy
+
     result = copy.deepcopy(config)
 
     # Ensure nested structures exist (handle None values from config)
@@ -356,19 +351,16 @@ def merge_cli_args(config: Dict[str, Any], cli_args: Dict[str, Any]) -> Dict[str
         'handlers_root': ('handlers_root',),
         'models_root': ('models_root',),
         'ignore_file': ('ignore_file',),
-
         # Mode (can be set directly or via boolean flags)
-        'mode': ('mode',),           # Direct mode setting
+        'mode': ('mode',),  # Direct mode setting
         'check': ('mode', 'check'),  # Boolean flag for check mode
-        'fix': ('mode', 'fix'),      # Boolean flag for fix mode
-
+        'fix': ('mode', 'fix'),  # Boolean flag for fix mode
         # Output settings
         'output_directory': ('output', 'directory'),
         'coverage_report': ('output', 'coverage_report'),
         'coverage_format': ('output', 'coverage_format'),
         'markdown_summary': ('output', 'markdown_summary'),
         'generate_badge': ('output', 'badge'),
-
         # Options
         'strict': ('options', 'strict'),
         'show_orphans': ('options', 'show_orphans'),
@@ -379,7 +371,6 @@ def merge_cli_args(config: Dict[str, Any], cli_args: Dict[str, Any]) -> Dict[str
         'no_model_components': ('options', 'no_model_components'),
         'color': ('options', 'color'),
         'fail_on_coverage_below': ('options', 'fail_on_coverage_below'),
-
         # Markers
         'openapi_start': ('markers', 'openapi_start'),
         'openapi_end': ('markers', 'openapi_end'),
@@ -400,8 +391,13 @@ def merge_cli_args(config: Dict[str, Any], cli_args: Dict[str, Any]) -> Dict[str
         # Special handling for boolean flags with store_true action:
         # Skip False values (argparse defaults) to avoid overriding config
         boolean_flags = {
-            'strict', 'show_orphans', 'show_ignored', 'show_missing_blocks',
-            'verbose_coverage', 'list_endpoints', 'no_model_components'
+            'strict',
+            'show_orphans',
+            'show_ignored',
+            'show_missing_blocks',
+            'verbose_coverage',
+            'list_endpoints',
+            'no_model_components',
         }
         if cli_key in boolean_flags and value is False:
             continue  # Don't override config with argparse default False
@@ -444,10 +440,7 @@ def export_schema(output_path: Optional[pathlib.Path] = None) -> str:
     return schema_json
 
 
-def init_config_file(
-    output_path: Union[str, pathlib.Path] = 'swagger-sync.yaml',
-    force: bool = False,
-) -> None:
+def init_config_file(output_path: Union[str, pathlib.Path] = 'swagger-sync.yaml', force: bool = False) -> None:
     """Generate example configuration file with documentation.
 
     Args:
@@ -460,10 +453,7 @@ def init_config_file(
     output_path = pathlib.Path(output_path)
 
     if output_path.exists() and not force:
-        raise FileExistsError(
-            f"Config file already exists at {output_path}. "
-            "Remove it first or use a different path."
-        )
+        raise FileExistsError(f"Config file already exists at {output_path}.\nRemove it first or use a different path.")
 
     # Create parent directories if needed
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -494,27 +484,14 @@ def init_config_file(
             'verbose_coverage': True,
             'color': 'auto',
         },
-        'markers': {
-            'start': '>>>openapi',
-            'end': '<<<openapi',
-        },
+        'markers': {'start': '>>>openapi', 'end': '<<<openapi'},
         'ignore': {
             'files': ['**/test_*.py', '**/__pycache__/**'],
             'handlers': ['internal_health_check', 'debug_endpoint'],
         },
         'environments': {
-            'ci': {
-                'options': {
-                    'color': 'never',
-                    'strict': True,
-                },
-            },
-            'local': {
-                'options': {
-                    'show_orphans': False,
-                    'verbose_coverage': True,
-                },
-            },
+            'ci': {'options': {'color': 'never', 'strict': True}},
+            'local': {'options': {'show_orphans': False, 'verbose_coverage': True}},
         },
     }
 

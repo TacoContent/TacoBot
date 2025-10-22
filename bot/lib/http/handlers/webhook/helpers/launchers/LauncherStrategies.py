@@ -3,7 +3,6 @@
 from abc import ABC, abstractmethod
 from typing import Literal
 
-
 # Type alias for supported launcher names
 LauncherName = Literal["Microsoft Store", "Steam", "Epic Games Launcher"]
 

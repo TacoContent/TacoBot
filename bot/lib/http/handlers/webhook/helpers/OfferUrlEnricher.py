@@ -8,11 +8,14 @@ Provides stateless functions for:
 
 from dataclasses import dataclass
 from typing import Optional, Tuple
-from lib.http.handlers.webhook.helpers.launchers.LauncherStrategies import (
-  EpicGamesLauncher, MicrosoftStoreLauncher, SteamLauncher
-)
+
 import requests
 from bot.lib.UrlShortener import UrlShortener
+from lib.http.handlers.webhook.helpers.launchers.LauncherStrategies import (
+    EpicGamesLauncher,
+    MicrosoftStoreLauncher,
+    SteamLauncher,
+)
 
 
 @dataclass

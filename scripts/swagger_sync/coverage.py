@@ -660,7 +660,7 @@ def _generate_coverage(
         report_path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
     elif fmt in ('cobertura', 'xml'):  # Accept both 'cobertura' and 'xml' as aliases
         try:
-            from xml.etree.ElementTree import Element, SubElement, tostring  # noqa: WPS433
+            from xml.etree.ElementTree import Element, SubElement, tostring
         except Exception as e:  # pragma: no cover
             raise SystemExit(f"XML generation failed: {e}")
         lines_valid = summary['handlers_total'] + summary['swagger_only_operations']

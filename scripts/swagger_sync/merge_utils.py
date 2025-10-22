@@ -7,8 +7,8 @@ This module provides functions to merge OpenAPI metadata from two sources:
 Decorator metadata takes precedence over YAML when both specify the same field.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
 import copy
+from typing import Any, Dict, List, Optional, Tuple
 
 
 def deep_merge_dict(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:

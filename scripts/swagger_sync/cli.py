@@ -15,24 +15,23 @@ import sys
 from io import StringIO as StringIOModule
 from typing import Any, Dict, List, Optional, Tuple
 
-
 from .badge import generate_coverage_badge
 from .coverage import (
-    _compute_coverage,
-    _generate_coverage,
-    _build_coverage_summary_markdown,
     _build_automation_coverage_markdown,
-    _build_quality_metrics_markdown,
+    _build_coverage_summary_markdown,
     _build_method_breakdown_markdown,
+    _build_orphaned_warnings_markdown,
+    _build_quality_metrics_markdown,
     _build_tag_coverage_markdown,
     _build_top_files_markdown,
-    _build_orphaned_warnings_markdown,
+    _compute_coverage,
+    _generate_coverage,
 )
 from .endpoint_collector import collect_endpoints
 from .model_components import collect_model_components
-from .swagger_ops import _colorize_unified, detect_orphans, merge, DISABLE_COLOR
+from .swagger_ops import DISABLE_COLOR, _colorize_unified, detect_orphans, merge
+from .validator import ValidationSeverity, format_validation_report, validate_endpoint_metadata
 from .yaml_handler import load_swagger, yaml
-from .validator import validate_endpoint_metadata, format_validation_report, ValidationSeverity
 
 # Default paths and constants - needed by CLI
 DEFAULT_HANDLERS_ROOT = pathlib.Path("bot/lib/http/handlers/")

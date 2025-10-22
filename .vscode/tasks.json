@@ -145,7 +145,16 @@
 		{
 			"label": "Format Check (Black)",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python -m black --config .github/linters/.python-black ./bot/lib/models/MinecraftServerStatus.py",
+			"command": "./.venv/scripts/Activate.ps1; python -m black --config .github/linters/.python-black .",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			}
+		},
+		{
+			"label": "Format Check (iSort)",
+			"type": "shell",
+			"command": "./.venv/scripts/Activate.ps1; python -m isort --settings-path .github/linters/.isort.cfg .",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"

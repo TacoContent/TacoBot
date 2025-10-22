@@ -23,15 +23,11 @@ Notes:
         becomes large or frequently requested; omitted here for simplicity.
 """
 
-from http import HTTPMethod
 import inspect
 import os
 import traceback
 import typing
-
-from lib import discordhelper
-from lib.models import ErrorStatusCodePayload, openapi
-from tacobot import TacoBot
+from http import HTTPMethod
 
 from bot.lib.http.handlers.api.v1.const import API_VERSION  # noqa: F401
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
@@ -39,6 +35,9 @@ from bot.lib.mongodb.tracking import TrackingDatabase
 from httpserver.EndpointDecorators import uri_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException
+from lib import discordhelper
+from lib.models import ErrorStatusCodePayload, openapi
+from tacobot import TacoBot
 
 
 class SwaggerHttpHandler(BaseHttpHandler):

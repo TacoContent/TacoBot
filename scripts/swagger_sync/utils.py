@@ -6,8 +6,8 @@ import ast
 import pathlib
 import re
 import textwrap
-from typing import Any, Dict, Optional
 import typing
+from typing import Any, Dict, Optional
 
 from .constants import MISSING, OPENAPI_BLOCK_RE
 

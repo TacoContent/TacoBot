@@ -1,15 +1,9 @@
-from http import HTTPMethod
 import inspect
 import json
 import os
 import traceback
 import typing
-
-from lib import discordhelper
-from lib.models.DiscordMentionable import DiscordMentionable
-from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
-from lib.models.GuildItemIdBatchRequestBody import GuildItemIdBatchRequestBody
-from lib.models.openapi import openapi
+from http import HTTPMethod
 
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
@@ -19,6 +13,11 @@ from bot.tacobot import TacoBot
 from httpserver.EndpointDecorators import uri_variable_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException
+from lib import discordhelper
+from lib.models.DiscordMentionable import DiscordMentionable
+from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from lib.models.GuildItemIdBatchRequestBody import GuildItemIdBatchRequestBody
+from lib.models.openapi import openapi
 
 
 class GuildRolesApiHandler(BaseHttpHandler):

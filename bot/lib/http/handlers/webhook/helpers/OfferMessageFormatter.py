@@ -4,15 +4,15 @@ Pure functions that transform offer data into Discord embed components.
 No dependencies on discord.py objects or async operations.
 """
 
-from dataclasses import dataclass
-from typing import List, Optional
 import html
 import typing
+from dataclasses import dataclass
+from typing import List, Optional
 
-from lib.http.handlers.webhook.helpers.OfferUrlEnricher import EnrichedUrl
 from bot.lib import utils
-from bot.lib.enums.free_game_types import FreeGameTypes
 from bot.lib.enums.free_game_platforms import FreeGamePlatforms
+from bot.lib.enums.free_game_types import FreeGameTypes
+from lib.http.handlers.webhook.helpers.OfferUrlEnricher import EnrichedUrl
 
 
 @dataclass

@@ -26,17 +26,11 @@ Error Handling Philosophy:
     500 JSON error consistent with the broader API.
 """
 
-from http import HTTPMethod
 import inspect
 import json
 import os
 import typing
-
-from lib import discordhelper
-from lib.models import ErrorStatusCodePayload
-from lib.models.SimpleStatusResponse import SimpleStatusResponse
-from lib.models.openapi import openapi
-from tacobot import TacoBot
+from http import HTTPMethod
 
 from bot.lib.enums.permissions import TacoPermissions
 from bot.lib.http.handlers.api.v1.const import API_VERSION
@@ -46,6 +40,11 @@ from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
 from httpserver.EndpointDecorators import uri_variable_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
+from lib import discordhelper
+from lib.models import ErrorStatusCodePayload
+from lib.models.openapi import openapi
+from lib.models.SimpleStatusResponse import SimpleStatusResponse
+from tacobot import TacoBot
 
 
 class TacoPermissionsApiHandler(BaseHttpHandler):

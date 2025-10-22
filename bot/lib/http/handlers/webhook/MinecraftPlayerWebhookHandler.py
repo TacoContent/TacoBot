@@ -31,28 +31,26 @@ Extensibility:
         can retry aggressively.
 """
 
-from http import HTTPMethod
 import inspect
 import json
-from time import time
 import traceback
-from typing import Optional
 import typing
 import uuid
+from http import HTTPMethod
+from time import time
+from typing import Optional
 
 import discord
-from lib.models import openapi
-from lib.models import MinecraftPlayerEventPayload
-from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
-from lib.models.MinecraftPlayerEventPayload import MinecraftPlayerEventPayload, MinecraftPlayerEventPayloadResponse
-from tacobot import TacoBot
-
 from bot.lib import discordhelper
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
 from bot.lib.http.handlers.BaseWebhookHandler import BaseWebhookHandler
 from httpserver.EndpointDecorators import uri_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException
+from lib.models import MinecraftPlayerEventPayload, openapi
+from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from lib.models.MinecraftPlayerEventPayload import MinecraftPlayerEventPayload, MinecraftPlayerEventPayloadResponse
+from tacobot import TacoBot
 
 
 class MinecraftPlayerWebhookHandler(BaseWebhookHandler):

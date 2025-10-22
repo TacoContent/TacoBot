@@ -8,36 +8,16 @@ OpenAPI blocks to swagger files and generating coverage reports.
 from .badge import generate_coverage_badge
 from .cli import main
 from .constants import (
-    DEFAULT_OPENAPI_START,
     DEFAULT_OPENAPI_END,
-    SUPPORTED_KEYS,
+    DEFAULT_OPENAPI_START,
     HTTP_METHODS,
-    build_openapi_block_re,
     OPENAPI_BLOCK_RE,
+    SUPPORTED_KEYS,
+    build_openapi_block_re,
 )
-from .models import Endpoint
-from .yaml_handler import load_swagger, yaml
-from .type_system import (
-    TYPE_ALIAS_CACHE,
-    TYPE_ALIAS_METADATA,
-    GLOBAL_TYPE_ALIASES,
-    MISSING,
-    _build_schema_from_annotation,
-    _unwrap_optional,
-    _flatten_nested_unions,
-    _extract_union_schema,
-    _split_union_types,
-    _extract_refs_from_types,
-    _discover_attribute_aliases,
-    _is_type_alias_annotation,
-    _module_name_to_path,
-    _load_type_aliases_for_path,
-    _load_type_aliases_for_module,
-    _collect_typevars_from_ast,
-    _extract_openapi_base_classes,
-    _collect_type_aliases_from_ast,
-    _register_type_aliases,
-    _expand_type_aliases,
+from .coverage import (
+    _compute_coverage,
+    _generate_coverage,
 )
 from .endpoint_collector import (
     collect_endpoints,
@@ -45,18 +25,38 @@ from .endpoint_collector import (
     resolve_path_literal,
 )
 from .model_components import collect_model_components
+from .models import Endpoint
 from .swagger_ops import (
-    merge,
-    detect_orphans,
-    _diff_operations,
-    _colorize_unified,
-    _dump_operation_yaml,
     DISABLE_COLOR,
+    _colorize_unified,
+    _diff_operations,
+    _dump_operation_yaml,
+    detect_orphans,
+    merge,
 )
-from .coverage import (
-    _generate_coverage,
-    _compute_coverage,
+from .type_system import (
+    GLOBAL_TYPE_ALIASES,
+    MISSING,
+    TYPE_ALIAS_CACHE,
+    TYPE_ALIAS_METADATA,
+    _build_schema_from_annotation,
+    _collect_type_aliases_from_ast,
+    _collect_typevars_from_ast,
+    _discover_attribute_aliases,
+    _expand_type_aliases,
+    _extract_openapi_base_classes,
+    _extract_refs_from_types,
+    _extract_union_schema,
+    _flatten_nested_unions,
+    _is_type_alias_annotation,
+    _load_type_aliases_for_module,
+    _load_type_aliases_for_path,
+    _module_name_to_path,
+    _register_type_aliases,
+    _split_union_types,
+    _unwrap_optional,
 )
+from .yaml_handler import load_swagger, yaml
 
 # Functions from main script that need lazy loading (now empty - all extracted!)
 # Keeping the lazy loading mechanism for potential future use
@@ -73,9 +73,9 @@ def _get_main_module():
     if _main_module_cache is not None:
         return _main_module_cache
 
-    import sys
-    import pathlib
     import importlib.util
+    import pathlib
+    import sys
 
     # Check if already in sys.modules
     if '_swagger_sync_main' in sys.modules:

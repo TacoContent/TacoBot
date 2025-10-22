@@ -48,14 +48,13 @@ import string
 import traceback
 import typing
 
-from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
-from tacobot import TacoBot
-
 from bot.lib import discordhelper, logger, settings
 from bot.lib.enums import loglevel
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
+from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from tacobot import TacoBot
 
 
 class BaseWebhookHandler:

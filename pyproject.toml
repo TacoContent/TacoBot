@@ -40,6 +40,7 @@ dev = [
   "mypy>=1.10.0,<2.0.0",
   "ruff>=0.6.0,<0.7.0",
   "black>=25.9.0,<26.0.0",
+  "isort>=7.0.0,<8.0.0",
   "types-requests",
   "types-PyYAML",
   "coverage>=7.11.0,<8.0.0",
@@ -115,3 +116,17 @@ exclude = '''
   | dist
 )/
 '''
+
+[tool.isort]
+profile = "black"
+py_version = 313
+line_length = 120
+skip = [".gitignore", ".dockerignore"]
+skip_glob = [".vscode/**", "tests/**"]
+ignore_comments = true
+skip_gitignore = true
+treat_all_comments_as_code = false
+use_parentheses = true
+multi_line_output = 3
+include_trailing_comma = true
+verbose = true

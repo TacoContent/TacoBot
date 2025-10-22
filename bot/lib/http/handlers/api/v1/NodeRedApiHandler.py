@@ -1,8 +1,9 @@
-
-
-from http import HTTPMethod
 import os
 import typing
+from http import HTTPMethod
+
+from httpserver.EndpointDecorators import uri_variable_mapping
+from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from lib import discordhelper
 from lib.enums.minecraft_player_events import MinecraftPlayerEventLiteral
 from lib.http.handlers.ApiHttpHandler import ApiHttpHandler
@@ -13,9 +14,6 @@ from lib.mongodb.minecraft import MinecraftDatabase
 from lib.mongodb.tracking import TrackingDatabase
 from lib.settings import Settings
 from tacobot import TacoBot
-
-from httpserver.EndpointDecorators import uri_variable_mapping
-from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 
 
 class NodeRedApiHandler(ApiHttpHandler):
