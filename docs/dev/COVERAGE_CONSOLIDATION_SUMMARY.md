@@ -4,19 +4,19 @@
 
 After implementing coverage visualization enhancements, we have **two separate code paths** generating coverage reports:
 
-1. **`coverage.py::_generate_coverage()`** - COMPREHENSIVE ✨
-   - Colorized terminal tables with emoji
-   - Automation coverage (orphaned components/endpoints)  
-   - Documentation quality metrics
-   - HTTP method breakdown
-   - Tag coverage
-   - Top files statistics
-   - **BUT**: Not accessible for markdown summaries
+- **`coverage.py::_generate_coverage()`** - COMPREHENSIVE ✨
+  - Colorized terminal tables with emoji
+  - Automation coverage (orphaned components/endpoints)  
+  - Documentation quality metrics
+  - HTTP method breakdown
+  - Tag coverage
+  - Top files statistics
+  - **BUT**: Not accessible for markdown summaries
 
-2. **`cli.py::build_markdown_summary()`** - LIMITED 📝
-   - Basic coverage table
-   - Suggestions and diffs
-   - **MISSING**: All the fancy coverage sections above
+- **`cli.py::build_markdown_summary()`** - LIMITED 📝
+  - Basic coverage table
+  - Suggestions and diffs
+  - **MISSING**: All the fancy coverage sections above
 
 ## The Impact
 

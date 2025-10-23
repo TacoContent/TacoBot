@@ -145,46 +145,46 @@ def to_dict(self) -> dict[str, Any]:
 
 **File:** `tests/test_decorator_parser.py` (lines ~778-1197)
 
-1. **TestPathParameterExtraction** (2 tests)
-   - `test_complete_path_parameter` - Full parameter with all fields
-   - `test_path_parameter_minimal` - Only required fields
+- **TestPathParameterExtraction** (2 tests)
+  - `test_complete_path_parameter` - Full parameter with all fields
+  - `test_path_parameter_minimal` - Only required fields
 
-2. **TestQueryParameterExtraction** (2 tests)
-   - `test_complete_query_parameter` - With default value
-   - `test_query_parameter_with_string_default` - String default handling
+- **TestQueryParameterExtraction** (2 tests)
+  - `test_complete_query_parameter` - With default value
+  - `test_query_parameter_with_string_default` - String default handling
 
-3. **TestHeaderParameterExtraction** (1 test)
-   - `test_complete_header_parameter` - Full header spec
+- **TestHeaderParameterExtraction** (1 test)
+  - `test_complete_header_parameter` - Full header spec
 
-4. **TestRequestBodyExtraction** (2 tests)
-   - `test_complete_request_body` - application/json
-   - `test_request_body_different_content_type` - Form data
+- **TestRequestBodyExtraction** (2 tests)
+  - `test_complete_request_body` - application/json
+  - `test_request_body_different_content_type` - Form data
 
-5. **TestResponseHeaderExtraction** (1 test)
-   - `test_complete_response_header` - Response header spec
+- **TestResponseHeaderExtraction** (1 test)
+  - `test_complete_response_header` - Response header spec
 
-6. **TestExampleExtraction** (2 tests)
-   - `test_complete_example_with_dict` - Dict value example
-   - `test_example_with_list_value` - List value example
+- **TestExampleExtraction** (2 tests)
+  - `test_complete_example_with_dict` - Dict value example
+  - `test_example_with_list_value` - List value example
 
-7. **TestExternalDocsExtraction** (2 tests)
-   - `test_complete_external_docs` - With description
-   - `test_external_docs_url_only` - URL only
+- **TestExternalDocsExtraction** (2 tests)
+  - `test_complete_external_docs` - With description
+  - `test_external_docs_url_only` - URL only
 
-8. **TestSchemaTypeExtraction** (2 tests)
-   - `test_all_python_types` - All 6 supported types
-   - `test_unknown_type_defaults_to_string` - Fallback behavior
+- **TestSchemaTypeExtraction** (2 tests)
+  - `test_all_python_types` - All 6 supported types
+  - `test_unknown_type_defaults_to_string` - Fallback behavior
 
-9. **TestLiteralValueExtraction** (4 tests)
-   - `test_extract_dict` - Dictionary literal
-   - `test_extract_list` - List literal
-   - `test_extract_nested_structures` - Nested dict/list
-   - `test_extract_constant` - Simple constant
+- **TestLiteralValueExtraction** (4 tests)
+  - `test_extract_dict` - Dictionary literal
+  - `test_extract_list` - List literal
+  - `test_extract_nested_structures` - Nested dict/list
+  - `test_extract_constant` - Simple constant
 
-10. **TestIntegrationWithAllNewDecorators** (3 tests)
-    - `test_handler_with_all_parameter_types` - All parameter types together
-    - `test_complete_crud_endpoint` - All decorators on one handler
-    - `test_to_dict_with_all_new_fields` - Serialization test
+- **TestIntegrationWithAllNewDecorators** (3 tests)
+  - `test_handler_with_all_parameter_types` - All parameter types together
+  - `test_complete_crud_endpoint` - All decorators on one handler
+  - `test_to_dict_with_all_new_fields` - Serialization test
 
 ### Test Results
 

@@ -21,11 +21,11 @@ WARNING: Model schema drift detected for component 'PagedResults'.
 @@ -2,18 +2,14 @@
  properties:
    total:
-     type: integer
--    description: Total number of matching items (unpaged)
+      type: integer
+-     description: Total number of matching items (unpaged)
    skip:
-     type: integer
--    description: Number of items skipped (offset)
+      type: integer
+-     description: Number of items skipped (offset)
 ```
 
 ## Root Cause
@@ -56,6 +56,7 @@ Updated the `@openapi.property` decorator parsing logic in `scripts/swagger_sync
 **File**: `scripts/swagger_sync/model_components.py` (lines 161-210)
 
 **Before**:
+
 ```python
 # Only handled 3-arg legacy form for positional args
 if len(deco_call.args) >= 3:
@@ -74,6 +75,7 @@ for kw in deco_call.keywords or []:
 ```
 
 **After**:
+
 ```python
 # Extract first positional arg (property name) if present
 if len(deco_call.args) >= 1:
@@ -109,22 +111,26 @@ property_decorators[prop_name].update(additional_kwargs)
 The fix now correctly handles all these patterns:
 
 ### 1. Positional property + kwargs (most common)
+
 ```python
 @openapi.property("uuid", description="The unique identifier")
 @openapi.property("level", description="The level", minimum=1, maximum=4)
 ```
 
 ### 2. Named property kwarg + other kwargs
+
 ```python
 @openapi.property(property="guild_id", description="Discord guild ID")
 ```
 
 ### 3. Legacy name/value form (backward compatible)
+
 ```python
 @openapi.property("status", name="description", value="The status message")
 ```
 
 ### 4. Mixed legacy + new kwargs
+
 ```python
 @openapi.property("value", name="description", value="Old", minimum=0)
 # Note: If both name="description" and description= are present,
@@ -147,6 +153,7 @@ Added comprehensive test suite in `tests/test_swagger_sync_property_decorator_kw
 ## Verification
 
 ### Before Fix
+
 ```bash
 $ python scripts/swagger_sync.py --check
 WARNING: Model schema drift detected for component 'PagedResults'.
@@ -157,6 +164,7 @@ WARNING: Model schema drift detected for component 'MinecraftSettingsUpdatePaylo
 ```
 
 ### After Fix
+
 ```bash
 $ python scripts/swagger_sync.py --check
 Swagger paths are in sync with handlers.
@@ -174,13 +182,16 @@ Swagger paths are in sync with handlers.
 ## Related Files
 
 **Modified**:
+
 - `scripts/swagger_sync/model_components.py` - AST parser fix
 
 **Added**:
+
 - `tests/test_swagger_sync_property_decorator_kwargs.py` - Test suite
 - `docs/dev/openapi_property_kwargs_fix.md` - This document
 
 **Affected Models** (now working correctly):
+
 - `bot/lib/models/PagedResults.py`
 - `bot/lib/models/JoinWhitelistUser.py`
 - `bot/lib/models/MinecraftOpUser.py`

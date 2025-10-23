@@ -1,8 +1,8 @@
 # OpenAPI Multi-Content-Type Support - Feature Addition
 
-**Date**: 2025-01-XX  
-**Type**: Feature Enhancement  
-**Component**: Swagger Sync / OpenAPI Decorator Parser  
+**Date**: 2025-01-XX
+**Type**: Feature Enhancement
+**Component**: Swagger Sync / OpenAPI Decorator Parser
 **Impact**: Developer Experience, API Documentation
 
 ## Summary
@@ -13,41 +13,43 @@ Added support for multiple content types per HTTP status code in `@openapi.respo
 
 ### Modified Files
 
-1. **`scripts/swagger_sync/decorator_parser.py`**
-   - **Modified `_build_responses_dict()` method** (lines 71-116):
-     - Changed from overwriting responses to **merging content types**
-     - Checks if status code already exists in responses dict
-     - Initializes response with empty `content` dict if new
-     - Iterates through content types and merges them
-     - Preserves specific descriptions over default "Response" text
-   - Added comprehensive docstring with merge behavior example
+- **`scripts/swagger_sync/decorator_parser.py`**
+  - **Modified `_build_responses_dict()` method** (lines 71-116):
+    - Changed from overwriting responses to **merging content types**
+    - Checks if status code already exists in responses dict
+    - Initializes response with empty `content` dict if new
+    - Iterates through content types and merges them
+    - Preserves specific descriptions over default "Response" text
+  - Added comprehensive docstring with merge behavior example
 
-2. **`tests/test_swagger_sync_multi_content_types.py`** (NEW)
-   - Created comprehensive test suite with 7 test cases
-   - Tests same status code with different content types
-   - Tests real-world healthcheck scenario
-   - Tests description priority logic
-   - Tests multiple status codes with multiple content types
-   - Tests backward compatibility with single content type
-   - Tests default content type handling
-   - Tests status code ranges (5XX) with multiple content types
+- **`tests/test_swagger_sync_multi_content_types.py`** (NEW)
+  - Created comprehensive test suite with 7 test cases
+  - Tests same status code with different content types
+  - Tests real-world healthcheck scenario
+  - Tests description priority logic
+  - Tests multiple status codes with multiple content types
+  - Tests backward compatibility with single content type
+  - Tests default content type handling
+  - Tests status code ranges (5XX) with multiple content types
 
-3. **`docs/http/openapi_multi_content_types.md`** (NEW)
-   - Complete documentation for multi-content-type feature
-   - Usage examples with `@openapi.response` decorators
-   - Real-world healthcheck example
-   - Implementation details and merging logic
-   - Best practices for content negotiation
-   - Testing examples
-   - Troubleshooting guide
-   - Migration guide from legacy YAML docstrings
+- **`docs/http/openapi_multi_content_types.md`** (NEW)
+  - Complete documentation for multi-content-type feature
+  - Usage examples with `@openapi.response` decorators
+  - Real-world healthcheck example
+  - Implementation details and merging logic
+  - Best practices for content negotiation
+  - Testing examples
+  - Troubleshooting guide
+  - Migration guide from legacy YAML docstrings
 
-4. **`.swagger.v1.yaml`**
-   - Updated 3 healthcheck endpoints with merged content types:
-     - `/api/v1/health`
-     - `/healthz`
-     - `/health`
-   - Each now properly shows `text/plain` for 200 and both `text/plain` + `application/json` for 5XX
+- **`.swagger.v1.yaml`**
+  - Updated 3 healthcheck endpoints with merged content types:
+    - `/api/v1/health`
+    - `/healthz`
+    - `/health`
+
+
+- Each now properly shows `text/plain` for 200 and both `text/plain` + `application/json` for 5XX
 
 ## Technical Details
 

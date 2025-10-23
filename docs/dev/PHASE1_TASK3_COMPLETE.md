@@ -32,6 +32,7 @@ class Endpoint:
 ```
 
 **Benefits:**
+
 - Maintains backward compatibility (optional field with default None)
 - Separates decorator metadata from docstring metadata
 - Enables future merge logic to combine both sources
@@ -41,6 +42,7 @@ class Endpoint:
 **File:** `scripts/swagger_sync/endpoint_collector.py`
 
 **Changes Made:**
+
 - Imported `extract_decorator_metadata` from decorator_parser
 - Added extraction call in `collect_endpoints()` function
 - Extracts metadata once per function (efficient - outside method loop)
@@ -123,6 +125,7 @@ TOTAL                                          267     53    166     21    78%
 ```
 
 **Notes:**
+
 - Decorator parser: 96% coverage (down from 97% due to async function type union)
 - Endpoint collector: 59% shown (many paths tested in other test files)
 - Combined: 78% coverage across both modules
@@ -150,7 +153,7 @@ tests\test_endpoint_collector_integration.py .................                  
 
 ### Data Flow
 
-```
+```text
 Handler File (handler.py)
     │
     ├─> AST Parsing
@@ -184,21 +187,21 @@ Handler File (handler.py)
 
 ### Integration Points
 
-1. **Import Phase**
-   - Decorator parser imported in endpoint_collector.py
-   - Both package-style and script-style imports supported
+- **Import Phase**
+  - Decorator parser imported in endpoint_collector.py
+  - Both package-style and script-style imports supported
 
-2. **Collection Phase**
-   - For each discovered handler function:
-     - Extract path and method from @uri_*_mapping
-     - Extract docstring >>>openapi<<< block → `meta`
-     - Extract @openapi.* decorators → `decorator_metadata` (NEW!)
-     - Create Endpoint with both metadata sources
+- **Collection Phase**
+  - For each discovered handler function:
+    - Extract path and method from @uri_*_mapping
+    - Extract docstring >>>openapi<<< block → `meta`
+    - Extract @openapi.* decorators → `decorator_metadata` (NEW!)
+    - Create Endpoint with both metadata sources
 
-3. **Storage Phase**
-   - Both `meta` and `decorator_metadata` stored in Endpoint
-   - Available for future merge logic
-   - Serializable to JSON/YAML
+- **Storage Phase**
+  - Both `meta` and `decorator_metadata` stored in Endpoint
+  - Available for future merge logic
+  - Serializable to JSON/YAML
 
 ---
 
@@ -289,6 +292,7 @@ Endpoint(
 ### ✅ Dual Metadata Sources
 
 Endpoints now capture metadata from **both** sources:
+
 - **Docstring blocks** (`meta`) - established method, verbose YAML
 - **Decorators** (`decorator_metadata`) - new method, concise Python
 
@@ -311,6 +315,7 @@ except Exception:
 ```
 
 **Benefits:**
+
 - Malformed decorators don't break endpoint collection
 - Syntax errors in one handler don't affect others
 - Graceful degradation (falls back to docstring-only)
@@ -364,7 +369,7 @@ except Exception:
 
 ### Modified
 
-```
+```text
 scripts/swagger_sync/
 ├── models.py                    (Added decorator_metadata field)
 └── endpoint_collector.py        (Integrated decorator extraction)
@@ -372,7 +377,7 @@ scripts/swagger_sync/
 
 ### Created
 
-```
+```text
 tests/
 └── test_endpoint_collector_integration.py  (17 integration tests)
 
@@ -387,6 +392,7 @@ docs/dev/
 ### Phase 1 Remaining Tasks
 
 **Task 4: Merge Logic** (Next up!)
+
 - Implement decorator + docstring metadata merge
 - Define precedence rules (decorator > docstring for most keys)
 - Handle conflicts and combinations
@@ -394,17 +400,20 @@ docs/dev/
 
 ### Future Phases
 
-**Phase 2: Extended Decorator Support**
+**Phase 2: Extended Decorator Support**:
+
 - Add @openapi.parameter decorator
 - Add @openapi.requestBody decorator
 - Support for other OpenAPI features
 
-**Phase 3: Migration Tooling**
+**Phase 3: Migration Tooling**:
+
 - Automated migration from docstring → decorators
 - Validation and diff reports
 - Rollback capabilities
 
-**Phase 4: Production Deployment**
+**Phase 4: Production Deployment**:
+
 - Update all handlers to use decorators
 - Remove verbose docstring blocks
 - Final validation and cleanup
@@ -418,6 +427,7 @@ docs/dev/
 **Problem:** Pylance couldn't infer that `fn` was `FunctionDef` after `isinstance(fn, FunctionDef)` check.
 
 **Solution:** Updated type signature to accept union:
+
 ```python
 def extract_decorator_metadata(func_node: ast.FunctionDef | ast.AsyncFunctionDef)
 ```
@@ -427,6 +437,7 @@ def extract_decorator_metadata(func_node: ast.FunctionDef | ast.AsyncFunctionDef
 **Problem:** Initially considered extracting inside method loop (inefficient).
 
 **Solution:** Extract once before loop, share across methods:
+
 ```python
 # Extract ONCE (outside method loop)
 decorator_meta_dict = extract_decorator_metadata(fn).to_dict()
@@ -441,6 +452,7 @@ for m in methods:
 **Problem:** Decorator parsing errors could break entire endpoint collection.
 
 **Solution:** Wrap extraction in try/except, continue with None on failure:
+
 ```python
 try:
     decorator_meta_dict = extract_decorator_metadata(fn).to_dict()
@@ -453,6 +465,7 @@ except Exception:
 **Problem:** Where to place integration tests?
 
 **Solution:** Separate file (`test_endpoint_collector_integration.py`) for:
+
 - Clear separation from unit tests
 - Easier to run integration tests independently
 - Better test organization and discovery
@@ -464,15 +477,18 @@ except Exception:
 ### Benchmark
 
 **Test Execution Time:**
+
 - Decorator parser unit tests (63 tests): ~0.55s
 - Integration tests (17 tests): ~0.48s
 - **Total overhead:** ~1.03s for 80 tests
 
 **Per-Handler Overhead:**
+
 - Decorator extraction: < 5ms per handler
 - Negligible impact on overall collection time
 
 **Scalability:**
+
 - Tested with 17 simulated handlers
 - Linear scaling with handler count
 - No performance concerns for production use

@@ -2,7 +2,7 @@
 
 ## Summary
 
-Added support for the `hint` kwarg in `@openapi.property` decorator to provide explicit type hints for properties that cannot be automatically inferred, particularly TypeVar properties in Generic classes.
+Added support for the `hint` kwargs in `@openapi.property` decorator to provide explicit type hints for properties that cannot be automatically inferred, particularly TypeVar properties in Generic classes.
 
 ## Problem
 
@@ -21,6 +21,7 @@ class TacoSettingsModel(Generic[T]):
 ```
 
 Generated schema (before fix):
+
 ```yaml
 TacoSettingsModel:
   properties:
@@ -31,7 +32,7 @@ TacoSettingsModel:
 
 ## Solution
 
-Implemented `hint` kwarg that allows explicit type specification for properties that fail automatic inference. The hint is:
+Implemented `hint` kwargs that allows explicit type specification for properties that fail automatic inference. The hint is:
 
 1. **Extracted** during AST parsing from property decorator kwargs
 2. **Applied** only when TypeVar detection triggers (inference failure)
@@ -53,6 +54,7 @@ class TacoSettingsModel(Generic[T]):
 ```
 
 Generated schema (after fix):
+
 ```yaml
 TacoSettingsModel:
   properties:
@@ -71,7 +73,7 @@ Updated `@openapi.property` function docstring to document `hint` kwarg:
 def property(property: str, **kwargs: typing.Any) -> typing.Callable[[AttrT], AttrT]:
     """Annotate an OpenAPI component property with schema attributes.
     
-    Special 'hint' kwarg:
+    Special 'hint' kwargs:
     - Used to provide explicit type information when type inference fails
     - Primarily useful for TypeVar properties in Generic classes
     - Supports type objects (list, dict), typing module types (List[Any], Dict[str, Any]),
@@ -118,6 +120,7 @@ def _resolve_hint_to_schema(hint_value: Any) -> Optional[Dict[str, Any]]:
 ```
 
 The function handles:
+
 - **String annotations**: Recursively processes with enhanced dict detection for `List[Dict[...]]` patterns
 - **Type objects**: Maps builtin types (list, dict, str, int, bool, float) to OpenAPI types
 - **Typing module types**: Converts to string and recursively processes
@@ -207,12 +210,14 @@ from typing import Dict, List, Any
 Created comprehensive test suite in `tests/test_swagger_sync_hint_kwarg.py`:
 
 ### Unit Tests (13 tests)
+
 - `TestResolveHintToSchema`: Tests `_resolve_hint_to_schema()` with various hint formats
   - None, string annotations, type objects, typing module types, nested types, model references
   - All primitive types (str, int, bool, float, list, dict)
   - Complex nested structures (List[Dict[str, Any]])
 
 ### Integration Tests (5 tests)
+
 - `TestHintKwargInModelComponents`: Tests full swagger sync pipeline
   - Hint extraction from decorators
   - Hint application to TypeVar properties
@@ -221,11 +226,13 @@ Created comprehensive test suite in `tests/test_swagger_sync_hint_kwarg.py`:
   - Simple type hints (list, dict)
 
 ### Test Models
+
 - `tests/tmp_hint_test_models.py`: Contains test models using hint kwarg
   - `HintTestModel`: Generic[T] class with various hint formats
   - `SimpleHintModel`: Simple class with basic type hints
 
 ### Results
+
 - **18 new tests** added
 - **All 921 tests pass** (18 new + 903 existing)
 - **Swagger sync validation passes** with no drift warnings
@@ -252,6 +259,7 @@ class GenericModel(Generic[T]):
 ```
 
 Generated OpenAPI schema:
+
 ```yaml
 GenericModel:
   type: object
@@ -311,6 +319,7 @@ Result: `settings` property now correctly typed as `object` in swagger spec.
 Potential improvements for future consideration:
 
 1. **Concrete Type Instantiation**: Support specifying concrete types for specific Generic instantiations
+
    ```python
    @openapi.component("SpecificModel", instantiates="GenericModel[MyConcreteType]")
    class SpecificModel(GenericModel[MyConcreteType]):
@@ -318,6 +327,7 @@ Potential improvements for future consideration:
    ```
 
 2. **Multiple TypeVar Support**: Enhanced hints for classes with multiple TypeVars
+
    ```python
    @openapi.property("mapping", hint={"K": str, "V": int})
    ```
@@ -337,9 +347,9 @@ Potential improvements for future consideration:
 
 ## Commit Summary
 
-**Added @openapi.property hint kwarg for TypeVar type inference**
+**Added @openapi.property hint kwargs for TypeVar type inference**:s
 
-- Implemented hint kwarg extraction during AST parsing
+- Implemented hint kwargs extraction during AST parsing
 - Created _resolve_hint_to_schema() to convert hints to OpenAPI schemas
 - Applied hints when TypeVar detection triggers (inference failure)
 - Filter hint from final OpenAPI spec (meta-attribute only)

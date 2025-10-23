@@ -1,7 +1,7 @@
 # Phase 3.1: Method Filtering Enhancement
 
-**Date:** October 16, 2025  
-**Status:** ✅ Complete  
+**Date:** October 16, 2025
+**Status:** ✅ Complete
 **Related:** Phase 3 (Merge Logic)
 
 ---
@@ -34,6 +34,7 @@ The `@openapi.response` decorator supports a `methods` parameter to filter which
 However, the `methods` parameter was being ignored during merge. All responses were applied to all HTTP methods.
 
 **Impact:**
+
 - Handlers with POST-only responses had those responses incorrectly added to GET endpoints
 - Swagger spec showed GET endpoints that shouldn't exist
 - API documentation was inaccurate
@@ -51,6 +52,7 @@ The endpoint collector (`endpoint_collector.py`) only parsed string literals for
 The code didn't handle `ast.Attribute` nodes (enum values like `HTTPMethod.POST`), causing it to fall back to the default `['get']`.
 
 **Impact:**
+
 - POST-only endpoints were incorrectly created as GET endpoints
 - Swagger sync tried to add responses to non-existent methods
 - Inconsistent behavior between string and enum method specifications
@@ -62,12 +64,13 @@ The code didn't handle `ast.Attribute` nodes (enum values like `HTTPMethod.POST`
 ### Fix #1: Response Method Filtering
 
 **Files Modified:**
+
 - `scripts/swagger_sync/decorator_parser.py` (+47 lines)
 - `scripts/swagger_sync/merge_utils.py` (+15 lines)
 
 **Implementation:**
 
-1. **Extract `methods` parameter** from `@openapi.response` decorators:
+- **Extract `methods` parameter** from `@openapi.response` decorators:
 
 ```python
 # In decorator_parser.py _extract_response()
@@ -83,7 +86,7 @@ if key == 'methods':
         result['methods'] = [value_node.attr.lower()]
 ```
 
-2. **Filter responses** during merge based on endpoint method:
+- **Filter responses** during merge based on endpoint method:
 
 ```python
 # In merge_utils.py merge_responses()
@@ -103,7 +106,7 @@ def merge_responses(yaml_responses, decorator_responses, endpoint_method=None):
         result[status_code] = response_to_merge
 ```
 
-3. **Pass endpoint method** to merge function:
+- **Pass endpoint method** to merge function:
 
 ```python
 # In merge_utils.py merge_endpoint_metadata()
@@ -111,11 +114,13 @@ result['responses'] = merge_responses(yaml_responses, decorator_responses, endpo
 ```
 
 **Test Coverage:**
+
 - `tests/test_response_method_filtering.py` (180 lines, 4 scenarios, all passing)
 
 ### Fix #2: Endpoint Collector Enum Parsing
 
 **Files Modified:**
+
 - `scripts/swagger_sync/endpoint_collector.py` (+10 lines)
 
 **Implementation:**
@@ -147,6 +152,7 @@ for kw in deco.keywords or []:
 ```
 
 **Test Coverage:**
+
 - `tests/test_endpoint_collector_http_method.py` (210 lines, 6 scenarios, all passing)
 
 ---
@@ -190,15 +196,17 @@ $ python tests/test_endpoint_collector_http_method.py
 ### Integration Test: TacosWebhookHandler
 
 **Before Fix:**
-```
+
+```text
 Drift detected between handlers and swagger. Run: python scripts/swagger_sync.py --fix
  - Updated GET /webhook/minecraft/tacos from TacosWebhookHandler.py:minecraft_give_tacos
 ```
 
 **After Fix:**
-```
+
+```text
 Drift detected between handlers and swagger. Run: python scripts/swagger_sync.py --fix
- - Updated POST /webhook/minecraft/tacos from TacosWebhookHandler.py:minecraft_give_tacos
+Updated POST /webhook/minecraft/tacos from TacosWebhookHandler.py:minecraft_give_tacos
 ```
 
 ✅ **Correct!** Now creating POST endpoint instead of GET.
@@ -210,6 +218,7 @@ Drift detected between handlers and swagger. Run: python scripts/swagger_sync.py
 ### `docs/http/response_method_filtering.md` (325 lines)
 
 Comprehensive guide covering:
+
 - Overview and syntax
 - Behavior: when methods specified, omitted, cross-product expansion
 - 3 complete examples with expected results
@@ -220,6 +229,7 @@ Comprehensive guide covering:
 - Full test coverage summary
 
 **Key sections:**
+
 - **Syntax**: How to use the `methods` parameter
 - **Behavior**: When/how filtering occurs
 - **Examples**: POST-only, multiple methods, universal responses
@@ -235,18 +245,21 @@ Comprehensive guide covering:
 ### ✅ Fully Backward Compatible
 
 **Existing code without `methods` parameter continues to work:**
+
 ```python
 # No methods specified = applies to all HTTP methods (same as before)
 @openapi.response(200, description="...", contentType="...", schema=...)
 ```
 
 **New feature is opt-in:**
+
 ```python
 # Explicitly filter by adding methods parameter
 @openapi.response(200, methods=[HTTPMethod.POST], description="...", ...)
 ```
 
 **No breaking changes:**
+
 - Existing endpoints unaffected
 - Existing tests still pass
 - Existing handlers don't need modification
@@ -256,31 +269,39 @@ Comprehensive guide covering:
 ## Edge Cases Handled
 
 ### 1. Mixed Methods and No Methods
+
 ```python
 @openapi.response(200, methods=[HTTPMethod.POST], ...)  # POST only
 @openapi.response(500, ...)                            # All methods
 ```
+
 **Behavior:** POST gets both 200 and 500; GET/PUT/etc only get 500 ✅
 
 ### 2. Empty Methods List
+
 ```python
 @openapi.response(200, methods=[], ...)  # Edge case
 ```
+
 **Behavior:** No endpoints get this response (treated as "applies to nothing") ✅
 
 ### 3. Method Not in Endpoint
+
 ```python
 @uri_mapping("/path", method=HTTPMethod.GET)
 @openapi.response(200, methods=[HTTPMethod.POST], ...)  # POST only
 ```
+
 **Behavior:** Response not added (POST not available at this path) ✅
 
 ### 4. Case Insensitivity
+
 ```python
 methods=[HTTPMethod.POST]  # → ['post']
 methods=['POST']           # → ['post']
 methods=['Post']           # → ['post']
 ```
+
 **Behavior:** All normalized to lowercase for consistent matching ✅
 
 ---
@@ -288,17 +309,20 @@ methods=['Post']           # → ['post']
 ## Related Files
 
 **Modified:**
+
 - `scripts/swagger_sync/decorator_parser.py` (adds methods extraction)
 - `scripts/swagger_sync/merge_utils.py` (adds response filtering)
 - `scripts/swagger_sync/endpoint_collector.py` (adds enum parsing)
 
 **Created:**
+
 - `tests/test_response_method_filtering.py` (response filtering tests)
 - `tests/test_endpoint_collector_http_method.py` (endpoint collector tests)
 - `docs/http/response_method_filtering.md` (user documentation)
 - `docs/dev/PHASE3.1_METHOD_FILTERING.md` (this document)
 
 **Updated:**
+
 - None (Phase 3 docs will be updated separately)
 
 ---
@@ -307,21 +331,21 @@ methods=['Post']           # → ['post']
 
 ### Potential Improvements
 
-1. **Auto-detect methods from decorator**
-   - If handler has `method=[HTTPMethod.POST, HTTPMethod.GET]`
-   - And response doesn't specify methods
-   - Could default to those methods instead of all methods
-   - **Status:** Deferred (requires design discussion)
+- **Auto-detect methods from decorator**
+  - If handler has `method=[HTTPMethod.POST, HTTPMethod.GET]`
+  - And response doesn't specify methods
+  - Could default to those methods instead of all methods
+  - **Status:** Deferred (requires design discussion)
 
-2. **Validate methods exist**
-   - Warn if response specifies methods not in decorator
-   - Example: decorator has `method=POST`, response has `methods=[GET]`
-   - **Status:** Could be added to strict mode
+- **Validate methods exist**
+  - Warn if response specifies methods not in decorator
+  - Example: decorator has `method=POST`, response has `methods=[GET]`
+  - **Status:** Could be added to strict mode
 
-3. **Support method wildcards**
-   - `methods='*'` = all methods
-   - `methods='!POST'` = all except POST
-   - **Status:** Not needed yet (YAGNI)
+- **Support method wildcards**
+  - `methods='*'` = all methods
+  - `methods='!POST'` = all except POST
+  - **Status:** Not needed yet (YAGNI)
 
 ---
 
@@ -349,10 +373,11 @@ Phase 3.1 successfully resolves both critical issues discovered during integrati
 The implementation is fully backward compatible, well-tested, and documented. All acceptance criteria have been met.
 
 **Next Steps:**
+
 - Update Phase 3 documentation to reference this enhancement
 - Consider adding strict mode validation for method mismatches
 - Monitor for edge cases in production usage
 
 ---
 
-**Phase 3.1 Status: ✅ COMPLETE**
+Phase 3.1 Status: ✅ COMPLETE
