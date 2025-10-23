@@ -313,7 +313,7 @@ class TestMinecraftPlayerWebhookHandlerLoginEvent:
         """
         # Set IDs as integers
         mock_guild.id = 999888777666555444
-        mock_discord_user.id = 111222333444555666  # gitleaks: allow
+        mock_discord_user.id = 111222333444555666  # gitleaks:allow
 
         response = await handler._handle_login_event(
             mock_guild, mock_member, mock_discord_user, sample_data_payload, http_headers
@@ -718,7 +718,7 @@ class TestMinecraftPlayerWebhookHandlerLogoutEvent:
         """
         # Set IDs as integers
         mock_guild.id = 999888777666555444
-        mock_discord_user.id = 111222333444555666  # gitleaks: allow
+        mock_discord_user.id = 111222333444555666  # gitleaks:allow
 
         response = await handler._handle_logout_event(
             mock_guild, mock_member, mock_discord_user, sample_data_payload, http_headers
