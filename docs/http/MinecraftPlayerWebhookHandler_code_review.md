@@ -17,11 +17,13 @@ The `MinecraftPlayerWebhookHandler` has been successfully refactored following t
 ### Code Changes
 
 #### ✅ 1. Error Response Standardization
+
 **Method:** `_create_error_response(status_code, error_message, headers, include_stacktrace=False)`
 
 **Purpose:** Centralized error response creation with ErrorStatusCodePayload
 
 **Benefits:**
+
 - Consistent error response format across all failure paths
 - Optional stacktrace inclusion for debugging
 - Reduces code duplication in error handling
@@ -32,11 +34,13 @@ The `MinecraftPlayerWebhookHandler` has been successfully refactored following t
 ---
 
 #### ✅ 2. Request Body Validation
+
 **Method:** `_validate_request_body(request, headers) -> dict`
 
 **Purpose:** Parse and validate incoming JSON request body
 
 **Benefits:**
+
 - Single place for JSON parsing logic
 - Consistent error messages for parsing failures
 - Stacktrace included in parse errors
@@ -47,11 +51,13 @@ The `MinecraftPlayerWebhookHandler` has been successfully refactored following t
 ---
 
 #### ✅ 3. Payload Field Validation
+
 **Method:** `_validate_payload_fields(payload, headers) -> tuple[int, str, dict]`
 
 **Purpose:** Validate presence of required fields (guild_id, event, payload)
 
 **Benefits:**
+
 - Clear separation of field validation logic
 - Type conversion (guild_id string → int)
 - Explicit tuple return makes unpacking clear
@@ -62,11 +68,13 @@ The `MinecraftPlayerWebhookHandler` has been successfully refactored following t
 ---
 
 #### ✅ 4. Event Type Validation
+
 **Method:** `_validate_event_type(event_str, headers) -> MinecraftPlayerEvents`
 
 **Purpose:** Convert event string to enum and validate
 
 **Benefits:**
+
 - Enum conversion isolated from main flow
 - Unknown events caught early with clear error
 - Easy to extend with new event types
@@ -77,11 +85,13 @@ The `MinecraftPlayerWebhookHandler` has been successfully refactored following t
 ---
 
 #### ✅ 5. Discord Object Resolution
+
 **Method:** `_resolve_discord_objects(guild_id, user_id, headers) -> tuple`
 
 **Purpose:** Resolve Discord user, guild, and member objects via API
 
 **Benefits:**
+
 - Discord API calls isolated and mockable
 - Clear error messages with IDs for debugging
 - Single place for object resolution logic
@@ -95,72 +105,72 @@ The `MinecraftPlayerWebhookHandler` has been successfully refactored following t
 
 ### Strengths 💪
 
-1. **Single Responsibility Principle**
-   - Each method has one clear purpose
-   - Easy to understand and maintain
-   - Changes are localized
+- **Single Responsibility Principle**
+  - Each method has one clear purpose
+  - Easy to understand and maintain
+  - Changes are localized
 
-2. **Error Handling**
-   - Consistent HttpResponseException usage
-   - Detailed error messages with IDs
-   - Optional stacktraces for debugging
-   - HTTP status codes appropriate (400 vs 404 vs 500)
+- **Error Handling**
+  - Consistent HttpResponseException usage
+  - Detailed error messages with IDs
+  - Optional stacktraces for debugging
+  - HTTP status codes appropriate (400 vs 404 vs 500)
 
-3. **Type Safety**
-   - Return types explicitly documented
-   - Type conversions explicit (str → int)
-   - Enum usage for event types
+- **Type Safety**
+  - Return types explicitly documented
+  - Type conversions explicit (str → int)
+  - Enum usage for event types
 
-4. **Testability**
-   - Methods can be tested in isolation
-   - Minimal mocking required for unit tests
-   - Clear input/output contracts
+- **Testability**
+  - Methods can be tested in isolation
+  - Minimal mocking required for unit tests
+  - Clear input/output contracts
 
-5. **Documentation**
-   - Comprehensive docstrings
-   - Parameter and return types documented
-   - Raises clauses documented
+- **Documentation**
+  - Comprehensive docstrings
+  - Parameter and return types documented
+  - Raises clauses documented
 
 ### Observations 👀
 
-1. **Dependency Injection**
-   - ✅ `discord_helper` already injected in `__init__`
-   - Good for testing and flexibility
+- **Dependency Injection**
+  - ✅ `discord_helper` already injected in `__init__`
+  - Good for testing and flexibility
 
-2. **Event Handler Dictionary**
-   - ✅ Already using dictionary dispatch in `event()` method
-   - Clean routing without match statement
+- **Event Handler Dictionary**
+  - ✅ Already using dictionary dispatch in `event()` method
+  - Clean routing without match statement
 
-3. **Request ID Tracking**
-   - ✅ Request ID generated and logged
-   - Included in headers for tracing
-   - Good for debugging and monitoring
+- **Request ID Tracking**
+  - ✅ Request ID generated and logged
+  - Included in headers for tracing
+  - Good for debugging and monitoring
 
-4. **Timing Metrics**
-   - ✅ Request duration logged in finally block
-   - Useful for performance monitoring
+- **Timing Metrics**
+  - ✅ Request duration logged in finally block
+  - Useful for performance monitoring
 
 ### Potential Future Improvements 🚀
 
-1. **Caching** (Low Priority)
-   - Consider caching Discord object lookups
-   - Could reduce API calls for repeated requests
-   - Would need TTL and invalidation strategy
+- **Caching** (Low Priority)
+  - Consider caching Discord object lookups
+  - Could reduce API calls for repeated requests
+  - Would need TTL and invalidation strategy
 
-2. **Rate Limiting** (Low Priority)
-   - Could add rate limiting per guild/user
-   - Prevent abuse from misconfigured webhooks
-   - Would need distributed state for multi-instance
+- **Rate Limiting** (Low Priority)
+  - Could add rate limiting per guild/user
+  - Prevent abuse from misconfigured webhooks
+  - Would need distributed state for multi-instance
 
-3. **Validation Schema** (Low Priority)
-   - Could define JSON schema for payloads
-   - More robust validation beyond presence checks
-   - Could validate payload field types/formats
+- **Validation Schema** (Low Priority)
+  - Could define JSON schema for payloads
+  - More robust validation beyond presence checks
+  - Could validate payload field types/formats
 
-4. **Metrics** (Low Priority)
-   - Could add Prometheus metrics
-   - Track event counts, error rates, latency
-   - Would complement existing logging
+- **Metrics** (Low Priority)
+  - Could add Prometheus metrics
+  - Track event counts, error rates, latency
+  - Would complement existing logging
 
 ---
 
@@ -181,32 +191,32 @@ The `MinecraftPlayerWebhookHandler` has been successfully refactored following t
 
 ### Test Quality Highlights ⭐
 
-1. **Well-Organized**
-   - One test class per method
-   - Clear, descriptive test names
-   - Comprehensive docstrings
+- **Well-Organized**
+  - One test class per method
+  - Clear, descriptive test names
+  - Comprehensive docstrings
 
-2. **Good Fixtures**
-   - Reusable mock objects
-   - Consistent setup across tests
-   - Proper isolation
+- **Good Fixtures**
+  - Reusable mock objects
+  - Consistent setup across tests
+  - Proper isolation
 
-3. **Edge Cases Covered**
-   - Empty/None values
-   - Falsy values (0, "", {})
-   - Type conversions
-   - Unicode handling
-   - Exception propagation
+- **Edge Cases Covered**
+  - Empty/None values
+  - Falsy values (0, "", {})
+  - Type conversions
+  - Unicode handling
+  - Exception propagation
 
-4. **Parametrized Tests**
-   - Efficient testing of similar scenarios
-   - Clear test data in test names
-   - Easy to extend with new cases
+- **Parametrized Tests**
+  - Efficient testing of similar scenarios
+  - Clear test data in test names
+  - Easy to extend with new cases
 
-5. **Async Testing**
-   - Proper `@pytest.mark.asyncio` usage
-   - AsyncMock for async methods
-   - Correct await usage
+- **Async Testing**
+  - Proper `@pytest.mark.asyncio` usage
+  - AsyncMock for async methods
+  - Correct await usage
 
 ### Test Patterns Used ✅
 
@@ -224,12 +234,14 @@ The `MinecraftPlayerWebhookHandler` has been successfully refactored following t
 ### Existing Tests Still Pass ✅
 
 All 61 original integration tests continue to pass, verifying:
+
 - Login event handling (14 tests)
 - Logout event handling (14 tests)
 - Death event handling (13 tests)
 - Main event() method (20 tests)
 
 This confirms:
+
 - ✅ No regressions from refactoring
 - ✅ End-to-end flows still work
 - ✅ Event routing unchanged
@@ -237,7 +249,7 @@ This confirms:
 
 ### Test Execution Performance
 
-```
+```text
 tests/test_minecraft_player_webhook_handler.py: 61 tests in ~19.6s
 tests/test_minecraft_player_webhook_handler_helpers.py: 32 tests in ~11.8s
 Full test suite: 590 tests in ~180s (3 minutes)
@@ -253,39 +265,39 @@ Full test suite: 590 tests in ~180s (3 minutes)
 
 ### Code Documentation ✅
 
-1. **Module Docstring**
-   - Clear overview of handler purpose
-   - Authentication requirements documented
-   - Payload structure documented
-   - Response codes documented
-   - Extensibility notes included
+- **Module Docstring**
+  - Clear overview of handler purpose
+  - Authentication requirements documented
+  - Payload structure documented
+  - Response codes documented
+  - Extensibility notes included
 
-2. **Method Docstrings**
-   - All public/protected methods documented
-   - Parameters and return types clear
-   - Raises clauses for exceptions
-   - Usage examples where helpful
+- **Method Docstrings**
+  - All public/protected methods documented
+  - Parameters and return types clear
+  - Raises clauses for exceptions
+  - Usage examples where helpful
 
-3. **OpenAPI Decorators**
-   - ✅ Using `@openapi.*` decorators (preferred approach)
-   - ✅ Complete request/response documentation
-   - ✅ Security requirements specified
-   - ✅ Swagger spec is in sync (100% match)
+- **OpenAPI Decorators**
+  - ✅ Using `@openapi.*` decorators (preferred approach)
+  - ✅ Complete request/response documentation
+  - ✅ Security requirements specified
+  - ✅ Swagger spec is in sync (100% match)
 
 ### Test Documentation ✅
 
-1. **Test Module Docstring**
-   - Clear purpose statement
-   - References handler being tested
+- **Test Module Docstring**
+  - Clear purpose statement
+  - References handler being tested
 
-2. **Test Class Docstrings**
-   - One class per method tested
-   - Purpose clearly stated
+- **Test Class Docstrings**
+  - One class per method tested
+  - Purpose clearly stated
 
-3. **Test Method Docstrings**
-   - What scenario is being tested
-   - "Verifies:" section lists assertions
-   - Clear and concise
+- **Test Method Docstrings**
+  - What scenario is being tested
+  - "Verifies:" section lists assertions
+  - Clear and concise
 
 ---
 
@@ -293,7 +305,7 @@ Full test suite: 590 tests in ~180s (3 minutes)
 
 **Validation Result:** ✅ Swagger paths are in sync with handlers
 
-```
+```text
 Handlers considered:        19
 With doc blocks:            15 (78.9%)
 In swagger (handlers):      19 (100.0%)
@@ -312,35 +324,35 @@ Model components generated: 37
 
 ### ✅ TacoBot Project Guidelines
 
-1. **Testing**
-   - ✅ Comprehensive test coverage added
-   - ✅ Tests run in .venv
-   - ✅ All tests passing
-   - ✅ No regression in existing tests
+- **Testing**
+  - ✅ Comprehensive test coverage added
+  - ✅ Tests run in .venv
+  - ✅ All tests passing
+  - ✅ No regression in existing tests
 
-2. **Code Style**
-   - ✅ Type hints used
-   - ✅ Docstrings complete
-   - ✅ Single responsibility methods
-   - ✅ Consistent error handling
+- **Code Style**
+  - ✅ Type hints used
+  - ✅ Docstrings complete
+  - ✅ Single responsibility methods
+  - ✅ Consistent error handling
 
-3. **HTTP API Conventions**
-   - ✅ Proper use of HttpRequest/HttpResponse
-   - ✅ JSON responses for all paths
-   - ✅ Appropriate status codes
-   - ✅ Content-Type headers set
+- **HTTP API Conventions**
+  - ✅ Proper use of HttpRequest/HttpResponse
+  - ✅ JSON responses for all paths
+  - ✅ Appropriate status codes
+  - ✅ Content-Type headers set
 
-4. **Error Handling**
-   - ✅ HttpResponseException for validation failures
-   - ✅ Detailed error messages
-   - ✅ Stacktraces in 500 errors
-   - ✅ Error logging for exceptions
+- **Error Handling**
+  - ✅ HttpResponseException for validation failures
+  - ✅ Detailed error messages
+  - ✅ Stacktraces in 500 errors
+  - ✅ Error logging for exceptions
 
-5. **Documentation**
-   - ✅ OpenAPI decorators used
-   - ✅ Comprehensive docstrings
-   - ✅ Test documentation complete
-   - ✅ Summary documents created
+- **Documentation**
+  - ✅ OpenAPI decorators used
+  - ✅ Comprehensive docstrings
+  - ✅ Test documentation complete
+  - ✅ Summary documents created
 
 ---
 
@@ -355,37 +367,37 @@ Model components generated: 37
 
 ### Short-Term Improvements (Optional)
 
-1. 🔄 **Performance Benchmarks**
-   - Add benchmark tests for validation methods
-   - Track performance over time
-   - Detect regressions early
+- 🔄 **Performance Benchmarks**
+  - Add benchmark tests for validation methods
+  - Track performance over time
+  - Detect regressions early
 
-2. 🔄 **Coverage Reporting**
-   - Add pytest-cov report generation
-   - Track coverage metrics
-   - Identify untested code paths
+- 🔄 **Coverage Reporting**
+  - Add pytest-cov report generation
+  - Track coverage metrics
+  - Identify untested code paths
 
-3. 🔄 **Integration Tests with Real API**
-   - If test Discord bot available
-   - Verify actual API behavior
-   - Catch Discord API changes
+- 🔄 **Integration Tests with Real API**
+  - If test Discord bot available
+  - Verify actual API behavior
+  - Catch Discord API changes
 
 ### Long-Term Improvements (Future)
 
-1. ⏳ **Caching Layer**
-   - Cache Discord object lookups
-   - Reduce API load
-   - Improve response times
+- ⏳ **Caching Layer**
+  - Cache Discord object lookups
+  - Reduce API load
+  - Improve response times
 
-2. ⏳ **Rate Limiting**
-   - Per-guild rate limits
-   - Prevent webhook abuse
-   - Protect Discord API quota
+- ⏳ **Rate Limiting**
+  - Per-guild rate limits
+  - Prevent webhook abuse
+  - Protect Discord API quota
 
-3. ⏳ **Payload Validation Schema**
-   - JSON schema validation
-   - Type/format checking
-   - More robust validation
+- ⏳ **Payload Validation Schema**
+  - JSON schema validation
+  - Type/format checking
+  - More robust validation
 
 ---
 
@@ -393,23 +405,23 @@ Model components generated: 37
 
 ### Current Security ✅
 
-1. **Authentication**
-   - ✅ Webhook token validation
-   - ✅ 401 for invalid tokens
-   - ✅ Token checked before processing
+- **Authentication**
+  - ✅ Webhook token validation
+  - ✅ 401 for invalid tokens
+  - ✅ Token checked before processing
 
-2. **Input Validation**
-   - ✅ JSON structure validated
-   - ✅ Required fields checked
-   - ✅ Type conversions safe
-   - ✅ Discord object resolution validated
+- **Input Validation**
+  - ✅ JSON structure validated
+  - ✅ Required fields checked
+  - ✅ Type conversions safe
+  - ✅ Discord object resolution validated
 
-3. **Error Information**
-   - ✅ Stacktraces only in 500 errors
-   - ✅ No sensitive data in errors
-   - ✅ Request IDs for tracking
+- **Error Information**
+  - ✅ Stacktraces only in 500 errors
+  - ✅ No sensitive data in errors
+  - ✅ Request IDs for tracking
 
-### Recommendations
+### Recommendations (2)
 
 - ✅ Current implementation is secure
 - 🔄 Consider: Rate limiting per token
@@ -422,37 +434,37 @@ Model components generated: 37
 
 ### Current Performance ✅
 
-1. **Validation Steps**
-   - Fast JSON parsing
-   - Minimal string operations
-   - No expensive computations
+- **Validation Steps**
+  - Fast JSON parsing
+  - Minimal string operations
+  - No expensive computations
 
-2. **Discord API Calls**
-   - Three API calls per request (user, guild, member)
-   - Async/await for non-blocking
-   - Sequential resolution (required dependencies)
+- **Discord API Calls**
+  - Three API calls per request (user, guild, member)
+  - Async/await for non-blocking
+  - Sequential resolution (required dependencies)
 
-3. **Response Generation**
-   - Simple dict to JSON conversion
-   - No database queries (commented out)
-   - Minimal memory allocation
+- **Response Generation**
+  - Simple dict to JSON conversion
+  - No database queries (commented out)
+  - Minimal memory allocation
 
 ### Optimization Opportunities (Future)
 
-1. **Caching** (High Impact)
-   - Cache Discord objects (short TTL)
-   - Could reduce API calls 80-90%
-   - Significant latency improvement
+- **Caching** (High Impact)
+  - Cache Discord objects (short TTL)
+  - Could reduce API calls 80-90%
+  - Significant latency improvement
 
-2. **Parallel Resolution** (Medium Impact)
-   - Fetch user and guild in parallel
-   - Await both, then fetch member
-   - Reduces latency by ~30-50%
+- **Parallel Resolution** (Medium Impact)
+  - Fetch user and guild in parallel
+  - Await both, then fetch member
+  - Reduces latency by ~30-50%
 
-3. **Connection Pooling** (Low Impact)
-   - Discord.py likely handles this
-   - Verify connection reuse
-   - Minimal additional benefit
+- **Connection Pooling** (Low Impact)
+  - Discord.py likely handles this
+  - Verify connection reuse
+  - Minimal additional benefit
 
 ---
 

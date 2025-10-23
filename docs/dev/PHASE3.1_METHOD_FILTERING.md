@@ -199,7 +199,7 @@ $ python tests/test_endpoint_collector_http_method.py
 
 ```text
 Drift detected between handlers and swagger. Run: python scripts/swagger_sync.py --fix
- - Updated GET /webhook/minecraft/tacos from TacosWebhookHandler.py:minecraft_give_tacos
+  - Updated GET /webhook/minecraft/tacos from TacosWebhookHandler.py:minecraft_give_tacos
 ```
 
 **After Fix:**

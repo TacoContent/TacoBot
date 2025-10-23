@@ -23,24 +23,28 @@ Successfully implemented merge logic that combines decorator and YAML metadata w
 **Key Functions:**
 
 ##### `deep_merge_dict(base, override)`
+
 - Recursively merges two dictionaries
 - Override values take precedence over base values
 - Preserves nested structure
 - Does not modify input dictionaries (creates deep copies)
 
 ##### `merge_list_fields(yaml_list, decorator_list, unique_by)`
+
 - Merges list fields with optional deduplication
 - Supports deduplication by key (e.g., 'name' for parameters)
 - Decorator items override YAML items with same key
 - Preserves YAML-only items
 
 ##### `merge_responses(yaml_responses, decorator_responses)`
+
 - Merges OpenAPI response objects
 - Decorator responses override YAML for same status codes
 - Preserves YAML-only status codes
 - Deep merges response objects (description, content, headers)
 
 ##### `detect_conflicts(yaml_meta, decorator_meta, endpoint_path, endpoint_method)`
+
 - Detects conflicting metadata between sources
 - Returns list of warning messages
 - Checks simple fields (summary, description, operationId)
@@ -48,32 +52,34 @@ Successfully implemented merge logic that combines decorator and YAML metadata w
 - Checks responses for overlapping status codes
 
 ##### `merge_endpoint_metadata(yaml_meta, decorator_meta, ...)`
+
 **Main merge function** - combines all metadata with proper precedence
 
 **Merge Rules:**
-1. **Simple fields** (summary, description, operationId, deprecated, externalDocs):
-   - Decorator value wins if present
-   - YAML provides fallback if decorator absent
 
-2. **Tags & Security:**
-   - Decorator completely replaces YAML (no merge)
+- **Simple fields** (summary, description, operationId, deprecated, externalDocs):
+  - Decorator value wins if present
+  - YAML provides fallback if decorator absent
 
-3. **Parameters:**
-   - Merged with deduplication by 'name' field
-   - Decorator parameters override YAML parameters with same name
-   - YAML-only parameters preserved
+- **Tags & Security:**
+  - Decorator completely replaces YAML (no merge)
 
-4. **Request Body:**
-   - Decorator completely replaces YAML
+- **Parameters:**
+  - Merged with deduplication by 'name' field
+  - Decorator parameters override YAML parameters with same name
+  - YAML-only parameters preserved
 
-5. **Responses:**
-   - Merged by status code
-   - Decorator response overrides YAML for same code
-   - YAML-only status codes preserved
-   - Deep merge of response objects
+- **Request Body:**
+  - Decorator completely replaces YAML
 
-6. **Custom Extensions:**
-   - x-response-headers, x-examples preserved from decorator
+- **Responses:**
+  - Merged by status code
+  - Decorator response overrides YAML for same code
+  - YAML-only status codes preserved
+  - Deep merge of response objects
+
+- **Custom Extensions:**
+  - x-response-headers, x-examples preserved from decorator
 
 **Returns:** `Tuple[Dict[str, Any], List[str]]` - merged metadata and conflict warnings
 
@@ -84,11 +90,13 @@ Successfully implemented merge logic that combines decorator and YAML metadata w
 **Added Methods to `Endpoint` class:**
 
 ##### `get_merged_metadata(detect_conflicts=True)`
+
 - Public API for getting merged metadata
 - Returns tuple of (merged_metadata, conflict_warnings)
 - Delegates to merge_utils.merge_endpoint_metadata()
 
 ##### `to_openapi_operation()` - **Enhanced**
+
 - Now calls `get_merged_metadata()` internally
 - Uses merged metadata instead of raw YAML
 - Maintains backward compatibility
@@ -103,6 +111,7 @@ Successfully implemented merge logic that combines decorator and YAML metadata w
 **Test Coverage:**
 
 ##### `TestDeepMergeDict` (6 tests)
+
 - ✅ Flat dictionary merging
 - ✅ Nested dictionary merging
 - ✅ Deeply nested structures
@@ -111,6 +120,7 @@ Successfully implemented merge logic that combines decorator and YAML metadata w
 - ✅ Original dict preservation (no mutation)
 
 ##### `TestMergeListFields` (6 tests)
+
 - ✅ Decorator-only lists
 - ✅ YAML-only lists
 - ✅ Empty list handling
@@ -119,6 +129,7 @@ Successfully implemented merge logic that combines decorator and YAML metadata w
 - ✅ YAML-only items preserved
 
 ##### `TestMergeResponses` (6 tests)
+
 - ✅ Decorator-only responses
 - ✅ YAML-only responses
 - ✅ Empty response handling
@@ -127,6 +138,7 @@ Successfully implemented merge logic that combines decorator and YAML metadata w
 - ✅ Deep merge of response objects
 
 ##### `TestDetectConflicts` (7 tests)
+
 - ✅ No conflicts detected
 - ✅ Summary field conflict
 - ✅ Tags field conflict
@@ -136,6 +148,7 @@ Successfully implemented merge logic that combines decorator and YAML metadata w
 - ✅ No conflict when only one source
 
 ##### `TestMergeEndpointMetadata` (11 tests)
+
 - ✅ YAML-only metadata
 - ✅ Decorator-only metadata
 - ✅ Decorator overrides summary
@@ -152,7 +165,7 @@ Successfully implemented merge logic that combines decorator and YAML metadata w
 
 ## Test Results
 
-```
+```text
 =================================================================== test session starts ===================================================================
 platform win32 -- Python 3.13.7, pytest-8.4.2, pluggy-1.6.0
 collected 36 items
@@ -259,7 +272,7 @@ merged, _ = merge_endpoint_metadata(yaml, decorator)
 
 ## Integration with Existing Code
 
-### Before (YAML only):
+### Before (YAML only)
 
 ```python
 endpoint = Endpoint(
@@ -274,7 +287,7 @@ operation = endpoint.to_openapi_operation()
 # operation = {'summary': 'Test', 'tags': ['test'], 'responses': {...}}
 ```
 
-### After (Automatic merging):
+### After (Automatic merging)
 
 ```python
 endpoint = Endpoint(
@@ -301,32 +314,38 @@ operation = endpoint.to_openapi_operation()
 ## Advantages of This Implementation
 
 ### 1. **Non-Breaking**
+
 - Existing endpoints with YAML-only continue to work
 - Existing endpoints with decorator-only continue to work
 - No changes needed to calling code
 
 ### 2. **Flexible**
+
 - Supports partial migration (some decorators + some YAML)
 - Supports full migration (decorators only)
 - Supports gradual rollout
 
 ### 3. **Conflict-Aware**
+
 - Detects when same field specified in both sources
 - Generates descriptive warning messages
 - Applies consistent precedence rules
 
 ### 4. **Data-Preserving**
+
 - Deep copies prevent mutation of original data
 - YAML-only fields preserved
 - Decorator-only fields added
 - No silent data loss
 
 ### 5. **Well-Tested**
+
 - 36 comprehensive unit tests
 - 100% code coverage of merge logic
 - Edge cases covered (empty, None, conflicts)
 
 ### 6. **Type-Safe**
+
 - Type hints on all functions
 - Clear function signatures
 - Documented return types
@@ -361,18 +380,23 @@ With Task 1 complete, the merge infrastructure is in place. The remaining Phase 
 ## Acceptance Criteria Verification
 
 ### ✅ Decorator metadata overrides YAML
+
 **Status:** PASS  
 **Evidence:** Tests verify decorator values override YAML for all field types
 
 ### ✅ YAML provides fallback values
+
 **Status:** PASS  
 **Evidence:** `test_yaml_fallback_for_missing_fields()` verifies fallback behavior
 
 ### ✅ Conflict warnings logged
+
 **Status:** PASS  
 **Evidence:** `detect_conflicts()` function + 7 tests verify conflict detection
 
 ### ✅ Merge preserves nested structures
+
+
 **Status:** PASS  
 **Evidence:** `deep_merge_dict()` + tests verify nested merging (responses, parameters)
 
@@ -381,6 +405,7 @@ With Task 1 complete, the merge infrastructure is in place. The remaining Phase 
 **Evidence:** 36 comprehensive tests covering all merge scenarios
 
 ### ✅ No data loss during merge
+
 **Status:** PASS  
 **Evidence:** `test_no_data_loss()` + deep copy implementation prevent data loss
 
@@ -396,10 +421,10 @@ Task 1 successfully implements the complete merge logic infrastructure for Phase
 - ✅ **Well-documented** - Comprehensive docstrings and examples
 - ✅ **Maintainable** - Clean separation of concerns, single responsibility functions
 
-**Task 1 Status: COMPLETE ✅**
+Task 1 Status: COMPLETE ✅
 
 ---
 
-*Document Generated: October 16, 2025*  
-*Task Duration: ~1 hour*  
+*Document Generated: October 16, 2025*
+*Task Duration: ~1 hour*
 *Next: Verify remaining tasks 2-6 are already satisfied*

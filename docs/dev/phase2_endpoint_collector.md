@@ -185,6 +185,7 @@ All core endpoint collection tests pass:
 ### Decorator Support
 
 The module handles three decorator patterns:
+
 1. `@uri_variable_mapping(path, method=...)` - Variable segments
 2. `@uri_mapping(path, method=...)` - Static paths
 3. `@uri_pattern_mapping(pattern, method=...)` - Regex patterns (ignored)
@@ -192,27 +193,28 @@ The module handles three decorator patterns:
 ### OpenAPI Block Styles
 
 Supports two docstring styles:
-1. **Flat style**: Top-level operation keys
 
-   ```yaml
-   >>>openapi
-   summary: Get roles
-   tags: [roles]
-   <<<openapi
-   ```
+- **Flat style**: Top-level operation keys
 
-2. **Method-rooted style**: Keys nested under HTTP method
+  ```yaml
+  >>>openapi
+  summary: Get roles
+  tags: [roles]
+  <<<openapi
+  ```
 
-   ```yaml
-   >>>openapi
-   get:
-     summary: Get roles
-     tags: [roles]
-   post:
-     summary: Create role
-     tags: [roles]
-   <<<openapi
-   ```
+- **Method-rooted style**: Keys nested under HTTP method
+
+  ```yaml
+  >>>openapi
+  get:
+    summary: Get roles
+    tags: [roles]
+  post:
+    summary: Create role
+    tags: [roles]
+  <<<openapi
+  ```
 
 ## Remaining Phase 2 Work
 
@@ -225,8 +227,8 @@ Supports two docstring styles:
 
 ### Subsequent Extractions
 
-1. `swagger_ops.py` - merge, detect_orphans, _diff_operations (~100 lines)
-2. `coverage.py` - _generate_coverage, _compute_coverage (~188 lines)
+1. `swagger_ops.py` - `merge`, `detect_orphans`, `_diff_operations` (~100 lines)
+2. `coverage.py` - `_generate_coverage`, `_compute_coverage` (~188 lines)
 3. `cli.py` - main function (~473 lines)
 
 ## Conclusion

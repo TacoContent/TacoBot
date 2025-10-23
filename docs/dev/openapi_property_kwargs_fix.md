@@ -19,11 +19,11 @@ WARNING: Model schema drift detected for component 'PagedResults'.
 --- a/components.schemas.PagedResults
 +++ b/components.schemas.PagedResults
 @@ -2,18 +2,14 @@
- properties:
-   total:
+  properties:
+    total:
       type: integer
 -     description: Total number of matching items (unpaged)
-   skip:
+    skip:
       type: integer
 -     description: Number of items skipped (offset)
 ```

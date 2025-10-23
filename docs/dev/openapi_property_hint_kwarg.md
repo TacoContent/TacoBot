@@ -318,23 +318,23 @@ Result: `settings` property now correctly typed as `object` in swagger spec.
 
 Potential improvements for future consideration:
 
-1. **Concrete Type Instantiation**: Support specifying concrete types for specific Generic instantiations
+- **Concrete Type Instantiation**: Support specifying concrete types for specific Generic instantiations
 
-   ```python
-   @openapi.component("SpecificModel", instantiates="GenericModel[MyConcreteType]")
-   class SpecificModel(GenericModel[MyConcreteType]):
-       pass
-   ```
+  ```python
+  @openapi.component("SpecificModel", instantiates="GenericModel[MyConcreteType]")
+  class SpecificModel(GenericModel[MyConcreteType]):
+      pass
+  ```
 
-2. **Multiple TypeVar Support**: Enhanced hints for classes with multiple TypeVars
+- **Multiple TypeVar Support**: Enhanced hints for classes with multiple TypeVars
 
-   ```python
-   @openapi.property("mapping", hint={"K": str, "V": int})
-   ```
+  ```python
+  @openapi.property("mapping", hint={"K": str, "V": int})
+  ```
 
-3. **Hint Validation**: Runtime validation that hint matches actual usage patterns
+- **Hint Validation**: Runtime validation that hint matches actual usage patterns
 
-4. **IDE Support**: LSP hints showing resolved type from hint kwarg
+- **IDE Support**: LSP hints showing resolved type from hint kwarg
 
 ## Related Files
 
