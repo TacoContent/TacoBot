@@ -150,6 +150,7 @@ python scripts/swagger_sync.py --check --coverage-report=openapi_coverage.json  
 ### Completed Extractions
 
 #### ✅ type_system.py (~788 lines extracted)
+
 - **Functions**: 16 type-related functions
   - `_build_schema_from_annotation`, `_unwrap_optional`, `_flatten_nested_unions`, `_extract_union_schema`
   - `_split_union_types`, `_extract_refs_from_types`, `_discover_attribute_aliases`, `_is_type_alias_annotation`
@@ -162,6 +163,7 @@ python scripts/swagger_sync.py --check --coverage-report=openapi_coverage.json  
 - **Documentation**: See `phase2_type_system.md`
 
 #### ✅ endpoint_collector.py (~268 lines extracted)
+
 - **Functions**: 3 endpoint collection functions
   - `extract_openapi_block` - Parse YAML from >>>openapi<<<openapi blocks
   - `resolve_path_literal` - Resolve path strings from AST (handles f-strings with API_VERSION)
@@ -176,17 +178,18 @@ python scripts/swagger_sync.py --check --coverage-report=openapi_coverage.json  
   - Supports flat and method-rooted OpenAPI block styles
 
 #### ✅ model_components.py (~482 lines extracted)
+
 - **Function**: 1 large model schema generation function
   - `collect_model_components` - Main collection function that:
-    * Scans model directory for @openapi.component decorated classes
-    * Analyzes __init__ methods for property annotations via AST
-    * Infers OpenAPI schemas from type hints (str→string, int→integer, etc.)
-    * Detects Literal enums and generates enum schemas
-    * Handles model references via $ref
-    * Supports inheritance with allOf structure
-    * Processes docstring YAML blocks for schema overrides and property metadata
-    * Integrates with TYPE_ALIAS_METADATA for type alias components
-    * Tracks excluded components (x-tacobot-exclude)
+    - Scans model directory for @openapi.component decorated classes
+    - Analyzes `__init__` methods for property annotations via AST
+    - Infers OpenAPI schemas from type hints (str→string, int→integer, etc.)
+    - Detects Literal enums and generates enum schemas
+    - Handles model references via $ref
+    - Supports inheritance with allOf structure
+    - Processes docstring YAML blocks for schema overrides and property metadata
+    - Integrates with TYPE_ALIAS_METADATA for type alias components
+    - Tracks excluded components (x-tacobot-exclude)
 - **Lines Removed**: 381 lines from main script (lines 480-912, net after adding imports)
 - **Impact**: swagger_sync.py reduced from 1617 → 1236 lines (23.6% reduction)
 - **Status**: ✅ Complete, 110/113 tests passing
@@ -198,6 +201,7 @@ python scripts/swagger_sync.py --check --coverage-report=openapi_coverage.json  
   - Imports 8 functions from type_system, 4 from utils
 
 #### ✅ swagger_ops.py (~175 lines extracted)
+
 - **Functions**: 5 swagger file operation functions
   - `merge` - Merge endpoint operations into swagger paths section
   - `detect_orphans` - Detect orphaned paths (in swagger but no handler) and orphaned components (in swagger but no model)
@@ -233,16 +237,17 @@ python scripts/swagger_sync.py --check --coverage-report=openapi_coverage.json  
 #### ✅ cli.py (~538 lines extracted)
 
 - **Function**: 1 main CLI orchestration function + helpers
+
   - `main` - Complete command-line interface with:
-    * Argparse setup for 24+ command-line arguments
-    * Model component collection and schema updates
-    * Endpoint merging and drift detection
-    * Coverage calculation and reporting
-    * Markdown summary generation
-    * Badge generation
-    * Output directory validation with warnings
-    * Color output control
-    * Exit code logic based on drift detection and coverage thresholds
+    - Argparse setup for 24+ command-line arguments
+    - Model component collection and schema updates
+    - Endpoint merging and drift detection
+    - Coverage calculation and reporting
+    - Markdown summary generation
+    - Badge generation
+    - Output directory validation with warnings
+    - Color output control
+    - Exit code logic based on drift detection and coverage thresholds
   - `build_openapi_block_re` - Regex builder for OpenAPI block delimiters
   - `_resolve_output` - Helper to resolve output paths (nested function in main)
   - `print_coverage_summary` - Summary printer (nested function in main)
@@ -279,7 +284,7 @@ python scripts/swagger_sync.py --check --coverage-report=openapi_coverage.json  
   - ✅ test_no_color_flag_behavior - **FIXED!** (now accesses swagger_ops.DISABLE_COLOR)
 - **Final File Structure**:
   - Line 1-194: Comprehensive module docstring with examples and usage
-  - Line 195-205: Minimal imports (from __future__, try/except for cli.main)
+  - Line 195-205: Minimal imports (from `__future__`, try/except for cli.main)
   - Line 206-207: Entry point (`if __name__ == '__main__': main()`)
 - **Notes**:
   - **swagger_sync.py is now a true minimal entry point** - contains ONLY docstring, import, and entry point
@@ -330,7 +335,7 @@ python scripts/swagger_sync.py --check --coverage-report=openapi_coverage.json  
 
 - **swagger_sync.py** (161 lines) ⭐ **MINIMAL ENTRY POINT ACHIEVED!**
   - Module docstring and documentation (194 lines - most comprehensive user docs)
-  - Minimal import statements (11 lines: from __future__, try/except for cli.main)
+  - Minimal import statements (11 lines: from `__future__`, try/except for cli.main)
   - Entry point (2 lines: `if __name__ == '__main__': main()`)
   - **NO duplicate code** - all constants, utilities, and functions properly delegated
 
@@ -378,57 +383,57 @@ When continuing refactoring, these test files need import updates:
 
 ## Benefits Achieved (Phase 1)
 
-1. **Testability** ✅
-   - Badge module is 100% isolated and testable
-   - 31 comprehensive tests covering badge functionality
+- **Testability** ✅
+  - Badge module is 100% isolated and testable
+  - 31 comprehensive tests covering badge functionality
 
-2. **Maintainability** ✅
-   - Clear separation between badge generation and core logic
-   - YAML handling centralized
-   - Easier to locate and modify badge-related code
+- **Maintainability** ✅
+  - Clear separation between badge generation and core logic
+  - YAML handling centralized
+  - Easier to locate and modify badge-related code
 
-3. **No Regression** ✅
-   - All existing functionality preserved
-   - Main script works identically
-   - All badge tests passing
+- **No Regression** ✅
+  - All existing functionality preserved
+  - Main script works identically
+  - All badge tests passing
 
-4. **Foundation for Further Refactoring** ✅
-   - Proven import strategy that works in multiple contexts
-   - Template for extracting other modules
-   - Constants and models modules ready to integrate
+- **Foundation for Further Refactoring** ✅
+  - Proven import strategy that works in multiple contexts
+  - Template for extracting other modules
+  - Constants and models modules ready to integrate
 
 ## Next Steps (When Continuing)
 
-1. ✅ **Extract type_system.py** - COMPLETE
-   - ✅ Moved all 16 type handling functions + 4 globals
-   - ✅ Updated imports in model_components.py consumers
+- ✅ **Extract type_system.py** - COMPLETE
+  - ✅ Moved all 16 type handling functions + 4 globals
+  - ✅ Updated imports in model_components.py consumers
 
-2. ✅ **Extract endpoint_collector.py** - COMPLETE
-   - ✅ Moved 3 endpoint collection functions
-   - ✅ Updated all endpoint collection test imports
-   - ✅ Enhanced Endpoint model with to_openapi_operation() method
+- ✅ **Extract endpoint_collector.py** - COMPLETE
+  - ✅ Moved 3 endpoint collection functions
+  - ✅ Updated all endpoint collection test imports
+  - ✅ Enhanced Endpoint model with to_openapi_operation() method
 
-3. ✅ **Extract model_components.py** - COMPLETE
-   - ✅ Moved collect_model_components() function (432 lines)
-   - ✅ All 61 model component tests passing (100%)
-   - ✅ Supports decorators, type inference, inheritance, schema overrides
+- ✅ **Extract model_components.py** - COMPLETE
+  - ✅ Moved collect_model_components() function (432 lines)
+  - ✅ All 61 model component tests passing (100%)
+  - ✅ Supports decorators, type inference, inheritance, schema overrides
 
-4. ✅ **Extract swagger_ops.py** - COMPLETE
-   - ✅ Moved 5 swagger operations functions (merge, detect_orphans, diffs)
-   - ✅ Clean separation of swagger file operations
-   - ✅ Color support for diff visualization maintained
+- ✅ **Extract swagger_ops.py** - COMPLETE
+  - ✅ Moved 5 swagger operations functions (merge, detect_orphans, diffs)
+  - ✅ Clean separation of swagger file operations
+  - ✅ Color support for diff visualization maintained
 
-5. ✅ **Extract coverage.py** - COMPLETE
-   - ✅ Moved _generate_coverage, _compute_coverage functions
-   - ✅ 302-line module with 2 coverage functions
-   - ✅ Supports JSON, text, and Cobertura XML formats
-   - ✅ All tests passing (124/126, 98.4%)
+- ✅ **Extract coverage.py** - COMPLETE
+  - ✅ Moved _generate_coverage, _compute_coverage functions
+  - ✅ 302-line module with 2 coverage functions
+  - ✅ Supports JSON, text, and Cobertura XML formats
+  - ✅ All tests passing (124/126, 98.4%)
 
-6. ✅ **Extract cli.py** - COMPLETE
-   - ✅ Moved main() function + helpers (538 lines)
-   - ✅ Reduced swagger_sync.py to minimal entry point (540 lines)
-   - ✅ All tests passing (124/127, 98.4%)
-   - ✅ **PHASE 2 REFACTORING COMPLETE!** 🎉
+- ✅ **Extract cli.py** - COMPLETE
+  - ✅ Moved main() function + helpers (538 lines)
+  - ✅ Reduced swagger_sync.py to minimal entry point (540 lines)
+  - ✅ All tests passing (124/127, 98.4%)
+  - ✅ **PHASE 2 REFACTORING COMPLETE!** 🎉
 
 ## Documentation Updates
 
@@ -501,19 +506,19 @@ Coverage calculation was **fundamentally redesigned** to focus on **automation g
 
 #### NEW Primary Metrics (Automation Coverage)
 
-1. **Orphaned Components** - Schemas in swagger WITHOUT `@openapi.component` decorators
-   - These are manual YAML definitions requiring manual maintenance
-   - Lower count = better automation (less technical debt)
+- **Orphaned Components** - Schemas in swagger WITHOUT `@openapi.component` decorators
+  - These are manual YAML definitions requiring manual maintenance
+  - Lower count = better automation (less technical debt)
 
-2. **Orphaned Endpoints** - Paths in swagger WITHOUT Python handler decorators
-   - These are manual API definitions not synchronized from code
-   - Lower count = better automation (less technical debt)
+- **Orphaned Endpoints** - Paths in swagger WITHOUT Python handler decorators
+  - These are manual API definitions not synchronized from code
+  - Lower count = better automation (less technical debt)
 
-3. **Automation Rates** - Percentage of items managed by code decorators
-   - `component_automation_rate = automated_components / total_swagger_components`
-   - `endpoint_automation_rate = automated_endpoints / total_swagger_endpoints`
-   - `automation_coverage_rate = (total_items - total_orphans) / total_items`
-   - Higher rate = less technical debt, more maintainable codebase
+- **Automation Rates** - Percentage of items managed by code decorators
+  - `component_automation_rate = automated_components / total_swagger_components`
+  - `endpoint_automation_rate = automated_endpoints / total_swagger_endpoints`
+  - `automation_coverage_rate = (total_items - total_orphans) / total_items`
+  - Higher rate = less technical debt, more maintainable codebase
 
 #### Legacy Metrics (Still Available)
 
@@ -527,6 +532,7 @@ Coverage calculation was **fundamentally redesigned** to focus on **automation g
 #### Modified Functions
 
 **`_compute_coverage()`** - Now accepts `model_components` parameter:
+
 ```python
 def _compute_coverage(
     endpoints: List[Endpoint],
@@ -537,11 +543,13 @@ def _compute_coverage(
 ```
 
 Returns 4-tuple instead of 3-tuple:
+
 ```python
 return summary, endpoint_records, swagger_only, orphaned_components  # orphaned_components is NEW
 ```
 
 **Summary Dict - New Fields:**
+
 - `total_swagger_components`: Count of all schemas in swagger
 - `automated_components`: Count from `@openapi.component` decorators
 - `orphaned_components_count`: Manual schemas (technical debt)
@@ -555,6 +563,7 @@ return summary, endpoint_records, swagger_only, orphaned_components  # orphaned_
 - `automation_coverage_rate`: Overall automation percentage
 
 **`_generate_coverage()`** - Now accepts `model_components` parameter:
+
 ```python
 def _generate_coverage(
     endpoints: List[Endpoint],
@@ -570,7 +579,8 @@ def _generate_coverage(
 #### Report Format Changes
 
 **Text Report** - New "🤖 AUTOMATION COVERAGE (Technical Debt)" section:
-```
+
+```text
 ┌─────────────────────────────┬──────────┬─────────────────────────┐
 │ Item Type                   │ Count    │ Automation Rate         │
 ├─────────────────────────────┼──────────┼─────────────────────────┤
@@ -591,6 +601,7 @@ These endpoints exist in swagger but have no corresponding handler:
 ```
 
 **Markdown Report** - New automation coverage section with goals:
+
 ```markdown
 ## 🤖 Automation Coverage (Technical Debt)
 
@@ -612,6 +623,7 @@ These endpoints exist in swagger but have no corresponding handler:
 ```
 
 **JSON Report** - New top-level field `orphaned_components`:
+
 ```json
 {
   "summary": {
@@ -635,6 +647,7 @@ These endpoints exist in swagger but have no corresponding handler:
 ```
 
 **Cobertura XML** - New custom properties for CI/CD:
+
 ```xml
 <property name="total_swagger_components" value="36" />
 <property name="automated_components" value="36" />
@@ -653,14 +666,16 @@ These endpoints exist in swagger but have no corresponding handler:
 
 **`swagger_sync/cli.py`** - Updated both coverage calls:
 
-1. Line ~335 - `_compute_coverage` call:
+- Line ~335 - `_compute_coverage` call:
+
 ```python
 coverage_summary, coverage_records, coverage_swagger_only, orphaned_components = _compute_coverage(
     endpoints, ignored, swagger_new, model_components  # model_components now passed
 )
 ```
 
-2. Line ~390 - `_generate_coverage` call:
+- Line ~390 - `_generate_coverage` call:
+
 ```python
 _generate_coverage(
     endpoints,
@@ -687,6 +702,7 @@ _generate_coverage(
 ### Example Output
 
 For TacoBot project:
+
 - ✅ **Components**: 100% automated (36/36) - all schemas from `@openapi.component` classes
 - ⚠️ **Endpoints**: 26.3% automated (15/57) - **42 orphaned endpoints need handlers or removal**
 - 🟡 **Overall**: 54.8% automated - **42 items of technical debt**

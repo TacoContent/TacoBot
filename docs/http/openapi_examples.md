@@ -17,12 +17,14 @@ The `@openapi.example` decorator provides full OpenAPI 3.0 specification complia
 ## Overview
 
 The `@openapi.example` decorator allows you to attach examples to:
+
 - **Parameters** (path, query, header)
 - **Request bodies**
 - **Response bodies**
 - **Schema definitions**
 
 Examples can be:
+
 - **Inline values** (directly in the decorator)
 - **External URLs** (via `externalValue`)
 - **Component references** (reusable examples via `$ref`)
@@ -131,6 +133,7 @@ from bot.lib.models.discord import DiscordUser
 ```
 
 **Benefits:**
+
 - Type-safe: Uses actual Python classes instead of strings
 - IDE support: Autocomplete and refactoring work
 - Consistent with other decorators (`@openapi.pathParameter`, `@openapi.response`)
@@ -505,18 +508,19 @@ func.__openapi_examples__ = [
 
 When running `python scripts/swagger_sync.py --fix`, the script:
 
-1. **Parses decorators** from Python handler files
-2. **Extracts `__openapi_examples__` metadata**
-3. **Groups examples by placement type**
-4. **Merges into OpenAPI spec** at appropriate locations:
-   - Parameter examples → `paths[path][method].parameters[*].examples`
-   - Request body examples → `paths[path][method].requestBody.content[contentType].examples`
-   - Response examples → `paths[path][method].responses[statusCode].content[contentType].examples`
-   - Schema examples → `components.schemas[schemaName].examples`
+- **Parses decorators** from Python handler files
+- **Extracts `__openapi_examples__` metadata**
+- **Groups examples by placement type**
+- **Merges into OpenAPI spec** at appropriate locations:
+  - Parameter examples → `paths[path][method].parameters[*].examples`
+  - Request body examples → `paths[path][method].requestBody.content[contentType].examples`
+  - Response examples → `paths[path][method].responses[statusCode].content[contentType].examples`
+  - Schema examples → `components.schemas[schemaName].examples`
 
 ### Validation
 
 Run `python scripts/swagger_sync.py --check` to verify:
+
 - All decorators are synced to the spec
 - No orphaned examples in the spec (examples without matching decorators)
 - Examples follow OpenAPI 3.0 schema
@@ -708,6 +712,7 @@ def get_roles(self, request, uri_variables):
 ```
 
 **Benefits:**
+
 - ✅ Type-safe: Python type checker validates arguments
 - ✅ IDE support: Autocomplete and refactoring tools work
 - ✅ DRY: No duplication with response schema definitions
@@ -723,6 +728,6 @@ def get_roles(self, request, uri_variables):
 
 ---
 
-**Last Updated:** 2025-01-17  
-**Decorator Version:** Enhanced with full OpenAPI 3.0 compliance  
+**Last Updated:** 2025-01-17
+**Decorator Version:** Enhanced with full OpenAPI 3.0 compliance
 **Python Version:** 3.12+

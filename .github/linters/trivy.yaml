@@ -6,6 +6,9 @@ scan:
   skip-dirs:
     - .devcontainer/
     - __pycache__/
+    - .vscode/
+    - .github/
+    - tests/
   scanners:
     - vuln
     - misconfig

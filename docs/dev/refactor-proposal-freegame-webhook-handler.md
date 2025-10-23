@@ -20,28 +20,28 @@ This proposal outlines a refactoring strategy to **decompose the method into 8-1
 
 ### 🔴 Problems Identified
 
-1. **Testability Issues**
-   - Cannot test URL enrichment logic without mocking Discord bot, databases, and HTTP requests
-   - Cannot test message formatting without setting up full guild/channel infrastructure
-   - Cannot test guild filtering logic in isolation
-   - End-to-end tests are brittle and slow due to heavy mocking requirements
+- **Testability Issues**
+  - Cannot test URL enrichment logic without mocking Discord bot, databases, and HTTP requests
+  - Cannot test message formatting without setting up full guild/channel infrastructure
+  - Cannot test guild filtering logic in isolation
+  - End-to-end tests are brittle and slow due to heavy mocking requirements
 
-2. **Maintainability Concerns**
-   - Single 262-line method with 7+ responsibilities
-   - Nested try-except blocks obscure error handling flow
-   - Business logic intermingled with HTTP response construction
-   - URL manipulation spread across multiple inline operations
+- **Maintainability Concerns**
+  - Single 262-line method with 7+ responsibilities
+  - Nested try-except blocks obscure error handling flow
+  - Business logic intermingled with HTTP response construction
+  - URL manipulation spread across multiple inline operations
 
-3. **Extensibility Limitations**
-   - Adding new platforms requires modifying `_get_open_in_app_url()` and understanding entire flow
-   - Cannot easily add URL enrichment strategies (e.g., metadata fetching)
-   - Difficult to add conditional message formatting based on offer type
-   - No clear extension point for adding new notification channels (email, mobile push, etc.)
+- **Extensibility Limitations**
+  - Adding new platforms requires modifying `_get_open_in_app_url()` and understanding entire flow
+  - Cannot easily add URL enrichment strategies (e.g., metadata fetching)
+  - Difficult to add conditional message formatting based on offer type
+  - No clear extension point for adding new notification channels (email, mobile push, etc.)
 
-4. **Code Duplication**
-   - Similar guild/channel resolution logic appears in other webhook handlers
-   - URL shortening pattern repeated across webhook handlers
-   - Error response construction duplicated in multiple places
+- **Code Duplication**
+  - Similar guild/channel resolution logic appears in other webhook handlers
+  - URL shortening pattern repeated across webhook handlers
+  - Error response construction duplicated in multiple places
 
 ### ✅ Strengths to Preserve
 
@@ -77,7 +77,7 @@ This proposal outlines a refactoring strategy to **decompose the method into 8-1
 
 ### Component Hierarchy
 
-```
+```text
 FreeGameWebhookHandler.game() [HTTP Entry Point]
 │
 ├─► validate_and_parse_request() [Auth + JSON]
@@ -149,13 +149,13 @@ class OfferUrlEnricher:
 
     def enrich(self, url: str) -> EnrichedUrl:
         """Enrich URL with redirects, shortening, and launcher links.
-        
+
         Args:
             url: Original offer URL from webhook payload
-            
+
         Returns:
             EnrichedUrl with all derived URLs
-            
+
         Raises:
             ValueError: If URL is empty or invalid
         """
@@ -165,7 +165,7 @@ class OfferUrlEnricher:
         resolved = self._resolve_redirect_chain(url)
         shortened = self._shorten_url(resolved)
         launcher_name, launcher_url = self._build_launcher_deep_link(resolved)
-        
+
         return EnrichedUrl(
             original=url,
             resolved=resolved,
@@ -191,7 +191,7 @@ class OfferUrlEnricher:
         """Shorten URL using configured shortener service."""
         if not self.url_shortener:
             return url
-        
+
         try:
             result = self.url_shortener.shorten(url=url)
             return result.get("url", url)
@@ -200,7 +200,7 @@ class OfferUrlEnricher:
 
     def _build_launcher_deep_link(self, url: str) -> Tuple[str, str]:
         """Generate platform-specific launcher deep link.
-        
+
         Returns:
             (launcher_name, launcher_url) tuple
         """
@@ -209,11 +209,11 @@ class OfferUrlEnricher:
             SteamLauncher(),
             EpicGamesLauncher(),
         ]
-        
+
         for launcher in launchers:
             if launcher.matches(url):
                 return launcher.name, launcher.build_deep_link(url)
-        
+
         return "", ""
 ```
 
@@ -224,7 +224,7 @@ class OfferUrlEnricher:
 def test_enrich_microsoft_store_url():
     enricher = OfferUrlEnricher()
     result = enricher.enrich("https://apps.microsoft.com/detail/9p83lmp6gdpk")
-    
+
     assert result.launcher_name == "Microsoft Store"
     assert "ms-windows-store://pdp?productid=9p83lmp6gdpk" in result.launcher_url
 
@@ -300,6 +300,7 @@ class EpicGamesLauncher(LauncherStrategy):
 ```
 
 **Benefits:**
+
 - Easy to add new platforms (GOG, Ubisoft, etc.)
 - Each strategy is independently testable
 - No coupling to Discord or HTTP infrastructure
@@ -350,11 +351,11 @@ class OfferMessageFormatter:
         enriched_url: 'EnrichedUrl'
     ) -> FormattedOffer:
         """Format offer payload for Discord embed.
-        
+
         Args:
             payload: Raw webhook payload
             enriched_url: Enriched URL data
-            
+
         Returns:
             FormattedOffer with all display strings
         """
@@ -364,23 +365,23 @@ class OfferMessageFormatter:
         price_display = self._format_price(payload.get("worth", ""))
         end_date_display = self._format_end_date(payload.get("end_date"))
         platform_list = self._format_platform_list(payload.get("platforms", []))
-        
+
         description = html.unescape(payload['description'])
         instructions = html.unescape(payload['instructions'])
-        
+
         # Build claim links
         claim_browser = f"[Claim {offer_type_str} ↗️]({enriched_url.shortened})"
         claim_launcher = ""
         if enriched_url.launcher_url:
             claim_launcher = f" / [Open in {enriched_url.launcher_name} ↗️]({enriched_url.launcher_url})"
-        
+
         full_description = (
             f"{price_display}**FREE**{end_date_display}\n\n"
             f"{description}\n\n"
             f"{instructions}\n\n"
             f"{claim_browser}{claim_launcher}"
         )
-        
+
         return FormattedOffer(
             title=f"{payload['title']} ↗️",
             description=full_description,
@@ -402,7 +403,7 @@ class OfferMessageFormatter:
         """Format end date with relative timestamp."""
         if not end_date:
             return ""
-        
+
         seconds_remaining = utils.get_seconds_until(end_date)
         if seconds_remaining <= 0:
             return f"\nEnded: <t:{end_date}:R>"
@@ -412,7 +413,7 @@ class OfferMessageFormatter:
         """Format platform list as Markdown bullets."""
         if not platforms:
             return "- Unknown"
-        
+
         platform_enums = [
             FreeGamePlatforms.str_to_enum(p) for p in platforms
         ]
@@ -435,9 +436,9 @@ def test_format_with_price():
     formatter = OfferMessageFormatter()
     payload = {"worth": "$19.99", "type": "GAME", ...}
     enriched_url = EnrichedUrl(...)
-    
+
     result = formatter.format(payload, enriched_url)
-    
+
     assert "~~$19.99~~" in result.description
     assert "**FREE**" in result.description
 
@@ -501,35 +502,34 @@ class GuildResolver:
         settings_section: str
     ) -> List[ResolvedGuild]:
         """Filter guilds and resolve notification channels.
-        
+
         Args:
             guilds: All bot guilds
             game_id: Unique game identifier for deduplication
             settings_section: Settings section name (e.g., "free_games")
-            
+
         Returns:
             List of guilds with resolved channels and role IDs
         """
         resolved = []
-        
+
         for guild in guilds:
             guild_config = self._get_guild_config(guild.id, game_id, settings_section)
-            
+
             if not guild_config:
                 continue  # Guild disabled or already tracked
-            
+
             channels = await self._resolve_channels(guild_config['channel_ids'])
-            
+
             if not channels:
                 self._log_no_channels(guild.id)
                 continue
-            
+
             resolved.append(ResolvedGuild(
                 guild_id=guild.id,
                 channels=channels,
                 notify_role_ids=guild_config['notify_role_ids']
             ))
-        
         return resolved
 
     def _get_guild_config(
@@ -539,21 +539,21 @@ class GuildResolver:
         settings_section: str
     ) -> Optional[dict]:
         """Get guild config if eligible for notification.
-        
+
         Returns None if guild is ineligible.
         """
         settings = self.get_settings(guild_id, settings_section)
-        
+
         if not settings.get("enabled", False):
             return None
-        
+
         if self.freegame_db.is_game_tracked(guild_id, game_id):
             return None
-        
+
         channel_ids = settings.get("channel_ids", [])
         if not channel_ids:
             return None
-        
+
         return {
             'channel_ids': channel_ids,
             'notify_role_ids': settings.get("notify_role_ids", [])
@@ -586,18 +586,18 @@ async def test_resolve_excludes_disabled_guilds():
     resolver = GuildResolver(...)
     guild = Mock(id=123)
     resolver.get_settings = Mock(return_value={"enabled": False})
-    
+
     result = await resolver.resolve_eligible_guilds([guild], "game123", "free_games")
-    
+
     assert len(result) == 0
 
 @pytest.mark.asyncio
 async def test_resolve_excludes_already_tracked():
     resolver = GuildResolver(...)
     resolver.freegame_db.is_game_tracked = Mock(return_value=True)
-    
+
     result = await resolver.resolve_eligible_guilds([guild], "game123", "free_games")
-    
+
     assert len(result) == 0
 ```
 
@@ -612,7 +612,7 @@ async def test_resolve_excludes_already_tracked():
 ```python
 async def game(self, request: HttpRequest) -> HttpResponse:
     """Handle inbound free game webhook event.
-    
+
     Orchestrates:
     1. Request validation & authentication
     2. URL enrichment (redirects, shortening, deep links)
@@ -621,32 +621,32 @@ async def game(self, request: HttpRequest) -> HttpResponse:
     5. Discord broadcasting & tracking
     """
     _method = inspect.stack()[0][3]
-    
+
     try:
         # Phase 1: Validate & Parse
         payload = self._validate_and_parse_request(request)
         game_id = payload.get("game_id", "")
-        
+
         # Phase 2: Enrich URLs
         url = payload.get("open_giveaway_url", "")
         enriched_url = self._enrich_offer_url(url)
-        
+
         # Phase 3: Format Message
         formatted_offer = self._format_offer_message(payload, enriched_url)
-        
+
         # Phase 4: Resolve Eligible Guilds
         eligible_guilds = await self._resolve_eligible_guilds(game_id)
-        
+
         # Phase 5: Broadcast
         await self._broadcast_to_guilds(
             eligible_guilds,
             formatted_offer,
             game_id
         )
-        
+
         # Return success
         return self._success_response(payload)
-        
+
     except HttpResponseException as e:
         return HttpResponse(e.status_code, e.headers, e.body)
     except Exception as e:
@@ -657,20 +657,21 @@ def _validate_and_parse_request(self, request: HttpRequest) -> dict:
     """Validate authentication and parse JSON payload."""
     if not self.validate_webhook_token(request):
         raise HttpResponseException(401, self._json_headers(), b'{"error": "Invalid webhook token"}')
-    
+
     if not request.body:
         raise HttpResponseException(400, None, b'{"error": "No payload found in the request"}')
-    
+
     payload = json.loads(request.body)
-    self.log.debug(0, f"{self._module}.{self._class}._validate_and_parse_request", 
-                   f"{json.dumps(payload, indent=4)}")
+    self.log.debug(
+      0, f"{self._module}.{self._class}._validate_and_parse_request", f"{json.dumps(payload, indent=4)}"
+    )
     return payload
 
 def _enrich_offer_url(self, url: str) -> EnrichedUrl:
     """Enrich URL with redirects, shortening, and launcher links."""
     if not url:
         return EnrichedUrl(original="", resolved="", shortened="", launcher_name="", launcher_url="")
-    
+
     try:
         enricher = OfferUrlEnricher(self.url_shortener)
         return enricher.enrich(url)
@@ -703,7 +704,7 @@ async def _broadcast_to_guilds(
     """Send formatted offer to all eligible guild channels."""
     for guild_config in eligible_guilds:
         notify_message = self._build_notify_message(guild_config.notify_role_ids)
-        
+
         for channel in guild_config.channels:
             await self._send_offer_to_channel(
                 channel,
@@ -726,7 +727,7 @@ async def _send_offer_to_channel(
         formatted_offer.button_label,
         formatted_offer.button_url
     )
-    
+
     message = await self.messaging.send_embed(
         channel=channel,
         title=formatted_offer.title,
@@ -738,7 +739,7 @@ async def _send_offer_to_channel(
         view=link_button,
         delete_after=None
     )
-    
+
     self.tracking_db.track_free_game_key(
         guildId=guild_id,
         channelId=channel.id,
@@ -837,14 +838,14 @@ async def test_game_success_flow():
     """End-to-end success path."""
     handler = FreeGameWebhookHandler(mock_bot, mock_discord_helper)
     request = create_mock_request(valid_payload)
-    
+
     # Mock guild resolution
     handler._resolve_eligible_guilds = AsyncMock(return_value=[
         ResolvedGuild(guild_id=123, channels=[mock_channel], notify_role_ids=[456])
     ])
-    
+
     response = await handler.game(request)
-    
+
     assert response.status_code == 200
     handler.messaging.send_embed.assert_called_once()
     handler.tracking_db.track_free_game_key.assert_called_once()
@@ -854,9 +855,9 @@ async def test_game_skips_disabled_guilds():
     """Verify disabled guilds are filtered out."""
     handler = FreeGameWebhookHandler(mock_bot, mock_discord_helper)
     handler.get_settings = Mock(return_value={"enabled": False})
-    
+
     eligible = await handler._resolve_eligible_guilds("game123")
-    
+
     assert len(eligible) == 0
 ```
 
@@ -865,6 +866,7 @@ async def test_game_skips_disabled_guilds():
 ## Migration Plan
 
 ### Phase 1: Foundation (Week 1)
+
 - ✅ Create helper directory structure
 - ✅ Implement `LauncherStrategies` with tests
 - ✅ Implement `OfferUrlEnricher` with tests
@@ -872,17 +874,20 @@ async def test_game_skips_disabled_guilds():
 - ✅ Verify 100% coverage on pure functions
 
 ### Phase 2: Async Components (Week 2)
+
 - ✅ Implement `GuildResolver` with tests
 - ✅ Update `BaseWebhookHandler` if shared patterns emerge
 - ✅ Create shared test fixtures in `utilities/`
 
 ### Phase 3: Integration (Week 3)
+
 - ✅ Refactor `game()` method to use new components
 - ✅ Update integration tests
 - ✅ Run full test suite with coverage report
 - ✅ Performance benchmarking (ensure <10ms overhead)
 
 ### Phase 4: Validation (Week 4)
+
 - ✅ Manual testing in staging environment
 - ✅ Review OpenAPI spec sync
 - ✅ Update documentation
@@ -893,6 +898,7 @@ async def test_game_skips_disabled_guilds():
 ## Backward Compatibility Guarantees
 
 ### External API Contract
+
 - ✅ HTTP endpoint path unchanged: `/webhook/game`
 - ✅ Request/response schemas unchanged
 - ✅ Authentication mechanism unchanged
@@ -900,12 +906,14 @@ async def test_game_skips_disabled_guilds():
 - ✅ OpenAPI spec remains accurate
 
 ### Discord Output
+
 - ✅ Embed appearance identical (fields, formatting, colors)
 - ✅ Button labels and URLs unchanged
 - ✅ Role mention behavior unchanged
 - ✅ Tracking database writes unchanged
 
 ### Configuration
+
 - ✅ Settings section names unchanged
 - ✅ Guild settings schema unchanged
 - ✅ Environment variables unchanged
@@ -947,10 +955,10 @@ async def test_game_skips_disabled_guilds():
 
 class GOGLauncher(LauncherStrategy):
     name = "GOG Galaxy"
-    
+
     def matches(self, url: str) -> bool:
         return "gog.com" in url
-    
+
     def build_deep_link(self, url: str) -> str:
         game_id = self._extract_game_id(url)
         return f"goggalaxy://openGameView/{game_id}"
@@ -976,10 +984,10 @@ def enrich(self, url: str) -> EnrichedUrl:
     resolved = self._resolve_redirect_chain(url)
     shortened = self._shorten_url(resolved)
     launcher_name, launcher_url = self._build_launcher_deep_link(resolved)
-    
+
     # NEW: Scrape metadata
     metadata = self._scrape_metadata(resolved)
-    
+
     return EnrichedUrl(
         original=url,
         resolved=resolved,
@@ -1026,36 +1034,44 @@ await email_notifier.notify_subscribers(eligible_guilds, formatted_offer)
 ## Risks and Mitigations
 
 ### Risk 1: Regression Bugs
+
 **Likelihood:** Medium  
 **Impact:** High (broken notifications affect users)  
 **Mitigation:**
+
 - Comprehensive integration tests covering all existing paths
 - Manual testing in staging with real webhook payloads
 - Canary deployment (10% traffic for 24h before full rollout)
 - Feature flag to revert to old implementation
 
 ### Risk 2: Performance Degradation
+
 **Likelihood:** Low  
 **Impact:** Medium (slower response times)  
 **Mitigation:**
+
 - Benchmark before/after with realistic payloads
 - Profile with cProfile to identify bottlenecks
 - Load test with 100 concurrent webhook requests
 - Set performance SLA: <10ms overhead, <5% latency increase
 
 ### Risk 3: Incomplete Testing
+
 **Likelihood:** Medium  
 **Impact:** Medium (bugs slip through)  
 **Mitigation:**
+
 - Require 90% coverage on all new components
 - Mutation testing to verify test quality
 - Code review checklist for edge cases
 - Integration test with mocked Discord API
 
 ### Risk 4: Increased Complexity
+
 **Likelihood:** Low  
 **Impact:** Low (harder to understand)  
 **Mitigation:**
+
 - Comprehensive docstrings on all new classes
 - Architecture diagram in docs
 - Update `copilot-instructions.md` with new patterns
@@ -1066,6 +1082,7 @@ await email_notifier.notify_subscribers(eligible_guilds, formatted_offer)
 ## Success Criteria
 
 ### Must Have (Required for Merge)
+
 - ✅ All existing tests pass
 - ✅ New pure function tests achieve 100% coverage
 - ✅ Integration tests achieve 90%+ coverage
@@ -1074,6 +1091,7 @@ await email_notifier.notify_subscribers(eligible_guilds, formatted_offer)
 - ✅ Performance overhead <10ms
 
 ### Should Have (Highly Desirable)
+
 - ✅ Total handler coverage increases from ~30% to ~90%
 - ✅ Cyclomatic complexity <5 per method
 - ✅ Documentation updated in `docs/http/`
@@ -1081,6 +1099,7 @@ await email_notifier.notify_subscribers(eligible_guilds, formatted_offer)
 - ✅ Zero linter warnings
 
 ### Nice to Have (Future Enhancements)
+
 - ⏳ Parallel URL enrichment for multiple offers
 - ⏳ LRU caching in `GuildResolver`
 - ⏳ Metrics for enrichment success rates
@@ -1105,6 +1124,7 @@ Once this refactor is complete, the following become **significantly easier**:
 ## Appendix A: Full File Checklist
 
 ### Files to Create
+
 - [ ] `bot/lib/http/handlers/webhook/helpers/__init__.py`
 - [ ] `bot/lib/http/handlers/webhook/helpers/LauncherStrategies.py`
 - [ ] `bot/lib/http/handlers/webhook/helpers/OfferUrlEnricher.py`
@@ -1117,12 +1137,14 @@ Once this refactor is complete, the following become **significantly easier**:
 - [ ] `tests/utilities/free_game_fixtures.py`
 
 ### Files to Modify
+
 - [ ] `bot/lib/http/handlers/webhook/FreeGameWebhookHandler.py`
 - [ ] `tests/test_free_game_webhook_handler.py` (if exists, else create)
 - [ ] `docs/http/webhook_handlers.md` (if exists)
 - [ ] `.github/copilot-instructions.md` (add new patterns)
 
 ### Files to Review
+
 - [ ] `.swagger.v1.yaml` (ensure sync after OpenAPI decorator changes)
 - [ ] `bot/lib/http/handlers/BaseWebhookHandler.py` (check for reusable patterns)
 
@@ -1173,6 +1195,7 @@ None. External API contract and Discord output unchanged.
 **Reviewer:** Please verify the following before approving:
 
 ### Functionality
+
 - [ ] Webhook authentication still validated correctly
 - [ ] URL enrichment handles all existing platforms (Microsoft/Steam/Epic)
 - [ ] Message formatting produces identical Discord embeds
@@ -1181,6 +1204,7 @@ None. External API contract and Discord output unchanged.
 - [ ] Error responses match original format (JSON with `error` field)
 
 ### Code Quality
+
 - [ ] All new classes have comprehensive docstrings
 - [ ] Pure functions have no side effects
 - [ ] Async functions properly awaited
@@ -1189,6 +1213,7 @@ None. External API contract and Discord output unchanged.
 - [ ] Type hints on all function signatures
 
 ### Testing
+
 - [ ] Pure functions have 100% line coverage
 - [ ] Edge cases tested (empty URLs, invalid platforms, missing fields)
 - [ ] Async functions tested with proper mocks
@@ -1197,12 +1222,14 @@ None. External API contract and Discord output unchanged.
 - [ ] Performance tests show acceptable overhead
 
 ### Documentation
+
 - [ ] OpenAPI decorators accurate and complete
 - [ ] Docstrings follow Google style guide
 - [ ] Architecture changes documented in `docs/`
 - [ ] Copilot instructions updated with new patterns
 
 ### Performance
+
 - [ ] No unnecessary network calls added
 - [ ] Database queries unchanged
 - [ ] Benchmark shows <10ms overhead

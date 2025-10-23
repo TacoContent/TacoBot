@@ -31,10 +31,11 @@ indent_size = 4
 trim_trailing_whitespace = false
 insert_final_newline = true
 
-[tacobot.egg-info/*, tests/*]
+[{tacobot.egg-info/**,tests/**}]
 insert_final_newline = unset
 trim_trailing_whitespace = unset
-end_of_line = unset
+tab_width = unset
 charset = unset
+end_of_line = unset
 indent_style = unset
 indent_size = unset

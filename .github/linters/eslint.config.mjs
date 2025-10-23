@@ -26,7 +26,8 @@ export default defineConfig([
       "**/node_modules/.*",
       "**/sample.devcontainer.json",
       "**/devcontainer.json",
-      "**/.vscode/tasks.json"
+      "**/.vscode/tasks.json",
+      "**/tests/**",
     ]
   ),
   {

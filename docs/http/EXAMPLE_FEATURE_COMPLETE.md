@@ -18,6 +18,7 @@ Successfully implemented comprehensive OpenAPI 3.0 example support for TacoBot's
 **Location**: `bot/lib/models/openapi/endpoints.py`
 
 **Capabilities**:
+
 - ✅ **Three example sources** (mutually exclusive):
   - `value`: Inline examples (dict, list, string, int, float, bool, None)
   - `externalValue`: External URL references
@@ -43,6 +44,7 @@ Successfully implemented comprehensive OpenAPI 3.0 example support for TacoBot's
   - Type-safe arguments with optional keyword flexibility
 
 **Usage Example**:
+
 ```python
 @openapi.example(
     name="success_response",
@@ -72,6 +74,7 @@ def get_guild_roles(self, request, uri_variables):
 **Components Modified**:
 
 #### `decorator_parser.py` - Enhanced Example Extraction
+
 - Updated `_extract_example()` to parse all new fields
 - Added support for placement types, example sources, filters
 - Component reference auto-formatting logic
@@ -79,6 +82,7 @@ def get_guild_roles(self, request, uri_variables):
 - Custom extension field extraction (`x-*`)
 
 **Extraction Output**:
+
 ```python
 {
     'name': 'success_response',
@@ -90,6 +94,7 @@ def get_guild_roles(self, request, uri_variables):
 ```
 
 #### `merge_utils.py` - Example Placement Logic
+
 - **New function**: `merge_examples_into_spec()` - Main distribution logic
 - **New function**: `_merge_parameter_example()` - Place in `parameters[].examples`
 - **New function**: `_merge_request_body_example()` - Place in `requestBody.content[contentType].examples`
@@ -97,7 +102,8 @@ def get_guild_roles(self, request, uri_variables):
 - Integrated with `merge_endpoint_metadata()` for automatic processing
 
 **Placement Logic**:
-```
+
+```text
 parameter → parameters[name].examples[exampleName]
 requestBody → requestBody.content[contentType].examples[exampleName]
 response → responses[statusCode].content[contentType].examples[exampleName]
@@ -105,6 +111,7 @@ schema → x-schema-examples (for future implementation)
 ```
 
 **OpenAPI Spec Structure**:
+
 ```yaml
 paths:
   /api/v1/permissions/{guildId}/{userId}:
@@ -134,9 +141,10 @@ paths:
 
 **Test Coverage**: 68 total tests across 4 test files
 
-#### Test Files Created:
+#### Test Files Created
 
 **`tests/test_openapi_example_decorator.py`** (21 tests)
+
 - Decorator behavior validation
 - All example sources (value, externalValue, ref)
 - All placement types
@@ -146,6 +154,7 @@ paths:
 - Custom extension fields
 
 **`tests/test_swagger_sync_examples.py`** (13 tests)
+
 - AST extraction from decorator calls
 - All field extraction (name, placement, value, metadata)
 - Component reference auto-formatting
@@ -153,6 +162,7 @@ paths:
 - Custom field extraction
 
 **`tests/test_swagger_merge_examples.py`** (23 tests)
+
 - Parameter example placement
 - Request body example placement
 - Response example placement (multiple status codes)
@@ -163,6 +173,7 @@ paths:
 - Full endpoint metadata merge with examples
 
 **`tests/test_swagger_integration_examples.py`** (11 tests)
+
 - End-to-end pipeline: Decorator → AST → Extraction → Merge → Spec
 - Real handler code samples
 - Component references
@@ -180,6 +191,7 @@ paths:
 **Created**: `docs/http/openapi_examples.md` (800+ lines)
 
 **Sections**:
+
 1. Overview and quick start
 2. Example sources (value/externalValue/ref)
 3. Placement types with code examples
@@ -199,11 +211,13 @@ paths:
 Applied examples to `GET /api/v1/permissions/{guildId}/{userId}` endpoint:
 
 **Examples Added**:
+
 - ✅ 2 parameter examples (guildId, userId)
 - ✅ 3 response examples for 200 status (admin, single permission, no permissions)
 - ✅ 1 error example for 401 status
 
 **Swagger Sync Result**:
+
 ```bash
 python scripts/swagger_sync.py --fix
 # Output: Swagger updated (endpoint operations).
@@ -211,6 +225,7 @@ python scripts/swagger_sync.py --fix
 ```
 
 **Verified in `.swagger.v1.yaml`**:
+
 - ✅ Parameter examples in correct location (`parameters[].examples`)
 - ✅ Response examples in correct location (`responses[statusCode].content[contentType].examples`)
 - ✅ All examples include `value` and `summary` fields
@@ -237,6 +252,7 @@ python scripts/swagger_sync.py --fix
 **Problem**: Distinguishing `value=None` (explicit null) from "value not provided"
 
 **Solution**:
+
 ```python
 _NOT_PROVIDED = object()  # Unique sentinel
 
@@ -274,6 +290,7 @@ placement: Literal['parameter', 'requestBody', 'response', 'schema']
 ## 📈 OpenAPI Spec Impact
 
 **Before**:
+
 ```yaml
 responses:
   '200':
@@ -285,6 +302,7 @@ responses:
 ```
 
 **After**:
+
 ```yaml
 responses:
   '200':
@@ -306,6 +324,7 @@ responses:
 ```
 
 **Benefits**:
+
 - 🎯 Better API documentation
 - 📖 Interactive Swagger UI examples
 - 🧪 Realistic test data for consumers
@@ -390,11 +409,13 @@ def get_all_items(self, request, uri_variables):
 ## 🔄 Workflow
 
 1. **Write decorator**:
+
    ```python
    @openapi.example(name="example1", value={...}, placement="response", status_code=200)
    ```
 
 2. **Run swagger sync**:
+
    ```bash
    python scripts/swagger_sync.py --check  # Verify drift
    python scripts/swagger_sync.py --fix    # Apply changes
@@ -413,6 +434,7 @@ def get_all_items(self, request, uri_variables):
 ## 🎯 Benefits
 
 ### For Developers
+
 - ✅ Type-safe example definitions
 - ✅ IDE autocomplete support
 - ✅ Refactoring tools work
@@ -420,12 +442,14 @@ def get_all_items(self, request, uri_variables):
 - ✅ DRY - no duplication with schema definitions
 
 ### For API Consumers
+
 - ✅ Realistic examples in documentation
 - ✅ Interactive Swagger UI testing
 - ✅ Clear expected formats
 - ✅ Multiple examples per endpoint (success, error, edge cases)
 
 ### For Documentation
+
 - ✅ Auto-generated from code
 - ✅ Always in sync
 - ✅ Version controlled
@@ -436,6 +460,7 @@ def get_all_items(self, request, uri_variables):
 ## 🚧 Future Enhancements
 
 ### Phase 2 (Potential):
+
 1. **Schema-level examples**: Implement placement in `components/schemas[schemaName].examples`
 2. **Property-level examples**: Support examples on individual schema properties
 3. **Example validation**: Validate example values against schemas
@@ -484,6 +509,6 @@ def get_all_items(self, request, uri_variables):
 
 ---
 
-*Generated: October 21, 2025*  
-*Feature: @openapi.example decorator with full OpenAPI 3.0 support*  
+*Generated: October 21, 2025*
+*Feature: @openapi.example decorator with full OpenAPI 3.0 support*
 *Project: TacoBot Discord Bot - HTTP API*

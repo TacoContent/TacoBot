@@ -6,7 +6,8 @@
   "NoColor": false,
   "exclude": [
     ".git",
-    ".vscode"
+    ".vscode",
+    "tests/**"
   ],
   "AllowedContentTypes": [],
   "PassedFiles": [],

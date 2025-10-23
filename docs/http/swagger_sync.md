@@ -23,23 +23,23 @@ The `scripts/swagger_sync.py` script provides a one‑way synchronization from c
 
 ## How It Works (Overview)
 
-1. Scans Python handler files in `bot/lib/http/handlers/api/v1/`.
-2. Finds functions decorated with `@uri_variable_mapping(path, method=...)`.
-3. Extracts a structured OpenAPI YAML fragment from a delimited block inside the function docstring:
+- Scans Python handler files in `bot/lib/http/handlers/api/v1/`.
+- Finds functions decorated with `@uri_variable_mapping(path, method=...)`.
+- Extracts a structured OpenAPI YAML fragment from a delimited block inside the function docstring:
 
-   ```yaml
-   >>>openapi
-   summary: List guild mentionables (roles + members)
-   tags: [guilds, mentionables]
-   responses:
-     200:
-       description: OK
+  ```yaml
+  >>>openapi
+  summary: List guild mentionables (roles + members)
+  tags: [guilds, mentionables]
+  responses:
+    200:
+      description: OK
    <<<openapi
    ```
 
-4. Builds/updates the operation object for that `path + method` (lowercased method) in memory.
-5. Compares it with the existing entry in `.swagger.v1.yaml` under `paths:`.
-6. Reports drift (different or missing operation) or updates the file in write mode.
+- Builds/updates the operation object for that `path + method` (lowercased method) in memory.
+- Compares it with the existing entry in `.swagger.v1.yaml` under `paths:`.
+- Reports drift (different or missing operation) or updates the file in write mode.
 
 ---
 
@@ -482,7 +482,6 @@ Notes:
 - In check mode (`--check`), component schema drift still surfaces as warnings with unified diffs; only `--fix` persists them.
 - CI logs can assert on these exact strings if you want to enforce that schema adjustments were applied during a given run.
 
-
 ### 5.3 Coverage Report (JSON + Threshold)
 
 ```bash
@@ -519,6 +518,7 @@ python scripts/swagger_sync.py --check --markdown-summary=openapi_summary.md
 ```
 
 The markdown summary includes:
+
 - 📊 **Coverage Summary**: Basic handler/swagger metrics
 - 🤖 **Automation Coverage**: Technical debt analysis (orphaned components/endpoints)
 - ✨ **Documentation Quality**: Summary, descriptions, parameters, examples
@@ -531,9 +531,10 @@ The markdown summary includes:
 
 > **Note**: The `markdown` format was removed from `--coverage-format` choices.
 > All markdown coverage content is now included in the `--markdown-summary` output.
-
+>
 > **Auto Extensions**: When using `--coverage-report`, if you don't provide a file extension,
 > the appropriate extension is added automatically based on `--coverage-format`:
+>
 > - `json` → `.json`
 > - `text` → `.txt`
 > - `cobertura` or `xml` → `.xml`
@@ -547,6 +548,7 @@ python scripts/swagger_sync.py --check --generate-badge=docs/badges/openapi-cove
 ```
 
 Generates an SVG badge showing OpenAPI documentation coverage percentage. The badge uses color coding:
+
 - 🔴 Red (`#e05d44`): coverage < 50%
 - 🟡 Yellow (`#dfb317`): 50% ≤ coverage < 80%
 - 🟢 Green (`#4c1`): coverage ≥ 80%
@@ -560,6 +562,7 @@ The badge can be embedded in README.md or other documentation:
 **Example Output**: `OpenAPI Coverage: 100.0%` with green background.
 
 **Typical Workflow**:
+
 ```bash
 # Generate badge during CI or pre-commit
 python scripts/swagger_sync.py --check --generate-badge=docs/badges/openapi-coverage.svg
@@ -570,6 +573,7 @@ git commit -m "docs: update OpenAPI coverage badge"
 ```
 
 **Notes**:
+
 - Badge generation does not require external dependencies; uses custom SVG template
 - Badge is created even if drift is detected (based on current coverage state)
 - Directory creation is automatic; `docs/badges/` will be created if it doesn't exist

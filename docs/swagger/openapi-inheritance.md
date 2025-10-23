@@ -250,18 +250,18 @@ def _extract_openapi_base_classes(class_node: ast.ClassDef, typevars: set[str]) 
 
 When a class has OpenAPI-decorated base classes:
 
-1. **Check for bases**: Extract non-filtered base class names
-2. **Create allOf structure**: If bases exist, generate:
+- **Check for bases**: Extract non-filtered base class names
+- **Create allOf structure**: If bases exist, generate:
 
-   ```yaml
-   allOf:
-     - $ref: '#/components/schemas/BaseClassName'
-     - type: object
-       properties: { ... subclass properties ... }
-       required: [ ... ]
-   ```
+  ```yaml
+  allOf:
+    - $ref: '#/components/schemas/BaseClassName'
+    - type: object
+      properties: { ... subclass properties ... }
+      required: [ ... ]
+  ```
 
-3. **Add metadata**: Preserve `description`, `x-tacobot-managed`, etc. at the top level
+- **Add metadata**: Preserve `description`, `x-tacobot-managed`, etc. at the top level
 
 ### TypeVar Handling
 
