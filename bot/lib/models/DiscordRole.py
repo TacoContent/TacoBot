@@ -34,6 +34,23 @@ from discord import Role
 from bot.lib.models.openapi import openapi
 
 @openapi.component("DiscordRole", description="Represents a Discord role with normalized primitive fields.")
+@openapi.property("id", description="The unique identifier for the role")
+@openapi.property("guild_id", description="The unique identifier for the guild this role belongs to")
+@openapi.property("color", description="The color of the role as an integer value")
+@openapi.property("created_at", description="The timestamp when the role was created")
+@openapi.property("display_icon", description="The URL of the role's display icon")
+@openapi.property("flags", description="The flags associated with the role")
+@openapi.property("hoist", description="Whether the role is hoisted")
+@openapi.property("icon", description="The URL of the role's icon")
+@openapi.property("managed", description="Whether the role is managed by an integration")
+@openapi.property("mention", description="The mention string for the role")
+@openapi.property("mentionable", description="Whether the role is mentionable")
+@openapi.property("name", description="The name of the role")
+@openapi.property("permissions", description="The permissions of the role as an integer value")
+@openapi.property("position", description="The position of the role in the guild's role list")
+@openapi.property("secondary_color", description="The secondary color of the role as an integer value")
+@openapi.property("tertiary_color", description="The tertiary color of the role as an integer value")
+@openapi.property("unicode_emoji", description="The unicode emoji associated with the role, if any")
 @openapi.managed()
 class DiscordRole:
     """Represents a Discord role with normalized primitive fields.

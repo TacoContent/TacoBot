@@ -2,6 +2,17 @@ import typing
 from bot.lib.models.openapi import openapi
 
 @openapi.component("DiscordChannel", description="Discord channel information")
+@openapi.property("id", description="The unique identifier for the channel")
+@openapi.property("name", description="The name of the channel")
+@openapi.property("type", description="The type of the channel (e.g., text, voice)")
+@openapi.property("guild_id", description="The unique identifier for the guild this channel belongs to")
+@openapi.property("position", description="The position of the channel in the guild's channel list")
+@openapi.property("topic", description="The topic of the channel, if applicable")
+@openapi.property("nsfw", description="Whether the channel is marked as NSFW")
+@openapi.property("bitrate", description="The bitrate of the channel, if applicable")
+@openapi.property("user_limit", description="The user limit of the channel, if applicable")
+@openapi.property("created_at", description="The timestamp when the channel was created")
+@openapi.property("category_id", description="The ID of the parent category, if any")
 @openapi.managed()
 class DiscordChannel:
     """Represents a Discord channel snapshot.

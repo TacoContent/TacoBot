@@ -34,6 +34,25 @@ from discord import Member, User
 
 
 @openapi.component("DiscordUser", description="Discord user information")
+@openapi.property("id", description="The unique identifier for the user")
+@openapi.property("guild_id", description="The unique identifier for the guild this member belongs to")
+@openapi.property("accent_color", description="The accent color of the user as an integer value")
+@openapi.property("avatar", description="The URL of the user's avatar")
+@openapi.property("banner", description="The URL of the user's banner")
+@openapi.property("bot", description="Whether the user is a bot")
+@openapi.property("color", description="The color of the user as an integer value")
+@openapi.property("created_at", description="The timestamp when the user was created")
+@openapi.property("default_avatar", description="The URL of the user's default avatar")
+@openapi.property("discriminator", description="The discriminator of the user as a string")
+@openapi.property("display_avatar", description="The URL of the user's display avatar")
+@openapi.property("display_name", description="The display name of the user")
+@openapi.property("global_name", description="The global name of the user")
+@openapi.property("mention", description="The mention string for the user")
+@openapi.property("name", description="The name of the user")
+@openapi.property("status", description="The status of the user")
+@openapi.property("system", description="Whether the user is a system user")
+@openapi.property("timestamp", description="The timestamp associated with the user")
+@openapi.property("username", description="The username of the user")
 @openapi.managed()
 class DiscordUser:
     """Represents a Discord user or member with normalized primitives.

@@ -4,6 +4,14 @@ import typing
 from bot.lib.models.openapi import openapi
 
 @openapi.component("ShiftCodePayload", description="Payload for the SHiFT Code.")
+@openapi.property("games", description="List of games associated with the SHiFT code.")
+@openapi.property("code", description="The SHiFT code string.")
+@openapi.property("platforms", description="List of platforms the SHiFT code is valid for.")
+@openapi.property("expiry", description="The expiry timestamp of the SHiFT code, if any.")
+@openapi.property("reward", description="Description of the reward associated with the SHiFT code.")
+@openapi.property("notes", description="Additional notes about the SHiFT code.")
+@openapi.property("source", description="Source from where the SHiFT code was obtained.")
+@openapi.property("created_at", description="Timestamp when the SHiFT code was created.")
 @openapi.managed()
 class ShiftCodePayload:
     def __init__(self, payload: dict):
@@ -38,6 +46,8 @@ class ShiftCodePayload:
 
 
 @openapi.component("ShiftCodeGame", description="Represents a supported game for SHiFT codes.")
+@openapi.property("id", description="The unique identifier for the game.")
+@openapi.property("name", description="The name of the game.")
 @openapi.managed()
 class ShiftCodeGame:
     def __init__(self, game: dict):

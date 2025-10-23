@@ -26,6 +26,7 @@ class PagedResults(Generic[T]):
         return self.__dict__
 
 @openapi.component("PagedResultsJoinWhitelistUser", description="Generic paginated results container.")
+@openapi.property("items", description="Page slice of JoinWhitelistUser items")
 @openapi.managed()
 class PagedResultsJoinWhitelistUser(PagedResults):
     def __init__(self, data: dict):

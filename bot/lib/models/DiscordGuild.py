@@ -33,6 +33,20 @@ import typing
 from bot.lib.models.openapi import openapi
 
 @openapi.component("DiscordGuild", description="Discord guild (server) information")
+@openapi.property("id", description="The unique identifier for the guild")
+@openapi.property("name", description="The name of the guild")
+@openapi.property("member_count", description="The number of members in the guild")
+@openapi.property("icon", description="The CDN URL for the guild icon")
+@openapi.property("banner", description="The CDN URL for the guild banner")
+@openapi.property("owner_id", description="The unique identifier for the guild owner")
+@openapi.property("features", description="List of features enabled for the guild")
+@openapi.property("description", description="The description of the guild")
+@openapi.property("vanity_url", description="The vanity URL of the guild")
+@openapi.property("vanity_url_code", description="The vanity URL code of the guild")
+@openapi.property("preferred_locale", description="The preferred locale of the guild")
+@openapi.property("verification_level", description="The verification level of the guild")
+@openapi.property("boost_level", description="The boost level of the guild")
+@openapi.property("boost_count", description="The number of boosts the guild has")
 @openapi.managed()
 class DiscordGuild:
     """Represents a Discord guild snapshot.

@@ -14,25 +14,7 @@ from bot.lib.models.openapi import openapi
 @openapi.property("category_id", description="The ID of the parent category, if any")
 @openapi.property("channels", description="List of channels under this category")
 class DiscordCategory:
-    """Model for a Discord Category.
-
-    >>>openapi
-    properties:
-      id:
-        description: The unique identifier for the category
-      type:
-        description: The type of the channel, always 'category' for categories
-      guild_id:
-        description: The unique identifier for the guild this category belongs to
-      name:
-        description: The name of the category
-      position:
-        description: The position of the category in the guild's channel list
-      category_id:
-        description: The ID of the parent category, if any
-      channels:
-        description: List of channels under this category
-    <<<openapi"""
+    """Model for a Discord Category."""
     def __init__(self, data: dict):
         self.id: str = data.get("id", "")
         self.type: typing.Literal['category'] = 'category'

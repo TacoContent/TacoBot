@@ -39,6 +39,29 @@ def _extract_constant(node: ast.AST) -> Any:
         operand = getattr(node, 'operand', None)
         if isinstance(operand, ast.Constant) and isinstance(operand.value, (int, float)):
             return -operand.value
+    # Handle dictionary literals
+    if isinstance(node, ast.Dict):
+        result = {}
+        for key_node, value_node in zip(node.keys, node.values):
+            if key_node is None or value_node is None:
+                return MISSING
+            key = _extract_constant(key_node)
+            if key is MISSING or not isinstance(key, str):
+                return MISSING
+            value = _extract_constant(value_node)
+            if value is MISSING:
+                return MISSING
+            result[key] = value
+        return result
+    # Handle list literals
+    if isinstance(node, (ast.List, ast.Tuple)):
+        result = []
+        for elt in node.elts:
+            value = _extract_constant(elt)
+            if value is MISSING:
+                return MISSING
+            result.append(value)
+        return result if isinstance(node, ast.List) else tuple(result)
     return MISSING
 
 

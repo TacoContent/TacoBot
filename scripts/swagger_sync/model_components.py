@@ -216,6 +216,7 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                         continue  # Try next block if present
             decorator_extensions: Dict[str, Any] = {}
             property_decorators: Dict[str, Dict[str, Any]] = {}  # Track @openapi.property decorators
+            examples: List[Dict[str, Any]] = []  # Track @openapi.example decorators
             for deco in cls.decorator_list:
                 deco_call: Optional[ast.Call] = deco if isinstance(deco, ast.Call) else None
                 deco_name = None
@@ -331,6 +332,51 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                     if alias_value is MISSING:
                         alias_value = True
                     decorator_extensions[sanitized] = alias_value
+                elif deco_name == 'example':
+                    # Handle @openapi.example decorator for component schemas
+                    if not deco_call:
+                        continue
+
+                    example_def: Dict[str, Any] = {}
+
+                    # Extract positional arguments (name)
+                    if deco_call.args:
+                        name = _extract_constant(deco_call.args[0])
+                        if isinstance(name, str):
+                            example_def['name'] = name
+
+                    # Extract keyword arguments
+                    for kw in deco_call.keywords or []:
+                        if kw.arg == 'name':
+                            name = _extract_constant(kw.value)
+                            if isinstance(name, str):
+                                example_def['name'] = name
+                        elif kw.arg == 'value':
+                            value = _extract_constant(kw.value)
+                            # Only add if not MISSING sentinel
+                            if value is not MISSING:
+                                example_def['value'] = value
+                        elif kw.arg == 'externalValue':
+                            external_value = _extract_constant(kw.value)
+                            if isinstance(external_value, str) and external_value is not MISSING:
+                                example_def['externalValue'] = external_value
+                        elif kw.arg == 'summary':
+                            summary = _extract_constant(kw.value)
+                            if isinstance(summary, str) and summary is not MISSING:
+                                example_def['summary'] = summary
+                        elif kw.arg == 'description':
+                            desc = _extract_constant(kw.value)
+                            if isinstance(desc, str) and desc is not MISSING:
+                                example_def['description'] = desc
+                        elif kw.arg == 'placement':
+                            # Verify it's a schema placement (only valid for component decorators)
+                            placement = _extract_constant(kw.value)
+                            if placement == 'schema' and placement is not MISSING:
+                                example_def['placement'] = placement
+
+                    # Only add if we have at least a name and some content
+                    if 'name' in example_def and ('value' in example_def or 'externalValue' in example_def):
+                        examples.append(example_def)
             if not comp_name:
                 continue
 
@@ -587,6 +633,22 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                     comp_schema['properties'] = props
                     if required:
                         comp_schema['required'] = sorted(required)
+
+                # Add examples if present
+                if examples:
+                    examples_dict = {}
+                    for ex in examples:
+                        example_obj = {}
+                        if 'value' in ex:
+                            example_obj['value'] = ex['value']
+                        if 'externalValue' in ex:
+                            example_obj['externalValue'] = ex['externalValue']
+                        if 'summary' in ex:
+                            example_obj['summary'] = ex['summary']
+                        if 'description' in ex:
+                            example_obj['description'] = ex['description']
+                        examples_dict[ex['name']] = example_obj
+                    comp_schema['examples'] = examples_dict
             else:
                 # Check for base classes to determine if we should use allOf
                 openapi_base_classes = _extract_openapi_base_classes(cls, module_typevars)
@@ -616,6 +678,22 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                         comp_schema['description'] = description
                     if decorator_extensions:
                         comp_schema.update(decorator_extensions)
+
+                    # Add examples if present
+                    if examples:
+                        examples_dict = {}
+                        for ex in examples:
+                            example_obj = {}
+                            if 'value' in ex:
+                                example_obj['value'] = ex['value']
+                            if 'externalValue' in ex:
+                                example_obj['externalValue'] = ex['externalValue']
+                            if 'summary' in ex:
+                                example_obj['summary'] = ex['summary']
+                            if 'description' in ex:
+                                example_obj['description'] = ex['description']
+                            examples_dict[ex['name']] = example_obj
+                        comp_schema['examples'] = examples_dict
                 else:
                     # No inheritance - use standard object schema
                     comp_schema: Dict[str, Any] = {'type': 'object', 'properties': props}
@@ -625,6 +703,22 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                         comp_schema['description'] = description
                     if decorator_extensions:
                         comp_schema.update(decorator_extensions)
+
+                    # Add examples if present
+                    if examples:
+                        examples_dict = {}
+                        for ex in examples:
+                            example_obj = {}
+                            if 'value' in ex:
+                                example_obj['value'] = ex['value']
+                            if 'externalValue' in ex:
+                                example_obj['externalValue'] = ex['externalValue']
+                            if 'summary' in ex:
+                                example_obj['summary'] = ex['summary']
+                            if 'description' in ex:
+                                example_obj['description'] = ex['description']
+                            examples_dict[ex['name']] = example_obj
+                        comp_schema['examples'] = examples_dict
 
             components[comp_name] = comp_schema
     for alias_meta in TYPE_ALIAS_METADATA.values():

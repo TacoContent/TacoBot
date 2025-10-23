@@ -4,6 +4,7 @@ import typing
 from lib.models.openapi import openapi
 
 @openapi.component("GuildItemIdBatchRequestBody", description="Request body for batch fetching guild item by IDs")
+@openapi.property("ids", description="List of guild item IDs to fetch")
 @openapi.managed()
 class GuildItemIdBatchRequestBody:
     def __init__(self, data: typing.Dict[str, typing.Any]):
@@ -19,6 +20,7 @@ class GuildItemIdBatchRequestBody:
         return {"ids": self.ids}
 
 @openapi.component("GuildItemNameBatchRequestBody", description="Request body for batch fetching guild item by names")
+@openapi.property("names", description="List of guild item names to fetch")
 @openapi.managed()
 class GuildItemNameBatchRequestBody:
     def __init__(self, data: typing.Dict[str, typing.Any]):

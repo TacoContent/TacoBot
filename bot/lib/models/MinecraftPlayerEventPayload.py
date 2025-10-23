@@ -6,6 +6,8 @@ from bot.lib.models.openapi import openapi
 
 
 @openapi.component("MinecraftPlayerEventPayloadResponse", description="Response payload for Minecraft player event")
+@openapi.property("status", description="Status of the response, typically 'ok'.")
+@openapi.property("data", description="The Minecraft player event payload data.")
 @openapi.managed()
 class MinecraftPlayerEventPayloadResponse:
 

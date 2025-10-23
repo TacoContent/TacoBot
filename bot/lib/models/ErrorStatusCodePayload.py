@@ -3,18 +3,14 @@ import typing
 from bot.lib.models.openapi import openapi
 
 @openapi.component("ErrorStatusCodePayload", description="Error status code payload")
+@openapi.property("error", description="Description of the error")
+@openapi.property("message", description="Error message")
+@openapi.property("code", description="Error code")
+@openapi.property("stacktrace", description="Stack trace of the error")
 @openapi.managed()
 class ErrorStatusCodePayload:
     """Model for error status code payloads.
     Represents an error message.
-
-    >>>openapi
-    properties:
-      error:
-        description: Description of the error.
-      code:
-        description: Error code.
-    <<<openapi
     """
     def __init__(self, data: dict):
         self.error: typing.Optional[str] = data.get("error", None)

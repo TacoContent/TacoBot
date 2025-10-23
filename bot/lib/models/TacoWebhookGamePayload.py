@@ -4,42 +4,23 @@ import typing
 from bot.lib.models.openapi import openapi
 
 @openapi.component("TacoWebhookGamePayload", description="Represents the payload for a Taco webhook game event.")
+@openapi.property("game_id", description="The unique identifier for the game.")
+@openapi.property("end_date", description="The end date of the game.")
+@openapi.property("worth", description="The worth of the game.")
+@openapi.property("open_giveaway_url", description="The URL to open the giveaway.")
+@openapi.property("title", description="The title of the game.")
+@openapi.property("thumbnail", description="The thumbnail image URL of the game.")
+@openapi.property("image", description="The main image URL of the game.")
+@openapi.property("description", description="The description of the game.")
+@openapi.property("instructions", description="The instructions for the game.")
+@openapi.property("published_date", description="The published date of the game.")
+@openapi.property("type", description="The type of the game.")
+@openapi.property("platforms", description="The platforms the game is available on.")
+@openapi.property("formatted_published_date", description="The formatted published date of the game.")
+@openapi.property("formatted_end_date", description="The formatted end date of the game.")
 @openapi.managed()
 class TacoWebhookGamePayload:
-    """Represents the payload for a Taco webhook game event.
-
-    >>>openapi
-    properties:
-      game_id:
-        description: The unique identifier for the game.
-      end_date:
-        description: The end date of the game.
-      worth:
-        description: The worth of the game.
-      open_giveaway_url:
-        description: The URL to open the giveaway.
-      title:
-        description: The title of the game.
-      thumbnail:
-        description: The thumbnail image URL of the game.
-      image:
-        description: The main image URL of the game.
-      description:
-        description: The description of the game.
-      instructions:
-        description: The instructions for the game.
-      published_date:
-        description: The published date of the game.
-      type:
-        description: The type of the game.
-      platforms:
-        description: The platforms the game is available on.
-      formatted_published_date:
-        description: The formatted published date of the game.
-      formatted_end_date:
-        description: The formatted end date of the game.
-    <<<openapi
-    """
+    """Represents the payload for a Taco webhook game event."""
 
     def __init__(self, data: dict):
         self.game_id: str = data.get("game_id", "")

@@ -48,6 +48,15 @@ import discord
 from bot.lib.models.openapi import openapi
 
 @openapi.component("DiscordEmoji", description="Snapshot of a Discord emoji's core attributes.")
+@openapi.property("id", description="The unique identifier for the emoji")
+@openapi.property("animated", description="Whether the emoji is animated")
+@openapi.property("available", description="Whether the emoji is available")
+@openapi.property("created_at", description="The timestamp when the emoji was created, in milliseconds since epoch")
+@openapi.property("guild_id", description="The unique identifier for the guild this emoji belongs to")
+@openapi.property("managed", description="Whether the emoji is managed by an integration")
+@openapi.property("require_colons", description="Whether the emoji requires colons to be used")
+@openapi.property("name", description="The name of the emoji")
+@openapi.property("url", description="The CDN URL for the emoji image")
 @openapi.managed()
 class DiscordEmoji:
     """Represents a Discord custom (guild) emoji.

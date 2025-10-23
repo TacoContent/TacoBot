@@ -1,8 +1,11 @@
 
 from http import HTTPMethod
-from typing import Any, Callable, Dict, List, Literal, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Type, TypeVar, Union
 from types import FunctionType, UnionType
 from .core import _python_type_to_openapi_schema, _schema_to_openapi
+
+# TypeVar for generic decorator that works on both functions and classes
+DecoratedT = TypeVar('DecoratedT', FunctionType, type)
 
 HttpStatusCodes = Literal['1XX', '2XX', '3XX', '4XX', '5XX']
 StatusCodeType = Union[List[int], int, HttpStatusCodes, List[HttpStatusCodes]]
@@ -54,11 +57,15 @@ def example(
     contentType: str = "application/json",
     methods: Optional[Union[HTTPMethod, List[HTTPMethod]]] = None,
     **kwargs,
-) -> Callable[[FunctionType], FunctionType]:
+) -> Callable[[DecoratedT], DecoratedT]:
     """Add OpenAPI example for parameters, request/response bodies, or schemas.
 
     Provides concrete examples that help API consumers understand expected data formats.
     Supports inline values, external files, and component references per OpenAPI 3.0 spec.
+
+    This decorator can be applied to:
+    - **Handler functions**: For operation-level examples (parameters, request/response bodies)
+    - **Model classes**: For component schema examples (when placement='schema')
 
     OpenAPI 3.0 Compliance:
         - value and externalValue are mutually exclusive
@@ -79,15 +86,15 @@ def example(
             - 'parameter': In parameter examples (requires parameter_name)
             - 'requestBody': In request body media type examples (requires contentType)
             - 'response': In response media type examples (requires status_code, contentType)
-            - 'schema': In schema-level example (single example only)
+            - 'schema': In schema-level example (single example only, for component classes)
         status_code: HTTP status code for response examples (required if placement='response')
         parameter_name: Parameter name for parameter examples (required if placement='parameter')
         contentType: Media type for request/response body examples (default: "application/json")
-        methods: HTTP methods this example applies to (optional filter)
+        methods: HTTP methods this example applies to (optional filter, only for handler functions)
         **kwargs: Additional custom fields (for future extensibility)
 
     Returns:
-        Decorator function that adds example metadata to the handler
+        Decorator function that adds example metadata to the handler or class
 
     Raises:
         ValueError: If mutually exclusive fields are used together, or required placement fields are missing
@@ -177,14 +184,25 @@ def example(
         ... )
         ... def delete_resource(self, request, uri_variables):
         ...     pass
+
+        Component schema example (on model class):
+        >>> @openapi.component("DiscordRole")
+        ... @openapi.example(
+        ...     name="admin_role",
+        ...     value={"id": "123", "name": "Admin", "color": 16711680, "permissions": 8},
+        ...     summary="Administrator role",
+        ...     placement='schema'
+        ... )
+        ... class DiscordRole:
+        ...     pass
     """
     # Validation: Check mutual exclusivity using sentinel pattern
     has_value = value is not _NOT_PROVIDED
     has_external = externalValue is not None
     has_schema = schema is not None
-    
+
     provided_sources = sum([has_value, has_external, has_schema])
-    
+
     if provided_sources == 0:
         raise ValueError("One of 'value', 'externalValue', or 'schema' must be provided")
     if provided_sources > 1:
@@ -196,9 +214,9 @@ def example(
     if placement == 'parameter' and parameter_name is None:
         raise ValueError("parameter_name is required when placement='parameter'")
 
-    def _wrap(func: FunctionType) -> FunctionType:
-        if not hasattr(func, '__openapi_examples__'):
-            setattr(func, '__openapi_examples__', [])
+    def _wrap(target: DecoratedT) -> DecoratedT:
+        if not hasattr(target, '__openapi_examples__'):
+            setattr(target, '__openapi_examples__', [])
 
         # Build example definition according to OpenAPI 3.0 spec
         example_def: Dict[str, Any] = {
@@ -240,8 +258,8 @@ def example(
         # Add any additional custom fields from **kwargs
         example_def.update(kwargs)
 
-        func.__openapi_examples__.append(example_def)
-        return func
+        target.__openapi_examples__.append(example_def)
+        return target
     return _wrap
 
 

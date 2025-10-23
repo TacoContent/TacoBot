@@ -3398,17 +3398,19 @@ components:
         error:
           type: string
           nullable: true
-          description: Description of the error.
+          description: Description of the error
         message:
           type: string
           nullable: true
+          description: Error message
         code:
           type: integer
           nullable: true
-          description: Error code.
+          description: Error code
         stacktrace:
           type: string
           nullable: true
+          description: Stack trace of the error
       description: Error status code payload
       x-tacobot-managed: true
     ShiftCodeGame:
@@ -3416,8 +3418,10 @@ components:
       properties:
         id:
           type: string
+          description: The unique identifier for the game.
         name:
           type: string
+          description: The name of the game.
       required:
         - id
         - name
@@ -3430,23 +3434,31 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ShiftCodeGame'
+          description: List of games associated with the SHiFT code.
         code:
           type: string
+          description: The SHiFT code string.
         platforms:
           type: array
           items:
             type: string
+          description: List of platforms the SHiFT code is valid for.
         expiry:
           type: integer
           nullable: true
+          description: The expiry timestamp of the SHiFT code, if any.
         reward:
           type: string
+          description: Description of the reward associated with the SHiFT code.
         notes:
           type: string
+          description: Additional notes about the SHiFT code.
         source:
           type: string
+          description: Source from where the SHiFT code was obtained.
         created_at:
           type: integer
+          description: Timestamp when the SHiFT code was created.
       required:
         - code
         - created_at
@@ -3496,8 +3508,8 @@ components:
         type:
           type: string
           enum:
-            - login
             - custom
+            - login
           description: The event type for giving the tacos to the user.
       required:
         - amount
@@ -3674,46 +3686,60 @@ components:
       properties:
         id:
           type: string
+          description: The unique identifier for the guild
         name:
           type: string
+          description: The name of the guild
         member_count:
           type: integer
           nullable: true
+          description: The number of members in the guild
         icon:
           type: string
           nullable: true
+          description: The CDN URL for the guild icon
         banner:
           type: string
           nullable: true
+          description: The CDN URL for the guild banner
         owner_id:
           type: string
           nullable: true
+          description: The unique identifier for the guild owner
         features:
           type: array
           items:
             type: string
           nullable: true
+          description: List of features enabled for the guild
         description:
           type: string
           nullable: true
+          description: The description of the guild
         vanity_url:
           type: string
           nullable: true
+          description: The vanity URL of the guild
         vanity_url_code:
           type: string
           nullable: true
+          description: The vanity URL code of the guild
         preferred_locale:
           type: string
           nullable: true
+          description: The preferred locale of the guild
         verification_level:
           type: string
           nullable: true
+          description: The verification level of the guild
         boost_level:
           type: string
           nullable: true
+          description: The boost level of the guild
         boost_count:
           type: integer
           nullable: true
+          description: The number of boosts the guild has
       required:
         - id
         - name
@@ -3745,37 +3771,49 @@ components:
         - name
       description: Discord guild channels information
       x-tacobot-managed: true
+
     DiscordChannel:
       type: object
       properties:
         id:
           type: string
+          description: The unique identifier for the channel
         name:
           type: string
+          description: The name of the channel
         type:
           type: string
+          description: The type of the channel (e.g., text, voice)
         guild_id:
           type: string
           nullable: true
+          description: The unique identifier for the guild this channel belongs to
         position:
           type: integer
+          description: The position of the channel in the guild's channel list
         topic:
           type: string
           nullable: true
+          description: The topic of the channel, if applicable
         nsfw:
           type: boolean
+          description: Whether the channel is marked as NSFW
         bitrate:
           type: integer
           nullable: true
+          description: The bitrate of the channel, if applicable
         user_limit:
           type: integer
           nullable: true
+          description: The user limit of the channel, if applicable
         created_at:
           type: integer
           nullable: true
+          description: The timestamp when the channel was created
         category_id:
           type: string
           nullable: true
+          description: The ID of the parent category, if any
       required:
         - id
         - name
@@ -3831,25 +3869,34 @@ components:
             - emoji
         id:
           type: string
+          description: The unique identifier for the emoji
         animated:
           type: boolean
+          description: Whether the emoji is animated
         available:
           type: boolean
+          description: Whether the emoji is available
         created_at:
           type: integer
           nullable: true
+          description: The timestamp when the emoji was created, in milliseconds since epoch
         guild_id:
           type: string
           nullable: true
+          description: The unique identifier for the guild this emoji belongs to
         managed:
           type: boolean
+          description: Whether the emoji is managed by an integration
         require_colons:
           type: boolean
+          description: Whether the emoji requires colons to be used
         name:
           type: string
+          description: The name of the emoji
         url:
           type: string
           nullable: true
+          description: The CDN URL for the emoji image
       required:
         - animated
         - available
@@ -3869,48 +3916,65 @@ components:
             - role
         id:
           type: string
+          description: The unique identifier for the role
         guild_id:
           type: string
+          description: The unique identifier for the guild this role belongs to
         color:
           type: integer
           nullable: true
+          description: The color of the role as an integer value
         created_at:
           type: integer
           nullable: true
+          description: The timestamp when the role was created
         display_icon:
           type: string
           nullable: true
+          description: The URL of the role's display icon
         flags:
           type: integer
           nullable: true
+          description: The flags associated with the role
         hoist:
           type: boolean
           nullable: true
+          description: Whether the role is hoisted
         icon:
           type: string
           nullable: true
+          description: The URL of the role's icon
         managed:
           type: boolean
           nullable: true
+          description: Whether the role is managed by an integration
         mention:
           type: string
+          description: The mention string for the role
         mentionable:
           type: boolean
+          description: Whether the role is mentionable
         name:
           type: string
+          description: The name of the role
         permissions:
           type: integer
+          description: The permissions of the role as an integer value
         position:
           type: integer
+          description: The position of the role in the guild's role list
         secondary_color:
           type: integer
           nullable: true
+          description: The secondary color of the role as an integer value
         tertiary_color:
           type: integer
           nullable: true
+          description: The tertiary color of the role as an integer value
         unicode_emoji:
           type: string
           nullable: true
+          description: The unicode emoji associated with the role, if any
       required:
         - guild_id
         - id
@@ -3931,52 +3995,71 @@ components:
             - user
         id:
           type: string
+          description: The unique identifier for the user
         guild_id:
           type: string
+          description: The unique identifier for the guild this member belongs to
         accent_color:
           type: integer
           nullable: true
+          description: The accent color of the user as an integer value
         avatar:
           type: string
           nullable: true
+          description: The URL of the user's avatar
         banner:
           type: string
           nullable: true
+          description: The URL of the user's banner
         bot:
           type: boolean
+          description: Whether the user is a bot
         color:
           type: integer
           nullable: true
+          description: The color of the user as an integer value
         created_at:
           type: integer
           nullable: true
+          description: The timestamp when the user was created
         default_avatar:
           type: string
           nullable: true
+          description: The URL of the user's default avatar
         discriminator:
           type: string
           nullable: true
+          description: The discriminator of the user as a string
         display_avatar:
           type: string
           nullable: true
+          description: The URL of the user's display avatar
         display_name:
           type: string
+          description: The display name of the user
         global_name:
           type: string
+          description: The global name of the user
         mention:
           type: string
+          description: The mention string for the user
         name:
           type: string
+          description: The name of the user
         status:
           type: string
           nullable: true
+          description: The status of the user
         system:
           type: boolean
+          description: Whether the user is a system user
         timestamp:
           type: integer
           nullable: true
+          description: The timestamp associated with the user
         username:
           type: string
+          description: The username of the user
       required:
         - bot
         - display_name
@@ -4003,52 +4086,69 @@ components:
           type: string
           enum:
             - message
+          description: The type of this object, always 'message' for messages
         id:
           type: string
+          description: The unique identifier for the message
         channel_id:
           type: string
+          description: The unique identifier for the channel
         guild_id:
           type: string
+          description: The unique identifier for the guild
         author_id:
           type: string
+          description: The unique identifier for the author
         content:
           type: string
+          description: The content of the message
         created_at:
           type: integer
+          description: The timestamp when the message was created
         jump_url:
           type: string
           nullable: true
+          description: The URL to jump to the message
         edited_at:
           type: integer
+          description: The timestamp when the message was last edited
         mention_everyone:
           type: boolean
+          description: Whether the message mentions everyone
         mentions:
           type: array
           items:
             type: object
           nullable: true
+          description: List of users mentioned in the message
         attachments:
           type: array
           items:
             type: object
           nullable: true
+          description: List of attachments in the message
         embeds:
           type: array
           items:
             type: object
           nullable: true
+          description: List of embeds in the message
         reactions:
           type: array
           items:
             type: object
           nullable: true
+          description: List of reactions to the message
         nonce:
           type: string
           nullable: true
+          description: The nonce of the message
         pinned:
           type: boolean
+          description: Whether the message is pinned
         message_type:
           type: integer
+          description: The type of the message
       required:
         - author_id
         - channel_id
@@ -4068,8 +4168,10 @@ components:
       properties:
         emoji:
           type: string
+          description: The emoji used in the reaction
         count:
           type: integer
+          description: The number of times this reaction has been used
       required:
         - count
         - emoji
@@ -4105,6 +4207,7 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/JoinWhitelistUser'
+              description: Page slice of JoinWhitelistUser items
           required:
             - items
       description: Generic paginated results container.
@@ -4382,10 +4485,10 @@ components:
             - taco_atm10-2
             - taco_atm8
             - taco_atm9
-          description: Enum identifying the Minecraft world
+          description: The name of the Minecraft world.
         stats:
           $ref: '#/components/schemas/MinecraftUserStats'
-          description: Container of user stats for the specified world
+          description: Container of user stats for the specified world.
       required:
         - stats
         - world_name
@@ -4408,8 +4511,10 @@ components:
           type: string
           enum:
             - ok
+          description: Status of the response, typically 'ok'.
         data:
           $ref: '#/components/schemas/MinecraftPlayerEventPayload'
+          description: The Minecraft player event payload data.
       required:
         - data
         - status
@@ -4422,6 +4527,7 @@ components:
           type: array
           items:
             type: string
+          description: List of guild item IDs to fetch
       required:
         - ids
       description: Request body for batch fetching guild item by IDs
@@ -4433,6 +4539,7 @@ components:
           type: array
           items:
             type: string
+          description: List of guild item names to fetch
       required:
         - names
       description: Request body for batch fetching guild item by names

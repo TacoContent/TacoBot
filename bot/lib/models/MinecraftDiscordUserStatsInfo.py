@@ -4,25 +4,15 @@ from bot.lib.models.openapi import openapi
 from bot.lib.models.TacoMinecraftWorlds import TacoMinecraftWorlds
 
 @openapi.component("MinecraftDiscordUserStatsInfo", description="Minecraft discord user stats info.")
+@openapi.property("world", description="The name of the Minecraft world.")
+@openapi.property("username", description="The Minecraft username.")
+@openapi.property("uuid", description="The Minecraft UUID.")
+@openapi.property("user_id", description="The Discord user ID associated with this Minecraft account.")
+@openapi.property("modified", description="Timestamp of the last modification to this record.")
+@openapi.property("stats", description="A dictionary of Minecraft stats.")
 @openapi.managed()
 class MinecraftDiscordUserStatsInfo:
-    """A Discord user's Minecraft stats info.
-
-    >>>openapi
-    properties:
-      world:
-        description: The name of the Minecraft world.
-      username:
-        description: The Minecraft username.
-      uuid:
-        description: The Minecraft UUID.
-      user_id:
-        description: The Discord user ID associated with this Minecraft account.
-      modified:
-        description: Timestamp of the last modification to this record.
-      stats:
-        description: A dictionary of Minecraft stats.
-    <<<openapi"""
+    """A Discord user's Minecraft stats info."""
 
     def __init__(self, data: dict):
         self.world: TacoMinecraftWorlds = data.get("world", "")

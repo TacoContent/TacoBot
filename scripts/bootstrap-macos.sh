@@ -19,7 +19,7 @@ python -m pip install --upgrade pip wheel setuptools
 deV=${1:-}
 if [[ "$deV" == "--dev" || "$deV" == "-d" ]]; then
   echo "[tacobot] Installing project with dev extras"
-  pip install -e .[dev,docs]
+  pip install -e ".[dev,docs]"
 else
   echo "[tacobot] Installing project (runtime deps only)"
   pip install -e .

@@ -4,6 +4,8 @@ import discord
 from bot.lib.models.openapi import openapi
 
 @openapi.component("DiscordMessageReaction", description="Discord message reaction information")
+@openapi.property("emoji", description="The emoji used in the reaction")
+@openapi.property("count", description="The number of times this reaction has been used")
 @openapi.managed()
 class DiscordMessageReaction:
     def __init__(self, emoji: str, count: int):

@@ -362,8 +362,7 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
         headers.add("Content-Type", "application/json")
         try:
             if not self.validate_auth_token(request):
-                return self._create_error_response(401
-                                                   , 'Invalid authentication token', headers)
+                return self._create_error_response(401, 'Invalid authentication token', headers)
             result = await self._add_permission(
                 uri_variables.get("guildId", "0"), uri_variables.get("userId", "0"), uri_variables.get("permission", "")
             )

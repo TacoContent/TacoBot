@@ -152,7 +152,7 @@
 			}
 		},
 		{
-			"label": "Format Check (iSort)",
+			"label": "Format (iSort)",
 			"type": "shell",
 			"command": "./.venv/scripts/Activate.ps1; python -m isort --settings-path .github/linters/.isort.cfg .",
 			"presentation": {

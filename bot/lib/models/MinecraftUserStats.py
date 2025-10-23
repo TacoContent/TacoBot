@@ -9,7 +9,7 @@ class MinecraftUserStatsItem(typing.Dict[str, int]):
     """TypedDict for individual Minecraft user statistics item."""
     def __init__(self, data: typing.Dict[str, int]):
         super().__init__(data)
-    
+
 @openapi.component("MinecraftUserStats", description="Payload for Minecraft user statistics.")
 @openapi.managed()
 class MinecraftUserStats(typing.Dict[str, MinecraftUserStatsItem]):

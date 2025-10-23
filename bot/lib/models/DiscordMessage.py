@@ -27,6 +27,23 @@ from bot.lib.models.openapi import openapi
 
 
 @openapi.component("DiscordMessage", description="Discord message information")
+@openapi.property("id", description="The unique identifier for the message")
+@openapi.property("channel_id", description="The unique identifier for the channel")
+@openapi.property("guild_id", description="The unique identifier for the guild")
+@openapi.property("author_id", description="The unique identifier for the author")
+@openapi.property("content", description="The content of the message")
+@openapi.property("created_at", description="The timestamp when the message was created")
+@openapi.property("jump_url", description="The URL to jump to the message")
+@openapi.property("edited_at", description="The timestamp when the message was last edited")
+@openapi.property("mention_everyone", description="Whether the message mentions everyone")
+@openapi.property("mentions", description="List of users mentioned in the message")
+@openapi.property("attachments", description="List of attachments in the message")
+@openapi.property("embeds", description="List of embeds in the message")
+@openapi.property("reactions", description="List of reactions to the message")
+@openapi.property("nonce", description="The nonce of the message")
+@openapi.property("pinned", description="Whether the message is pinned")
+@openapi.property("message_type", description="The type of the message")
+@openapi.property("type", description="The type of this object, always 'message' for messages")
 @openapi.managed()
 class DiscordMessage:
     """Represents a Discord message snapshot.

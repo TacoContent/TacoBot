@@ -52,63 +52,11 @@ All HTTP endpoints live inside classes within `bot/lib/http/handlers/api/v1/`. A
 4. Uses helper model factories (e.g. `DiscordRole.fromRole`) and serializes via `.to_dict()` arrays.
 5. Adds `Content-Type: application/json` header explicitly.
 
-### 2.1 Docstring → OpenAPI Sync
+### 2.1 OpenAPI Documentation
 
-Each synced endpoint SHOULD include a minimal YAML block in its docstring, delimited EXACTLY by:
+HTTP handlers must document their OpenAPI metadata using Python decorators.
 
-```
->>>openapi
-summary: Short summary sentence
-description: >-
-  (Optional) Longer multi-line description in folded style.
-operationId: uniqueOperationIdCamelCase
-tags: [tag1, tag2]
-parameters:
-  - in: path
-    name: guild_id
-    schema: { type: string }
-    required: true
-    description: Discord guild id
-responses:
-  200:
-    description: Successful response
-    content:
-      application/json:
-        schema:
-          type: array
-          items:
-            $ref: '#/components/schemas/DiscordRole'
-  400: { description: Bad request }
-  404: { description: Not found }
-<<<openapi
-```
-
-Everything between the `>>>openapi` and `<<<openapi` markers is parsed as YAML. Use 2 spaces for indentation.
-
-Guidelines:
-- Only supported top-level keys: `summary`, `description`, `tags`, `parameters`, `requestBody`, `responses`, `security`.
-- Omit `responses` ONLY if intending the script to inject a default `200` placeholder (prefer being explicit).
-- Prefer `tags` arrays (even single tag) for consistency.
-- `operationId` (if used) becomes `operationId` in swagger (currently script does not enforce but may be extended—keep unique).
-- Keep YAML indentation consistent (2 spaces) and avoid tabs.
-- For arrays of mixed role/user objects, use `oneOf` referencing existing component schemas.
-- If you have suggestions for improving the sync script or docstring format, propose them in the docs/scripts/SUGGESTIONS.md file and mention you added the suggestions.
-
-#### 2.1.1 Rules for generating OpenAPI DocStrings
-
-- Use `>>>openapi` and `<<<openapi` delimiters exactly (no extra spaces).
-- Use `>-'` for multi-line `description` to preserve newlines.
-- Always specify `tags` as an array, even if only one tag.
-- Define all path parameters in `parameters` section with `in: path`.
-- Use `$ref` to reference existing schemas in `components/schemas/`.
-- Always include `responses` section; define at least `200` and relevant error codes.
-- Use consistent 2-space indentation; avoid tabs. Do not use 4-space indentation.
-- Add a custom annotation to the openapi block to indicate that the information is auto-generated and should not be manually edited.
-- Always use `LF` line endings within the docstring block, even on Windows.
-
-#### 2.1.2 Using @openapi.* Decorators (Preferred Approach)
-
-**New in Phase 2:** TacoBot now supports Python decorators for OpenAPI documentation, providing a more maintainable and type-safe alternative to YAML docstrings.
+#### 2.1.1 Using @openapi.* Decorators (Preferred Approach)
 
 **Available Decorators** (from `bot.lib.models.openapi.openapi`):
 
@@ -127,6 +75,7 @@ Guidelines:
 - `@openapi.responseHeader(name, schema, description)` - Response header documentation
 - `@openapi.example(name, value, summary, description)` - Example request/response
 - `@openapi.externalDocs(url, description)` - Link to external documentation
+- `@openapi.managed()` - Marks endpoint as managed by swagger_sync automation (non-user-facing)
 
 **Existing Decorators:**
 - `@openapi.tags(*tags)` - Group endpoints by category
@@ -164,12 +113,6 @@ class GuildRolesApiHandler:
 5. **Document all parameters** including path, query, and header parameters
 6. **Provide examples** for complex request bodies using `@openapi.example()`
 7. **Link external docs** when endpoint behavior is complex or has caveats
-
-**Migration from YAML Docstrings:**
-- Decorators are parsed by the same sync script (`scripts/swagger_sync.py`)
-- Both approaches can coexist (decorators take precedence)
-- Gradually migrate existing endpoints by adding decorators and removing YAML blocks
-- Run `scripts/swagger_sync.py --fix` after adding decorators to update swagger spec
 
 **Type Mapping:**
 - `str` → `{"type": "string"}`
@@ -242,7 +185,7 @@ Best Practice: Run `./.venv/scripts/Activate.ps1; python scripts/sync_endpoints.
 ---
 ## 4. Models & Serialization
 - Data models in `bot/lib/models/` should provide:
-  - Classmethod constructors like `fromRole`, `fromUser`, etc.
+  - Class-method constructors like `fromRole`, `fromUser`, etc.
   - An instance method `.to_dict()` returning primitive types only (dict/list/str/int/bool/None).
 - Avoid embedding raw Discord.py objects in responses; always convert.
 - If you add a new model used by HTTP responses, update Swagger component schemas manually and reference them via `$ref`.
@@ -279,7 +222,6 @@ Conventions:
 ## 8. Adding a New Endpoint (Checklist)
 1. Implement handler method with `@uri_variable_mapping` decorator in correct versioned directory.
 2. **Add @openapi.* decorators** (preferred) for all OpenAPI metadata: tags, summary, description, parameters, request body, responses.
-   - Alternative: Write docstring with `>>>openapi` YAML block (legacy approach).
 3. Add or update related models & component schemas (manual edit to swagger if new schema).
 4. Run sync script `--check`; if diff expected, run `--fix` and commit swagger.
 5. Add tests covering success + at least one 4xx path.
@@ -355,7 +297,7 @@ Before submitting a PR that touches TacoBot code:
 ## 16. Future Enhancements (Context for Copilot)
 These may appear in future commits—be prepared to extend:
 - Deeper nested diff logic in sync script.
-- Auto-generation of component schemas from model dataclasses.
+- Auto-generation of component schemas from model @dataclasses.
 - Security scheme enforcement across endpoints.
 - Pagination & filtering patterns for large collections.
 

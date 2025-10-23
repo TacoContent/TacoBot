@@ -412,32 +412,9 @@ class GuildRolesApiHandler(BaseHttpHandler):
         Returns: Array[DiscordRole|DiscordUser]
         Errors:
             400 - missing/invalid guild_id
+            401 - unauthorized
             404 - guild not found
-        Swagger:
-            Summary: List guild mentionables (roles + members)
-            Tags: [Guild, Mentionables]
-            OperationId: getGuildMentionables
-            Parameters:
-              - in: path
-                name: guild_id
-                schema:
-                  type: string
-                required: true
-                description: Discord guild id
-            Responses:
-              200:
-                description: Array of mentionable role and user objects
-                content:
-                  application/json:
-                    schema:
-                      type: array
-                      items:
-                        oneOf:
-                          - $ref: '#/components/schemas/DiscordRole'
-                          - $ref: '#/components/schemas/DiscordUser'
-              400: { description: Missing or invalid guild id }
-              404: { description: Guild not found }
-              500: { description: Internal server error }
+            500 - internal server error
         """
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()

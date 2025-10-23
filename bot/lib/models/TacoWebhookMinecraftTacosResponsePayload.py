@@ -10,20 +10,12 @@ from bot.lib.models.TacoWebhookMinecraftTacosPayload import TacoWebhookMinecraft
     "TacoWebhookMinecraftTacosResponsePayload",
     description="Represents a response payload for TacoWebhook Minecraft Tacos events.",
 )
+@openapi.property("success", description="Whether the operation was successful.")
+@openapi.property("payload", description="The payload that was processed.")
+@openapi.property("total_tacos", description="The total number of tacos.")
 @openapi.managed()
 class TacoWebhookMinecraftTacosResponsePayload:
-    """Response payload for TacoWebhook Minecraft Tacos events.
-
-    >>>openapi
-    properties:
-      success:
-        description: Whether the operation was successful.
-      payload:
-        description: The payload that was processed.
-      total_tacos:
-        description: The total number of tacos.
-    <<<openapi
-    """
+    """Response payload for TacoWebhook Minecraft Tacos events."""
     def __init__(self, data: dict):
         self.success: bool = data.get("success", False)
         self.payload: TacoWebhookMinecraftTacosPayload = TacoWebhookMinecraftTacosPayload(data.get("payload", {}))
