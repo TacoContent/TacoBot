@@ -140,6 +140,7 @@ def handler(self, request, uri_variables):
 ```
 
 **Problems:**
+
 - ❌ 20+ lines of YAML per endpoint
 - ❌ No syntax validation until runtime
 - ❌ Easy to desync with actual code
@@ -205,6 +206,7 @@ async def get_roles(self, request: HttpRequest, uri_variables: dict) -> HttpResp
 ```
 
 **Benefits:**
+
 - ✅ 10 lines vs 20+ lines of YAML
 - ✅ Type-checked by Python
 - ✅ IDE autocomplete
@@ -224,34 +226,37 @@ async def get_roles(self, request: HttpRequest, uri_variables: dict) -> HttpResp
 
 #### Tasks
 
-1. **Create Decorator Parser Module** (`scripts/swagger_sync/decorator_parser.py`)
-   ```python
-   def extract_decorator_metadata(func_node: ast.FunctionDef) -> DecoratorMetadata:
-       """Extract @openapi.* metadata from AST."""
-       pass
-   ```
+- **Create Decorator Parser Module** (`scripts/swagger_sync/decorator_parser.py`)
 
-2. **Define Metadata Model**
-   ```python
-   @dataclass
-   class DecoratorMetadata:
-       tags: List[str]
-       security: List[str]
-       responses: List[ResponseMetadata]
-       # ... etc
-   ```
+```python
+    def extract_decorator_metadata(func_node: ast.FunctionDef) -> DecoratorMetadata:
+        """Extract @openapi.* metadata from AST."""
+        pass
+```
 
-3. **Integrate with Endpoint Collector**
-   ```python
-   # In endpoint_collector.py
-   decorator_metadata = extract_decorator_metadata(func_node)
-   endpoint.decorator_metadata = decorator_metadata
-   ```
+- **Define Metadata Model**
 
-4. **Add Tests**
-   - Unit tests for each decorator type
-   - Integration tests with endpoint collector
-   - Edge cases (multiple decorators, invalid syntax)
+  ```python
+    @dataclass
+    class DecoratorMetadata:
+        tags: List[str]
+        security: List[str]
+        responses: List[ResponseMetadata]
+        # ... etc
+  ```
+
+- **Integrate with Endpoint Collector**
+
+  ```python
+  # In endpoint_collector.py
+  decorator_metadata = extract_decorator_metadata(func_node)
+  endpoint.decorator_metadata = decorator_metadata
+  ```
+
+- **Add Tests**
+  - Unit tests for each decorator type
+  - Integration tests with endpoint collector
+  - Edge cases (multiple decorators, invalid syntax)
 
 #### Acceptance Criteria
 
@@ -358,7 +363,7 @@ def _extract_summary(decorator: ast.Call) -> Optional[str]:
     return None
 ```
 
-#### Acceptance Criteria
+#### Acceptance Criteria (2)
 
 - [ ] All high-priority decorators implemented
 - [ ] Medium-priority decorators implemented
@@ -367,7 +372,7 @@ def _extract_summary(decorator: ast.Call) -> Optional[str]:
 - [ ] Unit tests for each new decorator
 - [ ] Documentation updated
 
-#### Dependencies
+#### Dependencies (2)
 
 Phase 1 (parser infrastructure must exist).
 
@@ -382,6 +387,7 @@ Phase 1 (parser infrastructure must exist).
 #### Merge Strategy
 
 **Precedence Rules:**
+
 1. **Decorator wins** if both decorator and YAML specify same field
 2. **YAML fallback** if only YAML specifies field
 3. **Decorator-only** for new decorators not in YAML
@@ -436,7 +442,7 @@ def detect_conflicts(endpoint: Endpoint) -> List[str]:
     return warnings
 ```
 
-#### Acceptance Criteria
+#### Acceptance Criteria (3)
 
 - [ ] Decorator metadata overrides YAML
 - [ ] YAML provides fallback values
@@ -445,7 +451,7 @@ def detect_conflicts(endpoint: Endpoint) -> List[str]:
 - [ ] Unit tests for merge scenarios
 - [ ] No data loss during merge
 
-#### Dependencies
+#### Dependencies (3)
 
 Phases 1-2 (both decorator parsing and new decorators).
 
@@ -487,12 +493,12 @@ def validate_decorator_metadata(
     Args:
         endpoint: Endpoint with decorator metadata
         component_schemas: Set of valid schema names
-        
+
     Returns:
         List of validation errors/warnings
     """
     errors = []
-    
+
     # Validate schema references
     for response in endpoint.decorator_metadata.get('responses', []):
         schema_ref = response.get('schema')
@@ -504,28 +510,31 @@ def validate_decorator_metadata(
                     endpoint=endpoint.function_name
                 )
             )
-    
+
     return errors
 ```
 
 #### Testing Strategy
 
 **Unit Tests:**
+
 - Validator detects missing schemas
 - Validator detects invalid status codes
 - Validator detects required parameter issues
 
 **Integration Tests:**
+
 - Full swagger_sync run with decorators
 - Decorator-only endpoints generate valid spec
 - Mixed decorator+YAML endpoints merge correctly
 
 **Regression Tests:**
+
 - Existing YAML-only endpoints still work
 - No breaking changes to CLI
 - No breaking changes to output format
 
-#### Acceptance Criteria
+#### Acceptance Criteria (4)
 
 - [ ] Validator detects invalid schema references
 - [ ] Validator warns on non-standard status codes
@@ -534,7 +543,7 @@ def validate_decorator_metadata(
 - [ ] Regression tests pass
 - [ ] Coverage ≥ 90%
 
-#### Dependencies
+#### Dependencies (4)
 
 Phases 1-3 (requires full decorator infrastructure).
 
@@ -557,7 +566,7 @@ Phases 1-3 (requires full decorator infrastructure).
 
 def migrate_handler_file(filepath: str, dry_run: bool = True):
     """Convert YAML docstrings to decorators.
-    
+
     Args:
         filepath: Path to handler file
         dry_run: If True, print changes without modifying file
@@ -573,7 +582,8 @@ def migrate_handler_file(filepath: str, dry_run: bool = True):
 
 #### Migration Process
 
-**Step 1: Inventory (1 day)**
+**Step 1: Inventory (1 day)**:
+
 ```bash
 # Count handlers with YAML blocks
 $ python scripts/analyze_handlers.py --report
@@ -582,7 +592,8 @@ Found 12 handlers with decorators only
 Found 3 handlers with both (conflicts!)
 ```
 
-**Step 2: Automated Migration (3-5 days)**
+**Step 2: Automated Migration (3-5 days)**:
+
 ```bash
 # Dry run to preview changes
 $ python scripts/migrate_to_decorators.py \
@@ -598,17 +609,20 @@ $ python scripts/migrate_to_decorators.py \
 $ python scripts/swagger_sync.py --check
 ```
 
-**Step 3: Manual Review (2-3 days)**
+**Step 3: Manual Review (2-3 days)**:
+
 - Review generated decorators for accuracy
 - Fix edge cases (complex YAML structures)
 - Verify swagger diff shows no unexpected changes
 
-**Step 4: Testing (2-3 days)**
+**Step 4: Testing (2-3 days)**:
+
 - Run full test suite
 - Manual API testing
 - Swagger UI validation
 
-**Step 5: Documentation Update (1-2 days)**
+**Step 5: Documentation Update (1-2 days)**:
+
 - Update `.github/copilot-instructions.md`
 - Update `docs/http/` guides
 - Add decorator usage examples
@@ -616,11 +630,12 @@ $ python scripts/swagger_sync.py --check
 #### Rollback Plan
 
 If migration fails:
+
 1. Revert file changes via git
 2. Keep parser updates (backward compatible)
 3. Continue using YAML until issues resolved
 
-#### Acceptance Criteria
+#### Acceptance Criteria (5)
 
 - [ ] All handlers migrated to decorators
 - [ ] No YAML docstring blocks remain
@@ -629,7 +644,7 @@ If migration fails:
 - [ ] Documentation updated
 - [ ] No regressions in API behavior
 
-#### Dependencies
+#### Dependencies (5)
 
 Phases 1-4 (requires fully validated decorator system).
 
@@ -739,6 +754,7 @@ async def get_roles(self, request: HttpRequest, uri_variables: dict):
 ```
 
 **Improvements:**
+
 - 📉 ~50% fewer lines
 - ✅ Type-safe schema references
 - ✅ IDE autocomplete support
@@ -806,10 +822,11 @@ async def get_roles(self, request: HttpRequest, uri_variables: dict):
 ### Completed Phases
 
 #### ✅ Phase 1: AST Decorator Parser (Complete)
+
 - **Completion Date:** 2025-10-16
 - **Test Results:** 80/80 tests passing (63 unit + 17 integration)
 - **Coverage:** 96% on decorator_parser.py
-- **Deliverables:** 
+- **Deliverables:**:
   - `scripts/swagger_sync/decorator_parser.py`
   - `tests/test_decorator_parser.py`
   - `tests/test_endpoint_collector_integration.py`

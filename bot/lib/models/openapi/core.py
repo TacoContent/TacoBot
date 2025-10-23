@@ -136,7 +136,7 @@ def _python_type_to_openapi_schema(python_type: type | UnionType | None) -> Unio
     if isinstance(python_type, UnionType):
         python_types = python_type.__args__
         return {
-           'oneOf': [_python_type_to_openapi_schema(t) for t in python_types] # type: ignore
+            'oneOf': [_python_type_to_openapi_schema(t) for t in python_types] # type: ignore
         }
 
     # Handle the type directly
