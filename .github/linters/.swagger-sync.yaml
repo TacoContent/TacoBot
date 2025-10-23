@@ -46,7 +46,8 @@ environments:
       show_missing_blocks: true
       verbose_coverage: true
     output:
-      markdown_summary: openapi-summary.md
+      directory: /github/workspace/reports/openapi/
+      badge: /github/workspace/docs/badges/openapi-coverage.svg
       coverage_report: openapi-coverage.xml
       coverage_format: xml  # XML/cobertura format for CI/CD systems
 
