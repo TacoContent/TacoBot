@@ -6,46 +6,46 @@ After implementing the coverage visualization enhancements documented in `COVERA
 
 ### Current Issues
 
-1. **Duplicate Coverage Logic**
-   - `coverage.py::_generate_coverage()` - **COMPREHENSIVE** implementation with:
-     - ✅ Colorized terminal tables with emoji (text format)
-     - ✅ Automation coverage metrics (orphaned components/endpoints)
-     - ✅ Documentation quality metrics (summary, description, parameters, examples)
-     - ✅ HTTP method breakdown with method-specific emoji
-     - ✅ Tag coverage statistics
-     - ✅ Top files by endpoint count
-     - ✅ Per-endpoint detail listing
-     - ✅ Orphaned items warnings (components & endpoints)
-     - ✅ JSON, Text, and Cobertura formats
+- **Duplicate Coverage Logic**
+  - `coverage.py::_generate_coverage()` - **COMPREHENSIVE** implementation with:
+    - ✅ Colorized terminal tables with emoji (text format)
+    - ✅ Automation coverage metrics (orphaned components/endpoints)
+    - ✅ Documentation quality metrics (summary, description, parameters, examples)
+    - ✅ HTTP method breakdown with method-specific emoji
+    - ✅ Tag coverage statistics
+    - ✅ Top files by endpoint count
+    - ✅ Per-endpoint detail listing
+    - ✅ Orphaned items warnings (components & endpoints)
+    - ✅ JSON, Text, and Cobertura formats
 
-   - `cli.py::build_markdown_summary()` - **LIMITED** implementation with:
-     - ✅ Basic coverage summary table (handlers, ignored, doc blocks, swagger ops)
-     - ✅ Suggestions
-     - ✅ Proposed diffs (when drift detected)
-     - ✅ Swagger-only operations (truncated to 25)
-     - ✅ Ignored endpoints (truncated to 50)
-     - ✅ Per-endpoint coverage detail (when verbose_coverage=true)
-     - ❌ **MISSING**: Automation coverage metrics
-     - ❌ **MISSING**: Documentation quality metrics table
-     - ❌ **MISSING**: HTTP method breakdown
-     - ❌ **MISSING**: Tag coverage
-     - ❌ **MISSING**: Top files statistics
-     - ❌ **MISSING**: Orphaned components warnings
+  - `cli.py::build_markdown_summary()` - **LIMITED** implementation with:
+    - ✅ Basic coverage summary table (handlers, ignored, doc blocks, swagger ops)
+    - ✅ Suggestions
+    - ✅ Proposed diffs (when drift detected)
+    - ✅ Swagger-only operations (truncated to 25)
+    - ✅ Ignored endpoints (truncated to 50)
+    - ✅ Per-endpoint coverage detail (when verbose_coverage=true)
+    - ❌ **MISSING**: Automation coverage metrics
+    - ❌ **MISSING**: Documentation quality metrics table
+    - ❌ **MISSING**: HTTP method breakdown
+    - ❌ **MISSING**: Tag coverage
+    - ❌ **MISSING**: Top files statistics
+    - ❌ **MISSING**: Orphaned components warnings
 
-2. **Inconsistent Feature Availability**
-   - Users running `--coverage-format=text` get rich, colorized output
-   - Users running `--markdown-summary` get basic, limited output
-   - The documentation claims markdown summary includes "extensive coverage information" but it doesn't
+- **Inconsistent Feature Availability**
+  - Users running `--coverage-format=text` get rich, colorized output
+  - Users running `--markdown-summary` get basic, limited output
+  - The documentation claims markdown summary includes "extensive coverage information" but it doesn't
 
-3. **Code Maintenance Burden**
-   - Two separate code paths for generating similar content
-   - Changes to coverage metrics must be duplicated in both places
-   - Easy to introduce bugs or inconsistencies
+- **Code Maintenance Burden**
+  - Two separate code paths for generating similar content
+  - Changes to coverage metrics must be duplicated in both places
+  - Easy to introduce bugs or inconsistencies
 
-4. **Unused Enhanced Coverage**
-   - `_generate_coverage()` supports `markdown` format (removed from choices per docs)
-   - But the markdown generation in `_generate_coverage()` is **never called**
-   - All the rich coverage content in `coverage.py` is inaccessible to markdown users
+- **Unused Enhanced Coverage**
+  - `_generate_coverage()` supports `markdown` format (removed from choices per docs)
+  - But the markdown generation in `_generate_coverage()` is **never called**
+  - All the rich coverage content in `coverage.py` is inaccessible to markdown users
 
 ### What the Documentation Promised
 
@@ -110,12 +110,12 @@ Create new markdown-specific helper functions (can be reused):
 ```python
 def _format_rate_emoji(count: int, total: int, rate: float) -> str:
     """Format coverage rate with emoji for markdown tables.
-    
+
     Args:
         count: Number of items
         total: Total items
         rate: Coverage rate from 0.0 to 1.0
-    
+
     Returns:
         Formatted string like "🟢 15/15 (100.0%)"
     """
@@ -125,7 +125,7 @@ def _format_rate_emoji(count: int, total: int, rate: float) -> str:
 
 def _build_coverage_summary_markdown(summary: Dict[str, Any]) -> List[str]:
     """Build Coverage Summary section for markdown.
-    
+
     Returns list of markdown lines.
     """
     lines = ["## 📊 Coverage Summary", ""]
@@ -137,7 +137,7 @@ def _build_coverage_summary_markdown(summary: Dict[str, Any]) -> List[str]:
     block_rate = summary['coverage_rate_handlers_with_block']
     block_display = _format_rate_emoji(summary['with_openapi_block'], summary['handlers_total'], block_rate)
     lines.append(f"| With OpenAPI block | {summary['with_openapi_block']} | {block_display} |")
-    
+
     # ... continue for all metrics
     return lines
 
@@ -147,7 +147,7 @@ def _build_automation_coverage_markdown(summary: Dict[str, Any]) -> List[str]:
     lines = ["## 🤖 Automation Coverage (Technical Debt)", ""]
     lines.append("| Item Type | Count | Automation Rate |")
     lines.append("|-----------|-------|-----------------|")
-    
+
     comp_auto_rate = summary.get('component_automation_rate', 0.0)
     comp_display = _format_rate_emoji(
         summary.get('automated_components', 0),
@@ -164,18 +164,18 @@ def _build_quality_metrics_markdown(summary: Dict[str, Any]) -> List[str]:
     lines = ["## ✨ Documentation Quality Metrics", ""]
     lines.append("| Quality Indicator | Count | Rate |")
     lines.append("|-------------------|-------|------|")
-    
+
     total_block = summary['with_openapi_block']
     quality_metrics = [
         ('📝 Summary', summary['endpoints_with_summary'], summary['quality_rate_summary']),
         ('📄 Description', summary['endpoints_with_description'], summary['quality_rate_description']),
         # ... continue
     ]
-    
+
     for label, count, rate in quality_metrics:
         rate_display = _format_rate_emoji(count, total_block, rate)
         lines.append(f"| {label} | {count} | {rate_display} |")
-    
+
     return lines
 
 
@@ -184,14 +184,14 @@ def _build_method_breakdown_markdown(summary: Dict[str, Any]) -> List[str]:
     lines = ["## 🔄 HTTP Method Breakdown", ""]
     lines.append("| Method | Total | Documented | In Swagger |")
     lines.append("|--------|-------|------------|------------|")
-    
+
     for method in sorted(summary['method_statistics'].keys()):
         stats = summary['method_statistics'][method]
         doc_rate = (stats['documented'] / stats['total']) if stats['total'] else 0.0
         doc_display = _format_rate_emoji(stats['documented'], stats['total'], doc_rate)
         emoji = '📥' if method == 'POST' else '📤' if method == 'PUT' else '🗑️' if method == 'DELETE' else '📖'
         lines.append(f"| {emoji} {method.upper()} | {stats['total']} | {doc_display} | {stats['in_swagger']} |")
-    
+
     return lines
 
 
@@ -199,15 +199,15 @@ def _build_tag_coverage_markdown(summary: Dict[str, Any]) -> List[str]:
     """Build Tag Coverage section for markdown."""
     if not summary['tag_coverage']:
         return []
-    
+
     lines = [f"## 🏷️ Tag Coverage (Unique tags: {summary['unique_tags']})", ""]
     lines.append("| Tag | Endpoints |")
     lines.append("|-----|-----------|")
-    
+
     for tag in sorted(summary['tag_coverage'].keys()):
         count = summary['tag_coverage'][tag]
         lines.append(f"| {tag} | {count} |")
-    
+
     return lines
 
 
@@ -216,16 +216,16 @@ def _build_top_files_markdown(summary: Dict[str, Any]) -> List[str]:
     lines = ["## 📁 Top Files by Endpoint Count", ""]
     lines.append("| File | Total | Documented |")
     lines.append("|------|-------|------------|")
-    
+
     file_list = [(f, s) for f, s in summary['file_statistics'].items()]
     file_list.sort(key=lambda x: x[1]['total'], reverse=True)
-    
+
     for file_path, stats in file_list[:10]:
         doc_rate = (stats['documented'] / stats['total']) if stats['total'] else 0.0
         file_name = pathlib.Path(file_path).name
         doc_display = _format_rate_emoji(stats['documented'], stats['total'], doc_rate)
         lines.append(f"| {file_name} | {stats['total']} | {doc_display} |")
-    
+
     return lines
 
 
@@ -235,7 +235,7 @@ def _build_orphaned_warnings_markdown(
 ) -> List[str]:
     """Build orphaned items warnings for markdown."""
     lines = []
-    
+
     if orphaned_components:
         lines.append("## 🚨 Orphaned Components (no @openapi.component)")
         lines.append("")
@@ -244,7 +244,7 @@ def _build_orphaned_warnings_markdown(
         for comp_name in sorted(orphaned_components):
             lines.append(f"- `{comp_name}`")
         lines.append("")
-    
+
     if swagger_only:
         lines.append("## 🚨 Orphaned Endpoints (no Python decorator)")
         lines.append("")
@@ -255,7 +255,7 @@ def _build_orphaned_warnings_markdown(
         if len(swagger_only) > 25:
             lines.append(f"... and {len(swagger_only) - 25} more")
         lines.append("")
-    
+
     return lines
 ```
 
@@ -286,10 +286,10 @@ Update `build_markdown_summary()`:
 def build_markdown_summary(*, changed: bool, coverage_fail: bool) -> str:
     def _strip_ansi(s: str) -> str:
         return re.sub(r"\x1b\[[0-9;]*m", "", s)
-    
+
     cs = coverage_summary
     lines: List[str] = ["# OpenAPI Sync Result", ""]
-    
+
     # Status section (UNIQUE to markdown summary)
     if changed:
         lines.append("**Status:** Drift detected. Please run the sync script with `--fix` and commit the updated swagger file.")
@@ -300,40 +300,40 @@ def build_markdown_summary(*, changed: bool, coverage_fail: bool) -> str:
     lines.append("")
     lines.append(f"_Diff color output: {color_reason}._")
     lines.append("")
-    
+
     # ========================================================================
     # ENHANCED COVERAGE SECTIONS (from coverage.py helpers)
     # ========================================================================
-    
+
     # 1. Coverage Summary (enhanced with emoji)
     lines.extend(_build_coverage_summary_markdown(cs))
     lines.append("")
-    
+
     # 2. Automation Coverage (NEW - was missing)
     lines.extend(_build_automation_coverage_markdown(cs))
     lines.append("")
-    
+
     # 3. Documentation Quality Metrics (NEW - was missing)
     lines.extend(_build_quality_metrics_markdown(cs))
     lines.append("")
-    
+
     # 4. HTTP Method Breakdown (NEW - was missing)
     lines.extend(_build_method_breakdown_markdown(cs))
     lines.append("")
-    
+
     # 5. Tag Coverage (NEW - was missing)
     if cs['tag_coverage']:
         lines.extend(_build_tag_coverage_markdown(cs))
         lines.append("")
-    
+
     # 6. Top Files (NEW - was missing)
     lines.extend(_build_top_files_markdown(cs))
     lines.append("")
-    
+
     # ========================================================================
     # UNIQUE MARKDOWN SUMMARY SECTIONS (keep existing)
     # ========================================================================
-    
+
     # Suggestions (existing)
     suggestions_md: List[str] = []
     if cs['without_openapi_block'] > 0:
@@ -348,7 +348,7 @@ def build_markdown_summary(*, changed: bool, coverage_fail: bool) -> str:
         for s in suggestions_md:
             lines.append(f"- {s}")
         lines.append("")
-    
+
     # Proposed diffs (UNIQUE - only in markdown summary, not in coverage reports)
     if changed:
         lines.append("## 📝 Proposed Operation Diffs")
@@ -362,11 +362,11 @@ def build_markdown_summary(*, changed: bool, coverage_fail: bool) -> str:
             lines.append("```")
             lines.append("</details>")
         lines.append("")
-    
+
     # Orphaned warnings (enhanced with components)
     orphaned_comps = coverage_orphaned_components if 'coverage_orphaned_components' in locals() else []
     lines.extend(_build_orphaned_warnings_markdown(orphaned_comps, coverage_swagger_only))
-    
+
     # Ignored endpoints (existing)
     if ignored:
         lines.append("## 🚫 Ignored Endpoints (@openapi: ignore)")
@@ -376,7 +376,7 @@ def build_markdown_summary(*, changed: bool, coverage_fail: bool) -> str:
         if len(ignored) > 50:
             lines.append(f"... and {len(ignored)-50} more")
         lines.append("")
-    
+
     # Per-endpoint detail (existing, conditional on verbose)
     if args.verbose_coverage and coverage_records:
         lines.append("## 📋 Per-Endpoint Coverage Detail")
@@ -398,7 +398,7 @@ def build_markdown_summary(*, changed: bool, coverage_fail: bool) -> str:
             status = ' │ '.join(flags) if flags else 'NONE'
             lines.append(f"| `{rec['method'].upper()}` | `{rec['path']}` | {status} |")
         lines.append("")
-    
+
     # Finalize
     content = "\n".join(lines)
     content = "\n".join(l.rstrip() for l in content.splitlines())
@@ -554,26 +554,27 @@ def test_markdown_summary_includes_method_breakdown():
 
 ### Manual Testing
 
-1. Run with `--markdown-summary`:
-   ```bash
-   python scripts/swagger_sync.py --check \
-     --markdown-summary=reports/openapi/summary.md \
-     --config=.swagger-sync.yaml --env=local
-   ```
+- Run with `--markdown-summary`:
 
-2. Verify `reports/openapi/summary.md` contains:
-   - ✅ Coverage Summary with emoji
-   - ✅ Automation Coverage section
-   - ✅ Documentation Quality Metrics
-   - ✅ HTTP Method Breakdown
-   - ✅ Tag Coverage
-   - ✅ Top Files
-   - ✅ Orphaned Components (if any)
-   - ✅ Orphaned Endpoints (swagger-only)
-   - ✅ Suggestions
-   - ✅ Ignored Endpoints
+  ```bash
+  python scripts/swagger_sync.py --check \
+    --markdown-summary=reports/openapi/summary.md \
+    --config=.swagger-sync.yaml --env=local
+  ```
 
-3. Compare with `--coverage-format=text` output to ensure consistency
+- Verify `reports/openapi/summary.md` contains:
+  - ✅ Coverage Summary with emoji
+  - ✅ Automation Coverage section
+  - ✅ Documentation Quality Metrics
+  - ✅ HTTP Method Breakdown
+  - ✅ Tag Coverage
+  - ✅ Top Files
+  - ✅ Orphaned Components (if any)
+  - ✅ Orphaned Endpoints (swagger-only)
+  - ✅ Suggestions
+  - ✅ Ignored Endpoints
+
+- Compare with `--coverage-format=text` output to ensure consistency
 
 ---
 
@@ -605,6 +606,7 @@ def test_markdown_summary_includes_method_breakdown():
 ### Rollback Plan
 
 If issues arise:
+
 1. Helpers are pure functions - can be disabled without breaking anything
 2. `build_markdown_summary()` can revert to inline table generation
 3. No breaking changes to CLI arguments or file formats
@@ -651,7 +653,7 @@ If issues arise:
 
 ### Medium Risk
 
-- ⚠️ Need to ensure orphaned_components is captured from _compute_coverage()
+- ⚠️ Need to ensure `orphaned_components` is captured from `_compute_coverage()`
 - ⚠️ Must maintain exact formatting compatibility with existing reports
 - ⚠️ Integration tests may need updates
 
@@ -685,7 +687,7 @@ If issues arise:
 - Update summary docs
 - Add code comments
 
-**Total Estimated Time: 5-7 hours**
+#### Total Estimated Time: 5-7 hours
 
 ---
 
@@ -694,6 +696,7 @@ If issues arise:
 ### Decision 1: Helper Function Location
 
 **Options:**
+
 1. Keep helpers in `coverage.py` ✅ **RECOMMENDED**
 2. Create new `coverage_markdown.py` module
 3. Move helpers to `cli.py`
@@ -703,6 +706,7 @@ If issues arise:
 ### Decision 2: Markdown Format in --coverage-format
 
 **Options:**
+
 1. Remove 'markdown' from --coverage-format choices ✅ **RECOMMENDED** (already done per docs)
 2. Keep it but document that it's deprecated
 3. Make it an alias to writing both --coverage-report and --markdown-summary
@@ -712,27 +716,30 @@ If issues arise:
 ### Decision 3: Orphaned Components Visibility
 
 **Options:**
+
 1. Always show in markdown summary ✅ **RECOMMENDED**
 2. Show only when verbose_coverage=true
 3. Show only when count > 0
 
-**Reasoning**: Orphaned components are technical debt indicators - always relevant. Users should see them even without verbose mode. Only show section when count > 0 to avoid clutter.
+**Reasoning**: Orphaned components are technical debt indicators - always relevant.
+  Users should see them even without verbose mode. Only show section when count > 0 to avoid clutter.
 
 ---
 
 ## Open Questions
 
-1. **Should we add orphaned components to suggestions?**
-   - Proposed: Yes, add "Add @openapi.component decorators to model classes to automate component schema generation." when orphaned_components_count > 0
+- **Should we add orphaned components to suggestions?**
+  - Proposed: Yes, add "Add @openapi.component decorators to model classes to automate
+  component schema generation." when orphaned_components_count > 0
 
-2. **Should method breakdown show all methods or only methods with endpoints?**
-   - Proposed: Only methods with endpoints (current behavior)
+- **Should method breakdown show all methods or only methods with endpoints?**
+  - Proposed: Only methods with endpoints (current behavior)
 
-3. **Should we limit top files to 10 or make it configurable?**
-   - Proposed: Keep at 10 for markdown (matches text format)
+- **Should we limit top files to 10 or make it configurable?**
+  - Proposed: Keep at 10 for markdown (matches text format)
 
-4. **Should we add a "quality score" aggregate metric?**
-   - Proposed: Defer to future enhancement (out of scope for this consolidation)
+- **Should we add a "quality score" aggregate metric?**
+  - Proposed: Defer to future enhancement (out of scope for this consolidation)
 
 ---
 
@@ -762,28 +769,28 @@ If issues arise:
 
 ### What Was Accomplished
 
-1. **Extracted 8 Markdown Helper Functions** from `coverage.py`:
-   - `_format_rate_emoji()` - Format coverage rates with emoji indicators
-   - `_build_coverage_summary_markdown()` - Basic coverage metrics table
-   - `_build_automation_coverage_markdown()` - Technical debt analysis table
-   - `_build_quality_metrics_markdown()` - Documentation quality table
-   - `_build_method_breakdown_markdown()` - HTTP method statistics table
-   - `_build_tag_coverage_markdown()` - API tag usage table
-   - `_build_top_files_markdown()` - Top handler files table
-   - `_build_orphaned_warnings_markdown()` - Orphaned items warnings
+- **Extracted 8 Markdown Helper Functions** from `coverage.py`:
+  - `_format_rate_emoji()` - Format coverage rates with emoji indicators
+  - `_build_coverage_summary_markdown()` - Basic coverage metrics table
+  - `_build_automation_coverage_markdown()` - Technical debt analysis table
+  - `_build_quality_metrics_markdown()` - Documentation quality table
+  - `_build_method_breakdown_markdown()` - HTTP method statistics table
+  - `_build_tag_coverage_markdown()` - API tag usage table
+  - `_build_top_files_markdown()` - Top handler files table
+  - `_build_orphaned_warnings_markdown()` - Orphaned items warnings
 
-2. **Created Comprehensive Test Suite**:
-   - File: `tests/test_swagger_sync_coverage_markdown_helpers.py`
-   - **59 unit tests** covering all helper functions
-   - **100% test pass rate**
-   - Tests cover:
-     - Emoji selection logic (green/yellow/red)
-     - Table structure and formatting
-     - Edge cases (empty tags, truncation)
-     - Sorting behavior
-     - Data accuracy
+- **Created Comprehensive Test Suite**:
+  - File: `tests/test_swagger_sync_coverage_markdown_helpers.py`
+  - **59 unit tests** covering all helper functions
+  - **100% test pass rate**
+  - Tests cover:
+    - Emoji selection logic (green/yellow/red)
+    - Table structure and formatting
+    - Edge cases (empty tags, truncation)
+    - Sorting behavior
+    - Data accuracy
 
-3. **Test Results**:
+- **Test Results**:
 
    ```text
    ======================================================================== 59 passed in 0.33s ========================================================================
@@ -823,32 +830,32 @@ If issues arise:
 
 ### Phase 2 Accomplishments
 
-1. **Imported Helper Functions** into `cli.py`:
-   - Added imports for all 7 markdown helper functions
-   - Functions are now available for use in `build_markdown_summary()`
+- **Imported Helper Functions** into `cli.py`:
+  - Added imports for all 7 markdown helper functions
+  - Functions are now available for use in `build_markdown_summary()`
 
-2. **Updated `build_markdown_summary()` Function**:
-   - Replaced inline basic coverage table with `_build_coverage_summary_markdown()`
-   - **Added 5 NEW sections** that were missing:
-     - 🤖 Automation Coverage (Technical Debt)
-     - ✨ Documentation Quality Metrics
-     - 🔄 HTTP Method Breakdown
-     - 🏷️ Tag Coverage
-     - 📁 Top Files by Endpoint Count
-   - Enhanced Orphaned Warnings with `_build_orphaned_warnings_markdown()`
-   - Added orphaned components suggestion
-   - Preserved unique markdown summary features (status, diffs)
+- **Updated `build_markdown_summary()` Function**:
+  - Replaced inline basic coverage table with `_build_coverage_summary_markdown()`
+  - **Added 5 NEW sections** that were missing:
+    - 🤖 Automation Coverage (Technical Debt)
+    - ✨ Documentation Quality Metrics
+    - 🔄 HTTP Method Breakdown
+    - 🏷️ Tag Coverage
+    - 📁 Top Files by Endpoint Count
+  - Enhanced Orphaned Warnings with `_build_orphaned_warnings_markdown()`
+  - Added orphaned components suggestion
+  - Preserved unique markdown summary features (status, diffs)
 
-3. **Code Consolidation**:
-   - Eliminated ~30 lines of duplicate table generation code
-   - Single source of truth for coverage formatting
-   - Consistent emoji usage across text and markdown outputs
+- **Code Consolidation**:
+  - Eliminated ~30 lines of duplicate table generation code
+  - Single source of truth for coverage formatting
+  - Consistent emoji usage across text and markdown outputs
 
-4. **Test Results**:
+- **Test Results**:
 
-   ```text
-   ======================================================================== 283 passed in 134.11s ========================================================================
-   ```
+  ```text
+  ======================================================================== 283 passed in 134.11s ========================================================================
+  ```
 
 ### Verified Functionality
 

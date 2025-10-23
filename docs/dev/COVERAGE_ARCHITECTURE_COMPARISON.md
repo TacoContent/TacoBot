@@ -2,7 +2,7 @@
 
 ## Current Architecture (DUPLICATED) ❌
 
-```
+``` text
 ┌─────────────────────────────────────────────────────────────┐
 │                     User Requests                            │
 └───────────────┬─────────────────────┬──────────────────────┘
@@ -37,6 +37,7 @@
 ```
 
 **Problems:**
+
 - 🔴 **Code Duplication**: Two separate implementations of coverage formatting
 - 🔴 **Inconsistent Output**: Text format has rich data, markdown is basic
 - 🔴 **Maintenance Burden**: Changes must be made in two places
@@ -46,7 +47,7 @@
 
 ## Proposed Architecture (CONSOLIDATED) ✅
 
-```
+``` text
 ┌─────────────────────────────────────────────────────────────┐
 │                     User Requests                            │
 └───────────────┬─────────────────────┬──────────────────────┘
@@ -59,20 +60,20 @@
                 │                     │
                 │                     │
     ┌───────────▼────────────┐   ┌────▼──────────────────────┐
-    │  coverage.py           │   │  cli.py                    │
-    │  _generate_coverage()  │   │  build_markdown_summary()  │
-    │                        │   │                            │
+    │  coverage.py           │   │  cli.py                   │
+    │  _generate_coverage()  │   │  build_markdown_summary() │
+    │                        │   │                           │
     │  ✅ ANSI colored text  │   │  ✅ Calls helpers below ⬇ │
-    │  ✅ JSON structure     │   │  ✅ Unique: diffs          │
-    │  ✅ Cobertura XML      │   │  ✅ Unique: status         │
-    │                        │   │  ✅ Unique: suggestions+   │
-    └────────────────────────┘   └─────┬──────────────────────┘
+    │  ✅ JSON structure     │   │  ✅ Unique: diffs         │
+    │  ✅ Cobertura XML      │   │  ✅ Unique: status        │
+    │                        │   │  ✅ Unique: suggestions+  │
+    └────────────────────────┘   └─────┬─────────────────────┘
                                         │
                 ┌───────────────────────┴─────────────────────┐
                 │                                             │
     ┌───────────▼──────────────────────────────────────────────────┐
     │  coverage.py - SHARED MARKDOWN HELPERS (NEW)                 │
-    │                                                               │
+    │                                                              │
     │  📊 _build_coverage_summary_markdown()                       │
     │  🤖 _build_automation_coverage_markdown()                    │
     │  ✨ _build_quality_metrics_markdown()                        │
@@ -91,6 +92,7 @@
 ```
 
 **Benefits:**
+
 - ✅ **Single Source**: Coverage formatting logic in one place (helpers)
 - ✅ **Consistent Output**: Both formats have same rich data
 - ✅ **Easy Maintenance**: Changes only needed in helper functions
@@ -102,68 +104,65 @@
 
 ### Current Flow (Text Format) ✅ WORKS
 
-```
+``` text
 endpoints + swagger
-     │
-     ▼
+    │
+    ▼
 _compute_coverage()
-     │
-     ▼
+    │
+    ▼
 summary dict + records
-     │
-     ▼
+    │
+    ▼
 _generate_coverage(fmt='text')
-     │
-     ▼
-✅ Rich, colorized terminal output
-   with ALL enhanced sections
+    │
+    ▼
+✅ Rich, colorized terminal output with ALL enhanced sections
 ```
 
 ### Current Flow (Markdown Summary) ❌ BROKEN
 
-```
+``` text
 endpoints + swagger
-     │
-     ▼
+    │
+    ▼
 _compute_coverage()
-     │
-     ▼
+    │
+    ▼
 summary dict + records
-     │
-     ▼
+    │
+    ▼
 build_markdown_summary()
-     │
-     ▼
-⚠️  Basic markdown output
-   MISSING enhanced sections
+    │
+    ▼
+⚠️  Basic markdown output MISSING enhanced sections
 ```
 
 ### Proposed Flow (Markdown Summary) ✅ FIXED
 
-```
+``` text
 endpoints + swagger
-     │
-     ▼
+    │
+    ▼
 _compute_coverage()
-     │
-     ▼
+    │
+    ▼
 summary dict + records + orphaned_components
-     │
-     ▼
+    │
+    ▼
 build_markdown_summary()
-     │
-     ├─► _build_coverage_summary_markdown(summary)
-     ├─► _build_automation_coverage_markdown(summary)
-     ├─► _build_quality_metrics_markdown(summary)
-     ├─► _build_method_breakdown_markdown(summary)
-     ├─► _build_tag_coverage_markdown(summary)
-     ├─► _build_top_files_markdown(summary)
-     ├─► _build_orphaned_warnings_markdown(orphaned_comps, swagger_only)
-     └─► (unique sections: status, diffs, suggestions)
-     │
-     ▼
-✅ Complete markdown output
-   with ALL enhanced sections
+    │
+    ├─► _build_coverage_summary_markdown(summary)
+    ├─► _build_automation_coverage_markdown(summary)
+    ├─► _build_quality_metrics_markdown(summary)
+    ├─► _build_method_breakdown_markdown(summary)
+    ├─► _build_tag_coverage_markdown(summary)
+    ├─► _build_top_files_markdown(summary)
+    ├─► _build_orphaned_warnings_markdown(orphaned_comps, swagger_only)
+    └─► (unique sections: status, diffs, suggestions)
+    │
+    ▼
+✅ Complete markdown output with ALL enhanced sections
 ```
 
 ---
@@ -172,7 +171,7 @@ build_markdown_summary()
 
 ### Before (Scattered)
 
-```
+``` text
 scripts/swagger_sync/
 ├── coverage.py
 │   ├── _compute_coverage()        ← Metrics calculation
@@ -189,7 +188,7 @@ scripts/swagger_sync/
 
 ### After (Organized)
 
-```
+``` text
 scripts/swagger_sync/
 ├── coverage.py
 │   ├── _compute_coverage()                 ← Metrics calculation
@@ -226,7 +225,7 @@ scripts/swagger_sync/
 
 ## Implementation Phases
 
-```
+``` text
 Phase 1: Extract Helpers
 ┌────────────────────────┐
 │  coverage.py           │
@@ -272,7 +271,7 @@ Phase 3: Documentation
 
 ## Testing Strategy
 
-```
+``` text
 Unit Tests (Phase 1)
 ├── test_format_rate_emoji()
 ├── test_build_coverage_summary_markdown()
@@ -300,5 +299,5 @@ Manual Tests (Phase 2)
 
 ---
 
-**See Full Plan**: `COVERAGE_CONSOLIDATION_PLAN.md`  
+**See Full Plan**: `COVERAGE_CONSOLIDATION_PLAN.md`
 **Created**: 2025-10-15

@@ -42,30 +42,30 @@ from .coverage import (
 
 #### Key Changes
 
-1. **Replaced Basic Coverage Table**
-   - Old: Inline table with basic formatting
-   - New: `_build_coverage_summary_markdown()` with emoji indicators
+- **Replaced Basic Coverage Table**
+  - Old: Inline table with basic formatting
+  - New: `_build_coverage_summary_markdown()` with emoji indicators
 
-2. **Added 5 NEW Sections** (Previously Missing)
-   - 🤖 **Automation Coverage** - Technical debt analysis showing orphaned items
-   - ✨ **Documentation Quality Metrics** - Summary, description, parameters, examples
-   - 🔄 **HTTP Method Breakdown** - Per-method statistics with emoji
-   - 🏷️ **Tag Coverage** - API tag usage statistics
-   - 📁 **Top Files** - Top 10 handler files by endpoint count
+- **Added 5 NEW Sections** (Previously Missing)
+  - 🤖 **Automation Coverage** - Technical debt analysis showing orphaned items
+  - ✨ **Documentation Quality Metrics** - Summary, description, parameters, examples
+  - 🔄 **HTTP Method Breakdown** - Per-method statistics with emoji
+  - 🏷️ **Tag Coverage** - API tag usage statistics
+  - 📁 **Top Files** - Top 10 handler files by endpoint count
 
-3. **Enhanced Orphaned Warnings**
-   - Old: Only showed orphaned endpoints
-   - New: Shows both orphaned components AND endpoints using helper
+- **Enhanced Orphaned Warnings**
+  - Old: Only showed orphaned endpoints
+  - New: Shows both orphaned components AND endpoints using helper
 
-4. **Enhanced Suggestions**
-   - Added suggestion for orphaned components: "Add @openapi.component decorators to model classes"
+- **Enhanced Suggestions**
+  - Added suggestion for orphaned components: "Add @openapi.component decorators to model classes"
 
-5. **Preserved Unique Features**
-   - Status section (drift/coverage fail/in sync)
-   - Diff color output note
-   - Proposed diffs (expandable details)
-   - Ignored endpoints list
-   - Per-endpoint detail (when verbose)
+- **Preserved Unique Features**
+  - Status section (drift/coverage fail/in sync)
+  - Diff color output note
+  - Proposed diffs (expandable details)
+  - Ignored endpoints list
+  - Per-endpoint detail (when verbose)
 
 ### 3. Complete Markdown Summary Structure
 
@@ -115,18 +115,21 @@ The enhanced markdown summary now includes 13 sections:
 ### What Changed
 
 **For Users:**
+
 - Markdown summaries now include 5 additional coverage sections
 - Enhanced visual feedback with emoji indicators
 - Better technical debt visibility
 - Documentation now accurately reflects actual output
 
 **For Developers:**
+
 - Eliminated ~30 lines of duplicate code
 - Single source of truth for coverage formatting
 - Easier to add new sections in the future
 - Better code organization
 
 **For CI/CD:**
+
 - Richer PR comment content (via markdown summary)
 - Better visibility into coverage gaps
 - Actionable suggestions for improvements
@@ -184,21 +187,21 @@ Sample verification from generated markdown:
 
 ### Modified Files
 
-1. **`scripts/swagger_sync/cli.py`**
-   - Added 7 helper function imports
-   - Rewrote `build_markdown_summary()` (lines ~542-650)
-   - Enhanced docstring
-   - Net change: -20 lines (eliminated duplication)
+- **`scripts/swagger_sync/cli.py`**
+  - Added 7 helper function imports
+  - Rewrote `build_markdown_summary()` (lines ~542-650)
+  - Enhanced docstring
+  - Net change: -20 lines (eliminated duplication)
 
 ### Documentation Updated
 
-2. **`docs/dev/COVERAGE_CONSOLIDATION_PLAN.md`**
-   - Added Phase 2 Completion Summary
-   - Updated status badges
-   - Documented changes and benefits
+- **`docs/dev/COVERAGE_CONSOLIDATION_PLAN.md`**
+  - Added Phase 2 Completion Summary
+  - Updated status badges
+  - Documented changes and benefits
 
-3. **`docs/dev/COVERAGE_CONSOLIDATION_PHASE2_SUMMARY.md`** (this file)
-   - New summary document for Phase 2
+- **`docs/dev/COVERAGE_CONSOLIDATION_PHASE2_SUMMARY.md`** (this file)
+  - New summary document for Phase 2
 
 ## Statistics
 
@@ -216,6 +219,7 @@ Sample verification from generated markdown:
 ### Before Phase 2
 
 Markdown summary included:
+
 - Status
 - Basic coverage summary (no emoji)
 - Suggestions (basic)
@@ -225,6 +229,7 @@ Markdown summary included:
 - Per-endpoint detail
 
 **Missing:**
+
 - Automation coverage metrics
 - Documentation quality metrics
 - HTTP method breakdown
@@ -235,6 +240,7 @@ Markdown summary included:
 ### After Phase 2
 
 Markdown summary includes:
+
 - Status
 - **Enhanced** coverage summary (with emoji)
 - **NEW:** Automation coverage (technical debt)
@@ -287,18 +293,18 @@ Markdown summary includes:
 
 Phase 3 involves documentation updates:
 
-1. Update `COVERAGE_VISUALIZATION_ENHANCEMENTS.md`
-   - Mark markdown integration as complete
-   - Update implementation status
+- Update `COVERAGE_VISUALIZATION_ENHANCEMENTS.md`
+  - Mark markdown integration as complete
+  - Update implementation status
 
-2. Update `COVERAGE_ENHANCEMENT_SUMMARY.md`
-   - Add Phase 2 completion note
-   - Update overall status
+- Update `COVERAGE_ENHANCEMENT_SUMMARY.md`
+  - Add Phase 2 completion note
+  - Update overall status
 
-3. Consider adding user-facing documentation
-   - How to interpret markdown summary
-   - What each section means
-   - How to act on suggestions
+- Consider adding user-facing documentation
+  - How to interpret markdown summary
+  - What each section means
+  - How to act on suggestions
 
 **Estimated Time for Phase 3:** 30-60 minutes
 

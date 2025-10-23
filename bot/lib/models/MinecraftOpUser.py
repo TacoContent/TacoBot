@@ -7,10 +7,10 @@ from bot.lib.models.openapi import openapi
 @openapi.property("bypassesPlayerLimit", description="Whether the user can bypass player limits.")
 @openapi.managed()
 class MinecraftOpUser:
-  """Represents a Minecraft user with operator permissions.
-  """
+    """Represents a Minecraft user with operator permissions.
+    """
 
-  def __init__(self, data: dict):
+    def __init__(self, data: dict):
         """Initializes a MinecraftUser with the given user ID and username.
 
         Args:

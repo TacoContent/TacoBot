@@ -6,9 +6,9 @@ auto-generate (or refresh) `components.schemas` entries.
 
 Rules / Conventions:
 * Only simple attribute discovery is performed: public attributes set in ``__init__``
-  become object properties.
+    become object properties.
 * Type inference is heuristic based on existing annotation (``__annotations__``) and
-  the runtime value assigned during a zero-arg construction attempt (best effort).
+    the runtime value assigned during a zero-arg construction attempt (best effort).
 * Unknown / complex types default to ``type: string`` for safety.
 * Optional (Union[..., None]/Optional[]) becomes `nullable: true` in the schema.
 * Decorator parameter ``name`` is the component schema name; if omitted falls back to class name.

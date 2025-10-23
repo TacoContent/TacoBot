@@ -29,9 +29,9 @@ def property(
     - Used to provide explicit type information when type inference fails
     - Primarily useful for TypeVar properties in Generic classes
     - Supports type objects (list, dict), typing module types (List[Any], Dict[str, Any]),
-      and string annotations (e.g., "List[Dict[str, Any]]")
+        and string annotations (e.g., "List[Dict[str, Any]]")
     - Only applied by swagger_sync when automatic inference determines the property
-      is a TypeVar that cannot be resolved
+        is a TypeVar that cannot be resolved
     - Example: @openapi.property("settings", hint=Dict[str, Any])
 
     Args:
@@ -39,9 +39,9 @@ def property(
         name: Optional single attribute name (legacy usage), e.g., "description".
         value: Optional single attribute value (legacy usage).
         **kwargs: Arbitrary OpenAPI schema attributes for this property
-                 (e.g., description, minimum, maximum, default, format, etc.).
-                 Special kwargs:
-                 - hint: Type hint for properties that cannot be automatically inferred
+            (e.g., description, minimum, maximum, default, format, etc.).
+            Special kwargs:
+            - hint: Type hint for properties that cannot be automatically inferred
 
     Returns:
         A decorator that records the provided attributes for the target component.

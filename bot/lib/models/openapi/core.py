@@ -1,6 +1,5 @@
 from types import FunctionType, UnionType
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, cast
-import typing
+from typing import Any, Callable, Dict, List, Optional, TypeVar, Union, cast
 
 
 _TYPE_ALIAS_REGISTRY: Dict[str, Dict[str, Any]] = {}
@@ -135,10 +134,10 @@ def _python_type_to_openapi_schema(python_type: type | UnionType | None) -> Unio
     }
 
     if isinstance(python_type, UnionType):
-       python_types = python_type.__args__
-       return {
+        python_types = python_type.__args__
+        return {
            'oneOf': [_python_type_to_openapi_schema(t) for t in python_types] # type: ignore
-       }
+        }
 
     # Handle the type directly
     if python_type in type_mapping:

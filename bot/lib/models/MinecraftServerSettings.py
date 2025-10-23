@@ -15,7 +15,7 @@ from bot.lib.models.TacoMinecraftServerSettingsMod import TacoMinecraftServerSet
 @openapi.property("mods", description="A list of mods installed on the server.", hint=typing.List[TacoMinecraftServerSettingsMod])
 @openapi.managed()
 class MinecraftServerSettings:
-  """Configuration for the Minecraft Server.
+    """Configuration for the Minecraft Server.
     Attributes:
         enabled (bool): Whether the Minecraft server integration is enabled.
         server (str): The server address (IP or domain) and port.
@@ -23,15 +23,15 @@ class MinecraftServerSettings:
         version (str): The base version of the Minecraft server.
         help (str): A link to provide help information on connecting to the server.
         mods (List[TacoMinecraftServerSettingsMod]): A list of mods installed on the server.
-  """
+    """
 
-  def __init__(self, data: dict):
-    self.enabled: bool = data.get("enabled", True)
-    self.server: str = data.get("server", "")
-    self.forge_version: str = data.get("forge_version", "")
-    self.version: str = data.get("version", "")
-    self.help: str = data.get("help", "")
-    self.mods: typing.List[TacoMinecraftServerSettingsMod] = []
+    def __init__(self, data: dict):
+        self.enabled: bool = data.get("enabled", True)
+        self.server: str = data.get("server", "")
+        self.forge_version: str = data.get("forge_version", "")
+        self.version: str = data.get("version", "")
+        self.help: str = data.get("help", "")
+        self.mods: typing.List[TacoMinecraftServerSettingsMod] = []
 
 
 @openapi.component("MinecraftServerSettingsSettingsModel", description="Generic Taco Settings Model")

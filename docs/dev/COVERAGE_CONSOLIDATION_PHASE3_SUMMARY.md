@@ -181,29 +181,29 @@ Documentation now provides:
 
 ### Optional Enhancements
 
-1. **Markdown Linting Cleanup** (Low Priority)
-   - Address pre-existing MD032, MD022, MD031, MD040 warnings
-   - Add blank lines around lists and headings
-   - Specify languages for code fences
-   - Estimated effort: 1-2 hours
+- **Markdown Linting Cleanup** (Low Priority)
+  - Address pre-existing MD032, MD022, MD031, MD040 warnings
+  - Add blank lines around lists and headings
+  - Specify languages for code fences
+  - Estimated effort: 1-2 hours
 
-2. **User Guide Enhancement** (Medium Priority)
-   - Create user-facing guide for interpreting markdown summaries
-   - Add screenshots or example outputs
-   - Document best practices for coverage improvement
-   - Estimated effort: 2-3 hours
+- **User Guide Enhancement** (Medium Priority)
+  - Create user-facing guide for interpreting markdown summaries
+  - Add screenshots or example outputs
+  - Document best practices for coverage improvement
+  - Estimated effort: 2-3 hours
 
-3. **Integration Testing** (Medium Priority)
-   - Add integration tests for full markdown generation pipeline
-   - Test cli.py end-to-end with various coverage scenarios
-   - Validate markdown output format compliance
-   - Estimated effort: 3-4 hours
+- **Integration Testing** (Medium Priority)
+  - Add integration tests for full markdown generation pipeline
+  - Test cli.py end-to-end with various coverage scenarios
+  - Validate markdown output format compliance
+  - Estimated effort: 3-4 hours
 
-4. **Performance Profiling** (Low Priority)
-   - Benchmark markdown generation with large endpoint sets
-   - Identify any performance bottlenecks
-   - Optimize if needed (currently not a concern)
-   - Estimated effort: 2-3 hours
+- **Performance Profiling** (Low Priority)
+  - Benchmark markdown generation with large endpoint sets
+  - Identify any performance bottlenecks
+  - Optimize if needed (currently not a concern)
+  - Estimated effort: 2-3 hours
 
 ---
 
