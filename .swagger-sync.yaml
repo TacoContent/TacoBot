@@ -1,5 +1,5 @@
 # OpenAPI/Swagger Synchronization Configuration
-# yaml-language-server: $schema=../../scripts/swagger_sync/config_schema.json
+# yaml-language-server: $schema=scripts/swagger_sync/config_schema.json
 #
 # This file configures the swagger_sync.py script for this project.
 # All paths are relative to the directory containing this file.
@@ -46,8 +46,6 @@ environments:
       show_missing_blocks: true
       verbose_coverage: true
     output:
-      directory: /github/workspace/reports/openapi/
-      badge: /github/workspace/docs/badges/openapi-coverage.svg
       coverage_report: openapi-coverage.xml
       coverage_format: xml  # XML/cobertura format for CI/CD systems
 

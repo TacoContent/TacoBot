@@ -173,7 +173,7 @@
 		{
 			"label": "Swagger Validation Quiet",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python scripts/swagger_sync.py --config=.github/linters/.swagger-sync.yaml --env=quiet",
+			"command": "./.venv/scripts/Activate.ps1; python scripts/swagger_sync.py --config=.swagger-sync.yaml --env=quiet",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"
@@ -184,7 +184,7 @@
 		{
 			"label": "Swagger Validation",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python scripts/swagger_sync.py --config=.github/linters/.swagger-sync.yaml --env=local",
+			"command": "./.venv/scripts/Activate.ps1; python scripts/swagger_sync.py --config=.swagger-sync.yaml --env=local",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"
@@ -195,7 +195,7 @@
 		{
 			"label": "Swagger FIX",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python scripts/swagger_sync.py --fix --config=.github/linters/.swagger-sync.yaml --env=local",
+			"command": "./.venv/scripts/Activate.ps1; python scripts/swagger_sync.py --fix --config=.swagger-sync.yaml --env=local",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"
