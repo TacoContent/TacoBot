@@ -188,13 +188,8 @@ class BaseWebhookHandler:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
             return False
 
-
     def _create_error_response(
-        self,
-        status_code: int,
-        error_message: str,
-        headers: HttpHeaders,
-        include_stacktrace: bool = False
+        self, status_code: int, error_message: str, headers: HttpHeaders, include_stacktrace: bool = False
     ) -> HttpResponse:
         """Create standardized error response.
 
@@ -207,16 +202,9 @@ class BaseWebhookHandler:
         Returns:
             HttpResponse with ErrorStatusCodePayload body
         """
-        err_data = {
-            "code": status_code,
-            "error": error_message,
-        }
+        err_data = {"code": status_code, "error": error_message}
         if include_stacktrace:
             err_data["stacktrace"] = traceback.format_exc()
 
         err = ErrorStatusCodePayload(err_data)
-        return HttpResponse(
-            status_code,
-            headers,
-            json.dumps(err.to_dict()).encode("utf-8")
-        )
+        return HttpResponse(status_code, headers, json.dumps(err.to_dict()).encode("utf-8"))

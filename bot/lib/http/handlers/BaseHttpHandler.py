@@ -196,11 +196,7 @@ class BaseHttpHandler:
             return False
 
     def _create_error_response(
-        self,
-        status_code: int,
-        error_message: str,
-        headers: HttpHeaders,
-        include_stacktrace: bool = False
+        self, status_code: int, error_message: str, headers: HttpHeaders, include_stacktrace: bool = False
     ) -> HttpResponse:
         """Create standardized error response.
 
@@ -213,19 +209,12 @@ class BaseHttpHandler:
         Returns:
             HttpResponse with ErrorStatusCodePayload body
         """
-        err_data = {
-            "code": status_code,
-            "error": error_message,
-        }
+        err_data = {"code": status_code, "error": error_message}
         if include_stacktrace:
             err_data["stacktrace"] = traceback.format_exc()
 
         err = ErrorStatusCodePayload(err_data)
-        return HttpResponse(
-            status_code,
-            headers,
-            json.dumps(err.to_dict()).encode("utf-8")
-        )
+        return HttpResponse(status_code, headers, json.dumps(err.to_dict()).encode("utf-8"))
 
     def _create_error_from_exception(
         self,
@@ -252,8 +241,4 @@ class BaseHttpHandler:
         err = ErrorStatusCodePayload(err_data)
         headers = HttpHeaders()
         [headers.add(k, v) for k, v in err_data.get("headers", {}).items()]
-        return HttpResponse(
-            err_data.get("code", 500),
-            headers,
-            json.dumps(err.to_dict()).encode("utf-8")
-        )
+        return HttpResponse(err_data.get("code", 500), headers, json.dumps(err.to_dict()).encode("utf-8"))

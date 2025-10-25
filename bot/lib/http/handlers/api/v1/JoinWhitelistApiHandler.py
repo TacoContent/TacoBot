@@ -173,51 +173,53 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
         name="guild_id",
         description="The ID of the guild to retrieve the join whitelist for",
         schema=int,
+        methods=[HTTPMethod.GET],
     )
     @openapi.response(
         200,
         description="Paginated join whitelist response",
         contentType="application/json",
         schema=PagedResultsJoinWhitelistUser,
+        methods=[HTTPMethod.GET],
     )
     @openapi.response(
         400,
         description="Bad Request - invalid skip/take parameters",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
     )
     @openapi.response(
         401,
         description="Unauthorized - missing or invalid auth token",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
     )
     @openapi.response(
         '5XX',
         description="Internal Server Error",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
     )
     @openapi.queryParameter(
         name="skip",
         description="Number of entries to skip from the start (default 0)",
         schema=int,
         required=False,
-        options={
-            "minimum": 0
-        },
+        options={"minimum": 0},
         default=0,
+        methods=[HTTPMethod.GET],
     )
     @openapi.queryParameter(
         name="take",
         description="Number of entries to return (default 50, max 200)",
         schema=int,
         required=False,
-        options={
-            "minimum": 1,
-            "maximum": 200
-        },
+        options={"minimum": 1, "maximum": 200},
         default=50,
+        methods=[HTTPMethod.GET],
     )
     @openapi.managed()
     def list_join_whitelist_paged(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:

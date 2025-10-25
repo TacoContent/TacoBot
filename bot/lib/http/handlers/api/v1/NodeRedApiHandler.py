@@ -34,7 +34,6 @@ class NodeRedApiHandler(ApiHttpHandler):
         self.minecraft_db = MinecraftDatabase()
         self.tracking_db = TrackingDatabase()
 
-
     @uri_variable_mapping("/tacobot/minecraft/player/event/{event}")
     @uri_variable_mapping("/taco/minecraft/player/event/{event}")
     @uri_variable_mapping("/api/v1/minecraft/player/event/{event}")
@@ -72,23 +71,16 @@ class NodeRedApiHandler(ApiHttpHandler):
         headers.add("Location", f"{self.NODERED_URL}/minecraft/player/event/{event}")
         return self._create_error_response(302, f"Redirecting to Node-RED for event: {event}", headers=headers)
 
-
     @uri_variable_mapping("/tacobot/guild/{guild}/invite/{channel}", method=HTTPMethod.POST)
     @uri_variable_mapping("/taco/guild/{guild}/invite/{channel}", method=HTTPMethod.POST)
     @uri_variable_mapping("/api/v1/guild/{guild}/invite/{channel}", method=HTTPMethod.POST)
     @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     @openapi.summary("Redirect Twitch guild invite to Node-RED")
     @openapi.pathParameter(
-        name="guild",
-        schema=str,
-        description="ID of the guild to invite.",
-        methods=HTTPMethod.POST,
+        name="guild", schema=str, description="ID of the guild to invite.", methods=HTTPMethod.POST
     )
     @openapi.pathParameter(
-        name="channel",
-        schema=str,
-        description="ID of the channel to invite.",
-        methods=HTTPMethod.POST,
+        name="channel", schema=str, description="ID of the channel to invite.", methods=HTTPMethod.POST
     )
     @openapi.description("This endpoint redirects to a Node-RED flow.")
     @openapi.response(
@@ -99,9 +91,7 @@ class NodeRedApiHandler(ApiHttpHandler):
         methods=HTTPMethod.POST,
     )
     @openapi.response(
-        302,
-        description="If called directly to TacoBot, it will redirect to Node-RED.",
-        methods=HTTPMethod.POST,
+        302, description="If called directly to TacoBot, it will redirect to Node-RED.", methods=HTTPMethod.POST
     )
     @openapi.tags("minecraft", "nodered")
     @openapi.managed()

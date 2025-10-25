@@ -3,6 +3,7 @@ import typing
 
 MinecraftPlayerEventLiteral: typing.TypeAlias = typing.Literal["login", "logout", "death", "unknown"]
 
+
 class MinecraftPlayerEvents(Enum):
     UNKNOWN = 0
     LOGIN = 1

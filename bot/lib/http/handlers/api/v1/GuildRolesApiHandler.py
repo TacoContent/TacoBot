@@ -33,10 +33,7 @@ class GuildRolesApiHandler(BaseHttpHandler):
     @openapi.tags("guilds", "roles")
     @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     @openapi.pathParameter(
-        name="guild_id",
-        schema=str,
-        description="Discord guild id",
-        methods=[HTTPMethod.GET],
+        name="guild_id", schema=str, description="Discord guild id", methods=[HTTPMethod.GET]
     )
     @openapi.response(
         200,
@@ -113,10 +110,7 @@ class GuildRolesApiHandler(BaseHttpHandler):
     @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     @openapi.tags("guilds", "roles")
     @openapi.pathParameter(
-        name="guild_id",
-        schema=str,
-        description="Discord guild id",
-        methods=[HTTPMethod.POST],
+        name="guild_id", schema=str, description="Discord guild id", methods=[HTTPMethod.POST]
     )
     @openapi.requestBody(
         schema=typing.List[str] | GuildItemIdBatchRequestBody,
@@ -225,10 +219,7 @@ class GuildRolesApiHandler(BaseHttpHandler):
     @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     @openapi.tags("guilds", "roles", "users", "mentionables")
     @openapi.pathParameter(
-        name="guild_id",
-        schema=str,
-        description="Discord guild id",
-        methods=[HTTPMethod.POST],
+        name="guild_id", schema=str, description="Discord guild id", methods=[HTTPMethod.POST]
     )
     @openapi.requestBody(
         schema=typing.List[str] | GuildItemIdBatchRequestBody,
@@ -363,10 +354,7 @@ class GuildRolesApiHandler(BaseHttpHandler):
     @openapi.tags("guilds", "roles", "users", "mentionables")
     @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     @openapi.pathParameter(
-        name="guild_id",
-        schema=str,
-        description="Discord guild id",
-        methods=[HTTPMethod.GET],
+        name="guild_id", schema=str, description="Discord guild id", methods=[HTTPMethod.GET]
     )
     @openapi.response(
         200,

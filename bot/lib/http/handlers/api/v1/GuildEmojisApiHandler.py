@@ -24,7 +24,6 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         self._module = os.path.basename(__file__)[:-3]
         self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
-
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emojis", method=HTTPMethod.GET)
     @openapi.security("X-API-TOKEN", "X-TACOBOT-TOKEN")
     @openapi.tags("guilds", "emojis")
@@ -50,12 +49,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         schema=ErrorStatusCodePayload,
         methods=[HTTPMethod.GET],
     )
-    @openapi.response(
-        401,
-        description="Unauthorized",
-        contentType="application/json",
-        schema=ErrorStatusCodePayload,
-    )
+    @openapi.response(401, description="Unauthorized", contentType="application/json", schema=ErrorStatusCodePayload)
     @openapi.response(
         404,
         description="Guild not found",
@@ -87,22 +81,24 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
         try:
-                guild_id: typing.Optional[str] = uri_variables.get("guild_id")
-                if guild_id is None:
-                        raise HttpResponseException(400, headers, bytearray('{"error": "guild_id is required"}', "utf-8"))
-                if not guild_id.isdigit():
-                        raise HttpResponseException(400, headers, bytearray('{"error": "guild_id must be a number"}', "utf-8"))
-                guild = self.bot.get_guild(int(guild_id))
-                if guild is None:
-                        raise HttpResponseException(404, headers, bytearray('{"error": "guild not found"}', "utf-8"))
-                emojis = [DiscordEmoji.fromEmoji(e).to_dict() for e in guild.emojis]
-                return HttpResponse(200, headers, bytearray(json.dumps(emojis), "utf-8"))
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, "Unauthorized", headers=headers)
+
+            guild_id: typing.Optional[str] = uri_variables.get("guild_id")
+            if guild_id is None:
+                return self._create_error_response(400, "guild_id is required", headers=headers)
+            if not guild_id.isdigit():
+                return self._create_error_response(400, "guild_id must be a number", headers=headers)
+            guild = self.bot.get_guild(int(guild_id))
+            if guild is None:
+                return self._create_error_response(404, "guild not found", headers=headers)
+            emojis = [DiscordEmoji.fromEmoji(e).to_dict() for e in guild.emojis]
+            return HttpResponse(200, headers, bytearray(json.dumps(emojis), "utf-8"))
         except HttpResponseException as e:
-                return HttpResponse(e.status_code, e.headers, e.body)
+            return self._create_error_from_exception(exception=e)
         except Exception as e:  # noqa: BLE001
-                self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e))
-                err_msg = f'{{"error": "Internal server error: {str(e)}" }}'
-                raise HttpResponseException(500, headers, bytearray(err_msg, "utf-8"))
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e))
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emoji/id/{{emoji_id}}", method=HTTPMethod.GET)
     @openapi.security("X-API-TOKEN", "X-TACOBOT-TOKEN")
@@ -116,10 +112,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         methods=[HTTPMethod.GET],
     )
     @openapi.pathParameter(
-        name="emoji_id",
-        description="The ID of the emoji to retrieve.",
-        schema=str,
-        methods=[HTTPMethod.GET],
+        name="emoji_id", description="The ID of the emoji to retrieve.", schema=str, methods=[HTTPMethod.GET]
     )
     @openapi.response(
         200,
@@ -136,10 +129,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         methods=[HTTPMethod.GET],
     )
     @openapi.response(
-        401,
-        description="Unauthorized",
-        contentType="application/json",
-        schema=ErrorStatusCodePayload,
+        401, description="Unauthorized", contentType="application/json", schema=ErrorStatusCodePayload
     )
     @openapi.response(
         404,
@@ -210,10 +200,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         methods=[HTTPMethod.GET],
     )
     @openapi.pathParameter(
-        name="emoji_name",
-        description="The name of the emoji to retrieve.",
-        schema=str,
-        methods=[HTTPMethod.GET],
+        name="emoji_name", description="The name of the emoji to retrieve.", schema=str, methods=[HTTPMethod.GET]
     )
     @openapi.response(
         200,
@@ -230,10 +217,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         methods=[HTTPMethod.GET],
     )
     @openapi.response(
-        401,
-        description="Unauthorized",
-        contentType="application/json",
-        schema=ErrorStatusCodePayload,
+        401, description="Unauthorized", contentType="application/json", schema=ErrorStatusCodePayload
     )
     @openapi.response(
         404,
@@ -326,6 +310,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         description="Unauthorized",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST]
     )
     @openapi.response(
         404,
@@ -372,7 +357,6 @@ class GuildEmojisApiHandler(BaseHttpHandler):
             if guild is None:
                 return self._create_error_response(404, "guild not found", headers=headers)
 
-
             query_ids: typing.Optional[list[str]] = request.query_params.get("ids")
             body_ids: typing.Optional[list[str]] = None
             if request.body is not None and request.method == HTTPMethod.POST:
@@ -418,7 +402,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         contentType="application/json",
         schema=typing.Union[typing.List[str], GuildItemNameBatchRequestBody],
         methods=[HTTPMethod.POST],
-        required=False
+        required=False,
     )
     @openapi.response(
         200,
@@ -438,18 +422,21 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         description="Unauthorized",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST]
     )
     @openapi.response(
         404,
         description="Guild not found",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
     )
     @openapi.response(
         '5XX',
         description="Server error",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
     )
     @openapi.managed()
     def get_guild_emojis_batch_by_names(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:

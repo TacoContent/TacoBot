@@ -102,7 +102,7 @@ class GuildLookupApiHandler(BaseHttpHandler):
     # How do i restrict this to only the GET method that has the path variable?
     # so i dont have to duplicate the entire guild_lookup method?
     @openapi.pathParameter(
-        name="guild_id", # maybe look at the mapping and se if it has the variable?
+        name="guild_id",  # maybe look at the mapping and se if it has the variable?
         description="The ID of the guild to look up.",
         schema=str,
         methods=[HTTPMethod.GET],
@@ -153,11 +153,7 @@ class GuildLookupApiHandler(BaseHttpHandler):
     )
     @openapi.tags("guilds")
     @openapi.queryParameter(
-        name="id",
-        description="The ID of the guild to look up.",
-        required=False,
-        schema=str,
-        methods=[HTTPMethod.GET],
+        name="id", description="The ID of the guild to look up.", required=False, schema=str, methods=[HTTPMethod.GET]
     )
     @openapi.requestBody(
         description="Request body for guild lookup by ID.",

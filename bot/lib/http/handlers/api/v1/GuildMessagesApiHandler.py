@@ -34,7 +34,9 @@ class GuildMessagesApiHandler(BaseHttpHandler):
         self._module = os.path.basename(__file__)[:-3]
         self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
-    @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/channel/{{channel_id}}/messages", method=HTTPMethod.GET)
+    @uri_variable_mapping(
+        f"/api/{API_VERSION}/guild/{{guild_id}}/channel/{{channel_id}}/messages", method=HTTPMethod.GET
+    )
     @openapi.tags("guilds", "channels", "messages")
     @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     @openapi.summary("List recent messages from a text-capable channel")
@@ -42,10 +44,7 @@ class GuildMessagesApiHandler(BaseHttpHandler):
         "Returns up to the most recent 100 messages (default 50) for the specified text-capable channel in the guild."
     )
     @openapi.pathParameter(
-        name="guild_id",
-        description="The ID of the guild containing the channel.",
-        schema=str,
-        methods=[HTTPMethod.GET],
+        name="guild_id", description="The ID of the guild containing the channel.", schema=str, methods=[HTTPMethod.GET]
     )
     @openapi.pathParameter(
         name="channel_id",
@@ -172,10 +171,7 @@ class GuildMessagesApiHandler(BaseHttpHandler):
     @openapi.summary("Fetch a single message by ID")
     @openapi.description("Returns the specified message from the text-capable channel in the guild.")
     @openapi.pathParameter(
-        name="guild_id",
-        description="The ID of the guild containing the channel.",
-        schema=str,
-        methods=[HTTPMethod.GET],
+        name="guild_id", description="The ID of the guild containing the channel.", schema=str, methods=[HTTPMethod.GET]
     )
     @openapi.pathParameter(
         name="channel_id",
@@ -184,10 +180,7 @@ class GuildMessagesApiHandler(BaseHttpHandler):
         methods=[HTTPMethod.GET],
     )
     @openapi.pathParameter(
-        name="message_id",
-        description="The ID of the message to retrieve.",
-        schema=str,
-        methods=[HTTPMethod.GET],
+        name="message_id", description="The ID of the message to retrieve.", schema=str, methods=[HTTPMethod.GET]
     )
     @openapi.response(
         200,
@@ -281,9 +274,7 @@ class GuildMessagesApiHandler(BaseHttpHandler):
     @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     @openapi.tags("guilds", "channels", "messages")
     @openapi.summary("Batch fetch multiple messages by IDs")
-    @openapi.description(
-        "Fetches multiple messages by their IDs from the specified text-capable channel in the guild."
-    )
+    @openapi.description("Fetches multiple messages by their IDs from the specified text-capable channel in the guild.")
     @openapi.pathParameter(
         name="guild_id",
         description="The ID of the guild containing the channel.",
