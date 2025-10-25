@@ -190,10 +190,10 @@ def uri_variable_mapping(path: str, method: HTTP_METHODS | list[Literal[HTTP_MET
     Notes
     -----
     * Variable regex is intentionally permissive (`[^/]*`)—add stricter validation
-      inside the handler if needed (e.g. ID length / numeric check).
+        inside the handler if needed (e.g. ID length / numeric check).
     * If handler signature omits a variable name a runtime invocation error likely occurs.
     * Duplicate variable names in the template are not recommended and may produce
-      unexpected group overwrites.
+        unexpected group overwrites.
     """
     uri_variables, uri_regex = _uri_variable_to_pattern(path)
     return lambda f: _uri_route_decorator(f, uri_regex, method, uri_variables)

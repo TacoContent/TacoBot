@@ -14,6 +14,7 @@ This document analyzes the `ShiftCodeWebhookHandler.shift_code` method and provi
 ### Method Structure
 
 The `shift_code` method currently handles:
+
 1. ✅ Authentication validation
 2. ✅ Request body validation
 3. ✅ Payload field validation (games, code)
@@ -49,6 +50,7 @@ The `shift_code` method currently handles:
 **Current:** Inline validation scattered throughout method
 
 **Proposed Method:**
+
 ```python
 def _validate_shift_code_request(self, request: HttpRequest, headers: HttpHeaders) -> dict:
     """Validate and parse shift code request.
@@ -87,12 +89,14 @@ def _validate_shift_code_request(self, request: HttpRequest, headers: HttpHeader
 ```
 
 **Benefits:**
+
 - Single responsibility: request validation
 - Easy to unit test with various invalid payloads
 - Consistent error response format
 - Can add schema validation in future
 
 **Testing:**
+
 - Test missing body
 - Test invalid JSON
 - Test missing/empty games
@@ -106,6 +110,7 @@ def _validate_shift_code_request(self, request: HttpRequest, headers: HttpHeader
 **Current:** Inline string manipulation
 
 **Proposed Method:**
+
 ```python
 def _normalize_shift_code(self, code: str) -> str:
     """Normalize shift code format.
@@ -120,12 +125,14 @@ def _normalize_shift_code(self, code: str) -> str:
 ```
 
 **Benefits:**
+
 - Testable normalization logic
 - Easy to add additional formatting rules
 - Self-documenting
 - Single source of truth for code format
 
 **Testing:**
+
 - Test lowercase conversion
 - Test space removal
 - Test whitespace stripping
@@ -138,6 +145,7 @@ def _normalize_shift_code(self, code: str) -> str:
 **Current:** Inline expiry checking with seconds calculation
 
 **Proposed Method:**
+
 ```python
 def _check_code_expiry(self, expiry: Optional[int], headers: HttpHeaders) -> bool:
     """Check if code has expired.
@@ -164,12 +172,14 @@ def _check_code_expiry(self, expiry: Optional[int], headers: HttpHeaders) -> boo
 ```
 
 **Benefits:**
+
 - Isolated expiry logic
 - Easy to mock time for testing
 - Clear return value semantics
 - Consistent with other validation methods
 
 **Testing:**
+
 - Test expired timestamp (past)
 - Test valid timestamp (future)
 - Test no expiry (None)
@@ -182,6 +192,7 @@ def _check_code_expiry(self, expiry: Optional[int], headers: HttpHeaders) -> boo
 **Current:** Inline string concatenation with HTML unescaping
 
 **Proposed Method:**
+
 ```python
 def _build_shift_code_description(
     self, 
@@ -211,12 +222,14 @@ def _build_shift_code_description(
 ```
 
 **Benefits:**
+
 - Testable string formatting
 - HTML unescape isolated
 - Easy to modify template
 - Clear input/output contract
 
 **Testing:**
+
 - Test with all fields
 - Test with missing notes
 - Test HTML entity unescaping
@@ -229,6 +242,7 @@ def _build_shift_code_description(
 **Current:** Inline timestamp formatting
 
 **Proposed Method:**
+
 ```python
 def _format_timestamp_messages(
     self, 
@@ -259,12 +273,14 @@ def _format_timestamp_messages(
 ```
 
 **Benefits:**
+
 - Isolated timestamp formatting
 - Easy to test different timestamp combinations
 - Type validation centralized
 - Discord timestamp format documented
 
 **Testing:**
+
 - Test with both timestamps
 - Test with only expiry
 - Test with only created_at
@@ -280,6 +296,7 @@ def _format_timestamp_messages(
 **Current:** Large loop with multiple nested conditions
 
 **Proposed Method:**
+
 ```python
 async def _process_guild_broadcast(
     self,
@@ -330,12 +347,14 @@ async def _process_guild_broadcast(
 ```
 
 **Benefits:**
+
 - Guild processing isolated
 - Easier to test single guild scenarios
 - Clearer separation of concerns
 - Can parallelize guild processing in future
 
 **Testing:**
+
 - Test guild with feature disabled
 - Test guild with code already tracked
 - Test guild with no channels
@@ -348,6 +367,7 @@ async def _process_guild_broadcast(
 **Current:** Inline channel fetching and validation
 
 **Proposed Method:**
+
 ```python
 async def _resolve_guild_channels(
     self, 
@@ -387,12 +407,14 @@ async def _resolve_guild_channels(
 ```
 
 **Benefits:**
+
 - Channel resolution isolated
 - Easy to mock for testing
 - Clear input/output contract
 - Can add channel validation logic
 
 **Testing:**
+
 - Test with no channel_ids
 - Test with invalid channel_ids
 - Test with valid channel_ids
@@ -405,6 +427,7 @@ async def _resolve_guild_channels(
 **Current:** Inline role mention string building
 
 **Proposed Method:**
+
 ```python
 def _build_notify_message(self, notify_role_ids: list) -> str:
     """Build role notification message.
@@ -422,12 +445,14 @@ def _build_notify_message(self, notify_role_ids: list) -> str:
 ```
 
 **Benefits:**
+
 - Simple, testable formatting
 - Easy to modify mention format
 - Clear responsibility
 - Can add role validation
 
 **Testing:**
+
 - Test with empty list
 - Test with single role
 - Test with multiple roles
@@ -440,6 +465,7 @@ def _build_notify_message(self, notify_role_ids: list) -> str:
 **Current:** Inline loop creating fields
 
 **Proposed Method:**
+
 ```python
 def _build_embed_fields(self, games: list, code: str) -> list[dict]:
     """Build embed fields from games list.
@@ -465,12 +491,14 @@ def _build_embed_fields(self, games: list, code: str) -> list[dict]:
 ```
 
 **Benefits:**
+
 - Testable field generation
 - Easy to modify field format
 - Handles missing game names
 - Clear data structure
 
 **Testing:**
+
 - Test with multiple games
 - Test with game missing name
 - Test with empty games list
@@ -483,6 +511,7 @@ def _build_embed_fields(self, games: list, code: str) -> list[dict]:
 **Current:** Inline message send and reaction logic
 
 **Proposed Method:**
+
 ```python
 async def _broadcast_to_channels(
     self,
@@ -525,12 +554,14 @@ async def _broadcast_to_channels(
 ```
 
 **Benefits:**
+
 - Broadcasting logic isolated
 - Easy to test without Discord API
 - Can add retry logic
 - Clear responsibility
 
 **Testing:**
+
 - Test successful broadcast
 - Test message is None
 - Test reaction failures
@@ -543,6 +574,7 @@ async def _broadcast_to_channels(
 **Current:** Inline reaction adding
 
 **Proposed Method:**
+
 ```python
 async def _add_validation_reactions(self, message) -> None:
     """Add validation reactions to shift code message.
@@ -555,12 +587,14 @@ async def _add_validation_reactions(self, message) -> None:
 ```
 
 **Benefits:**
+
 - Simple, focused method
 - Easy to modify reactions
 - Can add error handling
 - Testable independently
 
 **Testing:**
+
 - Test both reactions added
 - Test reaction failure handling
 - Test None message
@@ -704,12 +738,14 @@ async def shift_code(self, request: HttpRequest) -> HttpResponse:
 ### Before Refactoring
 
 **Test Complexity:**
+
 - Need to mock: bot, discord_helper, tracking_db, shift_codes_db, messaging, utils
 - Need to set up: guilds, channels, messages, settings
 - Hard to test individual validation steps
 - Difficult to test error paths
 
 **Example Test Setup:**
+
 ```python
 # 50+ lines of mock setup required for each test
 ```
@@ -717,11 +753,13 @@ async def shift_code(self, request: HttpRequest) -> HttpResponse:
 ### After Refactoring
 
 **Test Complexity:**
+
 - Unit tests for each helper (minimal mocking)
 - Integration tests for main flow
 - Focused tests for each concern
 
 **Example Test Setup:**
+
 ```python
 def test_normalize_shift_code():
     handler = ShiftCodeWebhookHandler(mock_bot)
@@ -733,27 +771,31 @@ def test_normalize_shift_code():
 ## Implementation Priority
 
 ### Phase 1: Critical Foundations (~2 hours)
+
 1. ✅ Add `_create_error_response` helper
-2. ✅ Extract `_validate_shift_code_request`
-3. ✅ Extract `_normalize_shift_code`
-4. ✅ Extract `_check_code_expiry`
+1. ✅ Extract `_validate_shift_code_request`
+1. ✅ Extract `_normalize_shift_code`
+1. ✅ Extract `_check_code_expiry`
 
 ### Phase 2: Description Building (~1 hour)
-5. ✅ Extract `_build_shift_code_description`
-6. ✅ Extract `_format_timestamp_messages`
-7. ✅ Extract `_build_embed_fields`
+
+1. ✅ Extract `_build_shift_code_description`
+1. ✅ Extract `_format_timestamp_messages`
+1. ✅ Extract `_build_embed_fields`
 
 ### Phase 3: Guild Processing (~2 hours)
-8. ✅ Extract `_resolve_guild_channels`
-9. ✅ Extract `_build_notify_message`
-10. ✅ Extract `_process_guild_broadcast`
-11. ✅ Extract `_broadcast_to_channels`
-12. ✅ Extract `_add_validation_reactions`
+
+1. ✅ Extract `_resolve_guild_channels`
+1. ✅ Extract `_build_notify_message`
+1. ✅ Extract `_process_guild_broadcast`
+1. ✅ Extract `_broadcast_to_channels`
+1. ✅ Extract `_add_validation_reactions`
 
 ### Phase 4: Polish (~1 hour)
-13. ✅ Add complete type hints
-14. ✅ Update docstrings
-15. ✅ Add tests for all helpers
+
+1. ✅ Add complete type hints
+1. ✅ Update docstrings
+1. ✅ Add tests for all helpers
 
 **Total Estimated Time:** ~6 hours
 
@@ -762,24 +804,28 @@ def test_normalize_shift_code():
 ## Benefits Summary
 
 ### Testability ⭐⭐⭐⭐⭐
+
 - Unit tests for each helper
 - Isolated validation logic
 - Easy to mock dependencies
 - Clear test scenarios
 
 ### Maintainability ⭐⭐⭐⭐⭐
+
 - Single responsibility per method
 - Easy to locate and fix bugs
 - Clear separation of concerns
 - Self-documenting code
 
 ### Extensibility ⭐⭐⭐⭐⭐
+
 - Easy to add new validations
 - Can modify formatting independently
 - Can add caching/rate limiting
 - Template for other webhooks
 
 ### Code Quality ⭐⭐⭐⭐⭐
+
 - Reduced cyclomatic complexity
 - Better error handling
 - Consistent patterns
@@ -790,35 +836,37 @@ def test_normalize_shift_code():
 ## Future Enhancements
 
 ### Performance Optimizations
-1. **Parallel Guild Processing**
-   - Process guilds concurrently with asyncio.gather
-   - Significant speedup for many guilds
 
-2. **Channel Caching**
-   - Cache channel objects (short TTL)
-   - Reduce Discord API calls
+- **Parallel Guild Processing**
+  - Process guilds concurrently with asyncio.gather
+  - Significant speedup for many guilds
 
-3. **Duplicate Detection Optimization**
-   - Batch check all guilds at once
-   - Single database query
+- **Channel Caching**
+  - Cache channel objects (short TTL)
+  - Reduce Discord API calls
+
+- **Duplicate Detection Optimization**
+  - Batch check all guilds at once
+  - Single database query
 
 ### Feature Additions
-1. **Code Validation**
-   - Validate code format (regex)
-   - Check for known invalid patterns
 
-2. **Rate Limiting**
-   - Per-source rate limiting
-   - Prevent webhook spam
+- **Code Validation**
+  - Validate code format (regex)
+  - Check for known invalid patterns
 
-3. **Webhook Signatures**
-   - Verify request authenticity
-   - Prevent unauthorized posts
+- **Rate Limiting**
+  - Per-source rate limiting
+  - Prevent webhook spam
 
-4. **Analytics**
-   - Track code usage/reactions
-   - Popular games tracking
-   - Expiry effectiveness
+- **Webhook Signatures**
+  - Verify request authenticity
+  - Prevent unauthorized posts
+
+- **Analytics**
+  - Track code usage/reactions
+  - Popular games tracking
+  - Expiry effectiveness
 
 ---
 
@@ -827,6 +875,7 @@ def test_normalize_shift_code():
 The `ShiftCodeWebhookHandler.shift_code` method follows a similar pattern to the previously refactored `MinecraftPlayerWebhookHandler`. The proposed extractions will significantly improve testability while maintaining all existing functionality.
 
 **Key Takeaways:**
+
 - Extract validation logic into focused methods
 - Separate formatting from business logic
 - Isolate external dependencies

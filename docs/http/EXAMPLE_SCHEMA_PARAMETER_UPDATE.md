@@ -42,17 +42,20 @@ from bot.lib.models.discord import DiscordUser
 ## ✨ Benefits
 
 ### 1. **Type Safety**
+
 - Uses actual Python classes instead of strings
 - No more typos in model names
 - Compile-time validation of model existence
 
 ### 2. **IDE Support**
+
 - **Autocomplete**: IDE suggests available model classes
 - **Go-to-definition**: Ctrl+Click navigates to model definition
 - **Refactoring**: Renaming model class updates all references automatically
 - **Import management**: Auto-import model classes
 
 ### 3. **Consistency**
+
 - Matches pattern used by other decorators:
   - `@openapi.pathParameter(schema=str)`
   - `@openapi.queryParameter(schema=int)`
@@ -60,6 +63,7 @@ from bot.lib.models.discord import DiscordUser
   - `@openapi.response(schema=DiscordRole)`
 
 ### 4. **Automatic OpenAPI Conversion**
+
 - Python class → `#/components/schemas/ClassName`
 - Leverages existing `_schema_to_openapi()` function
 - Consistent with schema generation throughout codebase
@@ -71,6 +75,7 @@ from bot.lib.models.discord import DiscordUser
 ### Simple Component References
 
 **Before:**
+
 ```python
 @openapi.example(
     name="standard_user",
@@ -81,6 +86,7 @@ from bot.lib.models.discord import DiscordUser
 ```
 
 **After:**
+
 ```python
 from bot.lib.models.discord import DiscordUser
 
@@ -95,6 +101,7 @@ from bot.lib.models.discord import DiscordUser
 ### Full Path References (No Longer Needed)
 
 **Before:**
+
 ```python
 @openapi.example(
     name="user",
@@ -105,6 +112,7 @@ from bot.lib.models.discord import DiscordUser
 ```
 
 **After:**
+
 ```python
 from bot.lib.models.discord import DiscordUser
 
@@ -135,6 +143,7 @@ from bot.lib.models.discord import DiscordUser
 ### Decorator Signature Update
 
 **Before:**
+
 ```python
 def example(
     name: str,
@@ -147,6 +156,7 @@ def example(
 ```
 
 **After:**
+
 ```python
 def example(
     name: str,
@@ -175,11 +185,13 @@ This leverages the existing schema extraction logic used throughout the codebase
 ### OpenAPI Output
 
 **Input:**
+
 ```python
 @openapi.example(name="user", schema=DiscordUser, placement="response", status_code=200)
 ```
 
 **Output in `.swagger.v1.yaml`:**
+
 ```yaml
 responses:
   '200':
@@ -231,35 +243,35 @@ python scripts/swagger_sync.py --check
 
 ## 📚 Updated Documentation
 
-### Files Updated:
+### Files Updated
 
-1. **`bot/lib/models/openapi/endpoints.py`**
-   - Renamed `ref` to `schema` in function signature
-   - Updated docstring examples
-   - Updated validation logic
-   - Updated implementation to use `_schema_to_openapi()`
+- **`bot/lib/models/openapi/endpoints.py`**
+  - Renamed `ref` to `schema` in function signature
+  - Updated docstring examples
+  - Updated validation logic
+  - Updated implementation to use `_schema_to_openapi()`
 
-2. **`scripts/swagger_sync/decorator_parser.py`**
-   - Updated `_extract_example()` to parse `schema` parameter
-   - Uses `_extract_schema_reference()` for type extraction
-   - Auto-generates `$ref` to `#/components/schemas/<ClassName>`
+- **`scripts/swagger_sync/decorator_parser.py`**
+  - Updated `_extract_example()` to parse `schema` parameter
+  - Uses `_extract_schema_reference()` for type extraction
+  - Auto-generates `$ref` to `#/components/schemas/<ClassName>`
 
-3. **`tests/test_openapi_example_decorator.py`**
-   - Added `MockUser` and `MockRole` test classes
-   - Updated all component reference tests
+- **`tests/test_openapi_example_decorator.py`**
+  - Added `MockUser` and `MockRole` test classes
+  - Updated all component reference tests
 
-4. **`tests/test_swagger_sync_examples.py`**
-   - Updated AST test code to use `schema=DiscordUser`
-   - Updated assertions to expect `/schemas/` paths
+- **`tests/test_swagger_sync_examples.py`**
+  - Updated AST test code to use `schema=DiscordUser`
+  - Updated assertions to expect `/schemas/` paths
 
-5. **`tests/test_swagger_integration_examples.py`**
-   - Updated `HANDLER_WITH_COMPONENT_REF` test data
-   - Updated assertions to expect `/schemas/` refs
+- **`tests/test_swagger_integration_examples.py`**
+  - Updated `HANDLER_WITH_COMPONENT_REF` test data
+  - Updated assertions to expect `/schemas/` refs
 
-6. **`docs/http/openapi_examples.md`**
-   - Updated "Component Reference" section to "Schema Reference"
-   - Replaced all `ref=` examples with `schema=` examples
-   - Added benefits section explaining type safety
+- **`docs/http/openapi_examples.md`**
+  - Updated "Component Reference" section to "Schema Reference"
+  - Replaced all `ref=` examples with `schema=` examples
+  - Added benefits section explaining type safety
 
 ---
 
@@ -346,6 +358,7 @@ Search for: `ref=` in decorator calls
 Replace with: `schema=<ModelClass>`
 
 **PowerShell migration script:**
+
 ```powershell
 # Find all handlers with ref= in example decorators
 Get-ChildItem -Recurse -Filter "*.py" | 

@@ -27,7 +27,7 @@ def collect_model_components(
     models_root: pathlib.Path
 ) -> tuple[Dict[str, Dict[str, Any]], set[str]]:
     """
-    Scan models_root for @openapiopenapi.component_model classes and generate component schemas.
+    Scan models_root for @openapi.component classes and generate component schemas.
     
     Returns:
         Tuple of (components dict, excluded component names set)
@@ -75,7 +75,7 @@ for excluded in excluded_model_components:
         ))
         if diff_lines:
             print(colored(f"WARNING: Excluded model schema component '{excluded}' removed.",
-                         color='yellow' if use_color else None))
+                          color='yellow' if use_color else None))
             for line in diff_lines:
                 color = 'red' if line.startswith('-') else None
                 print(colored(line.rstrip(), color=color if use_color else None))

@@ -34,8 +34,8 @@ The `scripts/swagger_sync.py` script provides a one‑way synchronization from c
   responses:
     200:
       description: OK
-   <<<openapi
-   ```
+  <<<openapi
+  ```
 
 - Builds/updates the operation object for that `path + method` (lowercased method) in memory.
 - Compares it with the existing entry in `.swagger.v1.yaml` under `paths:`.
@@ -428,21 +428,21 @@ Modes (mutually exclusive):
   --fix              Apply updates (write operations to swagger file).
 
 General Options:
-  --handlers-root PATH       Override handler root (default bot/lib/http/handlers/)
-  --swagger-file FILE        Path to swagger file (default .swagger.v1.yaml)
-  --ignore-file GLOB         Glob (relative) or filename to skip; repeatable.
-  --show-orphans             List swagger paths and components lacking handlers/models.
-  --show-ignored             List endpoints skipped via @openapi.ignore() decorator or @openapi: ignore docstring marker.
-  --show-missing-blocks      List handlers without an ---openapi block.
-  --verbose-coverage         Print per-endpoint coverage flags.
-  --coverage-report FILE     Emit coverage report (extension auto-detected if not provided).
-  --coverage-format FORMAT   json|text|cobertura|xml (xml and cobertura are equivalent; default json).
-  --fail-on-coverage-below N Fail if handler doc coverage < N (0-1 or 0-100).
-  --generate-badge FILE      Generate SVG badge showing coverage % and write to FILE.
-  --markdown-summary FILE    Generate comprehensive GitHub-friendly markdown summary with
-                             full coverage details (automation, quality, methods, tags, files).
-  --output-directory DIR     Base directory for report outputs (coverage & summary). Default: current working directory.
-  --color MODE               Color output: auto (default, only if TTY), always, never.
+  --handlers-root PATH        Override handler root (default bot/lib/http/handlers/)
+  --swagger-file FILE         Path to swagger file (default .swagger.v1.yaml)
+  --ignore-file GLOB          Glob (relative) or filename to skip; repeatable.
+  --show-orphans              List swagger paths and components lacking handlers/models.
+  --show-ignored              List endpoints skipped via @openapi.ignore() decorator or @openapi: ignore docstring marker.
+  --show-missing-blocks       List handlers without an ---openapi block.
+  --verbose-coverage          Print per-endpoint coverage flags.
+  --coverage-report FILE      Emit coverage report (extension auto-detected if not provided).
+  --coverage-format FORMAT    json|text|cobertura|xml (xml and cobertura are equivalent; default json).
+  --fail-on-coverage-below N  Fail if handler doc coverage < N (0-1 or 0-100).
+  --generate-badge FILE       Generate SVG badge showing coverage % and write to FILE.
+  --markdown-summary FILE     Generate comprehensive GitHub-friendly markdown summary with
+                              full coverage details (automation, quality, methods, tags, files).
+  --output-directory DIR      Base directory for report outputs (coverage & summary). Default: current working directory.
+  --color MODE                Color output: auto (default, only if TTY), always, never.
 
 Exit Codes:
   0 In sync (or after successful --fix) / coverage OK
@@ -712,10 +712,10 @@ Orphans are clearly distinguished in the output:
 
 ```text
 Orphans:
- - Path present only in swagger (no handler): GET /api/v1/guilds
- - Path present only in swagger (no handler): POST /api/v1/minecraft/stats
- - Component present only in swagger (no model class): MinecraftUser
- - Component present only in swagger (no model class): TacoWebhookPayload
+  - Path present only in swagger (no handler): GET /api/v1/guilds
+  - Path present only in swagger (no handler): POST /api/v1/minecraft/stats
+  - Component present only in swagger (no model class): MinecraftUser
+  - Component present only in swagger (no model class): TacoWebhookPayload
 ```
 
 ### 7.5 Managing Orphans

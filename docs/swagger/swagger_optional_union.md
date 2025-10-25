@@ -8,65 +8,65 @@ Implemented comprehensive support for nullable unions in swagger_sync.py, allowi
 
 ### Code Changes (scripts/swagger_sync.py)
 
-1. **Added `_unwrap_optional` function** (~50 lines, lines 453-503)
-   - Detects Optional[Union[...]], Union[..., None], and A|B|None patterns
-   - Returns (unwrapped_type, is_nullable) tuple
-   - Handles regex, string manipulation, and pipe syntax
+- **Added `_unwrap_optional` function** (~50 lines, lines 453-503)
+  - Detects Optional[Union[...]], Union[..., None], and A|B|None patterns
+  - Returns (unwrapped_type, is_nullable) tuple
+  - Handles regex, string manipulation, and pipe syntax
 
-2. **Enhanced `_extract_union_schema` function**
-   - Added `nullable: bool = False` parameter
-   - Adds `nullable: true` to schema when flag is set
-   - Preserves existing oneOf/anyOf behavior
+- **Enhanced `_extract_union_schema` function**
+  - Added `nullable: bool = False` parameter
+  - Adds `nullable: true` to schema when flag is set
+  - Preserves existing oneOf/anyOf behavior
 
-3. **Integrated nullable detection at two call sites:**
-   - `_build_schema_from_annotation` (handler scanning)
-   - Model component collection loop (TypedDict scanning)
+- **Integrated nullable detection at two call sites:**
+  - `_build_schema_from_annotation` (handler scanning)
+  - Model component collection loop (TypedDict scanning)
 
 ### Test Changes
 
-1. **Created tests/tmp_union_test_models.py** (new file)
-   - OptionalMentionable: Optional[Union[DiscordRole, DiscordUser]]
-   - OptionalSearchCriteria: Union[SearchDateFilter, SearchAuthorFilter, SearchTagFilter, None]
-   - Follows tmp_* naming convention for test-only fixtures
-   - Not scanned during production model collection
+- **Created tests/tmp_union_test_models.py** (new file)
+  - OptionalMentionable: Optional[Union[DiscordRole, DiscordUser]]
+  - OptionalSearchCriteria: Union[SearchDateFilter, SearchAuthorFilter, SearchTagFilter, None]
+  - Follows tmp_* naming convention for test-only fixtures
+  - Not scanned during production model collection
 
-2. **Updated tests/test_swagger_sync_union_oneof.py**
-   - Added test_optional_union_oneof_with_nullable
-   - Added test_union_with_none_anyof_nullable
-   - Added test_nullable_not_present_on_non_optional
-   - Added test_optional_union_models_not_in_production
-   - Updated existing tests to scan tests/ directory for test models
-   - Total: 11 union tests (all passing)
+- **Updated tests/test_swagger_sync_union_oneof.py**
+  - Added test_optional_union_oneof_with_nullable
+  - Added test_union_with_none_anyof_nullable
+  - Added test_nullable_not_present_on_non_optional
+  - Added test_optional_union_models_not_in_production
+  - Updated existing tests to scan tests/ directory for test models
+  - Total: 11 union tests (all passing)
 
 ### Documentation Changes
 
-1. **Updated docs/swagger_union_oneof.md**
-   - Added "Optional[Union[...]] Support" section
-   - Added examples for all three nullable patterns
-   - Added usage guidelines for nullable unions
+- **Updated docs/swagger_union_oneof.md**
+  - Added "Optional[Union[...]] Support" section
+  - Added examples for all three nullable patterns
+  - Added usage guidelines for nullable unions
 
-2. **Updated docs/swagger_union_support_summary.md**
-   - Added nullable support to features list
-   - Updated test model inventory
-   - Added nullable validation examples
+- **Updated docs/swagger_union_support_summary.md**
+  - Added nullable support to features list
+  - Updated test model inventory
+  - Added nullable validation examples
 
-3. **Created docs/swagger_optional_union_implementation.md** (new file)
-   - Comprehensive implementation guide
-   - Detailed detection logic explanation
-   - Integration walkthrough
-   - Testing strategy documentation
+- **Created docs/swagger_optional_union_implementation.md** (new file)
+  - Comprehensive implementation guide
+  - Detailed detection logic explanation
+  - Integration walkthrough
+  - Testing strategy documentation
 
-4. **Created docs/swagger_union_nullable_complete.md** (new file)
-   - Complete implementation summary
-   - All features, tests, and examples consolidated
-   - Usage guidelines and future enhancements
+- **Created docs/swagger_union_nullable_complete.md** (new file)
+  - Complete implementation summary
+  - All features, tests, and examples consolidated
+  - Usage guidelines and future enhancements
 
 ### Swagger Changes
 
-1. **Removed test schemas from .swagger.v1.yaml**
-   - Deleted OptionalMentionable component (test-only)
-   - Deleted OptionalSearchCriteria component (test-only)
-   - Keeps production swagger clean
+- **Removed test schemas from .swagger.v1.yaml**
+  - Deleted OptionalMentionable component (test-only)
+  - Deleted OptionalSearchCriteria component (test-only)
+  - Keeps production swagger clean
 
 ## Testing Results
 

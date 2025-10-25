@@ -266,19 +266,19 @@ This implementation follows the [OpenAPI 3.0 Dictionary/HashMap specification](h
 
 If you have existing models with incorrect `allOf: [{$ref: '#/components/schemas/Dict'}]` schemas:
 
-1. Run swagger sync to detect drift:
+- Run swagger sync to detect drift:
 
-   ```powershell
-   python scripts/swagger_sync.py --check --config=.swagger-sync.yaml
-   ```
+  ```powershell
+  python scripts/swagger_sync.py --check --config=.swagger-sync.yaml
+  ```
 
-2. Apply the fix:
+- Apply the fix:
 
-   ```powershell
-   python scripts/swagger_sync.py --fix --config=.swagger-sync.yaml
-   ```
+  ```powershell
+  python scripts/swagger_sync.py --fix --config=.swagger-sync.yaml
+  ```
 
-3. Commit the updated `.swagger.v1.yaml` file
+- Commit the updated `.swagger.v1.yaml` file
 
 ## Related Documentation
 

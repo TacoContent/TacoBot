@@ -408,26 +408,26 @@ def get_all_items(self, request, uri_variables):
 
 ## 🔄 Workflow
 
-1. **Write decorator**:
+- **Write decorator**:
 
-   ```python
-   @openapi.example(name="example1", value={...}, placement="response", status_code=200)
-   ```
+  ```python
+  @openapi.example(name="example1", value={...}, placement="response", status_code=200)
+  ```
 
-2. **Run swagger sync**:
+- **Run swagger sync**:
 
-   ```bash
-   python scripts/swagger_sync.py --check  # Verify drift
-   python scripts/swagger_sync.py --fix    # Apply changes
-   ```
+  ```bash
+  python scripts/swagger_sync.py --check  # Verify drift
+  python scripts/swagger_sync.py --fix    # Apply changes
+  ```
 
-3. **Verify spec**:
-   - Check `.swagger.v1.yaml` for examples in correct locations
-   - View in Swagger UI for interactive examples
+- **Verify spec**:
+  - Check `.swagger.v1.yaml` for examples in correct locations
+  - View in Swagger UI for interactive examples
 
-4. **Commit**:
-   - Handler file with decorators
-   - Updated `.swagger.v1.yaml`
+- **Commit**:
+  - Handler file with decorators
+  - Updated `.swagger.v1.yaml`
 
 ---
 

@@ -9,21 +9,21 @@ Focuses on @openapi decorator usage rather than legacy YAML blocks:
 
 Key Metrics:
 1. **Decorator Coverage**: Handlers with ANY @openapi decorators
-   - Level 0: No decorators (needs attention)
-   - Level 1: Basic decorators (tags, summary, response)
-   - Level 2: Complete documentation (all applicable decorators)
+    - Level 0: No decorators (needs attention)
+    - Level 1: Basic decorators (tags, summary, response)
+    - Level 2: Complete documentation (all applicable decorators)
 
 2. **Core Documentation**: Essential decorators present
-   - Tags: Groups endpoints by category
-   - Summary: One-line description
-   - Response: At least one response definition
+    - Tags: Groups endpoints by category
+    - Summary: One-line description
+    - Response: At least one response definition
 
 3. **Complete Documentation**: All applicable decorators for endpoint
-   - Path parameters for variable paths
-   - Query parameters for query strings
-   - Request body for POST/PUT/PATCH
-   - Security requirements
-   - Examples and descriptions
+    - Path parameters for variable paths
+    - Query parameters for query strings
+    - Request body for POST/PUT/PATCH
+    - Security requirements
+    - Examples and descriptions
 
 Legacy Metrics (Still Available):
 - Documentation presence: handlers with >>>openapi<<<openapi blocks
@@ -421,9 +421,9 @@ def _generate_coverage(
         report_path: Output file path for the coverage report
         fmt: Output format - one of 'json', 'text', 'cobertura'
         extra_summary: Optional dict of additional metrics to merge into summary
-                      (e.g., legacy metrics for backward compatibility)
+                        (e.g., legacy metrics for backward compatibility)
         model_components: Optional dict of components from @openapi.component decorated classes
-                         (required for accurate orphan component detection)
+                        (required for accurate orphan component detection)
 
     Raises:
         SystemExit: If unsupported format is specified or XML generation fails
@@ -762,21 +762,21 @@ def _compute_coverage(
 
     Key metrics:
     - Decorator Coverage: Handlers with ANY @openapi decorators
-      - Level 0: No decorators (needs attention)
-      - Level 1: Basic decorators (tags, summary, response)
-      - Level 2: Complete documentation (all applicable decorators)
+        - Level 0: No decorators (needs attention)
+        - Level 1: Basic decorators (tags, summary, response)
+        - Level 2: Complete documentation (all applicable decorators)
 
     - Core Documentation: Essential decorators present
-      - Tags: Groups endpoints by category
-      - Summary: One-line description
-      - Response: At least one response definition
+        - Tags: Groups endpoints by category
+        - Summary: One-line description
+        - Response: At least one response definition
 
     - Complete Documentation: All applicable decorators for endpoint
-      - Path parameters for variable paths
-      - Query parameters for query strings
-      - Request body for POST/PUT/PATCH
-      - Security requirements
-      - Examples and descriptions
+        - Path parameters for variable paths
+        - Query parameters for query strings
+        - Request body for POST/PUT/PATCH
+        - Security requirements
+        - Examples and descriptions
 
     Args:
         endpoints: List of endpoint objects discovered from handler files

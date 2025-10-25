@@ -122,23 +122,23 @@ def collect_endpoints(
 
     OpenAPI Block Styles:
     1. Flat operation (one method per handler):
-       ```
-       >>>openapi
-       summary: Get guild details
-       responses:
-         200: {...}
-       <<<openapi
-       ```
+        ```
+        >>>openapi
+        summary: Get guild details
+        responses:
+            200: {...}
+        <<<openapi
+        ```
 
     2. Method-rooted (multiple methods per handler):
-       ```
-       >>>openapi
-       get:
-         summary: Get items
-       post:
-         summary: Create item
-       <<<openapi
-       ```
+        ```
+        >>>openapi
+        get:
+            summary: Get items
+        post:
+            summary: Create item
+        <<<openapi
+        ```
 
     Args:
         handlers_root: Root directory containing handler files
@@ -149,11 +149,11 @@ def collect_endpoints(
         Tuple of (endpoints_list, ignored_list)
         - endpoints_list: List of Endpoint objects with metadata
         - ignored_list: List of (path, method, file, function_name) tuples for
-          pattern-mapped or explicitly ignored handlers
+            pattern-mapped or explicitly ignored handlers
 
     Raises:
         ValueError: In strict mode, when OpenAPI docstring declares methods not
-                   present in decorator method list
+                    present in decorator method list
 
     Notes:
         - Module-level @openapi: ignore marks all handlers in that file (legacy)

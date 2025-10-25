@@ -255,25 +255,25 @@ pytest tests/test_swagger_sync_union_oneof.py -vvv
 
 **Sections**:
 
-1. Overview
-2. Supported Patterns
-3. How It Works (AST parsing strategy)
-4. Features
-   - Composition Keywords (oneOf vs anyOf)
-   - Metadata Preservation
-   - Multiple Union Members
-   - Primitive Filtering
-5. OpenAPI Semantics
-6. anyOf Support
-   - Use Cases
-   - Python Pattern
-   - Schema Examples
-   - Common Patterns
-7. Testing
-8. Implementation Details
-9. Troubleshooting
-10. Best Practices
-11. Future Enhancements
+- Overview
+- Supported Patterns
+- How It Works (AST parsing strategy)
+- Features
+  - Composition Keywords (oneOf vs anyOf)
+  - Metadata Preservation
+  - Multiple Union Members
+  - Primitive Filtering
+- OpenAPI Semantics
+- anyOf Support
+  - Use Cases
+  - Python Pattern
+  - Schema Examples
+  - Common Patterns
+- Testing
+- Implementation Details
+- Troubleshooting
+- Best Practices
+- Future Enhancements
 
 ## Usage Examples
 

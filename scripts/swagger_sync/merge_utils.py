@@ -173,7 +173,7 @@ def merge_examples_into_spec(
     for example in examples_list:
         placement = example.get('placement')
         name = example.get('name')
-        
+
         if not placement or not name:
             continue
 
@@ -193,7 +193,7 @@ def merge_examples_into_spec(
             example_obj['externalValue'] = example['externalValue']
         elif '$ref' in example:
             example_obj['$ref'] = example['$ref']
-        
+
         # Add optional metadata
         if 'summary' in example:
             example_obj['summary'] = example['summary']
@@ -237,7 +237,7 @@ def _merge_parameter_example(
         return
 
     parameters = result.setdefault('parameters', [])
-    
+
     # Find the parameter by name
     for param in parameters:
         if param.get('name') == parameter_name:
@@ -260,7 +260,7 @@ def _merge_request_body_example(
         example_obj: Cleaned example object to insert
     """
     content_type = example.get('contentType', 'application/json')
-    
+
     request_body = result.setdefault('requestBody', {})
     content = request_body.setdefault('content', {})
     content_schema = content.setdefault(content_type, {})
@@ -290,11 +290,11 @@ def _merge_response_example(
 
     responses = result.setdefault('responses', {})
     response_obj = responses.setdefault(status_key, {})
-    
+
     # Ensure description exists (required by OpenAPI spec)
     if 'description' not in response_obj:
         response_obj['description'] = 'Response'
-    
+
     content = response_obj.setdefault('content', {})
     content_schema = content.setdefault(content_type, {})
     content_schema.setdefault('examples', {})[name] = example_obj

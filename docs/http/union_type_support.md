@@ -73,6 +73,7 @@ The Union type parser supports:
 ```
 
 Generates:
+
 ```yaml
 schema:
   oneOf:
@@ -90,6 +91,7 @@ schema:
 ```
 
 Generates:
+
 ```yaml
 schema:
   oneOf:
@@ -108,6 +110,7 @@ schema:
 ```
 
 Generates:
+
 ```yaml
 schema:
   oneOf:
@@ -137,11 +140,13 @@ Three helper functions in `scripts/swagger_sync/decorator_parser.py` handle Unio
 ### Type Detection
 
 Primitive types (`str`, `int`, `bool`, etc.) are detected and converted to OpenAPI types:
+
 - `str` → `{"type": "string"}`
 - `int` → `{"type": "integer"}`
 - `bool` → `{"type": "boolean"}`
 
 All other names are treated as model references:
+
 - `MyModel` → `{"$ref": "#/components/schemas/MyModel"}`
 
 ## Testing
@@ -158,6 +163,7 @@ Comprehensive tests for Union type support are in `tests/test_decorator_parser_u
 - ✅ Integration with @openapi.requestBody decorator
 
 Run tests:
+
 ```bash
 ./.venv/scripts/Activate.ps1
 python -m pytest tests/test_decorator_parser_union.py -v
@@ -166,6 +172,7 @@ python -m pytest tests/test_decorator_parser_union.py -v
 ## Real-World Example
 
 See `bot/lib/http/handlers/api/v1/GuildChannelsApiHandler.py::get_guild_channels_batch_by_ids` for a production example that accepts either:
+
 - A JSON array of channel IDs: `["123", "456", "789"]`
 - A JSON object: `{"ids": ["123", "456", "789"]}`
 
@@ -175,17 +182,19 @@ This flexibility allows clients to use whichever format is more convenient for t
 
 After adding Union types to decorators:
 
-1. Run swagger validation to check for drift:
-   ```bash
-   python scripts/swagger_sync.py --check --config=.swagger-sync.yaml
-   ```
+- Run swagger validation to check for drift:
 
-2. If drift detected, update swagger file:
-   ```bash
-   python scripts/swagger_sync.py --fix --config=.swagger-sync.yaml
-   ```
+  ```bash
+  python scripts/swagger_sync.py --check --config=.swagger-sync.yaml
+  ```
 
-3. Verify oneOf schema was generated correctly in `.swagger.v1.yaml`
+- If drift detected, update swagger file:
+
+  ```bash
+  python scripts/swagger_sync.py --fix --config=.swagger-sync.yaml
+  ```
+
+- Verify oneOf schema was generated correctly in `.swagger.v1.yaml`
 
 ## Limitations
 
