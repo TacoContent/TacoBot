@@ -1250,7 +1250,6 @@ paths:
       description: Supports skip & take query parameters for pagination.
   /api/v1/guild/{guild_id}/join-whitelist/{user_id}:
     put:
-      summary: Update (re-add) a whitelist entry for a user
       parameters:
         - in: path
           required: true
@@ -1264,6 +1263,32 @@ paths:
           description: The ID of the user to update in the join whitelist
           schema:
             type: string
+      responses:
+        '200':
+          description: The updated JoinWhitelistUser object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JoinWhitelistUser'
+        '400':
+          description: Bad Request - missing or invalid body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized - missing or invalid auth token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Update (re-add) a whitelist entry for a user
       description: If the user is not already whitelisted, this adds them.
       requestBody:
         description: Optional body to specify 'added_by' user ID
@@ -1272,9 +1297,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/JoinWhitelistAddedBy'
-      responses:
-        '200':
-          description: OK
     delete:
       description: Removes a user from the join whitelist for a specific guild.
       responses:
