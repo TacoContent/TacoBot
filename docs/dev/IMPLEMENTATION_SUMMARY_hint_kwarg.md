@@ -1,14 +1,15 @@
-# Implementation Summary: @openapi.property hint kwarg
+# Implementation Summary: @openapi.property hint kwargs
 
 ## Completed Work
 
-Successfully implemented `hint` kwarg for `@openapi.property` decorator to provide explicit type hints for TypeVar properties in Generic classes that cannot be automatically inferred during AST-based swagger sync.
+Successfully implemented `hint` kwargs for `@openapi.property` decorator to provide explicit type hints for TypeVar properties in Generic classes that cannot be automatically inferred during AST-based swagger sync.
 
 ## Changes Made
 
 ### 1. Core Implementation
+
 - **`bot/lib/models/openapi/components.py`**: Updated decorator docstring, preserved hint in metadata
-- **`scripts/swagger_sync/model_components.py`**: 
+- **`scripts/swagger_sync/model_components.py`**:
   - Added `_resolve_hint_to_schema()` helper function (lines 77-145)
   - Enhanced hint extraction during decorator parsing (lines 247-256)
   - Applied hint when TypeVar detected (lines 446-459, 478-495)
@@ -16,15 +17,18 @@ Successfully implemented `hint` kwarg for `@openapi.property` decorator to provi
   - Fixed schema overwriting issue (line 467)
 
 ### 2. Test Suite
+
 - **`tests/test_swagger_sync_hint_kwarg.py`**: 18 comprehensive tests
   - 13 unit tests for `_resolve_hint_to_schema()`
   - 5 integration tests for full swagger sync pipeline
 - **`tests/tmp_hint_test_models.py`**: Test models demonstrating hint usage
 
 ### 3. Real-World Example
+
 - **`bot/lib/models/TacoSettingsModel.py`**: Updated to use `hint=Dict[str, Any]` for settings property
 
 ### 4. Documentation
+
 - **`docs/dev/openapi_property_hint_kwarg.md`**: Comprehensive implementation documentation
 
 ## Test Results
@@ -36,11 +40,13 @@ Successfully implemented `hint` kwarg for `@openapi.property` decorator to provi
 ## Key Features
 
 ### Supported Hint Formats
+
 1. Type objects: `hint=dict`, `hint=list`, `hint=str`, etc.
 2. Typing module types: `hint=Dict[str, Any]`, `hint=List[str]`, etc.
 3. String annotations: `hint="List[Dict[str, Any]]"`, `hint="MyModel"`, etc.
 
 ### Behavior
+
 - **Only applied** when TypeVar inference fails (automatic fallback)
 - **Filtered out** from final OpenAPI spec (meta-attribute)
 - **Backward compatible**: No hint = defaults to object type
@@ -61,6 +67,7 @@ class MyModel(Generic[T]):
 ```
 
 Generated OpenAPI schema:
+
 ```yaml
 MyModel:
   properties:
@@ -103,6 +110,7 @@ All verification steps pass successfully.
 ## Next Steps
 
 Ready for:
+
 1. Code review
 2. Integration into main branch
 3. Update release notes

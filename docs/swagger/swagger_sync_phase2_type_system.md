@@ -11,6 +11,7 @@ Successfully extracted the type system module from `swagger_sync.py`, reducing t
 Extracted 16 type-related functions and 4 global variables:
 
 **Functions:**
+
 1. `_build_schema_from_annotation` - Build OpenAPI schema from Python type annotation
 2. `_unwrap_optional` - Unwrap Optional wrapper and detect nullable types
 3. `_flatten_nested_unions` - Flatten nested Union types to single Union
@@ -29,12 +30,14 @@ Extracted 16 type-related functions and 4 global variables:
 16. `_expand_type_aliases` - Expand type alias references in annotations
 
 **Global Variables:**
+
 - `MISSING` - Sentinel value for missing defaults
 - `TYPE_ALIAS_CACHE` - Cache for type alias definitions by file path
 - `TYPE_ALIAS_METADATA` - Metadata for managed type aliases (component info, extensions)
 - `GLOBAL_TYPE_ALIASES` - Global registry of all discovered type aliases
 
 **Dependencies:**
+
 - Imports from `swagger_sync.constants`: `DEFAULT_MODELS_ROOT`
 - Imports from `swagger_sync.utils`: `_decorator_identifier`, `_extract_constant`, `_extract_constant_dict`, `_safe_unparse`, `_normalize_extension_key`, `_extract_literal_schema`
 
@@ -54,7 +57,7 @@ Extracted 16 type-related functions and 4 global variables:
 
 ## Test Results
 
-```
+```text
 ✅ 110/113 tests passing (97.3%)
 ✅ 100% OpenAPI documentation coverage maintained
 ✅ Main script fully functional
@@ -62,13 +65,14 @@ Extracted 16 type-related functions and 4 global variables:
 ```
 
 **Failing Tests (pre-existing):**
+
 - `test_component_only_update_triggers_write` - Module import in temporary directory
 - `test_custom_markers_parse` - Edge case with custom marker parsing
 - `test_no_color_flag_behavior` - Test isolation issue with DISABLE_COLOR global
 
 ## Module Structure
 
-```
+```text
 scripts/
 ├── swagger_sync.py              # Main script (1748 lines, was 2476)
 └── swagger_sync/
@@ -95,6 +99,7 @@ The `type_system.py` module handles all Python type annotation analysis for Open
 ## Complexity Metrics
 
 **Most Complex Functions:**
+
 - `_collect_type_aliases_from_ast` - 188 lines (type alias pattern matching)
 - `_flatten_nested_unions` - 104 lines (recursive union flattening)
 - `_unwrap_optional` - 63 lines (nullable type detection)
@@ -127,6 +132,7 @@ The `type_system.py` module handles all Python type annotation analysis for Open
 ## Backward Compatibility
 
 ✅ **Fully Maintained**
+
 - Existing imports continue to work
 - Tests require no changes (except for pre-existing failures)
 - Script can be run directly or imported as package

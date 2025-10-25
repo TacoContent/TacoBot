@@ -459,7 +459,7 @@ def get_all_items(self, request, uri_variables):
 
 ## 🚧 Future Enhancements
 
-### Phase 2 (Potential):
+### Phase 2 (Potential)
 
 1. **Schema-level examples**: Implement placement in `components/schemas[schemaName].examples`
 2. **Property-level examples**: Support examples on individual schema properties

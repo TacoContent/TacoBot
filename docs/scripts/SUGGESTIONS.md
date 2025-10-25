@@ -285,15 +285,18 @@ Coverage by Tag:
 ```
 
 **Pros**:
+
 - Identifies weak spots in documentation
 - Helps prioritize work for specific modules
 - Useful for team-based ownership (e.g., roles team owns roles.py)
 
 **Cons**:
+
 - More verbose output
 - Requires aggregation logic
 
 **Implementation Complexity**: **Low**
+
 - Group coverage records by `file` field and `tags` field
 - Calculate per-group metrics
 - Format as table or JSON
@@ -310,18 +313,21 @@ Coverage by Tag:
 **Use Case**: Display OpenAPI documentation coverage status directly in project README.
 
 **Example**:
+
 ```bash
 python scripts/swagger_sync.py --check --generate-badge=docs/badges/openapi-coverage.svg
 ```
 
 **Generated Badge**:
-```
+
+```markdwown
 ![OpenAPI Coverage](docs/badges/openapi-coverage.svg)
 ```
 
 Badge shows: `OpenAPI Coverage: 84%` with color-coded background (red <50%, yellow 50-80%, green >80%).
 
 **Implementation Status**: ✅ **IMPLEMENTED**
+
 - Added `--generate-badge` CLI argument
 - Uses custom SVG template (pybadges incompatible with Python 3.13+)
 - Generates shields.io-style badges with color coding
@@ -329,15 +335,18 @@ Badge shows: `OpenAPI Coverage: 84%` with color-coded background (red <50%, yell
 - Works seamlessly with existing coverage calculation
 
 **Pros**:
+
 - Instant visual indicator in README
 - Encourages documentation quality
 - Works with GitHub/GitLab badges
 
 **Cons**:
+
 - Requires badge generation library or custom SVG
 - Another artifact to track
 
 **Implementation Complexity**: **Low**
+
 - Use `shields.io` style SVG template
 - Calculate coverage percentage
 - Write SVG file with dynamic percentage/color
@@ -361,6 +370,7 @@ Badge shows: `OpenAPI Coverage: 84%` with color-coded background (red <50%, yell
 **Use Case**: Projects with many custom settings benefit from centralized, version-controlled configuration.
 
 **Implementation Details**:
+
 - Config file auto-detection (`swagger-sync.yaml`, `.swagger-sync.yaml`, `.yml` variants)
 - JSON Schema draft-07 validation with full property definitions
 - Environment profile system with selective overrides
@@ -370,6 +380,7 @@ Badge shows: `OpenAPI Coverage: 84%` with color-coded background (red <50%, yell
 - Comprehensive test coverage (42 tests)
 
 **Example File (`swagger-sync.yaml`)**:
+
 ```yaml
 # OpenAPI Synchronization Configuration
 swagger_file: .swagger.v1.yaml
@@ -427,6 +438,7 @@ python scripts/swagger_sync.py --check --env=ci
 ```
 
 **Pros**:
+
 - Cleaner CLI invocations
 - Version-controlled configuration
 - Easier to maintain complex setups
@@ -434,11 +446,13 @@ python scripts/swagger_sync.py --check --env=ci
 - Self-documenting project settings
 
 **Cons**:
+
 - Adds YAML parsing dependency (already have ruamel.yaml)
 - Need to maintain config schema/validation
 - Migration effort for existing scripts
 
 **Implementation Complexity**: **Medium**
+
 - Define config schema with validation
 - Add `--config` CLI argument (defaults to `swagger-sync.yaml`)
 - Load YAML, merge with CLI args (CLI takes precedence)
@@ -469,6 +483,7 @@ python scripts/swagger_sync.py --check --env=ci
 - Example config includes schema reference
 
 **Example**:
+
 ```bash
 # Validate config without running sync
 python scripts/swagger_sync.py --validate-config
@@ -499,6 +514,7 @@ The following enhancements could further improve the configuration system:
 **Description**: Allow config files to extend or include other config files for better reusability.
 
 **Example**:
+
 ```yaml
 # base-config.yaml
 extends: ../shared/swagger-base.yaml
@@ -508,11 +524,13 @@ swagger_file: .swagger.v1.yaml
 ```
 
 **Pros**:
+
 - Reuse common settings across projects
 - Maintain DRY principle for multi-repo setups
 - Easier to standardize across team
 
 **Cons**:
+
 - Circular dependency risks
 - Path resolution complexity
 - Debugging can be harder
@@ -526,17 +544,20 @@ swagger_file: .swagger.v1.yaml
 **Description**: Automated tool to migrate config files between versions when schema changes.
 
 **Example**:
+
 ```bash
 # Upgrade config from v1.0 to v2.0
 python scripts/swagger_sync.py --migrate-config swagger-sync.yaml --to-version=2.0
 ```
 
 **Pros**:
+
 - Smooth upgrade path for users
 - Preserves comments and formatting
 - Reduces breaking changes impact
 
 **Cons**:
+
 - Maintenance overhead
 - Version tracking complexity
 
@@ -549,6 +570,7 @@ python scripts/swagger_sync.py --migrate-config swagger-sync.yaml --to-version=2
 **Description**: Provide pre-made config templates for common project types.
 
 **Example**:
+
 ```bash
 # Generate config from template
 python scripts/swagger_sync.py --init-config --template=fastapi
@@ -557,11 +579,13 @@ python scripts/swagger_sync.py --init-config --template=django
 ```
 
 **Pros**:
+
 - Faster onboarding
 - Best practices baked in
 - Reduces configuration errors
 
 **Cons**:
+
 - Template maintenance
 - May not fit all use cases
 
@@ -574,6 +598,7 @@ python scripts/swagger_sync.py --init-config --template=django
 **Description**: Provide pre-commit hook configuration for automatic validation.
 
 **Example** (`.pre-commit-config.yaml`):
+
 ```yaml
 repos:
   - repo: local
@@ -586,11 +611,13 @@ repos:
 ```
 
 **Pros**:
+
 - Catch drift before commit
 - Enforces documentation standards
 - CI-like checks locally
 
 **Cons**:
+
 - Slows down commit process
 - Requires pre-commit installed
 
@@ -603,6 +630,7 @@ repos:
 **Description**: Support `.swaggerignore` file similar to `.gitignore` for complex patterns.
 
 **Example** (`.swaggerignore`):
+
 ```gitignore
 # Ignore all test files
 **/test_*.py
@@ -617,11 +645,13 @@ _internal_*
 ```
 
 **Pros**:
+
 - Familiar syntax for developers
 - Easier to maintain large ignore lists
 - Can be shared/versioned separately
 
 **Cons**:
+
 - Another file to maintain
 - Pattern matching complexity
 
@@ -629,7 +659,7 @@ _internal_*
 
 ---
 
-##  4. Coverage and Reporting Enhancements ✅ COMPLETED
+## 4. Coverage and Reporting Enhancements ✅ COMPLETED
 
 **IDE Integration**: Add YAML schema reference to config files:
 
@@ -646,10 +676,12 @@ swagger_file: .swagger.v1.yaml
 - Self-documenting configuration
 
 **Cons**:
+
 - Schema maintenance overhead
 - Need JSON Schema library (e.g., `jsonschema`)
 
 **Implementation Complexity**: **Low-Medium**
+
 - Define JSON schema for config structure
 - Add validation with `jsonschema` library
 - Provide `--validate-config` and `--export-config-schema` flags
@@ -668,6 +700,7 @@ swagger_file: .swagger.v1.yaml
 **Use Case**: Reduce manual schema definition by leveraging existing Python type hints and model serialization code.
 
 **Example**:
+
 ```python
 def get_roles(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
     """
@@ -685,22 +718,26 @@ def get_roles(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
 ```
 
 **Inference Logic**:
+
 - Detect patterns like `[Model.from*(x).to_dict() for x in ...]`
 - Infer array of `DiscordRole` → `{"type": "array", "items": {"$ref": "#/components/schemas/DiscordRole"}}`
 - Detect single object pattern: `Model(...).to_dict()` → `{"$ref": "..."}`
 - Use return type annotation `-> List[Dict[str, Any]]` as fallback
 
 **Pros**:
+
 - Less manual schema writing
 - Reduces drift between code and OpenAPI
 - Encourages consistent serialization patterns
 
 **Cons**:
+
 - Requires AST analysis of function body (fragile)
 - May not work for complex/dynamic responses
 - Need heuristics that might not cover all cases
 
 **Implementation Complexity**: **High**
+
 - Parse function body AST
 - Detect `.to_dict()` patterns
 - Match with known model classes
@@ -718,6 +755,7 @@ def get_roles(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
 **Use Case**: Similar to response inference, reduce manual schema definition for POST/PUT/PATCH endpoints.
 
 **Example**:
+
 ```python
 def create_role(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
     """
@@ -735,21 +773,25 @@ def create_role(self, request: HttpRequest, uri_variables: dict) -> HttpResponse
 ```
 
 **Inference Logic**:
+
 - Detect `data.get('key')` patterns
 - Infer type from usage (e.g., passed to `int()`, used in comparison)
 - Mark required if accessed without default
 - Generate `requestBody` schema
 
 **Pros**:
+
 - Reduces boilerplate
 - Ensures alignment between handler code and schema
 
 **Cons**:
+
 - Even more fragile than response inference
 - Complex validation logic may not be inferable
 - False positives/negatives likely
 
 **Implementation Complexity**: **Very High**
+
 - Deep AST analysis of request parsing
 - Type inference from usage context
 - Handle multiple patterns (form data, JSON, multipart)
@@ -766,6 +808,7 @@ def create_role(self, request: HttpRequest, uri_variables: dict) -> HttpResponse
 **Use Case**: Provide realistic examples in Swagger UI by leveraging existing test fixtures.
 
 **Example Test**:
+
 ```python
 # tests/test_roles_api.py
 def test_get_guild_roles():
@@ -776,6 +819,7 @@ def test_get_guild_roles():
 ```
 
 **Generated OpenAPI**:
+
 ```yaml
 paths:
   /api/v1/guilds/{guild_id}/roles:
@@ -788,16 +832,19 @@ paths:
 ```
 
 **Pros**:
+
 - Real examples from working tests
 - Encourages test-driven documentation
 - Examples stay in sync with code
 
 **Cons**:
+
 - Requires test execution (slow)
 - Need special markers/decorators in tests
 - May expose sensitive test data
 
 **Implementation Complexity**: **High**
+
 - Detect marked tests
 - Execute tests in isolated environment
 - Capture request/response data
@@ -813,6 +860,7 @@ paths:
 **Description**: Infer parameter constraints and descriptions from validation code in handlers.
 
 **Example**:
+
 ```python
 def get_user(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
     guild_id = uri_variables.get('guild_id')
@@ -833,14 +881,17 @@ def get_user(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
 ```
 
 **Pros**:
+
 - Reduces redundant validation documentation
 - Keeps constraints in sync with code
 
 **Cons**:
+
 - Complex AST/control flow analysis
 - May not capture all validation logic
 
 **Implementation Complexity**: **High**
+
 - Analyze validation branches
 - Infer constraints from checks
 - Generate parameter schema with constraints
@@ -858,6 +909,7 @@ def get_user(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
 **Use Case**: Enforce OpenAPI documentation quality gate at commit time.
 
 **Example**:
+
 ```bash
 # .git/hooks/pre-commit (generated by script)
 #!/bin/bash
@@ -870,20 +922,24 @@ fi
 ```
 
 **Installation**:
+
 ```bash
 python scripts/swagger_sync.py --install-pre-commit-hook
 ```
 
 **Pros**:
+
 - Catches drift before it reaches remote
 - Forces developers to maintain docs
 - Simple to install
 
 **Cons**:
+
 - May slow down commits (add `--fast` mode)
 - Developers might bypass with `--no-verify`
 
 **Implementation Complexity**: **Low**
+
 - Generate pre-commit script
 - Copy to `.git/hooks/pre-commit`
 - Make executable
@@ -900,13 +956,15 @@ python scripts/swagger_sync.py --install-pre-commit-hook
 **Use Case**: Better CI/CD integration with more helpful PR feedback.
 
 **Current Output** (plain text):
-```
+
+```text
 OpenAPI Sync Check Summary:
 Coverage: 84%
 Drift detected: 2 operations
 ```
 
 **Enhanced Output** (Markdown with tables, badges, details sections):
+
 ```markdown
 ## OpenAPI Sync Check Summary
 
@@ -943,15 +1001,18 @@ Drift detected: 2 operations
 ```
 
 **Pros**:
+
 - Much more informative
 - Provides actionable guidance
 - Better developer experience in PRs
 
 **Cons**:
+
 - More code to maintain
 - Markdown generation complexity
 
 **Implementation Complexity**: **Medium**
+
 - Enhance `_build_markdown_summary` function
 - Add collapsible sections with `<details>`
 - Generate Markdown tables
@@ -968,13 +1029,15 @@ Drift detected: 2 operations
 **Use Case**: Keep team informed about documentation quality without manual checks.
 
 **Example**:
+
 ```bash
 # In CI/CD pipeline
 python scripts/swagger_sync.py --check --notify-slack=$SLACK_WEBHOOK_URL
 ```
 
 **Notification Format**:
-```
+
+```text
 🔔 OpenAPI Sync Alert
 
 📊 Coverage: 84.4% (+2.1% from last run)
@@ -984,16 +1047,19 @@ python scripts/swagger_sync.py --check --notify-slack=$SLACK_WEBHOOK_URL
 ```
 
 **Pros**:
+
 - Proactive notifications
 - Increases visibility
 - Encourages team accountability
 
 **Cons**:
+
 - Requires webhook configuration
 - May become noisy
 - Security concerns with webhook URLs
 
 **Implementation Complexity**: **Low-Medium**
+
 - Add `--notify-slack` and `--notify-discord` flags
 - Format message as JSON payload
 - POST to webhook URL
@@ -1012,22 +1078,26 @@ python scripts/swagger_sync.py --check --notify-slack=$SLACK_WEBHOOK_URL
 **Use Case**: Leverage newer features like `$schema`, `unevaluatedProperties`, `prefixItems`, etc.
 
 **Key Differences**:
+
 - `nullable: true` → `type: ["string", "null"]`
 - JSON Schema compatibility
 - Webhooks support
 - Better discriminator handling
 
 **Pros**:
+
 - Modern spec version
 - Better JSON Schema integration
 - Future-proof
 
 **Cons**:
+
 - Breaking change (3.0 → 3.1)
 - Not all tools support 3.1 yet
 - Migration effort
 
 **Implementation Complexity**: **Medium-High**
+
 - Update nullable handling
 - Adjust schema generation for 3.1 syntax
 - Test with 3.1 validators
@@ -1044,7 +1114,8 @@ python scripts/swagger_sync.py --check --notify-slack=$SLACK_WEBHOOK_URL
 **Use Case**: Very large APIs benefit from modular swagger files (e.g., `paths/roles.yaml`, `paths/users.yaml`).
 
 **Example Structure**:
-```
+
+```text
 .swagger/
   ├── openapi.yaml          # Main file with $ref to others
   ├── paths/
@@ -1057,6 +1128,7 @@ python scripts/swagger_sync.py --check --notify-slack=$SLACK_WEBHOOK_URL
 ```
 
 **Main File**:
+
 ```yaml
 openapi: 3.0.0
 paths:
@@ -1069,16 +1141,19 @@ components:
 ```
 
 **Pros**:
+
 - Better organization for large APIs
 - Easier to review in PRs (smaller diffs)
 - Parallel editing by multiple developers
 
 **Cons**:
+
 - Complex to merge/resolve $ref during sync
 - Need bundling step for some consumers
 - More files to track
 
 **Implementation Complexity**: **High**
+
 - Parse and resolve external `$ref`
 - Merge into in-memory swagger object
 - Write back to correct files
@@ -1095,6 +1170,7 @@ components:
 **Use Case**: Developers who want guided fixing instead of automatic `--fix`.
 
 **Example**:
+
 ```bash
 python scripts/swagger_sync.py --interactive
 
@@ -1118,15 +1194,18 @@ Choice: _
 ```
 
 **Pros**:
+
 - Fine-grained control
 - Educational for new developers
 - Safer than automatic `--fix`
 
 **Cons**:
+
 - Slower than automatic mode
 - Requires interactive terminal (not CI-friendly)
 
 **Implementation Complexity**: **Medium**
+
 - Iterate through drift/missing blocks
 - Display diff for each
 - Prompt for action
@@ -1144,6 +1223,7 @@ Choice: _
 **Use Case**: Enforce organization-specific OpenAPI conventions (e.g., all operations must have `x-team-owner` extension).
 
 **Example Plugin** (`custom_validators.py`):
+
 ```python
 from swagger_sync import ValidationPlugin
 
@@ -1158,20 +1238,24 @@ VALIDATORS = [TeamOwnerValidator()]
 ```
 
 **CLI Usage**:
+
 ```bash
 python scripts/swagger_sync.py --check --validators=custom_validators.py
 ```
 
 **Pros**:
+
 - Extensible without modifying core script
 - Organization-specific rules
 - Reusable across projects
 
 **Cons**:
+
 - Plugin API surface to maintain
 - Security concerns with executing arbitrary Python
 
 **Implementation Complexity**: **Medium-High**
+
 - Define plugin interface/base class
 - Load plugins from file paths
 - Call plugin validators during sync
@@ -1190,6 +1274,7 @@ python scripts/swagger_sync.py --check --validators=custom_validators.py
 **Use Case**: Developers actively working on handlers want immediate feedback without manually running script.
 
 **Example**:
+
 ```bash
 python scripts/swagger_sync.py --watch
 
@@ -1202,16 +1287,19 @@ python scripts/swagger_sync.py --watch
 ```
 
 **Pros**:
+
 - Instant feedback loop
 - Encourages real-time documentation
 - Reduces context switching
 
 **Cons**:
+
 - Resource usage (continuous process)
 - May be noisy with frequent changes
 - Not useful in CI
 
 **Implementation Complexity**: **Low-Medium**
+
 - Use `watchdog` library to monitor file changes
 - Debounce rapid changes (don't sync on every keystroke)
 - Run sync in background thread
@@ -1228,6 +1316,7 @@ python scripts/swagger_sync.py --watch
 **Use Case**: IDE-native experience for OpenAPI documentation.
 
 **Features**:
+
 - Syntax highlighting for `>>>openapi` blocks
 - Inline diagnostics (squiggly underlines for missing blocks)
 - Code actions: "Generate OpenAPI block", "Fix drift"
@@ -1235,16 +1324,19 @@ python scripts/swagger_sync.py --watch
 - Commands: "Sync OpenAPI", "View Coverage Report"
 
 **Pros**:
+
 - Seamless developer experience
 - No need to switch to terminal
 - Immediate visual feedback
 
 **Cons**:
+
 - Requires TypeScript/VSCode API knowledge
 - Separate project to maintain
 - Distribution via marketplace
 
 **Implementation Complexity**: **Very High** (separate project)
+
 - VSCode extension scaffold
 - Language server for YAML blocks
 - Execute Python script from extension
@@ -1262,6 +1354,7 @@ python scripts/swagger_sync.py --watch
 **Use Case**: Automate writing operation descriptions by analyzing handler implementation.
 
 **Example**:
+
 ```python
 def get_guild_roles(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
     guild_id = uri_variables.get('guild_id')
@@ -1270,6 +1363,7 @@ def get_guild_roles(self, request: HttpRequest, uri_variables: dict) -> HttpResp
 ```
 
 **AI-Generated Summary**:
+
 ```yaml
 summary: Retrieve all roles for a specified guild
 description: >-
@@ -1279,17 +1373,20 @@ description: >-
 ```
 
 **Pros**:
+
 - Saves time writing descriptions
 - Can generate decent initial drafts
 - Useful for poorly documented code
 
 **Cons**:
+
 - Requires API key / costs money
 - AI may hallucinate incorrect descriptions
 - Privacy concerns (sending code to external API)
 - Requires review/editing
 
 **Implementation Complexity**: **Medium**
+
 - Add `--ai-generate-summaries` flag
 - Extract handler source code
 - Send to LLM API with prompt
@@ -1309,6 +1406,7 @@ description: >-
 **Use Case**: Ensure reliability, catch regressions, support refactoring.
 
 **Test Coverage Goals**:
+
 - AST parsing edge cases
 - Diff generation correctness
 - Coverage calculation accuracy
@@ -1318,15 +1416,18 @@ description: >-
 - YAML manipulation (preserve comments, formatting)
 
 **Pros**:
+
 - Higher confidence in changes
 - Safer refactoring
 - Documents expected behavior
 
 **Cons**:
+
 - Initial time investment
 - Test maintenance overhead
 
 **Implementation Complexity**: **High** (comprehensive coverage)
+
 - Create `tests/test_swagger_sync.py`
 - Use `pytest` with fixtures for sample handlers/models
 - Mock file I/O for faster tests
@@ -1344,6 +1445,7 @@ description: >-
 **Use Case**: Projects with hundreds of endpoints experience slow sync times.
 
 **Optimization Targets**:
+
 - Cache type alias resolution (already implemented)
 - Parallelize AST parsing for multiple files
 - Avoid redundant YAML serialization
@@ -1351,14 +1453,17 @@ description: >-
 - Lazy load modules only when needed
 
 **Pros**:
+
 - Faster CI/CD pipelines
 - Better developer experience
 
 **Cons**:
+
 - Complexity increase
 - Parallelism may complicate debugging
 
 **Implementation Complexity**: **Medium**
+
 - Profile with `cProfile` to find bottlenecks
 - Use `multiprocessing` for file scanning
 - Optimize hot loops
@@ -1373,12 +1478,14 @@ description: >-
 **Description**: Provide more helpful, actionable error messages with suggestions.
 
 **Example (Current)**:
-```
+
+```text
 ERROR: OpenAPI block parse error in file.py:45
 ```
 
 **Example (Improved)**:
-```
+
+```text
 ERROR: OpenAPI block parse error in bot/lib/http/handlers/api/v1/roles.py:45
 
 The YAML block starting with '>>>openapi' could not be parsed.
@@ -1402,15 +1509,18 @@ Block preview:
 ```
 
 **Pros**:
+
 - Faster troubleshooting
 - Less frustration
 - Guides developers to solutions
 
 **Cons**:
+
 - More verbose error output
 - Code complexity in error handling
 
 **Implementation Complexity**: **Low-Medium**
+
 - Enhance exception messages
 - Add context (file, line, surrounding code)
 - Provide suggestions for common errors
@@ -1427,6 +1537,7 @@ Block preview:
 **Description**: Provide step-by-step tutorial for new users learning the script.
 
 **Example**:
+
 ```bash
 python scripts/swagger_sync.py --tutorial
 
@@ -1445,15 +1556,18 @@ Press Enter to continue or Ctrl+C to exit...
 ```
 
 **Pros**:
+
 - Lowers onboarding barrier
 - Self-paced learning
 - Reduces documentation reading
 
 **Cons**:
+
 - Additional code to maintain
 - May become outdated
 
 **Implementation Complexity**: **Low**
+
 - Create tutorial content as structured data
 - Display step-by-step with pauses
 - Optionally create sample files in temp directory
@@ -1470,6 +1584,7 @@ Press Enter to continue or Ctrl+C to exit...
 **Use Case**: Visual learners benefit from seeing tool in action.
 
 **Topics**:
+
 - "Getting Started with Swagger Sync"
 - "Adding Your First OpenAPI Block"
 - "Understanding Coverage Reports"
@@ -1477,16 +1592,19 @@ Press Enter to continue or Ctrl+C to exit...
 - "CI/CD Integration"
 
 **Pros**:
+
 - More accessible than text docs
 - Shows real-world usage
 - Can be shared in training sessions
 
 **Cons**:
+
 - Requires video editing skills
 - Videos become outdated faster than text
 - Hosting/distribution considerations
 
 **Implementation Complexity**: **Low** (non-code)
+
 - Record terminal sessions (asciinema)
 - Edit and add narration
 - Host on YouTube or internal wiki
@@ -1504,6 +1622,7 @@ Press Enter to continue or Ctrl+C to exit...
 **Use Case**: Ensure OpenAPI spec follows best practices and organizational standards.
 
 **Example**:
+
 ```bash
 # Run sync with linting
 python scripts/swagger_sync.py --check --lint
@@ -1515,15 +1634,18 @@ OpenAPI Lint Results (spectral):
 ```
 
 **Pros**:
+
 - Enforces consistent style
 - Catches spec issues early
 - Integrates well with existing linters
 
 **Cons**:
+
 - External dependency (Spectral CLI)
 - May be opinionated (need config)
 
 **Implementation Complexity**: **Low**
+
 - Run linter as subprocess after sync
 - Parse linter output
 - Display results
@@ -1540,6 +1662,7 @@ OpenAPI Lint Results (spectral):
 **Use Case**: Teams migrating from FastAPI (which has built-in OpenAPI) want similar automation for custom frameworks.
 
 **Example (FastAPI)**:
+
 ```python
 @app.get("/api/v1/roles", tags=["roles"], summary="Get all roles")
 def get_roles(guild_id: str) -> List[Role]:
@@ -1547,21 +1670,25 @@ def get_roles(guild_id: str) -> List[Role]:
 ```
 
 **Adapter**:
+
 ```bash
 python scripts/swagger_sync.py --fastapi-source=app/main.py --merge-into=.swagger.v1.yaml
 ```
 
 **Pros**:
+
 - Framework-agnostic sync
 - Can unify multiple sources
 - Leverages existing framework metadata
 
 **Cons**:
+
 - Requires understanding of each framework
 - May not handle all features
 - Fragile if framework changes
 
 **Implementation Complexity**: **Medium-High**
+
 - Parse FastAPI/Flask decorators
 - Convert to common format
 - Merge with existing swagger
@@ -1576,6 +1703,7 @@ python scripts/swagger_sync.py --fastapi-source=app/main.py --merge-into=.swagge
 Based on value-to-effort ratio, here's a suggested implementation order:
 
 ### Phase 1: Quick Wins (Low effort, high value)
+
 1. **Badge Generation** (Section 2.4) - Visual indicator for README
 2. **Per-File/Tag Coverage** (Section 2.3) - Better granularity
 3. **Pre-Commit Hook** (Section 5.1) - Enforcement at commit time
@@ -1583,6 +1711,7 @@ Based on value-to-effort ratio, here's a suggested implementation order:
 5. **YAML Config File** (Section 3.1) - Reduce CLI complexity
 
 ### Phase 2: Medium Investments (Medium effort, high value)
+
 1. **HTML Coverage Dashboard** (Section 2.1) - Visual reporting
 2. **GitHub Actions Enhancements** (Section 5.2) - Better CI integration
 3. **Coverage Trend Tracking** (Section 2.2) - Historical analysis
@@ -1590,6 +1719,7 @@ Based on value-to-effort ratio, here's a suggested implementation order:
 5. **Watch Mode** (Section 7.1) - Real-time feedback
 
 ### Phase 3: Advanced Features (High effort, specific needs)
+
 1. **Decorator-Based Config** (Section 1.1) - Alternative to docstrings
 2. **Response Schema Inference** (Section 4.1) - Less manual work
 3. **OpenAPI 3.1 Support** (Section 6.1) - Future-proofing
@@ -1597,6 +1727,7 @@ Based on value-to-effort ratio, here's a suggested implementation order:
 5. **VSCode Extension** (Section 7.2) - IDE integration
 
 ### Phase 4: Experimental (High effort, unproven value)
+
 1. **AI-Assisted Summaries** (Section 7.3) - Automation experiment
 2. **Request Body Inference** (Section 4.2) - Complex and fragile
 3. **Multi-File Swagger** (Section 6.2) - Only for very large projects
@@ -1613,6 +1744,7 @@ Based on value-to-effort ratio, here's a suggested implementation order:
 **Use Case**: Teams want to measure not just whether endpoints are documented, but how well they're documented, and track improvement over time.
 
 **Current Limitations**:
+
 - Only tracks presence/absence of documentation blocks
 - No measurement of documentation quality or completeness
 - No historical tracking or trend analysis
@@ -1622,7 +1754,9 @@ Based on value-to-effort ratio, here's a suggested implementation order:
 **Proposed Enhancements**:
 
 #### A. Documentation Quality Metrics (✅ IMPLEMENTED)
+
 Track additional quality indicators for documented endpoints:
+
 - **Summary presence**: % of endpoints with summary field
 - **Description presence**: % of endpoints with description field
 - **Parameter documentation**: % of endpoints documenting their parameters
@@ -1632,12 +1766,15 @@ Track additional quality indicators for documented endpoints:
 - **Tags assigned**: % of endpoints with proper tag categorization
 
 **Implementation Status**: ✅ Added to `coverage.py` module
+
 - Added quality metrics tracking in `_compute_coverage()`
 - Enhanced text report format with quality metrics section
 - Included in JSON output for programmatic access
 
 #### B. HTTP Method Breakdown (✅ IMPLEMENTED)
+
 Break down coverage statistics by HTTP method:
+
 - GET endpoints: X/Y documented (Z%)
 - POST endpoints: X/Y documented (Z%)
 - PUT endpoints: X/Y documented (Z%)
@@ -1645,30 +1782,37 @@ Break down coverage statistics by HTTP method:
 - etc.
 
 **Implementation Status**: ✅ Added to `coverage.py` module
+
 - Method statistics tracked during coverage computation
 - Included in text report with documentation rates
 - Available in JSON format for analysis
 
 #### C. File-Based Coverage (✅ IMPLEMENTED)
+
 Show which handler files have best/worst coverage:
+
 - Top 10 files by endpoint count
 - Files with 100% coverage
 - Files with <50% coverage needing attention
 - Coverage rate per file
 
 **Implementation Status**: ✅ Added to `coverage.py` module
+
 - File statistics tracked for each endpoint
 - Text report shows top 10 files by endpoint count
 - Full file stats available in JSON output
 
 #### D. Tag-Based Coverage (✅ IMPLEMENTED)
+
 Track coverage by OpenAPI tags:
+
 - List unique tags used
 - Number of endpoints per tag
 - Coverage rate per tag
 - Orphaned tags (in swagger but no handlers)
 
 **Implementation Status**: ✅ Added to `coverage.py` module
+
 - Tag coverage dictionary tracks endpoints per tag
 - Text report shows tag breakdown
 - Unique tag count included in summary
@@ -1680,36 +1824,43 @@ Track coverage by OpenAPI tags:
 **Proposed Features**:
 
 #### A. Coverage History Database
+
 - SQLite database storing coverage snapshots
 - Fields: timestamp, commit_hash, branch, metrics
 - Query interface for trend analysis
 - Retention policy (keep last N records or X days)
 
 **Benefits**:
+
 - Track progress toward documentation goals
 - Identify when coverage regresses
 - Correlate coverage with releases/sprints
 - Show team productivity metrics
 
 **Implementation Complexity**: Medium
+
 - Requires new database module
 - Need migration strategy for existing reports
 - Add CLI commands for history queries
 
 #### B. Trend Visualization
+
 Generate charts showing coverage over time:
+
 - Line chart: coverage % over last 30/60/90 days
 - Bar chart: quality metrics comparison
 - Diff view: changes since last week/month
 - Goal tracking: progress toward target coverage %
 
 **Output Formats**:
+
 - HTML with embedded Chart.js/D3.js
 - Markdown with ASCII charts for terminal
 - PNG/SVG for embedding in docs
 - Integration with CI dashboards (Codecov, etc.)
 
 **Implementation Complexity**: Medium-High
+
 - Requires charting library integration
 - HTML template generation
 - Optional: GitHub Actions workflow integration
@@ -1721,6 +1872,7 @@ Generate charts showing coverage over time:
 **Proposed Features**:
 
 #### A. Configurable Thresholds
+
 ```yaml
 # .swagger.coverage.yaml
 goals:
@@ -1736,16 +1888,19 @@ goals:
 ```
 
 #### B. Exit Code Based on Thresholds
+
 - Exit 0: All goals met
 - Exit 1: One or more goals not met
 - Useful for CI/CD pipeline gates
 
 #### C. Notification Integration
+
 - Slack webhook when coverage drops
 - GitHub PR comments showing coverage delta
 - Email reports for weekly summaries
 
 **Implementation Complexity**: Medium
+
 - Config file parsing
 - Threshold comparison logic
 - Webhook/notification clients
@@ -1755,22 +1910,26 @@ goals:
 **Description**: Generate SVG badges showing coverage percentage for README files.
 
 **Example**:
+
 ```markdown
 ![OpenAPI Coverage](./docs/badges/openapi-coverage.svg)
 ```
 
 Badge shows: `OpenAPI Coverage: 87%` with color coding:
+
 - Green: ≥80%
 - Yellow: 60-79%
 - Orange: 40-59%
 - Red: <40%
 
 **Implementation Complexity**: Low
+
 - SVG template generation
 - Shield.io API integration option
 - Update badge on each sync run
 
 **Benefits**:
+
 - Visual indication of documentation health
 - Quick assessment in README
 - Motivates maintaining high coverage
@@ -1780,6 +1939,7 @@ Badge shows: `OpenAPI Coverage: 87%` with color coding:
 **Description**: Assign quality scores to each endpoint based on documentation completeness.
 
 **Scoring Criteria** (example):
+
 - Has summary: +10 points
 - Has description: +15 points
 - Has parameters (if applicable): +10 points
@@ -1792,6 +1952,7 @@ Badge shows: `OpenAPI Coverage: 87%` with color coding:
 - **Maximum**: 100 points
 
 **Output**:
+
 ```text
 Per-endpoint quality scores:
   GET /api/v1/guilds/{guild_id}/roles        95/100 ⭐⭐⭐⭐⭐
@@ -1802,11 +1963,13 @@ Average quality score: 71.7/100
 ```
 
 **Benefits**:
+
 - Gamification encourages better documentation
 - Easy to identify poorly documented endpoints
 - Objective measurement of "good enough"
 
 **Implementation Complexity**: Low-Medium
+
 - Scoring algorithm
 - Report formatting
 - Optional: Minimum score threshold
@@ -1816,6 +1979,7 @@ Average quality score: 71.7/100
 **Description**: Show what changed in coverage between two runs (e.g., current vs main branch).
 
 **Example Output**:
+
 ```diff
 Coverage Summary (beta vs main):
   Total endpoints:        127 → 132  (+5)
@@ -1835,12 +1999,14 @@ Improved Documentation:
   ✓ GET /api/v1/users/{user_id}  (added description)
 ```
 
-**Use Case**: 
+**Use Case**:
+
 - PR reviews showing documentation impact
 - Release notes generation
 - Tracking progress between sprints
 
 **Implementation Complexity**: Medium
+
 - Requires storing/loading previous coverage data
 - Diff algorithm implementation
 - Formatted output generation
@@ -1850,6 +2016,7 @@ Improved Documentation:
 **Description**: Generate rich HTML report with filtering, sorting, and drill-down capabilities.
 
 **Features**:
+
 - Sortable table of all endpoints
 - Filter by: documented/undocumented, HTTP method, tag, file
 - Click endpoint to see full OpenAPI definition
@@ -1858,16 +2025,19 @@ Improved Documentation:
 - Print-friendly version
 
 **Technology**:
+
 - HTML + Tailwind CSS for styling
 - Vanilla JS or Alpine.js for interactivity
 - No build step required (single HTML file)
 
 **Benefits**:
+
 - Better UX than text reports
 - Shareable across team
 - Easy to identify gaps
 
 **Implementation Complexity**: Medium
+
 - HTML template creation
 - JavaScript for filtering/sorting
 - Data serialization into HTML
@@ -1877,6 +2047,7 @@ Improved Documentation:
 **Description**: AI/heuristic-based suggestions for improving coverage.
 
 **Example Output**:
+
 ```text
 Coverage Recommendations:
 
@@ -1902,6 +2073,7 @@ Coverage Recommendations:
 ```
 
 **Implementation Complexity**: Medium-High
+
 - Pattern detection algorithms
 - Recommendation engine
 - Natural language generation
@@ -1914,7 +2086,9 @@ Coverage Recommendations:
 **Supported Formats**:
 
 #### A. Redoc/Swagger UI Annotations
+
 Add custom extensions to OpenAPI spec:
+
 ```yaml
 paths:
   /api/v1/roles:
@@ -1925,7 +2099,9 @@ paths:
 ```
 
 #### B. Docusaurus/MkDocs Integration
+
 Generate markdown files for static site generators:
+
 ```markdown
 ---
 sidebar_label: API Coverage
@@ -1942,9 +2118,11 @@ Current coverage: **87%** (110/127 endpoints)
 ```
 
 #### C. OpenAPI Extensions
+
 Custom schema additions for coverage metadata.
 
 **Implementation Complexity**: Low-Medium
+
 - Format-specific serializers
 - Template generation
 - Documentation on integration
@@ -1954,23 +2132,27 @@ Custom schema additions for coverage metadata.
 ## Implementation Priority for Coverage Enhancements
 
 ### Phase 1: Immediate (Already Implemented ✅)
+
 1. ✅ Documentation quality metrics
 2. ✅ HTTP method breakdown  
 3. ✅ File-based coverage
 4. ✅ Tag-based coverage
 
 ### Phase 2: Short-term (Next Sprint)
+
 1. Coverage badge generation
 2. Per-endpoint quality scores
 3. Enhanced text report formatting
 
 ### Phase 3: Medium-term (Next Quarter)
+
 1. Historical tracking database
 2. Coverage diff reports
 3. Configurable thresholds and alerts
 4. Interactive HTML reports
 
 ### Phase 4: Long-term (Future Consideration)
+
 1. Trend visualization with charts
 2. Coverage analysis recommendations
 3. Integration with doc sites
@@ -1980,9 +2162,10 @@ Custom schema additions for coverage metadata.
 
 ## Conclusion
 
-This document presents a comprehensive roadmap for enhancing the `swagger_sync.py` script. The suggestions range from quick wins (badge generation, config files) to ambitious long-term projects (VSCode extension, AI assistance). 
+This document presents a comprehensive roadmap for enhancing the `swagger_sync.py` script. The suggestions range from quick wins (badge generation, config files) to ambitious long-term projects (VSCode extension, AI assistance).
 
 **Key Themes**:
+
 - **Developer Experience**: Make the tool easier and more pleasant to use
 - **Visibility**: Better reporting and notifications
 - **Automation**: Reduce manual work through inference and generation

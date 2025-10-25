@@ -20,14 +20,17 @@ Migrated from docstring-based `@openapi: ignore` marker to the Python decorator 
 ### 1. Core Implementation
 
 #### `bot/lib/models/openapi/openapi.py`
+
 - ✅ `@openapi.ignore()` decorator already existed, setting `__openapi_ignore__` attribute
 
 #### `scripts/swagger_sync/decorator_parser.py`
+
 - ✅ Added `ignore: bool = False` field to `DecoratorMetadata` dataclass
 - ✅ Added parsing logic for `@openapi.ignore()` decorator in `extract_decorator_metadata()`
 - ✅ Decorator sets `metadata.ignore = True` when present
 
 #### `scripts/swagger_sync/endpoint_collector.py`
+
 - ✅ Modified `collect_endpoints()` to check `decorator_meta.ignore` flag
 - ✅ Endpoints with `@openapi.ignore()` decorator are added to `ignored` list
 - ✅ Updated docstring to document both approaches (decorator preferred, docstring legacy)
@@ -35,17 +38,20 @@ Migrated from docstring-based `@openapi: ignore` marker to the Python decorator 
 ### 2. Documentation Updates
 
 #### `.github/copilot-instructions.md`
+
 - ✅ Added section 2.1.3 documenting both approaches
 - ✅ Marked decorator as "Preferred" and docstring as "Legacy"
 - ✅ Provided code examples for both patterns
 
 #### `docs/http/swagger_sync.md`
+
 - ✅ Expanded section 6 "Ignoring Endpoints"
 - ✅ Added subsections for decorator (6.1) and docstring (6.2) approaches
 - ✅ Updated all references to mention both methods
 - ✅ Updated troubleshooting section
 
 #### `scripts/swagger_sync/cli.py`
+
 - ✅ Updated `--show-ignored` help text to mention both approaches
 - ✅ Updated all console output headers from `"@openapi: ignore"` to `"@openapi.ignore() or @openapi: ignore"`
 - ✅ Updated markdown report section headers
@@ -54,12 +60,14 @@ Migrated from docstring-based `@openapi: ignore` marker to the Python decorator 
 ### 3. Test Coverage
 
 #### `tests/test_decorator_parser.py`
+
 - ✅ Added `test_to_dict_with_ignore()` - verify ignore not included in OpenAPI dict
 - ✅ Added `test_to_dict_ignore_false_omitted()` - verify default omitted
 - ✅ Added `test_extract_ignore_decorator()` - verify decorator parsing
 - ✅ Updated `test_empty_metadata()` to include `ignore` field check
 
 #### `tests/test_endpoint_collector_integration.py`
+
 - ✅ Added `test_collect_endpoints_ignore_decorator()` - verify ignored endpoints list
 
 ### 4. Validation
@@ -113,6 +121,7 @@ def legacy_endpoint(self, request: HttpRequest, uri_variables: dict) -> HttpResp
 ### How to Migrate
 
 **Before:**
+
 ```python
 def handler(self, request, uri_variables):
     """Handler docstring.
@@ -123,6 +132,7 @@ def handler(self, request, uri_variables):
 ```
 
 **After:**
+
 ```python
 from bot.lib.models.openapi import openapi
 
@@ -146,7 +156,7 @@ If any of these are present, the endpoint is excluded from OpenAPI spec.
 
 ### Internal Metadata Flow
 
-```
+```text
 @openapi.ignore()
     ↓
 sets __openapi_ignore__ attribute on function
@@ -161,11 +171,13 @@ endpoint added to ignored list instead of endpoints list
 ### OpenAPI Spec Exclusion
 
 The `ignore` flag is **internal only** and does NOT appear in:
+
 - OpenAPI spec (`.swagger.v1.yaml`)
 - `DecoratorMetadata.to_dict()` output
 - Merged operation objects
 
 It only affects:
+
 - Whether endpoint is included in spec
 - Coverage calculation denominators
 - `--show-ignored` output
@@ -184,16 +196,19 @@ It only affects:
 ## Related Files
 
 **Implementation:**
+
 - `bot/lib/models/openapi/openapi.py` - Decorator definition
 - `scripts/swagger_sync/decorator_parser.py` - Parsing logic
 - `scripts/swagger_sync/endpoint_collector.py` - Collection logic
 
 **Documentation:**
+
 - `.github/copilot-instructions.md` - Developer guidance
 - `docs/http/swagger_sync.md` - User documentation
 - `docs/dev/DECORATOR_IGNORE_MIGRATION.md` - This file
 
 **Tests:**
+
 - `tests/test_decorator_parser.py` - Decorator parsing tests
 - `tests/test_endpoint_collector_integration.py` - Integration tests
 

@@ -1,6 +1,7 @@
 # MinecraftPlayerWebhookHandler Testability & Quality Improvements
 
 ## Summary
+
 Analysis of the `event()` method in `MinecraftPlayerWebhookHandler` revealed several opportunities for improved testability, error handling, and maintainability.
 
 ---
@@ -12,6 +13,7 @@ Analysis of the `event()` method in `MinecraftPlayerWebhookHandler` revealed sev
 **Location:** `bot/lib/http/handlers/webhook/MinecraftPlayerWebhookHandler.py:206`
 
 **Problem:**
+
 ```python
 except HttpResponseException as e:
     return HttpResponse(e.status_code, e.headers, e.body)
@@ -24,6 +26,7 @@ except Exception as e:
 The `HttpResponseException` raised in the final `except Exception` block is NOT caught by the `except HttpResponseException` handler because it's outside that try-except scope. This means 500 errors will propagate as exceptions instead of being returned as HTTP responses.
 
 **Fix:**
+
 ```python
 except HttpResponseException as e:
     return HttpResponse(e.status_code, e.headers, e.body)
@@ -35,6 +38,7 @@ except Exception as e:
 ```
 
 **Impact:** Medium-High
+
 - Breaks HTTP contract (exceptions instead of responses)
 - Makes testing difficult
 - May crash request handling in production
@@ -48,6 +52,7 @@ except Exception as e:
 **Current Problem:** All validation is inline in the `event()` method, making it harder to test validation logic in isolation.
 
 **Suggestion:**
+
 ```python
 def _validate_request_body(self, request: HttpRequest, headers: HttpHeaders) -> dict:
     """Validate and parse request body.
@@ -111,6 +116,7 @@ def _validate_event_type(self, event_str: str, headers: HttpHeaders) -> Minecraf
 ```
 
 **Benefits:**
+
 - Each validation method can be tested independently
 - Clearer separation of concerns
 - Easier to add new validation rules
@@ -123,6 +129,7 @@ def _validate_event_type(self, event_str: str, headers: HttpHeaders) -> Minecraf
 **Current Problem:** Discord user/guild/member fetching is inline, making it hard to test without mocking multiple Discord API calls.
 
 **Suggestion:**
+
 ```python
 async def _resolve_discord_objects(
     self,
@@ -163,6 +170,7 @@ async def _resolve_discord_objects(
 ```
 
 **Benefits:**
+
 - Single method to mock for Discord resolution testing
 - Clearer error messages with actual IDs
 - Easier to add caching layer later
@@ -175,6 +183,7 @@ async def _resolve_discord_objects(
 **Current Problem:** Error responses are created inline with inconsistent formats (some use ErrorStatusCodePayload, some use raw JSON strings).
 
 **Suggestion:**
+
 ```python
 def _create_error_response(
     self,
@@ -210,6 +219,7 @@ def _create_error_response(
 ```
 
 **Benefits:**
+
 - Consistent error response format
 - Centralized error logging
 - Easier to change error format project-wide
@@ -222,6 +232,7 @@ def _create_error_response(
 **Current Problem:** `discord_helper` is created in `__init__`, making it hard to mock without patching.
 
 **Suggestion:**
+
 ```python
 def __init__(self, bot, discord_helper: Optional[discordhelper.DiscordHelper] = None):
     super().__init__(bot)
@@ -232,6 +243,7 @@ def __init__(self, bot, discord_helper: Optional[discordhelper.DiscordHelper] = 
 ```
 
 **Benefits:**
+
 - Easier to inject mock in tests
 - More testable without monkeypatching
 - Follows dependency injection pattern
@@ -243,6 +255,7 @@ def __init__(self, bot, discord_helper: Optional[discordhelper.DiscordHelper] = 
 **Current Problem:** Debug logs don't include request correlation ID or timing information.
 
 **Suggestion:**
+
 ```python
 async def event(self, request: HttpRequest, **kwargs) -> HttpResponse:
     _method = inspect.stack()[0][3]
@@ -260,6 +273,7 @@ async def event(self, request: HttpRequest, **kwargs) -> HttpResponse:
 ```
 
 **Benefits:**
+
 - Easier to correlate logs with requests
 - Performance monitoring built-in
 - Request-level tracing for debugging
@@ -271,6 +285,7 @@ async def event(self, request: HttpRequest, **kwargs) -> HttpResponse:
 **Current Problem:** Match statement returns directly from cases, making it less clear that this is the final routing logic.
 
 **Suggestion:**
+
 ```python
 # Route to appropriate event handler
 event_handlers = {
@@ -288,6 +303,7 @@ return await handler_func(guild, member, discord_user, data_payload, headers)
 ```
 
 **Benefits:**
+
 - More Pythonic (dictionary dispatch)
 - Easier to add new event types dynamically
 - Clearer error when handler is missing
@@ -300,6 +316,7 @@ return await handler_func(guild, member, discord_user, data_payload, headers)
 **Current Problem:** Some parameters lack type hints, reducing IDE support and static analysis.
 
 **Suggestion:**
+
 ```python
 async def _handle_login_event(
     self,
@@ -312,6 +329,7 @@ async def _handle_login_event(
 ```
 
 **Benefits:**
+
 - Better IDE autocomplete
 - Static type checking with mypy
 - Self-documenting code
@@ -324,6 +342,7 @@ async def _handle_login_event(
 **Current Problem:** `user_id` is extracted from payload but never validated before use.
 
 **Suggestion:**
+
 ```python
 user_id = data_payload.get("user_id", 0)
 if not user_id or not isinstance(user_id, int):
@@ -335,6 +354,7 @@ if not user_id or not isinstance(user_id, int):
 ```
 
 **Benefits:**
+
 - Fail fast with clear error message
 - Prevent passing 0 or None to Discord API
 - Better error messages for clients
@@ -426,7 +446,8 @@ async def event(self, request: HttpRequest, **kwargs) -> HttpResponse:
 
 With these changes, tests become much simpler:
 
-### Before (Complex Mocking):
+### Before (Complex Mocking)
+
 ```python
 async def test_event_success(handler, mock_request):
     handler.validate_webhook_token = MagicMock(return_value=True)
@@ -437,7 +458,8 @@ async def test_event_success(handler, mock_request):
     # ... test logic
 ```
 
-### After (Simple Mocking):
+### After (Simple Mocking)
+
 ```python
 async def test_event_success(handler, mock_request):
     handler._validate_request_body = MagicMock(return_value={"guild_id": 123, ...})
@@ -488,6 +510,7 @@ async def test_event_success(handler, mock_request):
 ## Backwards Compatibility
 
 All suggested changes are backwards compatible:
+
 - Public API (`event()` signature) unchanged
 - Response formats unchanged
 - Error codes unchanged
@@ -498,6 +521,7 @@ All suggested changes are backwards compatible:
 ## Testing Strategy
 
 After refactoring:
+
 1. Run existing tests to ensure no regressions
 2. Add tests for new private methods
 3. Add integration tests for full request flows
@@ -508,6 +532,7 @@ After refactoring:
 ## Conclusion
 
 These improvements will make the codebase:
+
 - **More testable** - Easier to unit test individual pieces
 - **More maintainable** - Clear separation of concerns
 - **More reliable** - Fix critical exception handling bug

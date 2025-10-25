@@ -788,7 +788,7 @@ def _json_headers(self) -> HttpHeaders:
 
 ### Test File Structure
 
-```
+```text
 tests/
 ├── test_free_game_webhook_handler.py (existing - update)
 ├── test_offer_url_enricher.py (new)

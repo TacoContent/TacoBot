@@ -81,11 +81,11 @@ Paths:
 Coverage & Reporting:
     --coverage-report PATH          Output path for coverage report
     --coverage-format {json,text,markdown,cobertura}
-                                  Report format with enhanced visualizations:
-                                  • json: Structured data for automation
-                                  • text: Colorized terminal tables with emoji
-                                  • markdown: GitHub-ready tables with emoji
-                                  • cobertura: CI/CD compatible XML
+                                    Report format with enhanced visualizations:
+                                    • json: Structured data for automation
+                                    • text: Colorized terminal tables with emoji
+                                    • markdown: GitHub-ready tables with emoji
+                                    • cobertura: CI/CD compatible XML
     --fail-on-coverage-below PCT    Fail if coverage < threshold (0-1 or 0-100)
     --markdown-summary PATH         Generate markdown summary file
     --generate-badge PATH           Generate SVG coverage badge
