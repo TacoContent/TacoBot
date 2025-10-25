@@ -32,16 +32,24 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev,docs]"
 
+      - name: Create reports directory
+        run: |
+          mkdir -p reports/openapi/
+
       - name: Swagger Sync check
         run: |
           python scripts/swagger_sync.py \
-            --config=${{github.workspace}}/.swagger-sync.yaml \
+            --config=.swagger-sync.yaml \
             --env=ci
+
+      - name: Check output directory
+        run: |
+          ls -la reports/openapi/
 
       - name: Code Coverage Report
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
-          filename: ${{github.workspace}}/reports/openapi/openapi-coverage.xml
+          filename: reports/openapi/openapi-coverage.xml
           badge: false
           fail_below_min: false
           format: markdown
@@ -53,7 +61,7 @@ jobs:
 
       - name: Move Code Coverage Report
         run: |
-          mv code-coverage-results.md ${{github.workspace}}/reports/openapi/code-coverage-report.md
+          mv code-coverage-results.md reports/openapi/code-coverage-report.md
 
       - name: Add Coverage PR Comment
         uses: marocchino/sticky-pull-request-comment@v2
@@ -61,7 +69,7 @@ jobs:
         with:
           header: 'swagger-sync-coverage-report'
           recreate: true
-          path: ${{github.workspace}}/reports/openapi/code-coverage-report.md
+          path: reports/openapi/code-coverage-report.md
 
       - name: Upload OpenAPI reports artifact
         if: always()
