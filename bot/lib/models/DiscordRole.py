@@ -33,6 +33,7 @@ import typing
 from discord import Role
 from bot.lib.models.openapi import openapi
 
+
 @openapi.component("DiscordRole", description="Represents a Discord role with normalized primitive fields.")
 @openapi.property("id", description="The unique identifier for the role")
 @openapi.property("guild_id", description="The unique identifier for the guild this role belongs to")

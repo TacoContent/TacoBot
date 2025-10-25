@@ -67,14 +67,10 @@ class SwaggerHttpHandler(BaseHttpHandler):
     @openapi.summary("Serve the OpenAPI/Swagger YAML document")
     @openapi.description("Serve the OpenAPI/Swagger YAML document")
     @openapi.response(
-        200,
-        description="Successful operation",
-        contentType="text/vnd.yaml",
-        schema=str,
-        methods=[HTTPMethod.GET],
+        200, description="Successful operation", contentType="text/vnd.yaml", schema=str, methods=[HTTPMethod.GET]
     )
     @openapi.response(
-        '5XX',
+        '5XX', 
         description="Internal server error",
         contentType="application/json",
         schema=ErrorStatusCodePayload,

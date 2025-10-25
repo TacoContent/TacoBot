@@ -1,4 +1,3 @@
-
 """Launcher strategy module with automatic discovery and export.
 
 This module automatically discovers all LauncherStrategy subclasses
@@ -21,11 +20,7 @@ def get_launcher_strategies() -> typing.Dict[str, typing.Type[LauncherStrategy]]
 
     for name, obj in inspect.getmembers(LauncherStrategies, inspect.isclass):
         # Check if it's a subclass of LauncherStrategy but not the base class itself
-        if (
-            issubclass(obj, LauncherStrategy)
-            and obj is not LauncherStrategy
-            and not inspect.isabstract(obj)
-        ):
+        if issubclass(obj, LauncherStrategy) and obj is not LauncherStrategy and not inspect.isabstract(obj):
             strategies[name] = obj
 
     return strategies
@@ -38,4 +33,4 @@ _LAUNCHER_STRATEGIES = get_launcher_strategies()
 LAUNCHER_STRATEGIES = _LAUNCHER_STRATEGIES
 
 # Build __all__ dynamically - explicit tuple for type checker
-__all__ = [k for k, _ in LAUNCHER_STRATEGIES.items()] # type: ignore[misc]
+__all__ = [k for k, _ in LAUNCHER_STRATEGIES.items()]  # type: ignore[misc]

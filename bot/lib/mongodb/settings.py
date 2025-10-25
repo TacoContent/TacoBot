@@ -64,7 +64,7 @@ class SettingsDatabase(BaseDatabase):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            settings = self.connection.settings.find_one({"guild_id": str(guildId), "name": name}) # type: ignore
+            settings = self.connection.settings.find_one({"guild_id": str(guildId), "name": name})  # type: ignore
             # explicitly return None if no settings are found
             if settings is None:
                 return None

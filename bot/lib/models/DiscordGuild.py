@@ -32,6 +32,7 @@ import typing
 
 from bot.lib.models.openapi import openapi
 
+
 @openapi.component("DiscordGuild", description="Discord guild (server) information")
 @openapi.property("id", description="The unique identifier for the guild")
 @openapi.property("name", description="The name of the guild")

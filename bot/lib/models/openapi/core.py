@@ -6,6 +6,7 @@ _TYPE_ALIAS_REGISTRY: Dict[str, Dict[str, Any]] = {}
 AttrT = TypeVar('AttrT')
 T = TypeVar('T')
 
+
 def attribute(name: str, value: Optional[Union[str, bool, int, float]]) -> Callable[[AttrT], AttrT]:
     def _wrap(attr: AttrT) -> AttrT:
         target = cast(Any, attr)
@@ -13,6 +14,7 @@ def attribute(name: str, value: Optional[Union[str, bool, int, float]]) -> Calla
             setattr(target, '__openapi_attributes__', {})
         target.__openapi_attributes__[name] = value
         return attr
+
     return _wrap
 
 
@@ -45,6 +47,7 @@ def ignore() -> Callable[[FunctionType], FunctionType]:
     def _wrap(func: FunctionType) -> FunctionType:
         setattr(func, '__openapi_ignore__', True)
         return func
+
     return _wrap
 
 
@@ -64,6 +67,7 @@ def metadata(name: str, value: Optional[Union[str, bool, int, float, Dict[str, A
             setattr(target, '__openapi_metadata__', {})
         target.__openapi_metadata__[name] = value
         return attr
+
     return _wrap
 
 
@@ -135,9 +139,7 @@ def _python_type_to_openapi_schema(python_type: type | UnionType | None) -> Unio
 
     if isinstance(python_type, UnionType):
         python_types = python_type.__args__
-        return {
-            'oneOf': [_python_type_to_openapi_schema(t) for t in python_types] # type: ignore
-        }
+        return {'oneOf': [_python_type_to_openapi_schema(t) for t in python_types]}  # type: ignore
 
     # Handle the type directly
     if python_type in type_mapping:
@@ -146,25 +148,17 @@ def _python_type_to_openapi_schema(python_type: type | UnionType | None) -> Unio
     # Default to string for unknown types
     return {'type': 'string'}
 
+
 def _schema_to_openapi(schema):
     import typing
     from types import UnionType
     if isinstance(schema, UnionType):
-        return {
-            'oneOf': [
-                {'$ref': f"#/components/schemas/{t.__name__}"}
-                for t in schema.__args__
-            ]
-        }
+        return {'oneOf': [{'$ref': f"#/components/schemas/{t.__name__}"} for t in schema.__args__]}
     elif getattr(schema, '__origin__', None) is typing.Union:
-        return {
-            'oneOf': [
-                {'$ref': f"#/components/schemas/{t.__name__}"}
-                for t in schema.__args__
-            ]
-        }
+        return {'oneOf': [{'$ref': f"#/components/schemas/{t.__name__}"} for t in schema.__args__]}
     else:
         return {'$ref': f"#/components/schemas/{schema.__name__}"}
+
 
 __all__ = [
     '_python_type_to_openapi_schema',

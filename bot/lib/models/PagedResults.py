@@ -6,6 +6,7 @@ from bot.lib.models.openapi import openapi
 
 T = TypeVar('T')
 
+
 @openapi.component("PagedResults", description="Generic paginated results container.")
 @openapi.property("total", description="Total number of matching items (unpaged)", default=0)
 @openapi.property("skip", description="Number of items skipped (offset)", default=0, minimum=0)
@@ -16,6 +17,7 @@ class PagedResults(Generic[T]):
     """
     Represents a generic paginated set of results.
     """
+
     def __init__(self, data: dict):
         self.total: int = data.get("total", 0)
         self.skip: int = data.get("skip", 0)
@@ -24,6 +26,7 @@ class PagedResults(Generic[T]):
 
     def to_dict(self) -> dict:
         return self.__dict__
+
 
 @openapi.component("PagedResultsJoinWhitelistUser", description="Generic paginated results container.")
 @openapi.property("items", description="Page slice of JoinWhitelistUser items")

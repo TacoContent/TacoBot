@@ -41,9 +41,7 @@ def deep_merge_dict(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str,
 
 
 def merge_list_fields(
-    yaml_list: Optional[List[Any]],
-    decorator_list: Optional[List[Any]],
-    unique_by: Optional[str] = None
+    yaml_list: Optional[List[Any]], decorator_list: Optional[List[Any]], unique_by: Optional[str] = None
 ) -> List[Any]:
     """Merge list fields from YAML and decorator metadata.
 
@@ -88,9 +86,7 @@ def merge_list_fields(
 
 
 def merge_responses(
-    yaml_responses: Dict[str, Any],
-    decorator_responses: Dict[str, Any],
-    endpoint_method: Optional[str] = None
+    yaml_responses: Dict[str, Any], decorator_responses: Dict[str, Any], endpoint_method: Optional[str] = None
 ) -> Dict[str, Any]:
     """Merge OpenAPI response objects by status code, filtering by HTTP method if applicable.
 
@@ -141,9 +137,7 @@ def merge_responses(
 
 
 def merge_examples_into_spec(
-    result: Dict[str, Any],
-    examples_list: List[Dict[str, Any]],
-    endpoint_method: str
+    result: Dict[str, Any], examples_list: List[Dict[str, Any]], endpoint_method: str
 ) -> None:
     """Merge examples from decorator metadata into the appropriate OpenAPI spec locations.
 
@@ -219,10 +213,7 @@ def merge_examples_into_spec(
 
 
 def _merge_parameter_example(
-    result: Dict[str, Any],
-    example: Dict[str, Any],
-    name: str,
-    example_obj: Dict[str, Any]
+    result: Dict[str, Any], example: Dict[str, Any], name: str, example_obj: Dict[str, Any]
 ) -> None:
     """Merge a parameter example into the parameters list.
 
@@ -246,10 +237,7 @@ def _merge_parameter_example(
 
 
 def _merge_request_body_example(
-    result: Dict[str, Any],
-    example: Dict[str, Any],
-    name: str,
-    example_obj: Dict[str, Any]
+    result: Dict[str, Any], example: Dict[str, Any], name: str, example_obj: Dict[str, Any]
 ) -> None:
     """Merge a request body example into requestBody.content.
 
@@ -268,10 +256,7 @@ def _merge_request_body_example(
 
 
 def _merge_response_example(
-    result: Dict[str, Any],
-    example: Dict[str, Any],
-    name: str,
-    example_obj: Dict[str, Any]
+    result: Dict[str, Any], example: Dict[str, Any], name: str, example_obj: Dict[str, Any]
 ) -> None:
     """Merge a response example into responses[statusCode].content.
 
@@ -301,10 +286,7 @@ def _merge_response_example(
 
 
 def detect_conflicts(
-    yaml_meta: Dict[str, Any],
-    decorator_meta: Dict[str, Any],
-    endpoint_path: str,
-    endpoint_method: str
+    yaml_meta: Dict[str, Any], decorator_meta: Dict[str, Any], endpoint_path: str, endpoint_method: str
 ) -> List[str]:
     """Detect conflicts between YAML and decorator metadata.
 
@@ -383,7 +365,7 @@ def merge_endpoint_metadata(
     decorator_meta: Optional[Dict[str, Any]],
     endpoint_path: str = "",
     endpoint_method: str = "",
-    detect_conflicts_flag: bool = True
+    detect_conflicts_flag: bool = True,
 ) -> Tuple[Dict[str, Any], List[str]]:
     """Merge YAML and decorator metadata for an endpoint.
 
@@ -445,7 +427,7 @@ def merge_endpoint_metadata(
         result['parameters'] = merge_list_fields(yaml_params, decorator_params, unique_by='name')
 
     # Merge request body (decorator wins, filtered by method)
-    yaml_request_body = result.get('requestBody', {})
+    # yaml_request_body = result.get('requestBody', {})
     decorator_request_body = decorator_meta.get('requestBody', {})
     if decorator_request_body:
         # Check if decorator requestBody applies to this endpoint's method

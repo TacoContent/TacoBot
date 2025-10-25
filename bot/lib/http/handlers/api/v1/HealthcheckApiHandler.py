@@ -78,20 +78,14 @@ class HealthcheckApiHandler(BaseHttpHandler):
         200, description="Service is healthy", contentType="plain/text", schema=str, methods=[HTTPMethod.GET]
     )
     @openapi.response(
-        '5XX',
-        description="Service is unhealthy",
-        contentType="plain/text",
-        schema=str,
-        methods=HTTPMethod.GET,
+        '5XX', description="Service is unhealthy", contentType="plain/text", schema=str, methods=HTTPMethod.GET
     )
     @openapi.response(
-        '5XX',
-        description="Internal server error",
+        '5XX', description="Internal server error",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
         methods=HTTPMethod.GET,
     )
-
     @openapi.managed()
     def healthcheck(self, request: HttpRequest) -> HttpResponse:
         """Return basic service health status.

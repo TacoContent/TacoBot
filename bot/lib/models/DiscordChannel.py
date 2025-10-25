@@ -1,6 +1,7 @@
 import typing
 from bot.lib.models.openapi import openapi
 
+
 @openapi.component("DiscordChannel", description="Discord channel information")
 @openapi.property("id", description="The unique identifier for the channel")
 @openapi.property("name", description="The name of the channel")

@@ -59,15 +59,11 @@ def _convert_params(request: HttpRequest, route: UriRoute, method):
     return args
 
 
-
-
-
 def _scan_handler_for_uri_routes(handler: object) -> Generator[tuple[object, UriRoute]]:
     for attr in dir(handler):
         method = getattr(handler, attr)
         for route in getattr(method, '_http_routes', []):
             yield method, route
-
 
 
 class HttpResponseException(Exception):

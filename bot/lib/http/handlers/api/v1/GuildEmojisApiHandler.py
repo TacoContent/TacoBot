@@ -128,9 +128,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         schema=ErrorStatusCodePayload,
         methods=[HTTPMethod.GET],
     )
-    @openapi.response(
-        401, description="Unauthorized", contentType="application/json", schema=ErrorStatusCodePayload
-    )
+    @openapi.response(401, description="Unauthorized", contentType="application/json", schema=ErrorStatusCodePayload)
     @openapi.response(
         404,
         description="Guild or Emoji not found",
@@ -216,9 +214,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         schema=ErrorStatusCodePayload,
         methods=[HTTPMethod.GET],
     )
-    @openapi.response(
-        401, description="Unauthorized", contentType="application/json", schema=ErrorStatusCodePayload
-    )
+    @openapi.response(401, description="Unauthorized", contentType="application/json", schema=ErrorStatusCodePayload)
     @openapi.response(
         404,
         description="Guild or Emoji not found",
@@ -310,7 +306,7 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         description="Unauthorized",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
-        methods=[HTTPMethod.POST]
+        methods=[HTTPMethod.POST],
     )
     @openapi.response(
         404,
@@ -416,13 +412,14 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         description="Invalid guild id or request body",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
     )
     @openapi.response(
         401,
         description="Unauthorized",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
-        methods=[HTTPMethod.POST]
+        methods=[HTTPMethod.POST],
     )
     @openapi.response(
         404,

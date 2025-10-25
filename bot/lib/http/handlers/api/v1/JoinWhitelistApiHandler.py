@@ -268,30 +268,35 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
         contentType="application/json",
         schema=JoinWhitelistUser,
         required=True,
+        methods=[HTTPMethod.POST],
     )
     @openapi.response(
         201,
         description="The created JoinWhitelistUser object",
         contentType="application/json",
         schema=JoinWhitelistUser,
+        methods=[HTTPMethod.POST],
     )
     @openapi.response(
         400,
         description="Bad Request - missing or invalid body",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
     )
     @openapi.response(
         401,
         description="Unauthorized - missing or invalid auth token",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
     )
     @openapi.response(
         '5XX',
         description="Internal Server Error",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
     )
     @openapi.managed()
     def add_join_whitelist_user(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
@@ -334,18 +339,50 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
         name="guild_id",
         description="The ID of the guild to update the join whitelist for",
         schema=str,
+        methods=[HTTPMethod.PUT],
     )
     @openapi.pathParameter(
         name="user_id",
         description="The ID of the user to update in the join whitelist",
         schema=str,
+        methods=[HTTPMethod.PUT],
     )
     @openapi.requestBody(
         description="Optional body to specify 'added_by' user ID",
         contentType="application/json",
         schema=JoinWhitelistAddedBy,
         required=False,
+        methods=[HTTPMethod.PUT],
     )
+    @openapi.response(
+        200,
+        description="The updated JoinWhitelistUser object",
+        contentType="application/json",
+        schema=JoinWhitelistUser,
+        methods=[HTTPMethod.PUT],
+    )
+    @openapi.response(
+        400,
+        description="Bad Request - missing or invalid body",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.PUT],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized - missing or invalid auth token",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.PUT],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal Server Error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.PUT],
+    )
+    @openapi.managed()
     def update_join_whitelist_user(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Update (re-add) a whitelist entry for a user.
         Body can include:
@@ -385,11 +422,13 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
         name="guild_id",
         description="The ID of the guild to remove the user from the join whitelist",
         schema=str,
+        methods=[HTTPMethod.DELETE],
     )
     @openapi.pathParameter(
         name="user_id",
         description="The ID of the user to remove from the join whitelist",
         schema=str,
+        methods=[HTTPMethod.DELETE],
     )
     @openapi.response(
         204,
@@ -401,12 +440,14 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
         description="Unauthorized - missing or invalid auth token",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.DELETE],
     )
     @openapi.response(
         '5XX',
         description="Internal Server Error",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.DELETE],
     )
     @openapi.managed()
     def delete_join_whitelist_user(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:  # noqa: ARG002

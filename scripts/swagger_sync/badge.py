@@ -31,7 +31,7 @@ def generate_coverage_badge(coverage_rate: float, output_path: pathlib.Path) -> 
     elif percentage < 80:
         color = '#dfb317'  # Yellow
     else:
-        color = '#4c1'     # Green (bright green)
+        color = '#4c1'  # Green (bright green)
 
     # Format percentage text
     percentage_text = f'{percentage:.1f}%'

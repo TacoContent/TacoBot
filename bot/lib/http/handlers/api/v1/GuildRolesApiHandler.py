@@ -32,9 +32,7 @@ class GuildRolesApiHandler(BaseHttpHandler):
     @openapi.description("List all roles in a guild")
     @openapi.tags("guilds", "roles")
     @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
-    @openapi.pathParameter(
-        name="guild_id", schema=str, description="Discord guild id", methods=[HTTPMethod.GET]
-    )
+    @openapi.pathParameter(name="guild_id", schema=str, description="Discord guild id", methods=[HTTPMethod.GET])
     @openapi.response(
         200,
         description="Array of guild roles",
@@ -109,9 +107,7 @@ class GuildRolesApiHandler(BaseHttpHandler):
     @openapi.summary("Batch fetch guild roles by IDs")
     @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     @openapi.tags("guilds", "roles")
-    @openapi.pathParameter(
-        name="guild_id", schema=str, description="Discord guild id", methods=[HTTPMethod.POST]
-    )
+    @openapi.pathParameter(name="guild_id", schema=str, description="Discord guild id", methods=[HTTPMethod.POST])
     @openapi.requestBody(
         schema=typing.List[str] | GuildItemIdBatchRequestBody,
         required=False,
@@ -218,9 +214,7 @@ class GuildRolesApiHandler(BaseHttpHandler):
     @openapi.summary("Batch fetch guild mentionables by IDs")
     @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     @openapi.tags("guilds", "roles", "users", "mentionables")
-    @openapi.pathParameter(
-        name="guild_id", schema=str, description="Discord guild id", methods=[HTTPMethod.POST]
-    )
+    @openapi.pathParameter(name="guild_id", schema=str, description="Discord guild id", methods=[HTTPMethod.POST])
     @openapi.requestBody(
         schema=typing.List[str] | GuildItemIdBatchRequestBody,
         required=False,
@@ -353,9 +347,7 @@ class GuildRolesApiHandler(BaseHttpHandler):
     @openapi.description("List all mentionables (roles and users) in a guild")
     @openapi.tags("guilds", "roles", "users", "mentionables")
     @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
-    @openapi.pathParameter(
-        name="guild_id", schema=str, description="Discord guild id", methods=[HTTPMethod.GET]
-    )
+    @openapi.pathParameter(name="guild_id", schema=str, description="Discord guild id", methods=[HTTPMethod.GET])
     @openapi.response(
         200,
         description="Array of mentionable role and user objects",

@@ -95,7 +95,9 @@ def _diff_operations(existing: Optional[Dict[str, Any]], new: Dict[str, Any], *,
     return _colorize_unified(diff)
 
 
-def merge(swagger: Dict[str, Any], endpoints: List[Endpoint]) -> Tuple[Dict[str, Any], bool, List[str], Dict[Tuple[str, str], List[str]]]:
+def merge(
+    swagger: Dict[str, Any], endpoints: List[Endpoint]
+) -> Tuple[Dict[str, Any], bool, List[str], Dict[Tuple[str, str], List[str]]]:
     """
     Merge endpoint operations into the swagger paths section.
 
@@ -128,7 +130,9 @@ def merge(swagger: Dict[str, Any], endpoints: List[Endpoint]) -> Tuple[Dict[str,
     return swagger, changed, notes, diffs
 
 
-def detect_orphans(swagger: Dict[str, Any], endpoints: List[Endpoint], model_components: Optional[Dict[str, Dict[str, Any]]] = None) -> list[str]:
+def detect_orphans(
+    swagger: Dict[str, Any], endpoints: List[Endpoint], model_components: Optional[Dict[str, Dict[str, Any]]] = None
+) -> list[str]:
     """
     Detect orphaned paths and components in the swagger file.
 
@@ -151,7 +155,7 @@ def detect_orphans(swagger: Dict[str, Any], endpoints: List[Endpoint], model_com
         if not isinstance(methods, dict):
             continue
         for m in methods.keys():
-            if m.lower() in {"get","post","put","delete","patch","options","head"}:
+            if m.lower() in {"get", "post", "put", "delete", "patch", "options", "head"}:
                 if (path, m.lower()) not in code_pairs:
                     orphan_notes.append(f"Path present only in swagger (no handler): {m.upper()} {path}")
 

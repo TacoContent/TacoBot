@@ -47,7 +47,7 @@ from bot.lib.http.handlers.BaseWebhookHandler import BaseWebhookHandler
 from httpserver.EndpointDecorators import uri_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException
-from lib.models import MinecraftPlayerEventPayload, openapi
+from lib.models import openapi
 from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
 from lib.models.MinecraftPlayerEventPayload import MinecraftPlayerEventPayload, MinecraftPlayerEventPayloadResponse
 from tacobot import TacoBot
@@ -76,47 +76,41 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
         methods=HTTPMethod.POST,
         description="Success: Event processed successfully",
         contentType="application/json",
-        schema=MinecraftPlayerEventPayloadResponse
+        schema=MinecraftPlayerEventPayloadResponse,
     )
     @openapi.response(
         401,
         methods=HTTPMethod.POST,
         description="Unauthorized: Invalid webhook token",
         contentType="application/json",
-        schema=ErrorStatusCodePayload
+        schema=ErrorStatusCodePayload,
     )
     @openapi.response(
         400,
         methods=HTTPMethod.POST,
         description="Bad Request: No payload found in the request",
         contentType="application/json",
-        schema=ErrorStatusCodePayload
+        schema=ErrorStatusCodePayload,
     )
     @openapi.response(
         404,
         methods=HTTPMethod.POST,
         description="Not Found: Missing/invalid fields or unknown event",
         contentType="application/json",
-        schema=ErrorStatusCodePayload
+        schema=ErrorStatusCodePayload,
     )
     @openapi.response(
         500,
         methods=HTTPMethod.POST,
         description="Internal Server Error: Unexpected processing failure",
         contentType="application/json",
-        schema=ErrorStatusCodePayload
+        schema=ErrorStatusCodePayload,
     )
     @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     @openapi.tags("webhook", "minecraft")
     @openapi.summary("Minecraft Webhook to send player events")
-    @openapi.description(
-        "Ingress point for Minecraft player events such as login, logout, and death."
-    )
-    @openapi.requestBody(
-        schema=MinecraftPlayerEventPayload,
-        contentType="application/json",
-        methods=[HTTPMethod.POST],
-    )
+    @openapi.description("Ingress point for Minecraft player events such as login, logout, and death.")
+    @openapi.requestBody(schema=MinecraftPlayerEventPayload, contentType="application/json", methods=[HTTPMethod.POST])
     async def event(self, request: HttpRequest, **kwargs) -> HttpResponse:
         """Ingress point for Minecraft player events.
 
@@ -144,14 +138,13 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
 
             # Authentication
             if not self.validate_webhook_token(request):
-                return self._create_error_response(
-                    401, "Invalid webhook token", headers
-                )
+                return self._create_error_response(401, "Invalid webhook token", headers)
 
             # Parse and validate request
             payload = self._validate_request_body(request, headers)
-            self.log.debug(0, f"{self._module}.{self._class}.{_method}",
-                        f"[{request_id}] {json.dumps(payload, indent=2)}")
+            self.log.debug(
+                0, f"{self._module}.{self._class}.{_method}", f"[{request_id}] {json.dumps(payload, indent=2)}"
+            )
 
             # Validate payload structure
             guild_id, event_str, data_payload = self._validate_payload_fields(payload, headers)
@@ -160,14 +153,10 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
             # Extract and validate user_id
             user_id = data_payload.get("user_id", 0)
             if not user_id:
-                return self._create_error_response(
-                    400, "Missing user_id in payload", headers
-                )
+                return self._create_error_response(400, "Missing user_id in payload", headers)
 
             # Resolve Discord objects
-            discord_user, guild, member = await self._resolve_discord_objects(
-                guild_id, user_id, headers
-            )
+            discord_user, guild, member = await self._resolve_discord_objects(guild_id, user_id, headers)
 
             # Route to event handler
             event_handlers = {
@@ -178,17 +167,18 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
 
             handler_func = event_handlers.get(event)
             if handler_func is None:
-                return self._create_error_response(
-                    404, f"No handler for event: {event}", headers
-                )
+                return self._create_error_response(404, f"No handler for event: {event}", headers)
 
             return await handler_func(guild, member, discord_user, data_payload, headers)
 
         except HttpResponseException as e:
             return HttpResponse(e.status_code, e.headers, e.body)
         except Exception as e:
-            self.log.error(0, f"{self._module}.{self._class}.{_method}",
-                        f"[{request_id}] {str(e)}", traceback.format_exc())
+            self.log.error(
+                0,
+                f"{self._module}.{self._class}.{_method}",
+                f"[{request_id}] {str(e)}", traceback.format_exc()
+            )
             return self._create_error_response(
                 500, f"Internal server error: {str(e)}", headers, include_stacktrace=True
             )
@@ -230,28 +220,31 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
             # tracking_db = TrackingDatabase()
             # tracking_db.track_minecraft_event(guild.id, member.id, data_payload)
 
-            result = MinecraftPlayerEventPayloadResponse({
-                "status": "ok",
-                "data": MinecraftPlayerEventPayload({
-                    "user_id": str(discord_user.id),
-                    "guild_id": str(guild.id),
-                    "event": str(MinecraftPlayerEvents.LOGIN),
-                    "payload": data_payload,
-                }).to_dict(),
-            })
+            result = MinecraftPlayerEventPayloadResponse(
+                {
+                    "status": "ok",
+                    "data": MinecraftPlayerEventPayload(
+                        {
+                            "user_id": str(discord_user.id),
+                            "guild_id": str(guild.id),
+                            "event": str(MinecraftPlayerEvents.LOGIN),
+                            "payload": data_payload,
+                        }
+                    ).to_dict(),
+                }
+            )
 
             return HttpResponse(200, headers, bytearray(json.dumps(result.to_dict(), indent=4), "utf-8"))
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
-            err = ErrorStatusCodePayload({
-                "code": 500,
-                "error": f"Internal server error: {str(e)}",
-                "stacktrace": traceback.format_exc(),
-            })
+            err = ErrorStatusCodePayload(
+                {"code": 500, "error": f"Internal server error: {str(e)}", "stacktrace": traceback.format_exc()}
+            )
             return HttpResponse(500, headers, bytearray(json.dumps(err.to_dict()), "utf-8"))
 
     async def _handle_logout_event(
-        self, guild: discord.Guild,
+        self,
+        guild: discord.Guild,
         member: discord.Member,
         discord_user: discord.User,
         data_payload: typing.Dict[str, typing.Any],
@@ -268,23 +261,25 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
             # get the tracking database
             # tracking_db = TrackingDatabase()
             # tracking_db.track_minecraft_event(guild.id, member.id, data_payload)
-            result = MinecraftPlayerEventPayloadResponse({
-                "status": "ok",
-                "data": MinecraftPlayerEventPayload({
-                    "user_id": str(discord_user.id),
-                    "guild_id": str(guild.id),
-                    "event": str(MinecraftPlayerEvents.LOGOUT),
-                    "payload": data_payload,
-                }).to_dict(),
-            })
+            result = MinecraftPlayerEventPayloadResponse(
+                {
+                    "status": "ok",
+                    "data": MinecraftPlayerEventPayload(
+                        {
+                            "user_id": str(discord_user.id),
+                            "guild_id": str(guild.id),
+                            "event": str(MinecraftPlayerEvents.LOGOUT),
+                            "payload": data_payload,
+                        }
+                    ).to_dict(),
+                }
+            )
             return HttpResponse(200, headers, bytearray(json.dumps(result.to_dict(), indent=4), "utf-8"))
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
-            err = ErrorStatusCodePayload({
-                "code": 500,
-                "error": f"Internal server error: {str(e)}",
-                "stacktrace": traceback.format_exc(),
-            })
+            err = ErrorStatusCodePayload(
+                {"code": 500, "error": f"Internal server error: {str(e)}", "stacktrace": traceback.format_exc()}
+            )
             return HttpResponse(500, headers, bytearray(json.dumps(err.to_dict()), "utf-8"))
 
     async def _handle_death_event(
@@ -307,23 +302,25 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
             # tracking_db = TrackingDatabase()
             # tracking_db.track_minecraft_event(guild.id, member.id, data_payload)
 
-            result = MinecraftPlayerEventPayloadResponse({
-                "status": "ok",
-                "data": MinecraftPlayerEventPayload({
-                    "user_id": str(discord_user.id),
-                    "guild_id": str(guild.id),
-                    "event": str(MinecraftPlayerEvents.DEATH),
-                    "payload": data_payload,
-                }).to_dict(),
-            })
+            result = MinecraftPlayerEventPayloadResponse(
+                {
+                    "status": "ok",
+                    "data": MinecraftPlayerEventPayload(
+                        {
+                            "user_id": str(discord_user.id),
+                            "guild_id": str(guild.id),
+                            "event": str(MinecraftPlayerEvents.DEATH),
+                            "payload": data_payload,
+                        }
+                    ).to_dict(),
+                }
+            )
             return HttpResponse(200, headers, bytearray(json.dumps(result.to_dict(), indent=4), "utf-8"))
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
-            err = ErrorStatusCodePayload({
-                "code": 500,
-                "error": f"Internal server error: {str(e)}",
-                "stacktrace": traceback.format_exc(),
-            })
+            err = ErrorStatusCodePayload(
+                {"code": 500, "error": f"Internal server error: {str(e)}", "stacktrace": traceback.format_exc()}
+            )
             return HttpResponse(500, headers, bytearray(json.dumps(err.to_dict()), "utf-8"))
 
     def _validate_request_body(self, request: HttpRequest, headers: HttpHeaders) -> dict:
@@ -342,11 +339,9 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
         try:
             return json.loads(request.body)
         except json.JSONDecodeError as e:
-            err = ErrorStatusCodePayload({
-                "code": 400,
-                "error": f"Invalid JSON payload: {str(e)}",
-                "stacktrace": traceback.format_exc(),
-            })
+            err = ErrorStatusCodePayload(
+                {"code": 400, "error": f"Invalid JSON payload: {str(e)}", "stacktrace": traceback.format_exc()}
+            )
             raise HttpResponseException(err.code, headers, json.dumps(err.to_dict()).encode())
 
     def _validate_payload_fields(self, payload: dict, headers: HttpHeaders) -> tuple[int, str, dict]:
@@ -410,10 +405,7 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
         # Get the member from the user_id
         member = await guild.fetch_member(user_id)
         if not member:
-            err = ErrorStatusCodePayload({
-                "code": 404,
-                "error": f"Member {user_id} not found in guild {guild_id}"
-            })
+            err = ErrorStatusCodePayload({"code": 404, "error": f"Member {user_id} not found in guild {guild_id}"})
             raise HttpResponseException(err.code, headers, json.dumps(err.to_dict()).encode())
 
         return discord_user, guild, member

@@ -1,4 +1,3 @@
-
 from http import HTTPMethod
 from typing import Any, Callable, Dict, List, Literal, Optional, Type, TypeVar, Union
 from types import FunctionType, UnionType
@@ -35,11 +34,13 @@ def description(text: str) -> Callable[[FunctionType], FunctionType]:
         ... def get_roles(self, request, uri_variables):
         ...     pass
     """
+
     def _wrap(func: FunctionType) -> FunctionType:
         if not hasattr(func, '__openapi_metadata__'):
             setattr(func, '__openapi_metadata__', {})
         func.__openapi_metadata__['description'] = text
         return func
+
     return _wrap
 
 
@@ -219,10 +220,7 @@ def example(
             setattr(target, '__openapi_examples__', [])
 
         # Build example definition according to OpenAPI 3.0 spec
-        example_def: Dict[str, Any] = {
-            'name': name,
-            'placement': placement,
-        }
+        example_def: Dict[str, Any] = {'name': name, 'placement': placement}
 
         # Add the example content (value, externalValue, or $ref from schema)
         if has_value:
@@ -260,13 +258,11 @@ def example(
 
         target.__openapi_examples__.append(example_def)
         return target
+
     return _wrap
 
 
-def externalDocs(
-    url: str,
-    description: str = ""
-) -> Callable[[FunctionType], FunctionType]:
+def externalDocs(url: str, description: str = "") -> Callable[[FunctionType], FunctionType]:
     """Link to external documentation.
 
     Provides a reference to external documentation for the operation.
@@ -288,6 +284,7 @@ def externalDocs(
         ... def get_roles(self, request, uri_variables):
         ...     pass
     """
+
     def _wrap(func: FunctionType) -> FunctionType:
         if not hasattr(func, '__openapi_metadata__'):
             setattr(func, '__openapi_metadata__', {})
@@ -296,6 +293,7 @@ def externalDocs(
             external_docs['description'] = description
         func.__openapi_metadata__['externalDocs'] = external_docs
         return func
+
     return _wrap
 
 
@@ -331,19 +329,23 @@ def headerParameter(
         ... def get_roles(self, request, uri_variables):
         ...     pass
     """
+
     def _wrap(func: FunctionType) -> FunctionType:
         if not hasattr(func, '__openapi_parameters__'):
             setattr(func, '__openapi_parameters__', [])
-        func.__openapi_parameters__.append({
-            'in': 'header',
-            'name': name,
-            'schema': _python_type_to_openapi_schema(schema),
-            'required': required,
-            'description': description
-        })
+        func.__openapi_parameters__.append(
+            {
+                'in': 'header',
+                'name': name,
+                'schema': _python_type_to_openapi_schema(schema),
+                'required': required,
+                'description': description,
+            }
+        )
         if options:
             func.__openapi_parameters__[-1]['schema'].update(options)
         return func
+
     return _wrap
 
 
@@ -364,11 +366,13 @@ def operationId(id: str) -> Callable[[FunctionType], FunctionType]:
         ... def get_roles(self, request, uri_variables):
         ...     pass
     """
+
     def _wrap(func: FunctionType) -> FunctionType:
         if not hasattr(func, '__openapi_metadata__'):
             setattr(func, '__openapi_metadata__', {})
         func.__openapi_metadata__['operationId'] = id
         return func
+
     return _wrap
 
 
@@ -405,20 +409,24 @@ def pathParameter(
         ... def get_roles(self, request, uri_variables):
         ...     pass
     """
+
     def _wrap(func: FunctionType) -> FunctionType:
         if not hasattr(func, '__openapi_parameters__'):
             setattr(func, '__openapi_parameters__', [])
-        func.__openapi_parameters__.append({
-            'in': 'path',
-            'name': name,
-            'methods': methods if isinstance(methods, list) else [methods] if methods else [],
-            'schema': _python_type_to_openapi_schema(schema),
-            'required': True,  # Path parameters are always required in OpenAPI
-            'description': description
-        })
+        func.__openapi_parameters__.append(
+            {
+                'in': 'path',
+                'name': name,
+                'methods': methods if isinstance(methods, list) else [methods] if methods else [],
+                'schema': _python_type_to_openapi_schema(schema),
+                'required': True,  # Path parameters are always required in OpenAPI
+                'description': description,
+            }
+        )
         if options:
             func.__openapi_parameters__[-1]['schema'].update(options)
         return func
+
     return _wrap
 
 
@@ -464,6 +472,7 @@ def queryParameter(
         ... def get_roles(self, request, uri_variables):
         ...     pass
     """
+
     def _wrap(func: FunctionType) -> FunctionType:
         if not hasattr(func, '__openapi_parameters__'):
             setattr(func, '__openapi_parameters__', [])
@@ -489,7 +498,7 @@ def requestBody(
     methods: Optional[Union[HTTPMethod, List[HTTPMethod]]] = HTTPMethod.POST,
     contentType: str = "application/json",
     required: bool = True,
-    description: str = ""
+    description: str = "",
 ) -> Callable[[FunctionType], FunctionType]:
     """Define request body schema.
 
@@ -517,6 +526,7 @@ def requestBody(
         ... def create_role(self, request, uri_variables):
         ...     pass
     """
+
     def _wrap(func: FunctionType) -> FunctionType:
         if not hasattr(func, '__openapi_request_body__'):
             setattr(func, '__openapi_request_body__', None)
@@ -524,25 +534,22 @@ def requestBody(
             'required': required,
             'description': description,
             'methods': methods if isinstance(methods, list) else [methods],
-            'content': {
-                contentType: {
-                    'schema': _schema_to_openapi(schema)
-                }
-            }
+            'content': {contentType: {'schema': _schema_to_openapi(schema)}}
         }
         return func
+
     return _wrap
 
 
 def response(
-        status_codes: StatusCodeType,
-        *,
-        methods: Optional[Union[List[HTTPMethod], HTTPMethod]] = None,
-        description: Optional[str] = None,
-        summary: Optional[str] = None,
-        contentType: Optional[str] = "application/json",
-        schema: Optional[Type | UnionType] = None,
-    ) -> Callable[[FunctionType], FunctionType]:
+    status_codes: StatusCodeType,
+    *,
+    methods: Optional[Union[List[HTTPMethod], HTTPMethod]] = None,
+    description: Optional[str] = None,
+    summary: Optional[str] = None,
+    contentType: Optional[str] = "application/json",
+    schema: Optional[Type | UnionType] = None,
+) -> Callable[[FunctionType], FunctionType]:
     """Decorator to annotate a handler method with OpenAPI response metadata.
 
     This decorator attaches OpenAPI response information to the decorated function,
@@ -568,6 +575,7 @@ def response(
     Callable[[FunctionType], FunctionType]
         A decorator function that adds the OpenAPI response metadata to the decorated function.
     """
+
     def _wrap(func: FunctionType) -> FunctionType:
         if not hasattr(func, '__openapi_responses__'):
             setattr(func, '__openapi_responses__', [])
@@ -582,14 +590,11 @@ def response(
 
         if schema is not None:
             # result should be a dict like {'application/json': {'schema': { '$ref': '#/components/schemas/<ModelClass>' }}}
-            model['content'] = {
-                contentType: {
-                    'schema': _schema_to_openapi(schema)
-                }
-            }
+            model['content'] = {contentType: {'schema': _schema_to_openapi(schema)}}
 
         responses.append(model)
         return func
+
     return _wrap
 
 
@@ -599,7 +604,7 @@ def responseHeader(
     name: str,
     schema: type,
     methods: Optional[Union[HTTPMethod, List[HTTPMethod]]] = None,
-    description: str = ""
+    description: str = "",
 ) -> Callable[[FunctionType], FunctionType]:
     """Define response header.
 
@@ -626,21 +631,27 @@ def responseHeader(
         ... def get_roles(self, request, uri_variables):
         ...     pass
     """
+
     def _wrap(func: FunctionType) -> FunctionType:
         if not hasattr(func, '__openapi_response_headers__'):
             setattr(func, '__openapi_response_headers__', [])
-        func.__openapi_response_headers__.append({
-            'name': name,
-            'status_code': status_codes if isinstance(status_codes, list) else [status_codes],
-            'methods': methods if isinstance(methods, list) else [methods] if methods else [],
-            'schema': _python_type_to_openapi_schema(schema),
-            'description': description
-        })
+        func.__openapi_response_headers__.append(
+            {
+                'name': name,
+                'status_code': status_codes if isinstance(status_codes, list) else [status_codes],
+                'methods': methods if isinstance(methods, list) else [methods] if methods else [],
+                'schema': _python_type_to_openapi_schema(schema),
+                'description': description
+            }
+        )
         return func
+
     return _wrap
 
 
-def security(*schemes, methods: Optional[Union[HTTPMethod, List[HTTPMethod]]] = None) -> Callable[[FunctionType], FunctionType]:
+def security(
+    *schemes, methods: Optional[Union[HTTPMethod, List[HTTPMethod]]] = None
+) -> Callable[[FunctionType], FunctionType]:
     def _wrap(func: FunctionType) -> FunctionType:
         if not hasattr(func, '__openapi_security__'):
             setattr(func, '__openapi_security__', [])
@@ -655,6 +666,7 @@ def security(*schemes, methods: Optional[Union[HTTPMethod, List[HTTPMethod]]] = 
             # set the schemes for all methods
             func.__openapi_security__.extend(schemes)
         return func
+
     return _wrap
 
 
@@ -676,11 +688,13 @@ def summary(text: str) -> Callable[[FunctionType], FunctionType]:
         ... def get_roles(self, request, uri_variables):
         ...     pass
     """
+
     def _wrap(func: FunctionType) -> FunctionType:
         if not hasattr(func, '__openapi_metadata__'):
             setattr(func, '__openapi_metadata__', {})
         func.__openapi_metadata__['summary'] = text
         return func
+
     return _wrap
 
 
@@ -690,6 +704,7 @@ def tags(*tags: str) -> Callable[[FunctionType], FunctionType]:
             setattr(func, '__openapi_tags__', [])
         func.__openapi_tags__.extend(tags)
         return func
+
     return _wrap
 
 
@@ -706,5 +721,5 @@ __all__ = [
     'responseHeader',
     'security',
     'summary',
-    'tags'
+    'tags',
 ]

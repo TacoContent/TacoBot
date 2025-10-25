@@ -217,9 +217,7 @@ class BaseHttpHandler:
         return HttpResponse(status_code, headers, json.dumps(err.to_dict()).encode("utf-8"))
 
     def _create_error_from_exception(
-        self,
-        exception: HttpResponseException,
-        include_stacktrace: bool = False
+        self, exception: HttpResponseException, include_stacktrace: bool = False
     ) -> HttpResponse:
         """Create standardized error response from exception.
 

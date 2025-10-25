@@ -1,5 +1,6 @@
-
 import typing
+
+
 AttrT = typing.TypeVar("AttrT")
 
 
@@ -11,12 +12,10 @@ def component(
         if description:
             setattr(cls, '__openapi_description__', description)
         return cls
+
     return _wrap
 
-def property(
-    property: str,
-    **kwargs: typing.Any
-) -> typing.Callable[[AttrT], AttrT]:
+def property(property: str, **kwargs: typing.Any) -> typing.Callable[[AttrT], AttrT]:
     """Annotate an OpenAPI component property with schema attributes.
 
     Flexible usage patterns supported:
@@ -66,7 +65,4 @@ def property(
 
     return _wrap
 
-__all__ = [
-    'component',
-    'property'
-]
+__all__ = ['component', 'property']

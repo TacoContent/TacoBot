@@ -146,11 +146,7 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
             eligible_guilds = await self._resolve_eligible_guilds(game_id)
 
             # Phase 5: Broadcast
-            await self._broadcast_to_guilds(
-                eligible_guilds,
-                formatted_offer,
-                game_id
-            )
+            await self._broadcast_to_guilds(eligible_guilds, formatted_offer, game_id)
 
             # Return success
             return self._success_response(payload)
@@ -160,6 +156,7 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
             return self._error_response(500, f"Internal server error: {str(e)}")
+
     def _validate_and_parse_request(self, request: HttpRequest) -> dict:
         """Validate authentication and parse JSON payload."""
         if not self.validate_webhook_token(request):
@@ -169,8 +166,9 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
             raise HttpResponseException(400, None, b'{"error": "No payload found in the request"}')
 
         payload = json.loads(request.body)
-        self.log.debug(0, f"{self._module}.{self._class}._validate_and_parse_request",
-                    f"{json.dumps(payload, indent=4)}")
+        self.log.debug(
+            0, f"{self._module}.{self._class}._validate_and_parse_request", f"{json.dumps(payload, indent=4)}"
+        )
         return payload
 
     def _enrich_offer_url(self, url: str) -> EnrichedUrl:
@@ -182,8 +180,7 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
             enricher = OfferUrlEnricher(self.url_shortener)
             return enricher.enrich(url)
         except Exception as e:
-            self.log.warn(0, f"{self._module}.{self._class}._enrich_offer_url",
-                        f"URL enrichment failed: {e}")
+            self.log.warn(0, f"{self._module}.{self._class}._enrich_offer_url", f"URL enrichment failed: {e}")
             # Return minimal fallback
             return EnrichedUrl(original=url, resolved=url, shortened=url, launcher_name="", launcher_url="")
 
@@ -195,17 +192,10 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
     async def _resolve_eligible_guilds(self, game_id: str) -> typing.List[ResolvedGuild]:
         """Resolve guilds eligible for offer notification."""
         resolver = GuildResolver(self.get_settings, self.freegame_db, self.discord_helper)
-        return await resolver.resolve_eligible_guilds(
-            [g for g in self.bot.guilds],
-            int(game_id),
-            self.SETTINGS_SECTION
-        )
+        return await resolver.resolve_eligible_guilds([g for g in self.bot.guilds], int(game_id), self.SETTINGS_SECTION)
 
     async def _broadcast_to_guilds(
-        self,
-        eligible_guilds: typing.List[ResolvedGuild],
-        formatted_offer: FormattedOffer,
-        game_id: str
+        self, eligible_guilds: typing.List[ResolvedGuild], formatted_offer: FormattedOffer, game_id: str
     ):
         """Send formatted offer to all eligible guild channels."""
         for guild_config in eligible_guilds:
@@ -213,11 +203,7 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
 
             for channel in guild_config.channels:
                 await self._send_offer_to_channel(
-                    channel,
-                    formatted_offer,
-                    notify_message,
-                    guild_config.guild_id,
-                    game_id
+                    channel, formatted_offer, notify_message, guild_config.guild_id, game_id
                 )
 
     async def _send_offer_to_channel(
@@ -226,13 +212,10 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
         formatted_offer: FormattedOffer,
         notify_message: str,
         guild_id: int,
-        game_id: str
+        game_id: str,
     ):
         """Send formatted embed with button to channel and track."""
-        link_button = ExternalUrlButtonView(
-            formatted_offer.button_label,
-            formatted_offer.button_url
-        )
+        link_button = ExternalUrlButtonView(formatted_offer.button_label, formatted_offer.button_url)
 
         message = await self.messaging.send_embed(
             channel=channel,
@@ -243,14 +226,11 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
             fields=formatted_offer.fields,
             content=notify_message,
             view=link_button,
-            delete_after=None
+            delete_after=None,
         )
 
         self.tracking_db.track_free_game_key(
-            guildId=guild_id,
-            channelId=channel.id,
-            messageId=message.id,
-            gameId=int(game_id)
+            guildId=guild_id, channelId=channel.id, messageId=message.id, gameId=int(game_id)
         )
 
     def _build_notify_message(self, role_ids: typing.List[int]) -> str:

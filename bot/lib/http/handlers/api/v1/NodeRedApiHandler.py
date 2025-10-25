@@ -8,7 +8,6 @@ from lib import discordhelper
 from lib.enums.minecraft_player_events import MinecraftPlayerEventLiteral
 from lib.http.handlers.ApiHttpHandler import ApiHttpHandler
 from lib.models import MinecraftPlayerEventPayload
-from lib.models.MinecraftPlayerEventPayload import MinecraftPlayerEventPayloadResponse
 from lib.models.openapi import openapi
 from lib.mongodb.minecraft import MinecraftDatabase
 from lib.mongodb.tracking import TrackingDatabase
@@ -76,9 +75,7 @@ class NodeRedApiHandler(ApiHttpHandler):
     @uri_variable_mapping("/api/v1/guild/{guild}/invite/{channel}", method=HTTPMethod.POST)
     @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     @openapi.summary("Redirect Twitch guild invite to Node-RED")
-    @openapi.pathParameter(
-        name="guild", schema=str, description="ID of the guild to invite.", methods=HTTPMethod.POST
-    )
+    @openapi.pathParameter(name="guild", schema=str, description="ID of the guild to invite.", methods=HTTPMethod.POST)
     @openapi.pathParameter(
         name="channel", schema=str, description="ID of the channel to invite.", methods=HTTPMethod.POST
     )

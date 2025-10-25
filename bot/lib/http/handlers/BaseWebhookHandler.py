@@ -56,6 +56,8 @@ from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
 from tacobot import TacoBot
 
+from httpserver.server import HttpResponseException
+
 
 class BaseWebhookHandler:
     """Abstract base for all webhook handlers.

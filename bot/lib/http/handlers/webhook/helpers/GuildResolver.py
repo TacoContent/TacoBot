@@ -1,9 +1,10 @@
 """Guild and channel resolution for webhook broadcasting."""
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 import discord
+from bot.lib import discordhelper
 from bot.lib.mongodb.free_game_keys import FreeGameKeysDatabase
 
 
@@ -20,19 +21,16 @@ class GuildResolver:
 
     def __init__(
         self,
-        get_settings_func,
+        get_settings_func: Callable[[int, str], dict],
         freegame_db: FreeGameKeysDatabase,
-        discord_helper
+        discord_helper: discordhelper.DiscordHelper,
     ):
-        self.get_settings = get_settings_func
-        self.freegame_db = freegame_db
-        self.discord_helper = discord_helper
+        self.get_settings: Callable[[int, str], dict] = get_settings_func
+        self.freegame_db: FreeGameKeysDatabase = freegame_db
+        self.discord_helper: discordhelper.DiscordHelper = discord_helper
 
     async def resolve_eligible_guilds(
-        self,
-        guilds: List[discord.Guild],
-        game_id: int,
-        settings_section: str
+        self, guilds: List[discord.Guild], game_id: int, settings_section: str
     ) -> List[ResolvedGuild]:
         """Filter guilds and resolve notification channels.
 
@@ -59,18 +57,13 @@ class GuildResolver:
                 continue
 
             resolved.append(ResolvedGuild(
-                guild_id=guild.id,
-                channels=channels,
-                notify_role_ids=guild_config['notify_role_ids']
+                guild_id=guild.id, channels=channels, notify_role_ids=guild_config['notify_role_ids']
             ))
 
         return resolved
 
     def _get_guild_config(
-        self,
-        guild_id: int,
-        game_id: int,
-        settings_section: str
+        self, guild_id: int, game_id: int, settings_section: str
     ) -> Optional[dict]:
         """Get guild config if eligible for notification.
 
@@ -88,15 +81,9 @@ class GuildResolver:
         if not channel_ids:
             return None
 
-        return {
-            'channel_ids': channel_ids,
-            'notify_role_ids': settings.get("notify_role_ids", [])
-        }
+        return {'channel_ids': channel_ids, 'notify_role_ids': settings.get("notify_role_ids", [])}
 
-    async def _resolve_channels(
-        self,
-        channel_ids: List[int]
-    ) -> List[discord.TextChannel]:
+    async def _resolve_channels(self, channel_ids: List[int]) -> List[discord.TextChannel]:
         """Resolve channel IDs to channel objects."""
         channels = []
         for channel_id in channel_ids:

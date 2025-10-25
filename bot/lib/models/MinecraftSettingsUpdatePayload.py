@@ -2,6 +2,7 @@ import typing
 
 from lib.models.openapi import openapi
 
+
 @openapi.component("MinecraftSettingsUpdatePayload", description="Payload for updating Minecraft settings for a guild.")
 @openapi.property("guild_id", description="The ID of the guild for which to update Minecraft settings.")
 @openapi.property("settings", description="The Minecraft settings to update.")

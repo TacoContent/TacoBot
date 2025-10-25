@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import ast
-import pathlib
-import re
 import textwrap
 import typing
 from typing import Any, Dict, Optional
@@ -13,15 +11,17 @@ from .constants import MISSING, OPENAPI_BLOCK_RE
 
 try:
     from ruamel.yaml import YAML
+
     yaml = YAML()
     yaml.preserve_quotes = True
     yaml.map_indent = 2
     yaml.sequence_indent = 4
     yaml.sequence_dash_offset = 2
     yaml.width = 4096
-except Exception as e:
+except Exception:
     print("Missing dependency ruamel.yaml. Install with: pip install ruamel.yaml", file=__import__("sys").stderr)
     raise
+
 
 def _decorator_identifier(node: ast.AST) -> Optional[str]:
     if isinstance(node, ast.Name):
@@ -29,7 +29,6 @@ def _decorator_identifier(node: ast.AST) -> Optional[str]:
     if isinstance(node, ast.Attribute):
         return node.attr
     return None
-
 
 
 def _extract_constant(node: ast.AST) -> Any:
@@ -65,7 +64,6 @@ def _extract_constant(node: ast.AST) -> Any:
     return MISSING
 
 
-
 def _safe_unparse(node: Optional[ast.AST]) -> Optional[str]:
     if node is None:
         return None
@@ -77,10 +75,8 @@ def _safe_unparse(node: Optional[ast.AST]) -> Optional[str]:
     return None
 
 
-
 def _normalize_extension_key(name: str) -> str:
     return name if name.startswith('x-') else f"x-{name}"
-
 
 
 def _extract_literal_schema(anno_str: str) -> Optional[Dict[str, Any]]:
@@ -93,7 +89,7 @@ def _extract_literal_schema(anno_str: str) -> Optional[Dict[str, Any]]:
     end_idx = sub.find(']')
     if end_idx == -1:
         return None
-    inner = sub[len('Literal['):end_idx]
+    inner = sub[len('Literal[') : end_idx]
     raw_vals = [v.strip() for v in inner.split(',') if v.strip()]
     enum_vals: typing.List[str] = []
     for rv in raw_vals:
@@ -101,12 +97,11 @@ def _extract_literal_schema(anno_str: str) -> Optional[Dict[str, Any]]:
             rv_clean = rv[1:-1]
         else:
             rv_clean = rv
-        if rv_clean and all(c.isalnum() or c in ('-','_','.') for c in rv_clean):
+        if rv_clean and all(c.isalnum() or c in ('-', '_', '.') for c in rv_clean):
             enum_vals.append(rv_clean)
     if not enum_vals:
         return None
     return {'type': 'string', 'enum': sorted(set(enum_vals))}
-
 
 
 def _extract_constant_dict(node: ast.AST) -> Optional[Dict[str, Any]]:
@@ -126,7 +121,6 @@ def _extract_constant_dict(node: ast.AST) -> Optional[Dict[str, Any]]:
     return result
 
 
-
 def extract_openapi_block(doc: Optional[str]) -> Dict[str, Any]:
     if not doc:
         return {}
@@ -140,8 +134,9 @@ def extract_openapi_block(doc: Optional[str]) -> Dict[str, Any]:
             raise ValueError("OpenAPI block must be a mapping")
         return data
     except Exception as e:
-        raise ValueError(f"Failed parsing >>>openapi <<<openapi block: {e}\nBlock contents:\n{textwrap.indent(raw, '    ')}") from e
-
+        raise ValueError(
+            f"Failed parsing >>>openapi <<<openapi block: {e}\nBlock contents:\n{textwrap.indent(raw, '    ')}"
+        ) from e
 
 
 def resolve_path_literal(node: ast.AST) -> Optional[str]:

@@ -1,7 +1,7 @@
-
 import typing
 
 from bot.lib.models.openapi import openapi
+
 
 @openapi.component("TacoWebhookGamePayload", description="Represents the payload for a Taco webhook game event.")
 @openapi.property("game_id", description="The unique identifier for the game.")

@@ -14,19 +14,11 @@ Rules / Conventions:
 * Decorator parameter ``name`` is the component schema name; if omitted falls back to class name.
 * Schema generation is intentionally basic; refine manually in swagger if needed.
 """
+
 from __future__ import annotations
 
 from .components import component, property
-from .core import (
-    attribute,
-    deprecated,
-    exclude,
-    get_type_alias_metadata,
-    ignore,
-    managed,
-    metadata,
-    type_alias,
-)
+from .core import attribute, deprecated, exclude, get_type_alias_metadata, ignore, managed, metadata, type_alias
 from .endpoints import (
     description,
     example,

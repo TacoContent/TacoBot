@@ -33,22 +33,15 @@ import typing
 
 from bot.lib.models.openapi import openapi
 
+
 @openapi.component("JoinWhitelistUser", description="Container for a guild-scoped join whitelist record.")
+@openapi.property(property="guild_id", description="Discord guild (server) identifier scoping the whitelist entry.")
+@openapi.property(property="user_id", description="Discord user identifier for the whitelisted user.")
 @openapi.property(
-    property="guild_id",
-    description="Discord guild (server) identifier scoping the whitelist entry.",
+    property="added_by", description="Discord user id (or system marker) of the actor who added the entry."
 )
 @openapi.property(
-    property="user_id",
-    description="Discord user identifier for the whitelisted user.",
-)
-@openapi.property(
-    property="added_by",
-    description="Discord user id (or system marker) of the actor who added the entry.",
-)
-@openapi.property(
-    property="timestamp",
-    description="Creation timestamp (seconds since epoch, or milliseconds depending on writer).",
+    property="timestamp", description="Creation timestamp (seconds since epoch, or milliseconds depending on writer)."
 )
 @openapi.managed()
 class JoinWhitelistUser:
@@ -84,6 +77,7 @@ class JoinWhitelistUser:
             "timestamp": self.timestamp,
         }
 
+
 @openapi.component("JoinWhitelistAddedBy", description="Container for the 'added_by' field of a join whitelist entry.")
 @openapi.property(
     property="added_by",
@@ -98,6 +92,4 @@ class JoinWhitelistAddedBy:
 
     def to_dict(self) -> dict:
         """Return a dictionary suitable for JSON / API responses."""
-        return {
-            "added_by": self.added_by,
-        }
+        return {"added_by": self.added_by}

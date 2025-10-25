@@ -45,6 +45,7 @@ class Endpoint:
         except ImportError:
             import sys
             from pathlib import Path
+
             scripts_dir = Path(__file__).parent.parent
             if str(scripts_dir) not in sys.path:
                 sys.path.insert(0, str(scripts_dir))
@@ -55,7 +56,7 @@ class Endpoint:
             decorator_meta=self.decorator_metadata,
             endpoint_path=self.path,
             endpoint_method=self.method,
-            detect_conflicts_flag=detect_conflicts
+            detect_conflicts_flag=detect_conflicts,
         )
 
     def to_openapi_operation(self) -> Dict[str, Any]:
@@ -74,6 +75,7 @@ class Endpoint:
             # Fallback for script context
             import sys
             from pathlib import Path
+
             scripts_dir = Path(__file__).parent.parent
             if str(scripts_dir) not in sys.path:
                 sys.path.insert(0, str(scripts_dir))

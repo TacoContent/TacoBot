@@ -47,6 +47,7 @@ import typing
 import discord
 from bot.lib.models.openapi import openapi
 
+
 @openapi.component("DiscordEmoji", description="Snapshot of a Discord emoji's core attributes.")
 @openapi.property("id", description="The unique identifier for the emoji")
 @openapi.property("animated", description="Whether the emoji is animated")

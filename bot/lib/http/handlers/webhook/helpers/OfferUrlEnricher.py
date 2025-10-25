@@ -21,6 +21,7 @@ from lib.http.handlers.webhook.helpers.launchers.LauncherStrategies import (
 @dataclass
 class EnrichedUrl:
     """Container for enriched URL data."""
+
     original: str
     resolved: str
     shortened: str
@@ -54,21 +55,14 @@ class OfferUrlEnricher:
         launcher_name, launcher_url = self._build_launcher_deep_link(resolved)
 
         return EnrichedUrl(
-            original=url,
-            resolved=resolved,
-            shortened=shortened,
-            launcher_name=launcher_name,
-            launcher_url=launcher_url
+            original=url, resolved=resolved, shortened=shortened, launcher_name=launcher_name, launcher_url=launcher_url
         )
 
     def _resolve_redirect_chain(self, url: str) -> str:
         """Follow redirects to final destination URL."""
         try:
             response = requests.get(
-                url,
-                allow_redirects=True,
-                headers={"Referer": url, "User-Agent": "Tacobot/1.0"},
-                timeout=5
+                url, allow_redirects=True, headers={"Referer": url, "User-Agent": "Tacobot/1.0"}, timeout=5
             )
             return response.url
         except requests.RequestException:
@@ -91,11 +85,7 @@ class OfferUrlEnricher:
         Returns:
             (launcher_name, launcher_url) tuple
         """
-        launchers = [
-            MicrosoftStoreLauncher(),
-            SteamLauncher(),
-            EpicGamesLauncher(),
-        ]
+        launchers = [MicrosoftStoreLauncher(), SteamLauncher(), EpicGamesLauncher()]
 
         for launcher in launchers:
             if launcher.matches(url):

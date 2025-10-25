@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional, Set
 
 class ValidationSeverity(Enum):
     """Validation message severity levels."""
+
     ERROR = "ERROR"  # Blocks generation, must be fixed
     WARNING = "WARNING"  # Should be reviewed, but allowed
     INFO = "INFO"  # Informational, best practice suggestions
@@ -155,7 +156,7 @@ def validate_schema_references(
                                 severity=ValidationSeverity.ERROR,
                                 message=f"Unknown schema reference: {schema_name}",
                                 endpoint=endpoint_id,
-                                field=f"responses.{status_code}.content.{media_type}.schema"
+                                field=f"responses.{status_code}.content.{media_type}.schema",
                             )
                         )
 
@@ -200,7 +201,7 @@ def validate_schema_references(
                             severity=ValidationSeverity.ERROR,
                             message=f"Unknown schema reference in parameter '{param_name}': {schema_name}",
                             endpoint=endpoint_id,
-                            field=f"parameters[{idx}].schema"
+                            field=f"parameters[{idx}].schema",
                         )
                     )
 
@@ -234,7 +235,7 @@ def validate_status_codes(metadata: Dict[str, Any], endpoint_id: str) -> List[Va
                         severity=ValidationSeverity.WARNING,
                         message=f"Non-standard HTTP status code: {status_code}",
                         endpoint=endpoint_id,
-                        field=f"responses.{status_code_str}"
+                        field=f"responses.{status_code_str}",
                     )
                 )
         except ValueError:
@@ -245,7 +246,7 @@ def validate_status_codes(metadata: Dict[str, Any], endpoint_id: str) -> List[Va
                         severity=ValidationSeverity.WARNING,
                         message=f"Invalid status code format: {status_code_str}",
                         endpoint=endpoint_id,
-                        field=f"responses.{status_code_str}"
+                        field=f"responses.{status_code_str}",
                     )
                 )
 
@@ -277,7 +278,7 @@ def validate_parameters(metadata: Dict[str, Any], endpoint_id: str) -> List[Vali
                     severity=ValidationSeverity.ERROR,
                     message=f"Parameter must be an object, got {type(param).__name__}",
                     endpoint=endpoint_id,
-                    field=f"parameters[{idx}]"
+                    field=f"parameters[{idx}]",
                 )
             )
             continue
@@ -289,9 +290,9 @@ def validate_parameters(metadata: Dict[str, Any], endpoint_id: str) -> List[Vali
             errors.append(
                 ValidationError(
                     severity=ValidationSeverity.ERROR,
-                    message=f"Parameter missing required field 'name'",
+                    message="Parameter missing required field 'name'",
                     endpoint=endpoint_id,
-                    field=f"parameters[{idx}]"
+                    field=f"parameters[{idx}]",
                 )
             )
 
@@ -301,7 +302,7 @@ def validate_parameters(metadata: Dict[str, Any], endpoint_id: str) -> List[Vali
                     severity=ValidationSeverity.ERROR,
                     message=f"Parameter '{param_name}' missing required field 'in'",
                     endpoint=endpoint_id,
-                    field=f"parameters[{idx}].in"
+                    field=f"parameters[{idx}].in",
                 )
             )
         else:
@@ -314,7 +315,7 @@ def validate_parameters(metadata: Dict[str, Any], endpoint_id: str) -> List[Vali
                         severity=ValidationSeverity.ERROR,
                         message=f"Parameter '{param_name}' has invalid 'in' value: {param_in}. Must be one of {valid_in_values}",
                         endpoint=endpoint_id,
-                        field=f"parameters[{idx}].in"
+                        field=f"parameters[{idx}].in",
                     )
                 )
 
@@ -325,7 +326,7 @@ def validate_parameters(metadata: Dict[str, Any], endpoint_id: str) -> List[Vali
                         severity=ValidationSeverity.ERROR,
                         message=f"Path parameter '{param_name}' must have required=true",
                         endpoint=endpoint_id,
-                        field=f"parameters[{idx}].required"
+                        field=f"parameters[{idx}].required",
                     )
                 )
 
@@ -336,7 +337,7 @@ def validate_parameters(metadata: Dict[str, Any], endpoint_id: str) -> List[Vali
                     severity=ValidationSeverity.ERROR,
                     message=f"Parameter '{param_name}' must have either 'schema' or 'content'",
                     endpoint=endpoint_id,
-                    field=f"parameters[{idx}]"
+                    field=f"parameters[{idx}]",
                 )
             )
 
@@ -364,7 +365,7 @@ def validate_responses(metadata: Dict[str, Any], endpoint_id: str) -> List[Valid
                 severity=ValidationSeverity.WARNING,
                 message="No responses defined for endpoint",
                 endpoint=endpoint_id,
-                field="responses"
+                field="responses",
             )
         )
         return errors
@@ -376,7 +377,7 @@ def validate_responses(metadata: Dict[str, Any], endpoint_id: str) -> List[Valid
                     severity=ValidationSeverity.ERROR,
                     message=f"Response for status {status_code} must be an object",
                     endpoint=endpoint_id,
-                    field=f"responses.{status_code}"
+                    field=f"responses.{status_code}",
                 )
             )
             continue
@@ -388,7 +389,7 @@ def validate_responses(metadata: Dict[str, Any], endpoint_id: str) -> List[Valid
                     severity=ValidationSeverity.ERROR,
                     message=f"Response {status_code} missing required 'description' field",
                     endpoint=endpoint_id,
-                    field=f"responses.{status_code}.description"
+                    field=f"responses.{status_code}.description",
                 )
             )
 
@@ -422,7 +423,7 @@ def validate_security_schemes(
                         severity=ValidationSeverity.ERROR,
                         message=f"Unknown security scheme: {scheme_name}",
                         endpoint=endpoint_id,
-                        field=f"security[{idx}].{scheme_name}"
+                        field=f"security[{idx}].{scheme_name}",
                     )
                 )
 

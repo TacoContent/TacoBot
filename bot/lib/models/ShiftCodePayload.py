@@ -3,6 +3,7 @@ import typing
 
 from bot.lib.models.openapi import openapi
 
+
 @openapi.component("ShiftCodePayload", description="Payload for the SHiFT Code.")
 @openapi.property("games", description="List of games associated with the SHiFT code.")
 @openapi.property("code", description="The SHiFT code string.")

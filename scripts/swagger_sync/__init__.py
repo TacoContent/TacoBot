@@ -15,25 +15,11 @@ from .constants import (
     SUPPORTED_KEYS,
     build_openapi_block_re,
 )
-from .coverage import (
-    _compute_coverage,
-    _generate_coverage,
-)
-from .endpoint_collector import (
-    collect_endpoints,
-    extract_openapi_block,
-    resolve_path_literal,
-)
+from .coverage import _compute_coverage, _generate_coverage
+from .endpoint_collector import collect_endpoints, extract_openapi_block, resolve_path_literal
 from .model_components import collect_model_components
 from .models import Endpoint
-from .swagger_ops import (
-    DISABLE_COLOR,
-    _colorize_unified,
-    _diff_operations,
-    _dump_operation_yaml,
-    detect_orphans,
-    merge,
-)
+from .swagger_ops import DISABLE_COLOR, _colorize_unified, _diff_operations, _dump_operation_yaml, detect_orphans, merge
 from .type_system import (
     GLOBAL_TYPE_ALIASES,
     MISSING,
@@ -66,8 +52,10 @@ _LAZY_IMPORTS: set[str] = set()
 # Cache for the main module to avoid repeated loading
 _main_module_cache = None
 
+
 def _get_main_module():
     """Get or load the main swagger_sync.py script module."""
+
     global _main_module_cache
 
     if _main_module_cache is not None:
@@ -96,6 +84,7 @@ def _get_main_module():
 
     raise ImportError(f"Could not load {script_file}")
 
+
 def __getattr__(name):
     """Lazy import attributes from main swagger_sync.py script on demand."""
     if name in _LAZY_IMPORTS:
@@ -113,6 +102,7 @@ def __getattr__(name):
 
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
+
 def __setattr__(name, value):
     """Allow setting attributes on the module, including those in main script."""
     if name in _LAZY_IMPORTS or name.startswith('_'):
@@ -124,6 +114,7 @@ def __setattr__(name, value):
     else:
         # Normal module attribute
         globals()[name] = value
+
 
 __all__ = [
     'generate_coverage_badge',

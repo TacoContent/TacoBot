@@ -21,6 +21,8 @@ HTTP_METHODS = typing.Literal[
     HTTPMethod.HEAD,
     HTTPMethod.OPTIONS,
 ]
+
+
 @dataclass
 class UriRoute:
     path: typing.Union[str, re.Pattern]

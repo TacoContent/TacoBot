@@ -70,15 +70,12 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
 
         self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
-
         self.tracking_db = TrackingDatabase()
         self.shift_codes_db = ShiftCodesDatabase()
 
     @uri_mapping("/webhook/shift", method=HTTPMethod.POST)
     @openapi.summary("Ingest SHiFT code webhook payloads")
-    @openapi.description(
-        "Receive SHiFT code webhook payloads, validate, and broadcast to subscribed guild channels."
-    )
+    @openapi.description("Receive SHiFT code webhook payloads, validate, and broadcast to subscribed guild channels.")
     @openapi.tags("webhook", "shift-codes")
     @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     @openapi.managed()
@@ -152,27 +149,17 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
 
             # 5. Build embed data
             description = self._build_shift_code_description(
-                code,
-                payload.get("reward", "Unknown"),
-                payload.get("notes")
+                code, payload.get("reward", "Unknown"), payload.get("notes", '')
             )
-            expiry_msg, created_msg = self._format_timestamp_messages(
-                payload.get("expiry"),
-                payload.get("created_at")
-            )
+            expiry_msg, created_msg = self._format_timestamp_messages(payload.get("expiry"), payload.get("created_at"))
             fields = self._build_embed_fields(payload["games"], code)
 
             # 6. Build view
-            buttons = MultipleExternalUrlButtonView([
-                ButtonData("Redeem", self.REDEEM_URL),
-                ButtonData("Open Source", payload.get("source", ""))
-            ])
+            buttons = MultipleExternalUrlButtonView(
+                [ButtonData("Redeem", self.REDEEM_URL), ButtonData("Open Source", payload.get("source", ""))]
+            )
 
-            embed_data = {
-                "message": f"{expiry_msg}{created_msg}\n\n{description}",
-                "fields": fields,
-                "view": buttons
-            }
+            embed_data = {"message": f"{expiry_msg}{created_msg}\n\n{description}", "fields": fields, "view": buttons}
 
             # 7. Process each guild
             for guild in self.bot.guilds:
@@ -206,11 +193,9 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
         try:
             payload = json.loads(request.body)
         except json.JSONDecodeError as e:
-            err = ErrorStatusCodePayload({
-                "code": 400,
-                "error": f"Invalid JSON payload: {str(e)}",
-                "stacktrace": traceback.format_exc(),
-            })
+            err = ErrorStatusCodePayload(
+                {"code": 400, "error": f"Invalid JSON payload: {str(e)}", "stacktrace": traceback.format_exc()}
+            )
             raise HttpResponseException(err.code, headers, json.dumps(err.to_dict()).encode())
 
         games = payload.get("games", [])
@@ -225,7 +210,6 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
 
         return payload
 
-
     def _normalize_shift_code(self, code: str) -> str:
         """Normalize shift code format.
 
@@ -236,7 +220,6 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
             Normalized code (uppercase, no spaces)
         """
         return str(code).strip().upper().replace(" ", "")
-
 
     def _check_code_expiry(self, expiry: Optional[int], headers: HttpHeaders) -> bool:
         """Check if code has expired.
@@ -261,13 +244,7 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
 
         return True
 
-
-    def _build_shift_code_description(
-        self,
-        code: str,
-        reward: str,
-        notes: Optional[str]
-    ) -> str:
+    def _build_shift_code_description(self, code: str, reward: str, notes: Optional[str]) -> str:
         """Build embed description for shift code.
 
         Args:
@@ -288,11 +265,7 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
 
         return desc
 
-    def _format_timestamp_messages(
-        self,
-        expiry: Optional[int],
-        created_at: Optional[int]
-    ) -> tuple[str, str]:
+    def _format_timestamp_messages(self, expiry: Optional[int], created_at: Optional[int]) -> tuple[str, str]:
         """Format expiry and created timestamp messages.
 
         Args:
@@ -317,11 +290,7 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
 
 
     async def _process_guild_broadcast(
-        self,
-        guild: discord.Guild,
-        code: str,
-        payload: Dict[str, Any],
-        embed_data: Dict[str, Any]
+        self, guild: discord.Guild, code: str, payload: Dict[str, Any], embed_data: Dict[str, Any]
     ) -> None:
         """Process shift code broadcast for a single guild.
 
@@ -337,8 +306,9 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
         # Check if feature enabled
         if not sc_settings.get("enabled", False):
             self.log.debug(
-                0, f"{self._module}.{self._class}.{inspect.stack()[0][3]}",
-                f"Shift Codes is disabled for guild {guild_id}"
+                0,
+                f"{self._module}.{self._class}.{inspect.stack()[0][3]}",
+                f"Shift Codes is disabled for guild {guild_id}",
             )
             return
 
@@ -359,16 +329,10 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
         notify_message = self._build_notify_message(sc_settings.get("notify_role_ids", []))
 
         # Broadcast to all channels
-        await self._broadcast_to_channels(
-            channels, guild_id, code, embed_data, notify_message, payload
-        )
+        await self._broadcast_to_channels(channels, guild_id, code, embed_data, notify_message, payload)
 
 
-    async def _resolve_guild_channels(
-        self,
-        guild_id: int,
-        settings: Dict[str, Any]
-    ) -> List[discord.TextChannel]:
+    async def _resolve_guild_channels(self, guild_id: int, settings: Dict[str, Any]) -> List[discord.TextChannel]:
         """Resolve Discord channels for shift code broadcast.
 
         Args:
@@ -381,7 +345,8 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
         channel_ids = settings.get("channel_ids", [])
         if not channel_ids or len(channel_ids) == 0:
             self.log.debug(
-                0, f"{self._module}.{self._class}.{inspect.stack()[0][3]}",
+                0,
+                f"{self._module}.{self._class}.{inspect.stack()[0][3]}",
                 f"No channel ids found for guild {guild_id}"
             )
             return []
@@ -394,7 +359,8 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
 
         if len(channels) == 0:
             self.log.debug(
-                0, f"{self._module}.{self._class}.{inspect.stack()[0][3]}",
+                0,
+                f"{self._module}.{self._class}.{inspect.stack()[0][3]}",
                 f"No channels found for guild {guild_id}"
             )
 
@@ -414,7 +380,6 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
 
         return " ".join([f"<@&{str(role_id)}>" for role_id in notify_role_ids])
 
-
     def _build_embed_fields(self, games: List[Dict[str, Any]], code: str) -> List[Dict[str, Any]]:
         """Build embed fields from games list.
 
@@ -430,11 +395,7 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
             game_name = game.get("name", None)
             if not game_name:
                 continue
-            fields.append({
-                "name": game_name,
-                "value": f"**{code}**",
-                "inline": False
-            })
+            fields.append({"name": game_name, "value": f"**{code}**", "inline": False})
         return fields
 
     async def _broadcast_to_channels(
@@ -444,7 +405,7 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
         code: str,
         embed_data: Dict[str, Any],
         notify_message: str,
-        payload: Dict[str, Any]
+        payload: Dict[str, Any],
     ) -> None:
         """Broadcast shift code message to channels.
 
@@ -472,8 +433,7 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
             if message:
                 await self._add_validation_reactions(message)
                 self.shift_codes_db.add_shift_code(
-                    payload,
-                    {"guildId": guild_id, "channelId": channel.id, "messageId": message.id}
+                    payload, {"guildId": guild_id, "channelId": channel.id, "messageId": message.id}
                 )
 
     async def _add_validation_reactions(self, message: discord.Message) -> None:

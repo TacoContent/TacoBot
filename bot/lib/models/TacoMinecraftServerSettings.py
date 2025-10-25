@@ -1,7 +1,6 @@
-
-
 from bot.lib.models.MinecraftServerSettings import MinecraftServerSettings
 from bot.lib.models.openapi import openapi
+
 
 @openapi.component("TacoMinecraftServerSettings", description="Represents the settings for a Minecraft server managed by TacoBot.")
 @openapi.property("guild_id", description="The Discord guild ID associated with these settings.")
@@ -11,6 +10,7 @@ from bot.lib.models.openapi import openapi
 @openapi.managed()
 class TacoMinecraftServerSettings:
     """Represents the settings for a Minecraft server managed by TacoBot."""
+
     def __init__(self, data: dict):
         self.guild_id: str = data.get("guild_id", "")
         self.name: str = data.get("name", "")

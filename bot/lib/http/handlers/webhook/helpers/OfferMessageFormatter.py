@@ -18,6 +18,7 @@ from lib.http.handlers.webhook.helpers.OfferUrlEnricher import EnrichedUrl
 @dataclass
 class FormattedOffer:
     """Formatted offer ready for Discord embedding."""
+
     title: str
     description: str
     embed_url: str
@@ -30,11 +31,7 @@ class FormattedOffer:
 class OfferMessageFormatter:
     """Transform offer payload into Discord-ready components."""
 
-    def format(
-        self,
-        payload: typing.Dict[str, typing.Any],
-        enriched_url: EnrichedUrl
-    ) -> FormattedOffer:
+    def format(self, payload: typing.Dict[str, typing.Any], enriched_url: EnrichedUrl) -> FormattedOffer:
         """Format offer payload for Discord embed.
 
         Args:
@@ -74,7 +71,7 @@ class OfferMessageFormatter:
             image_url=payload['image'],
             fields=[{"name": "Platforms", "value": platform_list, "inline": True}],
             button_label=f"Claim {offer_type_str}",
-            button_url=enriched_url.resolved
+            button_url=enriched_url.resolved,
         )
 
     def _format_price(self, price: str) -> str:
@@ -99,15 +96,10 @@ class OfferMessageFormatter:
         if not platforms:
             return "- Unknown"
 
-        platform_enums = [
-            FreeGamePlatforms.str_to_enum(p) for p in platforms
-        ]
+        platform_enums = [FreeGamePlatforms.str_to_enum(p) for p in platforms]
         return "\n".join([f"- {p}" for p in platform_enums])
 
     def _format_offer_type(self, offer_type: FreeGameTypes) -> str:
         """Map offer type enum to display string."""
-        mapping = {
-            FreeGameTypes.GAME: "Game",
-            FreeGameTypes.DLC: "Loot",
-        }
+        mapping = {FreeGameTypes.GAME: "Game", FreeGameTypes.DLC: "Loot"}
         return mapping.get(offer_type, "Offer")

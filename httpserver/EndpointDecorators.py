@@ -65,6 +65,7 @@ def _uri_variable_to_pattern(uri: str):
     -------
     ``/foo/{name}/{id}`` -> names ``['name','id']`` regex ``^/foo/(?P<name>[^/]*)/(?P<id>[^/]*)$``
     """
+
     uri_variables = []
     last_index = 0
     uri_parts = ['^']
@@ -110,6 +111,7 @@ def _uri_route_decorator(
     function
         The original function with `_http_routes` attribute mutated/appended.
     """
+
     args_specs = inspect.getfullargspec(f)
     route = UriRoute(path, http_method, uri_variables, args_specs.args, auth_callback)
 
@@ -122,7 +124,7 @@ def _uri_route_decorator(
 def uri_mapping(
     path: str,
     method: HTTP_METHODS | list[Literal[HTTP_METHODS]] = HTTPMethod.GET,
-    auth_callback: types.FunctionType | None = None
+    auth_callback: types.FunctionType | None = None,
 ):
     """Map a literal (static) path to a handler function.
 
@@ -144,6 +146,7 @@ def uri_mapping(
         return HttpResponse.json({'ok': True})
     ```
     """
+
     return lambda f: _uri_route_decorator(f, path, method, auth_callback=auth_callback)
 
 
@@ -165,6 +168,7 @@ def uri_pattern_mapping(path: str, method: HTTP_METHODS | list[Literal[HTTP_METH
     Overuse of regex routes can complicate performance and debugging—prefer
     `uri_variable_mapping` where possible.
     """
+
     return lambda f: _uri_route_decorator(f, re.compile(path), method)
 
 
@@ -195,5 +199,6 @@ def uri_variable_mapping(path: str, method: HTTP_METHODS | list[Literal[HTTP_MET
     * Duplicate variable names in the template are not recommended and may produce
         unexpected group overwrites.
     """
+
     uri_variables, uri_regex = _uri_variable_to_pattern(path)
     return lambda f: _uri_route_decorator(f, uri_regex, method, uri_variables)

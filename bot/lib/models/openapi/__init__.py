@@ -39,5 +39,5 @@ __all__ = [
     'security',
     'summary',
     'tags',
-    'type_alias'
+    'type_alias',
 ]

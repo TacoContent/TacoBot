@@ -5,6 +5,7 @@ from lib.models.openapi import openapi
 
 T = TypeVar('T')
 
+
 @openapi.component("TacoSettingsModel", description="Generic Taco Settings Model")
 @openapi.property("guild_id", description="The ID of the guild.")
 @openapi.property("name", description="The name of the settings.")

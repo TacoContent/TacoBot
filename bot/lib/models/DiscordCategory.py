@@ -1,4 +1,3 @@
-
 import typing
 from bot.lib.models.DiscordChannel import DiscordChannel
 from bot.lib.models.openapi import openapi
@@ -15,6 +14,7 @@ from bot.lib.models.openapi import openapi
 @openapi.property("channels", description="List of channels under this category")
 class DiscordCategory:
     """Model for a Discord Category."""
+
     def __init__(self, data: dict):
         self.id: str = data.get("id", "")
         self.type: typing.Literal['category'] = 'category'

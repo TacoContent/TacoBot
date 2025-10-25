@@ -1,7 +1,7 @@
-
 import typing
 
 from bot.lib.models.openapi import openapi
+
 
 @openapi.component("TacoWebhookMinecraftTacosPayload", description="Payload that is sent to give a Minecraft user tacos.")
 @openapi.property("guild_id", description="The ID of the guild where the tacos are being sent.")
@@ -13,6 +13,7 @@ from bot.lib.models.openapi import openapi
 @openapi.managed()
 class TacoWebhookMinecraftTacosPayload:
     """Payload that is sent to give a Minecraft user tacos."""
+
     def __init__(self, payload: dict):
         self.guild_id: str = payload.get("guild_id", "")
         self.from_user: str = payload.get("from_user", "")

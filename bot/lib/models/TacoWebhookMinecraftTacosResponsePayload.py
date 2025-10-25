@@ -1,7 +1,3 @@
-
-import typing
-
-
 from bot.lib.models.openapi import openapi
 from bot.lib.models.TacoWebhookMinecraftTacosPayload import TacoWebhookMinecraftTacosPayload
 
@@ -16,6 +12,7 @@ from bot.lib.models.TacoWebhookMinecraftTacosPayload import TacoWebhookMinecraft
 @openapi.managed()
 class TacoWebhookMinecraftTacosResponsePayload:
     """Response payload for TacoWebhook Minecraft Tacos events."""
+
     def __init__(self, data: dict):
         self.success: bool = data.get("success", False)
         self.payload: TacoWebhookMinecraftTacosPayload = TacoWebhookMinecraftTacosPayload(data.get("payload", {}))

@@ -125,7 +125,6 @@ class BasicAuthentication(Authentication):
 
 class ApiKeyAuthentication(Authentication):
 
-
     def __init__(self, data: typing.Dict[str, typing.Any]):
         super().__init__(data)
         if self.type != "apiKey":
@@ -164,10 +163,11 @@ class CookieAuthentication(Authentication):
 
 
 class OpenIDConnectDiscoveryAuthentication(Authentication):
-    """ OpenID Connect Discovery Authentication
+    """OpenID Connect Discovery Authentication
 
     see: https://swagger.io/docs/specification/v3_0/authentication/openid-connect-discovery/
     """
+
     def __init__(self, data: typing.Dict[str, typing.Any]):
         super().__init__(data)
         if self.type != "openIdConnect":
@@ -192,7 +192,9 @@ class OAuth2Flows:
 
     def __init__(self, data: typing.Dict[str, typing.Any]):
         self.authorizationCode: typing.Optional[OAuth2Flow] = OAuth2Flow(data.get("authorizationCode", {}))
-        self.clientCredentials: typing.Optional[OAuth2ClientCredentialsFlow] = OAuth2ClientCredentialsFlow(data.get("clientCredentials", {}))
+        self.clientCredentials: typing.Optional[OAuth2ClientCredentialsFlow] = OAuth2ClientCredentialsFlow(
+            data.get("clientCredentials", {})
+        )
         self.implicit: typing.Optional[OAuth2ImplicitFlow] = OAuth2ImplicitFlow(data.get("implicit", {}))
         self.password: typing.Optional[OAuth2PasswordFlow] = OAuth2PasswordFlow(data.get("password", {}))
 

@@ -3,6 +3,7 @@ import typing
 from bot.lib.models.openapi import openapi
 from bot.lib.models.TacoMinecraftWorlds import TacoMinecraftWorlds
 
+
 @openapi.component("MinecraftDiscordUserStatsInfo", description="Minecraft discord user stats info.")
 @openapi.property("world", description="The name of the Minecraft world.")
 @openapi.property("username", description="The Minecraft username.")

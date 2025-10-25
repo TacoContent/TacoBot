@@ -82,10 +82,7 @@ class SettingsApiHandler(BaseHttpHandler):
     @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     @openapi.tags("settings")
     @openapi.pathParameter(
-        name="section",
-        description="Logical settings section name.",
-        schema=str,
-        methods=[HTTPMethod.GET],
+        name="section", description="Logical settings section name.", schema=str, methods=[HTTPMethod.GET]
     )
     @openapi.response(
         200,
@@ -145,17 +142,13 @@ class SettingsApiHandler(BaseHttpHandler):
             {"section": uri_variables.get("section", ""), "guild_id": str(self.settings.primary_guild_id or "0")},
         )
 
-
     @uri_variable_mapping("/api/v1/guilds/{guild_id}/settings/{section}", method=HTTPMethod.GET)
     @openapi.summary("Get settings for a guild and section")
     @openapi.description("Retrieves the settings document for the guild and the specified section.")
     @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     @openapi.tags("settings")
     @openapi.pathParameter(
-        name="section",
-        description="Logical settings section name.",
-        schema=str,
-        methods=[HTTPMethod.GET],
+        name="section", description="Logical settings section name.", schema=str, methods=[HTTPMethod.GET]
     )
     @openapi.pathParameter(
         name="guild_id",
