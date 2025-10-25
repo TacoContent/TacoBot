@@ -35,7 +35,7 @@ jobs:
       - name: Swagger Sync check
         run: |
           python scripts/swagger_sync.py \
-            --config=/github/workspace/.github/linters/.swagger-sync.yaml \
+            --config=${{github.workspace}}/.swagger-sync.yaml \
             --env=ci
 
       - name: Code Coverage Report
