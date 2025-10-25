@@ -4,7 +4,7 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "TacoBot: Start Local Bot",
+			"label": "TacoBot: Start Local Bot (source)",
 			"type": "shell",
 			"command": "./.venv/scripts/Activate.ps1; python ${workspaceFolder}/main.py",
 			"presentation": {
@@ -21,6 +21,35 @@
 			"detail": "Start the TacoBot locally for development"
 		},
 		{
+			"label": "TacoBot: Start Local Bot (docker)",
+			"type": "shell",
+			"command": "docker run --rm --env-file .env -v ${workspaceFolder}:/app -p 8931:8931 -p 8932:8932 tacobot:local",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"detail": "Start the TacoBot locally using Docker for development"
+		},
+		{
+			"label": "TacoBot: Build Docker Image",
+			"type": "shell",
+			"command": "docker build -t tacobot:local .",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			}
+		},
+		{
 			"label": "Python: Activate Virtual Environment",
 			"type": "shell",
 			"command": "./.venv/scripts/Activate.ps1",
@@ -30,7 +59,7 @@
 			},
 			"problemMatcher": [],
 			"group": {
-				"kind": "none",
+				"kind": "test",
 				"isDefault": false
 			},
 			"detail": "Activate the Python virtual environment for the workspace"
@@ -149,6 +178,11 @@
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"group": {
+				"kind": "test",
+				"isDefault": false
 			}
 		},
 		{
@@ -158,6 +192,11 @@
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"group": {
+				"kind": "test",
+				"isDefault": false
 			}
 		},
 		{
@@ -167,6 +206,11 @@
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"group": {
+				"kind": "test",
+				"isDefault": false
 			},
 			"detail": "Run GitHub Super-Linter locally against the repository using Docker"
 		},
@@ -179,6 +223,9 @@
 				"panel": "dedicated"
 			},
 			"problemMatcher": [],
+			"group": {
+				"kind": "test"
+			},
 			"detail": "Validate the OpenAPI (Swagger) specification file"
 		},
 		{
@@ -190,6 +237,9 @@
 				"panel": "dedicated"
 			},
 			"problemMatcher": [],
+			"group": {
+				"kind": "test"
+			},
 			"detail": "Validate the OpenAPI (Swagger) specification file"
 		},
 		{
@@ -201,6 +251,9 @@
 				"panel": "dedicated"
 			},
 			"problemMatcher": [],
+			"group": {
+				"kind": "test"
+			},
 			"detail": "Fix the OpenAPI (Swagger) specification file"
 		}
 	]
