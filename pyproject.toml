@@ -101,19 +101,23 @@ line-length = 120
 target-version = ["py310", "py311", "py312", "py313"]
 skip-string-normalization = true
 skip-magic-trailing-comma = true
-verbose = true
+verbose = false
 diff = true
-check = true
+check = false
 color = true
 exclude = '''
 /(
     \.git
-  | tests
+  | \.hg
   | \.mypy_cache
+  | \.tox
   | \.venv
+  | \.vscode
   | _build
+  | buck-out
   | build
   | dist
+  | tests
 )/
 '''
 

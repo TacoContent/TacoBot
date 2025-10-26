@@ -10,11 +10,15 @@ color = true
 exclude = '''
 /(
     \.git
-  | tests
+  | \.hg
   | \.mypy_cache
+  | \.tox
   | \.venv
+  | \.vscode
   | _build
+  | buck-out
   | build
   | dist
+  | tests
 )/
 '''
