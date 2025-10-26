@@ -1,7 +1,6 @@
 from types import FunctionType, UnionType
 from typing import Any, Callable, Dict, List, Optional, TypeVar, Union, cast
 
-
 _TYPE_ALIAS_REGISTRY: Dict[str, Dict[str, Any]] = {}
 AttrT = TypeVar('AttrT')
 T = TypeVar('T')
@@ -152,6 +151,7 @@ def _python_type_to_openapi_schema(python_type: type | UnionType | None) -> Unio
 def _schema_to_openapi(schema):
     import typing
     from types import UnionType
+
     if isinstance(schema, UnionType):
         return {'oneOf': [{'$ref': f"#/components/schemas/{t.__name__}"} for t in schema.__args__]}
     elif getattr(schema, '__origin__', None) is typing.Union:

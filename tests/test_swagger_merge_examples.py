@@ -4,16 +4,17 @@ Tests that @openapi.example decorators are correctly merged into the appropriate
 locations in the OpenAPI specification based on their placement type.
 """
 
-import pytest
-import sys
 import os
+import sys
+
+import pytest
 
 # Add scripts directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 
 from swagger_sync.merge_utils import (
-    merge_examples_into_spec,
     merge_endpoint_metadata,
+    merge_examples_into_spec,
 )
 
 

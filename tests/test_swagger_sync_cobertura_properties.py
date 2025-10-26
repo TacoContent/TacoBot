@@ -1,9 +1,9 @@
 """Test that Cobertura XML includes custom model component metrics as <property> tags."""
 from __future__ import annotations
 
+import pathlib
 import subprocess
 import sys
-import pathlib
 import xml.etree.ElementTree as ET
 
 

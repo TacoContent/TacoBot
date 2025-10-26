@@ -150,12 +150,7 @@ class SettingsApiHandler(BaseHttpHandler):
     @openapi.pathParameter(
         name="section", description="Logical settings section name.", schema=str, methods=[HTTPMethod.GET]
     )
-    @openapi.pathParameter(
-        name="guild_id",
-        description="Discord Guild ID.",
-        schema=int,
-        methods=[HTTPMethod.GET],
-    )
+    @openapi.pathParameter(name="guild_id", description="Discord Guild ID.", schema=int, methods=[HTTPMethod.GET])
     @openapi.response(
         200,
         description="Successful operation",

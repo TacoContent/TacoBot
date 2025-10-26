@@ -18,6 +18,7 @@ class GuildItemIdBatchRequestBody:
     def to_dict(self) -> typing.Dict[str, typing.Any]:
         return {"ids": self.ids}
 
+
 @openapi.component("GuildItemNameBatchRequestBody", description="Request body for batch fetching guild item by names")
 @openapi.property("names", description="List of guild item names to fetch")
 @openapi.managed()

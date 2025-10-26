@@ -4,12 +4,13 @@ This module tests the new UnionType/oneOf support added to the
 swagger_sync decorator_parser module.
 """
 import ast
+
 import pytest
 from scripts.swagger_sync.decorator_parser import (
-    _extract_schema_reference,
-    _extract_union_schemas,
-    _extract_union_from_binop,
     _extract_request_body,
+    _extract_schema_reference,
+    _extract_union_from_binop,
+    _extract_union_schemas,
 )
 
 

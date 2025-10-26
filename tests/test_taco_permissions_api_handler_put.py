@@ -1,10 +1,11 @@
-import pytest
 import json
-from unittest.mock import MagicMock, AsyncMock, patch, ANY
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
+import pytest
 from bot.lib.http.handlers.api.v1.TacoPermissionsApiHandler import TacoPermissionsApiHandler
-from httpserver.http_util import HttpRequest, HttpHeaders, HttpResponse
+from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from lib.models.SimpleStatusResponse import SimpleStatusResponse
+
 
 @pytest.fixture
 def handler():

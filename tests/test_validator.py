@@ -10,16 +10,16 @@ Tests validation of:
 
 import pytest
 from scripts.swagger_sync.validator import (
-    validate_schema_references,
-    validate_status_codes,
+    STANDARD_STATUS_CODES,
+    ValidationError,
+    ValidationSeverity,
+    format_validation_report,
+    validate_endpoint_metadata,
     validate_parameters,
     validate_responses,
+    validate_schema_references,
     validate_security_schemes,
-    validate_endpoint_metadata,
-    format_validation_report,
-    ValidationSeverity,
-    ValidationError,
-    STANDARD_STATUS_CODES
+    validate_status_codes,
 )
 
 

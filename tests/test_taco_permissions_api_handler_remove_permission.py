@@ -1,10 +1,12 @@
 """Comprehensive tests for TacoPermissionsApiHandler._remove_permission
 Ensures 100% coverage, including edge cases and error handling.
 """
-import pytest
 from unittest.mock import MagicMock, patch
-from bot.lib.http.handlers.api.v1.TacoPermissionsApiHandler import TacoPermissionsApiHandler
+
+import pytest
 from bot.lib.enums.permissions import TacoPermissions
+from bot.lib.http.handlers.api.v1.TacoPermissionsApiHandler import TacoPermissionsApiHandler
+
 
 class DummyBot:
     pass

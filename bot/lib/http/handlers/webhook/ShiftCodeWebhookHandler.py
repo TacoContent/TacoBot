@@ -288,7 +288,6 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
 
         return expiry_msg, created_msg
 
-
     async def _process_guild_broadcast(
         self, guild: discord.Guild, code: str, payload: Dict[str, Any], embed_data: Dict[str, Any]
     ) -> None:
@@ -315,8 +314,9 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
         # Check if code already tracked
         if self.shift_codes_db.is_code_tracked(guild_id, code):
             self.log.debug(
-                0, f"{self._module}.{self._class}.{inspect.stack()[0][3]}",
-                f"Code `{code}` for guild '{guild_id}' is already being tracked"
+                0,
+                f"{self._module}.{self._class}.{inspect.stack()[0][3]}",
+                f"Code `{code}` for guild '{guild_id}' is already being tracked",
             )
             return
 
@@ -331,7 +331,6 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
         # Broadcast to all channels
         await self._broadcast_to_channels(channels, guild_id, code, embed_data, notify_message, payload)
 
-
     async def _resolve_guild_channels(self, guild_id: int, settings: Dict[str, Any]) -> List[discord.TextChannel]:
         """Resolve Discord channels for shift code broadcast.
 
@@ -345,9 +344,7 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
         channel_ids = settings.get("channel_ids", [])
         if not channel_ids or len(channel_ids) == 0:
             self.log.debug(
-                0,
-                f"{self._module}.{self._class}.{inspect.stack()[0][3]}",
-                f"No channel ids found for guild {guild_id}"
+                0, f"{self._module}.{self._class}.{inspect.stack()[0][3]}", f"No channel ids found for guild {guild_id}"
             )
             return []
 
@@ -359,9 +356,7 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
 
         if len(channels) == 0:
             self.log.debug(
-                0,
-                f"{self._module}.{self._class}.{inspect.stack()[0][3]}",
-                f"No channels found for guild {guild_id}"
+                0, f"{self._module}.{self._class}.{inspect.stack()[0][3]}", f"No channels found for guild {guild_id}"
             )
 
         return channels

@@ -1,5 +1,6 @@
 from bot.lib.models.openapi import openapi
 
+
 @openapi.component("MinecraftWhiteListUser", description="A user on the Minecraft whitelist.")
 @openapi.property("uuid", description="The user's UUID.")
 @openapi.property("name", description="The user's Minecraft username.")

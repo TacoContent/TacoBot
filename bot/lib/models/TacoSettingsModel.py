@@ -2,7 +2,6 @@ from typing import Any, Dict, Generic, TypeVar
 
 from lib.models.openapi import openapi
 
-
 T = TypeVar('T')
 
 

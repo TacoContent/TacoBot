@@ -12,6 +12,9 @@ Tests cover:
 """
 import json
 import os
+
+# Import config module
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -19,19 +22,17 @@ from typing import Any
 import pytest
 from jsonschema import ValidationError
 
-# Import config module
-import sys
 sys.path.insert(0, str(Path(__file__).parent.parent / 'scripts'))
 from swagger_sync.config import (
     DEFAULT_CONFIG,
+    ensure_coverage_report_extension,
     export_schema,
     init_config_file,
     load_config,
     merge_cli_args,
     merge_configs,
-    validate_config,
     normalize_coverage_format,
-    ensure_coverage_report_extension,
+    validate_config,
 )
 
 

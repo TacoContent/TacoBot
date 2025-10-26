@@ -28,8 +28,8 @@ from collections.abc import Generator
 
 from bot.lib import logger, settings
 from bot.lib.enums import loglevel
-from httpserver.UriRoute import UriRoute
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse, http_parser, http_send_response
+from httpserver.UriRoute import UriRoute
 
 
 def _convert_params(request: HttpRequest, route: UriRoute, method):

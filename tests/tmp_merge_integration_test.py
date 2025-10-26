@@ -10,9 +10,9 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from scripts.swagger_sync.models import Endpoint
 from scripts.swagger_sync.decorator_parser import DecoratorMetadata
 from scripts.swagger_sync.merge_utils import merge_endpoint_metadata
+from scripts.swagger_sync.models import Endpoint
 
 
 def test_merge_integration_real_handler_simulation():

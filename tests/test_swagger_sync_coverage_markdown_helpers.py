@@ -7,14 +7,14 @@ markdown tables with emoji indicators.
 
 import pytest
 from scripts.swagger_sync.coverage import (
-    _format_rate_emoji,
-    _build_coverage_summary_markdown,
     _build_automation_coverage_markdown,
-    _build_quality_metrics_markdown,
+    _build_coverage_summary_markdown,
     _build_method_breakdown_markdown,
+    _build_orphaned_warnings_markdown,
+    _build_quality_metrics_markdown,
     _build_tag_coverage_markdown,
     _build_top_files_markdown,
-    _build_orphaned_warnings_markdown,
+    _format_rate_emoji,
 )
 
 

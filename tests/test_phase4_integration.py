@@ -9,16 +9,16 @@ Tests end-to-end validation functionality including:
 - CLI integration with validation flags
 """
 
-import pytest
 import tempfile
 import textwrap
 from pathlib import Path
 
-from scripts.swagger_sync.validator import (
-    validate_endpoint_metadata,
-    ValidationSeverity,
-)
+import pytest
 from scripts.swagger_sync.models import Endpoint
+from scripts.swagger_sync.validator import (
+    ValidationSeverity,
+    validate_endpoint_metadata,
+)
 
 
 class TestEndToEndValidation:

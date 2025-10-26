@@ -10,8 +10,9 @@ These tests verify that:
 6. All output files (coverage_report, markdown_summary, badge) use output directory
 """
 import pathlib
-import tempfile
 import shutil
+import tempfile
+
 from ruamel.yaml import YAML
 
 
@@ -98,8 +99,8 @@ def test_default_directory_when_none_specified():
     assert result['output']['directory'] == './reports/openapi/'
 def test_relative_paths_use_output_directory(tmp_path):
     """Test that relative paths are resolved relative to output_directory."""
-    import sys
     import os
+    import sys
 
     # Save original cwd
     original_cwd = os.getcwd()
@@ -258,8 +259,9 @@ def test_empty_string_output_directory_is_ignored():
 
 def test_multiple_output_files_use_same_directory():
     """Test that coverage_report, markdown_summary, and badge all use output_directory."""
-    from scripts.swagger_sync.config import load_config, merge_cli_args
     import tempfile
+
+    from scripts.swagger_sync.config import load_config, merge_cli_args
 
     tmp_path = pathlib.Path(tempfile.mkdtemp())
 
@@ -295,8 +297,9 @@ def test_multiple_output_files_use_same_directory():
 
 def test_badge_with_absolute_path_in_config():
     """Test that badge with ./ prefix uses project root, not output_directory."""
-    from scripts.swagger_sync.config import load_config
     import tempfile
+
+    from scripts.swagger_sync.config import load_config
 
     tmp_path = pathlib.Path(tempfile.mkdtemp())
 

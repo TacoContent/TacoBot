@@ -13,7 +13,6 @@ import tempfile
 from typing import List
 
 import pytest
-
 from scripts.swagger_sync.endpoint_collector import collect_endpoints
 from scripts.swagger_sync.models import Endpoint
 

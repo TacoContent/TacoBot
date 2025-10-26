@@ -2,6 +2,7 @@
 
 import pathlib
 import tempfile
+
 from scripts.swagger_sync import collect_model_components
 
 

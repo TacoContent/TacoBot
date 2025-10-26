@@ -429,7 +429,7 @@ class TacosWebhookHandler(BaseWebhookHandler):
             err = ErrorStatusCodePayload(
                 {
                     "code": 404,
-                    "error": f"No discord user found for from_user ({from_twitch_user}) when looking up in user table."
+                    "error": f"No discord user found for from_user ({from_twitch_user}) when looking up in user table.",
                 }
             )
             raise HttpResponseException(err.code, headers, json.dumps(err.to_dict()).encode())
@@ -466,7 +466,7 @@ class TacosWebhookHandler(BaseWebhookHandler):
             err = ErrorStatusCodePayload(
                 {
                     "code": 404,
-                    "error": f"No discord user found for to_user ({to_twitch_user}) when fetching from discord."
+                    "error": f"No discord user found for to_user ({to_twitch_user}) when fetching from discord.",
                 }
             )
             raise HttpResponseException(err.code, headers, json.dumps(err.to_dict()).encode())
@@ -475,7 +475,7 @@ class TacosWebhookHandler(BaseWebhookHandler):
             err = ErrorStatusCodePayload(
                 {
                     "code": 404,
-                    "error": f"No discord user found for from_user ({from_twitch_user}) when fetching from discord."
+                    "error": f"No discord user found for from_user ({from_twitch_user}) when fetching from discord.",
                 }
             )
             raise HttpResponseException(err.code, headers, json.dumps(err.to_dict()).encode())
@@ -498,22 +498,12 @@ class TacosWebhookHandler(BaseWebhookHandler):
         """
         # No self-gifting
         if from_user.id == to_user.id:
-            err = ErrorStatusCodePayload(
-                {
-                    "code": 400,
-                    "error": "You can not give tacos to yourself."
-                }
-            )
+            err = ErrorStatusCodePayload({"code": 400, "error": "You can not give tacos to yourself."})
             raise HttpResponseException(err.code, headers, json.dumps(err.to_dict()).encode())
 
         # No gifting to bots
         if to_user.bot:
-            err = ErrorStatusCodePayload(
-                {
-                    "code": 400,
-                    "error": "You can not give tacos to a bot."
-                }
-            )
+            err = ErrorStatusCodePayload({"code": 400, "error": "You can not give tacos to a bot."})
             raise HttpResponseException(err.code, headers, json.dumps(err.to_dict()).encode())
 
         # Bot sender is immune to limits
@@ -579,7 +569,7 @@ class TacosWebhookHandler(BaseWebhookHandler):
             err = ErrorStatusCodePayload(
                 {
                     "code": 400,
-                    "error": f"You have given the maximum number of tacos today ({limits['max_give_per_ts']})"
+                    "error": f"You have given the maximum number of tacos today ({limits['max_give_per_ts']})",
                 }
             )
             raise HttpResponseException(err.code, headers, json.dumps(err.to_dict()).encode())
@@ -589,7 +579,7 @@ class TacosWebhookHandler(BaseWebhookHandler):
             err = ErrorStatusCodePayload(
                 {
                     "code": 400,
-                    "error": f"You have given the maximum number of tacos to this user today ({limits['max_give_per_user_per_ts']})"
+                    "error": f"You have given the maximum number of tacos to this user today ({limits['max_give_per_user_per_ts']})",
                 }
             )
             raise HttpResponseException(err.code, headers, json.dumps(err.to_dict()).encode())
@@ -597,20 +587,14 @@ class TacosWebhookHandler(BaseWebhookHandler):
         # Per-transaction limit (positive)
         if amount > limits["max_give_per_user"]:
             err = ErrorStatusCodePayload(
-                {
-                    "code": 400,
-                    "error": f"You can only give up to {limits['max_give_per_user']} tacos at a time"
-                }
+                {"code": 400, "error": f"You can only give up to {limits['max_give_per_user']} tacos at a time"}
             )
             raise HttpResponseException(err.code, headers, json.dumps(err.to_dict()).encode())
 
         # Per-transaction limit (negative) - can't take back up to max give per user limit
         if amount < 0 and abs(amount) > limits['max_give_per_user']:
             err = ErrorStatusCodePayload(
-                {
-                    "code": 400,
-                    "error": f"You can only take up to {limits['max_give_per_user']} tacos at a time"
-                }
+                {"code": 400, "error": f"You can only take up to {limits['max_give_per_user']} tacos at a time"}
             )
             raise HttpResponseException(err.code, headers, json.dumps(err.to_dict()).encode())
 
@@ -636,14 +620,12 @@ class TacosWebhookHandler(BaseWebhookHandler):
         Returns:
             Recipient's new total taco count
         """
-        await self.discord_helper.taco_give_user(
-            guild_id, from_user, to_user, reason, taco_type, taco_amount=amount
-        )
+        await self.discord_helper.taco_give_user(guild_id, from_user, to_user, reason, taco_type, taco_amount=amount)
 
         total_tacos = self.tacos_db.get_tacos_count(guild_id, to_user.id)
         return total_tacos if total_tacos is not None else 0
 
-    def _build_success_response( self, payload: Dict[str, Any], total_tacos: int, headers: HttpHeaders) -> HttpResponse:
+    def _build_success_response(self, payload: Dict[str, Any], total_tacos: int, headers: HttpHeaders) -> HttpResponse:
         """Build success response.
 
         Args:

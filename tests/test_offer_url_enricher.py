@@ -4,16 +4,15 @@ Comprehensive tests for URL enrichment including redirect resolution,
 URL shortening, and launcher deep link generation.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-import requests
+from unittest.mock import MagicMock, Mock, patch
 
+import pytest
+import requests
 from bot.lib.http.handlers.webhook.helpers.OfferUrlEnricher import (
-    OfferUrlEnricher,
     EnrichedUrl,
+    OfferUrlEnricher,
 )
 from bot.lib.UrlShortener import UrlShortener
-
 
 # =======================
 # Fixtures

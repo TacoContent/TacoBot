@@ -13,6 +13,7 @@ class ErrorStatusCodePayload:
     """Model for error status code payloads.
     Represents an error message.
     """
+
     def __init__(self, data: dict):
         self.error: typing.Optional[str] = data.get("error", None)
         self.message: typing.Optional[str] = data.get("message", None)

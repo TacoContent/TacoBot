@@ -4,16 +4,15 @@ Comprehensive tests for Discord embed formatting including price display,
 date formatting, platform lists, and HTML entity handling.
 """
 
-import pytest
 from datetime import datetime, timedelta
 from unittest.mock import Mock
 
+import pytest
 from bot.lib.http.handlers.webhook.helpers.OfferMessageFormatter import (
-    OfferMessageFormatter,
     FormattedOffer,
+    OfferMessageFormatter,
 )
 from bot.lib.http.handlers.webhook.helpers.OfferUrlEnricher import EnrichedUrl
-
 
 # =======================
 # Fixtures
@@ -165,6 +164,7 @@ def test_format_with_just_ended_date(basic_payload, enriched_url):
     """Test formatting with end date in the past minute (uses 'Ended:')."""
     formatter = OfferMessageFormatter()
     import time
+
     # Use a more clearly past timestamp (1 hour ago) to ensure seconds_remaining <= 0
     just_ended = int(time.time()) - (60 * 60)  # 1 hour ago
     basic_payload["end_date"] = just_ended

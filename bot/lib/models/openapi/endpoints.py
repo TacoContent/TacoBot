@@ -1,6 +1,7 @@
 from http import HTTPMethod
-from typing import Any, Callable, Dict, List, Literal, Optional, Type, TypeVar, Union
 from types import FunctionType, UnionType
+from typing import Any, Callable, Dict, List, Literal, Optional, Type, TypeVar, Union
+
 from .core import _python_type_to_openapi_schema, _schema_to_openapi
 
 # TypeVar for generic decorator that works on both functions and classes
@@ -490,6 +491,7 @@ def queryParameter(
             param_def['schema'].update(options)
         func.__openapi_parameters__.append(param_def)
         return func
+
     return _wrap
 
 
@@ -534,7 +536,7 @@ def requestBody(
             'required': required,
             'description': description,
             'methods': methods if isinstance(methods, list) else [methods],
-            'content': {contentType: {'schema': _schema_to_openapi(schema)}}
+            'content': {contentType: {'schema': _schema_to_openapi(schema)}},
         }
         return func
 
@@ -641,7 +643,7 @@ def responseHeader(
                 'status_code': status_codes if isinstance(status_codes, list) else [status_codes],
                 'methods': methods if isinstance(methods, list) else [methods] if methods else [],
                 'schema': _python_type_to_openapi_schema(schema),
-                'description': description
+                'description': description,
             }
         )
         return func

@@ -35,13 +35,13 @@ attempts to invoke the handler—keep handler parameter names aligned with varia
 
 """
 
-from http import HTTPMethod
 import inspect
 import re
 import types
-from typing_extensions import Literal
+from http import HTTPMethod
 
 from httpserver.UriRoute import HTTP_METHODS, UriRoute
+from typing_extensions import Literal
 
 
 def _uri_variable_to_pattern(uri: str):

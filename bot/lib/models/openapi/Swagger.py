@@ -1,7 +1,4 @@
-
-
 import typing
-
 
 AuthenticationTypes: typing.TypeAlias = typing.Literal["http", "apiKey", "oauth2", "openIdConnect"]
 AuthenticationSchemes: typing.TypeAlias = typing.Literal["basic"]

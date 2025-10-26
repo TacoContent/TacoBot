@@ -70,7 +70,7 @@ class SwaggerHttpHandler(BaseHttpHandler):
         200, description="Successful operation", contentType="text/vnd.yaml", schema=str, methods=[HTTPMethod.GET]
     )
     @openapi.response(
-        '5XX', 
+        '5XX',
         description="Internal server error",
         contentType="application/json",
         schema=ErrorStatusCodePayload,

@@ -1,9 +1,11 @@
-import pytest
-from unittest.mock import MagicMock, patch
-from bot.lib.http.handlers.api.v1.TacoPermissionsApiHandler import TacoPermissionsApiHandler
-from bot.lib.enums.permissions import TacoPermissions
-import types
 import asyncio
+import types
+from unittest.mock import MagicMock, patch
+
+import pytest
+from bot.lib.enums.permissions import TacoPermissions
+from bot.lib.http.handlers.api.v1.TacoPermissionsApiHandler import TacoPermissionsApiHandler
+
 
 @pytest.mark.asyncio
 class TestAddPermission:

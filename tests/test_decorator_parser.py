@@ -5,18 +5,19 @@ from handler methods.
 """
 
 import ast
+
 import pytest
 from scripts.swagger_sync.decorator_parser import (
     DecoratorMetadata,
-    extract_decorator_metadata,
-    _is_openapi_decorator,
-    _get_decorator_name,
-    _extract_tags,
-    _extract_security,
-    _extract_response,
-    _extract_summary,
     _extract_description,
     _extract_operation_id,
+    _extract_response,
+    _extract_security,
+    _extract_summary,
+    _extract_tags,
+    _get_decorator_name,
+    _is_openapi_decorator,
+    extract_decorator_metadata,
 )
 
 

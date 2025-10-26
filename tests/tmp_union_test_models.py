@@ -9,9 +9,10 @@ NOTE: This file follows the tmp_* naming convention used in tests for
       swagger sync since the --models-root defaults to bot/lib/models.
 """
 import typing
-from bot.lib.models.openapi import openapi
+
 from bot.lib.models.DiscordRole import DiscordRole
 from bot.lib.models.DiscordUser import DiscordUser
+from bot.lib.models.openapi import openapi
 
 
 # Test filter models for SearchCriteria union type

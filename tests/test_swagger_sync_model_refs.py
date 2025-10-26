@@ -5,9 +5,10 @@ $ref references for model class type annotations instead of defaulting to string
 """
 from __future__ import annotations
 
+import os
 import pathlib
 import tempfile
-import os
+
 from scripts.swagger_sync import collect_model_components
 
 

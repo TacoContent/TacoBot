@@ -1,5 +1,5 @@
-from typing import TypeVar, Generic
 import typing
+from typing import Generic, TypeVar
 
 from bot.lib.models.JoinWhitelistUser import JoinWhitelistUser
 from bot.lib.models.openapi import openapi

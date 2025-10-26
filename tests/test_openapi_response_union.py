@@ -10,6 +10,7 @@ generates $ref components for model types and does not expand arrays/primitives.
 from __future__ import annotations
 
 import typing
+
 from bot.lib.models.openapi import openapi
 
 

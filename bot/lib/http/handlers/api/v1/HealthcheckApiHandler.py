@@ -81,7 +81,8 @@ class HealthcheckApiHandler(BaseHttpHandler):
         '5XX', description="Service is unhealthy", contentType="plain/text", schema=str, methods=HTTPMethod.GET
     )
     @openapi.response(
-        '5XX', description="Internal server error",
+        '5XX',
+        description="Internal server error",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
         methods=HTTPMethod.GET,

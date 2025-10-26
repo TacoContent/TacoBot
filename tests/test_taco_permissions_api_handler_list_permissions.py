@@ -1,9 +1,11 @@
 """Comprehensive tests for TacoPermissionsApiHandler._list_permissions
 Ensures 100% coverage, including edge cases and error handling.
 """
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 from bot.lib.http.handlers.api.v1.TacoPermissionsApiHandler import TacoPermissionsApiHandler
+
 
 @pytest.mark.asyncio
 class TestListPermissions:

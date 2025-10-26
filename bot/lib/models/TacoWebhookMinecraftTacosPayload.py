@@ -3,7 +3,9 @@ import typing
 from bot.lib.models.openapi import openapi
 
 
-@openapi.component("TacoWebhookMinecraftTacosPayload", description="Payload that is sent to give a Minecraft user tacos.")
+@openapi.component(
+    "TacoWebhookMinecraftTacosPayload", description="Payload that is sent to give a Minecraft user tacos."
+)
 @openapi.property("guild_id", description="The ID of the guild where the tacos are being sent.")
 @openapi.property("from_user", description="The user who is sending the tacos.")
 @openapi.property("to_user_id", description="The ID of the user who is receiving the tacos.")

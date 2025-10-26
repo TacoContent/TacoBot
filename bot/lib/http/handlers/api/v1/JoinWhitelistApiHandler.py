@@ -430,11 +430,7 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
         schema=str,
         methods=[HTTPMethod.DELETE],
     )
-    @openapi.response(
-        204,
-        description="No Content - user successfully removed",
-        methods=[HTTPMethod.DELETE],
-    )
+    @openapi.response(204, description="No Content - user successfully removed", methods=[HTTPMethod.DELETE])
     @openapi.response(
         401,
         description="Unauthorized - missing or invalid auth token",
@@ -451,8 +447,7 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
     )
     @openapi.managed()
     def delete_join_whitelist_user(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:  # noqa: ARG002
-        """Remove a user from the join whitelist.
-        """
+        """Remove a user from the join whitelist."""
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")

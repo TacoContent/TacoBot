@@ -10,6 +10,7 @@ OpenAPI 3.0 Spec Reference:
 """
 
 import ast
+
 from scripts.swagger_sync.decorator_parser import extract_decorator_metadata
 
 

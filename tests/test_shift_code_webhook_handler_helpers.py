@@ -11,13 +11,11 @@ from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
-
 from bot.lib.http.handlers.webhook.ShiftCodeWebhookHandler import ShiftCodeWebhookHandler
 from bot.lib.mongodb.shift_codes import ShiftCodesDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from httpserver.http_util import HttpHeaders, HttpRequest
 from httpserver.server import HttpResponseException
-
 
 # =======================
 # Fixtures

@@ -10,6 +10,7 @@ NOTE: This file follows the tmp_* naming convention used in tests for
       --models-root defaults to bot/lib/models.
 """
 import typing
+
 from bot.lib.models.openapi import openapi
 
 

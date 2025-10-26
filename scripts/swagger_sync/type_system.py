@@ -19,7 +19,6 @@ import pathlib
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-
 # Import from other swagger_sync modules
 try:
     from .constants import DEFAULT_MODELS_ROOT

@@ -142,7 +142,7 @@ class MinecraftDatabase(Database):
                 self.open()
             query = {"guild_id": str(guildId)}
             if active is not None:
-                query["active"] = active # type: ignore
+                query["active"] = active  # type: ignore
             results = self.connection.minecraft_worlds.find(query)  # type: ignore
             worlds = []
             for result in results:

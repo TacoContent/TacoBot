@@ -1,9 +1,9 @@
-from http import HTTPMethod
 import re
-from dataclasses import dataclass
-from typing import Generator
 import types
 import typing
+from dataclasses import dataclass
+from http import HTTPMethod
+from typing import Generator
 
 HTTP_METHODS = typing.Literal[
     "GET",

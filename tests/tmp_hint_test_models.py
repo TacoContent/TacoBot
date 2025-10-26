@@ -1,8 +1,8 @@
 """Test models for verifying @openapi.property hint kwarg functionality."""
 
-from typing import Generic, TypeVar, Dict, List, Any
-import sys
 import os
+import sys
+from typing import Any, Dict, Generic, List, TypeVar
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))

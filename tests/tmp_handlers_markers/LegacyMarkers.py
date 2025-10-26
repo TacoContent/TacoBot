@@ -1,6 +1,7 @@
 
 from httpserver.EndpointDecorators import uri_mapping
 
+
 class LegacyMarkersHandler:
     @uri_mapping('/legacy-markers', method=['GET'])
     def get_legacy(self, request):

@@ -7,17 +7,17 @@ Tests the complete pipeline:
 4. Final spec structure validation
 """
 
-import pytest
 import ast
-import sys
 import os
+import sys
+
+import pytest
 
 # Add scripts directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 
 from swagger_sync.decorator_parser import extract_decorator_metadata
 from swagger_sync.merge_utils import merge_endpoint_metadata
-
 
 # Test handler code samples
 HANDLER_WITH_RESPONSE_EXAMPLES = '''

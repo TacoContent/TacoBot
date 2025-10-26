@@ -175,9 +175,7 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
             return HttpResponse(e.status_code, e.headers, e.body)
         except Exception as e:
             self.log.error(
-                0,
-                f"{self._module}.{self._class}.{_method}",
-                f"[{request_id}] {str(e)}", traceback.format_exc()
+                0, f"{self._module}.{self._class}.{_method}", f"[{request_id}] {str(e)}", traceback.format_exc()
             )
             return self._create_error_response(
                 500, f"Internal server error: {str(e)}", headers, include_stacktrace=True
@@ -185,9 +183,7 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
         finally:
             duration_ms = (time() - start_time) * 1000
             self.log.debug(
-                0,
-                f"{self._module}.{self._class}.{_method}",
-                f"[{request_id}] Request completed in {duration_ms:.2f}ms",
+                0, f"{self._module}.{self._class}.{_method}", f"[{request_id}] Request completed in {duration_ms:.2f}ms"
             )
 
     async def _handle_login_event(

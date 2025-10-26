@@ -6,8 +6,8 @@ component schema with expected property types and required list.
 from __future__ import annotations
 
 import pathlib
-import yaml
 
+import yaml
 from scripts.swagger_sync import collect_model_components
 
 

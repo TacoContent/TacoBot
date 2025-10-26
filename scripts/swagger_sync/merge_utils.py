@@ -136,9 +136,7 @@ def merge_responses(
     return result
 
 
-def merge_examples_into_spec(
-    result: Dict[str, Any], examples_list: List[Dict[str, Any]], endpoint_method: str
-) -> None:
+def merge_examples_into_spec(result: Dict[str, Any], examples_list: List[Dict[str, Any]], endpoint_method: str) -> None:
     """Merge examples from decorator metadata into the appropriate OpenAPI spec locations.
 
     Examples are placed based on their 'placement' field:

@@ -6,8 +6,9 @@ ensuring it supports inline values, external references, component references,
 and proper placement in parameters, request bodies, responses, and schemas.
 """
 
-import pytest
 from http import HTTPMethod
+
+import pytest
 from bot.lib.models.openapi.endpoints import example
 
 

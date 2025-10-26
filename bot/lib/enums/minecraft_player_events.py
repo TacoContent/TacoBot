@@ -1,5 +1,5 @@
-from enum import Enum
 import typing
+from enum import Enum
 
 MinecraftPlayerEventLiteral: typing.TypeAlias = typing.Literal["login", "logout", "death", "unknown"]
 

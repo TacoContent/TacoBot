@@ -1,8 +1,8 @@
 import pathlib
 import shutil
-import tempfile
 import subprocess
 import sys
+import tempfile
 
 SCRIPT = pathlib.Path('scripts/swagger_sync.py')
 SWAGGER = pathlib.Path('.swagger.v1.yaml')

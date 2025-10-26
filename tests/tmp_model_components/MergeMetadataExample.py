@@ -1,6 +1,7 @@
 """Example model demonstrating merged metadata from legacy and unified blocks."""
 
 import typing
+
 from bot.lib.models.openapi import component
 
 

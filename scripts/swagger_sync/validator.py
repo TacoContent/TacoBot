@@ -179,7 +179,7 @@ def validate_schema_references(
                                 severity=ValidationSeverity.ERROR,
                                 message=f"Unknown schema reference: {schema_name}",
                                 endpoint=endpoint_id,
-                                field=f"requestBody.content.{media_type}.schema"
+                                field=f"requestBody.content.{media_type}.schema",
                             )
                         )
 

@@ -10,7 +10,7 @@ import pathlib
 import textwrap
 
 from scripts import swagger_sync
-from scripts.swagger_sync import collect_endpoints, build_openapi_block_re
+from scripts.swagger_sync import build_openapi_block_re, collect_endpoints
 
 BASE = pathlib.Path('tests/tmp_handlers_markers')
 

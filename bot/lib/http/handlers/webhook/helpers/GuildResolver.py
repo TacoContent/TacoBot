@@ -11,6 +11,7 @@ from bot.lib.mongodb.free_game_keys import FreeGameKeysDatabase
 @dataclass
 class ResolvedGuild:
     """Guild with resolved notification channels."""
+
     guild_id: int
     channels: List[discord.TextChannel]
     notify_role_ids: List[int]
@@ -56,15 +57,13 @@ class GuildResolver:
                 self._log_no_channels(guild.id)
                 continue
 
-            resolved.append(ResolvedGuild(
-                guild_id=guild.id, channels=channels, notify_role_ids=guild_config['notify_role_ids']
-            ))
+            resolved.append(
+                ResolvedGuild(guild_id=guild.id, channels=channels, notify_role_ids=guild_config['notify_role_ids'])
+            )
 
         return resolved
 
-    def _get_guild_config(
-        self, guild_id: int, game_id: int, settings_section: str
-    ) -> Optional[dict]:
+    def _get_guild_config(self, guild_id: int, game_id: int, settings_section: str) -> Optional[dict]:
         """Get guild config if eligible for notification.
 
         Returns None if guild is ineligible.
@@ -85,6 +84,7 @@ class GuildResolver:
 
     async def _resolve_channels(self, channel_ids: List[int]) -> List[discord.TextChannel]:
         """Resolve channel IDs to channel objects."""
+
         channels = []
         for channel_id in channel_ids:
             channel = await self.discord_helper.get_or_fetch_channel(int(channel_id))

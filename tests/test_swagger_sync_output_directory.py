@@ -11,9 +11,9 @@ with temporary directories.
 """
 from __future__ import annotations
 
+import json
 import os
 import pathlib
-import json
 import tempfile
 
 from scripts import swagger_sync as se

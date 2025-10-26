@@ -10,7 +10,6 @@ from bot.lib.models.openapi import openapi
 @openapi.managed()
 class MinecraftPlayerEventPayloadResponse:
 
-
     def __init__(self, data: typing.Dict[str, typing.Any]):
         self.status: typing.Literal["ok"] = data.get("status", "ok")
         self.data: MinecraftPlayerEventPayload = MinecraftPlayerEventPayload(data.get("data", {}))

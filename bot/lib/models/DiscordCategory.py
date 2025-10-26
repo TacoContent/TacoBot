@@ -1,4 +1,5 @@
 import typing
+
 from bot.lib.models.DiscordChannel import DiscordChannel
 from bot.lib.models.openapi import openapi
 

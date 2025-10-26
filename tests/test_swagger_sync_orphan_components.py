@@ -1,7 +1,8 @@
 """Test orphan detection for components."""
 
-from scripts.swagger_sync import detect_orphans, Endpoint
 import pathlib
+
+from scripts.swagger_sync import Endpoint, detect_orphans
 
 
 def test_detect_orphans_includes_components():

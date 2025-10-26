@@ -5,10 +5,11 @@ enum schemas when used in parameter decorators.
 """
 
 import ast
+
 import pytest
 from scripts.swagger_sync.decorator_parser import (
-    extract_decorator_metadata,
     _extract_schema_type,
+    extract_decorator_metadata,
 )
 
 

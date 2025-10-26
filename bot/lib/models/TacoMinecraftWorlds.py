@@ -1,6 +1,6 @@
 import typing
-from bot.lib.models.openapi import openapi
 
+from bot.lib.models.openapi import openapi
 
 TacoMinecraftWorlds: typing.TypeAlias = typing.Literal["taco_atm8", "taco_atm9", "taco_atm10", "taco_atm10-2"]
 

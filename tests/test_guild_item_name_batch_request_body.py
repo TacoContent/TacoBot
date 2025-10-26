@@ -1,6 +1,7 @@
 import pytest
 from bot.lib.models.GuildItemIdBatchRequestBody import GuildItemNameBatchRequestBody
 
+
 class TestGuildItemNameBatchRequestBody:
     def test_init_with_names_list(self):
         data = {"names": [1, 2, "3", "foo"]}

@@ -14,6 +14,7 @@ This focuses on _colorize_unified behavior and global DISABLE_COLOR toggle.
 from __future__ import annotations
 
 import pathlib
+
 from scripts import swagger_sync as se
 
 TMP_COLOR_ROOT = pathlib.Path('tests/tmp_color_handlers')
@@ -35,6 +36,7 @@ def test_no_color_flag_behavior():
     new_op = ep.to_openapi_operation()
     # Need to access DISABLE_COLOR from the swagger_ops module where it's actually used
     from scripts.swagger_sync import swagger_ops
+
     # With color enabled
     swagger_ops.DISABLE_COLOR = False
     colored = se._diff_operations(None, new_op, op_id=f"{ep.path}#{ep.method}")

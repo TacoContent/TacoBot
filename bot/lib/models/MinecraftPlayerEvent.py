@@ -7,7 +7,7 @@ from bot.lib.models.openapi import openapi
 @openapi.managed()
 class MinecraftPlayerEvent:
     """A Minecraft player event."""
-    
+
     def __init__(self, data: dict):
         self.event: MinecraftPlayerEventLiteral = data.get("event", "unknown")
 

@@ -8,6 +8,7 @@ with various usage patterns including kwargs like description, minimum, maximum,
 import pathlib
 import tempfile
 import textwrap
+
 from scripts.swagger_sync import collect_model_components
 
 

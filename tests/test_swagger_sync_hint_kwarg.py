@@ -7,16 +7,18 @@ Tests verify that:
 4. hint schemas are correctly resolved to OpenAPI schemas
 """
 
-import pytest
 import pathlib
 import sys
+
+import pytest
 
 # Add scripts directory to path for swagger_sync imports
 scripts_path = pathlib.Path(__file__).parent.parent / 'scripts'
 sys.path.insert(0, str(scripts_path))
 
-from swagger_sync.model_components import collect_model_components, _resolve_hint_to_schema
-from typing import Dict, List, Any
+from typing import Any, Dict, List
+
+from swagger_sync.model_components import _resolve_hint_to_schema, collect_model_components
 
 
 class TestResolveHintToSchema:

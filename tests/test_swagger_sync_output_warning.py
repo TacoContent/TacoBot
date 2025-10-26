@@ -6,8 +6,8 @@ under test) and capture stderr. The test uses a minimal handler tree and an empt
 from __future__ import annotations
 
 import pathlib
-import sys
 import runpy
+import sys
 import types
 from contextlib import redirect_stderr
 from io import StringIO

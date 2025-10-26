@@ -5,9 +5,9 @@ including success scenarios and error handling paths.
 """
 
 import json
-import pytest
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
+import pytest
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
 from bot.lib.http.handlers.webhook.MinecraftPlayerWebhookHandler import MinecraftPlayerWebhookHandler
 from bot.lib.models.MinecraftPlayerEventPayload import MinecraftPlayerEventPayload, MinecraftPlayerEventPayloadResponse
