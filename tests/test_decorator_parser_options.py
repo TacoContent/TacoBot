@@ -6,8 +6,6 @@ queryParameter, and headerParameter decorators.
 
 import ast
 
-import pytest
-
 
 class TestPathParameterOptions:
     """Test cases for pathParameter with options."""

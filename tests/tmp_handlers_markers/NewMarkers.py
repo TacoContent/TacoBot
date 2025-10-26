@@ -1,7 +1,6 @@
 
 from httpserver.EndpointDecorators import uri_mapping
 
-
 class NewMarkersHandler:
     @uri_mapping('/new-markers', method=['GET'])
     def get_new(self, request):

@@ -7,12 +7,11 @@ Discord object resolution.
 """
 
 import json
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
 from bot.lib.http.handlers.webhook.MinecraftPlayerWebhookHandler import MinecraftPlayerWebhookHandler
-from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
 from httpserver.http_util import HttpHeaders, HttpRequest
 from httpserver.server import HttpResponseException
 
@@ -177,6 +176,7 @@ class TestMinecraftPlayerWebhookHandlerValidateRequestBody:
             handler._validate_request_body(mock_request, http_headers)
 
         assert exc_info.value.status_code == 400
+        assert exc_info.value.body is not None
         error_body = json.loads(exc_info.value.body.decode("utf-8"))
         assert "No payload found" in error_body["error"]
 
@@ -195,6 +195,7 @@ class TestMinecraftPlayerWebhookHandlerValidateRequestBody:
             handler._validate_request_body(mock_request, http_headers)
 
         assert exc_info.value.status_code == 400
+        assert exc_info.value.body is not None
         error_body = json.loads(exc_info.value.body.decode("utf-8"))
         assert "Invalid JSON payload" in error_body["error"]
         assert "stacktrace" in error_body
@@ -297,6 +298,7 @@ class TestMinecraftPlayerWebhookHandlerValidatePayloadFields:
             handler._validate_payload_fields(payload, http_headers)
 
         assert exc_info.value.status_code == 404
+        assert exc_info.value.body is not None
         assert b"guild_id" in exc_info.value.body
 
     def test_validate_payload_fields_missing_event(self, handler, http_headers):
@@ -316,6 +318,7 @@ class TestMinecraftPlayerWebhookHandlerValidatePayloadFields:
             handler._validate_payload_fields(payload, http_headers)
 
         assert exc_info.value.status_code == 404
+        assert exc_info.value.body is not None
         assert b"event" in exc_info.value.body
 
     def test_validate_payload_fields_missing_payload(self, handler, http_headers):
@@ -335,6 +338,7 @@ class TestMinecraftPlayerWebhookHandlerValidatePayloadFields:
             handler._validate_payload_fields(payload, http_headers)
 
         assert exc_info.value.status_code == 404
+        assert exc_info.value.body is not None
         assert b"payload" in exc_info.value.body
 
     def test_validate_payload_fields_guild_id_zero(self, handler, http_headers):
@@ -452,6 +456,7 @@ class TestMinecraftPlayerWebhookHandlerValidateEventType:
             handler._validate_event_type("INVALID_EVENT", http_headers)
 
         assert exc_info.value.status_code == 404
+        assert exc_info.value.body is not None
         error_body = json.loads(exc_info.value.body.decode("utf-8"))
         assert "Unknown event type" in error_body["error"]
         assert "INVALID_EVENT" in error_body["error"]
@@ -585,6 +590,7 @@ class TestMinecraftPlayerWebhookHandlerResolveDiscordObjects:
             )
 
         assert exc_info.value.status_code == 404
+        assert exc_info.value.body is not None
         error_body = json.loads(exc_info.value.body.decode("utf-8"))
         assert "User 112233445566778899 not found" == error_body["error"]
 
@@ -608,6 +614,7 @@ class TestMinecraftPlayerWebhookHandlerResolveDiscordObjects:
             )
 
         assert exc_info.value.status_code == 404
+        assert exc_info.value.body is not None
         error_body = json.loads(exc_info.value.body.decode("utf-8"))
         assert "Guild 123456789012345678 not found" == error_body["error"]
 
@@ -632,6 +639,7 @@ class TestMinecraftPlayerWebhookHandlerResolveDiscordObjects:
             )
 
         assert exc_info.value.status_code == 404
+        assert exc_info.value.body is not None
         error_body = json.loads(exc_info.value.body.decode("utf-8"))
         assert "Member 112233445566778899 not found in guild 123456789012345678" == error_body["error"]
 

@@ -1,4 +1,3 @@
-import pytest
 from bot.lib.models.GuildItemIdBatchRequestBody import GuildItemIdBatchRequestBody
 
 

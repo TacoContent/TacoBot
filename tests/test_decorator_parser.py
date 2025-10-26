@@ -6,7 +6,6 @@ from handler methods.
 
 import ast
 
-import pytest
 from scripts.swagger_sync.decorator_parser import (
     DecoratorMetadata,
     _extract_description,

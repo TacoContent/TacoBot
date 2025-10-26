@@ -4,14 +4,11 @@ Comprehensive tests for URL enrichment including redirect resolution,
 URL shortening, and launcher deep link generation.
 """
 
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 import requests
-from bot.lib.http.handlers.webhook.helpers.OfferUrlEnricher import (
-    EnrichedUrl,
-    OfferUrlEnricher,
-)
+from bot.lib.http.handlers.webhook.helpers.OfferUrlEnricher import EnrichedUrl, OfferUrlEnricher
 from bot.lib.UrlShortener import UrlShortener
 
 # =======================
@@ -108,10 +105,7 @@ def test_resolve_redirect_chain():
     assert result.original == original_url
     assert result.resolved == final_url
     mock_get.assert_called_once_with(
-        original_url,
-        allow_redirects=True,
-        headers={"Referer": original_url, "User-Agent": "Tacobot/1.0"},
-        timeout=5
+        original_url, allow_redirects=True, headers={"Referer": original_url, "User-Agent": "Tacobot/1.0"}, timeout=5
     )
 
 

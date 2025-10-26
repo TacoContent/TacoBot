@@ -19,9 +19,9 @@ We stub:
 
 NOTE: If discord.py not installed the test is skipped (mirrors pattern in other tests).
 """
+
 from __future__ import annotations
 
-import asyncio
 import json
 from types import SimpleNamespace
 from typing import Any, Dict, List
@@ -47,17 +47,22 @@ class StubReaction:
         self.emoji = emoji
         self.count = count
 
+
 class StubMessage:
     def __init__(self, mid: int, reactions: List[StubReaction]):
         self.id = mid
         self.reactions = reactions
 
+
 class FetchError(discord.NotFound):  # type: ignore[misc]
     def __init__(self):
         super().__init__(response=None, message="not found")  # type: ignore[arg-type]
 
+
 class StubChannel:
-    def __init__(self, channel_id: int, messages: Dict[int, StubMessage], not_found: List[int] | None = None, guild_id: int = 1):
+    def __init__(
+        self, channel_id: int, messages: Dict[int, StubMessage], not_found: List[int] | None = None, guild_id: int = 1
+    ):
         self.id = channel_id
         self._messages = messages
         self._not_found = set(not_found or [])
@@ -67,6 +72,7 @@ class StubChannel:
         if mid in self._not_found or mid not in self._messages:
             raise discord.NotFound(response=None, message="not found")  # type: ignore[arg-type]
         return self._messages[mid]
+
 
 class StubBot(TacoBot):  # type: ignore[misc]
     def __init__(self, guild_id: int, channel: StubChannel):  # pragma: no cover - simple init
@@ -92,13 +98,7 @@ def make_request(body_obj: Any | None, method: str = "POST") -> HttpRequest:
     if body_obj is not None:
         raw = json.dumps(body_obj).encode("utf-8")
     return HttpRequest(
-        0.0,
-        method,
-        "/api/v1/guild/1/channel/2/messages/batch/reactions",
-        {},  # query_params
-        "HTTP/1.1",
-        headers,
-        raw,
+        0.0, method, "/api/v1/guild/1/channel/2/messages/batch/reactions", {}, "HTTP/1.1", headers, raw
     )
 
 
@@ -121,13 +121,9 @@ async def test_reactions_batch_basic():
     payload = json.loads(resp.body.decode("utf-8"))
     assert set(payload.keys()) == {"100", "101"}
     # Sorted descending count then emoji
-    assert payload["100"] == [
-        {"emoji": "👍", "count": 2},
-        {"emoji": "🔥", "count": 1},
-    ]
-    assert payload["101"] == [
-        {"emoji": "👍", "count": 1},
-    ]
+    assert payload["100"] == [{"emoji": "👍", "count": 2}, {"emoji": "🔥", "count": 1}]
+    assert payload["101"] == [{"emoji": "👍", "count": 1}]
+
 
 @pytest.mark.asyncio
 async def test_reactions_batch_duplicates_and_non_numeric():
@@ -144,6 +140,7 @@ async def test_reactions_batch_duplicates_and_non_numeric():
     assert list(payload.keys()) == ["100"]  # only one entry
     assert payload["100"] == [{"emoji": ":taco:", "count": 3}]
 
+
 @pytest.mark.asyncio
 async def test_reactions_batch_missing_messages():
     messages = {100: StubMessage(100, [StubReaction("A", 1)])}
@@ -156,6 +153,7 @@ async def test_reactions_batch_missing_messages():
     resp = await handler.get_reactions_for_messages_batch_by_ids(req, {"guild_id": "1", "channel_id": "2"})
     payload = json.loads(resp.body.decode("utf-8"))
     assert set(payload.keys()) == {"100"}
+
 
 @pytest.mark.asyncio
 async def test_reactions_batch_empty_ids():
@@ -170,18 +168,13 @@ async def test_reactions_batch_empty_ids():
     assert resp.status_code == 200
     assert resp.body.decode("utf-8") in ("[]", "{}")  # allow either if impl later changes
 
+
 @pytest.mark.asyncio
 async def test_reactions_batch_invalid_json_body():
     # Provide body which is invalid JSON
     headers = HttpHeaders()
     bad_req = HttpRequest(
-        0.0,
-        "POST",
-        "/api/v1/guild/1/channel/2/messages/batch/reactions",
-        {},
-        "HTTP/1.1",
-        headers,
-        b"{ not valid json",
+        0.0, "POST", "/api/v1/guild/1/channel/2/messages/batch/reactions", {}, "HTTP/1.1", headers, b"{ not valid json"
     )
     channel = StubChannel(2, {})
     bot = StubBot(1, channel)

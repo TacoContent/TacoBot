@@ -123,18 +123,18 @@ class TestMergeResponses:
     def test_decorator_only(self):
         """Test when only decorator responses exist."""
         decorator = {'200': {'description': 'OK'}}
-        result = merge_responses(None, decorator)
+        result = merge_responses(None, decorator)  # pyright: ignore[reportArgumentType]
         assert result == decorator
 
     def test_yaml_only(self):
         """Test when only YAML responses exist."""
         yaml = {'404': {'description': 'Not found'}}
-        result = merge_responses(yaml, None)
+        result = merge_responses(yaml, None)  # pyright: ignore[reportArgumentType]
         assert result == yaml
 
     def test_both_empty(self):
         """Test when both are empty/None."""
-        assert merge_responses(None, None) == {}
+        assert merge_responses(None, None) == {}  # pyright: ignore[reportArgumentType]
         assert merge_responses({}, {}) == {}
 
     def test_merge_different_status_codes(self):
@@ -476,7 +476,7 @@ class TestMergeEndpointMetadata:
         # Parameters merged with decorator override
         assert len(merged['parameters']) == 2
         id_param = next(p for p in merged['parameters'] if p['name'] == 'id')
-        assert id_param.get('required') == True
+        assert id_param.get('required') is True
 
         # Conflicts detected
         assert len(warnings) >= 2  # At least summary and tags
@@ -496,7 +496,7 @@ class TestMergeEndpointMetadata:
 
         # All YAML fields preserved
         assert merged['summary'] == 'Summary'
-        assert merged['deprecated'] == False
+        assert merged['deprecated'] is False
         assert merged['externalDocs'] == {'url': 'https://yaml.com'}
         assert merged['x-custom'] == 'yaml-value'
 

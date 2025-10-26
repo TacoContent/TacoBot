@@ -8,7 +8,6 @@ This test ensures endpoint_collector correctly extracts HTTP methods from
 - Lists of enums: method=[HTTPMethod.POST, HTTPMethod.GET]
 """
 
-import ast
 import sys
 from pathlib import Path
 
@@ -16,7 +15,7 @@ from pathlib import Path
 scripts_dir = Path(__file__).parent.parent / "scripts"
 sys.path.insert(0, str(scripts_dir))
 
-from swagger_sync.endpoint_collector import collect_endpoints
+from ..scripts.swagger_sync.endpoint_collector import collect_endpoints  # noqa: E402
 
 
 def test_http_method_string_literal():

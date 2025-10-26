@@ -87,6 +87,9 @@ class TestValidateTacosRequest:
             handler._validate_tacos_request(mock_request, http_headers)
 
         assert exc_info.value.status_code == 400
+        assert exc_info is not None
+        assert exc_info.value is not None
+        assert exc_info.value.body is not None
         error_data = json.loads(exc_info.value.body.decode())
         assert "No payload found in the request" in error_data["error"]
 
@@ -98,6 +101,9 @@ class TestValidateTacosRequest:
             handler._validate_tacos_request(mock_request, http_headers)
 
         assert exc_info.value.status_code == 400
+        assert exc_info is not None
+        assert exc_info.value is not None
+        assert exc_info.value.body is not None
         error_data = json.loads(exc_info.value.body.decode())
         assert "Invalid JSON payload" in error_data["error"]
         assert "stacktrace" in error_data  # Should include stacktrace
@@ -110,6 +116,9 @@ class TestValidateTacosRequest:
         with pytest.raises(HttpResponseException) as exc_info:
             handler._validate_tacos_request(mock_request, http_headers)
 
+        assert exc_info is not None
+        assert exc_info.value is not None
+        assert exc_info.value.body is not None
         assert exc_info.value.status_code == 404
         error_data = json.loads(exc_info.value.body.decode())
         assert "No guild_id found in the payload" in error_data["error"]
@@ -123,6 +132,9 @@ class TestValidateTacosRequest:
             handler._validate_tacos_request(mock_request, http_headers)
 
         assert exc_info.value.status_code == 404
+        assert exc_info is not None
+        assert exc_info.value is not None
+        assert exc_info.value.body is not None
         error_data = json.loads(exc_info.value.body.decode())
         assert "No from_user found in the payload" in error_data["error"]
 
@@ -135,16 +147,16 @@ class TestValidateTacosRequest:
             handler._validate_tacos_request(mock_request, http_headers)
 
         assert exc_info.value.status_code == 404
+        assert exc_info is not None
+        assert exc_info.value is not None
+        assert exc_info.value.body is not None
         error_data = json.loads(exc_info.value.body.decode())
         assert "No to_user found in the payload" in error_data["error"]
 
     def test_validate_success_with_to_user(self, handler, mock_request, http_headers):
         """Test successful validation with to_user field."""
         payload = {
-            "guild_id": "123456",
-            "from_user": "streamer",
-            "to_user": "viewer",
-            "amount": 5
+            "guild_id": "123456", "from_user": "streamer", "to_user": "viewer", "amount": 5
         }
         mock_request.body = json.dumps(payload).encode()
 
@@ -158,7 +170,7 @@ class TestValidateTacosRequest:
             "guild_id": "123456",
             "from_user": "streamer",
             "to_user_id": 111111111111,
-            "amount": 5
+            "amount": 5,
         }
         mock_request.body = json.dumps(payload).encode()
 
@@ -172,8 +184,8 @@ class TestValidateTacosRequest:
             "guild_id": "123456",
             "from_user": "streamer",
             "to_user": "viewer",
-            "to_user_id": 111111111111,
-            "amount": 5
+            "to_user_id":111111111111,
+            "amount": 5,
         }
         mock_request.body = json.dumps(payload).encode()
 
@@ -199,7 +211,7 @@ class TestExtractPayloadData:
             "from_user": "streamer",
             "amount": 10,
             "reason": "Great work!",
-            "type": "taco"
+            "type": "taco",
         }
 
         result = handler._extract_payload_data(payload)
@@ -214,12 +226,7 @@ class TestExtractPayloadData:
 
     def test_extract_with_to_user_only(self, handler):
         """Test extraction with only to_user (no to_user_id)."""
-        payload = {
-            "guild_id": "123456",
-            "to_user": "viewer",
-            "from_user": "streamer",
-            "amount": 5
-        }
+        payload = {"guild_id": "123456", "to_user": "viewer", "from_user": "streamer", "amount": 5}
 
         result = handler._extract_payload_data(payload)
 
@@ -228,12 +235,7 @@ class TestExtractPayloadData:
 
     def test_extract_with_to_user_id_only(self, handler):
         """Test extraction with only to_user_id (no to_user)."""
-        payload = {
-            "guild_id": "123456",
-            "to_user_id": 111111111111,
-            "from_user": "streamer",
-            "amount": 5
-        }
+        payload = {"guild_id": "123456", "to_user_id": 111111111111, "from_user": "streamer", "amount": 5}
 
         result = handler._extract_payload_data(payload)
 
@@ -242,11 +244,7 @@ class TestExtractPayloadData:
 
     def test_extract_amount_default_zero(self, handler):
         """Test amount defaults to 0 when missing."""
-        payload = {
-            "guild_id": "123456",
-            "to_user": "viewer",
-            "from_user": "streamer"
-        }
+        payload = {"guild_id": "123456", "to_user": "viewer", "from_user": "streamer"}
 
         result = handler._extract_payload_data(payload)
 
@@ -254,11 +252,7 @@ class TestExtractPayloadData:
 
     def test_extract_reason_default_empty(self, handler):
         """Test reason defaults to empty string when missing."""
-        payload = {
-            "guild_id": "123456",
-            "to_user": "viewer",
-            "from_user": "streamer"
-        }
+        payload = {"guild_id": "123456", "to_user": "viewer", "from_user": "streamer"}
 
         result = handler._extract_payload_data(payload)
 
@@ -266,11 +260,7 @@ class TestExtractPayloadData:
 
     def test_extract_type_default_enum(self, handler):
         """Test type converts to default enum when missing."""
-        payload = {
-            "guild_id": "123456",
-            "to_user": "viewer",
-            "from_user": "streamer"
-        }
+        payload = {"guild_id": "123456", "to_user": "viewer", "from_user": "streamer"}
 
         result = handler._extract_payload_data(payload)
 
@@ -283,7 +273,7 @@ class TestExtractPayloadData:
             "guild_id": "123456",
             "to_user": "viewer",
             "from_user": "streamer",
-            "type": "invalid_type_xyz"
+            "type": "invalid_type_xyz",
         }
 
         result = handler._extract_payload_data(payload)
@@ -306,7 +296,7 @@ class TestLoadRateLimitSettings:
             "api_max_give_per_ts": 1000,
             "api_max_give_per_user_per_timespan": 100,
             "api_max_give_per_user": 20,
-            "api_max_give_timespan": 43200
+            "api_max_give_timespan": 43200,
         }
 
         result = handler._load_rate_limit_settings(123456)
@@ -329,10 +319,7 @@ class TestLoadRateLimitSettings:
 
     def test_load_settings_partial_custom(self, handler):
         """Test loading with some custom and some default values."""
-        handler.settings.get_settings.return_value = {
-            "api_max_give_per_ts": 750,
-            "api_max_give_per_user": 15
-        }
+        handler.settings.get_settings.return_value = {"api_max_give_per_ts": 750, "api_max_give_per_user": 15}
 
         result = handler._load_rate_limit_settings(123456)
 
@@ -379,10 +366,7 @@ class TestResolveUserIds:
         handler.users_utils.twitch_user_to_discord_user.side_effect = [333333333333, 222222222222]
 
         to_id, from_id = handler._resolve_user_ids(
-            to_twitch_user="viewer",
-            to_user_id=0,
-            from_twitch_user="streamer",
-            headers=http_headers
+            to_twitch_user="viewer", to_user_id=0, from_twitch_user="streamer", headers=http_headers
         )
 
         assert to_id == 333333333333
@@ -394,13 +378,13 @@ class TestResolveUserIds:
 
         with pytest.raises(HttpResponseException) as exc_info:
             handler._resolve_user_ids(
-                to_twitch_user="unknown_viewer",
-                to_user_id=0,
-                from_twitch_user="streamer",
-                headers=http_headers
+                to_twitch_user="unknown_viewer", to_user_id=0, from_twitch_user="streamer", headers=http_headers
             )
 
         assert exc_info.value.status_code == 404
+        assert exc_info is not None
+        assert exc_info.value is not None
+        assert exc_info.value.body is not None
         error_data = json.loads(exc_info.value.body.decode())
         assert "No discord user found for to_user (unknown_viewer)" in error_data["error"]
         assert "user table" in error_data["error"]
@@ -411,13 +395,13 @@ class TestResolveUserIds:
 
         with pytest.raises(HttpResponseException) as exc_info:
             handler._resolve_user_ids(
-                to_twitch_user="zero_user",
-                to_user_id=0,
-                from_twitch_user="streamer",
-                headers=http_headers
+                to_twitch_user="zero_user", to_user_id=0, from_twitch_user="streamer", headers=http_headers
             )
 
         assert exc_info.value.status_code == 404
+        assert exc_info is not None
+        assert exc_info.value is not None
+        assert exc_info.value.body is not None
         error_data = json.loads(exc_info.value.body.decode())
         assert "No discord user found for to_user" in error_data["error"]
 
@@ -427,13 +411,13 @@ class TestResolveUserIds:
 
         with pytest.raises(HttpResponseException) as exc_info:
             handler._resolve_user_ids(
-                to_twitch_user="viewer",
-                to_user_id=0,
-                from_twitch_user="unknown_streamer",
-                headers=http_headers
+                to_twitch_user="viewer", to_user_id=0, from_twitch_user="unknown_streamer", headers=http_headers
             )
 
         assert exc_info.value.status_code == 404
+        assert exc_info is not None
+        assert exc_info.value is not None
+        assert exc_info.value.body is not None
         error_data = json.loads(exc_info.value.body.decode())
         assert "No discord user found for from_user (unknown_streamer)" in error_data["error"]
         assert "user table" in error_data["error"]
@@ -443,10 +427,7 @@ class TestResolveUserIds:
         handler.users_utils.twitch_user_to_discord_user.side_effect = [111111111111, 222222222222]
 
         to_id, from_id = handler._resolve_user_ids(
-            to_twitch_user="viewer",
-            to_user_id=0,
-            from_twitch_user="streamer",
-            headers=http_headers
+            to_twitch_user="viewer", to_user_id=0, from_twitch_user="streamer", headers=http_headers
         )
 
         assert to_id == 111111111111
@@ -473,7 +454,7 @@ class TestFetchDiscordUsers:
             from_user_id=222222222222,
             to_twitch_user="viewer",
             from_twitch_user="streamer",
-            headers=http_headers
+            headers=http_headers,
         )
 
         assert result_to.id == 111111111111
@@ -491,10 +472,13 @@ class TestFetchDiscordUsers:
                 from_user_id=222222222222,
                 to_twitch_user="missing_viewer",
                 from_twitch_user="streamer",
-                headers=http_headers
+                headers=http_headers,
             )
 
         assert exc_info.value.status_code == 404
+        assert exc_info is not None
+        assert exc_info.value is not None
+        assert exc_info.value.body is not None
         error_data = json.loads(exc_info.value.body.decode())
         assert "No discord user found for to_user (missing_viewer)" in error_data["error"]
         assert "fetching from discord" in error_data["error"]
@@ -511,10 +495,13 @@ class TestFetchDiscordUsers:
                 from_user_id=222222222222,
                 to_twitch_user="viewer",
                 from_twitch_user="missing_streamer",
-                headers=http_headers
+                headers=http_headers,
             )
 
         assert exc_info.value.status_code == 404
+        assert exc_info is not None
+        assert exc_info.value is not None
+        assert exc_info.value.body is not None
         error_data = json.loads(exc_info.value.body.decode())
         assert "No discord user found for from_user (missing_streamer)" in error_data["error"]
         assert "fetching from discord" in error_data["error"]
@@ -530,11 +517,15 @@ class TestFetchDiscordUsers:
                 from_user_id=222222222222,
                 to_twitch_user="viewer",
                 from_twitch_user="streamer",
-                headers=http_headers
+                headers=http_headers,
             )
 
         # Should fail on to_user first
         assert exc_info.value.status_code == 404
+        assert exc_info is not None
+        assert exc_info.value is not None
+        assert exc_info.value.body is not None
+
         error_data = json.loads(exc_info.value.body.decode())
         assert "to_user" in error_data["error"]
 
@@ -564,6 +555,9 @@ class TestValidateBusinessRules:
             handler._validate_business_rules(same_user, same_user, http_headers)
 
         assert exc_info.value.status_code == 400
+        assert exc_info is not None
+        assert exc_info.value is not None
+        assert exc_info.value.body is not None
         error_data = json.loads(exc_info.value.body.decode())
         assert "can not give tacos to yourself" in error_data["error"]
 
@@ -576,6 +570,9 @@ class TestValidateBusinessRules:
             handler._validate_business_rules(from_user, to_user, http_headers)
 
         assert exc_info.value.status_code == 400
+        assert exc_info is not None
+        assert exc_info.value is not None
+        assert exc_info.value.body is not None
         error_data = json.loads(exc_info.value.body.decode())
         assert "can not give tacos to a bot" in error_data["error"]
 
@@ -609,14 +606,11 @@ class TestCalculateRateLimits:
             "max_give_per_ts": 500,
             "max_give_per_user_per_ts": 50,
             "max_give_per_user": 10,
-            "max_give_timespan": 86400
+            "max_give_timespan": 86400,
         }
 
         usage = handler._calculate_rate_limits(
-            guild_id=123456,
-            from_twitch_user="Streamer",
-            to_twitch_user="Viewer",
-            limits=limits
+            guild_id=123456, from_twitch_user="Streamer", to_twitch_user="Viewer", limits=limits
         )
 
         assert usage["total_gifted_to_user"] == 0
@@ -659,14 +653,11 @@ class TestCalculateRateLimits:
             "max_give_per_ts": 500,
             "max_give_per_user_per_ts": 50,
             "max_give_per_user": 10,
-            "max_give_timespan": 86400
+            "max_give_timespan": 86400,
         }
 
         usage = handler._calculate_rate_limits(
-            guild_id=123456,
-            from_twitch_user="streamer",
-            to_twitch_user="viewer",
-            limits=limits
+            guild_id=123456, from_twitch_user="streamer", to_twitch_user="viewer", limits=limits
         )
 
         assert usage["total_gifted_to_user"] == 50
@@ -682,14 +673,11 @@ class TestCalculateRateLimits:
             "max_give_per_ts": 500,
             "max_give_per_user_per_ts": 50,
             "max_give_per_user": 10,
-            "max_give_timespan": 86400
+            "max_give_timespan": 86400,
         }
 
         usage = handler._calculate_rate_limits(
-            guild_id=123456,
-            from_twitch_user="streamer",
-            to_twitch_user="viewer",
-            limits=limits
+            guild_id=123456, from_twitch_user="streamer", to_twitch_user="viewer", limits=limits
         )
 
         assert usage["total_gifted_over_ts"] == 500
@@ -705,14 +693,11 @@ class TestCalculateRateLimits:
             "max_give_per_ts": 500,
             "max_give_per_user_per_ts": 50,
             "max_give_per_user": 10,
-            "max_give_timespan": 86400
+            "max_give_timespan": 86400,
         }
 
         handler._calculate_rate_limits(
-            guild_id=123456,
-            from_twitch_user=" Streamer ",
-            to_twitch_user=" Viewer ",
-            limits=limits
+            guild_id=123456, from_twitch_user=" Streamer ", to_twitch_user=" Viewer ", limits=limits
         )
 
         # Should call clean twice (from and to)
@@ -729,15 +714,12 @@ class TestEnforceRateLimits:
 
     def test_enforce_all_limits_satisfied(self, handler, http_headers):
         """Test success when all limits are satisfied."""
-        usage = {
-            "remaining_gifts_to_user": 30,
-            "remaining_gifts_over_ts": 400
-        }
+        usage = {"remaining_gifts_to_user": 30, "remaining_gifts_over_ts": 400}
         limits = {
             "max_give_per_ts": 500,
             "max_give_per_user_per_ts": 50,
             "max_give_per_user": 10,
-            "max_give_timespan": 86400
+            "max_give_timespan": 86400,
         }
 
         # Should not raise
@@ -745,98 +727,92 @@ class TestEnforceRateLimits:
 
     def test_enforce_overall_limit_exceeded(self, handler, http_headers):
         """Test rejection when overall daily limit exceeded."""
-        usage = {
-            "remaining_gifts_to_user": 30,
-            "remaining_gifts_over_ts": 0  # At limit!
-        }
+        usage = {"remaining_gifts_to_user": 30, "remaining_gifts_over_ts": 0}
         limits = {
             "max_give_per_ts": 500,
             "max_give_per_user_per_ts": 50,
             "max_give_per_user": 10,
-            "max_give_timespan": 86400
+            "max_give_timespan": 86400,
         }
 
         with pytest.raises(HttpResponseException) as exc_info:
             handler._enforce_rate_limits(5, usage, limits, http_headers)
 
         assert exc_info.value.status_code == 400
+        assert exc_info.value.body is not None
         error_data = json.loads(exc_info.value.body.decode())
         assert "maximum number of tacos today" in error_data["error"]
         assert "500" in error_data["error"]
 
     def test_enforce_per_user_limit_exceeded(self, handler, http_headers):
         """Test rejection when per-user daily limit exceeded."""
-        usage = {
-            "remaining_gifts_to_user": 0,  # At limit!
-            "remaining_gifts_over_ts": 400
-        }
+        usage = {"remaining_gifts_to_user": 0, "remaining_gifts_over_ts": 400}
         limits = {
             "max_give_per_ts": 500,
             "max_give_per_user_per_ts": 50,
             "max_give_per_user": 10,
-            "max_give_timespan": 86400
+            "max_give_timespan": 86400,
         }
 
         with pytest.raises(HttpResponseException) as exc_info:
             handler._enforce_rate_limits(5, usage, limits, http_headers)
 
         assert exc_info.value.status_code == 400
+        assert exc_info.value.body is not None
         error_data = json.loads(exc_info.value.body.decode())
         assert "maximum number of tacos to this user today" in error_data["error"]
         assert "50" in error_data["error"]
 
     def test_enforce_positive_amount_exceeds_max(self, handler, http_headers):
         """Test rejection when positive amount exceeds max_give_per_user."""
-        usage = {
-            "remaining_gifts_to_user": 30,
-            "remaining_gifts_over_ts": 400
-        }
+        usage = {"remaining_gifts_to_user": 30, "remaining_gifts_over_ts": 400}
         limits = {
             "max_give_per_ts": 500,
             "max_give_per_user_per_ts": 50,
             "max_give_per_user": 10,
-            "max_give_timespan": 86400
+            "max_give_timespan": 86400,
         }
 
         with pytest.raises(HttpResponseException) as exc_info:
             handler._enforce_rate_limits(15, usage, limits, http_headers)
 
         assert exc_info.value.status_code == 400
+        assert exc_info is not None
+        assert exc_info.value is not None
+        assert exc_info.value.body is not None
         error_data = json.loads(exc_info.value.body.decode())
         assert "only give up to 10 tacos at a time" in error_data["error"]
 
     def test_enforce_negative_amount_exceeds_quota(self, handler, http_headers):
         """Test rejection when negative amount exceeds available quota."""
         usage = {
-            "total_gifted_to_user": 10,  # Only 10 tacos have been given to this user
-            "remaining_gifts_to_user": 10,
-            "remaining_gifts_over_ts": 400
+            "total_gifted_to_user": 10, "remaining_gifts_to_user": 10, "remaining_gifts_over_ts": 400
         }
         limits = {
             "max_give_per_ts": 500,
             "max_give_per_user_per_ts": 50,
             "max_give_per_user": 10,
-            "max_give_timespan": 86400
+            "max_give_timespan": 86400,
         }
 
         with pytest.raises(HttpResponseException) as exc_info:
             handler._enforce_rate_limits(-15, usage, limits, http_headers)
 
         assert exc_info.value.status_code == 400
+        assert exc_info is not None
+        assert exc_info.value is not None
+        assert exc_info.value.body is not None
         error_data = json.loads(exc_info.value.body.decode())
         assert "only take up to 10 tacos at a time" in error_data["error"]
 
     def test_enforce_edge_exactly_at_overall_limit(self, handler, http_headers):
         """Test edge case when exactly at overall limit (zero remaining)."""
-        usage = {
-            "remaining_gifts_to_user": 30,
-            "remaining_gifts_over_ts": 0
-        }
+        usage = {"remaining_gifts_to_user": 30,"remaining_gifts_over_ts": 0}
         limits = {
             "max_give_per_ts": 500,
             "max_give_per_user_per_ts": 50,
             "max_give_per_user": 10,
-            "max_give_timespan": 86400
+            "max_give_timespan": 86400,
         }
 
         with pytest.raises(HttpResponseException) as exc_info:
@@ -846,15 +822,12 @@ class TestEnforceRateLimits:
 
     def test_enforce_edge_exactly_at_per_user_limit(self, handler, http_headers):
         """Test edge case when exactly at per-user limit (zero remaining)."""
-        usage = {
-            "remaining_gifts_to_user": 0,
-            "remaining_gifts_over_ts": 400
-        }
+        usage = {"remaining_gifts_to_user": 0, "remaining_gifts_over_ts": 400}
         limits = {
             "max_give_per_ts": 500,
             "max_give_per_user_per_ts": 50,
             "max_give_per_user": 10,
-            "max_give_timespan": 86400
+            "max_give_timespan": 86400,
         }
 
         with pytest.raises(HttpResponseException) as exc_info:
@@ -864,15 +837,12 @@ class TestEnforceRateLimits:
 
     def test_enforce_edge_amount_equals_max(self, handler, http_headers):
         """Test edge case when amount exactly equals max_give_per_user."""
-        usage = {
-            "remaining_gifts_to_user": 30,
-            "remaining_gifts_over_ts": 400
-        }
+        usage = {"remaining_gifts_to_user": 30, "remaining_gifts_over_ts": 400}
         limits = {
             "max_give_per_ts": 500,
             "max_give_per_user_per_ts": 50,
             "max_give_per_user": 10,
-            "max_give_timespan": 86400
+            "max_give_timespan": 86400,
         }
 
         # Should succeed (not exceed)
@@ -902,7 +872,7 @@ class TestExecuteTacoTransfer:
             to_user=to_user,
             reason="Great work!",
             taco_type=TacoTypes.CUSTOM,
-            amount=5
+            amount=5,
         )
 
         assert total == 105
@@ -925,7 +895,7 @@ class TestExecuteTacoTransfer:
             to_user=to_user,
             reason="Mistake",
             taco_type=TacoTypes.CUSTOM,
-            amount=-5
+            amount=-5,
         )
 
         assert total == 95
@@ -943,12 +913,12 @@ class TestExecuteTacoTransfer:
         handler.tacos_db.get_tacos_count.return_value = 100
 
         total = await handler._execute_taco_transfer(
-            guild_id=123456,
+            guild_id=123456, 
             from_user=from_user,
             to_user=to_user,
             reason="Testing",
             taco_type=TacoTypes.CUSTOM,
-            amount=0
+            amount=0,
         )
 
         assert total == 100
@@ -965,12 +935,7 @@ class TestExecuteTacoTransfer:
         handler.tacos_db.get_tacos_count.return_value = None
 
         total = await handler._execute_taco_transfer(
-            guild_id=123456,
-            from_user=from_user,
-            to_user=to_user,
-            reason="Test",
-            taco_type=TacoTypes.CUSTOM,
-            amount=5
+            guild_id=123456, from_user=from_user, to_user=to_user, reason="Test", taco_type=TacoTypes.CUSTOM, amount=5
         )
 
         assert total == 0
@@ -986,12 +951,7 @@ class TestBuildSuccessResponse:
 
     def test_build_response_structure(self, handler, http_headers):
         """Test correct response structure."""
-        payload = {
-            "guild_id": "123456",
-            "from_user": "streamer",
-            "to_user": "viewer",
-            "amount": 5
-        }
+        payload = {"guild_id": "123456", "from_user": "streamer", "to_user": "viewer", "amount": 5}
 
         response = handler._build_success_response(payload, 105, http_headers)
 

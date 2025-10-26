@@ -3,9 +3,9 @@
 This module tests the new UnionType/oneOf support added to the
 swagger_sync decorator_parser module.
 """
+
 import ast
 
-import pytest
 from scripts.swagger_sync.decorator_parser import (
     _extract_request_body,
     _extract_schema_reference,
@@ -71,12 +71,7 @@ class TestExtractSchemaReference:
         code = "typing.Union[ModelA, ModelB]"
         node = ast.parse(code, mode='eval').body
         result = _extract_schema_reference(node)
-        assert result == {
-            "oneOf": [
-                {"$ref": "#/components/schemas/ModelA"},
-                {"$ref": "#/components/schemas/ModelB"}
-            ]
-        }
+        assert result == {"oneOf": [{"$ref": "#/components/schemas/ModelA"}, {"$ref": "#/components/schemas/ModelB"}]}
 
     def test_typing_union_list_and_model(self):
         """Test typing.Union[typing.List[str], MyModel] returns oneOf."""
@@ -84,10 +79,7 @@ class TestExtractSchemaReference:
         node = ast.parse(code, mode='eval').body
         result = _extract_schema_reference(node)
         assert result == {
-            "oneOf": [
-                {"type": "array", "items": {"type": "string"}},
-                {"$ref": "#/components/schemas/MyModel"}
-            ]
+            "oneOf": [{"type": "array", "items": {"type": "string"}}, {"$ref": "#/components/schemas/MyModel"}]
         }
 
     def test_pipe_union_two_models(self):
@@ -95,12 +87,7 @@ class TestExtractSchemaReference:
         code = "ModelA | ModelB"
         node = ast.parse(code, mode='eval').body
         result = _extract_schema_reference(node)
-        assert result == {
-            "oneOf": [
-                {"$ref": "#/components/schemas/ModelA"},
-                {"$ref": "#/components/schemas/ModelB"}
-            ]
-        }
+        assert result == {"oneOf": [{"$ref": "#/components/schemas/ModelA"}, {"$ref": "#/components/schemas/ModelB"}]}
 
     def test_pipe_union_three_models(self):
         """Test ModelA | ModelB | ModelC returns oneOf with three refs."""
@@ -111,7 +98,7 @@ class TestExtractSchemaReference:
             "oneOf": [
                 {"$ref": "#/components/schemas/ModelA"},
                 {"$ref": "#/components/schemas/ModelB"},
-                {"$ref": "#/components/schemas/ModelC"}
+                {"$ref": "#/components/schemas/ModelC"},
             ]
         }
 
@@ -121,10 +108,7 @@ class TestExtractSchemaReference:
         node = ast.parse(code, mode='eval').body
         result = _extract_schema_reference(node)
         assert result == {
-            "oneOf": [
-                {"type": "array", "items": {"type": "string"}},
-                {"$ref": "#/components/schemas/MyModel"}
-            ]
+            "oneOf": [{"type": "array", "items": {"type": "string"}}, {"$ref": "#/components/schemas/MyModel"}]
         }
 
 
@@ -138,12 +122,7 @@ class TestExtractUnionSchemas:
         node = ast.parse(code, mode='eval').body
         slice_node = node.slice  # type: ignore
         result = _extract_union_schemas(slice_node)
-        assert result == {
-            "oneOf": [
-                {"$ref": "#/components/schemas/ModelA"},
-                {"$ref": "#/components/schemas/ModelB"}
-            ]
-        }
+        assert result == {"oneOf": [{"$ref": "#/components/schemas/ModelA"}, {"$ref": "#/components/schemas/ModelB"}]}
 
     def test_single_element(self):
         """Test extracting union from single element (edge case)."""
@@ -151,11 +130,7 @@ class TestExtractUnionSchemas:
         node = ast.parse(code, mode='eval').body
         slice_node = node.slice  # type: ignore
         result = _extract_union_schemas(slice_node)
-        assert result == {
-            "oneOf": [
-                {"$ref": "#/components/schemas/ModelA"}
-            ]
-        }
+        assert result == {"oneOf": [{"$ref": "#/components/schemas/ModelA"}]}
 
 
 class TestExtractUnionFromBinop:
@@ -166,12 +141,7 @@ class TestExtractUnionFromBinop:
         code = "ModelA | ModelB"
         node = ast.parse(code, mode='eval').body
         result = _extract_union_from_binop(node)  # type: ignore
-        assert result == {
-            "oneOf": [
-                {"$ref": "#/components/schemas/ModelA"},
-                {"$ref": "#/components/schemas/ModelB"}
-            ]
-        }
+        assert result == {"oneOf": [{"$ref": "#/components/schemas/ModelA"}, {"$ref": "#/components/schemas/ModelB"}]}
 
     def test_three_models_nested(self):
         """Test A | B | C returns oneOf with three refs (nested BinOp)."""
@@ -182,7 +152,7 @@ class TestExtractUnionFromBinop:
             "oneOf": [
                 {"$ref": "#/components/schemas/ModelA"},
                 {"$ref": "#/components/schemas/ModelB"},
-                {"$ref": "#/components/schemas/ModelC"}
+                {"$ref": "#/components/schemas/ModelC"},
             ]
         }
 
@@ -274,7 +244,4 @@ def dummy():
         result = _extract_request_body(decorator)
 
         schema = result["content"]["application/json"]["schema"]
-        assert schema == {
-            "type": "array",
-            "items": {"$ref": "#/components/schemas/MyModel"}
-        }
+        assert schema == {"type": "array", "items": {"$ref": "#/components/schemas/MyModel"}}

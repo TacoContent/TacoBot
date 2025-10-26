@@ -5,12 +5,11 @@ including success scenarios and error handling paths.
 """
 
 import json
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
 from bot.lib.http.handlers.webhook.MinecraftPlayerWebhookHandler import MinecraftPlayerWebhookHandler
-from bot.lib.models.MinecraftPlayerEventPayload import MinecraftPlayerEventPayload, MinecraftPlayerEventPayloadResponse
 from httpserver.http_util import HttpHeaders, HttpResponse
 
 
@@ -64,7 +63,7 @@ class TestMinecraftPlayerWebhookHandlerLoginEvent:
             "user_id": 112233445566778899,
             "timestamp": "2025-10-17T12:00:00Z",
             "server": "survival",
-            "location": {"x": 100, "y": 64, "z": -200}
+            "location": {"x": 100, "y": 64, "z": -200},
         }
 
     @pytest.fixture
@@ -147,16 +146,9 @@ class TestMinecraftPlayerWebhookHandlerLoginEvent:
             "metadata": {
                 "version": "1.20.1",
                 "mods": ["optifine", "journeymap"],
-                "settings": {
-                    "render_distance": 16,
-                    "difficulty": "hard"
-                }
+                "settings": {"render_distance": 16, "difficulty": "hard"},
             },
-            "location": {
-                "world": "overworld",
-                "coords": {"x": 100, "y": 64, "z": -200},
-                "biome": "plains"
-            }
+            "location": {"world": "overworld", "coords": {"x": 100, "y": 64, "z": -200}, "biome": "plains"},
         }
 
         response = await handler._handle_login_event(
@@ -196,17 +188,16 @@ class TestMinecraftPlayerWebhookHandlerLoginEvent:
 
         Verifies that the handler logs the user name during processing.
         """
-        await handler._handle_login_event(
-            mock_guild, mock_member, mock_discord_user, sample_data_payload, http_headers
-        )
+        await handler._handle_login_event(mock_guild, mock_member, mock_discord_user, sample_data_payload, http_headers)
 
         # Assert debug was called at least once
         assert handler.log.debug.call_count >= 1, "Debug logging should be called"
 
         # Check that one of the debug calls mentions the user name
         debug_calls = [str(call) for call in handler.log.debug.call_args_list]
-        assert any(mock_discord_user.name in str(call) for call in debug_calls), \
-            f"Debug log should contain user name '{mock_discord_user.name}'"
+        assert any(
+            mock_discord_user.name in str(call) for call in debug_calls
+        ), f"Debug log should contain user name '{mock_discord_user.name}'"
 
     @pytest.mark.asyncio
     async def test_handle_login_event_json_serialization(
@@ -241,7 +232,9 @@ class TestMinecraftPlayerWebhookHandlerLoginEvent:
         Simulates an error during response construction to test error branch.
         """
         # Patch MinecraftPlayerEventPayloadResponse to raise an exception during construction
-        with patch("bot.lib.http.handlers.webhook.MinecraftPlayerWebhookHandler.MinecraftPlayerEventPayloadResponse") as mock_response:
+        with patch(
+            "bot.lib.http.handlers.webhook.MinecraftPlayerWebhookHandler.MinecraftPlayerEventPayloadResponse"
+        ) as mock_response:
             mock_response.side_effect = TypeError("Response construction error")
 
             response = await handler._handle_login_event(
@@ -267,7 +260,9 @@ class TestMinecraftPlayerWebhookHandlerLoginEvent:
 
         Verifies that error logging includes traceback information.
         """
-        with patch("bot.lib.http.handlers.webhook.MinecraftPlayerWebhookHandler.MinecraftPlayerEventPayloadResponse") as mock_response:
+        with patch(
+            "bot.lib.http.handlers.webhook.MinecraftPlayerWebhookHandler.MinecraftPlayerEventPayloadResponse"
+        ) as mock_response:
             mock_response.side_effect = ValueError("Test error")
 
             await handler._handle_login_event(
@@ -379,11 +374,7 @@ class TestMinecraftPlayerWebhookHandlerLoginEvent:
 
         Verifies that Unicode data is properly preserved.
         """
-        unicode_payload = {
-            "user_id": 112233445566778899,
-            "message": "Welcome 欢迎 🎮",
-            "location": "スポーン地点"
-        }
+        unicode_payload = {"user_id": 112233445566778899, "message": "Welcome 欢迎 🎮", "location": "スポーン地点"}
 
         response = await handler._handle_login_event(
             mock_guild, mock_member, mock_discord_user, unicode_payload, http_headers
@@ -471,7 +462,7 @@ class TestMinecraftPlayerWebhookHandlerLogoutEvent:
             "timestamp": "2025-10-17T14:30:00Z",
             "server": "survival",
             "session_duration": 3600,
-            "location": {"x": 250, "y": 70, "z": -150}
+            "location": {"x": 250, "y": 70, "z": -150},
         }
 
     @pytest.fixture
@@ -555,13 +546,9 @@ class TestMinecraftPlayerWebhookHandlerLogoutEvent:
                 "duration_seconds": 7200,
                 "blocks_mined": 345,
                 "distance_traveled": 12500,
-                "achievements_earned": ["stone_age", "acquire_hardware"]
+                "achievements_earned": ["stone_age", "acquire_hardware"],
             },
-            "stats": {
-                "deaths": 2,
-                "mob_kills": 47,
-                "items_crafted": 123
-            }
+            "stats": {"deaths": 2, "mob_kills": 47, "items_crafted": 123},
         }
 
         response = await handler._handle_logout_event(
@@ -610,8 +597,9 @@ class TestMinecraftPlayerWebhookHandlerLogoutEvent:
 
         # Check that one of the debug calls mentions the user name
         debug_calls = [str(call) for call in handler.log.debug.call_args_list]
-        assert any(mock_discord_user.name in str(call) for call in debug_calls), \
-            f"Debug log should contain user name '{mock_discord_user.name}'"
+        assert any(
+            mock_discord_user.name in str(call) for call in debug_calls
+        ), f"Debug log should contain user name '{mock_discord_user.name}'"
 
     @pytest.mark.asyncio
     async def test_handle_logout_event_json_serialization(
@@ -646,7 +634,9 @@ class TestMinecraftPlayerWebhookHandlerLogoutEvent:
         Simulates an error during response construction to test error branch.
         """
         # Patch MinecraftPlayerEventPayloadResponse to raise an exception during construction
-        with patch("bot.lib.http.handlers.webhook.MinecraftPlayerWebhookHandler.MinecraftPlayerEventPayloadResponse") as mock_response:
+        with patch(
+            "bot.lib.http.handlers.webhook.MinecraftPlayerWebhookHandler.MinecraftPlayerEventPayloadResponse"
+        ) as mock_response:
             mock_response.side_effect = TypeError("Response construction error")
 
             response = await handler._handle_logout_event(
@@ -672,7 +662,9 @@ class TestMinecraftPlayerWebhookHandlerLogoutEvent:
 
         Verifies that error logging includes traceback information.
         """
-        with patch("bot.lib.http.handlers.webhook.MinecraftPlayerWebhookHandler.MinecraftPlayerEventPayloadResponse") as mock_response:
+        with patch(
+            "bot.lib.http.handlers.webhook.MinecraftPlayerWebhookHandler.MinecraftPlayerEventPayloadResponse"
+        ) as mock_response:
             mock_response.side_effect = ValueError("Test logout error")
 
             await handler._handle_logout_event(
@@ -787,7 +779,7 @@ class TestMinecraftPlayerWebhookHandlerLogoutEvent:
         unicode_payload = {
             "user_id": 112233445566778899,
             "message": "Goodbye さようなら 👋",
-            "last_location": "プレイヤーの家"
+            "last_location": "プレイヤーの家",
         }
 
         response = await handler._handle_logout_event(
@@ -877,7 +869,7 @@ class TestMinecraftPlayerWebhookHandlerDeathEvent:
             "timestamp": "2025-10-17T12:00:00Z",
             "death_message": "TestUser was slain by a zombie",
             "location": {"x": 100, "y": 64, "z": -200},
-            "killer": "zombie"
+            "killer": "zombie",
         }
 
     @pytest.fixture
@@ -908,6 +900,7 @@ class TestMinecraftPlayerWebhookHandlerDeathEvent:
         assert response.headers == http_headers
 
         # Parse and verify response body
+        assert response.body is not None
         response_data = json.loads(response.body.decode("utf-8"))
         assert response_data["status"] == "ok"
         assert "data" in response_data
@@ -928,9 +921,7 @@ class TestMinecraftPlayerWebhookHandlerDeathEvent:
         - Debug log method is invoked
         - Log message contains user name
         """
-        response = await handler._handle_death_event(
-            mock_guild, mock_member, mock_discord_user, sample_data_payload, http_headers
-        )
+        await handler._handle_death_event(mock_guild, mock_member, mock_discord_user, sample_data_payload, http_headers)
 
         # Verify debug log was called
         handler.log.debug.assert_called_once()
@@ -952,7 +943,6 @@ class TestMinecraftPlayerWebhookHandlerDeathEvent:
         )
 
         body_str = response.body.decode("utf-8")
-        response_data = json.loads(body_str)
 
         # Verify indented formatting (should have newlines/spaces)
         assert "\n" in body_str
@@ -1111,9 +1101,9 @@ class TestMinecraftPlayerWebhookHandlerDeathEvent:
             "location": {"x": 150.5, "y": 128.0, "z": -300.25, "dimension": "overworld"},
             "equipment": [
                 {"slot": "mainhand", "item": "diamond_sword", "enchantments": ["sharpness_5", "looting_3"]},
-                {"slot": "helmet", "item": "netherite_helmet", "enchantments": ["protection_4"]}
+                {"slot": "helmet", "item": "netherite_helmet", "enchantments": ["protection_4"]},
             ],
-            "statistics": {"deaths": 42, "playtime": 360000, "kills": {"zombie": 150, "skeleton": 89}}
+            "statistics": {"deaths": 42, "playtime": 360000, "kills": {"zombie": 150, "skeleton": 89}},
         }
 
         response = await handler._handle_death_event(
@@ -1160,7 +1150,7 @@ class TestMinecraftPlayerWebhookHandlerDeathEvent:
             "user_id": 112233445566778899,
             "death_message": "プレイヤー was killed by クリーパー 💥",
             "location_name": "村の近く",
-            "last_words": "さようなら 👋"
+            "last_words": "さようなら 👋",
         }
 
         response = await handler._handle_death_event(
@@ -1245,8 +1235,8 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
             "payload": {
                 "user_id": 112233445566778899,
                 "timestamp": "2025-10-17T12:00:00Z",
-                "server": "minecraft-server-01"
-            }
+                "server": "minecraft-server-01",
+            },
         }
 
     @pytest.fixture
@@ -1313,10 +1303,7 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
         - 404 status code returned
         - Error message indicates missing guild_id
         """
-        mock_request.body = json.dumps({
-            "event": "LOGIN",
-            "payload": {"user_id": 123}
-        }).encode()
+        mock_request.body = json.dumps({"event": "LOGIN", "payload": {"user_id": 123}}).encode()
 
         response = await handler.event(mock_request)
 
@@ -1333,10 +1320,7 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
         - 404 status code returned
         - Error message indicates missing event
         """
-        mock_request.body = json.dumps({
-            "guild_id": 123456789012345678,
-            "payload": {"user_id": 123}
-        }).encode()
+        mock_request.body = json.dumps({"guild_id": 123456789012345678, "payload": {"user_id": 123}}).encode()
 
         response = await handler.event(mock_request)
 
@@ -1353,11 +1337,9 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
         - 404 status code returned
         - Error message indicates unknown event
         """
-        mock_request.body = json.dumps({
-            "guild_id": 123456789012345678,
-            "event": "INVALID_EVENT_TYPE",
-            "payload": {"user_id": 123}
-        }).encode()
+        mock_request.body = json.dumps(
+            {"guild_id": 123456789012345678, "event": "INVALID_EVENT_TYPE", "payload": {"user_id": 123}}
+        ).encode()
 
         response = await handler.event(mock_request)
 
@@ -1374,10 +1356,7 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
         - 404 status code returned
         - Error message indicates missing payload object
         """
-        mock_request.body = json.dumps({
-            "guild_id": 123456789012345678,
-            "event": "LOGIN"
-        }).encode()
+        mock_request.body = json.dumps({"guild_id": 123456789012345678, "event": "LOGIN"}).encode()
 
         response = await handler.event(mock_request)
 
@@ -1450,7 +1429,9 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
         mock_discord_objects["guild"].fetch_member.assert_called_once_with(112233445566778899)
 
     @pytest.mark.asyncio
-    async def test_event_successful_login_routing(self, handler, mock_request, valid_login_payload, mock_discord_objects):
+    async def test_event_successful_login_routing(
+        self, handler, mock_request, valid_login_payload, mock_discord_objects
+    ):
         """Test event successfully routes LOGIN event to _handle_login_event.
 
         Verifies:
@@ -1480,7 +1461,7 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
         logout_payload = {
             "guild_id": 123456789012345678,
             "event": "LOGOUT",
-            "payload": {"user_id": 112233445566778899, "timestamp": "2025-10-17T12:00:00Z"}
+            "payload": {"user_id": 112233445566778899, "timestamp": "2025-10-17T12:00:00Z"},
         }
         mock_request.body = json.dumps(logout_payload).encode()
         handler.discord_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
@@ -1504,10 +1485,7 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
         death_payload = {
             "guild_id": 123456789012345678,
             "event": "DEATH",
-            "payload": {
-                "user_id": 112233445566778899,
-                "death_message": "TestUser was slain by a zombie"
-            }
+            "payload": {"user_id": 112233445566778899, "death_message": "TestUser was slain by a zombie"},
         }
         mock_request.body = json.dumps(death_payload).encode()
         handler.discord_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
@@ -1601,11 +1579,7 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
         unicode_payload = {
             "guild_id": 123456789012345678,
             "event": "LOGIN",
-            "payload": {
-                "user_id": 112233445566778899,
-                "message": "こんにちは 🎮",
-                "server": "サーバー"
-            }
+            "payload": {"user_id": 112233445566778899, "message": "こんにちは 🎮", "server": "サーバー"},
         }
         mock_request.body = json.dumps(unicode_payload, ensure_ascii=False).encode("utf-8")
         handler.discord_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
@@ -1633,9 +1607,9 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
                 "metadata": {
                     "statistics": {f"stat_{i}": i * 100 for i in range(50)},
                     "achievements": [f"achievement_{i}" for i in range(100)],
-                    "inventory": [{"slot": i, "item": f"item_{i}"} for i in range(40)]
-                }
-            }
+                    "inventory": [{"slot": i, "item": f"item_{i}"} for i in range(40)],
+                },
+            },
         }
         mock_request.body = json.dumps(large_payload).encode()
         handler.discord_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
@@ -1678,7 +1652,7 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
         lowercase_payload = {
             "guild_id": 123456789012345678,
             "event": "login",  # lowercase
-            "payload": {"user_id": 112233445566778899}
+            "payload": {"user_id": 112233445566778899},
         }
         mock_request.body = json.dumps(lowercase_payload).encode()
         handler.discord_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]

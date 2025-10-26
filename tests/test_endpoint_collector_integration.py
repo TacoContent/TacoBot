@@ -7,12 +7,8 @@ in Endpoint objects during endpoint collection.
 Phase 1 - Task 3: Integration Tests
 """
 
-import ast
 import pathlib
-import tempfile
-from typing import List
 
-import pytest
 from scripts.swagger_sync.endpoint_collector import collect_endpoints
 from scripts.swagger_sync.models import Endpoint
 

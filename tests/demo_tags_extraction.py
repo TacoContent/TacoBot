@@ -13,7 +13,7 @@ scripts_dir = Path(__file__).parent.parent / "scripts"
 if str(scripts_dir) not in sys.path:
     sys.path.insert(0, str(scripts_dir))
 
-from ..scripts.swagger_sync.decorator_parser import extract_decorator_metadata
+from ..scripts.swagger_sync.decorator_parser import extract_decorator_metadata  # noqa: E402
 
 
 def demonstrate_tags_extraction():
@@ -36,7 +36,7 @@ def handler():
     func1 = tree1.body[0]
     assert isinstance(func1, (ast.FunctionDef, ast.AsyncFunctionDef))
     metadata1 = extract_decorator_metadata(func1)
-    print(f"Code: @openapi.tags('webhooks')")
+    print("Code: @openapi.tags('webhooks')")
     print(f"Extracted tags: {metadata1.tags}")
     print(f"Serialized: {metadata1.to_dict()['tags']}")
     assert metadata1.tags == ['webhooks']
@@ -55,7 +55,7 @@ def handler():
     func2 = tree2.body[0]
     assert isinstance(func2, (ast.FunctionDef, ast.AsyncFunctionDef))
     metadata2 = extract_decorator_metadata(func2)
-    print(f"Code: @openapi.tags('webhook', 'minecraft', 'tacos')")
+    print("Code: @openapi.tags('webhook', 'minecraft', 'tacos')")
     print(f"Extracted tags: {metadata2.tags}")
     print(f"Serialized: {metadata2.to_dict()['tags']}")
     assert metadata2.tags == ['webhook', 'minecraft', 'tacos']
@@ -77,9 +77,9 @@ def get_roles(self, request, uri_variables):
     func3 = tree3.body[0]
     assert isinstance(func3, (ast.FunctionDef, ast.AsyncFunctionDef))
     metadata3 = extract_decorator_metadata(func3)
-    print(f"Code: @openapi.tags('guilds', 'roles')")
+    print("Code: @openapi.tags('guilds', 'roles')")
     print(f"Extracted tags: {metadata3.tags}")
-    print(f"Full metadata:")
+    print("Full metadata:")
     for key, value in metadata3.to_dict().items():
         if value:  # Only show non-empty values
             print(f"  {key}: {value}")
@@ -100,7 +100,7 @@ def handler():
     func4 = tree4.body[0]
     assert isinstance(func4, (ast.FunctionDef, ast.AsyncFunctionDef))
     metadata4 = extract_decorator_metadata(func4)
-    print(f"Code: @openapi.tags()")
+    print("Code: @openapi.tags()")
     print(f"Extracted tags: {metadata4.tags}")
     result_dict = metadata4.to_dict()
     print(f"Serialized (tags in dict): {'tags' in result_dict}")
@@ -121,7 +121,7 @@ def handler():
     func5 = tree5.body[0]
     assert isinstance(func5, (ast.FunctionDef, ast.AsyncFunctionDef))
     metadata5 = extract_decorator_metadata(func5)
-    print(f"Code: Two @openapi.tags decorators")
+    print("Code: Two @openapi.tags decorators")
     print(f"Extracted tags: {metadata5.tags}")
     print(f"Serialized: {metadata5.to_dict()['tags']}")
     assert 'tag1' in metadata5.tags
