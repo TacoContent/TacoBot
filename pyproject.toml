@@ -105,7 +105,7 @@ verbose = false
 diff = true
 check = false
 color = true
-exclude = '''
+extend-exclude = '''
 /(
     \.git
   | \.hg
