@@ -49,9 +49,7 @@ class TestMinecraftPlayerWebhookHandlerCreateErrorResponse:
         - Error payload structure
         - No stacktrace field when not requested
         """
-        response = handler._create_error_response(
-            400, "Bad request", http_headers, include_stacktrace=False
-        )
+        response = handler._create_error_response(400, "Bad request", http_headers, include_stacktrace=False)
 
         assert response.status_code == 400
         assert response.headers == http_headers
@@ -71,9 +69,7 @@ class TestMinecraftPlayerWebhookHandlerCreateErrorResponse:
         try:
             raise ValueError("Test exception")
         except ValueError:
-            response = handler._create_error_response(
-                500, "Internal error", http_headers, include_stacktrace=True
-            )
+            response = handler._create_error_response(500, "Internal error", http_headers, include_stacktrace=True)
 
         assert response.status_code == 500
         response_data = json.loads(response.body.decode("utf-8"))
@@ -96,9 +92,7 @@ class TestMinecraftPlayerWebhookHandlerCreateErrorResponse:
         - Different HTTP status codes handled correctly
         - Error messages preserved accurately
         """
-        response = handler._create_error_response(
-            status_code, message, http_headers
-        )
+        response = handler._create_error_response(status_code, message, http_headers)
 
         assert response.status_code == status_code
         response_data = json.loads(response.body.decode("utf-8"))
@@ -113,9 +107,7 @@ class TestMinecraftPlayerWebhookHandlerCreateErrorResponse:
         - No encoding errors
         """
         unicode_message = "Usuario no encontrado: 用户未找到 🚫"
-        response = handler._create_error_response(
-            404, unicode_message, http_headers
-        )
+        response = handler._create_error_response(404, unicode_message, http_headers)
 
         assert response.status_code == 404
         response_data = json.loads(response.body.decode("utf-8"))
@@ -225,12 +217,8 @@ class TestMinecraftPlayerWebhookHandlerValidateRequestBody:
             "event": "LOGIN",
             "payload": {
                 "user_id": 456,
-                "metadata": {
-                    "server": "survival",
-                    "location": {"x": 100, "y": 64, "z": -200},
-                    "stats": [1, 2, 3]
-                }
-            }
+                "metadata": {"server": "survival", "location": {"x": 100, "y": 64, "z": -200}, "stats": [1, 2, 3]},
+            },
         }
         mock_request.body = json.dumps(complex_payload).encode()
 
@@ -268,11 +256,7 @@ class TestMinecraftPlayerWebhookHandlerValidatePayloadFields:
         - Returns tuple with correct types
         - guild_id converted to int
         """
-        payload = {
-            "guild_id": 123456789012345678,
-            "event": "LOGIN",
-            "payload": {"user_id": 112233445566778899}
-        }
+        payload = {"guild_id": 123456789012345678, "event": "LOGIN", "payload": {"user_id": 112233445566778899}}
 
         guild_id, event_str, data_payload = handler._validate_payload_fields(payload, http_headers)
 
@@ -289,10 +273,7 @@ class TestMinecraftPlayerWebhookHandlerValidatePayloadFields:
         - 404 status code
         - Error message mentions guild_id
         """
-        payload = {
-            "event": "LOGIN",
-            "payload": {"user_id": 112233445566778899}
-        }
+        payload = {"event": "LOGIN", "payload": {"user_id": 112233445566778899}}
 
         with pytest.raises(HttpResponseException) as exc_info:
             handler._validate_payload_fields(payload, http_headers)
@@ -309,10 +290,7 @@ class TestMinecraftPlayerWebhookHandlerValidatePayloadFields:
         - 404 status code
         - Error message mentions event
         """
-        payload = {
-            "guild_id": 123456789012345678,
-            "payload": {"user_id": 112233445566778899}
-        }
+        payload = {"guild_id": 123456789012345678, "payload": {"user_id": 112233445566778899}}
 
         with pytest.raises(HttpResponseException) as exc_info:
             handler._validate_payload_fields(payload, http_headers)
@@ -329,10 +307,7 @@ class TestMinecraftPlayerWebhookHandlerValidatePayloadFields:
         - 404 status code
         - Error message mentions payload
         """
-        payload = {
-            "guild_id": 123456789012345678,
-            "event": "LOGIN"
-        }
+        payload = {"guild_id": 123456789012345678, "event": "LOGIN"}
 
         with pytest.raises(HttpResponseException) as exc_info:
             handler._validate_payload_fields(payload, http_headers)
@@ -347,11 +322,7 @@ class TestMinecraftPlayerWebhookHandlerValidatePayloadFields:
         Verifies:
         - Zero treated as missing (fails validation)
         """
-        payload = {
-            "guild_id": 0,
-            "event": "LOGIN",
-            "payload": {"user_id": 112233445566778899}
-        }
+        payload = {"guild_id": 0, "event": "LOGIN", "payload": {"user_id": 112233445566778899}}
 
         with pytest.raises(HttpResponseException):
             handler._validate_payload_fields(payload, http_headers)
@@ -363,11 +334,7 @@ class TestMinecraftPlayerWebhookHandlerValidatePayloadFields:
         - Empty string treated as missing
         - Appropriate error raised
         """
-        payload = {
-            "guild_id": 123456789012345678,
-            "event": "",
-            "payload": {"user_id": 112233445566778899}
-        }
+        payload = {"guild_id": 123456789012345678, "event": "", "payload": {"user_id": 112233445566778899}}
 
         with pytest.raises(HttpResponseException):
             handler._validate_payload_fields(payload, http_headers)
@@ -379,11 +346,7 @@ class TestMinecraftPlayerWebhookHandlerValidatePayloadFields:
         - Empty payload dict treated as missing
         - Appropriate error raised
         """
-        payload = {
-            "guild_id": 123456789012345678,
-            "event": "LOGIN",
-            "payload": {}
-        }
+        payload = {"guild_id": 123456789012345678, "event": "LOGIN", "payload": {}}
 
         with pytest.raises(HttpResponseException):
             handler._validate_payload_fields(payload, http_headers)
@@ -395,11 +358,7 @@ class TestMinecraftPlayerWebhookHandlerValidatePayloadFields:
         - String guild_id converted to int
         - Large Discord IDs handled correctly
         """
-        payload = {
-            "guild_id": "123456789012345678",
-            "event": "LOGIN",
-            "payload": {"user_id": 112233445566778899}
-        }
+        payload = {"guild_id": "123456789012345678", "event": "LOGIN", "payload": {"user_id": 112233445566778899}}
 
         guild_id, event_str, data_payload = handler._validate_payload_fields(payload, http_headers)
 
@@ -545,9 +504,7 @@ class TestMinecraftPlayerWebhookHandlerResolveDiscordObjects:
         return member
 
     @pytest.mark.asyncio
-    async def test_resolve_discord_objects_success(
-        self, handler, http_headers, mock_user, mock_guild, mock_member
-    ):
+    async def test_resolve_discord_objects_success(self, handler, http_headers, mock_user, mock_guild, mock_member):
         """Test successful resolution of all Discord objects.
 
         Verifies:
@@ -572,9 +529,7 @@ class TestMinecraftPlayerWebhookHandlerResolveDiscordObjects:
         mock_guild.fetch_member.assert_called_once_with(112233445566778899)
 
     @pytest.mark.asyncio
-    async def test_resolve_discord_objects_user_not_found(
-        self, handler, http_headers
-    ):
+    async def test_resolve_discord_objects_user_not_found(self, handler, http_headers):
         """Test resolution when user cannot be found.
 
         Verifies:
@@ -585,9 +540,7 @@ class TestMinecraftPlayerWebhookHandlerResolveDiscordObjects:
         handler.discord_helper.get_or_fetch_user.return_value = None
 
         with pytest.raises(HttpResponseException) as exc_info:
-            await handler._resolve_discord_objects(
-                123456789012345678, 112233445566778899, http_headers
-            )
+            await handler._resolve_discord_objects(123456789012345678, 112233445566778899, http_headers)
 
         assert exc_info.value.status_code == 404
         assert exc_info.value.body is not None
@@ -595,9 +548,7 @@ class TestMinecraftPlayerWebhookHandlerResolveDiscordObjects:
         assert "User 112233445566778899 not found" == error_body["error"]
 
     @pytest.mark.asyncio
-    async def test_resolve_discord_objects_guild_not_found(
-        self, handler, http_headers, mock_user
-    ):
+    async def test_resolve_discord_objects_guild_not_found(self, handler, http_headers, mock_user):
         """Test resolution when guild cannot be found.
 
         Verifies:
@@ -609,9 +560,7 @@ class TestMinecraftPlayerWebhookHandlerResolveDiscordObjects:
         handler.bot.fetch_guild.return_value = None
 
         with pytest.raises(HttpResponseException) as exc_info:
-            await handler._resolve_discord_objects(
-                123456789012345678, 112233445566778899, http_headers
-            )
+            await handler._resolve_discord_objects(123456789012345678, 112233445566778899, http_headers)
 
         assert exc_info.value.status_code == 404
         assert exc_info.value.body is not None
@@ -619,9 +568,7 @@ class TestMinecraftPlayerWebhookHandlerResolveDiscordObjects:
         assert "Guild 123456789012345678 not found" == error_body["error"]
 
     @pytest.mark.asyncio
-    async def test_resolve_discord_objects_member_not_found(
-        self, handler, http_headers, mock_user, mock_guild
-    ):
+    async def test_resolve_discord_objects_member_not_found(self, handler, http_headers, mock_user, mock_guild):
         """Test resolution when member cannot be found in guild.
 
         Verifies:
@@ -634,9 +581,7 @@ class TestMinecraftPlayerWebhookHandlerResolveDiscordObjects:
         mock_guild.fetch_member.return_value = None
 
         with pytest.raises(HttpResponseException) as exc_info:
-            await handler._resolve_discord_objects(
-                123456789012345678, 112233445566778899, http_headers
-            )
+            await handler._resolve_discord_objects(123456789012345678, 112233445566778899, http_headers)
 
         assert exc_info.value.status_code == 404
         assert exc_info.value.body is not None
@@ -644,9 +589,7 @@ class TestMinecraftPlayerWebhookHandlerResolveDiscordObjects:
         assert "Member 112233445566778899 not found in guild 123456789012345678" == error_body["error"]
 
     @pytest.mark.asyncio
-    async def test_resolve_discord_objects_exception_propagation(
-        self, handler, http_headers
-    ):
+    async def test_resolve_discord_objects_exception_propagation(self, handler, http_headers):
         """Test that unexpected exceptions propagate correctly.
 
         Verifies:
@@ -656,9 +599,7 @@ class TestMinecraftPlayerWebhookHandlerResolveDiscordObjects:
         handler.discord_helper.get_or_fetch_user.side_effect = RuntimeError("API error")
 
         with pytest.raises(RuntimeError, match="API error"):
-            await handler._resolve_discord_objects(
-                123456789012345678, 112233445566778899, http_headers
-            )
+            await handler._resolve_discord_objects(123456789012345678, 112233445566778899, http_headers)
 
 
 if __name__ == "__main__":

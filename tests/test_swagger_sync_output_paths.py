@@ -9,6 +9,7 @@ These tests verify that:
 5. Absolute paths are preserved
 6. All output files (coverage_report, markdown_summary, badge) use output directory
 """
+
 import pathlib
 import shutil
 import tempfile
@@ -57,10 +58,7 @@ def test_cli_args_override_config(tmp_path):
     config_content = {
         'swagger_file': 'api.yaml',
         'handlers_root': 'handlers/',
-        'output': {
-            'directory': './reports/',
-            'coverage_report': 'coverage.json',
-        },
+        'output': {'directory': './reports/', 'coverage_report': 'coverage.json'},
     }
 
     config_file = tmp_path / 'test-config.yaml'
@@ -72,10 +70,7 @@ def test_cli_args_override_config(tmp_path):
     config = load_config(config_file)
 
     # Merge with CLI args that override
-    cli_args = {
-        'output_directory': './custom-output/',
-        'coverage_report': 'custom-coverage.json',
-    }
+    cli_args = {'output_directory': './custom-output/', 'coverage_report': 'custom-coverage.json'}
     result = merge_cli_args(config, cli_args)
 
     # Verify CLI overrides config
@@ -97,10 +92,11 @@ def test_default_directory_when_none_specified():
 
     # Should use the default from ConfigOutputModel
     assert result['output']['directory'] == './reports/openapi/'
+
+
 def test_relative_paths_use_output_directory(tmp_path):
     """Test that relative paths are resolved relative to output_directory."""
     import os
-    import sys
 
     # Save original cwd
     original_cwd = os.getcwd()
@@ -215,18 +211,10 @@ def test_none_output_directory_defaults_to_dot():
     from scripts.swagger_sync.config import merge_cli_args
 
     # Config specifies a directory
-    config = {
-        'swagger_file': 'api.yaml',
-        'handlers_root': 'handlers/',
-        'output': {
-            'directory': './reports/openapi/',
-        },
-    }
+    config = {'swagger_file': 'api.yaml', 'handlers_root': 'handlers/', 'output': {'directory': './reports/openapi/'}}
 
     # CLI args with None (not specified)
-    cli_args = {
-        'output_directory': None,
-    }
+    cli_args = {'output_directory': None}
 
     result = merge_cli_args(config, cli_args)
 
@@ -238,18 +226,10 @@ def test_empty_string_output_directory_is_ignored():
     """Test that empty string output_directory doesn't override config."""
     from scripts.swagger_sync.config import merge_cli_args
 
-    config = {
-        'swagger_file': 'api.yaml',
-        'handlers_root': 'handlers/',
-        'output': {
-            'directory': './reports/',
-        },
-    }
+    config = {'swagger_file': 'api.yaml', 'handlers_root': 'handlers/', 'output': {'directory': './reports/'}}
 
     # CLI args with empty string (should be treated as None)
-    cli_args = {
-        'output_directory': '',
-    }
+    cli_args = {'output_directory': ''}
 
     result = merge_cli_args(config, cli_args)
 

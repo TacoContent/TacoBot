@@ -121,7 +121,10 @@ def test_search_criteria_uses_anyof():
     assert '#/components/schemas/SearchTagFilter' in refs, 'SearchTagFilter ref missing'
 
     # Check metadata
-    assert schema.get('description') == 'Search filters that can be combined - supports date range, author, and/or tag filters.'
+    assert (
+        schema.get('description')
+        == 'Search filters that can be combined - supports date range, author, and/or tag filters.'
+    )
     assert schema.get('x-tacobot-managed') is True
 
 

@@ -6,7 +6,6 @@ normalization, expiry handling, guild processing, broadcasting, and error handli
 """
 
 import json
-import traceback
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
@@ -55,14 +54,11 @@ def valid_shift_code_payload():
     return {
         "code": "ABCD3-WXYZ9-12345-67890-FOOBA",
         "reward": "3 Golden Keys",
-        "games": [
-            {"name": "Borderlands 3"},
-            {"name": "Borderlands 2"}
-        ],
+        "games": [{"name": "Borderlands 3"}, {"name": "Borderlands 2"}],
         "source": "https://example.com/post",
         "notes": "Platform agnostic",
         "expiry": int(datetime(2030, 1, 1, tzinfo=timezone.utc).timestamp()),  # Future date
-        "created_at": int(datetime(2025, 10, 1, tzinfo=timezone.utc).timestamp())
+        "created_at": int(datetime(2025, 10, 1, tzinfo=timezone.utc).timestamp()),
     }
 
 
@@ -236,19 +232,13 @@ class TestShiftCodeWebhookHandler:
         - Lowercase code converted to uppercase
         - Database receives normalized code
         """
-        payload = {
-            "code": "abcd-1234",
-            "games": [{"name": "Borderlands 3"}],
-            "reward": "Test"
-        }
+        payload = {"code": "abcd-1234", "games": [{"name": "Borderlands 3"}], "reward": "Test"}
         mock_request.body = json.dumps(payload).encode()
         handler.validate_webhook_token = MagicMock(return_value=True)
         mock_bot.guilds = [mock_guild]
-        handler.get_settings = MagicMock(return_value={
-            "enabled": True,
-            "channel_ids": [mock_channel.id],
-            "notify_role_ids": []
-        })
+        handler.get_settings = MagicMock(
+            return_value={"enabled": True, "channel_ids": [mock_channel.id], "notify_role_ids": []}
+        )
         handler.shift_codes_db.is_code_tracked = MagicMock(return_value=False)
         handler.discord_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
         handler.messaging.send_embed = AsyncMock(return_value=mock_message)
@@ -271,19 +261,13 @@ class TestShiftCodeWebhookHandler:
         - Spaces removed from code
         - Database receives space-free code
         """
-        payload = {
-            "code": " ABCD 1234 ",
-            "games": [{"name": "Borderlands 3"}],
-            "reward": "Test"
-        }
+        payload = {"code": " ABCD 1234 ", "games": [{"name": "Borderlands 3"}], "reward": "Test"}
         mock_request.body = json.dumps(payload).encode()
         handler.validate_webhook_token = MagicMock(return_value=True)
         mock_bot.guilds = [mock_guild]
-        handler.get_settings = MagicMock(return_value={
-            "enabled": True,
-            "channel_ids": [mock_channel.id],
-            "notify_role_ids": []
-        })
+        handler.get_settings = MagicMock(
+            return_value={"enabled": True, "channel_ids": [mock_channel.id], "notify_role_ids": []}
+        )
         handler.shift_codes_db.is_code_tracked = MagicMock(return_value=False)
         handler.discord_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
         handler.messaging.send_embed = AsyncMock(return_value=mock_message)
@@ -311,7 +295,7 @@ class TestShiftCodeWebhookHandler:
             "code": "EXPIRED123",
             "games": [{"name": "Borderlands 3"}],
             "reward": "Test",
-            "expiry": int(datetime(2020, 1, 1, tzinfo=timezone.utc).timestamp())  # Past date
+            "expiry": int(datetime(2020, 1, 1, tzinfo=timezone.utc).timestamp()),  # Past date
         }
         mock_request.body = json.dumps(payload).encode()
         handler.validate_webhook_token = MagicMock(return_value=True)
@@ -325,9 +309,7 @@ class TestShiftCodeWebhookHandler:
         assert "Code is expired" in body["error"]
 
     @pytest.mark.asyncio
-    async def test_shift_code_future_expiry(
-        self, handler, mock_request, valid_shift_code_payload, mock_bot
-    ):
+    async def test_shift_code_future_expiry(self, handler, mock_request, valid_shift_code_payload, mock_bot):
         """Test shift_code processes codes with future expiry.
 
         Verifies:
@@ -344,9 +326,7 @@ class TestShiftCodeWebhookHandler:
         assert response.status_code == 200
 
     @pytest.mark.asyncio
-    async def test_shift_code_no_expiry(
-        self, handler, mock_request, mock_bot
-    ):
+    async def test_shift_code_no_expiry(self, handler, mock_request, mock_bot):
         """Test shift_code processes codes without expiry field.
 
         Verifies:
@@ -467,8 +447,7 @@ class TestShiftCodeWebhookHandler:
 
     @pytest.mark.asyncio
     async def test_shift_code_successful_broadcast(
-        self, handler, mock_request, valid_shift_code_payload, mock_bot,
-        mock_guild, mock_channel, mock_message
+        self, handler, mock_request, valid_shift_code_payload, mock_bot, mock_guild, mock_channel, mock_message
     ):
         """Test shift_code successfully broadcasts to configured channels.
 
@@ -481,11 +460,9 @@ class TestShiftCodeWebhookHandler:
         mock_request.body = json.dumps(valid_shift_code_payload).encode()
         handler.validate_webhook_token = MagicMock(return_value=True)
         mock_bot.guilds = [mock_guild]
-        handler.get_settings = MagicMock(return_value={
-            "enabled": True,
-            "channel_ids": [mock_channel.id],
-            "notify_role_ids": []
-        })
+        handler.get_settings = MagicMock(
+            return_value={"enabled": True, "channel_ids": [mock_channel.id], "notify_role_ids": []}
+        )
         handler.shift_codes_db.is_code_tracked = MagicMock(return_value=False)
         handler.discord_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
         handler.messaging.send_embed = AsyncMock(return_value=mock_message)
@@ -500,9 +477,7 @@ class TestShiftCodeWebhookHandler:
         handler.shift_codes_db.add_shift_code.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_shift_code_response_echoes_payload(
-        self, handler, mock_request, valid_shift_code_payload, mock_bot
-    ):
+    async def test_shift_code_response_echoes_payload(self, handler, mock_request, valid_shift_code_payload, mock_bot):
         """Test shift_code response contains original payload.
 
         Verifies:

@@ -15,7 +15,7 @@ from pathlib import Path
 scripts_dir = Path(__file__).parent.parent / "scripts"
 sys.path.insert(0, str(scripts_dir))
 
-from ..scripts.swagger_sync.endpoint_collector import collect_endpoints  # noqa: E402
+from swagger_sync.endpoint_collector import collect_endpoints  # type: ignore # noqa: E402
 
 
 def test_http_method_string_literal():

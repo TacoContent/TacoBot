@@ -86,15 +86,8 @@ class TestMergeListFields:
 
     def test_deduplication_by_name(self):
         """Test merging with deduplication by name key."""
-        yaml_list = [
-            {'name': 'a', 'value': 1},
-            {'name': 'b', 'value': 2},
-            {'name': 'c', 'value': 3}
-        ]
-        decorator_list = [
-            {'name': 'a', 'value': 99},  # Override 'a'
-            {'name': 'd', 'value': 4}    # New item
-        ]
+        yaml_list = [{'name': 'a', 'value': 1}, {'name': 'b', 'value': 2}, {'name': 'c', 'value': 3}]
+        decorator_list = [{'name': 'a', 'value': 99}, {'name': 'd', 'value': 4}]
         result = merge_list_fields(yaml_list, decorator_list, unique_by='name')
 
         # Should contain: b, c (from YAML), a, d (from decorator)
@@ -143,10 +136,7 @@ class TestMergeResponses:
         decorator = {'200': {'description': 'OK'}}
         result = merge_responses(yaml, decorator)
 
-        assert result == {
-            '200': {'description': 'OK'},
-            '404': {'description': 'Not found'}
-        }
+        assert result == {'200': {'description': 'OK'}, '404': {'description': 'Not found'}}
 
     def test_decorator_overrides_same_status_code(self):
         """Test that decorator response overrides YAML for same status code."""
@@ -159,17 +149,8 @@ class TestMergeResponses:
 
     def test_deep_merge_response_objects(self):
         """Test deep merging of response objects."""
-        yaml = {
-            '200': {
-                'description': 'Success',
-                'headers': {'X-Old': {'schema': {'type': 'string'}}}
-            }
-        }
-        decorator = {
-            '200': {
-                'content': {'application/json': {'schema': {'$ref': '#/components/schemas/Model'}}}
-            }
-        }
+        yaml = {'200': {'description': 'Success', 'headers': {'X-Old': {'schema': {'type': 'string'}}}}}
+        decorator = {'200': {'content': {'application/json': {'schema': {'$ref': '#/components/schemas/Model'}}}}}
         result = merge_responses(yaml, decorator)
 
         # Should have both headers (from YAML) and content (from decorator)
@@ -212,16 +193,8 @@ class TestDetectConflicts:
 
     def test_multiple_conflicts(self):
         """Test multiple conflicting fields."""
-        yaml = {
-            'summary': 'Old',
-            'description': 'Old desc',
-            'tags': ['old']
-        }
-        decorator = {
-            'summary': 'New',
-            'description': 'New desc',
-            'tags': ['new']
-        }
+        yaml = {'summary': 'Old', 'description': 'Old desc', 'tags': ['old']}
+        decorator = {'summary': 'New', 'description': 'New desc', 'tags': ['new']}
         warnings = detect_conflicts(yaml, decorator, '/test', 'put')
 
         assert len(warnings) == 3
@@ -292,14 +265,8 @@ class TestMergeEndpointMetadata:
 
     def test_yaml_fallback_for_missing_fields(self):
         """Test that YAML provides fallback for fields not in decorator."""
-        yaml = {
-            'summary': 'YAML summary',
-            'description': 'YAML description',
-            'tags': ['yaml']
-        }
-        decorator = {
-            'summary': 'Decorator summary'  # Only override summary
-        }
+        yaml = {'summary': 'YAML summary', 'description': 'YAML description', 'tags': ['yaml']}
+        decorator = {'summary': 'Decorator summary'}  # Only override summary
         merged, warnings = merge_endpoint_metadata(yaml, decorator)
 
         assert merged['summary'] == 'Decorator summary'  # From decorator
@@ -311,14 +278,10 @@ class TestMergeEndpointMetadata:
         yaml = {
             'parameters': [
                 {'name': 'id', 'in': 'path', 'description': 'Old'},
-                {'name': 'limit', 'in': 'query', 'description': 'Limit'}
+                {'name': 'limit', 'in': 'query', 'description': 'Limit'},
             ]
         }
-        decorator = {
-            'parameters': [
-                {'name': 'id', 'in': 'path', 'description': 'New'}  # Override 'id'
-            ]
-        }
+        decorator = {'parameters': [{'name': 'id', 'in': 'path', 'description': 'New'}]}
         merged, _ = merge_endpoint_metadata(yaml, decorator)
 
         # Should have 2 parameters: limit (from YAML), id (from decorator)
@@ -329,17 +292,8 @@ class TestMergeEndpointMetadata:
 
     def test_merge_responses_preserves_yaml_only(self):
         """Test that merging responses preserves YAML-only status codes."""
-        yaml = {
-            'responses': {
-                '200': {'description': 'OK'},
-                '404': {'description': 'Not found'}
-            }
-        }
-        decorator = {
-            'responses': {
-                '200': {'description': 'Success'}  # Override 200
-            }
-        }
+        yaml = {'responses': {'200': {'description': 'OK'}, '404': {'description': 'Not found'}}}
+        decorator = {'responses': {'200': {'description': 'Success'}}}
         merged, _ = merge_endpoint_metadata(yaml, decorator)
 
         assert merged['responses']['200']['description'] == 'Success'  # Decorator
@@ -361,7 +315,7 @@ class TestMergeEndpointMetadata:
             'requestBody': {
                 'methods': ['post', 'put'],
                 'required': True,
-                'content': {'application/json': {'schema': {'$ref': '#/components/schemas/CreateRequest'}}}
+                'content': {'application/json': {'schema': {'$ref': '#/components/schemas/CreateRequest'}}},
             }
         }
         merged, _ = merge_endpoint_metadata(yaml, decorator, '/test', 'post')
@@ -379,7 +333,7 @@ class TestMergeEndpointMetadata:
             'requestBody': {
                 'methods': ['post', 'put'],
                 'required': True,
-                'content': {'application/json': {'schema': {'$ref': '#/components/schemas/CreateRequest'}}}
+                'content': {'application/json': {'schema': {'$ref': '#/components/schemas/CreateRequest'}}},
             }
         }
         merged, _ = merge_endpoint_metadata(yaml, decorator, '/test', 'get')
@@ -395,7 +349,7 @@ class TestMergeEndpointMetadata:
         decorator = {
             'requestBody': {
                 'required': True,
-                'content': {'application/json': {'schema': {'$ref': '#/components/schemas/GenericRequest'}}}
+                'content': {'application/json': {'schema': {'$ref': '#/components/schemas/GenericRequest'}}},
             }
         }
 
@@ -414,7 +368,7 @@ class TestMergeEndpointMetadata:
         decorator = {
             'requestBody': {
                 'required': False,
-                'content': {'application/json': {'schema': {'$ref': '#/components/schemas/NewRequest'}}}
+                'content': {'application/json': {'schema': {'$ref': '#/components/schemas/NewRequest'}}},
             }
         }
         merged, _ = merge_endpoint_metadata(yaml, decorator, '/test', 'post')
@@ -428,9 +382,7 @@ class TestMergeEndpointMetadata:
         """Test that conflict detection can be disabled."""
         yaml = {'summary': 'Old'}
         decorator = {'summary': 'New'}
-        merged, warnings = merge_endpoint_metadata(
-            yaml, decorator, '/test', 'get', detect_conflicts_flag=False
-        )
+        merged, warnings = merge_endpoint_metadata(yaml, decorator, '/test', 'get', detect_conflicts_flag=False)
 
         assert merged['summary'] == 'New'
         assert len(warnings) == 0  # No warnings
@@ -440,25 +392,15 @@ class TestMergeEndpointMetadata:
         yaml = {
             'summary': 'Old summary',
             'tags': ['old'],
-            'parameters': [
-                {'name': 'id', 'in': 'path'},
-                {'name': 'filter', 'in': 'query'}
-            ],
-            'responses': {
-                '200': {'description': 'OK'},
-                '404': {'description': 'Not found'}
-            }
+            'parameters': [{'name': 'id', 'in': 'path'}, {'name': 'filter', 'in': 'query'}],
+            'responses': {'200': {'description': 'OK'}, '404': {'description': 'Not found'}}
         }
         decorator = {
             'summary': 'New summary',
             'description': 'New description',
             'tags': ['new'],
-            'parameters': [
-                {'name': 'id', 'in': 'path', 'required': True}  # Override id
-            ],
-            'responses': {
-                '200': {'description': 'Success', 'content': {}}  # Override 200
-            }
+            'parameters': [{'name': 'id', 'in': 'path', 'required': True}],
+            'responses': {'200': {'description': 'Success', 'content': {}}}
         }
         merged, warnings = merge_endpoint_metadata(yaml, decorator, '/test', 'get')
 
@@ -487,11 +429,9 @@ class TestMergeEndpointMetadata:
             'summary': 'Summary',
             'deprecated': False,
             'externalDocs': {'url': 'https://yaml.com'},
-            'x-custom': 'yaml-value'
+            'x-custom': 'yaml-value',
         }
-        decorator = {
-            'tags': ['new']
-        }
+        decorator = {'tags': ['new']}
         merged, _ = merge_endpoint_metadata(yaml, decorator)
 
         # All YAML fields preserved

@@ -5,7 +5,6 @@ Coverage Consolidation Plan. These helpers format coverage data as
 markdown tables with emoji indicators.
 """
 
-import pytest
 from scripts.swagger_sync.coverage import (
     _build_automation_coverage_markdown,
     _build_coverage_summary_markdown,
@@ -423,44 +422,28 @@ class TestBuildMethodBreakdownMarkdown:
 
     def test_post_method_with_emoji(self):
         """Should include POST method with inbox emoji."""
-        summary = {
-            'method_statistics': {
-                'POST': {'total': 5, 'documented': 5, 'in_swagger': 5}
-            }
-        }
+        summary = {'method_statistics': {'POST': {'total': 5, 'documented': 5, 'in_swagger': 5}}}
         lines = _build_method_breakdown_markdown(summary)
         line_str = '\n'.join(lines)
         assert '📥 POST' in line_str
 
     def test_put_method_with_emoji(self):
         """Should include PUT method with outbox emoji."""
-        summary = {
-            'method_statistics': {
-                'PUT': {'total': 3, 'documented': 2, 'in_swagger': 2}
-            }
-        }
+        summary = {'method_statistics': {'PUT': {'total': 3, 'documented': 2, 'in_swagger': 2}}}
         lines = _build_method_breakdown_markdown(summary)
         line_str = '\n'.join(lines)
         assert '📤 PUT' in line_str
 
     def test_delete_method_with_emoji(self):
         """Should include DELETE method with trash emoji."""
-        summary = {
-            'method_statistics': {
-                'DELETE': {'total': 2, 'documented': 1, 'in_swagger': 1}
-            }
-        }
+        summary = {'method_statistics': {'DELETE': {'total': 2, 'documented': 1, 'in_swagger': 1}}}
         lines = _build_method_breakdown_markdown(summary)
         line_str = '\n'.join(lines)
         assert '🗑️ DELETE' in line_str
 
     def test_documented_rate_with_emoji(self):
         """Should include emoji based on documentation rate."""
-        summary = {
-            'method_statistics': {
-                'GET': {'total': 10, 'documented': 5, 'in_swagger': 5}
-            }
-        }
+        summary = {'method_statistics': {'GET': {'total': 10, 'documented': 5, 'in_swagger': 5}}}
         lines = _build_method_breakdown_markdown(summary)
         line_str = '\n'.join(lines)
         assert '🔴' in line_str  # 50% should be red
@@ -468,11 +451,7 @@ class TestBuildMethodBreakdownMarkdown:
     @staticmethod
     def _minimal_summary():
         """Create minimal valid summary dict."""
-        return {
-            'method_statistics': {
-                'GET': {'total': 10, 'documented': 10, 'in_swagger': 10}
-            }
-        }
+        return {'method_statistics': {'GET': {'total': 10, 'documented': 10, 'in_swagger': 10}}}
 
 
 class TestBuildTagCoverageMarkdown:
@@ -499,10 +478,7 @@ class TestBuildTagCoverageMarkdown:
 
     def test_tag_rows_sorted(self):
         """Should list tags in alphabetical order."""
-        summary = {
-            'tag_coverage': {'zebra': 1, 'alpha': 5, 'beta': 3},
-            'unique_tags': 3
-        }
+        summary = {'tag_coverage': {'zebra': 1, 'alpha': 5, 'beta': 3}, 'unique_tags': 3}
         lines = _build_tag_coverage_markdown(summary)
         line_str = '\n'.join(lines)
         # Find positions of tags in the output
@@ -524,10 +500,7 @@ class TestBuildTagCoverageMarkdown:
     @staticmethod
     def _minimal_summary():
         """Create minimal valid summary dict."""
-        return {
-            'tag_coverage': {'roles': 8, 'users': 5},
-            'unique_tags': 2
-        }
+        return {'tag_coverage': {'roles': 8, 'users': 5}, 'unique_tags': 2}
 
 
 class TestBuildTopFilesMarkdown:
@@ -547,16 +520,11 @@ class TestBuildTopFilesMarkdown:
 
     def test_limits_to_top_10(self):
         """Should only show top 10 files."""
-        summary = {
-            'file_statistics': {
-                f'file{i}.py': {'total': 20 - i, 'documented': 20 - i}
-                for i in range(15)  # 15 files
-            }
-        }
+        summary = {'file_statistics': {f'file{i}.py': {'total': 20 - i, 'documented': 20 - i} for i in range(15)}}
         lines = _build_top_files_markdown(summary)
         # Should have header + separator + 10 data rows
         # Count lines that look like data rows (start with |)
-        data_lines = [l for l in lines if l.startswith('|') and 'File' not in l and '----' not in l]
+        data_lines = [lx for lx in lines if lx.startswith('|') and 'File' not in lx and '----' not in lx]
         assert len(data_lines) == 10
 
     def test_sorted_by_total_descending(self):
@@ -578,11 +546,7 @@ class TestBuildTopFilesMarkdown:
 
     def test_shows_basename_only(self):
         """Should show only filename, not full path."""
-        summary = {
-            'file_statistics': {
-                '/full/path/to/handler.py': {'total': 5, 'documented': 5}
-            }
-        }
+        summary = {'file_statistics': {'/full/path/to/handler.py': {'total': 5, 'documented': 5}}}
         lines = _build_top_files_markdown(summary)
         line_str = '\n'.join(lines)
         assert 'handler.py' in line_str
@@ -590,11 +554,7 @@ class TestBuildTopFilesMarkdown:
 
     def test_documented_rate_with_emoji(self):
         """Should include emoji based on documentation rate."""
-        summary = {
-            'file_statistics': {
-                'handler.py': {'total': 10, 'documented': 9}
-            }
-        }
+        summary = {'file_statistics': {'handler.py': {'total': 10, 'documented': 9}}}
         lines = _build_top_files_markdown(summary)
         line_str = '\n'.join(lines)
         assert '🟢' in line_str  # 90% should be green
@@ -646,10 +606,7 @@ class TestBuildOrphanedWarningsMarkdown:
 
     def test_orphaned_endpoints_section(self):
         """Should include orphaned endpoints section."""
-        swagger_only = [
-            {'path': '/api/v1/test', 'method': 'get'},
-            {'path': '/api/v1/other', 'method': 'post'},
-        ]
+        swagger_only = [{'path': '/api/v1/test', 'method': 'get'}, {'path': '/api/v1/other', 'method': 'post'}]
         lines = _build_orphaned_warnings_markdown([], swagger_only)
         line_str = '\n'.join(lines)
         assert '## 🚨 Orphaned Endpoints (no Python decorator)' in line_str
@@ -680,10 +637,7 @@ class TestBuildOrphanedWarningsMarkdown:
 
     def test_orphaned_endpoints_truncated_at_25(self):
         """Should truncate to 25 endpoints and show count."""
-        swagger_only = [
-            {'path': f'/api/v1/endpoint{i}', 'method': 'get'}
-            for i in range(30)
-        ]
+        swagger_only = [{'path': f'/api/v1/endpoint{i}', 'method': 'get'} for i in range(30)]
         lines = _build_orphaned_warnings_markdown([], swagger_only)
         line_str = '\n'.join(lines)
         # Should show "... and 5 more"

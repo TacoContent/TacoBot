@@ -8,7 +8,6 @@ import json
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
-from bot.lib.enums.tacotypes import TacoTypes
 from bot.lib.http.handlers.webhook.TacosWebhookHandler import TacosWebhookHandler
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
@@ -58,19 +57,21 @@ def valid_tacos_payload():
         "to_user": "viewer_username",
         "amount": 5,
         "reason": "Helpful in chat",
-        "type": "taco"
+        "type": "taco",
     }
 
 
 @pytest.fixture
 def mock_discord_user():
     """Create a mock Discord user."""
+
     def _create_user(user_id: int, username: str, is_bot: bool = False):
         user = MagicMock()
         user.id = user_id
         user.name = username
         user.bot = is_bot
         return user
+
     return _create_user
 
 
@@ -94,7 +95,7 @@ class TestTacosWebhookHandlerGiveTacos:
                 "api_max_give_per_ts": 500,
                 "api_max_give_per_user_per_timespan": 50,
                 "api_max_give_per_user": 10,
-                "api_max_give_timespan": 86400
+                "api_max_give_timespan": 86400,
             }
 
             # Mock user resolution
@@ -166,11 +167,7 @@ class TestTacosWebhookHandlerGiveTacos:
     @pytest.mark.asyncio
     async def test_give_tacos_missing_guild_id(self, handler, mock_request):
         """Test rejection when guild_id is missing."""
-        payload = {
-            "from_user": "streamer",
-            "to_user": "viewer",
-            "amount": 5
-        }
+        payload = {"from_user": "streamer", "to_user": "viewer", "amount": 5}
         mock_request.body = json.dumps(payload).encode()
 
         with patch.object(handler, 'validate_webhook_token', return_value=True):
@@ -183,11 +180,7 @@ class TestTacosWebhookHandlerGiveTacos:
     @pytest.mark.asyncio
     async def test_give_tacos_missing_from_user(self, handler, mock_request):
         """Test rejection when from_user is missing."""
-        payload = {
-            "guild_id": "123456789012345678",
-            "to_user": "viewer",
-            "amount": 5
-        }
+        payload = {"guild_id": "123456789012345678", "to_user": "viewer", "amount": 5}
         mock_request.body = json.dumps(payload).encode()
 
         with patch.object(handler, 'validate_webhook_token', return_value=True):
@@ -200,11 +193,7 @@ class TestTacosWebhookHandlerGiveTacos:
     @pytest.mark.asyncio
     async def test_give_tacos_missing_both_to_fields(self, handler, mock_request):
         """Test rejection when both to_user and to_user_id are missing."""
-        payload = {
-            "guild_id": "123456789012345678",
-            "from_user": "streamer",
-            "amount": 5
-        }
+        payload = {"guild_id": "123456789012345678", "from_user": "streamer", "amount": 5}
         mock_request.body = json.dumps(payload).encode()
 
         with patch.object(handler, 'validate_webhook_token', return_value=True):
@@ -224,7 +213,7 @@ class TestTacosWebhookHandlerGiveTacos:
                 "api_max_give_per_ts": 500,
                 "api_max_give_per_user_per_timespan": 50,
                 "api_max_give_per_user": 10,
-                "api_max_give_timespan": 86400
+                "api_max_give_timespan": 86400,
             }
 
             # Same user ID for both from and to
@@ -249,7 +238,7 @@ class TestTacosWebhookHandlerGiveTacos:
                 "api_max_give_per_ts": 500,
                 "api_max_give_per_user_per_timespan": 50,
                 "api_max_give_per_user": 10,
-                "api_max_give_timespan": 86400
+                "api_max_give_timespan": 86400,
             }
 
             handler.users_utils.twitch_user_to_discord_user.side_effect = [111111111111, 222222222222]
@@ -265,7 +254,9 @@ class TestTacosWebhookHandlerGiveTacos:
             assert "can not give tacos to a bot" in response_data["error"]
 
     @pytest.mark.asyncio
-    async def test_give_tacos_rate_limit_overall_exceeded(self, handler, mock_request, valid_tacos_payload, mock_discord_user):
+    async def test_give_tacos_rate_limit_overall_exceeded(
+        self, handler, mock_request, valid_tacos_payload, mock_discord_user
+    ):
         """Test rejection when overall daily limit is exceeded."""
         mock_request.body = json.dumps(valid_tacos_payload).encode()
 
@@ -274,7 +265,7 @@ class TestTacosWebhookHandlerGiveTacos:
                 "api_max_give_per_ts": 500,
                 "api_max_give_per_user_per_timespan": 50,
                 "api_max_give_per_user": 10,
-                "api_max_give_timespan": 86400
+                "api_max_give_timespan": 86400,
             }
 
             handler.users_utils.twitch_user_to_discord_user.side_effect = [111111111111, 222222222222]
@@ -296,7 +287,9 @@ class TestTacosWebhookHandlerGiveTacos:
             assert "500" in response_data["error"]
 
     @pytest.mark.asyncio
-    async def test_give_tacos_rate_limit_per_user_exceeded(self, handler, mock_request, valid_tacos_payload, mock_discord_user):
+    async def test_give_tacos_rate_limit_per_user_exceeded(
+        self, handler, mock_request, valid_tacos_payload, mock_discord_user
+    ):
         """Test rejection when per-user daily limit is exceeded."""
         mock_request.body = json.dumps(valid_tacos_payload).encode()
 
@@ -305,7 +298,7 @@ class TestTacosWebhookHandlerGiveTacos:
                 "api_max_give_per_ts": 500,
                 "api_max_give_per_user_per_timespan": 50,
                 "api_max_give_per_user": 10,
-                "api_max_give_timespan": 86400
+                "api_max_give_timespan": 86400,
             }
 
             handler.users_utils.twitch_user_to_discord_user.side_effect = [111111111111, 222222222222]
@@ -334,7 +327,7 @@ class TestTacosWebhookHandlerGiveTacos:
             "from_user": "streamer",
             "to_user": "viewer",
             "amount": 15,  # More than max_give_per_user (10)
-            "reason": "Test"
+            "reason": "Test",
         }
         mock_request.body = json.dumps(payload).encode()
 
@@ -343,7 +336,7 @@ class TestTacosWebhookHandlerGiveTacos:
                 "api_max_give_per_ts": 500,
                 "api_max_give_per_user_per_timespan": 50,
                 "api_max_give_per_user": 10,
-                "api_max_give_timespan": 86400
+                "api_max_give_timespan": 86400,
             }
 
             handler.users_utils.twitch_user_to_discord_user.side_effect = [111111111111, 222222222222]
@@ -370,7 +363,7 @@ class TestTacosWebhookHandlerGiveTacos:
             "from_user": "streamer",
             "to_user": "viewer",
             "amount": -15,  # More negative than remaining quota
-            "reason": "Mistake correction"
+            "reason": "Mistake correction",
         }
         mock_request.body = json.dumps(payload).encode()
 
@@ -379,7 +372,7 @@ class TestTacosWebhookHandlerGiveTacos:
                 "api_max_give_per_ts": 500,
                 "api_max_give_per_user_per_timespan": 50,
                 "api_max_give_per_user": 10,
-                "api_max_give_timespan": 86400
+                "api_max_give_timespan": 86400,
             }
 
             handler.users_utils.twitch_user_to_discord_user.side_effect = [111111111111, 222222222222]
@@ -407,7 +400,7 @@ class TestTacosWebhookHandlerGiveTacos:
             "from_user": "bot_user",
             "to_user": "viewer",
             "amount": 100,  # Exceeds normal limits
-            "reason": "Bot reward"
+            "reason": "Bot reward",
         }
         mock_request.body = json.dumps(payload).encode()
 
@@ -416,7 +409,7 @@ class TestTacosWebhookHandlerGiveTacos:
                 "api_max_give_per_ts": 500,
                 "api_max_give_per_user_per_timespan": 50,
                 "api_max_give_per_user": 10,
-                "api_max_give_timespan": 86400
+                "api_max_give_timespan": 86400,
             }
 
             handler.users_utils.twitch_user_to_discord_user.side_effect = [111111111111, 999888777666555444]
@@ -448,7 +441,7 @@ class TestTacosWebhookHandlerGiveTacos:
             "from_user": "streamer",
             "to_user_id": 111111111111,  # Direct Discord ID
             "amount": 5,
-            "reason": "Great work"
+            "reason": "Great work",
         }
         mock_request.body = json.dumps(payload).encode()
 
@@ -457,7 +450,7 @@ class TestTacosWebhookHandlerGiveTacos:
                 "api_max_give_per_ts": 500,
                 "api_max_give_per_user_per_timespan": 50,
                 "api_max_give_per_user": 10,
-                "api_max_give_timespan": 86400
+                "api_max_give_timespan": 86400,
             }
 
             # Only from_user needs lookup
@@ -490,7 +483,7 @@ class TestTacosWebhookHandlerGiveTacos:
                 "api_max_give_per_ts": 500,
                 "api_max_give_per_user_per_timespan": 50,
                 "api_max_give_per_user": 10,
-                "api_max_give_timespan": 86400
+                "api_max_give_timespan": 86400,
             }
 
             # to_user lookup fails
@@ -504,7 +497,9 @@ class TestTacosWebhookHandlerGiveTacos:
             assert "user table" in response_data["error"]
 
     @pytest.mark.asyncio
-    async def test_give_tacos_user_not_found_in_discord(self, handler, mock_request, valid_tacos_payload, mock_discord_user):
+    async def test_give_tacos_user_not_found_in_discord(
+        self, handler, mock_request, valid_tacos_payload, mock_discord_user
+    ):
         """Test rejection when Discord user fetch fails."""
         mock_request.body = json.dumps(valid_tacos_payload).encode()
 
@@ -513,13 +508,16 @@ class TestTacosWebhookHandlerGiveTacos:
                 "api_max_give_per_ts": 500,
                 "api_max_give_per_user_per_timespan": 50,
                 "api_max_give_per_user": 10,
-                "api_max_give_timespan": 86400
+                "api_max_give_timespan": 86400,
             }
 
             handler.users_utils.twitch_user_to_discord_user.side_effect = [111111111111, 222222222222]
 
             # to_user fetch fails
-            handler.discord_helper.get_or_fetch_user.side_effect = [None, mock_discord_user(222222222222, "streamer", False)]
+            handler.discord_helper.get_or_fetch_user.side_effect = [
+                None,
+                mock_discord_user(222222222222, "streamer", False),
+            ]
 
             response = await handler.give_tacos(mock_request)
 

@@ -25,16 +25,10 @@ def test_merge_integration_real_handler_simulation():
         'responses': {
             '200': {
                 'description': 'Success response from YAML',
-                'content': {
-                    'application/json': {
-                        'schema': {'$ref': '#/components/schemas/OldSchema'}
-                    }
-                }
+                'content': {'application/json': {'schema': {'$ref': '#/components/schemas/OldSchema'}}},
             },
-            '404': {
-                'description': 'Not found'
-            }
-        }
+            '404': {'description': 'Not found'},
+        },
     }
 
     # Simulate decorator metadata
@@ -44,24 +38,15 @@ def test_merge_integration_real_handler_simulation():
         'responses': {
             '200': {  # Override 200 response
                 'description': 'Tacos successfully granted or removed',
-                'content': {
-                    'application/json': {
-                        'schema': {'$ref': '#/components/schemas/TacoWebhookPayload'}
-                    }
-                }
+                'content': {'application/json': {'schema': {'$ref': '#/components/schemas/TacoWebhookPayload'}}},
             },
-            '400': {  # New response
-                'description': 'Bad request'
-            }
-        }
+            '400': {'description': 'Bad request'},
+        },
     }
 
     # Merge
     merged, warnings = merge_endpoint_metadata(
-        yaml_meta,
-        decorator_meta,
-        endpoint_path='/webhook/minecraft/tacos',
-        endpoint_method='POST'
+        yaml_meta, decorator_meta, endpoint_path='/webhook/minecraft/tacos', endpoint_method='POST'
     )
 
     # Verify merge results
@@ -87,7 +72,10 @@ def test_merge_integration_real_handler_simulation():
 
     print("\n5️⃣  Response 200 merged (decorator overrode):")
     assert merged['responses']['200']['description'] == 'Tacos successfully granted or removed'
-    assert merged['responses']['200']['content']['application/json']['schema']['$ref'] == '#/components/schemas/TacoWebhookPayload'
+    assert (
+        merged['responses']['200']['content']['application/json']['schema']['$ref']
+        == '#/components/schemas/TacoWebhookPayload'
+    )
     print(f"   ✓ 200.description = {merged['responses']['200']['description']}")
     print(f"   ✓ 200.schema = {merged['responses']['200']['content']['application/json']['schema']['$ref']}")
 
@@ -123,7 +111,7 @@ def test_endpoint_class_integration():
             'status_code': 200,
             'description': 'Success from decorator',
             'content_type': 'application/json',
-            'schema': {'type': 'object'}
+            'schema': {'type': 'object'},
         }
     ]
 
@@ -133,29 +121,21 @@ def test_endpoint_class_integration():
         'responses': {
             '200': {
                 'description': 'Success from decorator',
-                'content': {
-                    'application/json': {
-                        'schema': {'type': 'object'}
-                    }
-                }
+                'content': {'application/json': {'schema': {'type': 'object'}}},
             }
-        }
+        },
     }
 
     # Create an Endpoint with both YAML and decorator metadata
     from pathlib import Path
+
     endpoint = Endpoint(
         path='/test/endpoint',
         method='get',
         file=Path('test.py'),
         function='test_method',
-        meta={  # YAML metadata
-            'summary': 'Test summary from YAML',
-            'responses': {
-                '200': {'description': 'Success'}
-            }
-        },
-        decorator_metadata=decorator_meta_dict
+        meta={'summary': 'Test summary from YAML', 'responses': {'200': {'description': 'Success'}}},
+        decorator_metadata=decorator_meta_dict,
     )
 
     # Get merged metadata

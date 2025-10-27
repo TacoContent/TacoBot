@@ -10,20 +10,18 @@ Tests cover:
 - Error handling and edge cases
 - Config file generation
 """
+
 import json
-import os
 
 # Import config module
 import sys
-import tempfile
 from pathlib import Path
-from typing import Any
 
 import pytest
 from jsonschema import ValidationError
 
 sys.path.insert(0, str(Path(__file__).parent.parent / 'scripts'))
-from swagger_sync.config import (
+from swagger_sync.config import (  # type: ignore # noqa: E402
     DEFAULT_CONFIG,
     ensure_coverage_report_extension,
     export_schema,
@@ -42,12 +40,14 @@ class TestConfigLoading:
     def test_load_minimal_config(self, tmp_path):
         """Test loading a minimal valid config file."""
         config_file = tmp_path / "minimal.yaml"
-        config_file.write_text("""
+        config_file.write_text(
+            """
 version: '1.0'
 swagger_file: api.yaml
 handlers_root: handlers/
 models_root: models/
-""")
+"""
+        )
 
         config = load_config(str(config_file))
 
@@ -62,7 +62,8 @@ models_root: models/
     def test_load_full_config(self, tmp_path):
         """Test loading a comprehensive config file."""
         config_file = tmp_path / "full.yaml"
-        config_file.write_text("""
+        config_file.write_text(
+            """
 version: '1.0'
 swagger_file: .swagger.v1.yaml
 handlers_root: bot/lib/http/handlers/
@@ -91,7 +92,8 @@ ignore:
     - debug_endpoint
   paths:
     - /internal/*
-""")
+"""
+        )
 
         config = load_config(str(config_file))
 
@@ -112,11 +114,13 @@ ignore:
     def test_load_invalid_yaml(self, tmp_path):
         """Test loading a malformed YAML file."""
         config_file = tmp_path / "invalid.yaml"
-        config_file.write_text("""
+        config_file.write_text(
+            """
 version: '1.0'
   bad_indentation: value
     worse_indentation: value
-""")
+"""
+        )
 
         with pytest.raises(ValueError, match="Failed to parse"):
             load_config(str(config_file))
@@ -124,7 +128,8 @@ version: '1.0'
     def test_load_with_environment_profile(self, tmp_path):
         """Test loading config with environment profile override."""
         config_file = tmp_path / "with_env.yaml"
-        config_file.write_text("""
+        config_file.write_text(
+            """
 version: '1.0'
 swagger_file: api.yaml
 handlers_root: handlers/
@@ -141,7 +146,8 @@ environments:
     options:
       verbose_coverage: true
       show_orphans: false
-""")
+"""
+        )
 
         # Load with CI environment
         config_ci = load_config(str(config_file), environment='ci')
@@ -157,7 +163,8 @@ environments:
     def test_load_with_nonexistent_environment(self, tmp_path):
         """Test loading config with environment that doesn't exist."""
         config_file = tmp_path / "config.yaml"
-        config_file.write_text("""
+        config_file.write_text(
+            """
 version: '1.0'
 swagger_file: api.yaml
 handlers_root: handlers/
@@ -166,7 +173,8 @@ environments:
   ci:
     options:
       strict: true
-""")
+"""
+        )
 
         with pytest.raises(ValueError, match="Environment 'production' not found"):
             load_config(str(config_file), environment='production')
@@ -177,12 +185,7 @@ class TestConfigValidation:
 
     def test_validate_minimal_valid_config(self):
         """Test validation of minimal valid config."""
-        config = {
-            'version': '1.0',
-            'swagger_file': 'api.yaml',
-            'handlers_root': 'handlers/',
-            'models_root': 'models/',
-        }
+        config = {'version': '1.0', 'swagger_file': 'api.yaml', 'handlers_root': 'handlers/', 'models_root': 'models/'}
 
         # Should not raise
         validate_config(config)
@@ -201,10 +204,7 @@ class TestConfigValidation:
                 'markdown_summary': 'summary.md',
             },
             'mode': 'check',
-            'options': {
-                'strict': True,
-                'show_orphans': True,
-            },
+            'options': {'strict': True, 'show_orphans': True},
         }
 
         # Should not raise
@@ -242,9 +242,7 @@ class TestConfigValidation:
             'swagger_file': 'api.yaml',
             'handlers_root': 'handlers/',
             'models_root': 'models/',
-            'options': {
-                'color': 'rainbow',  # Should be 'auto', 'always', or 'never'
-            },
+            'options': {'color': 'rainbow'},  # Should be 'auto', 'always', or 'never'
         }
 
         with pytest.raises(ValidationError):
@@ -257,9 +255,7 @@ class TestConfigValidation:
             'swagger_file': 'api.yaml',
             'handlers_root': 'handlers/',
             'models_root': 'models/',
-            'output': {
-                'coverage_format': 'invalid',  # Should be 'json', 'text', 'cobertura', or 'xml'
-            },
+            'output': {'coverage_format': 'invalid'},  # Should be 'json', 'text', 'cobertura', or 'xml'
         }
 
         with pytest.raises(ValidationError):
@@ -294,23 +290,10 @@ class TestConfigMerging:
     def test_merge_configs_nested(self):
         """Test merging nested dictionaries."""
         base = {
-            'output': {
-                'directory': './reports/',
-                'coverage_report': 'coverage.json',
-            },
-            'options': {
-                'strict': False,
-                'color': 'auto',
-            },
+            'output': {'directory': './reports/', 'coverage_report': 'coverage.json'},
+            'options': {'strict': False, 'color': 'auto'},
         }
-        override = {
-            'output': {
-                'directory': './custom-reports/',
-            },
-            'options': {
-                'strict': True,
-            },
-        }
+        override = {'output': {'directory': './custom-reports/'}, 'options': {'strict': True}}
 
         result = merge_configs(base, override)
 
@@ -321,17 +304,8 @@ class TestConfigMerging:
 
     def test_merge_configs_lists_replaced(self):
         """Test that lists are replaced, not merged."""
-        base = {
-            'ignore': {
-                'files': ['test_*.py', 'temp_*.py'],
-                'handlers': ['debug'],
-            },
-        }
-        override = {
-            'ignore': {
-                'files': ['custom_*.py'],
-            },
-        }
+        base = {'ignore': {'files': ['test_*.py', 'temp_*.py'], 'handlers': ['debug']}}
+        override = {'ignore': {'files': ['custom_*.py']}}
 
         result = merge_configs(base, override)
 
@@ -360,25 +334,8 @@ class TestConfigMerging:
 
     def test_merge_configs_deep_nesting(self):
         """Test merging deeply nested structures."""
-        base = {
-            'level1': {
-                'level2': {
-                    'level3': {
-                        'value': 'original',
-                        'other': 'kept',
-                    },
-                },
-            },
-        }
-        override = {
-            'level1': {
-                'level2': {
-                    'level3': {
-                        'value': 'overridden',
-                    },
-                },
-            },
-        }
+        base = {'level1': {'level2': {'level3': {'value': 'original', 'other': 'kept'}}}}
+        override = {'level1': {'level2': {'level3': {'value': 'overridden'}}}}
 
         result = merge_configs(base, override)
 
@@ -391,10 +348,7 @@ class TestCLIArgumentMerging:
 
     def test_merge_basic_cli_args(self):
         """Test merging basic CLI arguments."""
-        config = {
-            'swagger_file': 'api.yaml',
-            'mode': 'check',
-        }
+        config = {'swagger_file': 'api.yaml', 'mode': 'check'}
 
         class Args:
             swagger_file = 'custom.yaml'
@@ -409,11 +363,7 @@ class TestCLIArgumentMerging:
 
     def test_merge_cli_args_with_none_values(self):
         """Test that None CLI args don't override config."""
-        config = {
-            'swagger_file': 'api.yaml',
-            'handlers_root': 'handlers/',
-            'mode': 'check',
-        }
+        config = {'swagger_file': 'api.yaml', 'handlers_root': 'handlers/', 'mode': 'check'}
 
         class Args:
             swagger_file = None  # Not specified on CLI
@@ -430,13 +380,7 @@ class TestCLIArgumentMerging:
 
     def test_merge_cli_nested_options(self):
         """Test merging nested option flags."""
-        config = {
-            'options': {
-                'strict': False,
-                'show_orphans': False,
-                'color': 'auto',
-            },
-        }
+        config = {'options': {'strict': False, 'show_orphans': False, 'color': 'auto'}}
 
         class Args:
             strict = True
@@ -454,12 +398,7 @@ class TestCLIArgumentMerging:
 
     def test_merge_cli_output_paths(self):
         """Test merging output-related CLI arguments."""
-        config = {
-            'output': {
-                'directory': './reports/',
-                'coverage_report': 'coverage.json',
-            },
-        }
+        config = {'output': {'directory': './reports/', 'coverage_report': 'coverage.json'}}
 
         class Args:
             output_directory = './custom-reports/'
@@ -476,13 +415,7 @@ class TestCLIArgumentMerging:
 
     def test_merge_cli_boolean_flags(self):
         """Test merging boolean flag arguments."""
-        config = {
-            'options': {
-                'strict': False,
-                'show_orphans': False,
-                'verbose_coverage': False,
-            },
-        }
+        config = {'options': {'strict': False, 'show_orphans': False, 'verbose_coverage': False}}
 
         class Args:
             strict = True
@@ -506,8 +439,8 @@ class TestSchemaExport:
     def test_export_schema_to_file(self, tmp_path):
         """Test exporting schema to a file."""
         schema_file = tmp_path / "schema.json"
-
-        export_schema(str(schema_file))
+        path = Path(schema_file)
+        export_schema(path)
 
         assert schema_file.exists()
 
@@ -523,8 +456,9 @@ class TestSchemaExport:
     def test_export_schema_creates_directory(self, tmp_path):
         """Test that export creates parent directories if needed."""
         schema_file = tmp_path / "nested" / "dir" / "schema.json"
+        path = Path(schema_file)
 
-        export_schema(str(schema_file))
+        export_schema(path)
 
         assert schema_file.exists()
         assert schema_file.parent.is_dir()
@@ -533,8 +467,8 @@ class TestSchemaExport:
         """Test that export overwrites existing file."""
         schema_file = tmp_path / "schema.json"
         schema_file.write_text("old content")
-
-        export_schema(str(schema_file))
+        path = Path(schema_file)
+        export_schema(path)
 
         # Should be valid JSON now (not "old content")
         with open(schema_file) as f:
@@ -630,6 +564,7 @@ class TestDefaultConfig:
 
     def test_default_markers_are_correct(self):
         """Test that default markers match project convention."""
+        assert DEFAULT_CONFIG.markers is not None
         assert DEFAULT_CONFIG.markers.start == '>>>openapi'
         assert DEFAULT_CONFIG.markers.end == '<<<openapi'
 
@@ -643,6 +578,7 @@ class TestDefaultConfig:
     def test_default_options_structure(self):
         """Test default options configuration."""
         options = DEFAULT_CONFIG.options
+        assert options is not None
         assert hasattr(options, 'strict')
         assert hasattr(options, 'show_orphans')
         assert hasattr(options, 'color')
@@ -655,7 +591,8 @@ class TestEdgeCases:
     def test_config_with_empty_sections(self, tmp_path):
         """Test config with empty sections."""
         config_file = tmp_path / "empty_sections.yaml"
-        config_file.write_text("""
+        config_file.write_text(
+            """
 version: '1.0'
 swagger_file: api.yaml
 handlers_root: handlers/
@@ -664,7 +601,8 @@ ignore:
   files: []
   handlers: []
   paths: []
-""")
+"""
+        )
 
         config = load_config(str(config_file))
 
@@ -677,12 +615,14 @@ ignore:
         long_path = '/'.join(['very_long_directory_name'] * 20) + '/file.yaml'
 
         config_file = tmp_path / "long_paths.yaml"
-        config_file.write_text(f"""
+        config_file.write_text(
+            f"""
 version: '1.0'
 swagger_file: {long_path}
 handlers_root: handlers/
 models_root: models/
-""")
+"""
+        )
 
         config = load_config(str(config_file))
 
@@ -691,12 +631,15 @@ models_root: models/
     def test_config_with_special_characters(self, tmp_path):
         """Test config with special characters in strings."""
         config_file = tmp_path / "special_chars.yaml"
-        config_file.write_text("""
+        config_file.write_text(
+            """
 version: '1.0'
 swagger_file: "api-v1.0_final(2).yaml"
 handlers_root: "handlers-[v1]/"
 models_root: "models_📦/"
-""", encoding='utf-8')
+""",
+            encoding='utf-8',
+        )
 
         config = load_config(str(config_file))
 
@@ -716,7 +659,8 @@ models_root: "models_📦/"
     def test_environment_profile_deep_override(self, tmp_path):
         """Test environment profile with deep nesting."""
         config_file = tmp_path / "deep_env.yaml"
-        config_file.write_text("""
+        config_file.write_text(
+            """
 version: '1.0'
 swagger_file: api.yaml
 handlers_root: handlers/
@@ -729,7 +673,8 @@ environments:
     output:
       coverage_report: custom_coverage.json
       markdown_summary: custom_summary.md
-""")
+"""
+        )
 
         config = load_config(str(config_file), environment='custom')
 
@@ -795,6 +740,8 @@ class TestCoverageFormatHelpers:
         result1 = ensure_coverage_report_extension('./reports/coverage', 'json')
         result2 = ensure_coverage_report_extension('./reports/coverage.json', 'json')
         # Check that extension was added/preserved (normalize path separators for cross-platform)
+        assert result1 is not None
+        assert result2 is not None
         assert result1.endswith('coverage.json')
         assert result2.endswith('coverage.json')
 

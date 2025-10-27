@@ -62,12 +62,14 @@ def mock_request():
 @pytest.fixture
 def mock_discord_user():
     """Create a mock Discord user."""
+
     def _create_user(user_id: int, username: str, is_bot: bool = False):
         user = MagicMock()
         user.id = user_id
         user.name = username
         user.bot = is_bot
         return user
+
     return _create_user
 
 
@@ -155,9 +157,7 @@ class TestValidateTacosRequest:
 
     def test_validate_success_with_to_user(self, handler, mock_request, http_headers):
         """Test successful validation with to_user field."""
-        payload = {
-            "guild_id": "123456", "from_user": "streamer", "to_user": "viewer", "amount": 5
-        }
+        payload = {"guild_id": "123456", "from_user": "streamer", "to_user": "viewer", "amount": 5}
         mock_request.body = json.dumps(payload).encode()
 
         result = handler._validate_tacos_request(mock_request, http_headers)
@@ -166,12 +166,7 @@ class TestValidateTacosRequest:
 
     def test_validate_success_with_to_user_id(self, handler, mock_request, http_headers):
         """Test successful validation with to_user_id field."""
-        payload = {
-            "guild_id": "123456",
-            "from_user": "streamer",
-            "to_user_id": 111111111111,
-            "amount": 5,
-        }
+        payload = {"guild_id": "123456", "from_user": "streamer", "to_user_id": 111111111111, "amount": 5}
         mock_request.body = json.dumps(payload).encode()
 
         result = handler._validate_tacos_request(mock_request, http_headers)
@@ -184,7 +179,7 @@ class TestValidateTacosRequest:
             "guild_id": "123456",
             "from_user": "streamer",
             "to_user": "viewer",
-            "to_user_id":111111111111,
+            "to_user_id": 111111111111,
             "amount": 5,
         }
         mock_request.body = json.dumps(payload).encode()
@@ -269,12 +264,7 @@ class TestExtractPayloadData:
 
     def test_extract_type_invalid_uses_default(self, handler):
         """Test invalid type converts to default enum."""
-        payload = {
-            "guild_id": "123456",
-            "to_user": "viewer",
-            "from_user": "streamer",
-            "type": "invalid_type_xyz",
-        }
+        payload = {"guild_id": "123456", "to_user": "viewer", "from_user": "streamer", "type": "invalid_type_xyz"}
 
         result = handler._extract_payload_data(payload)
 
@@ -350,10 +340,7 @@ class TestResolveUserIds:
         handler.users_utils.twitch_user_to_discord_user.return_value = 222222222222
 
         to_id, from_id = handler._resolve_user_ids(
-            to_twitch_user=None,
-            to_user_id=111111111111,
-            from_twitch_user="streamer",
-            headers=http_headers
+            to_twitch_user=None, to_user_id=111111111111, from_twitch_user="streamer", headers=http_headers
         )
 
         assert to_id == 111111111111
@@ -628,14 +615,11 @@ class TestCalculateRateLimits:
             "max_give_per_ts": 500,
             "max_give_per_user_per_ts": 50,
             "max_give_per_user": 10,
-            "max_give_timespan": 86400
+            "max_give_timespan": 86400,
         }
 
         usage = handler._calculate_rate_limits(
-            guild_id=123456,
-            from_twitch_user="streamer",
-            to_twitch_user="viewer",
-            limits=limits
+            guild_id=123456, from_twitch_user="streamer", to_twitch_user="viewer", limits=limits
         )
 
         assert usage["total_gifted_to_user"] == 20
@@ -785,9 +769,7 @@ class TestEnforceRateLimits:
 
     def test_enforce_negative_amount_exceeds_quota(self, handler, http_headers):
         """Test rejection when negative amount exceeds available quota."""
-        usage = {
-            "total_gifted_to_user": 10, "remaining_gifts_to_user": 10, "remaining_gifts_over_ts": 400
-        }
+        usage = {"total_gifted_to_user": 10, "remaining_gifts_to_user": 10, "remaining_gifts_over_ts": 400}
         limits = {
             "max_give_per_ts": 500,
             "max_give_per_user_per_ts": 50,
@@ -807,7 +789,7 @@ class TestEnforceRateLimits:
 
     def test_enforce_edge_exactly_at_overall_limit(self, handler, http_headers):
         """Test edge case when exactly at overall limit (zero remaining)."""
-        usage = {"remaining_gifts_to_user": 30,"remaining_gifts_over_ts": 0}
+        usage = {"remaining_gifts_to_user": 30, "remaining_gifts_over_ts": 0}
         limits = {
             "max_give_per_ts": 500,
             "max_give_per_user_per_ts": 50,
@@ -913,7 +895,7 @@ class TestExecuteTacoTransfer:
         handler.tacos_db.get_tacos_count.return_value = 100
 
         total = await handler._execute_taco_transfer(
-            guild_id=123456, 
+            guild_id=123456,
             from_user=from_user,
             to_user=to_user,
             reason="Testing",

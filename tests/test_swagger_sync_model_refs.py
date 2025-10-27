@@ -5,7 +5,6 @@ $ref references for model class type annotations instead of defaulting to string
 """
 from __future__ import annotations
 
-import os
 import pathlib
 import tempfile
 
@@ -301,7 +300,7 @@ def component(name: str, description: str = None):
 
         # optional_str should be string with nullable
         assert props['optional_str']['type'] == 'string'
-        assert props['optional_str'].get('nullable') == True
+        assert props['optional_str'].get('nullable')
         assert '$ref' not in props['optional_str']
 
         # union_type contains 'int' so should be detected as integer
@@ -359,7 +358,9 @@ def component(name: str, description: str = None):
         # Should be string type with enum, not a $ref
         assert status_schema['type'] == 'string', 'status should be string type'
         assert 'enum' in status_schema, 'status should have enum property'
-        assert set(status_schema['enum']) == {'active', 'inactive', 'pending'}, f"Unexpected enum values: {status_schema['enum']}"
+        assert set(status_schema['enum']) == {
+            'active', 'inactive', 'pending'
+        }, f"Unexpected enum values: {status_schema['enum']}"
         assert '$ref' not in status_schema, 'status should not be a $ref'
 
 

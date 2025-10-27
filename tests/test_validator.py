@@ -8,7 +8,6 @@ Tests validation of:
 - Security schemes
 """
 
-import pytest
 from scripts.swagger_sync.validator import (
     STANDARD_STATUS_CODES,
     ValidationError,
@@ -32,11 +31,7 @@ class TestValidateSchemaReferences:
             'responses': {
                 '200': {
                     'description': 'Success',
-                    'content': {
-                        'application/json': {
-                            'schema': {'$ref': '#/components/schemas/User'}
-                        }
-                    }
+                    'content': {'application/json': {'schema': {'$ref': '#/components/schemas/User'}}},
                 }
             }
         }
@@ -49,13 +44,7 @@ class TestValidateSchemaReferences:
         """Missing schema reference should produce error."""
         metadata = {
             'responses': {
-                '200': {
-                    'content': {
-                        'application/json': {
-                            'schema': {'$ref': '#/components/schemas/UnknownModel'}
-                        }
-                    }
-                }
+                '200': {'content': {'application/json': {'schema': {'$ref': '#/components/schemas/UnknownModel'}}}}
             }
         }
         available = {'User', 'Role'}
@@ -70,11 +59,7 @@ class TestValidateSchemaReferences:
         """Missing schema in request body should produce error."""
         metadata = {
             'requestBody': {
-                'content': {
-                    'application/json': {
-                        'schema': {'$ref': '#/components/schemas/CreateUserRequest'}
-                    }
-                }
+                'content': {'application/json': {'schema': {'$ref': '#/components/schemas/CreateUserRequest'}}}
             }
         }
         available = {'User'}
@@ -87,13 +72,7 @@ class TestValidateSchemaReferences:
     def test_missing_schema_reference_in_parameter(self):
         """Missing schema in parameter should produce error."""
         metadata = {
-            'parameters': [
-                {
-                    'name': 'filter',
-                    'in': 'query',
-                    'schema': {'$ref': '#/components/schemas/FilterObject'}
-                }
-            ]
+            'parameters': [{'name': 'filter', 'in': 'query', 'schema': {'$ref': '#/components/schemas/FilterObject'}}]
         }
         available = {'User'}
 
@@ -106,22 +85,10 @@ class TestValidateSchemaReferences:
     def test_multiple_missing_schemas(self):
         """Multiple missing schemas should all be reported."""
         metadata = {
-            'requestBody': {
-                'content': {
-                    'application/json': {
-                        'schema': {'$ref': '#/components/schemas/RequestModel'}
-                    }
-                }
-            },
+            'requestBody': {'content': {'application/json': {'schema': {'$ref': '#/components/schemas/RequestModel'}}}},
             'responses': {
-                '200': {
-                    'content': {
-                        'application/json': {
-                            'schema': {'$ref': '#/components/schemas/ResponseModel'}
-                        }
-                    }
-                }
-            }
+                '200': {'content': {'application/json': {'schema': {'$ref': '#/components/schemas/ResponseModel'}}}}
+            },
         }
         available = set()
 
@@ -131,13 +98,7 @@ class TestValidateSchemaReferences:
 
     def test_no_schema_references(self):
         """Metadata without schema references should not error."""
-        metadata = {
-            'responses': {
-                '204': {
-                    'description': 'No content'
-                }
-            }
-        }
+        metadata = {'responses': {'204': {'description': 'No content'}}}
         available = {'User'}
 
         errors = validate_schema_references(metadata, available, 'DELETE /users/123')
@@ -155,7 +116,7 @@ class TestValidateStatusCodes:
                 '201': {'description': 'Created'},
                 '400': {'description': 'Bad Request'},
                 '404': {'description': 'Not Found'},
-                '500': {'description': 'Internal Server Error'}
+                '500': {'description': 'Internal Server Error'},
             }
         }
 
@@ -164,12 +125,7 @@ class TestValidateStatusCodes:
 
     def test_non_standard_status_code(self):
         """Non-standard status code should produce warning."""
-        metadata = {
-            'responses': {
-                '200': {'description': 'OK'},
-                '999': {'description': 'Custom code'}
-            }
-        }
+        metadata = {'responses': {'200': {'description': 'OK'}, '999': {'description': 'Custom code'}}}
 
         errors = validate_status_codes(metadata, 'GET /users')
         assert len(errors) == 1
@@ -178,22 +134,14 @@ class TestValidateStatusCodes:
 
     def test_default_response(self):
         """'default' response should be allowed."""
-        metadata = {
-            'responses': {
-                'default': {'description': 'Error'}
-            }
-        }
+        metadata = {'responses': {'default': {'description': 'Error'}}}
 
         errors = validate_status_codes(metadata, 'GET /users')
         assert len(errors) == 0
 
     def test_invalid_status_code_format(self):
         """Invalid status code format should produce warning."""
-        metadata = {
-            'responses': {
-                'success': {'description': 'OK'}
-            }
-        }
+        metadata = {'responses': {'success': {'description': 'OK'}}}
 
         errors = validate_status_codes(metadata, 'GET /users')
         assert len(errors) == 1
@@ -213,30 +161,14 @@ class TestValidateParameters:
 
     def test_valid_parameter(self):
         """Valid parameter should not produce errors."""
-        metadata = {
-            'parameters': [
-                {
-                    'name': 'user_id',
-                    'in': 'path',
-                    'required': True,
-                    'schema': {'type': 'string'}
-                }
-            ]
-        }
+        metadata = {'parameters': [{'name': 'user_id', 'in': 'path', 'required': True, 'schema': {'type': 'string'}}]}
 
         errors = validate_parameters(metadata, 'GET /users/{user_id}')
         assert len(errors) == 0
 
     def test_parameter_missing_name(self):
         """Parameter missing 'name' should produce error."""
-        metadata = {
-            'parameters': [
-                {
-                    'in': 'query',
-                    'schema': {'type': 'string'}
-                }
-            ]
-        }
+        metadata = {'parameters': [{'in': 'query', 'schema': {'type': 'string'}}]}
 
         errors = validate_parameters(metadata, 'GET /users')
         assert len(errors) >= 1
@@ -245,14 +177,7 @@ class TestValidateParameters:
 
     def test_parameter_missing_in(self):
         """Parameter missing 'in' should produce error."""
-        metadata = {
-            'parameters': [
-                {
-                    'name': 'filter',
-                    'schema': {'type': 'string'}
-                }
-            ]
-        }
+        metadata = {'parameters': [{'name': 'filter', 'schema': {'type': 'string'}}]}
 
         errors = validate_parameters(metadata, 'GET /users')
         assert len(errors) >= 1
@@ -265,7 +190,7 @@ class TestValidateParameters:
                 {
                     'name': 'filter',
                     'in': 'body',  # Invalid - should be path/query/header/cookie
-                    'schema': {'type': 'string'}
+                    'schema': {'type': 'string'},
                 }
             ]
         }
@@ -276,16 +201,7 @@ class TestValidateParameters:
 
     def test_path_parameter_not_required(self):
         """Path parameter must be required."""
-        metadata = {
-            'parameters': [
-                {
-                    'name': 'user_id',
-                    'in': 'path',
-                    'required': False,
-                    'schema': {'type': 'string'}
-                }
-            ]
-        }
+        metadata = {'parameters': [{'name': 'user_id', 'in': 'path', 'required': False, 'schema': {'type': 'string'}}]}
 
         errors = validate_parameters(metadata, 'GET /users/{user_id}')
         assert len(errors) >= 1
@@ -293,14 +209,7 @@ class TestValidateParameters:
 
     def test_parameter_missing_schema_and_content(self):
         """Parameter must have either schema or content."""
-        metadata = {
-            'parameters': [
-                {
-                    'name': 'filter',
-                    'in': 'query'
-                }
-            ]
-        }
+        metadata = {'parameters': [{'name': 'filter', 'in': 'query'}]}
 
         errors = validate_parameters(metadata, 'GET /users')
         assert len(errors) >= 1
@@ -310,15 +219,7 @@ class TestValidateParameters:
         """Parameter with 'content' instead of 'schema' should be valid."""
         metadata = {
             'parameters': [
-                {
-                    'name': 'filter',
-                    'in': 'query',
-                    'content': {
-                        'application/json': {
-                            'schema': {'type': 'object'}
-                        }
-                    }
-                }
+                {'name': 'filter', 'in': 'query', 'content': {'application/json': {'schema': {'type': 'object'}}}}
             ]
         }
 
@@ -335,14 +236,7 @@ class TestValidateResponses:
         """Valid response should not produce errors."""
         metadata = {
             'responses': {
-                '200': {
-                    'description': 'Success',
-                    'content': {
-                        'application/json': {
-                            'schema': {'type': 'object'}
-                        }
-                    }
-                }
+                '200': {'description': 'Success', 'content': {'application/json': {'schema': {'type': 'object'}}}}
             }
         }
 
@@ -351,17 +245,7 @@ class TestValidateResponses:
 
     def test_response_missing_description(self):
         """Response missing description should produce error."""
-        metadata = {
-            'responses': {
-                '200': {
-                    'content': {
-                        'application/json': {
-                            'schema': {'type': 'object'}
-                        }
-                    }
-                }
-            }
-        }
+        metadata = {'responses': {'200': {'content': {'application/json': {'schema': {'type': 'object'}}}}}}
 
         errors = validate_responses(metadata, 'GET /users')
         assert len(errors) == 1
@@ -379,11 +263,7 @@ class TestValidateResponses:
 
     def test_response_not_object(self):
         """Response that's not an object should produce error."""
-        metadata = {
-            'responses': {
-                '200': 'Not an object'
-            }
-        }
+        metadata = {'responses': {'200': 'Not an object'}}
 
         errors = validate_responses(metadata, 'GET /users')
         assert len(errors) >= 1
@@ -395,11 +275,7 @@ class TestValidateSecuritySchemes:
 
     def test_valid_security_scheme(self):
         """Valid security scheme reference should not error."""
-        metadata = {
-            'security': [
-                {'BearerAuth': []}
-            ]
-        }
+        metadata = {'security': [{'BearerAuth': []}]}
         available = {'BearerAuth', 'ApiKeyAuth'}
 
         errors = validate_security_schemes(metadata, available, 'GET /users')
@@ -407,11 +283,7 @@ class TestValidateSecuritySchemes:
 
     def test_unknown_security_scheme(self):
         """Unknown security scheme should produce error."""
-        metadata = {
-            'security': [
-                {'UnknownAuth': []}
-            ]
-        }
+        metadata = {'security': [{'UnknownAuth': []}]}
         available = {'BearerAuth'}
 
         errors = validate_security_schemes(metadata, available, 'GET /users')
@@ -421,12 +293,7 @@ class TestValidateSecuritySchemes:
 
     def test_multiple_security_schemes(self):
         """Multiple security schemes should all be validated."""
-        metadata = {
-            'security': [
-                {'BearerAuth': []},
-                {'UnknownAuth': []}
-            ]
-        }
+        metadata = {'security': [{'BearerAuth': []}, {'UnknownAuth': []}]}
         available = {'BearerAuth'}
 
         errors = validate_security_schemes(metadata, available, 'GET /users')
@@ -442,35 +309,19 @@ class TestValidateEndpointMetadata:
         metadata = {
             'summary': 'Get user by ID',
             'description': 'Retrieves a user',
-            'parameters': [
-                {
-                    'name': 'user_id',
-                    'in': 'path',
-                    'required': True,
-                    'schema': {'type': 'string'}
-                }
-            ],
+            'parameters': [{'name': 'user_id', 'in': 'path', 'required': True, 'schema': {'type': 'string'}}],
             'responses': {
                 '200': {
                     'description': 'Success',
-                    'content': {
-                        'application/json': {
-                            'schema': {'$ref': '#/components/schemas/User'}
-                        }
-                    }
+                    'content': {'application/json': {'schema': {'$ref': '#/components/schemas/User'}}},
                 },
-                '404': {
-                    'description': 'Not found'
-                }
+                '404': {'description': 'Not found'},
             },
-            'security': [{'BearerAuth': []}]
+            'security': [{'BearerAuth': []}],
         }
 
         errors = validate_endpoint_metadata(
-            metadata,
-            'GET /users/{user_id}',
-            available_schemas={'User'},
-            available_security_schemes={'BearerAuth'}
+            metadata, 'GET /users/{user_id}', available_schemas={'User'}, available_security_schemes={'BearerAuth'}
         )
         assert len(errors) == 0
 
@@ -482,27 +333,20 @@ class TestValidateEndpointMetadata:
                     'name': 'id',
                     'in': 'path',
                     # Missing required=True for path param
-                    'schema': {'type': 'string'}
+                    'schema': {'type': 'string'},
                 }
             ],
             'responses': {
                 '999': {  # Non-standard code
                     # Missing description
-                    'content': {
-                        'application/json': {
-                            'schema': {'$ref': '#/components/schemas/UnknownModel'}
-                        }
-                    }
+                    'content': {'application/json': {'schema': {'$ref': '#/components/schemas/UnknownModel'}}}
                 }
             },
-            'security': [{'UnknownAuth': []}]
+            'security': [{'UnknownAuth': []}],
         }
 
         errors = validate_endpoint_metadata(
-            metadata,
-            'GET /test/{id}',
-            available_schemas={'User'},
-            available_security_schemes={'BearerAuth'}
+            metadata, 'GET /test/{id}', available_schemas={'User'}, available_security_schemes={'BearerAuth'}
         )
 
         # Should have errors from multiple validators
@@ -512,11 +356,7 @@ class TestValidateEndpointMetadata:
 
     def test_validation_without_optional_checks(self):
         """Validation should work without schema/security checks."""
-        metadata = {
-            'responses': {
-                '200': {'description': 'OK'}
-            }
-        }
+        metadata = {'responses': {'200': {'description': 'OK'}}}
 
         # Don't provide available_schemas or available_security_schemes
         errors = validate_endpoint_metadata(metadata, 'GET /test')
@@ -551,18 +391,14 @@ class TestFormatValidationReport:
 
     def test_info_hidden_by_default(self):
         """INFO messages should be hidden by default."""
-        errors = [
-            ValidationError(ValidationSeverity.INFO, 'Info message', 'GET /test')
-        ]
+        errors = [ValidationError(ValidationSeverity.INFO, 'Info message', 'GET /test')]
 
         report = format_validation_report(errors, show_info=False)
         assert 'INFO' not in report
 
     def test_info_shown_when_requested(self):
         """INFO messages should be shown when show_info=True."""
-        errors = [
-            ValidationError(ValidationSeverity.INFO, 'Info message', 'GET /test')
-        ]
+        errors = [ValidationError(ValidationSeverity.INFO, 'Info message', 'GET /test')]
 
         report = format_validation_report(errors, show_info=True)
         assert 'INFO' in report
@@ -591,7 +427,7 @@ class TestValidationErrorFormatting:
             severity=ValidationSeverity.ERROR,
             message="Invalid value",
             endpoint="GET /users",
-            field="parameters[0].name"
+            field="parameters[0].name",
         )
 
         formatted = str(error)
@@ -603,9 +439,7 @@ class TestValidationErrorFormatting:
     def test_error_without_field(self):
         """Error without field should omit field from message."""
         error = ValidationError(
-            severity=ValidationSeverity.WARNING,
-            message="Consider adding description",
-            endpoint="POST /users"
+            severity=ValidationSeverity.WARNING, message="Consider adding description", endpoint="POST /users"
         )
 
         formatted = str(error)

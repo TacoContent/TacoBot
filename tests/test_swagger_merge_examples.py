@@ -7,12 +7,11 @@ locations in the OpenAPI specification based on their placement type.
 import os
 import sys
 
-import pytest
 
 # Add scripts directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 
-from swagger_sync.merge_utils import (
+from swagger_sync.merge_utils import (  # type: ignore # noqa: E402
     merge_endpoint_metadata,
     merge_examples_into_spec,
 )
@@ -23,23 +22,14 @@ class TestParameterExampleMerge:
 
     def test_parameter_example_basic(self):
         """Test basic parameter example is merged correctly."""
-        result = {
-            'parameters': [
-                {
-                    'name': 'guild_id',
-                    'in': 'path',
-                    'schema': {'type': 'string'},
-                    'required': True
-                }
-            ]
-        }
+        result = {'parameters': [{'name': 'guild_id', 'in': 'path', 'schema': {'type': 'string'}, 'required': True}]}
         examples = [
             {
                 'name': 'example_guild',
                 'placement': 'parameter',
                 'parameter_name': 'guild_id',
                 'value': '123456789012345678',
-                'summary': 'Example Discord guild ID'
+                'summary': 'Example Discord guild ID',
             }
         ]
 
@@ -52,30 +42,22 @@ class TestParameterExampleMerge:
 
     def test_parameter_example_multiple(self):
         """Test multiple examples on same parameter."""
-        result = {
-            'parameters': [
-                {
-                    'name': 'limit',
-                    'in': 'query',
-                    'schema': {'type': 'integer'}
-                }
-            ]
-        }
+        result = {'parameters': [{'name': 'limit', 'in': 'query', 'schema': {'type': 'integer'}}]}
         examples = [
             {
                 'name': 'small_limit',
                 'placement': 'parameter',
                 'parameter_name': 'limit',
                 'value': 10,
-                'summary': 'Small result set'
+                'summary': 'Small result set',
             },
             {
                 'name': 'large_limit',
                 'placement': 'parameter',
                 'parameter_name': 'limit',
                 'value': 100,
-                'summary': 'Large result set'
-            }
+                'summary': 'Large result set',
+            },
         ]
 
         merge_examples_into_spec(result, examples, 'get')
@@ -87,19 +69,8 @@ class TestParameterExampleMerge:
 
     def test_parameter_example_missing_parameter_name(self):
         """Test parameter example without parameter_name is skipped."""
-        result = {
-            'parameters': [
-                {'name': 'guild_id', 'in': 'path', 'schema': {'type': 'string'}}
-            ]
-        }
-        examples = [
-            {
-                'name': 'example1',
-                'placement': 'parameter',
-                # Missing parameter_name
-                'value': '123'
-            }
-        ]
+        result = {'parameters': [{'name': 'guild_id', 'in': 'path', 'schema': {'type': 'string'}}]}
+        examples = [{'name': 'example1', 'placement': 'parameter', 'value': '123'}]
 
         merge_examples_into_spec(result, examples, 'get')
 
@@ -108,18 +79,9 @@ class TestParameterExampleMerge:
 
     def test_parameter_example_nonexistent_parameter(self):
         """Test example for nonexistent parameter is skipped."""
-        result = {
-            'parameters': [
-                {'name': 'guild_id', 'in': 'path', 'schema': {'type': 'string'}}
-            ]
-        }
+        result = {'parameters': [{'name': 'guild_id', 'in': 'path', 'schema': {'type': 'string'}}]}
         examples = [
-            {
-                'name': 'example1',
-                'placement': 'parameter',
-                'parameter_name': 'nonexistent_param',
-                'value': '123'
-            }
+            {'name': 'example1', 'placement': 'parameter', 'parameter_name': 'nonexistent_param', 'value': '123'}
         ]
 
         merge_examples_into_spec(result, examples, 'get')
@@ -136,11 +98,7 @@ class TestRequestBodyExampleMerge:
         result = {
             'requestBody': {
                 'required': True,
-                'content': {
-                    'application/json': {
-                        'schema': {'$ref': '#/components/schemas/CreateRoleRequest'}
-                    }
-                }
+                'content': {'application/json': {'schema': {'$ref': '#/components/schemas/CreateRoleRequest'}}},
             }
         }
         examples = [
@@ -148,7 +106,7 @@ class TestRequestBodyExampleMerge:
                 'name': 'create_moderator',
                 'placement': 'requestBody',
                 'value': {'name': 'Moderator', 'color': 3447003},
-                'summary': 'Create moderator role'
+                'summary': 'Create moderator role',
             }
         ]
 
@@ -168,7 +126,7 @@ class TestRequestBodyExampleMerge:
                 'placement': 'requestBody',
                 'contentType': 'application/xml',
                 'externalValue': 'https://example.com/request.xml',
-                'summary': 'XML request example'
+                'summary': 'XML request example',
             }
         ]
 
@@ -183,18 +141,8 @@ class TestRequestBodyExampleMerge:
         """Test request body example filtered by HTTP method."""
         result = {}
         examples = [
-            {
-                'name': 'post_example',
-                'placement': 'requestBody',
-                'value': {'action': 'create'},
-                'methods': ['post']
-            },
-            {
-                'name': 'put_example',
-                'placement': 'requestBody',
-                'value': {'action': 'update'},
-                'methods': ['put', 'patch']
-            }
+            {'name': 'post_example', 'placement': 'requestBody', 'value': {'action': 'create'}, 'methods': ['post']},
+            {'name': 'put_example', 'placement': 'requestBody', 'value': {'action': 'update'}, 'methods': ['put', 'patch']},
         ]
 
         # Should only include post_example for POST method
@@ -216,13 +164,10 @@ class TestResponseExampleMerge:
                     'description': 'Successful response',
                     'content': {
                         'application/json': {
-                            'schema': {
-                                'type': 'array',
-                                'items': {'$ref': '#/components/schemas/DiscordRole'}
-                            }
-                        }
-                    }
-                }
+                            'schema': {'type': 'array', 'items': {'$ref': '#/components/schemas/DiscordRole'}}
+                        },
+                    },
+                },
             }
         }
         examples = [
@@ -230,11 +175,8 @@ class TestResponseExampleMerge:
                 'name': 'role_list',
                 'placement': 'response',
                 'status_code': 200,
-                'value': [
-                    {'id': '1', 'name': 'Admin'},
-                    {'id': '2', 'name': 'Moderator'}
-                ],
-                'summary': 'Example role list'
+                'value': [{'id': '1', 'name': 'Admin'}, {'id': '2', 'name': 'Moderator'}],
+                'summary': 'Example role list',
             }
         ]
 
@@ -249,24 +191,9 @@ class TestResponseExampleMerge:
         """Test examples for different status codes."""
         result = {}
         examples = [
-            {
-                'name': 'success',
-                'placement': 'response',
-                'status_code': 200,
-                'value': {'status': 'ok'}
-            },
-            {
-                'name': 'not_found',
-                'placement': 'response',
-                'status_code': 404,
-                'value': {'error': 'Not found'}
-            },
-            {
-                'name': 'bad_request',
-                'placement': 'response',
-                'status_code': 400,
-                'value': {'error': 'Invalid input'}
-            }
+            {'name': 'success', 'placement': 'response', 'status_code': 200, 'value': {'status': 'ok'}},
+            {'name': 'not_found', 'placement': 'response', 'status_code': 404, 'value': {'error': 'Not found'}},
+            {'name': 'bad_request', 'placement': 'response', 'status_code': 400, 'value': {'error': 'Invalid input'}},
         ]
 
         merge_examples_into_spec(result, examples, 'get')
@@ -280,14 +207,7 @@ class TestResponseExampleMerge:
     def test_response_example_missing_status_code(self):
         """Test response example without status_code is skipped."""
         result = {}
-        examples = [
-            {
-                'name': 'example1',
-                'placement': 'response',
-                # Missing status_code
-                'value': {'data': 'test'}
-            }
-        ]
+        examples = [{'name': 'example1', 'placement': 'response', 'value': {'data': 'test'}}]
 
         merge_examples_into_spec(result, examples, 'get')
 
@@ -297,14 +217,7 @@ class TestResponseExampleMerge:
     def test_response_example_auto_description(self):
         """Test that response description is auto-added if missing."""
         result = {}
-        examples = [
-            {
-                'name': 'example1',
-                'placement': 'response',
-                'status_code': 200,
-                'value': {'data': 'test'}
-            }
-        ]
+        examples = [{'name': 'example1', 'placement': 'response', 'status_code': 200, 'value': {'data': 'test'}}]
 
         merge_examples_into_spec(result, examples, 'get')
 
@@ -319,7 +232,7 @@ class TestResponseExampleMerge:
                 'placement': 'response',
                 'status_code': 200,
                 '$ref': '#/components/examples/StandardUser',
-                'summary': 'Standard user response'
+                'summary': 'Standard user response',
             }
         ]
 
@@ -337,13 +250,7 @@ class TestSchemaExamplePlacement:
     def test_schema_example_stored_separately(self):
         """Test schema examples are kept in x-schema-examples."""
         result = {}
-        examples = [
-            {
-                'name': 'user_schema',
-                'placement': 'schema',
-                'value': {'id': 123, 'name': 'Alice'}
-            }
-        ]
+        examples = [{'name': 'user_schema', 'placement': 'schema', 'value': {'id': 123, 'name': 'Alice'}}]
 
         merge_examples_into_spec(result, examples, 'get')
 
@@ -358,14 +265,7 @@ class TestExampleSourceTypes:
     def test_example_with_value(self):
         """Test example with inline value."""
         result = {}
-        examples = [
-            {
-                'name': 'inline',
-                'placement': 'response',
-                'status_code': 200,
-                'value': {'data': 'inline value'}
-            }
-        ]
+        examples = [{'name': 'inline', 'placement': 'response', 'status_code': 200, 'value': {'data': 'inline value'}}]
 
         merge_examples_into_spec(result, examples, 'get')
 
@@ -381,7 +281,7 @@ class TestExampleSourceTypes:
                 'name': 'external',
                 'placement': 'response',
                 'status_code': 200,
-                'externalValue': 'https://example.com/large.json'
+                'externalValue': 'https://example.com/large.json',
             }
         ]
 
@@ -399,7 +299,7 @@ class TestExampleSourceTypes:
                 'name': 'referenced',
                 'placement': 'response',
                 'status_code': 200,
-                '$ref': '#/components/examples/StandardExample'
+                '$ref': '#/components/examples/StandardExample',
             }
         ]
 
@@ -424,7 +324,7 @@ class TestCustomExtensionFields:
                 'status_code': 200,
                 'value': {'data': 'test'},
                 'x-custom-field': 'custom value',
-                'x-internal-note': 'For internal use'
+                'x-internal-note': 'For internal use',
             }
         ]
 
@@ -443,15 +343,8 @@ class TestEndpointMetadataMerge:
         yaml_meta = {
             'summary': 'Get roles',
             'responses': {
-                '200': {
-                    'description': 'Success',
-                    'content': {
-                        'application/json': {
-                            'schema': {'type': 'array'}
-                        }
-                    }
-                }
-            }
+                '200': {'description': 'Success', 'content': {'application/json': {'schema': {'type': 'array'}}}}
+            },
         }
         decorator_meta = {
             'tags': ['roles'],
@@ -460,17 +353,12 @@ class TestEndpointMetadataMerge:
                     'name': 'success_example',
                     'placement': 'response',
                     'status_code': 200,
-                    'value': [{'id': '1', 'name': 'Admin'}]
+                    'value': [{'id': '1', 'name': 'Admin'}],
                 }
             ]
         }
 
-        merged, warnings = merge_endpoint_metadata(
-            yaml_meta,
-            decorator_meta,
-            '/api/v1/roles',
-            'get'
-        )
+        merged, warnings = merge_endpoint_metadata(yaml_meta, decorator_meta, '/api/v1/roles', 'get')
 
         # YAML metadata preserved
         assert merged['summary'] == 'Get roles'
@@ -491,26 +379,18 @@ class TestEndpointMetadataMerge:
             'summary': 'Create role',
             'requestBody': {
                 'required': True,
-                'content': {
-                    'application/json': {
-                        'schema': {'$ref': '#/components/schemas/RoleRequest'}
-                    }
-                }
+                'content': {'application/json': {'schema': {'$ref': '#/components/schemas/RoleRequest'}}},
             }
         }
         decorator_meta = {
             'x-examples': [
-                {
-                    'name': 'create_admin',
-                    'placement': 'requestBody',
-                    'value': {'name': 'Admin', 'permissions': 8}
-                },
+                {'name': 'create_admin', 'placement': 'requestBody', 'value': {'name': 'Admin', 'permissions': 8}},
                 {
                     'name': 'success_response',
                     'placement': 'response',
                     'status_code': 201,
-                    'value': {'id': '123', 'name': 'Admin'}
-                }
+                    'value': {'id': '123', 'name': 'Admin'},
+                },
             ]
         }
 
@@ -545,14 +425,7 @@ class TestEmptyAndEdgeCases:
     def test_example_without_name(self):
         """Test example without name is skipped."""
         result = {}
-        examples = [
-            {
-                # Missing 'name'
-                'placement': 'response',
-                'status_code': 200,
-                'value': {'data': 'test'}
-            }
-        ]
+        examples = [{'placement': 'response', 'status_code': 200, 'value': {'data': 'test'}}]
 
         merge_examples_into_spec(result, examples, 'get')
 
@@ -562,13 +435,7 @@ class TestEmptyAndEdgeCases:
     def test_example_without_placement(self):
         """Test example without placement is skipped."""
         result = {}
-        examples = [
-            {
-                'name': 'example1',
-                # Missing 'placement'
-                'value': {'data': 'test'}
-            }
-        ]
+        examples = [{'name': 'example1', 'value': {'data': 'test'}}]
 
         merge_examples_into_spec(result, examples, 'get')
 

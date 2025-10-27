@@ -6,7 +6,6 @@ testability and maintainability.
 """
 
 import json
-import traceback
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
@@ -77,6 +76,9 @@ class TestShiftCodeWebhookHandlerValidateRequest:
 
         with pytest.raises(HttpResponseException) as exc_info:
             handler._validate_shift_code_request(mock_request, http_headers)
+        assert exc_info is not None
+        assert exc_info.value is not None
+        assert exc_info.value.body is not None
 
         assert exc_info.value.status_code == 400
         body = json.loads(exc_info.value.body.decode())
@@ -95,6 +97,9 @@ class TestShiftCodeWebhookHandlerValidateRequest:
         with pytest.raises(HttpResponseException) as exc_info:
             handler._validate_shift_code_request(mock_request, http_headers)
 
+        assert exc_info is not None
+        assert exc_info.value is not None
+        assert exc_info.value.body is not None
         assert exc_info.value.status_code == 400
         body = json.loads(exc_info.value.body.decode())
         assert "Invalid JSON payload" in body["error"]
@@ -114,6 +119,9 @@ class TestShiftCodeWebhookHandlerValidateRequest:
             handler._validate_shift_code_request(mock_request, http_headers)
 
         assert exc_info.value.status_code == 400
+        assert exc_info is not None
+        assert exc_info.value is not None
+        assert exc_info.value.body is not None
         body = json.loads(exc_info.value.body.decode())
         assert "No games found" in body["error"]
 
@@ -131,6 +139,9 @@ class TestShiftCodeWebhookHandlerValidateRequest:
             handler._validate_shift_code_request(mock_request, http_headers)
 
         assert exc_info.value.status_code == 400
+        assert exc_info is not None
+        assert exc_info.value is not None
+        assert exc_info.value.body is not None
         body = json.loads(exc_info.value.body.decode())
         assert "No games found" in body["error"]
 
@@ -146,7 +157,9 @@ class TestShiftCodeWebhookHandlerValidateRequest:
 
         with pytest.raises(HttpResponseException) as exc_info:
             handler._validate_shift_code_request(mock_request, http_headers)
-
+        assert exc_info is not None
+        assert exc_info.value is not None
+        assert exc_info.value.body is not None
         assert exc_info.value.status_code == 400
         body = json.loads(exc_info.value.body.decode())
         assert "No code found" in body["error"]
@@ -158,11 +171,7 @@ class TestShiftCodeWebhookHandlerValidateRequest:
         - Returns parsed payload dict
         - All required fields present
         """
-        payload = {
-            "code": "ABCD-1234",
-            "games": [{"name": "Borderlands 3"}],
-            "reward": "3 Golden Keys"
-        }
+        payload = {"code": "ABCD-1234", "games": [{"name": "Borderlands 3"}], "reward": "3 Golden Keys"}
         mock_request.body = json.dumps(payload).encode()
 
         result = handler._validate_shift_code_request(mock_request, http_headers)
@@ -256,8 +265,7 @@ class TestShiftCodeWebhookHandlerCheckExpiry:
         """
         with patch('bot.lib.utils.get_seconds_until', return_value=86400):  # 1 day
             result = handler._check_code_expiry(
-                int(datetime(2030, 1, 1, tzinfo=timezone.utc).timestamp()),
-                http_headers
+                int(datetime(2030, 1, 1, tzinfo=timezone.utc).timestamp()), http_headers
             )
             assert result is True
 
@@ -270,12 +278,12 @@ class TestShiftCodeWebhookHandlerCheckExpiry:
         """
         with patch('bot.lib.utils.get_seconds_until', return_value=-86400):  # 1 day ago
             with pytest.raises(HttpResponseException) as exc_info:
-                handler._check_code_expiry(
-                    int(datetime(2020, 1, 1, tzinfo=timezone.utc).timestamp()),
-                    http_headers
-                )
+                handler._check_code_expiry(int(datetime(2020, 1, 1, tzinfo=timezone.utc).timestamp()), http_headers)
 
             assert exc_info.value.status_code == 202
+            assert exc_info is not None
+            assert exc_info.value is not None
+            assert exc_info.value.body is not None
             body = json.loads(exc_info.value.body.decode())
             assert "Code is expired" in body["error"]
 
@@ -288,10 +296,7 @@ class TestShiftCodeWebhookHandlerCheckExpiry:
         """
         with patch('bot.lib.utils.get_seconds_until', return_value=0):
             with pytest.raises(HttpResponseException) as exc_info:
-                handler._check_code_expiry(
-                    int(datetime.now(timezone.utc).timestamp()),
-                    http_headers
-                )
+                handler._check_code_expiry(int(datetime.now(timezone.utc).timestamp()), http_headers)
 
             assert exc_info.value.status_code == 202
 
@@ -308,11 +313,7 @@ class TestShiftCodeWebhookHandlerBuildDescription:
         - Notes included
         - React instructions included
         """
-        result = handler._build_shift_code_description(
-            "ABCD-1234",
-            "3 Golden Keys",
-            "Platform agnostic"
-        )
+        result = handler._build_shift_code_description("ABCD-1234", "3 Golden Keys", "Platform agnostic")
 
         assert "`ABCD-1234`" in result
         assert "3 Golden Keys" in result
@@ -328,11 +329,7 @@ class TestShiftCodeWebhookHandlerBuildDescription:
         - Notes section not included
         - React instructions included
         """
-        result = handler._build_shift_code_description(
-            "ABCD-1234",
-            "3 Golden Keys",
-            None
-        )
+        result = handler._build_shift_code_description("ABCD-1234", "3 Golden Keys", None)
 
         assert "`ABCD-1234`" in result
         assert "3 Golden Keys" in result
@@ -345,11 +342,7 @@ class TestShiftCodeWebhookHandlerBuildDescription:
         Verifies:
         - HTML entities like &amp; converted
         """
-        result = handler._build_shift_code_description(
-            "ABCD-1234",
-            "3 Golden Keys &amp; Skins",
-            None
-        )
+        result = handler._build_shift_code_description("ABCD-1234", "3 Golden Keys &amp; Skins", None)
 
         assert "3 Golden Keys & Skins" in result
         assert "&amp;" not in result
@@ -360,11 +353,7 @@ class TestShiftCodeWebhookHandlerBuildDescription:
         Verifies:
         - HTML entities in notes converted
         """
-        result = handler._build_shift_code_description(
-            "ABCD-1234",
-            "Test",
-            "Use &lt;redeem button&gt;"
-        )
+        result = handler._build_shift_code_description("ABCD-1234", "Test", "Use &lt;redeem button&gt;")
 
         assert "Use <redeem button>" in result
         assert "&lt;" not in result
@@ -522,11 +511,7 @@ class TestShiftCodeWebhookHandlerBuildEmbedFields:
         - Multiple fields created
         - Each game has own field
         """
-        games = [
-            {"name": "Borderlands 3"},
-            {"name": "Borderlands 2"},
-            {"name": "Tiny Tina's Wonderlands"}
-        ]
+        games = [{"name": "Borderlands 3"}, {"name": "Borderlands 2"}, {"name": "Tiny Tina's Wonderlands"}]
         result = handler._build_embed_fields(games, "TEST-CODE")
 
         assert len(result) == 3
@@ -541,11 +526,7 @@ class TestShiftCodeWebhookHandlerBuildEmbedFields:
         - Game without name is skipped
         - Other games still included
         """
-        games = [
-            {"name": "Borderlands 3"},
-            {},  # Missing name
-            {"name": "Borderlands 2"}
-        ]
+        games = [{"name": "Borderlands 3"}, {}, {"name": "Borderlands 2"}]
         result = handler._build_embed_fields(games, "TEST-CODE")
 
         assert len(result) == 2

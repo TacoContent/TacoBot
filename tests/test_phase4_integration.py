@@ -9,11 +9,8 @@ Tests end-to-end validation functionality including:
 - CLI integration with validation flags
 """
 
-import tempfile
-import textwrap
 from pathlib import Path
 
-import pytest
 from scripts.swagger_sync.models import Endpoint
 from scripts.swagger_sync.validator import (
     ValidationSeverity,
@@ -505,10 +502,8 @@ def test_phase_4_acceptance_criteria():
         function="test3",
         meta={},
         decorator_metadata={
-            'parameters': [
-                {'name': 'id', 'in': 'path', 'schema': {'type': 'string'}}  # Missing required
-            ],
-            'responses': {'200': {'description': 'OK'}}
+            'parameters': [{'name': 'id', 'in': 'path', 'schema': {'type': 'string'}}],  # Missing 'required': True
+            'responses': {'200': {'description': 'OK'}},
         }
     )
 
