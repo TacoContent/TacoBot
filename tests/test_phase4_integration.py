@@ -45,9 +45,9 @@ class TestEndToEndValidation:
                         'description': 'Success',
                         'content': {'application/json': {'schema': {'$ref': '#/components/schemas/User'}}},
                     },
-                    '404': {'description': 'User not found'}
+                    '404': {'description': 'User not found'},
                 },
-                'security': [{'BearerAuth': []}]
+                'security': [{'BearerAuth': []}],
             }
         )
 
@@ -57,7 +57,7 @@ class TestEndToEndValidation:
             metadata=metadata,
             endpoint_id="GET /api/v1/users/{user_id}",
             available_schemas={'User'},
-            available_security_schemes={'BearerAuth'}
+            available_security_schemes={'BearerAuth'},
         )
 
         assert len(errors) == 0, f"Expected no errors but got: {errors}"
@@ -82,9 +82,7 @@ class TestEndToEndValidation:
 
         metadata, _ = endpoint.get_merged_metadata()
         errors = validate_endpoint_metadata(
-            metadata=metadata,
-            endpoint_id="GET /api/v1/posts",
-            available_schemas={'User', 'Role'},
+            metadata=metadata, endpoint_id="GET /api/v1/posts", available_schemas={'User', 'Role'}
         )
 
         assert len(errors) >= 1
@@ -99,9 +97,7 @@ class TestEndToEndValidation:
             file=Path("test.py"),
             function="custom_action",
             meta={},
-            decorator_metadata={
-                'responses': {'200': {'description': 'OK'}, '999': {'description': 'Custom status'}}
-            },
+            decorator_metadata={'responses': {'200': {'description': 'OK'}, '999': {'description': 'Custom status'}}},
         )
 
         metadata, _ = endpoint.get_merged_metadata()
@@ -121,7 +117,7 @@ class TestEndToEndValidation:
             meta={},
             decorator_metadata={
                 'parameters': [{'name': 'query', 'schema': {'type': 'string'}}],
-                'responses': {'200': {'description': 'Results'}}
+                'responses': {'200': {'description': 'Results'}},
             },
         )
 
@@ -180,17 +176,12 @@ class TestEndToEndValidation:
             file=Path("test.py"),
             function="secure_endpoint",
             meta={},
-            decorator_metadata={
-                'security': [{'UnknownAuth': []}],
-                'responses': {'200': {'description': 'Success'}},
-            },
+            decorator_metadata={'security': [{'UnknownAuth': []}],'responses': {'200': {'description': 'Success'}}},
         )
 
         metadata, _ = endpoint.get_merged_metadata()
         errors = validate_endpoint_metadata(
-            metadata=metadata,
-            endpoint_id="GET /api/v1/secure",
-            available_security_schemes={'BearerAuth', 'ApiKeyAuth'}
+            metadata=metadata, endpoint_id="GET /api/v1/secure", available_security_schemes={'BearerAuth', 'ApiKeyAuth'}
         )
 
         security_errors = [e for e in errors if 'UnknownAuth' in str(e)]
@@ -214,9 +205,7 @@ class TestEndToEndValidation:
                 # 5. Unknown security scheme
                 'parameters': [{'name': 'id', 'in': 'path', 'required': False, 'schema': {'type': 'string'}}],
                 'responses': {
-                    '200': {
-                        'content': {'application/json': {'schema': {'$ref': '#/components/schemas/MissingModel'}}}
-                    },
+                    '200': {'content': {'application/json': {'schema': {'$ref': '#/components/schemas/MissingModel'}}}},
                     '999': {'description': 'Custom'},  # Issue 3
                 },
                 'security': [{'BadAuth': []}],  # Issue 5
@@ -228,7 +217,7 @@ class TestEndToEndValidation:
             metadata=metadata,
             endpoint_id="POST /api/v1/broken/{id}",
             available_schemas={'User'},
-            available_security_schemes={'BearerAuth'}
+            available_security_schemes={'BearerAuth'},
         )
 
         # Should have at least 5 errors/warnings (one for each issue)
@@ -238,7 +227,9 @@ class TestEndToEndValidation:
         assert any('required=true' in str(e) for e in errors), "Path param required error not found"
         assert any('MissingModel' in str(e) for e in errors), "Missing schema error not found"
         assert any('999' in str(e) for e in errors), "Non-standard status code warning not found"
-        assert any('description' in str(e).lower() and '200' in str(e) for e in errors), "Missing description error not found"
+        assert any(
+            'description' in str(e).lower() and '200' in str(e) for e in errors
+        ), "Missing description error not found"
         assert any('BadAuth' in str(e) for e in errors), "Unknown security scheme error not found"
 
 
@@ -256,16 +247,13 @@ class TestYAMLFallbackWithValidation:
                 'description': "Full description from YAML",
                 'tags': ["yaml"],
                 'parameters': [{'name': 'filter', 'in': 'query', 'required': False, 'schema': {'type': 'string'}}],
-                'responses': {'200': {'description': 'Success from YAML'}}
+                'responses': {'200': {'description': 'Success from YAML'}},
             },
             decorator_metadata={'summary': "Hybrid endpoint"},
         )
 
         metadata, _ = endpoint.get_merged_metadata()
-        errors = validate_endpoint_metadata(
-            metadata=metadata,
-            endpoint_id="GET /api/v1/hybrid"
-        )
+        errors = validate_endpoint_metadata(metadata=metadata, endpoint_id="GET /api/v1/hybrid")
 
         # Should validate cleanly with merged metadata
         assert len(errors) == 0
@@ -283,7 +271,7 @@ class TestYAMLFallbackWithValidation:
                 'parameters': [{'name': 'bad_param', 'schema': {'type': 'string'}}],
                 'responses': {'200': {'description': 'Success'}},
             },
-            decorator_metadata={'summary': "Valid summary"}  # Valid decorator metadata
+            decorator_metadata={'summary': "Valid summary"},  # Valid decorator metadata
         )
 
         metadata, _ = endpoint.get_merged_metadata()
@@ -363,14 +351,10 @@ def test_phase_4_acceptance_criteria():
             'responses': {
                 '200': {
                     'description': 'OK',
-                    'content': {
-                        'application/json': {
-                            'schema': {'$ref': '#/components/schemas/UnknownModel'}
-                        }
-                    }
+                    'content': {'application/json': {'schema': {'$ref': '#/components/schemas/UnknownModel'}}},
                 }
             }
-        }
+        },
     )
 
     metadata, _ = endpoint.get_merged_metadata()
