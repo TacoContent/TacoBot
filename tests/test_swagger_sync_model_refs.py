@@ -3,6 +3,7 @@
 Validates that the automatic model component generation correctly creates
 $ref references for model class type annotations instead of defaulting to string.
 """
+
 from __future__ import annotations
 
 import pathlib
@@ -359,7 +360,9 @@ def component(name: str, description: str = None):
         assert status_schema['type'] == 'string', 'status should be string type'
         assert 'enum' in status_schema, 'status should have enum property'
         assert set(status_schema['enum']) == {
-            'active', 'inactive', 'pending'
+            'active',
+            'inactive',
+            'pending',
         }, f"Unexpected enum values: {status_schema['enum']}"
         assert '$ref' not in status_schema, 'status should not be a $ref'
 

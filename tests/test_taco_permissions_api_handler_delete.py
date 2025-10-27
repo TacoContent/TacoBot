@@ -79,7 +79,9 @@ async def test_delete_not_found(handler):
 async def test_delete_exception(handler):
     handler.validate_auth_token.return_value = True
     handler._remove_permission.side_effect = Exception("DB error")
-    handler._create_error_response = MagicMock(return_value=HttpResponse(500, headers=HttpHeaders(), body=b'{"error": "Internal server error: DB error"}'))
+    handler._create_error_response = MagicMock(
+        return_value=HttpResponse(500, headers=HttpHeaders(), body=b'{"error": "Internal server error: DB error"}')
+    )
     request = MagicMock(spec=HttpRequest)
     uri_variables = {"guildId": "123", "userId": "456", "permission": "admin"}
 

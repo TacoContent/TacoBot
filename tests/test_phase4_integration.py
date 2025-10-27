@@ -12,10 +12,7 @@ Tests end-to-end validation functionality including:
 from pathlib import Path
 
 from scripts.swagger_sync.models import Endpoint
-from scripts.swagger_sync.validator import (
-    ValidationSeverity,
-    validate_endpoint_metadata,
-)
+from scripts.swagger_sync.validator import ValidationSeverity, validate_endpoint_metadata
 
 
 class TestEndToEndValidation:
@@ -40,21 +37,15 @@ class TestEndToEndValidation:
                         'in': 'path',
                         'required': True,
                         'schema': {'type': 'string'},
-                        'description': 'User ID'
+                        'description': 'User ID',
                     }
                 ],
                 'responses': {
                     '200': {
                         'description': 'Success',
-                        'content': {
-                            'application/json': {
-                                'schema': {'$ref': '#/components/schemas/User'}
-                            }
-                        }
+                        'content': {'application/json': {'schema': {'$ref': '#/components/schemas/User'}}},
                     },
-                    '404': {
-                        'description': 'User not found'
-                    }
+                    '404': {'description': 'User not found'}
                 },
                 'security': [{'BearerAuth': []}]
             }
@@ -83,21 +74,17 @@ class TestEndToEndValidation:
                 'responses': {
                     '200': {
                         'description': 'Success',
-                        'content': {
-                            'application/json': {
-                                'schema': {'$ref': '#/components/schemas/UnknownModel'}
-                            }
-                        }
+                        'content': {'application/json': {'schema': {'$ref': '#/components/schemas/UnknownModel'}}},
                     }
                 }
-            }
+            },
         )
 
         metadata, _ = endpoint.get_merged_metadata()
         errors = validate_endpoint_metadata(
             metadata=metadata,
             endpoint_id="GET /api/v1/posts",
-            available_schemas={'User', 'Role'}  # UnknownModel not available
+            available_schemas={'User', 'Role'},
         )
 
         assert len(errors) >= 1
@@ -113,18 +100,12 @@ class TestEndToEndValidation:
             function="custom_action",
             meta={},
             decorator_metadata={
-                'responses': {
-                    '200': {'description': 'OK'},
-                    '999': {'description': 'Custom status'}  # Non-standard
-                }
-            }
+                'responses': {'200': {'description': 'OK'}, '999': {'description': 'Custom status'}}
+            },
         )
 
         metadata, _ = endpoint.get_merged_metadata()
-        errors = validate_endpoint_metadata(
-            metadata=metadata,
-            endpoint_id="POST /api/v1/custom"
-        )
+        errors = validate_endpoint_metadata(metadata=metadata, endpoint_id="POST /api/v1/custom")
 
         warnings = [e for e in errors if e.severity == ValidationSeverity.WARNING]
         assert len(warnings) >= 1
@@ -139,24 +120,13 @@ class TestEndToEndValidation:
             function="search",
             meta={},
             decorator_metadata={
-                'parameters': [
-                    {
-                        'name': 'query',
-                        # Missing 'in' field
-                        'schema': {'type': 'string'}
-                    }
-                ],
-                'responses': {
-                    '200': {'description': 'Results'}
-                }
-            }
+                'parameters': [{'name': 'query', 'schema': {'type': 'string'}}],
+                'responses': {'200': {'description': 'Results'}}
+            },
         )
 
         metadata, _ = endpoint.get_merged_metadata()
-        errors = validate_endpoint_metadata(
-            metadata=metadata,
-            endpoint_id="GET /api/v1/search"
-        )
+        errors = validate_endpoint_metadata(metadata=metadata, endpoint_id="GET /api/v1/search")
 
         param_errors = [e for e in errors if 'parameter' in str(e).lower()]
         assert len(param_errors) >= 1
@@ -171,25 +141,13 @@ class TestEndToEndValidation:
             function="get_item",
             meta={},
             decorator_metadata={
-                'parameters': [
-                    {
-                        'name': 'item_id',
-                        'in': 'path',
-                        'required': False,  # Should be True for path params
-                        'schema': {'type': 'string'}
-                    }
-                ],
-                'responses': {
-                    '200': {'description': 'Success'}
-                }
-            }
+                'parameters': [{'name': 'item_id', 'in': 'path', 'required': False, 'schema': {'type': 'string'}}],
+                'responses': {'200': {'description': 'Success'}},
+            },
         )
 
         metadata, _ = endpoint.get_merged_metadata()
-        errors = validate_endpoint_metadata(
-            metadata=metadata,
-            endpoint_id="GET /api/v1/items/{item_id}"
-        )
+        errors = validate_endpoint_metadata(metadata=metadata, endpoint_id="GET /api/v1/items/{item_id}")
 
         required_errors = [e for e in errors if 'required=true' in str(e)]
         assert len(required_errors) >= 1
@@ -203,24 +161,12 @@ class TestEndToEndValidation:
             function="do_action",
             meta={},
             decorator_metadata={
-                'responses': {
-                    '200': {
-                        # Missing required 'description' field
-                        'content': {
-                            'application/json': {
-                                'schema': {'type': 'object'}
-                            }
-                        }
-                    }
-                }
-            }
+                'responses': {'200': {'content': {'application/json': {'schema': {'type': 'object'}}}}}
+            },
         )
 
         metadata, _ = endpoint.get_merged_metadata()
-        errors = validate_endpoint_metadata(
-            metadata=metadata,
-            endpoint_id="POST /api/v1/action"
-        )
+        errors = validate_endpoint_metadata(metadata=metadata, endpoint_id="POST /api/v1/action")
 
         desc_errors = [e for e in errors if 'description' in str(e).lower()]
         assert len(desc_errors) >= 1
@@ -236,10 +182,8 @@ class TestEndToEndValidation:
             meta={},
             decorator_metadata={
                 'security': [{'UnknownAuth': []}],
-                'responses': {
-                    '200': {'description': 'Success'}
-                }
-            }
+                'responses': {'200': {'description': 'Success'}},
+            },
         )
 
         metadata, _ = endpoint.get_merged_metadata()
@@ -268,27 +212,15 @@ class TestEndToEndValidation:
                 # 3. Non-standard status code
                 # 4. Response missing description
                 # 5. Unknown security scheme
-                'parameters': [
-                    {
-                        'name': 'id',
-                        'in': 'path',
-                        'required': False,  # Issue 1
-                        'schema': {'type': 'string'}
-                    }
-                ],
+                'parameters': [{'name': 'id', 'in': 'path', 'required': False, 'schema': {'type': 'string'}}],
                 'responses': {
                     '200': {
-                        # Issue 4
-                        'content': {
-                            'application/json': {
-                                'schema': {'$ref': '#/components/schemas/MissingModel'}  # Issue 2
-                            }
-                        }
+                        'content': {'application/json': {'schema': {'$ref': '#/components/schemas/MissingModel'}}}
                     },
-                    '999': {'description': 'Custom'}  # Issue 3
+                    '999': {'description': 'Custom'},  # Issue 3
                 },
-                'security': [{'BadAuth': []}]  # Issue 5
-            }
+                'security': [{'BadAuth': []}],  # Issue 5
+            },
         )
 
         metadata, _ = endpoint.get_merged_metadata()
@@ -323,21 +255,10 @@ class TestYAMLFallbackWithValidation:
             meta={  # YAML metadata
                 'description': "Full description from YAML",
                 'tags': ["yaml"],
-                'parameters': [
-                    {
-                        'name': 'filter',
-                        'in': 'query',
-                        'required': False,
-                        'schema': {'type': 'string'}
-                    }
-                ],
-                'responses': {
-                    '200': {'description': 'Success from YAML'}
-                }
+                'parameters': [{'name': 'filter', 'in': 'query', 'required': False, 'schema': {'type': 'string'}}],
+                'responses': {'200': {'description': 'Success from YAML'}}
             },
-            decorator_metadata={  # Decorator metadata - overrides summary
-                'summary': "Hybrid endpoint"
-            }
+            decorator_metadata={'summary': "Hybrid endpoint"},
         )
 
         metadata, _ = endpoint.get_merged_metadata()
@@ -359,27 +280,14 @@ class TestYAMLFallbackWithValidation:
             file=Path("test.py"),
             function="invalid_endpoint",
             meta={  # YAML with invalid parameter
-                'parameters': [
-                    {
-                        'name': 'bad_param',
-                        # Missing 'in' field - invalid
-                        'schema': {'type': 'string'}
-                    }
-                ],
-                'responses': {
-                    '200': {'description': 'Success'}
-                }
+                'parameters': [{'name': 'bad_param', 'schema': {'type': 'string'}}],
+                'responses': {'200': {'description': 'Success'}},
             },
-            decorator_metadata={  # Decorator provides summary
-                'summary': "Valid summary"
-            }
+            decorator_metadata={'summary': "Valid summary"}  # Valid decorator metadata
         )
 
         metadata, _ = endpoint.get_merged_metadata()
-        errors = validate_endpoint_metadata(
-            metadata=metadata,
-            endpoint_id="GET /api/v1/invalid"
-        )
+        errors = validate_endpoint_metadata(metadata=metadata, endpoint_id="GET /api/v1/invalid")
 
         # Should detect invalid parameter from YAML
         param_errors = [e for e in errors if 'parameter' in str(e).lower() and "'in'" in str(e)]
@@ -398,10 +306,7 @@ class TestValidationRegression:
             file=Path("test.py"),
             function="test",
             meta={},
-            decorator_metadata={
-                'summary': "Test endpoint",
-                'responses': {'200': {'description': 'OK'}}  # Valid response
-            }
+            decorator_metadata={'summary': "Test endpoint", 'responses': {'200': {'description': 'OK'}}},
         )
 
         # Without explicit validation, should still get merged metadata
@@ -420,21 +325,15 @@ class TestValidationRegression:
             meta={},
             decorator_metadata={
                 'summary': "Original summary",
-                'responses': {
-                    '200': {'description': 'OK'},
-                    '999': {'description': 'Custom'}  # Non-standard
-                }
-            }
+                'responses': {'200': {'description': 'OK'}, '999': {'description': 'Custom'}},
+            },
         )
 
         metadata, _ = endpoint.get_merged_metadata()
         metadata_before = dict(metadata)
 
         # Run validation
-        errors = validate_endpoint_metadata(
-            metadata=metadata,
-            endpoint_id="GET /api/v1/immutable"
-        )
+        errors = validate_endpoint_metadata(metadata=metadata, endpoint_id="GET /api/v1/immutable")
 
         # Metadata should be unchanged
         assert metadata == metadata_before
@@ -486,7 +385,7 @@ def test_phase_4_acceptance_criteria():
         file=Path("test.py"),
         function="test2",
         meta={},
-        decorator_metadata={'responses': {'999': {'description': 'Custom'}}}
+        decorator_metadata={'responses': {'999': {'description': 'Custom'}}},
     )
 
     metadata2, _ = endpoint2.get_merged_metadata()
@@ -504,7 +403,7 @@ def test_phase_4_acceptance_criteria():
         decorator_metadata={
             'parameters': [{'name': 'id', 'in': 'path', 'schema': {'type': 'string'}}],  # Missing 'required': True
             'responses': {'200': {'description': 'OK'}},
-        }
+        },
     )
 
     metadata3, _ = endpoint3.get_merged_metadata()

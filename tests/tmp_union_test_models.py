@@ -8,6 +8,7 @@ NOTE: This file follows the tmp_* naming convention used in tests for
       temporary test fixtures. These models are NOT scanned during production
       swagger sync since the --models-root defaults to bot/lib/models.
 """
+
 import typing
 
 from bot.lib.models.DiscordRole import DiscordRole
@@ -19,6 +20,7 @@ from bot.lib.models.openapi import openapi
 @openapi.component()
 class SearchDateFilter:
     """Date range filter for search."""
+
     start_date: str
     end_date: str
 
@@ -26,6 +28,7 @@ class SearchDateFilter:
 @openapi.component()
 class SearchAuthorFilter:
     """Author filter for search."""
+
     author_id: str
     author_name: str | None
 
@@ -33,14 +36,13 @@ class SearchAuthorFilter:
 @openapi.component()
 class SearchTagFilter:
     """Tag filter for search."""
+
     tags: list[str]
     match_all: bool
 
 
 # Search criteria can combine multiple filter types (anyOf)
-SearchCriteria: typing.TypeAlias = typing.Union[
-    SearchDateFilter, SearchAuthorFilter, SearchTagFilter
-]
+SearchCriteria: typing.TypeAlias = typing.Union[SearchDateFilter, SearchAuthorFilter, SearchTagFilter]
 
 openapi.type_alias(
     "SearchCriteria",
@@ -54,16 +56,12 @@ openapi.type_alias(
 OptionalMentionable: typing.TypeAlias = typing.Optional[typing.Union[DiscordRole, DiscordUser]]
 
 openapi.type_alias(
-    "OptionalMentionable",
-    description="An optional Discord mentionable entity (role, user, or null).",
-    managed=True,
+    "OptionalMentionable", description="An optional Discord mentionable entity (role, user, or null).", managed=True
 )(typing.cast(typing.Any, OptionalMentionable))
 
 
 # Test 2: Union[A, B, C, None] pattern - nullable composable union
-OptionalSearchCriteria: typing.TypeAlias = typing.Union[
-    SearchDateFilter, SearchAuthorFilter, SearchTagFilter, None
-]
+OptionalSearchCriteria: typing.TypeAlias = typing.Union[SearchDateFilter, SearchAuthorFilter, SearchTagFilter, None]
 
 openapi.type_alias(
     "OptionalSearchCriteria",

@@ -11,10 +11,7 @@ import sys
 # Add scripts directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 
-from swagger_sync.merge_utils import (  # type: ignore # noqa: E402
-    merge_endpoint_metadata,
-    merge_examples_into_spec,
-)
+from swagger_sync.merge_utils import (merge_endpoint_metadata, merge_examples_into_spec)  # type: ignore # noqa: E402
 
 
 class TestParameterExampleMerge:
@@ -142,7 +139,12 @@ class TestRequestBodyExampleMerge:
         result = {}
         examples = [
             {'name': 'post_example', 'placement': 'requestBody', 'value': {'action': 'create'}, 'methods': ['post']},
-            {'name': 'put_example', 'placement': 'requestBody', 'value': {'action': 'update'}, 'methods': ['put', 'patch']},
+            {
+                'name': 'put_example',
+                'placement': 'requestBody',
+                'value': {'action': 'update'},
+                'methods': ['put', 'patch'],
+            },
         ]
 
         # Should only include post_example for POST method
@@ -165,9 +167,9 @@ class TestResponseExampleMerge:
                     'content': {
                         'application/json': {
                             'schema': {'type': 'array', 'items': {'$ref': '#/components/schemas/DiscordRole'}}
-                        },
+                        }
                     },
-                },
+                }
             }
         }
         examples = [
@@ -201,8 +203,12 @@ class TestResponseExampleMerge:
         assert '200' in result['responses']
         assert '404' in result['responses']
         assert '400' in result['responses']
-        assert result['responses']['200']['content']['application/json']['examples']['success']['value'] == {'status': 'ok'}
-        assert result['responses']['404']['content']['application/json']['examples']['not_found']['value'] == {'error': 'Not found'}
+        assert result['responses']['200']['content']['application/json']['examples']['success']['value'] == {
+            'status': 'ok'
+        }
+        assert result['responses']['404']['content']['application/json']['examples']['not_found']['value'] == {
+            'error': 'Not found'
+        }
 
     def test_response_example_missing_status_code(self):
         """Test response example without status_code is skipped."""
@@ -355,7 +361,7 @@ class TestEndpointMetadataMerge:
                     'status_code': 200,
                     'value': [{'id': '1', 'name': 'Admin'}],
                 }
-            ]
+            ],
         }
 
         merged, warnings = merge_endpoint_metadata(yaml_meta, decorator_meta, '/api/v1/roles', 'get')
@@ -380,7 +386,7 @@ class TestEndpointMetadataMerge:
             'requestBody': {
                 'required': True,
                 'content': {'application/json': {'schema': {'$ref': '#/components/schemas/RoleRequest'}}},
-            }
+            },
         }
         decorator_meta = {
             'x-examples': [

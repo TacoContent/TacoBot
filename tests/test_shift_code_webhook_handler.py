@@ -336,7 +336,7 @@ class TestShiftCodeWebhookHandler:
         payload = {
             "code": "NOEXPIRY123",
             "games": [{"name": "Borderlands 3"}],
-            "reward": "Test"
+            "reward": "Test",
             # No expiry field
         }
         mock_request.body = json.dumps(payload).encode()

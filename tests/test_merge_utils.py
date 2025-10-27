@@ -393,14 +393,14 @@ class TestMergeEndpointMetadata:
             'summary': 'Old summary',
             'tags': ['old'],
             'parameters': [{'name': 'id', 'in': 'path'}, {'name': 'filter', 'in': 'query'}],
-            'responses': {'200': {'description': 'OK'}, '404': {'description': 'Not found'}}
+            'responses': {'200': {'description': 'OK'}, '404': {'description': 'Not found'}},
         }
         decorator = {
             'summary': 'New summary',
             'description': 'New description',
             'tags': ['new'],
             'parameters': [{'name': 'id', 'in': 'path', 'required': True}],
-            'responses': {'200': {'description': 'Success', 'content': {}}}
+            'responses': {'200': {'description': 'Success', 'content': {}}},
         }
         merged, warnings = merge_endpoint_metadata(yaml, decorator, '/test', 'get')
 

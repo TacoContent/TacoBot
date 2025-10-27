@@ -78,13 +78,16 @@ class TestMinecraftPlayerWebhookHandlerCreateErrorResponse:
         assert len(response_data["stacktrace"]) > 0
         assert "ValueError: Test exception" in response_data["stacktrace"]
 
-    @pytest.mark.parametrize("status_code,message", [
-        (400, "Missing required field"),
-        (401, "Unauthorized access"),
-        (404, "Resource not found"),
-        (500, "Internal server error"),
-        (503, "Service unavailable"),
-    ])
+    @pytest.mark.parametrize(
+        "status_code,message",
+        [
+            (400, "Missing required field"),
+            (401, "Unauthorized access"),
+            (404, "Resource not found"),
+            (500, "Internal server error"),
+            (503, "Service unavailable"),
+        ],
+    )
     def test_create_error_response_various_codes(self, handler, http_headers, status_code, message):
         """Test error response creation with various status codes.
 
@@ -386,11 +389,14 @@ class TestMinecraftPlayerWebhookHandlerValidateEventType:
         headers.add("Content-Type", "application/json")
         return headers
 
-    @pytest.mark.parametrize("event_str,expected_enum", [
-        ("LOGIN", MinecraftPlayerEvents.LOGIN),
-        ("LOGOUT", MinecraftPlayerEvents.LOGOUT),
-        ("DEATH", MinecraftPlayerEvents.DEATH),
-    ])
+    @pytest.mark.parametrize(
+        "event_str,expected_enum",
+        [
+            ("LOGIN", MinecraftPlayerEvents.LOGIN),
+            ("LOGOUT", MinecraftPlayerEvents.LOGOUT),
+            ("DEATH", MinecraftPlayerEvents.DEATH),
+        ],
+    )
     def test_validate_event_type_valid_events(self, handler, http_headers, event_str, expected_enum):
         """Test validation of valid event types.
 
