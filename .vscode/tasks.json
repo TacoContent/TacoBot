@@ -174,7 +174,7 @@
 		{
 			"label": "Format Check (Black)",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python -m black --config .github/linters/.python-black .",
+			"command": "./.venv/scripts/Activate.ps1; python -m black --diff --check --config .github/linters/.python-black .",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"
