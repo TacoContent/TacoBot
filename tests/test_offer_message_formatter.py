@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock
 
 import pytest
+
 from bot.lib.http.handlers.webhook.helpers.OfferMessageFormatter import FormattedOffer, OfferMessageFormatter
 from bot.lib.http.handlers.webhook.helpers.OfferUrlEnricher import EnrichedUrl
 

@@ -1,5 +1,5 @@
-from httpserver.EndpointDecorators import uri_mapping
 
+from httpserver.EndpointDecorators import uri_mapping
 
 class NewMarkersHandler:
     @uri_mapping('/new-markers', method=['GET'])

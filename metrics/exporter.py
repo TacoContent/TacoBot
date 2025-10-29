@@ -2,13 +2,14 @@ import inspect
 import os
 import traceback
 
+from prometheus_client import start_http_server
+
 from bot.lib.enums.loglevel import LogLevel
 from bot.lib.logger import Log
 from bot.lib.settings import Settings
 from bot.lib.utils import dict_get
 from metrics.config import TacoBotMetricsConfig
 from metrics.tacobot import TacoBotMetrics
-from prometheus_client import start_http_server
 
 
 class MetricsExporter:

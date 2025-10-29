@@ -16,6 +16,7 @@ import tempfile
 import xml.etree.ElementTree as ET
 
 import pytest
+
 from scripts.swagger_sync.badge import generate_coverage_badge
 
 

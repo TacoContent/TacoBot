@@ -7,11 +7,10 @@ locations in the OpenAPI specification based on their placement type.
 import os
 import sys
 
-
 # Add scripts directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 
-from swagger_sync.merge_utils import merge_endpoint_metadata, merge_examples_into_spec  # type: ignore # noqa: E402
+from swagger_sync.merge_utils import merge_endpoint_metadata, merge_examples_into_spec
 
 
 class TestParameterExampleMerge:

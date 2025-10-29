@@ -4,6 +4,7 @@ Tests the merging of decorator and YAML metadata with proper precedence rules.
 """
 
 import pytest
+
 from scripts.swagger_sync.merge_utils import (
     deep_merge_dict,
     detect_conflicts,

@@ -8,6 +8,10 @@ from random import random, randrange
 
 import discord
 import pytz
+from discord import app_commands
+from discord.ext import commands
+from discord.ext.commands import Context
+
 from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
@@ -15,9 +19,6 @@ from bot.lib.messaging import Messaging
 from bot.lib.mongodb.birthdays import BirthdaysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.tacobot import TacoBot
-from discord import app_commands
-from discord.ext import commands
-from discord.ext.commands import Context
 
 
 class Birthday(TacobotCog):

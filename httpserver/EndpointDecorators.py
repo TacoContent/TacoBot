@@ -40,8 +40,9 @@ import re
 import types
 from http import HTTPMethod
 
-from httpserver.UriRoute import HTTP_METHODS, UriRoute
 from typing_extensions import Literal
+
+from httpserver.UriRoute import HTTP_METHODS, UriRoute
 
 
 def _uri_variable_to_pattern(uri: str):

@@ -4,13 +4,14 @@ import socket
 import time
 import traceback
 
+from prometheus_client import Gauge
+
 from bot.lib import logger
 from bot.lib.enums.loglevel import LogLevel
 from bot.lib.enums.permissions import TacoPermissions
 from bot.lib.mongodb.metrics import MetricsDatabase
 from bot.lib.settings import Settings
 from bot.lib.utils import dict_get
-from prometheus_client import Gauge
 
 
 class TacoBotMetrics:

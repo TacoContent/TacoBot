@@ -6,6 +6,8 @@ import typing
 import uuid
 
 import discord
+from discord.ext import commands
+
 from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
@@ -16,7 +18,6 @@ from bot.lib.mongodb.suggestions import SuggestionsDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
 from bot.tacobot import TacoBot
-from discord.ext import commands
 
 
 class SuggestionsCog(TacobotCog):

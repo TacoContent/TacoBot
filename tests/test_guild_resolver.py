@@ -7,6 +7,7 @@ which handles guild and channel resolution for webhook broadcasting.
 from unittest.mock import AsyncMock, MagicMock, Mock
 
 import pytest
+
 from bot.lib.http.handlers.webhook.helpers.GuildResolver import GuildResolver, ResolvedGuild
 from bot.lib.mongodb.free_game_keys import FreeGameKeysDatabase
 

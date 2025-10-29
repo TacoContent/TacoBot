@@ -7,12 +7,13 @@ from concurrent.futures import ProcessPoolExecutor
 if os.name == 'nt':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-import bot.tacobot as bot
 import discord
+from dotenv import find_dotenv, load_dotenv
+
+import bot.tacobot as bot
 from bot.lib.colors import Colors
 from bot.lib.mongodb.migration_runner import MigrationRunner
 from bot.lib.mongodb.mongo_singleton import MongoClientSingleton
-from dotenv import find_dotenv, load_dotenv
 from metrics.exporter import MetricsExporter
 
 load_dotenv(find_dotenv())

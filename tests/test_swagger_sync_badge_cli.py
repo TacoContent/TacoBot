@@ -17,6 +17,7 @@ import tempfile
 from unittest import mock
 
 import pytest
+
 from scripts.swagger_sync.badge import generate_coverage_badge
 
 

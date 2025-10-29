@@ -200,7 +200,7 @@
 			}
 		},
 		{
-			"label": "Format (iSort)",
+			"label": "Format Fix (iSort)",
 			"type": "shell",
 			"command": "./.venv/scripts/Activate.ps1; python -m isort --settings-path ./pyproject.toml .",
 			"presentation": {
@@ -227,6 +227,21 @@
 				"isDefault": false
 			}
 		},
+		{
+			"label": "Format Check (Ruff)",
+			"type": "shell",
+			"command": "./.venv/scripts/Activate.ps1; python -m ruff format --check --diff --config ./pyproject.toml .",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"group": {
+				"kind": "test",
+				"isDefault": false
+			}
+		},
+
 		{
 			"label": "Lint (Super Linter)",
 			"type": "shell",

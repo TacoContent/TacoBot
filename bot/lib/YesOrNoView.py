@@ -4,6 +4,7 @@ import traceback
 import typing
 
 import discord
+
 from bot.lib import logger, settings
 from bot.lib.enums import loglevel
 

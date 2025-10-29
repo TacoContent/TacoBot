@@ -2,12 +2,13 @@ import inspect
 import os
 import traceback
 
+from discord.ext import commands
+
 from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.tacobot import TacoBot
-from discord.ext import commands
 
 
 class MessageTracker(TacobotCog):

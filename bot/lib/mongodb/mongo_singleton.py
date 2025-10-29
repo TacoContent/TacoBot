@@ -2,8 +2,9 @@ import os
 import threading
 import typing
 
-from bot.lib import utils
 from pymongo import MongoClient
+
+from bot.lib import utils
 
 
 class MongoClientSingleton:

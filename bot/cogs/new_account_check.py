@@ -4,6 +4,8 @@ import math
 import os
 import traceback
 
+from discord.ext import commands
+
 from bot.lib import discordhelper, utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums.system_actions import SystemActions
@@ -12,7 +14,6 @@ from bot.lib.mongodb.settings import SettingsDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.whitelist import WhitelistDatabase
 from bot.tacobot import TacoBot
-from discord.ext import commands
 
 
 class NewAccountCheckCog(TacobotCog):

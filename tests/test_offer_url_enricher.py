@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 import requests
+
 from bot.lib.http.handlers.webhook.helpers.OfferUrlEnricher import EnrichedUrl, OfferUrlEnricher
 from bot.lib.UrlShortener import UrlShortener
 

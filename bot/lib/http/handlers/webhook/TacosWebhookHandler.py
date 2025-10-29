@@ -95,6 +95,9 @@ from http import HTTPMethod
 from typing import Any, Dict, Optional, Tuple
 
 import discord
+from lib import discordhelper
+from tacobot import TacoBot
+
 from bot.lib.enums.tacotypes import TacoTypes
 from bot.lib.http.handlers.BaseWebhookHandler import BaseWebhookHandler
 from bot.lib.models import openapi
@@ -106,8 +109,6 @@ from bot.lib.users_utils import UsersUtils
 from httpserver.EndpointDecorators import uri_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException
-from lib import discordhelper
-from tacobot import TacoBot
 
 
 class TacosWebhookHandler(BaseWebhookHandler):

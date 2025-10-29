@@ -1,6 +1,7 @@
 import typing
 
 import discord
+
 from bot.lib import discordhelper, settings
 from bot.lib.enums.permissions import TacoPermissions
 from bot.lib.mongodb.permissions import PermissionsDatabase

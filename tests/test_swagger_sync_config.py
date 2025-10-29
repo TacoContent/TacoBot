@@ -21,7 +21,7 @@ import pytest
 from jsonschema import ValidationError
 
 sys.path.insert(0, str(Path(__file__).parent.parent / 'scripts'))
-from swagger_sync.config import (  # type: ignore # noqa: E402
+from swagger_sync.config import (
     DEFAULT_CONFIG,
     ensure_coverage_report_extension,
     export_schema,

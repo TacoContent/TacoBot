@@ -1,7 +1,8 @@
+from discord.ext import commands
+
 from bot.lib import logger, settings
 from bot.lib.enums import loglevel
 from bot.tacobot import TacoBot
-from discord.ext import commands
 
 
 class TacobotCog(commands.Cog):

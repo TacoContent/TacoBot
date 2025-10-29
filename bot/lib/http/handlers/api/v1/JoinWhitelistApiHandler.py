@@ -41,6 +41,11 @@ import traceback
 import typing
 from http import HTTPMethod
 
+from lib import discordhelper
+from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from lib.models.openapi import openapi
+from lib.models.PagedResults import PagedResultsJoinWhitelistUser
+
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.models.JoinWhitelistUser import JoinWhitelistAddedBy, JoinWhitelistUser
@@ -49,10 +54,6 @@ from bot.tacobot import TacoBot
 from httpserver.EndpointDecorators import uri_variable_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException
-from lib import discordhelper
-from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
-from lib.models.openapi import openapi
-from lib.models.PagedResults import PagedResultsJoinWhitelistUser
 
 
 class JoinWhitelistApiHandler(BaseHttpHandler):

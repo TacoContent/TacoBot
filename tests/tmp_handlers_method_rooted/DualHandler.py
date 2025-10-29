@@ -1,8 +1,8 @@
+
 from httpserver.EndpointDecorators import uri_mapping
 
-
 class DualHandler:
-    @uri_mapping('/dual', method=['GET', 'POST'])
+    @uri_mapping('/dual', method=['GET','POST'])
     def dual(self, request):
         """Dual method endpoint with method-rooted openapi block
 

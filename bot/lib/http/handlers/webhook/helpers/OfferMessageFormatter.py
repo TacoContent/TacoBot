@@ -9,10 +9,11 @@ import typing
 from dataclasses import dataclass
 from typing import List, Optional
 
+from lib.http.handlers.webhook.helpers.OfferUrlEnricher import EnrichedUrl
+
 from bot.lib import utils
 from bot.lib.enums.free_game_platforms import FreeGamePlatforms
 from bot.lib.enums.free_game_types import FreeGameTypes
-from lib.http.handlers.webhook.helpers.OfferUrlEnricher import EnrichedUrl
 
 
 @dataclass
