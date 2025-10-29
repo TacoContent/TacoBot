@@ -228,9 +228,9 @@
 			}
 		},
 		{
-			"label": "Format Check (Ruff)",
+			"label": "Lint Check (Ruff)",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python -m ruff format --check --diff --config ./pyproject.toml .",
+			"command": "./.venv/scripts/Activate.ps1; python -m ruff linter --config=./pyproject.toml",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"
