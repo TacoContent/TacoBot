@@ -1,5 +1,5 @@
-
 from httpserver.EndpointDecorators import uri_mapping
+
 
 class CustomMarkersHandler:
     @uri_mapping('/custom-markers', method=['GET'])
