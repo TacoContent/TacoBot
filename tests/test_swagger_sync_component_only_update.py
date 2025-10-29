@@ -47,17 +47,17 @@ def test_component_only_update_triggers_write(monkeypatch):
 
         # Run --check then --fix
         cmd_base = [
-            sys.executable, 
-            'scripts/swagger_sync.py', 
-            '--handlers-root', 
-            'bot/lib/http/handlers', 
-            '--models-root', 
-            'bot/lib/models', 
-            '--swagger-file', 
-            '.swagger.v1.yaml', 
-            '--coverage-report', 
-            'coverage.json', 
-            '--coverage-format', 
+            sys.executable,
+            'scripts/swagger_sync.py',
+            '--handlers-root',
+            'bot/lib/http/handlers',
+            '--models-root',
+            'bot/lib/models',
+            '--swagger-file',
+            '.swagger.v1.yaml',
+            '--coverage-report',
+            'coverage.json',
+            '--coverage-format',
             'json',
         ]
         # Handlers root may not exist in temp; create empty so script can proceed (will have zero handlers)

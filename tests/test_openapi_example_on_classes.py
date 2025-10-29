@@ -77,11 +77,7 @@ def test_example_on_function_still_works():
     """Ensure @openapi.example still works on functions (regression test)."""
 
     @openapi.example(
-        name="success",
-        value={"status": "ok"},
-        placement="response",
-        status_code=200,
-        summary="Successful response",
+        name="success", value={"status": "ok"}, placement="response", status_code=200, summary="Successful response"
     )
     def test_handler():
         pass
@@ -127,10 +123,7 @@ def test_example_validation_on_class():
     with pytest.raises(ValueError, match="Only one of .* can be provided"):
 
         @openapi.example(
-            name="invalid",
-            value={"test": "data"},
-            externalValue="https://example.com/test.json",
-            placement="schema",
+            name="invalid", value={"test": "data"}, externalValue="https://example.com/test.json", placement="schema"
         )
         class TestRoleMutualExclusive:
             pass

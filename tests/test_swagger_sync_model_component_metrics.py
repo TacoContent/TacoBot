@@ -3,6 +3,7 @@
 Ensures new keys model_components_generated and model_components_existing_not_generated
 are present and of expected types/values (>0 generated) when running coverage report.
 """
+
 from __future__ import annotations
 
 import json
@@ -34,7 +35,9 @@ def test_coverage_includes_model_component_metrics(tmp_path: pathlib.Path):
     data = run_sync_json(tmp_path)
     summary = data["summary"]
     assert "model_components_generated" in summary, "Missing model_components_generated metric"
-    assert "model_components_existing_not_generated" in summary, "Missing model_components_existing_not_generated metric"
+    assert (
+        "model_components_existing_not_generated" in summary
+    ), "Missing model_components_existing_not_generated metric"
     assert isinstance(summary["model_components_generated"], int)
     assert isinstance(summary["model_components_existing_not_generated"], int)
     # At least one model component should be generated (DiscordChannel)

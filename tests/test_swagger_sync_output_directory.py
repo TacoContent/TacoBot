@@ -9,6 +9,7 @@ We simulate path resolution logic by invoking main() via a helper wrapper would 
 replicate the _resolve_output semantics using a lightweight import and invoking collect + coverage generation
 with temporary directories.
 """
+
 from __future__ import annotations
 
 import json

@@ -13,6 +13,7 @@ This ensures a single docstring containing:
 
 produces two Endpoint objects with the correct meta subset for each method.
 """
+
 from __future__ import annotations
 
 import pathlib

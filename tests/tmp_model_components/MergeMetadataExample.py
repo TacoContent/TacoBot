@@ -23,6 +23,7 @@ class MergeMetadataExample:
         description: Provided only by unified block
     <<<openapi
     """
+
     def __init__(self):
         self.literal: typing.Literal["example"] = "example"
         self.primary: str = "p"

@@ -1,4 +1,5 @@
 """Test OpenAPI model inheritance using allOf."""
+
 import pathlib
 import tempfile
 import textwrap
@@ -12,7 +13,8 @@ def test_subclass_uses_allof_for_inheritance():
         models_root = pathlib.Path(temp_dir)
 
         # Create base class
-        base_model = textwrap.dedent('''
+        base_model = textwrap.dedent(
+            '''
         from typing import TypeVar, Generic
 
         T = TypeVar('T')
@@ -36,10 +38,12 @@ def test_subclass_uses_allof_for_inheritance():
             def __init__(self, data: dict):
                 self.id: int = data.get("id", 0)
                 self.name: str = data.get("name", "")
-        ''')
+        '''
+        )
 
         # Create subclass
-        sub_model = textwrap.dedent('''
+        sub_model = textwrap.dedent(
+            '''
         from test_base import BaseModel, component, managed
 
         @openapi.component("SubModel", description="Subclass model")
@@ -48,10 +52,12 @@ def test_subclass_uses_allof_for_inheritance():
             def __init__(self, data: dict):
                 super().__init__(data)
                 self.extra_field: str = data.get("extra_field", "")
-        ''')
+        '''
+        )
 
         # Create openapi helper file
-        openapi_content = textwrap.dedent('''
+        openapi_content = textwrap.dedent(
+            '''
         def attribute(name: str, value):
             def decorator(target):
                 if not hasattr(target, '__openapi_attributes__'):
@@ -69,7 +75,8 @@ def test_subclass_uses_allof_for_inheritance():
 
         def managed():
             return attribute('x-tacobot-managed', True)
-        ''')
+        '''
+        )
 
         base_file = models_root / "test_base.py"
         base_file.write_text(base_model)
@@ -120,7 +127,8 @@ def test_generic_base_class_with_typevar():
     with tempfile.TemporaryDirectory() as temp_dir:
         models_root = pathlib.Path(temp_dir)
 
-        base_model = textwrap.dedent('''
+        base_model = textwrap.dedent(
+            '''
         from typing import TypeVar, Generic
         import typing
 
@@ -137,9 +145,11 @@ def test_generic_base_class_with_typevar():
         class GenericBase(Generic[T]):
             def __init__(self, data: dict):
                 self.items: typing.List[T] = data.get("items", [])
-        ''')
+        '''
+        )
 
-        sub_model = textwrap.dedent('''
+        sub_model = textwrap.dedent(
+            '''
         from test_base import GenericBase, component
         import typing
 
@@ -148,9 +158,11 @@ def test_generic_base_class_with_typevar():
             def __init__(self, data: dict):
                 super().__init__(data)
                 self.items: typing.List[str] = data.get("items", [])
-        ''')
+        '''
+        )
 
-        openapi_content = textwrap.dedent('''
+        openapi_content = textwrap.dedent(
+            '''
         def attribute(name: str, value):
             def decorator(target):
                 if not hasattr(target, '__openapi_attributes__'):
@@ -165,7 +177,8 @@ def test_generic_base_class_with_typevar():
                 cls.__openapi_component_description__ = description
                 return cls
             return decorator
-        ''')
+        '''
+        )
 
         base_file = models_root / "test_base.py"
         base_file.write_text(base_model)
@@ -190,13 +203,11 @@ def test_generic_base_class_with_typevar():
         assert 'allOf' in concrete_schema
 
         # Find the base class reference
-        has_base_ref = any('$ref' in item and 'GenericBase' in item['$ref']
-                          for item in concrete_schema['allOf'])
+        has_base_ref = any('$ref' in item and 'GenericBase' in item['$ref'] for item in concrete_schema['allOf'])
         assert has_base_ref, "Should reference GenericBase in allOf"
 
         # Verify overridden items property has string type
-        props_item = next((item for item in concrete_schema['allOf']
-                          if 'properties' in item), None)
+        props_item = next((item for item in concrete_schema['allOf'] if 'properties' in item), None)
         assert props_item is not None
         assert 'items' in props_item['properties']
         assert props_item['properties']['items']['items']['type'] == 'string'
@@ -207,7 +218,8 @@ def test_multiple_inheritance_levels():
     with tempfile.TemporaryDirectory() as temp_dir:
         models_root = pathlib.Path(temp_dir)
 
-        models_content = textwrap.dedent('''
+        models_content = textwrap.dedent(
+            '''
         def component(name: str, description: str = ""):
             def decorator(cls):
                 cls.__openapi_component_name__ = name
@@ -231,9 +243,11 @@ def test_multiple_inheritance_levels():
             def __init__(self, data: dict):
                 super().__init__(data)
                 self.age: int = data.get("age", 0)
-        ''')
+        '''
+        )
 
-        openapi_content = textwrap.dedent('''
+        openapi_content = textwrap.dedent(
+            '''
         def attribute(name: str, value):
             def decorator(target):
                 if not hasattr(target, '__openapi_attributes__'):
@@ -248,7 +262,8 @@ def test_multiple_inheritance_levels():
                 cls.__openapi_component_description__ = description
                 return cls
             return decorator
-        ''')
+        '''
+        )
 
         models_file = models_root / "test_models.py"
         models_file.write_text(models_content)
@@ -267,15 +282,13 @@ def test_multiple_inheritance_levels():
         assert 'Parent' in comps
         parent_schema = comps['Parent']
         assert 'allOf' in parent_schema
-        assert any('GrandParent' in str(item.get('$ref', ''))
-                  for item in parent_schema['allOf'])
+        assert any('GrandParent' in str(item.get('$ref', '')) for item in parent_schema['allOf'])
 
         # Child should use allOf with Parent
         assert 'Child' in comps
         child_schema = comps['Child']
         assert 'allOf' in child_schema
-        assert any('Parent' in str(item.get('$ref', ''))
-                  for item in child_schema['allOf'])
+        assert any('Parent' in str(item.get('$ref', '')) for item in child_schema['allOf'])
 
 
 def test_no_inheritance_standard_schema():
@@ -283,7 +296,8 @@ def test_no_inheritance_standard_schema():
     with tempfile.TemporaryDirectory() as temp_dir:
         models_root = pathlib.Path(temp_dir)
 
-        model_content = textwrap.dedent('''
+        model_content = textwrap.dedent(
+            '''
         def component(name: str, description: str = ""):
             def decorator(cls):
                 cls.__openapi_component_name__ = name
@@ -296,9 +310,11 @@ def test_no_inheritance_standard_schema():
             def __init__(self, data: dict):
                 self.field1: str = data.get("field1", "")
                 self.field2: int = data.get("field2", 0)
-        ''')
+        '''
+        )
 
-        openapi_content = textwrap.dedent('''
+        openapi_content = textwrap.dedent(
+            '''
         def attribute(name: str, value):
             def decorator(target):
                 if not hasattr(target, '__openapi_attributes__'):
@@ -313,7 +329,8 @@ def test_no_inheritance_standard_schema():
                 cls.__openapi_component_description__ = description
                 return cls
             return decorator
-        ''')
+        '''
+        )
 
         model_file = models_root / "test_model.py"
         model_file.write_text(model_content)

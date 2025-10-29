@@ -8,10 +8,7 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock
 
 import pytest
-from bot.lib.http.handlers.webhook.helpers.OfferMessageFormatter import (
-    FormattedOffer,
-    OfferMessageFormatter,
-)
+from bot.lib.http.handlers.webhook.helpers.OfferMessageFormatter import FormattedOffer, OfferMessageFormatter
 from bot.lib.http.handlers.webhook.helpers.OfferUrlEnricher import EnrichedUrl
 
 # =======================
@@ -138,6 +135,7 @@ def test_format_with_future_end_date(basic_payload, enriched_url):
     """Test formatting with future end date (uses 'Ends:')."""
     formatter = OfferMessageFormatter()
     import time
+
     future_time = int(time.time()) + (7 * 24 * 60 * 60)  # 7 days from now
     basic_payload["end_date"] = future_time
 
@@ -151,6 +149,7 @@ def test_format_with_past_end_date(basic_payload, enriched_url):
     """Test formatting with past end date (uses 'Ended:')."""
     formatter = OfferMessageFormatter()
     import time
+
     past_time = int(time.time()) - (24 * 60 * 60)  # 1 day ago
     basic_payload["end_date"] = past_time
 

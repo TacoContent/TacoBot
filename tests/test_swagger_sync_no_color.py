@@ -11,6 +11,7 @@ Approach:
 
 This focuses on _colorize_unified behavior and global DISABLE_COLOR toggle.
 """
+
 from __future__ import annotations
 
 import pathlib

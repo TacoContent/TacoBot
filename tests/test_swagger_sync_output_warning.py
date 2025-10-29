@@ -3,6 +3,7 @@
 We invoke main() with a temporary directory inside the current working directory (repository root assumed
 under test) and capture stderr. The test uses a minimal handler tree and an empty swagger file.
 """
+
 from __future__ import annotations
 
 import pathlib
@@ -42,12 +43,17 @@ def test_output_directory_warning(tmp_path, monkeypatch):
     monkeypatch.setenv('PYTEST_RUNNING', '1')  # marker if needed
     argv = [
         'swagger_sync.py',
-        '--handlers-root', str(handlers),
-        '--swagger-file', str(swagger_file),
-        '--coverage-report', 'cov.json',
-        '--coverage-format', 'json',
-        '--output-directory', str(bad_out),
-        '--check'
+        '--handlers-root',
+        str(handlers),
+        '--swagger-file',
+        str(swagger_file),
+        '--coverage-report',
+        'cov.json',
+        '--coverage-format',
+        'json',
+        '--output-directory',
+        str(bad_out),
+        '--check',
     ]
     monkeypatch.setattr(sys, 'argv', argv)
 

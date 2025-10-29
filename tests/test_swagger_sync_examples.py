@@ -34,7 +34,7 @@ def get_roles(self, request, uri_variables):
     tree = ast.parse(code)
     func_node = tree.body[1]  # Skip import, get function
     metadata = extract_decorator_metadata(func_node)
-    
+
     assert len(metadata.examples) == 1
     example = metadata.examples[0]
     assert example["name"] == "success_response"
@@ -63,7 +63,7 @@ def get_data(self, request, uri_variables):
     tree = ast.parse(code)
     func_node = tree.body[1]
     metadata = extract_decorator_metadata(func_node)
-    
+
     assert len(metadata.examples) == 1
     example = metadata.examples[0]
     assert example["name"] == "large_dataset"
@@ -91,7 +91,7 @@ def get_user(self, request, uri_variables):
     tree = ast.parse(code)
     func_node = tree.body[2]  # Skip the two imports
     metadata = extract_decorator_metadata(func_node)
-    
+
     assert len(metadata.examples) == 1
     example = metadata.examples[0]
     assert example["name"] == "standard_user"
@@ -119,7 +119,7 @@ def get_role(self, request, uri_variables):
     tree = ast.parse(code)
     func_node = tree.body[2]  # Skip the two imports
     metadata = extract_decorator_metadata(func_node)
-    
+
     assert len(metadata.examples) == 1
     example = metadata.examples[0]
     assert example["$ref"] == "#/components/schemas/DiscordRole"
@@ -144,7 +144,7 @@ def get_guild(self, request, uri_variables):
     tree = ast.parse(code)
     func_node = tree.body[1]
     metadata = extract_decorator_metadata(func_node)
-    
+
     assert len(metadata.examples) == 1
     example = metadata.examples[0]
     assert example["name"] == "guild_id_example"
@@ -172,7 +172,7 @@ def create_role(self, request, uri_variables):
     tree = ast.parse(code)
     func_node = tree.body[1]
     metadata = extract_decorator_metadata(func_node)
-    
+
     assert len(metadata.examples) == 1
     example = metadata.examples[0]
     assert example["name"] == "create_role"
@@ -200,7 +200,7 @@ def handle_item(self, request, uri_variables):
     tree = ast.parse(code)
     func_node = tree.body[1]
     metadata = extract_decorator_metadata(func_node)
-    
+
     assert len(metadata.examples) == 1
     example = metadata.examples[0]
     assert example["name"] == "create_request"
@@ -226,7 +226,7 @@ def delete_item(self, request, uri_variables):
     tree = ast.parse(code)
     func_node = tree.body[1]
     metadata = extract_decorator_metadata(func_node)
-    
+
     assert len(metadata.examples) == 1
     example = metadata.examples[0]
     assert example["methods"] == ["DELETE"]  # Converted to list
@@ -252,7 +252,7 @@ def get_data(self, request, uri_variables):
     tree = ast.parse(code)
     func_node = tree.body[1]
     metadata = extract_decorator_metadata(func_node)
-    
+
     assert len(metadata.examples) == 1
     example = metadata.examples[0]
     assert example["x_custom_field"] == "custom_value"
@@ -283,7 +283,7 @@ def get_roles(self, request, uri_variables):
     tree = ast.parse(code)
     func_node = tree.body[1]
     metadata = extract_decorator_metadata(func_node)
-    
+
     assert len(metadata.examples) == 2
     assert metadata.examples[0]["name"] == "success"
     assert metadata.examples[0]["status_code"] == 200
@@ -310,7 +310,7 @@ def delete_resource(self, request, uri_variables):
     tree = ast.parse(code)
     func_node = tree.body[1]
     metadata = extract_decorator_metadata(func_node)
-    
+
     assert len(metadata.examples) == 1
     example = metadata.examples[0]
     assert example["name"] == "null_response"
@@ -335,7 +335,7 @@ def get_schema(self, request, uri_variables):
     tree = ast.parse(code)
     func_node = tree.body[1]
     metadata = extract_decorator_metadata(func_node)
-    
+
     assert len(metadata.examples) == 4
     assert metadata.examples[0]["value"] == "example"
     assert metadata.examples[1]["value"] == 123
@@ -361,7 +361,7 @@ def get_user_schema(self, request, uri_variables):
     tree = ast.parse(code)
     func_node = tree.body[1]
     metadata = extract_decorator_metadata(func_node)
-    
+
     assert len(metadata.examples) == 1
     example = metadata.examples[0]
     assert example["placement"] == "schema"

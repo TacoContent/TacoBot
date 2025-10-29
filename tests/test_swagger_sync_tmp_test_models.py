@@ -1,4 +1,5 @@
 """Integration test to verify test models work correctly from tests directory."""
+
 import pathlib
 
 from scripts.swagger_sync import collect_model_components

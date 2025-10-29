@@ -97,9 +97,7 @@ def make_request(body_obj: Any | None, method: str = "POST") -> HttpRequest:
     raw = None
     if body_obj is not None:
         raw = json.dumps(body_obj).encode("utf-8")
-    return HttpRequest(
-        0.0, method, "/api/v1/guild/1/channel/2/messages/batch/reactions", {}, "HTTP/1.1", headers, raw
-    )
+    return HttpRequest(0.0, method, "/api/v1/guild/1/channel/2/messages/batch/reactions", {}, "HTTP/1.1", headers, raw)
 
 
 @pytest.mark.asyncio

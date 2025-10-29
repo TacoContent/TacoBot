@@ -2,6 +2,7 @@
 
 Tests corner cases and error conditions to ensure the enhancement is robust.
 """
+
 from __future__ import annotations
 
 import pathlib

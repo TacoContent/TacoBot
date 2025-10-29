@@ -3,6 +3,7 @@
 Validates that the DiscordChannel model (decorated) is turned into an OpenAPI
 component schema with expected property types and required list.
 """
+
 from __future__ import annotations
 
 import pathlib
@@ -41,7 +42,9 @@ def test_collect_model_components_discord_message_list_of_dict_items_object():
         assert list_field in props, f'Missing property: {list_field}'
         lf_schema = props[list_field]
         assert lf_schema['type'] == 'array', f'{list_field} should be array'
-        assert lf_schema['items']['type'] == 'object', f'{list_field} items should be object (was {lf_schema["items"]["type"]})'
+        assert (
+            lf_schema['items']['type'] == 'object'
+        ), f'{list_field} items should be object (was {lf_schema["items"]["type"]})'
 
 
 def test_collect_model_components_discord_emoji_literal_enum():

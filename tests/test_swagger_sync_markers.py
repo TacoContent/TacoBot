@@ -4,6 +4,7 @@ Scenarios:
 1. New default markers (>>>openapi / <<<openapi) are parsed.
 2. Custom markers provided by rebuilding regex (e.g. [[openapi and ]]openapi) are parsed.
 """
+
 from __future__ import annotations
 
 import pathlib
@@ -20,7 +21,9 @@ def setup_module(module):  # noqa: D401
     (BASE / '__init__.py').write_text('', encoding='utf-8')
 
     # 1. New default markers >>>openapi / <<<openapi
-    (BASE / 'NewMarkers.py').write_text(textwrap.dedent('''
+    (BASE / 'NewMarkers.py').write_text(
+        textwrap.dedent(
+            '''
         from httpserver.EndpointDecorators import uri_mapping
 
         class NewMarkersHandler:
@@ -34,10 +37,15 @@ def setup_module(module):  # noqa: D401
                 <<<openapi
                 """
                 pass
-    '''), encoding='utf-8')
+    '''
+        ),
+        encoding='utf-8',
+    )
 
     # 2. Custom markers [[openapi ... ]]openapi
-    (BASE / 'CustomMarkers.py').write_text(textwrap.dedent('''
+    (BASE / 'CustomMarkers.py').write_text(
+        textwrap.dedent(
+            '''
         from httpserver.EndpointDecorators import uri_mapping
 
         class CustomMarkersHandler:
@@ -51,7 +59,11 @@ def setup_module(module):  # noqa: D401
                 ]]openapi
                 """
                 pass
-    '''), encoding='utf-8')
+    '''
+        ),
+        encoding='utf-8',
+    )
+
 
 def teardown_module(module):  # noqa: D401 - keep artifacts
     pass
@@ -60,9 +72,9 @@ def teardown_module(module):  # noqa: D401 - keep artifacts
 def test_new_default_markers_parse():
     # Uses current global regex which includes new defaults + legacy.
     eps, _ = collect_endpoints(BASE)
-    metas = { (e.path, e.method): e.meta.get('summary') for e in eps }
+    metas = {(e.path, e.method): e.meta.get('summary') for e in eps}
     assert ('/new-markers', 'get') in metas
-    assert metas[('/new-markers','get')] == 'New markers example'
+    assert metas[('/new-markers', 'get')] == 'New markers example'
 
 
 def test_custom_markers_parse(monkeypatch):
@@ -70,6 +82,7 @@ def test_custom_markers_parse(monkeypatch):
     custom_re = build_openapi_block_re('[[openapi', ']]openapi')
     # Monkeypatch the endpoint_collector module where OPENAPI_BLOCK_RE is actually used
     from scripts.swagger_sync import endpoint_collector
+
     monkeypatch.setattr(endpoint_collector, 'OPENAPI_BLOCK_RE', custom_re)
     eps, _ = collect_endpoints(BASE)
     # Ensure the custom markers summary present

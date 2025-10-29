@@ -74,13 +74,7 @@ def test_example_external_value():
 def test_example_component_reference():
     """Test example with schema reference to component."""
 
-    @example(
-        name="admin_user",
-        schema=MockUser,
-        summary="Admin user reference",
-        placement='response',
-        status_code=200,
-    )
+    @example(name="admin_user", schema=MockUser, summary="Admin user reference", placement='response', status_code=200)
     def handler():
         pass
 
@@ -106,13 +100,7 @@ def test_example_schema_with_different_model():
 def test_example_parameter_placement():
     """Test example for parameter."""
 
-    @example(
-        name="limit_50",
-        value=50,
-        summary="Limit to 50 results",
-        placement='parameter',
-        parameter_name='limit',
-    )
+    @example(name="limit_50", value=50, summary="Limit to 50 results", placement='parameter', parameter_name='limit')
     def handler():
         pass
 
@@ -156,11 +144,7 @@ def test_example_with_methods_filter():
     """Test example with HTTP methods filter."""
 
     @example(
-        name="post_response",
-        value={"created": True},
-        placement='response',
-        status_code=201,
-        methods=[HTTPMethod.POST],
+        name="post_response", value={"created": True}, placement='response', status_code=201, methods=[HTTPMethod.POST]
     )
     def handler():
         pass
@@ -295,12 +279,7 @@ def test_example_all_placements():
 def test_example_content_types():
     """Test example with different content types."""
 
-    @example(
-        name="json_example",
-        value={"format": "json"},
-        placement='requestBody',
-        contentType="application/json",
-    )
+    @example(name="json_example", value={"format": "json"}, placement='requestBody', contentType="application/json")
     @example(
         name="xml_example",
         externalValue="https://example.com/data.xml",
@@ -331,11 +310,7 @@ def test_example_complex_value():
     }
 
     @example(
-        name="complex",
-        value=complex_data,
-        summary="Complex nested structure",
-        placement='response',
-        status_code=200,
+        name="complex", value=complex_data, summary="Complex nested structure", placement='response', status_code=200
     )
     def handler():
         pass

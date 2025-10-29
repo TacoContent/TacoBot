@@ -37,37 +37,23 @@ def test_response_with_typing_union_generates_oneof():
     """typing.Union[ModelA, ModelB] should result in oneOf with two $ref entries."""
 
     @openapi.response(
-        200,
-        description="Union schema",
-        contentType="application/json",
-        schema=typing.Union[ModelA, ModelB],
+        200, description="Union schema", contentType="application/json", schema=typing.Union[ModelA, ModelB]
     )
     def endpoint_func():
         pass
 
     schema = _get_schema_from_response(endpoint_func)
     assert "oneOf" in schema
-    assert schema["oneOf"] == [
-        {"$ref": "#/components/schemas/ModelA"},
-        {"$ref": "#/components/schemas/ModelB"},
-    ]
+    assert schema["oneOf"] == [{"$ref": "#/components/schemas/ModelA"}, {"$ref": "#/components/schemas/ModelB"}]
 
 
 def test_response_with_pep604_union_generates_oneof():
     """ModelA | ModelB should result in oneOf with two $ref entries."""
 
-    @openapi.response(
-        200,
-        description="PEP 604 Union schema",
-        contentType="application/json",
-        schema=(ModelA | ModelB),
-    )
+    @openapi.response(200, description="PEP 604 Union schema", contentType="application/json", schema=(ModelA | ModelB))
     def endpoint_func():
         pass
 
     schema = _get_schema_from_response(endpoint_func)
     assert "oneOf" in schema
-    assert schema["oneOf"] == [
-        {"$ref": "#/components/schemas/ModelA"},
-        {"$ref": "#/components/schemas/ModelB"},
-    ]
+    assert schema["oneOf"] == [{"$ref": "#/components/schemas/ModelA"}, {"$ref": "#/components/schemas/ModelB"}]

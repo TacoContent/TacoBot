@@ -19,7 +19,9 @@ def test_dict_inheritance_int_value():
         models_dir.mkdir()
 
         model_file = models_dir / 'TestDictInt.py'
-        model_file.write_text(textwrap.dedent("""
+        model_file.write_text(
+            textwrap.dedent(
+                """
             import typing
             from bot.lib.models.openapi import openapi
 
@@ -28,7 +30,9 @@ def test_dict_inheritance_int_value():
             class TestDictInt(typing.Dict[str, int]):
                 '''A dict with integer values.'''
                 pass
-        """))
+        """
+            )
+        )
 
         components, _ = collect_model_components(models_dir)
 
@@ -52,7 +56,9 @@ def test_dict_inheritance_model_value():
 
         # Create the inner model first
         inner_model_file = models_dir / 'InnerModel.py'
-        inner_model_file.write_text(textwrap.dedent("""
+        inner_model_file.write_text(
+            textwrap.dedent(
+                """
             from bot.lib.models.openapi import openapi
 
             @openapi.component("InnerModel")
@@ -60,11 +66,15 @@ def test_dict_inheritance_model_value():
                 def __init__(self):
                     self.name: str = ""
                     self.value: int = 0
-        """))
+        """
+            )
+        )
 
         # Create dict that references the inner model
         model_file = models_dir / 'TestDictModel.py'
-        model_file.write_text(textwrap.dedent("""
+        model_file.write_text(
+            textwrap.dedent(
+                """
             import typing
             from bot.lib.models.openapi import openapi
 
@@ -72,7 +82,9 @@ def test_dict_inheritance_model_value():
             class TestDictModel(typing.Dict[str, 'InnerModel']):
                 '''A dict with InnerModel values.'''
                 pass
-        """))
+        """
+            )
+        )
 
         components, _ = collect_model_components(models_dir)
 
@@ -94,7 +106,9 @@ def test_dict_inheritance_nested_dict():
         models_dir.mkdir()
 
         model_file = models_dir / 'TestNestedDict.py'
-        model_file.write_text(textwrap.dedent("""
+        model_file.write_text(
+            textwrap.dedent(
+                """
             import typing
             from bot.lib.models.openapi import openapi
 
@@ -102,7 +116,9 @@ def test_dict_inheritance_nested_dict():
             class TestNestedDict(typing.Dict[str, typing.Dict[str, int]]):
                 '''A dict of dicts with integer values.'''
                 pass
-        """))
+        """
+            )
+        )
 
         components, _ = collect_model_components(models_dir)
 
@@ -113,10 +129,7 @@ def test_dict_inheritance_nested_dict():
         assert 'allOf' not in schema
         assert schema['type'] == 'object'
         assert 'additionalProperties' in schema
-        assert schema['additionalProperties'] == {
-            'type': 'object',
-            'additionalProperties': {'type': 'integer'}
-        }
+        assert schema['additionalProperties'] == {'type': 'object', 'additionalProperties': {'type': 'integer'}}
 
 
 def test_builtin_dict_inheritance():
@@ -126,14 +139,18 @@ def test_builtin_dict_inheritance():
         models_dir.mkdir()
 
         model_file = models_dir / 'TestBuiltinDict.py'
-        model_file.write_text(textwrap.dedent("""
+        model_file.write_text(
+            textwrap.dedent(
+                """
             from bot.lib.models.openapi import openapi
 
             @openapi.component("TestBuiltinDict", description="Uses builtin dict")
             class TestBuiltinDict(dict[str, int]):
                 '''A dict using lowercase dict type.'''
                 pass
-        """))
+        """
+            )
+        )
 
         components, _ = collect_model_components(models_dir)
 
@@ -155,7 +172,9 @@ def test_minecraft_user_stats_models():
 
         # Create MinecraftUserStatsItem
         item_file = models_dir / 'MinecraftUserStatsItem.py'
-        item_file.write_text(textwrap.dedent("""
+        item_file.write_text(
+            textwrap.dedent(
+                """
             import typing
             from bot.lib.models.openapi import openapi
 
@@ -165,11 +184,15 @@ def test_minecraft_user_stats_models():
                 '''TypedDict for individual Minecraft user statistics item.'''
                 def __init__(self, data: typing.Dict[str, int]):
                     super().__init__(data)
-        """))
+        """
+            )
+        )
 
         # Create MinecraftUserStats
         stats_file = models_dir / 'MinecraftUserStats.py'
-        stats_file.write_text(textwrap.dedent("""
+        stats_file.write_text(
+            textwrap.dedent(
+                """
             import typing
             from bot.lib.models.openapi import openapi
 
@@ -179,7 +202,9 @@ def test_minecraft_user_stats_models():
                 '''Payload for Minecraft user statistics.'''
                 def __init__(self, data: typing.Dict[str, 'MinecraftUserStatsItem']):
                     super().__init__(data)
-        """))
+        """
+            )
+        )
 
         components, _ = collect_model_components(models_dir)
 
@@ -205,7 +230,9 @@ def test_dict_inheritance_with_properties():
         models_dir.mkdir()
 
         model_file = models_dir / 'TestDictWithProps.py'
-        model_file.write_text(textwrap.dedent("""
+        model_file.write_text(
+            textwrap.dedent(
+                """
             import typing
             from bot.lib.models.openapi import openapi
 
@@ -215,7 +242,9 @@ def test_dict_inheritance_with_properties():
                 def __init__(self):
                     self.meta: str = ""
                     self.count: int = 0
-        """))
+        """
+            )
+        )
 
         components, _ = collect_model_components(models_dir)
 

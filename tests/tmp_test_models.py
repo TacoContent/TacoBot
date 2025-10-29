@@ -9,6 +9,7 @@ NOTE: This file follows the tmp_* naming convention used in tests for
       These models are NOT scanned during production swagger sync since the
       --models-root defaults to bot/lib/models.
 """
+
 import typing
 
 from bot.lib.models.openapi import openapi
@@ -29,10 +30,7 @@ class ExampleDeprecatedModel:
 
     def to_dict(self) -> dict:
         """Convert to dictionary representation."""
-        return {
-            'legacy_field': self.legacy_field,
-            'deprecated_id': self.deprecated_id,
-        }
+        return {'legacy_field': self.legacy_field, 'deprecated_id': self.deprecated_id}
 
 
 @openapi.component("ExampleExcludedModel", description="This model should not appear in OpenAPI schema.")
@@ -51,7 +49,4 @@ class ExampleExcludedModel:
 
     def to_dict(self) -> dict:
         """Convert to dictionary representation."""
-        return {
-            'internal_field': self.internal_field,
-            'secret_data': self.secret_data,
-        }
+        return {'internal_field': self.internal_field, 'secret_data': self.secret_data}

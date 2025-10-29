@@ -174,7 +174,21 @@
 		{
 			"label": "Format Check (Black)",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python -m black --diff --check --config .github/linters/.python-black .",
+			"command": "./.venv/scripts/Activate.ps1; python -m black --diff --check --config ./pyproject.toml .",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"group": {
+				"kind": "test",
+				"isDefault": false
+			}
+		},
+		{
+			"label": "Format Fix (Black)",
+			"type": "shell",
+			"command": "./.venv/scripts/Activate.ps1; python -m black --config ./pyproject.toml .",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"
@@ -188,7 +202,21 @@
 		{
 			"label": "Format (iSort)",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python -m isort --settings-path .github/linters/.isort.cfg .",
+			"command": "./.venv/scripts/Activate.ps1; python -m isort --settings-path ./pyproject.toml .",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"group": {
+				"kind": "test",
+				"isDefault": false
+			}
+		},
+		{
+			"label": "Format Check (iSort)",
+			"type": "shell",
+			"command": "./.venv/scripts/Activate.ps1; python -m isort --check --diff --settings-path ./pyproject.toml .",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"

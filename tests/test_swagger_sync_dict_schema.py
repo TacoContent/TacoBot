@@ -20,10 +20,7 @@ class TestDictSchemaExtraction:
         node = ast.parse(code, mode='eval').body
         result = _extract_schema_reference(node)
 
-        assert result == {
-            "type": "object",
-            "additionalProperties": {"type": "string"}
-        }
+        assert result == {"type": "object", "additionalProperties": {"type": "string"}}
 
     def test_typing_dict_str_int(self):
         """Test typing.Dict[str, int] generates additionalProperties with integer type."""
@@ -31,10 +28,7 @@ class TestDictSchemaExtraction:
         node = ast.parse(code, mode='eval').body
         result = _extract_schema_reference(node)
 
-        assert result == {
-            "type": "object",
-            "additionalProperties": {"type": "integer"}
-        }
+        assert result == {"type": "object", "additionalProperties": {"type": "integer"}}
 
     def test_typing_dict_str_model(self):
         """Test typing.Dict[str, Model] generates additionalProperties with $ref."""
@@ -42,10 +36,7 @@ class TestDictSchemaExtraction:
         node = ast.parse(code, mode='eval').body
         result = _extract_schema_reference(node)
 
-        assert result == {
-            "type": "object",
-            "additionalProperties": {"$ref": "#/components/schemas/MyModel"}
-        }
+        assert result == {"type": "object", "additionalProperties": {"$ref": "#/components/schemas/MyModel"}}
 
     def test_typing_dict_str_list_model(self):
         """Test typing.Dict[str, typing.List[Model]] generates nested schema."""
@@ -55,10 +46,7 @@ class TestDictSchemaExtraction:
 
         assert result == {
             "type": "object",
-            "additionalProperties": {
-                "type": "array",
-                "items": {"$ref": "#/components/schemas/DiscordMessageReaction"}
-            }
+            "additionalProperties": {"type": "array", "items": {"$ref": "#/components/schemas/DiscordMessageReaction"}},
         }
 
     def test_builtin_dict_str_str(self):
@@ -67,10 +55,7 @@ class TestDictSchemaExtraction:
         node = ast.parse(code, mode='eval').body
         result = _extract_schema_reference(node)
 
-        assert result == {
-            "type": "object",
-            "additionalProperties": {"type": "string"}
-        }
+        assert result == {"type": "object", "additionalProperties": {"type": "string"}}
 
     def test_builtin_dict_str_list_str(self):
         """Test dict[str, list[str]] generates nested schema."""
@@ -78,13 +63,7 @@ class TestDictSchemaExtraction:
         node = ast.parse(code, mode='eval').body
         result = _extract_schema_reference(node)
 
-        assert result == {
-            "type": "object",
-            "additionalProperties": {
-                "type": "array",
-                "items": {"type": "string"}
-            }
-        }
+        assert result == {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}}}
 
     def test_typing_dict_str_union(self):
         """Test typing.Dict[str, Union[A, B]] generates oneOf in additionalProperties."""
@@ -95,11 +74,8 @@ class TestDictSchemaExtraction:
         assert result == {
             "type": "object",
             "additionalProperties": {
-                "oneOf": [
-                    {"$ref": "#/components/schemas/ModelA"},
-                    {"$ref": "#/components/schemas/ModelB"}
-                ]
-            }
+                "oneOf": [{"$ref": "#/components/schemas/ModelA"}, {"$ref": "#/components/schemas/ModelB"}]
+            },
         }
 
     def test_typing_dict_str_optional_model(self):
@@ -124,11 +100,8 @@ class TestDictSchemaExtraction:
             "type": "object",
             "additionalProperties": {
                 "type": "array",
-                "items": {
-                    "type": "object",
-                    "additionalProperties": {"type": "integer"}
-                }
-            }
+                "items": {"type": "object", "additionalProperties": {"type": "integer"}},
+            },
         }
 
     def test_typing_dict_fallback_no_args(self):
@@ -147,10 +120,7 @@ class TestDictSchemaExtraction:
         node = ast.parse(code, mode='eval').body
         result = _extract_schema_reference(node)
 
-        assert result == {
-            "type": "object",
-            "additionalProperties": {"type": "boolean"}
-        }
+        assert result == {"type": "object", "additionalProperties": {"type": "boolean"}}
 
     def test_dict_str_float(self):
         """Test dict[str, float] generates additionalProperties with number type."""
@@ -158,10 +128,7 @@ class TestDictSchemaExtraction:
         node = ast.parse(code, mode='eval').body
         result = _extract_schema_reference(node)
 
-        assert result == {
-            "type": "object",
-            "additionalProperties": {"type": "number"}
-        }
+        assert result == {"type": "object", "additionalProperties": {"type": "number"}}
 
     def test_typing_dict_str_typing_any(self):
         """Test typing.Dict[str, typing.Any] generates additionalProperties: True."""
@@ -169,10 +136,7 @@ class TestDictSchemaExtraction:
         node = ast.parse(code, mode='eval').body
         result = _extract_schema_reference(node)
 
-        assert result == {
-            "type": "object",
-            "additionalProperties": True
-        }
+        assert result == {"type": "object", "additionalProperties": True}
 
     def test_dict_str_any(self):
         """Test Dict[str, Any] (with Any imported) generates additionalProperties: True."""
@@ -180,10 +144,7 @@ class TestDictSchemaExtraction:
         node = ast.parse(code, mode='eval').body
         result = _extract_schema_reference(node)
 
-        assert result == {
-            "type": "object",
-            "additionalProperties": True
-        }
+        assert result == {"type": "object", "additionalProperties": True}
 
     def test_builtin_dict_str_any(self):
         """Test dict[str, Any] generates additionalProperties: True."""
@@ -191,7 +152,4 @@ class TestDictSchemaExtraction:
         node = ast.parse(code, mode='eval').body
         result = _extract_schema_reference(node)
 
-        assert result == {
-            "type": "object",
-            "additionalProperties": True
-        }
+        assert result == {"type": "object", "additionalProperties": True}

@@ -5,7 +5,7 @@ skip-string-normalization=true
 skip-magic-trailing-comma=true
 verbose=false
 diff=true
-check=false
+check=true
 color=true
 extend-exclude='''
 /(

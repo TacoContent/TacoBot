@@ -49,9 +49,7 @@ def handler():
         assert response_200["content"]["text/plain"]["schema"] == {"type": "string"}
 
         # Verify application/json schema
-        assert response_200["content"]["application/json"]["schema"] == {
-            "$ref": "#/components/schemas/ErrorPayload"
-        }
+        assert response_200["content"]["application/json"]["schema"] == {"$ref": "#/components/schemas/ErrorPayload"}
 
     def test_healthcheck_use_case(self):
         """Test real-world healthcheck scenario with plain text success and JSON error."""

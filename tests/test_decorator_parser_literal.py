@@ -6,10 +6,7 @@ enum schemas when used in parameter decorators.
 
 import ast
 
-from scripts.swagger_sync.decorator_parser import (
-    _extract_schema_type,
-    extract_decorator_metadata,
-)
+from scripts.swagger_sync.decorator_parser import _extract_schema_type, extract_decorator_metadata
 
 
 class TestLiteralTypeExtraction:

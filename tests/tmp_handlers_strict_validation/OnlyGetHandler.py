@@ -1,5 +1,5 @@
-
 from httpserver.EndpointDecorators import uri_mapping
+
 
 class OnlyGetHandler:
     @uri_mapping('/only-get', method=['GET'])

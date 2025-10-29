@@ -154,7 +154,9 @@ def test_real_tacos_webhook_handler():
     tacos_endpoints = [e for e in endpoints if e.path == '/webhook/minecraft/tacos']
 
     # Should only have POST, not GET
-    assert len(tacos_endpoints) == 1, f"Expected 1 endpoint (POST only), found {len(tacos_endpoints)}: {[e.method for e in tacos_endpoints]}"
+    assert (
+        len(tacos_endpoints) == 1
+    ), f"Expected 1 endpoint (POST only), found {len(tacos_endpoints)}: {[e.method for e in tacos_endpoints]}"
 
     endpoint = tacos_endpoints[0]
     assert endpoint.method == 'post', f"Expected 'post', got '{endpoint.method}'"

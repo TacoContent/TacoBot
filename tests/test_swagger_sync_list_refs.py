@@ -1,4 +1,5 @@
 """Test that List[ModelClass] annotations generate proper $ref references."""
+
 import pathlib
 import tempfile
 import textwrap
@@ -14,7 +15,9 @@ def test_list_model_class_generates_ref():
 
         # Create a test model file
         test_file = models_root / "test_model.py"
-        test_file.write_text(textwrap.dedent("""
+        test_file.write_text(
+            textwrap.dedent(
+                """
             import typing
             from bot.lib.models.openapi import component
 
@@ -29,7 +32,9 @@ def test_list_model_class_generates_ref():
                 def __init__(self, games: typing.List[TestGame], title: str):
                     self.games: typing.List[TestGame] = games
                     self.title: str = title
-        """))
+        """
+            )
+        )
 
         # Collect model components
         components, _ = collect_model_components(models_root)
@@ -54,7 +59,9 @@ def test_list_primitive_uses_string():
 
         # Create a test model file
         test_file = models_root / "test_model.py"
-        test_file.write_text(textwrap.dedent("""
+        test_file.write_text(
+            textwrap.dedent(
+                """
             import typing
             from bot.lib.models.openapi import component
 
@@ -63,7 +70,9 @@ def test_list_primitive_uses_string():
                 def __init__(self, tags: typing.List[str], count: int):
                     self.tags: typing.List[str] = tags
                     self.count: int = count
-        """))
+        """
+            )
+        )
 
         # Collect model components
         components, _ = collect_model_components(models_root)

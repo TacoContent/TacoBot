@@ -178,10 +178,6 @@ Ignored endpoints are excluded from swagger spec and coverage calculations but c
 - Supports orphan detection (`--show-orphans`) to list spec paths lacking handlers.
 - Only updates the `paths` section; schemas/components must be curated manually.
 
-Always run `./.venv/scripts/Activate.ps1;` before executing the `python scripts/sync_endpoints.py` command to ensure the virtual environment is active.
-
-Best Practice: Run `./.venv/scripts/Activate.ps1; python scripts/sync_endpoints.py --check` before committing. If drift is legitimate, run with `--fix` and commit the updated swagger file.
-
 ---
 ## 4. Models & Serialization
 - Data models in `bot/lib/models/` should provide:
@@ -272,7 +268,16 @@ def get_resource(self, request, uri_variables):
 - Update all relevant documentation files when adding features or changing behavior.
 - Update a changelog or release notes for significant performance improvements or regressions.
 - Always use `LF` line endings, even on Windows, to maintain consistency across environments.
-- Run `python -m black --config .github/linters/.python-black --diff --check .` to verify formatting and fix issues.
+- Run `python -m black --config .github/linters/.python-black --diff --check .` to verify black formatting.
+- Run `python -m black --config .github/linters/.python-black --fix .` to fix black formatting issues.
+- Run `python -m isort --settings-path .github/linters/.isort.cfg . --diff --check .` to verify import sorting.
+- Run `python -m isort --settings-path .github/linters/.isort.cfg .` to fix import sorting issues.
+- Always run python in a virtual environment by executing the activate script for the platform in `./.venv/scripts` 
+before running any python commands.
+  - On Windows, use `Activate.ps1`.
+
+- Run `python scripts/sync_endpoints.py --check` before committing.
+  - If drift is legitimate, run with `--fix` and commit the updated swagger file.
 
 ---
 ## 13. Performance Considerations

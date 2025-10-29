@@ -3,6 +3,7 @@
 This module tests that nested Union types are properly flattened before
 schema generation, ensuring Union[Union[A, B], C] becomes Union[A, B, C].
 """
+
 import pathlib
 import sys
 
@@ -86,7 +87,9 @@ def test_flatten_with_complex_types():
     result = _flatten_nested_unions(nested)
 
     # Should flatten but preserve complex types
-    assert "Union[List[str], Dict[str, int], Optional[TypeA]]" == result, f"Expected flattened with complex types, got: {result}"
+    assert (
+        "Union[List[str], Dict[str, int], Optional[TypeA]]" == result
+    ), f"Expected flattened with complex types, got: {result}"
 
 
 def test_nested_union_in_model_component():

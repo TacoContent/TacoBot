@@ -40,7 +40,7 @@ def test_response_method_filtering_multiple_methods():
     """Test responses that apply to multiple methods."""
 
     decorator_responses = {
-        '200': {'description': 'Success', 'methods': ['post', 'put']},  # Applies to both POST and PUT
+        '200': {'description': 'Success', 'methods': ['post', 'put']}  # Applies to both POST and PUT
     }
 
     # Should apply to POST
@@ -108,7 +108,7 @@ def test_real_webhook_handler_scenario():
             'description': 'Bad request due to validation or limit error',
             'content': {'application/json': {'schema': {'$ref': '#/components/schemas/ErrorStatusCodePayload'}}},
             'methods': ['post'],
-        }
+        },
     }
 
     # Merge for POST endpoint - should include all responses
