@@ -1,6 +1,7 @@
 """Comprehensive tests for TacoPermissionsApiHandler._list_permissions
 Ensures 100% coverage, including edge cases and error handling.
 """
+
 from unittest.mock import MagicMock
 
 import pytest
@@ -12,6 +13,7 @@ class TestListPermissions:
     @pytest.fixture(autouse=True)
     def setup_handler(self):
         from tacobot import TacoBot
+
         self.bot = MagicMock(spec=TacoBot)
         self.mock_permissions_db = MagicMock()
         self.mock_log = MagicMock()
@@ -21,16 +23,19 @@ class TestListPermissions:
         self.handler._module = "test_module"
         self.handler._class = "TacoPermissionsApiHandler"
 
-    @pytest.mark.parametrize("guildId,userId,db_return,expected,should_log_error", [
-        ("123", "456", ["ADMIN", "MODERATOR"], ["ADMIN", "MODERATOR"], False),
-        ("1", "2", [], [], False),
-        ("0", "456", ["ADMIN"], [], False),   # invalid guildId
-        ("123", "0", ["ADMIN"], [], False),   # invalid userId
-        ("-1", "456", ["ADMIN"], [], False),  # negative guildId
-        ("123", "-2", ["ADMIN"], [], False),  # negative userId
-        ("abc", "456", ["ADMIN"], [], True),  # non-int guildId
-        ("123", "def", ["ADMIN"], [], True),  # non-int userId
-    ])
+    @pytest.mark.parametrize(
+        "guildId,userId,db_return,expected,should_log_error",
+        [
+            ("123", "456", ["ADMIN", "MODERATOR"], ["ADMIN", "MODERATOR"], False),
+            ("1", "2", [], [], False),
+            ("0", "456", ["ADMIN"], [], False),  # invalid guildId
+            ("123", "0", ["ADMIN"], [], False),  # invalid userId
+            ("-1", "456", ["ADMIN"], [], False),  # negative guildId
+            ("123", "-2", ["ADMIN"], [], False),  # negative userId
+            ("abc", "456", ["ADMIN"], [], True),  # non-int guildId
+            ("123", "def", ["ADMIN"], [], True),  # non-int userId
+        ],
+    )
     async def test_list_permissions_various_inputs(self, guildId, userId, db_return, expected, should_log_error):
         self.mock_permissions_db.get_user_permissions.return_value = db_return
         result = await self.handler._list_permissions(guildId, userId)

@@ -19,7 +19,9 @@ def test_property_decorator_with_description_kwarg():
         models_dir.mkdir()
 
         model_file = models_dir / 'TestModel.py'
-        model_file.write_text(textwrap.dedent("""
+        model_file.write_text(
+            textwrap.dedent(
+                """
             from bot.lib.models.openapi import openapi
 
             @openapi.component("TestModel", description="Test model")
@@ -30,7 +32,9 @@ def test_property_decorator_with_description_kwarg():
                 def __init__(self, data: dict):
                     self.name: str = data.get("name", "")
                     self.count: int = data.get("count", 0)
-        """))
+        """
+            )
+        )
 
         components, _ = collect_model_components(models_dir)
 
@@ -55,7 +59,9 @@ def test_property_decorator_with_multiple_kwargs():
         models_dir.mkdir()
 
         model_file = models_dir / 'RangeModel.py'
-        model_file.write_text(textwrap.dedent("""
+        model_file.write_text(
+            textwrap.dedent(
+                """
             from bot.lib.models.openapi import openapi
 
             @openapi.component("RangeModel", description="Model with constraints")
@@ -64,7 +70,9 @@ def test_property_decorator_with_multiple_kwargs():
             class RangeModel:
                 def __init__(self, data: dict):
                     self.score: int = data.get("score", 0)
-        """))
+        """
+            )
+        )
 
         components, _ = collect_model_components(models_dir)
 
@@ -87,7 +95,9 @@ def test_property_decorator_positional_with_kwargs():
         models_dir.mkdir()
 
         model_file = models_dir / 'MixedModel.py'
-        model_file.write_text(textwrap.dedent("""
+        model_file.write_text(
+            textwrap.dedent(
+                """
             from bot.lib.models.openapi import openapi
 
             @openapi.component("MixedModel", description="Mixed usage")
@@ -98,7 +108,9 @@ def test_property_decorator_positional_with_kwargs():
                 def __init__(self, data: dict):
                     self.uuid: str = data.get("uuid", "")
                     self.level: int = data.get("level", 1)
-        """))
+        """
+            )
+        )
 
         components, _ = collect_model_components(models_dir)
 
@@ -122,7 +134,9 @@ def test_property_decorator_named_property_kwarg():
         models_dir.mkdir()
 
         model_file = models_dir / 'NamedModel.py'
-        model_file.write_text(textwrap.dedent("""
+        model_file.write_text(
+            textwrap.dedent(
+                """
             from bot.lib.models.openapi import openapi
 
             @openapi.component("NamedModel", description="All kwargs")
@@ -131,7 +145,9 @@ def test_property_decorator_named_property_kwarg():
             class NamedModel:
                 def __init__(self, data: dict):
                     self.field_name: str = data.get("field_name", "")
-        """))
+        """
+            )
+        )
 
         components, _ = collect_model_components(models_dir)
 
@@ -150,7 +166,9 @@ def test_property_decorator_legacy_name_value_form():
         models_dir.mkdir()
 
         model_file = models_dir / 'LegacyModel.py'
-        model_file.write_text(textwrap.dedent("""
+        model_file.write_text(
+            textwrap.dedent(
+                """
             from bot.lib.models.openapi import openapi
 
             @openapi.component("LegacyModel", description="Legacy usage")
@@ -159,7 +177,9 @@ def test_property_decorator_legacy_name_value_form():
             class LegacyModel:
                 def __init__(self, data: dict):
                     self.status: str = data.get("status", "")
-        """))
+        """
+            )
+        )
 
         components, _ = collect_model_components(models_dir)
 
@@ -177,7 +197,9 @@ def test_property_decorator_kwargs_override_legacy():
         models_dir.mkdir()
 
         model_file = models_dir / 'OverrideModel.py'
-        model_file.write_text(textwrap.dedent("""
+        model_file.write_text(
+            textwrap.dedent(
+                """
             from bot.lib.models.openapi import openapi
 
             @openapi.component("OverrideModel", description="Override test")
@@ -186,7 +208,9 @@ def test_property_decorator_kwargs_override_legacy():
             class OverrideModel:
                 def __init__(self, data: dict):
                     self.value: str = data.get("value", "")
-        """))
+        """
+            )
+        )
 
         components, _ = collect_model_components(models_dir)
 

@@ -16,7 +16,9 @@ def test_simple_string_enum_schema():
 
         # Create a simple enum model file
         model_file = models_dir / 'TestEnum.py'
-        model_file.write_text(textwrap.dedent("""
+        model_file.write_text(
+            textwrap.dedent(
+                """
             from bot.lib.models.openapi import component
 
             @openapi.component("TestEnum", description="Test enum type")
@@ -32,7 +34,9 @@ def test_simple_string_enum_schema():
                   - option_c
                 <<<openapi
                 '''
-        """))
+        """
+            )
+        )
 
         components, _ = collect_model_components(models_dir)
 
@@ -58,7 +62,9 @@ def test_simple_integer_with_minimum():
 
         # Create a simple integer model file
         model_file = models_dir / 'TestInteger.py'
-        model_file.write_text(textwrap.dedent("""
+        model_file.write_text(
+            textwrap.dedent(
+                """
             from bot.lib.models.openapi import component
 
             @openapi.component("TestInteger")
@@ -72,7 +78,9 @@ def test_simple_integer_with_minimum():
                 default: 50
                 <<<openapi
                 '''
-        """))
+        """
+            )
+        )
 
         components, _ = collect_model_components(models_dir)
 
@@ -98,7 +106,9 @@ def test_simple_boolean_schema():
 
         # Create a simple boolean model file
         model_file = models_dir / 'TestBoolean.py'
-        model_file.write_text(textwrap.dedent("""
+        model_file.write_text(
+            textwrap.dedent(
+                """
             from bot.lib.models.openapi import component
 
             @openapi.component("TestBoolean", description="Test boolean flag")
@@ -110,7 +120,9 @@ def test_simple_boolean_schema():
                 default: false
                 <<<openapi
                 '''
-        """))
+        """
+            )
+        )
 
         components, _ = collect_model_components(models_dir)
 
@@ -135,7 +147,9 @@ def test_object_schema_still_works():
 
         # Create a model with properties (should still generate object schema)
         model_file = models_dir / 'TestObject.py'
-        model_file.write_text(textwrap.dedent("""
+        model_file.write_text(
+            textwrap.dedent(
+                """
             from bot.lib.models.openapi import component
 
             @openapi.component("TestObject", description="Test object type")
@@ -153,7 +167,9 @@ def test_object_schema_still_works():
                 def __init__(self, id: int, name: str):
                     self.id: int = id
                     self.name: str = name
-        """))
+        """
+            )
+        )
 
         components, _ = collect_model_components(models_dir)
 
@@ -177,15 +193,19 @@ def test_fallback_to_object_without_openapi_block():
 
         # Create a standard object model without openapi block
         model_file = models_dir / 'TestStandard.py'
-        model_file.write_text(textwrap.dedent("""
-            from bot.lib.models.openapi import ccomponent
+        model_file.write_text(
+            textwrap.dedent(
+                """
+            from bot.lib.models.openapi import component
 
             @openapi.component("TestStandard", description="Standard object")
             class TestStandard:
                 def __init__(self, id: int, value: str):
                     self.id = id
                     self.value = value
-        """))
+        """
+            )
+        )
 
         components, _ = collect_model_components(models_dir)
 
@@ -207,7 +227,9 @@ def test_description_precedence():
 
         # Create a simple schema without description in openapi block
         model_file = models_dir / 'TestDescription.py'
-        model_file.write_text(textwrap.dedent("""
+        model_file.write_text(
+            textwrap.dedent(
+                """
             from bot.lib.models.openapi import component
 
             @openapi.component("TestDescription", description="From decorator")
@@ -219,7 +241,9 @@ def test_description_precedence():
                 enum: [a, b, c]
                 <<<openapi
                 '''
-        """))
+        """
+            )
+        )
 
         components, _ = collect_model_components(models_dir)
 
@@ -238,7 +262,9 @@ def test_schema_description_overrides_decorator():
 
         # Create a schema with description in openapi block
         model_file = models_dir / 'TestDescOverride.py'
-        model_file.write_text(textwrap.dedent("""
+        model_file.write_text(
+            textwrap.dedent(
+                """
             from bot.lib.models.openapi import component
 
             @openapi.component("TestDescOverride", description="From decorator")
@@ -251,7 +277,9 @@ def test_schema_description_overrides_decorator():
                 enum: [x, y, z]
                 <<<openapi
                 '''
-        """))
+        """
+            )
+        )
 
         components, _ = collect_model_components(models_dir)
 

@@ -272,6 +272,7 @@ def get_resource(self, request, uri_variables):
 - Update all relevant documentation files when adding features or changing behavior.
 - Update a changelog or release notes for significant performance improvements or regressions.
 - Always use `LF` line endings, even on Windows, to maintain consistency across environments.
+- Run `python -m black --config .github/linters/.python-black --diff --check .` to verify formatting and fix issues.
 
 ---
 ## 13. Performance Considerations

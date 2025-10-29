@@ -8,6 +8,7 @@ collector should:
 
 In strict mode the collector should raise a ValueError detailing the mismatch.
 """
+
 from __future__ import annotations
 
 import io

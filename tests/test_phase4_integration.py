@@ -48,7 +48,7 @@ class TestEndToEndValidation:
                     '404': {'description': 'User not found'},
                 },
                 'security': [{'BearerAuth': []}],
-            }
+            },
         )
 
         # Validate
@@ -176,7 +176,7 @@ class TestEndToEndValidation:
             file=Path("test.py"),
             function="secure_endpoint",
             meta={},
-            decorator_metadata={'security': [{'UnknownAuth': []}],'responses': {'200': {'description': 'Success'}}},
+            decorator_metadata={'security': [{'UnknownAuth': []}], 'responses': {'200': {'description': 'Success'}}},
         )
 
         metadata, _ = endpoint.get_merged_metadata()

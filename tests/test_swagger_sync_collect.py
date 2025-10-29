@@ -8,6 +8,7 @@ Covers:
 We create a temporary handlers tree under tests/tmp_handlers and point the collector
 there so we don't rely on real production handlers.
 """
+
 from __future__ import annotations
 
 import pathlib
@@ -21,7 +22,8 @@ TMP_ROOT = pathlib.Path('tests/tmp_handlers')
 def setup_module(module):  # noqa: D401 - test fixture style
     TMP_ROOT.mkdir(exist_ok=True)
     (TMP_ROOT / '__init__.py').write_text('', encoding='utf-8')
-    source = textwrap.dedent('''
+    source = textwrap.dedent(
+        '''
         from httpserver.EndpointDecorators import uri_mapping, uri_variable_mapping, uri_pattern_mapping
 
         class DemoHandler:
@@ -66,7 +68,8 @@ def setup_module(module):  # noqa: D401 - test fixture style
                 <<<openapi
                 """
                 pass
-        ''')
+        '''
+    )
     (TMP_ROOT / 'DemoHandler.py').write_text(source, encoding='utf-8')
 
 

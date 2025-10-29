@@ -7,6 +7,7 @@ Note: We purposefully use only model classes (annotated with @openapi.component)
 inside the unions because the runtime helper _schema_to_openapi() currently
 generates $ref components for model types and does not expand arrays/primitives.
 """
+
 from __future__ import annotations
 
 import typing

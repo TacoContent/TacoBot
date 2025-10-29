@@ -1,5 +1,5 @@
 import json
-from unittest.mock import ANY, AsyncMock, MagicMock, patch
+from unittest.mock import ANY, AsyncMock, MagicMock
 
 import pytest
 from bot.lib.http.handlers.api.v1.TacoPermissionsApiHandler import TacoPermissionsApiHandler
@@ -16,6 +16,7 @@ def handler():
     handler._list_permissions = AsyncMock()
     handler._create_error_response = MagicMock()
     return handler
+
 
 @pytest.mark.asyncio
 async def test_get_success(handler):
@@ -36,10 +37,13 @@ async def test_get_success(handler):
     handler._list_permissions.assert_awaited_once_with("123", "456")
     handler.validate_auth_token.assert_called_once_with(request)
 
+
 @pytest.mark.asyncio
 async def test_get_invalid_token(handler):
     handler.validate_auth_token.return_value = False
-    handler._create_error_response.return_value = HttpResponse(401, headers=HttpHeaders(), body=b'{"error": "Invalid authentication token"}')
+    handler._create_error_response.return_value = HttpResponse(
+        401, headers=HttpHeaders(), body=b'{"error": "Invalid authentication token"}'
+    )
     request = MagicMock(spec=HttpRequest)
     uri_variables = {"guildId": "123", "userId": "456"}
 
@@ -52,11 +56,14 @@ async def test_get_invalid_token(handler):
     handler.validate_auth_token.assert_called_once_with(request)
     handler._create_error_response.assert_called_once_with(401, 'Invalid authentication token', ANY)
 
+
 @pytest.mark.asyncio
 async def test_get_exception(handler):
     handler.validate_auth_token.return_value = True
     handler._list_permissions.side_effect = Exception("DB error")
-    handler._create_error_response.return_value = HttpResponse(500, headers=HttpHeaders(), body=b'{"error": "Internal server error: DB error"}')
+    handler._create_error_response.return_value = HttpResponse(
+        500, headers=HttpHeaders(), body=b'{"error": "Internal server error: DB error"}'
+    )
     request = MagicMock(spec=HttpRequest)
     uri_variables = {"guildId": "123", "userId": "456"}
 

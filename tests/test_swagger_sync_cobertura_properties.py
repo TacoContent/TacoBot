@@ -1,4 +1,5 @@
 """Test that Cobertura XML includes custom model component metrics as <property> tags."""
+
 from __future__ import annotations
 
 import pathlib
@@ -24,7 +25,9 @@ def test_cobertura_includes_model_component_properties(tmp_path: pathlib.Path):
     subprocess.check_call(cmd)
     tree = ET.parse(report)
     root = tree.getroot()
-    props = {p.attrib['name']: p.attrib['value'] for p in root.find('properties').findall('property')}
+    props_elem = root.find('properties')
+    assert props_elem is not None, "Cobertura report missing <properties> element"
+    props = {p.attrib['name']: p.attrib['value'] for p in props_elem.findall('property')}
     assert 'model_components_generated' in props
     assert 'model_components_existing_not_generated' in props
     assert int(props['model_components_generated']) >= 1

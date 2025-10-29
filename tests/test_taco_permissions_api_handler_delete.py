@@ -18,6 +18,7 @@ def handler():
     # Only mock _create_error_response in error tests
     return handler
 
+
 @pytest.mark.asyncio
 async def test_delete_success(handler):
     handler.validate_auth_token.return_value = True
@@ -39,10 +40,13 @@ async def test_delete_success(handler):
     handler._remove_permission.assert_awaited_once_with("123", "456", "admin")
     handler.validate_auth_token.assert_called_once_with(request)
 
+
 @pytest.mark.asyncio
 async def test_delete_invalid_token(handler):
     handler.validate_auth_token.return_value = False
-    handler._create_error_response = MagicMock(return_value=HttpResponse(404, headers=HttpHeaders(), body=b'{"error": "Invalid authentication token"}'))
+    handler._create_error_response = MagicMock(
+        return_value=HttpResponse(404, headers=HttpHeaders(), body=b'{"error": "Invalid authentication token"}')
+    )
     request = MagicMock(spec=HttpRequest)
     uri_variables = {"guildId": "123", "userId": "456", "permission": "admin"}
 
@@ -57,11 +61,14 @@ async def test_delete_invalid_token(handler):
     handler.validate_auth_token.assert_called_once_with(request)
     handler._create_error_response.assert_called_once_with(404, 'Invalid authentication token', ANY)
 
+
 @pytest.mark.asyncio
 async def test_delete_not_found(handler):
     handler.validate_auth_token.return_value = True
     handler._remove_permission.return_value = False
-    handler._create_error_response = MagicMock(return_value=HttpResponse(404, headers=HttpHeaders(), body=b'{"error": "Not found"}'))
+    handler._create_error_response = MagicMock(
+        return_value=HttpResponse(404, headers=HttpHeaders(), body=b'{"error": "Not found"}')
+    )
     request = MagicMock(spec=HttpRequest)
     uri_variables = {"guildId": "123", "userId": "456", "permission": "admin"}
 
@@ -74,6 +81,7 @@ async def test_delete_not_found(handler):
     assert json.loads(response.body.decode("utf-8"))["error"] == "Not found"
     handler._remove_permission.assert_awaited_once_with("123", "456", "admin")
     handler._create_error_response.assert_called_once_with(404, 'Not found', ANY)
+
 
 @pytest.mark.asyncio
 async def test_delete_exception(handler):

@@ -11,13 +11,12 @@ import ast
 import os
 import sys
 
-import pytest
 
 # Add scripts directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
 
-from swagger_sync.decorator_parser import extract_decorator_metadata
-from swagger_sync.merge_utils import merge_endpoint_metadata
+from swagger_sync.decorator_parser import extract_decorator_metadata  # type: ignore # noqa: E402
+from swagger_sync.merge_utils import merge_endpoint_metadata  # type: ignore # noqa: E402
 
 # Test handler code samples
 HANDLER_WITH_RESPONSE_EXAMPLES = '''
@@ -189,10 +188,10 @@ class TestResponseExampleIntegration:
     def test_response_examples_extracted_and_merged(self):
         """Test response examples are extracted from decorators and merged into spec."""
         func_node = parse_handler_code(HANDLER_WITH_RESPONSE_EXAMPLES)
-        
+
         # Extract decorator metadata
         metadata = extract_decorator_metadata(func_node)
-        
+
         # Verify extraction
         assert len(metadata.examples) == 2
         assert metadata.examples[0]['name'] == 'success_response'
@@ -203,7 +202,7 @@ class TestResponseExampleIntegration:
 
         # Convert to dict for merging
         decorator_dict = metadata.to_dict()
-        
+
         # Merge with empty YAML metadata
         yaml_meta = {}
         merged, _ = merge_endpoint_metadata(yaml_meta, decorator_dict, '/api/v1/roles', 'get')
@@ -211,7 +210,7 @@ class TestResponseExampleIntegration:
         # Verify merged spec structure
         assert '200' in merged['responses']
         assert '404' in merged['responses']
-        
+
         # Check 200 response example
         content_200 = merged['responses']['200']['content']['application/json']
         assert 'examples' in content_200
@@ -220,7 +219,7 @@ class TestResponseExampleIntegration:
         assert example_200['summary'] == 'Successful role list'
         assert len(example_200['value']) == 2
         assert example_200['value'][0]['id'] == '1'
-        
+
         # Check 404 response example
         content_404 = merged['responses']['404']['content']['application/json']
         assert 'not_found' in content_404['examples']
@@ -234,7 +233,7 @@ class TestParameterExampleIntegration:
         """Test parameter examples are placed in parameter.examples."""
         func_node = parse_handler_code(HANDLER_WITH_PARAMETER_EXAMPLES)
         metadata = extract_decorator_metadata(func_node)
-        
+
         # Verify extraction
         assert len(metadata.examples) == 2
         assert all(ex['placement'] == 'parameter' for ex in metadata.examples)
@@ -262,7 +261,7 @@ class TestRequestBodyExampleIntegration:
         """Test request body examples are placed correctly."""
         func_node = parse_handler_code(HANDLER_WITH_REQUEST_BODY_EXAMPLES)
         metadata = extract_decorator_metadata(func_node)
-        
+
         # Verify extraction
         request_examples = [ex for ex in metadata.examples if ex['placement'] == 'requestBody']
         response_examples = [ex for ex in metadata.examples if ex['placement'] == 'response']
@@ -295,7 +294,7 @@ class TestComponentReferenceIntegration:
         """Test component references are auto-formatted and merged."""
         func_node = parse_handler_code(HANDLER_WITH_COMPONENT_REF)
         metadata = extract_decorator_metadata(func_node)
-        
+
         # Verify extraction and auto-formatting
         assert len(metadata.examples) == 2
         assert metadata.examples[0]['$ref'] == '#/components/schemas/DiscordUser'
@@ -324,7 +323,7 @@ class TestExternalValueIntegration:
         """Test externalValue is placed correctly."""
         func_node = parse_handler_code(HANDLER_WITH_EXTERNAL_VALUE)
         metadata = extract_decorator_metadata(func_node)
-        
+
         # Verify extraction
         assert len(metadata.examples) == 1
         assert metadata.examples[0]['externalValue'] == 'https://api.example.com/examples/large_roles.json'
@@ -337,7 +336,9 @@ class TestExternalValueIntegration:
         # Verify externalValue in spec
         content = merged['responses']['200']['content']['application/json']
         assert 'large_dataset' in content['examples']
-        assert content['examples']['large_dataset']['externalValue'] == 'https://api.example.com/examples/large_roles.json'
+        assert (
+            content['examples']['large_dataset']['externalValue'] == 'https://api.example.com/examples/large_roles.json'
+        )
         # Should not have 'value' field
         assert 'value' not in content['examples']['large_dataset']
 
@@ -349,7 +350,7 @@ class TestMultiplePlacementsIntegration:
         """Test examples are distributed to correct placements."""
         func_node = parse_handler_code(HANDLER_WITH_MULTIPLE_PLACEMENTS)
         metadata = extract_decorator_metadata(func_node)
-        
+
         # Verify extraction
         param_examples = [ex for ex in metadata.examples if ex['placement'] == 'parameter']
         response_examples = [ex for ex in metadata.examples if ex['placement'] == 'response']
@@ -364,10 +365,10 @@ class TestMultiplePlacementsIntegration:
         # Verify parameter examples
         guild_param = next((p for p in merged['parameters'] if p['name'] == 'guild_id'), None)
         limit_param = next((p for p in merged['parameters'] if p['name'] == 'limit'), None)
-        
+
         assert guild_param is not None
         assert 'guild_param' in guild_param['examples']
-        
+
         assert limit_param is not None
         assert 'limit_param' in limit_param['examples']
         assert limit_param['examples']['limit_param']['value'] == 50
@@ -392,17 +393,12 @@ class TestYAMLAndDecoratorMerge:
                     'description': 'Array of role objects',
                     'content': {
                         'application/json': {
-                            'schema': {
-                                'type': 'array',
-                                'items': {'$ref': '#/components/schemas/DiscordRole'}
-                            }
+                            'schema': {'type': 'array', 'items': {'$ref': '#/components/schemas/DiscordRole'}}
                         }
-                    }
+                    },
                 },
-                '404': {
-                    'description': 'Guild not found'
-                }
-            }
+                '404': {'description': 'Guild not found'},
+            },
         }
 
         func_node = parse_handler_code(HANDLER_WITH_RESPONSE_EXAMPLES)
@@ -428,10 +424,7 @@ class TestYAMLAndDecoratorMerge:
 
     def test_decorator_tags_override_yaml(self):
         """Test that decorator tags take precedence over YAML tags."""
-        yaml_meta = {
-            'tags': ['old_tag'],
-            'summary': 'Old summary'
-        }
+        yaml_meta = {'tags': ['old_tag'], 'summary': 'Old summary'}
 
         func_node = parse_handler_code(HANDLER_WITH_RESPONSE_EXAMPLES)
         metadata = extract_decorator_metadata(func_node)
@@ -455,7 +448,7 @@ class TestSpecStructureValidation:
         func_node = parse_handler_code(HANDLER_WITH_RESPONSE_EXAMPLES)
         metadata = extract_decorator_metadata(func_node)
         decorator_dict = metadata.to_dict()
-        
+
         yaml_meta = {}
         merged, _ = merge_endpoint_metadata(yaml_meta, decorator_dict, '/test', 'get')
 
@@ -465,15 +458,15 @@ class TestSpecStructureValidation:
         assert 'content' in merged['responses']['200']
         assert 'application/json' in merged['responses']['200']['content']
         assert 'examples' in merged['responses']['200']['content']['application/json']
-        
+
         examples = merged['responses']['200']['content']['application/json']['examples']
         assert isinstance(examples, dict)
         assert 'success_response' in examples
-        
+
         # Example object should have value or externalValue or $ref
         example_obj = examples['success_response']
         assert 'value' in example_obj or 'externalValue' in example_obj or '$ref' in example_obj
-        
+
         # Should have optional summary/description
         if 'summary' in example_obj:
             assert isinstance(example_obj['summary'], str)
@@ -483,19 +476,18 @@ class TestSpecStructureValidation:
         func_node = parse_handler_code(HANDLER_WITH_PARAMETER_EXAMPLES)
         metadata = extract_decorator_metadata(func_node)
         decorator_dict = metadata.to_dict()
-        
+
         yaml_meta = {}
         merged, _ = merge_endpoint_metadata(yaml_meta, decorator_dict, '/test', 'get')
 
         # Validate structure: parameters → [{...parameter, examples: {...}}]
         assert isinstance(merged['parameters'], list)
         assert len(merged['parameters']) > 0
-        
+
         param = merged['parameters'][0]
         assert 'name' in param
         assert 'examples' in param
         assert isinstance(param['examples'], dict)
-        
         # Example object validation
         example_name = list(param['examples'].keys())[0]
         example_obj = param['examples'][example_name]
@@ -506,7 +498,7 @@ class TestSpecStructureValidation:
         func_node = parse_handler_code(HANDLER_WITH_REQUEST_BODY_EXAMPLES)
         metadata = extract_decorator_metadata(func_node)
         decorator_dict = metadata.to_dict()
-        
+
         yaml_meta = {}
         merged, _ = merge_endpoint_metadata(yaml_meta, decorator_dict, '/test', 'post')
 
@@ -515,11 +507,10 @@ class TestSpecStructureValidation:
         assert 'content' in merged['requestBody']
         assert 'application/json' in merged['requestBody']['content']
         assert 'examples' in merged['requestBody']['content']['application/json']
-        
+
         examples = merged['requestBody']['content']['application/json']['examples']
         assert isinstance(examples, dict)
         assert len(examples) >= 2  # create_moderator and create_admin
-        
         # Validate example objects
         for example_name, example_obj in examples.items():
             assert 'value' in example_obj or 'externalValue' in example_obj or '$ref' in example_obj

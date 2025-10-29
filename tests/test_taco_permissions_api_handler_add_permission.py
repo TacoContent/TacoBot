@@ -1,9 +1,6 @@
-import asyncio
-import types
 from unittest.mock import MagicMock, patch
 
 import pytest
-from bot.lib.enums.permissions import TacoPermissions
 from bot.lib.http.handlers.api.v1.TacoPermissionsApiHandler import TacoPermissionsApiHandler
 
 
@@ -16,15 +13,18 @@ class TestAddPermission:
         handler.log = MagicMock()
         return handler
 
-    @pytest.mark.parametrize("guildId,userId,permission,expected", [
-        ("123", "456", "ADMIN", True),
-        ("1", "2", "MODERATOR", True),
-        ("0", "2", "ADMIN", False),  # guild_id <= 0
-        ("2", "0", "ADMIN", False),  # user_id <= 0
-        ("2", "3", "", False),       # empty permission
-        ("abc", "3", "ADMIN", False), # invalid guildId
-        ("2", "xyz", "ADMIN", False), # invalid userId
-    ])
+    @pytest.mark.parametrize(
+        "guildId,userId,permission,expected",
+        [
+            ("123", "456", "ADMIN", True),
+            ("1", "2", "MODERATOR", True),
+            ("0", "2", "ADMIN", False),  # guild_id <= 0
+            ("2", "0", "ADMIN", False),  # user_id <= 0
+            ("2", "3", "", False),  # empty permission
+            ("abc", "3", "ADMIN", False),  # invalid guildId
+            ("2", "xyz", "ADMIN", False),  # invalid userId
+        ],
+    )
     async def test_add_permission_various_inputs(self, handler, guildId, userId, permission, expected):
         # Patch TacoPermissions.from_str to return a dummy value for valid permissions
         with patch("bot.lib.enums.permissions.TacoPermissions.from_str", return_value="PERM") as mock_enum:

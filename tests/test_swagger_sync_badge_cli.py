@@ -6,6 +6,7 @@ integrates with the main swagger_sync.py workflow.
 Note: Subprocess tests don't contribute to coverage metrics since the script
 runs in a separate process. Direct function tests are in test_swagger_sync_badge_generation.py.
 """
+
 from __future__ import annotations
 
 import io
@@ -26,12 +27,7 @@ def test_badge_generation_via_cli():
 
         # Run swagger_sync with --generate-badge using the current Python interpreter
         result = subprocess.run(
-            [
-                sys.executable,
-                'scripts/swagger_sync.py',
-                '--check',
-                f'--generate-badge={badge_path}',
-            ],
+            [sys.executable, 'scripts/swagger_sync.py', '--check', f'--generate-badge={badge_path}'],
             cwd=pathlib.Path.cwd(),
             capture_output=True,
             text=True,
@@ -60,12 +56,7 @@ def test_badge_generation_creates_nested_directories():
         assert not badge_path.parent.exists()
 
         result = subprocess.run(
-            [
-                sys.executable,
-                'scripts/swagger_sync.py',
-                '--check',
-                f'--generate-badge={badge_path}',
-            ],
+            [sys.executable, 'scripts/swagger_sync.py', '--check', f'--generate-badge={badge_path}'],
             cwd=pathlib.Path.cwd(),
             capture_output=True,
             text=True,
@@ -83,12 +74,7 @@ def test_badge_generation_with_fix_mode():
         badge_path = pathlib.Path(tmpdir) / 'badge.svg'
 
         result = subprocess.run(
-            [
-                sys.executable,
-                'scripts/swagger_sync.py',
-                '--fix',
-                f'--generate-badge={badge_path}',
-            ],
+            [sys.executable, 'scripts/swagger_sync.py', '--fix', f'--generate-badge={badge_path}'],
             cwd=pathlib.Path.cwd(),
             capture_output=True,
             text=True,
@@ -107,12 +93,7 @@ def test_badge_path_with_spaces():
         badge_path = pathlib.Path(tmpdir) / 'path with spaces' / 'badge.svg'
 
         result = subprocess.run(
-            [
-                sys.executable,
-                'scripts/swagger_sync.py',
-                '--check',
-                f'--generate-badge={badge_path}',
-            ],
+            [sys.executable, 'scripts/swagger_sync.py', '--check', f'--generate-badge={badge_path}'],
             cwd=pathlib.Path.cwd(),
             capture_output=True,
             text=True,
@@ -124,6 +105,7 @@ def test_badge_path_with_spaces():
 
 
 # Direct function tests (these contribute to coverage)
+
 
 def test_badge_generation_direct_function_call():
     """Test generate_coverage_badge function directly for coverage."""
@@ -148,6 +130,7 @@ def test_badge_generation_with_readonly_parent_directory():
 
         # Make directory read-only (platform-specific)
         import stat
+
         try:
             parent.chmod(stat.S_IRUSR | stat.S_IXUSR)
 
@@ -200,6 +183,7 @@ def test_badge_generation_with_relative_path():
         original_cwd = pathlib.Path.cwd()
         try:
             import os
+
             os.chdir(tmpdir)
 
             badge_path = pathlib.Path('relative-badge.svg')
@@ -215,12 +199,12 @@ def test_badge_generation_with_relative_path():
 def test_badge_generation_coverage_edge_values():
     """Test badge generation with edge case coverage values."""
     test_cases = [
-        (0.0, '#e05d44'),    # Exactly 0%
+        (0.0, '#e05d44'),  # Exactly 0%
         (0.499, '#e05d44'),  # Just below 50%
-        (0.5, '#dfb317'),    # Exactly 50%
+        (0.5, '#dfb317'),  # Exactly 50%
         (0.799, '#dfb317'),  # Just below 80%
-        (0.8, '#4c1'),       # Exactly 80%
-        (1.0, '#4c1'),       # Exactly 100%
+        (0.8, '#4c1'),  # Exactly 80%
+        (1.0, '#4c1'),  # Exactly 100%
     ]
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -229,8 +213,7 @@ def test_badge_generation_coverage_edge_values():
             generate_coverage_badge(coverage, badge_path)
 
             content = badge_path.read_text(encoding='utf-8')
-            assert f'fill="{expected_color}"' in content, \
-                f"Coverage {coverage} should produce color {expected_color}"
+            assert f'fill="{expected_color}"' in content, f"Coverage {coverage} should produce color {expected_color}"
 
 
 def test_badge_generation_concurrent_writes():

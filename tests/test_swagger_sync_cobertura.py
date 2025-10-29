@@ -4,6 +4,7 @@ We construct a minimal handler with an openapi block and generate a swagger
 entry to ensure coverage counts reflect documented handler. Then we invoke
 _generate_coverage with fmt='cobertura' and validate the XML structure.
 """
+
 from __future__ import annotations
 
 import pathlib
@@ -39,7 +40,7 @@ def test_cobertura_generation(tmp_path):
     swagger_new, changed, notes, diffs = se.merge(swagger, endpoints)
 
     # Assert merge produced operation
-    assert ('/cov-test' in swagger_new['paths'])
+    assert '/cov-test' in swagger_new['paths']
     assert 'get' in swagger_new['paths']['/cov-test']
 
     # Generate Cobertura report

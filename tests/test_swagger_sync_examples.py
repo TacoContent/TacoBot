@@ -3,6 +3,7 @@
 Tests that the decorator_parser correctly extracts all fields from the enhanced
 @openapi.example decorator including placement types, example sources, and metadata.
 """
+
 import ast
 import sys
 from pathlib import Path
@@ -11,7 +12,7 @@ from pathlib import Path
 scripts_dir = Path(__file__).parent.parent / "scripts"
 sys.path.insert(0, str(scripts_dir))
 
-from swagger_sync.decorator_parser import extract_decorator_metadata
+from swagger_sync.decorator_parser import extract_decorator_metadata  # type: ignore # noqa: E402
 
 
 def test_extract_inline_value_example():
@@ -371,4 +372,5 @@ def get_user_schema(self, request, uri_variables):
 if __name__ == "__main__":
     # Run tests manually if needed
     import pytest
+
     pytest.main([__file__, "-v"])

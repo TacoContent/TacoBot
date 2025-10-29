@@ -7,6 +7,7 @@ Covers:
  - Directory creation
  - Error handling
 """
+
 from __future__ import annotations
 
 import pathlib
@@ -205,12 +206,7 @@ def test_badge_generation_overwrite_existing():
 
 def test_badge_generation_fractional_percentages():
     """Test badge generation with various fractional coverage values."""
-    test_cases = [
-        (0.123, '12.3%'),
-        (0.456, '45.6%'),
-        (0.789, '78.9%'),
-        (0.999, '99.9%'),
-    ]
+    test_cases = [(0.123, '12.3%'), (0.456, '45.6%'), (0.789, '78.9%'), (0.999, '99.9%')]
 
     with tempfile.TemporaryDirectory() as tmpdir:
         for coverage, expected_text in test_cases:
@@ -264,8 +260,9 @@ def test_badge_color_thresholds_comprehensive():
             output_path = pathlib.Path(tmpdir) / f'badge-{coverage}.svg'
             generate_coverage_badge(coverage, output_path)
             content = output_path.read_text(encoding='utf-8')
-            assert f'fill="{expected_color}"' in content, \
-                f"Coverage {coverage:.1%} should use {color_name} color ({expected_color})"
+            assert (
+                f'fill="{expected_color}"' in content
+            ), f"Coverage {coverage:.1%} should use {color_name} color ({expected_color})"
 
 
 def test_badge_utf8_encoding():
