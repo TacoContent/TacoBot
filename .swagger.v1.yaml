@@ -3513,7 +3513,6 @@ components:
           description: Whether the operation was successful.
         payload:
           $ref: '#/components/schemas/TacoWebhookMinecraftTacosPayload'
-          description: The payload that was processed.
         total_tacos:
           type: integer
           description: The total number of tacos.
@@ -4442,7 +4441,6 @@ components:
           description: A brief description of the server.
         motd:
           $ref: '#/components/schemas/MinecraftServerStatusMotd'
-          description: The message of the day (MOTD) information.
         online:
           type: boolean
           description: Whether the server is currently online.
@@ -4457,10 +4455,8 @@ components:
           description: The base64-encoded server icon image.
         players:
           $ref: '#/components/schemas/MinecraftServerStatusPlayers'
-          description: Player count information.
         version:
           $ref: '#/components/schemas/MinecraftServerStatusVersion'
-          description: Version information of the server.
       required:
         - description
         - enforces_secure_chat
@@ -4486,7 +4482,6 @@ components:
           description: The name of the Minecraft server configuration.
         settings:
           $ref: '#/components/schemas/MinecraftServerSettings'
-          description: A dictionary containing various Minecraft server settings.
         timestamp:
           type: integer
           description: The last updated timestamp for these settings (epoch seconds).
@@ -4524,7 +4519,6 @@ components:
           description: The name of the Minecraft world.
         stats:
           $ref: '#/components/schemas/MinecraftUserStats'
-          description: Container of user stats for the specified world.
       required:
         - stats
         - world_name
@@ -4550,7 +4544,6 @@ components:
           description: Status of the response, typically 'ok'.
         data:
           $ref: '#/components/schemas/MinecraftPlayerEventPayload'
-          description: The Minecraft player event payload data.
       required:
         - data
         - status
@@ -4640,7 +4633,6 @@ components:
         - properties:
             settings:
               $ref: '#/components/schemas/MinecraftServerSettings'
-              description: The settings data.
           required:
             - settings
       description: Generic Taco Settings Model

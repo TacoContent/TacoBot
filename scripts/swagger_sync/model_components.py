@@ -22,7 +22,8 @@ from __future__ import annotations
 import ast
 import pathlib
 import re
-from typing import Any, Dict, List, Optional, Tuple
+import sys
+from typing import Any, Dict, List, Optional
 
 # Import from other swagger_sync modules
 try:
@@ -608,6 +609,29 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                             continue  # hint is meta-attribute, not OpenAPI spec
                         if key not in schema or schema.get(key) is None:
                             schema[key] = value
+
+                # Fix OpenAPI no-$ref-siblings violation (OpenAPI 3.0 and below):
+                # According to OpenAPI spec, $ref must be the only property at that level.
+                # Any sibling properties (like description) will be ignored by compliant tooling.
+                # Warn and discard sibling properties to maintain spec compliance.
+                if '$ref' in schema:
+                    # Check if there are any sibling properties
+                    sibling_props = {k: v for k, v in schema.items() if k != '$ref'}
+
+                    if sibling_props:
+                        # Warn about discarded properties
+                        ref_value = schema['$ref']
+                        sibling_keys = ', '.join(sorted(sibling_props.keys()))
+                        print(
+                            f"⚠️  WARNING: Component '{comp_name}', property '{attr}': "
+                            f"Discarding sibling properties [{sibling_keys}] next to $ref={ref_value}. "
+                            f"OpenAPI 3.0 ignores properties alongside $ref (no-$ref-siblings rule). "
+                            f"Move '{sibling_keys}' to the referenced schema instead.",
+                            file=sys.stderr
+                        )
+                        # Keep only the $ref, discard siblings
+                        schema.clear()
+                        schema['$ref'] = ref_value
 
                 props[attr] = schema
                 if not nullable:
