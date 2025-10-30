@@ -2,7 +2,7 @@ import typing
 
 from bot.lib.models.openapi import openapi
 from bot.lib.models.TacoMinecraftServerSettingsMod import TacoMinecraftServerSettingsMod
-from lib.models.TacoSettingsModel import TacoSettingsModel
+from bot.lib.models.TacoSettingsModel import TacoSettingsModel
 
 
 @openapi.component("MinecraftServerSettings", description="Minecraft server settings")

@@ -1,6 +1,6 @@
 import typing
 
-from lib.models.openapi import openapi
+from bot.lib.models.openapi import openapi
 
 
 @openapi.component("MinecraftSettingsUpdatePayload", description="Payload for updating Minecraft settings for a guild.")
