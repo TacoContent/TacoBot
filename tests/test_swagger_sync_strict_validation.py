@@ -17,7 +17,6 @@ import sys
 import textwrap
 
 import pytest
-
 from scripts.swagger_sync import collect_endpoints
 
 TMP_ROOT = pathlib.Path('tests/tmp_handlers_strict_validation')

@@ -6,8 +6,6 @@ import typing
 
 import discord
 import requests
-from discord.ext import commands
-
 from bot.lib import discordhelper, utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
@@ -17,6 +15,7 @@ from bot.lib.mongodb.live import LiveDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.twitch import TwitchDatabase
 from bot.tacobot import TacoBot
+from discord.ext import commands
 
 
 class LiveNow(TacobotCog):

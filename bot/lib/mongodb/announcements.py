@@ -23,7 +23,6 @@ import os
 import traceback
 
 import pytz
-
 from bot.lib import utils
 from bot.lib.enums import loglevel
 from bot.lib.models.AnnouncementEntry import AnnouncementEntry

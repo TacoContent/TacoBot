@@ -22,7 +22,6 @@ serialization issues.
 import typing
 
 import discord
-
 from bot.lib.models.DiscordMessageReaction import DiscordMessageReaction
 from bot.lib.models.openapi import openapi
 

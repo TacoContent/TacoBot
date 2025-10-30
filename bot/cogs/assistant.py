@@ -4,12 +4,11 @@ import os
 import traceback
 
 import discord
-from discord.ext import commands
-from openai import OpenAI
-
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.tacobot import TacoBot
+from discord.ext import commands
+from openai import OpenAI
 
 
 class Assistant(TacobotCog):

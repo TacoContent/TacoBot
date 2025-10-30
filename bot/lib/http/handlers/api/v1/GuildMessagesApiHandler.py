@@ -5,11 +5,6 @@ import typing
 from http import HTTPMethod
 
 import discord
-from lib import discordhelper
-from lib.models import openapi
-from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
-from lib.models.GuildItemIdBatchRequestBody import GuildItemIdBatchRequestBody
-
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.models.DiscordMessage import DiscordMessage
@@ -18,6 +13,10 @@ from bot.tacobot import TacoBot
 from httpserver.EndpointDecorators import uri_variable_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException
+from lib import discordhelper
+from lib.models import openapi
+from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from lib.models.GuildItemIdBatchRequestBody import GuildItemIdBatchRequestBody
 
 
 class GuildMessagesApiHandler(BaseHttpHandler):

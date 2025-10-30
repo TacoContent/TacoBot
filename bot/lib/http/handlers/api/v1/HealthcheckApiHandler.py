@@ -33,10 +33,6 @@ import traceback
 import typing
 from http import HTTPMethod
 
-from lib import discordhelper
-from lib.models import ErrorStatusCodePayload
-from lib.models.openapi import openapi
-
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.mongodb.minecraft import MinecraftDatabase
@@ -46,6 +42,9 @@ from bot.tacobot import TacoBot
 from httpserver.EndpointDecorators import uri_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException
+from lib import discordhelper
+from lib.models import ErrorStatusCodePayload
+from lib.models.openapi import openapi
 
 
 class HealthcheckApiHandler(BaseHttpHandler):

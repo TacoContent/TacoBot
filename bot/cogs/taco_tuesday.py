@@ -7,8 +7,6 @@ import typing
 
 import discord
 import pytz
-from discord.ext import commands
-
 from bot.lib import discordhelper, utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
@@ -17,6 +15,7 @@ from bot.lib.mongodb.tacotuesdays import TacoTuesdaysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
 from bot.tacobot import TacoBot
+from discord.ext import commands
 
 
 class TacoTuesdayCog(TacobotCog):

@@ -3,7 +3,6 @@ import os
 import traceback
 
 import requests
-
 from bot.lib import logger, settings
 from bot.lib.enums import loglevel
 

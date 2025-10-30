@@ -3,13 +3,12 @@ import os
 import typing
 
 import discord
-from discord.ext import commands
-from discord.ext.commands import Context, Greedy
-
 from bot import tacobot  # pylint: disable=no-name-in-module
 from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
+from discord.ext import commands
+from discord.ext.commands import Context, Greedy
 
 
 class CommandSyncCog(TacobotCog):

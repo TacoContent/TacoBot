@@ -35,11 +35,6 @@ from http import HTTPMethod
 from typing import Any, Dict, List, Optional, Union
 
 import discord
-from lib import discordhelper
-from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
-from lib.models.ShiftCodePayload import ShiftCodePayload
-from tacobot import TacoBot
-
 from bot.lib import utils
 from bot.lib.http.handlers.BaseWebhookHandler import BaseWebhookHandler
 from bot.lib.models import openapi
@@ -49,6 +44,10 @@ from bot.ui.MultipleExternalUrlButtonView import ButtonData, MultipleExternalUrl
 from httpserver.EndpointDecorators import uri_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException
+from lib import discordhelper
+from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from lib.models.ShiftCodePayload import ShiftCodePayload
+from tacobot import TacoBot
 
 
 class ShiftCodeWebhookHandler(BaseWebhookHandler):

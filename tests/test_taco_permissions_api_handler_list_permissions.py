@@ -5,7 +5,6 @@ Ensures 100% coverage, including edge cases and error handling.
 from unittest.mock import MagicMock
 
 import pytest
-
 from bot.lib.http.handlers.api.v1.TacoPermissionsApiHandler import TacoPermissionsApiHandler
 
 

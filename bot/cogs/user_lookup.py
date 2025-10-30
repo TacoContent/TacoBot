@@ -4,13 +4,12 @@ import os
 import traceback
 
 import pytz
-from discord.ext import commands
-
 from bot.lib import discordhelper, utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.models.DiscordUser import DiscordUser
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.tacobot import TacoBot
+from discord.ext import commands
 
 
 class UserLookupCog(TacobotCog):

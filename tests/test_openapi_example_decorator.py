@@ -9,7 +9,6 @@ and proper placement in parameters, request bodies, responses, and schemas.
 from http import HTTPMethod
 
 import pytest
-
 from bot.lib.models.openapi.endpoints import example
 
 

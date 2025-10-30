@@ -8,15 +8,14 @@ import traceback
 
 import discord
 import requests
-from discord.ext import commands
-from discord.ext.commands import Context
-
 from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.minecraft import MinecraftDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.tacobot import TacoBot
+from discord.ext import commands
+from discord.ext.commands import Context
 
 
 class MinecraftCog(TacobotCog):

@@ -8,7 +8,6 @@ import ast
 import typing
 
 import pytest
-
 from scripts.swagger_sync.decorator_parser import _extract_schema_reference
 
 

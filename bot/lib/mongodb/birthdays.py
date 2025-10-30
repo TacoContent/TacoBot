@@ -5,7 +5,6 @@ import traceback
 import typing
 
 import pytz
-
 from bot.lib import utils
 from bot.lib.enums import loglevel
 from bot.lib.mongodb.database import Database

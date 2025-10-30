@@ -1,4 +1,4 @@
-from httpserver.EndpointDecorators import uri_mapping, uri_variable_mapping, uri_pattern_mapping
+from httpserver.EndpointDecorators import uri_mapping, uri_pattern_mapping, uri_variable_mapping
 
 
 class DemoHandler:

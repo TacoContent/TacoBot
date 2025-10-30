@@ -4,9 +4,6 @@ import os
 import traceback
 
 import discord
-from discord.ext import commands
-from discord.ext.commands import Context
-
 from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
@@ -15,6 +12,8 @@ from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.wdyctw import WDYCTWDatabase
 from bot.lib.permissions import Permissions
 from bot.tacobot import TacoBot
+from discord.ext import commands
+from discord.ext.commands import Context
 
 
 class WhatDoYouCallThisWednesdayCog(TacobotCog):

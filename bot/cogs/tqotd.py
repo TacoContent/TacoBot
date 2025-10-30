@@ -7,11 +7,6 @@ import typing
 
 import aiohttp
 import discord
-from discord import app_commands
-from discord.ext import commands
-from discord.ext.commands import Context
-from openai import OpenAI
-
 from bot.lib import discordhelper, utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
@@ -20,6 +15,10 @@ from bot.lib.mongodb.toqtd import TQOTDDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
 from bot.tacobot import TacoBot
+from discord import app_commands
+from discord.ext import commands
+from discord.ext.commands import Context
+from openai import OpenAI
 
 
 class TacoQuestionOfTheDayCog(TacobotCog):

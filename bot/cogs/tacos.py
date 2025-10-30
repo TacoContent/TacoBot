@@ -4,9 +4,6 @@ import traceback
 import typing
 
 import discord
-from discord import app_commands
-from discord.ext import commands
-
 from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
@@ -14,6 +11,8 @@ from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.tacobot import TacoBot
+from discord import app_commands
+from discord.ext import commands
 
 
 class TacosCog(TacobotCog):

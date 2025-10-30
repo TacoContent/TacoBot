@@ -5,11 +5,10 @@ import typing
 
 import discord
 import discordhealthcheck
-from discord.ext import commands
-
 from bot.lib import logger, settings
 from bot.lib.enums import loglevel
 from bot.lib.mongodb.guilds import GuildsDatabase
+from discord.ext import commands
 
 
 class TacoBot(commands.Bot):

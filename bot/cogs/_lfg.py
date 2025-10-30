@@ -2,11 +2,10 @@ import inspect
 import os
 
 import discord
-from discord.ext import commands
-
 from bot import tacobot  # pylint: disable=relative-beyond-top-level
 from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
+from discord.ext import commands
 
 
 class LookingForGamersCog(TacobotCog):

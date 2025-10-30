@@ -1,7 +1,6 @@
 import typing
 
 import discord
-
 from bot.lib.models.openapi import openapi
 
 

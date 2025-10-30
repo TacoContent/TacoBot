@@ -6,7 +6,6 @@ import traceback
 import typing
 
 import discord
-
 from bot.lib import logger, settings, utils
 from bot.lib.ChannelSelect import ChannelSelectView
 from bot.lib.enums import loglevel, tacotypes

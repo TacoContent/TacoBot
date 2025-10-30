@@ -4,11 +4,10 @@ import os
 import traceback
 import typing
 
-from bson.objectid import ObjectId
-
 from bot.lib import utils
 from bot.lib.enums import loglevel
 from bot.lib.mongodb.database import Database
+from bson.objectid import ObjectId
 
 
 class GameKeysDatabase(Database):

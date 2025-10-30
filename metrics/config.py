@@ -2,7 +2,6 @@ import codecs
 import os
 
 import yaml
-
 from bot.lib.utils import dict_get
 
 

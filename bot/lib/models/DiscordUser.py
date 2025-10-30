@@ -29,9 +29,8 @@ ensures all asset references become plain URLs.
 import datetime
 import typing
 
-from discord import Member, User
-
 from bot.lib.models.openapi import openapi
+from discord import Member, User
 
 
 @openapi.component("DiscordUser", description="Discord user information")

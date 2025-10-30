@@ -9,7 +9,6 @@ from __future__ import annotations
 import pathlib
 
 import yaml
-
 from scripts.swagger_sync import collect_model_components
 
 

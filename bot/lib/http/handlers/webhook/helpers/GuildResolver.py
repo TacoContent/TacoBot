@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Callable, List, Optional
 
 import discord
-
 from bot.lib import discordhelper
 from bot.lib.mongodb.free_game_keys import FreeGameKeysDatabase
 

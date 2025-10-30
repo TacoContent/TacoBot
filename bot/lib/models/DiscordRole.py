@@ -30,9 +30,8 @@ already matches the expected structure. Non-role, non-dict inputs raise
 import datetime
 import typing
 
-from discord import Role
-
 from bot.lib.models.openapi import openapi
+from discord import Role
 
 
 @openapi.component("DiscordRole", description="Represents a Discord role with normalized primitive fields.")

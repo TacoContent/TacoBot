@@ -6,8 +6,6 @@ import traceback
 import typing
 
 import discord
-from discord.ext import commands
-
 from bot.lib import discordhelper, utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
@@ -21,6 +19,7 @@ from bot.lib.permissions import Permissions
 from bot.lib.steam.steamapi import SteamApiClient
 from bot.tacobot import TacoBot
 from bot.ui.GameRewardView import GameRewardView
+from discord.ext import commands
 
 
 class GameKeysCog(TacobotCog):

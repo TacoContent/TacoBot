@@ -1,7 +1,6 @@
 """Tests for @openapi.example decorator on classes (components)."""
 
 import pytest
-
 from bot.lib.models.openapi import openapi
 
 

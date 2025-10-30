@@ -10,7 +10,6 @@ import json
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
 from bot.lib.http.handlers.webhook.MinecraftPlayerWebhookHandler import MinecraftPlayerWebhookHandler
 from httpserver.http_util import HttpHeaders, HttpRequest

@@ -10,13 +10,12 @@ from dataclasses import dataclass
 from typing import Optional, Tuple
 
 import requests
+from bot.lib.UrlShortener import UrlShortener
 from lib.http.handlers.webhook.helpers.launchers.LauncherStrategies import (
     EpicGamesLauncher,
     MicrosoftStoreLauncher,
     SteamLauncher,
 )
-
-from bot.lib.UrlShortener import UrlShortener
 
 
 @dataclass

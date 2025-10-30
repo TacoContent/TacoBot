@@ -3,12 +3,11 @@ import os
 import typing
 
 import discord
-from discord.ext import commands
-
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums.system_actions import SystemActions
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.tacobot import TacoBot
+from discord.ext import commands
 
 
 class ModEventsCog(TacobotCog):

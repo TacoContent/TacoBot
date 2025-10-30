@@ -2,7 +2,6 @@ import json
 from unittest.mock import ANY, AsyncMock, MagicMock, patch
 
 import pytest
-
 from bot.lib.http.handlers.api.v1.TacoPermissionsApiHandler import TacoPermissionsApiHandler
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 

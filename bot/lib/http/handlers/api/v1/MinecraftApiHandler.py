@@ -42,6 +42,16 @@ import typing
 from http import HTTPMethod
 
 import requests
+from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
+from bot.lib.http.handlers.api.v1.const import API_VERSION
+from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
+from bot.lib.minecraft.status import MinecraftStatus
+from bot.lib.mongodb.minecraft import MinecraftDatabase
+from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.settings import Settings
+from httpserver.EndpointDecorators import uri_mapping, uri_variable_mapping
+from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
+from httpserver.server import HttpResponseException
 from lib import discordhelper
 from lib.models import ErrorStatusCodePayload
 from lib.models.MinecraftOpUser import MinecraftOpUser
@@ -57,17 +67,6 @@ from lib.models.TacoMinecraftWorldInfo import TacoMinecraftWorldInfo
 from lib.models.TacoMinecraftWorlds import TacoMinecraftWorlds
 from lib.models.TacoSettingsModel import TacoSettingsModel
 from tacobot import TacoBot
-
-from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
-from bot.lib.http.handlers.api.v1.const import API_VERSION
-from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
-from bot.lib.minecraft.status import MinecraftStatus
-from bot.lib.mongodb.minecraft import MinecraftDatabase
-from bot.lib.mongodb.tracking import TrackingDatabase
-from bot.lib.settings import Settings
-from httpserver.EndpointDecorators import uri_mapping, uri_variable_mapping
-from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException
 
 
 class MinecraftApiHandler(BaseHttpHandler):
