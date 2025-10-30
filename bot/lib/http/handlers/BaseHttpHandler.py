@@ -58,10 +58,6 @@ from bot.lib import discordhelper, logger, settings
 from bot.lib.enums import loglevel
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
-<<<<<<< HEAD
-=======
-from bot.tacobot import TacoBot
->>>>>>> origin/develop
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException
 from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
