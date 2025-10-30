@@ -627,7 +627,7 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                             f"Discarding sibling properties [{sibling_keys}] next to $ref={ref_value}. "
                             f"OpenAPI 3.0 ignores properties alongside $ref (no-$ref-siblings rule). "
                             f"Move '{sibling_keys}' to the referenced schema instead.",
-                            file=sys.stderr
+                            file=sys.stderr,
                         )
                         # Keep only the $ref, discard siblings
                         schema.clear()
