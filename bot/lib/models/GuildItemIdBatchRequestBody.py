@@ -1,6 +1,6 @@
 import typing
 
-from lib.models.openapi import openapi
+from bot.lib.models.openapi import openapi
 
 
 @openapi.component("GuildItemIdBatchRequestBody", description="Request body for batch fetching guild item by IDs")

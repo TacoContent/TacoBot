@@ -1,4 +1,4 @@
-from lib.models.openapi import openapi
+from bot.lib.models.openapi import openapi
 
 
 @openapi.component("SimpleStatusResponse", description="Simple status response with a status string")
