@@ -1,0 +1,303 @@
+{
+	// VS Code tasks for TacoBot
+	"$schema": "vscode://schemas/tasks",
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "TacoBot: Start Local Bot (source)",
+			"type": "shell",
+			"command": "./.venv/scripts/Activate.ps1; python ${workspaceFolder}/main.py",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [
+				"$python"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"detail": "Start the TacoBot locally for development"
+		},
+		{
+			"label": "TacoBot: Start Local Bot (docker)",
+			"type": "shell",
+			"command": "docker run --rm --env-file .env -v ${workspaceFolder}:/app -p 8931:8931 -p 8932:8932 tacobot:local",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"detail": "Start the TacoBot locally using Docker for development"
+		},
+		{
+			"label": "TacoBot: Build Docker Image",
+			"type": "shell",
+			"command": "docker build -t tacobot:local .",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			}
+		},
+		{
+			"label": "Python: Activate Virtual Environment",
+			"type": "shell",
+			"command": "./.venv/scripts/Activate.ps1",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"group": {
+				"kind": "test",
+				"isDefault": false
+			},
+			"detail": "Activate the Python virtual environment for the workspace"
+		},
+		{
+			"label": "Python: Run Tests",
+			"type": "shell",
+			"command": "./.venv/scripts/Activate.ps1; python -m pytest tests/",
+			"options": {
+				"env": {
+					"PYTHONPATH": "${workspaceFolder}/bot"
+				}
+			},
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [
+				"$python"
+			],
+			"group": {
+				"kind": "test",
+				"isDefault": true
+			},
+			"detail": "Run all tests with standard output"
+		},
+		{
+			"label": "Python: Run Tests (Verbose)",
+			"type": "shell",
+			"command": "./.venv/scripts/Activate.ps1; python -m pytest tests/ -v --tb=long",
+			"options": {
+				"env": {
+					"PYTHONPATH": "${workspaceFolder}/bot"
+				}
+			},
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [
+				"$python"
+			],
+			"group": {
+				"kind": "test"
+			},
+			"detail": "Run all tests with verbose output and full tracebacks"
+		},
+		{
+			"label": "Python: Run Tests (Fast)",
+			"type": "shell",
+			"command": "./.venv/scripts/Activate.ps1; python -m pytest tests/ -q --disable-warnings",
+			"options": {
+				"env": {
+					"PYTHONPATH": "${workspaceFolder}/bot"
+				}
+			},
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [
+				"$python"
+			],
+			"group": {
+				"kind": "test"
+			},
+			"detail": "Run tests quickly, only showing pass/fail summary"
+		},
+		{
+			"label": "Python: Run Tests (Coverage)",
+			"type": "shell",
+			"command": "./.venv/scripts/Activate.ps1; python -m pytest tests/ --cov=bot --cov=httpserver --cov=metrics --cov=scripts --cov-config=.coveragerc --cov-report=html --cov-report=xml --cov-report=json --cov-report=term-missing",
+			"options": {
+				"env": {
+					"PYTHONPATH": "${workspaceFolder}/bot"
+				}
+			},
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [
+				"$python"
+			],
+			"group": {
+				"kind": "test"
+			},
+			"detail": "Run tests with coverage reports (HTML, XML, JSON)"
+		},
+		{
+			"label": "Python: Coverage Markdown Report",
+			"type": "shell",
+			"command": "./.venv/scripts/Activate.ps1; python -m pytest --cov=bot --cov=httpserver --cov=metrics --cov=scripts --cov-config=.coveragerc --cov-report=term-missing tests/; python -m coverage report --format=markdown > reports/pytest/coverage.md",
+			"options": {
+				"env": {
+					"PYTHONPATH": "${workspaceFolder}/bot"
+				}
+			},
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [
+				"$python"
+			],
+			"group": {
+				"kind": "test",
+				"isDefault": false
+			},
+			"detail": "Run all tests and output a markdown coverage report to reports/coverage.md"
+		},
+		{
+			"label": "Format Check (Black)",
+			"type": "shell",
+			"command": "./.venv/scripts/Activate.ps1; python -m black --diff --check --config ./pyproject.toml .",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"group": {
+				"kind": "test",
+				"isDefault": false
+			}
+		},
+		{
+			"label": "Format Fix (Black)",
+			"type": "shell",
+			"command": "./.venv/scripts/Activate.ps1; python -m black --config ./pyproject.toml .",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"group": {
+				"kind": "test",
+				"isDefault": false
+			}
+		},
+		{
+			"label": "Format Fix (iSort)",
+			"type": "shell",
+			"command": "./.venv/scripts/Activate.ps1; python -m isort --settings-path ./pyproject.toml .",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"group": {
+				"kind": "test",
+				"isDefault": false
+			}
+		},
+		{
+			"label": "Format Check (iSort)",
+			"type": "shell",
+			"command": "./.venv/scripts/Activate.ps1; python -m isort --check --diff --settings-path ./pyproject.toml .",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"group": {
+				"kind": "test",
+				"isDefault": false
+			}
+		},
+		{
+			"label": "Lint Check (Ruff)",
+			"type": "shell",
+			"command": "./.venv/scripts/Activate.ps1; python -m ruff linter --config=./pyproject.toml",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"group": {
+				"kind": "test",
+				"isDefault": false
+			}
+		},
+
+		{
+			"label": "Lint (Super Linter)",
+			"type": "shell",
+			"command": "docker run --rm --env-file .github/env/super-linter.fix.env -e RUN_LOCAL=true -e CREATE_LOG_FILE=true -e LOG_FILE=reports/super-linter/super-linter-summary.ansi.log -e DEFAULT_BRANCH=develop -e GITHUB_WORKSPACE=/github/workspace -v ${workspaceFolder}:/github/workspace ghcr.io/super-linter/super-linter:v8",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"group": {
+				"kind": "test",
+				"isDefault": false
+			},
+			"detail": "Run GitHub Super-Linter locally against the repository using Docker"
+		},
+		{
+			"label": "Swagger Validation Quiet",
+			"type": "shell",
+			"command": "./.venv/scripts/Activate.ps1; python scripts/swagger_sync.py --config=.swagger-sync.yaml --env=quiet",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"group": {
+				"kind": "test"
+			},
+			"detail": "Validate the OpenAPI (Swagger) specification file"
+		},
+		{
+			"label": "Swagger Validation",
+			"type": "shell",
+			"command": "./.venv/scripts/Activate.ps1; python scripts/swagger_sync.py --config=.swagger-sync.yaml --env=local",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"group": {
+				"kind": "test"
+			},
+			"detail": "Validate the OpenAPI (Swagger) specification file"
+		},
+		{
+			"label": "Swagger FIX",
+			"type": "shell",
+			"command": "./.venv/scripts/Activate.ps1; python scripts/swagger_sync.py --fix --config=.swagger-sync.yaml --env=local",
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			},
+			"problemMatcher": [],
+			"group": {
+				"kind": "test"
+			},
+			"detail": "Fix the OpenAPI (Swagger) specification file"
+		}
+	]
+}

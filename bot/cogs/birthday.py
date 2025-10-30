@@ -58,7 +58,12 @@ class Birthday(TacobotCog):
                 reason_msg = self.settings.get_string(guild_id, "taco_reason_birthday")
 
                 await self.discord_helper.taco_give_user(
-                    guild_id, self.bot.user, user, reason_msg, tacotypes.TacoTypes.BIRTHDAY, taco_amount=taco_amount
+                    guild_id,
+                    self.bot.user,  # type: ignore
+                    user,
+                    reason_msg,
+                    tacotypes.TacoTypes.BIRTHDAY,
+                    taco_amount=taco_amount,
                 )
 
             # TODO: change to full interaction response
@@ -147,7 +152,7 @@ class Birthday(TacobotCog):
                 reason_msg = self.settings.get_string(guild_id, "taco_reason_birthday")
                 await self.discord_helper.taco_give_user(
                     guild_id,
-                    self.bot.user,
+                    self.bot.user,  # type: ignore
                     ctx.author,
                     reason_msg,
                     tacotypes.TacoTypes.BIRTHDAY,
@@ -353,7 +358,7 @@ class Birthday(TacobotCog):
                 self.log.warn(
                     guild_id,
                     f"{self._module}.{self._class}.{_method}",
-                    f"No live_now settings found for guild {guild_id}",
+                    f"No birthday settings found for guild {guild_id}",
                 )
                 return
             if not cog_settings.get("enabled", False):
@@ -377,14 +382,14 @@ class Birthday(TacobotCog):
             # Get a random birthday message
 
             # These should be pulled from database settings
-            birthday_messsages = cog_settings.get("messages", [])
+            birthday_messages = cog_settings.get("messages", [])
             birthday_images = cog_settings.get("images", [])
             output_channel_id = cog_settings.get("channel_id", "0")
 
             # output_channel = ctx.guild.get_channel(int(output_channel_id))
             output_channel = await self.discord_helper.get_or_fetch_channel(channelId=int(output_channel_id))
             if output_channel:
-                message = birthday_messsages[int(random() * len(birthday_messsages))]
+                message = birthday_messages[int(random() * len(birthday_messages))]
                 image = birthday_images[int(random() * len(birthday_images))]
 
                 date = datetime.datetime.now(tz=None)

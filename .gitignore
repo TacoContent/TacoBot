@@ -1,9 +1,33 @@
 
 \.idea/
 __pycache__/**
+__pycache__/
+.pytest_cache/
+tacobot.egg-info/
+.venv/
 *.env
 .env.*
 .env
+!.github/env/*.env
+COMMIT_MESSAGE.txt
+.coverage
+.coverage.*
+
+reports/*
+!reports/.gitkeep
+!reports/README.md
+# ignore file copies and backup files
+'* copy.*'
+'* copy/'
+
+
+# ignore the super-linter log file when running super-linter locally
+super-linter-summary.log
+super-linter-summary.ansi.log
+super-linter-output/
+openapi_coverage.json
+openapi_summary.md
+
 # Created by https://www.toptal.com/developers/gitignore/api/linux
 # Edit at https://www.toptal.com/developers/gitignore?templates=linux
 
@@ -95,6 +119,7 @@ Temporary Items
 ### VisualStudioCode ###
 .vscode/*
 !.vscode/settings.json
+.vscode/mcp.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json

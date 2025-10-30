@@ -2,9 +2,12 @@ import datetime
 import inspect
 import os
 import traceback
+import typing
 
+import pytz
 from bot.lib import utils
 from bot.lib.enums import loglevel
+from bot.lib.models.JoinWhitelistUser import JoinWhitelistUser
 from bot.lib.mongodb.database import Database
 
 
@@ -22,16 +25,14 @@ class WhitelistDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow()
+            date = datetime.datetime.now(pytz.UTC)
             timestamp = utils.to_timestamp(date)
 
-            payload = {
-                "guild_id": str(guild_id),
-                "user_id": str(user_id),
-                "added_by": str(added_by),
-                "timestamp": timestamp,
-            }
-            self.connection.join_whitelist.update_one(
+            payload = JoinWhitelistUser(
+                {"guild_id": str(guild_id), "user_id": str(user_id), "added_by": str(added_by), "timestamp": timestamp}
+            ).to_dict()
+
+            self.connection.join_whitelist.update_one(  # type: ignore
                 {"guild_id": str(guild_id), "user_id": str(user_id)}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
@@ -43,13 +44,13 @@ class WhitelistDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
 
-    def get_user_join_whitelist(self, guild_id: int) -> list:
+    def get_user_join_whitelist(self, guild_id: int) -> typing.List[JoinWhitelistUser]:
         """Get the join whitelist for a guild."""
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            return list(self.connection.join_whitelist.find({"guild_id": str(guild_id)}))
+            return list(self.connection.join_whitelist.find({"guild_id": str(guild_id)}))  # type: ignore
         except Exception as ex:
             self.log(
                 guildId=guild_id,
@@ -66,7 +67,9 @@ class WhitelistDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            self.connection.join_whitelist.delete_one({"guild_id": str(guild_id), "user_id": str(user_id)})
+            self.connection.join_whitelist.delete_one(  # type: ignore
+                {"guild_id": str(guild_id), "user_id": str(user_id)}
+            )
         except Exception as ex:
             self.log(
                 guildId=guild_id,

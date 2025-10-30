@@ -1,0 +1,281 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://tacobot.app/schemas/swagger-sync-config.json",
+  "title": "Swagger Sync Configuration",
+  "description": "Configuration schema for TacoBot's OpenAPI/Swagger synchronization tool",
+  "type": "object",
+  "properties": {
+    "swagger_file": {
+      "type": "string",
+      "description": "Path to the OpenAPI/Swagger specification file",
+      "default": ".swagger.v1.yaml",
+      "examples": [".swagger.v1.yaml", "api/openapi.yaml"]
+    },
+    "handlers_root": {
+      "type": "string",
+      "description": "Root directory containing HTTP handler Python files",
+      "default": "bot/lib/http/handlers/",
+      "examples": ["bot/lib/http/handlers/", "src/api/handlers/"]
+    },
+    "models_root": {
+      "type": "string",
+      "description": "Root directory containing model classes with @openapi.component decorators",
+      "default": "bot/lib/models/",
+      "examples": ["bot/lib/models/", "src/models/"]
+    },
+    "ignore_file": {
+      "type": ["string", "null"],
+      "description": "Path to file containing ignore patterns (one per line)",
+      "examples": [".swaggerignore", "config/swagger-ignore.txt"],
+      "nullable": true
+    },
+    "output": {
+      "type": ["object", "null"],
+      "description": "Output file and report generation settings",
+      "properties": {
+        "directory": {
+          "type": "string",
+          "description": "Base directory for output files",
+          "default": "./reports/openapi/",
+          "examples": ["./reports/openapi/", "./build/swagger/"]
+        },
+        "coverage_report": {
+          "type": ["string", "null"],
+          "description": "Path for coverage report file (relative to directory or absolute)",
+          "examples": [
+            "openapi_coverage.json",
+            "coverage.xml",
+            "coverage.txt",
+            "coverage.md"
+          ]
+        },
+        "coverage_format": {
+          "type": ["string", "null"],
+          "description": "Format for coverage report (xml and cobertura are equivalent)",
+          "enum": ["json", "text", "cobertura", "xml"],
+          "default": "json"
+        },
+        "markdown_summary": {
+          "type": ["string", "null"],
+          "description": "Path for markdown summary file (for GitHub Actions integration)",
+          "examples": ["openapi_summary.md", "summary.md"]
+        },
+        "badge": {
+          "type": ["string", "null"],
+          "description": "Path for SVG coverage badge generation",
+          "examples": ["coverage-badge.svg", "badges/openapi.svg"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "mode": {
+      "type": "string",
+      "description": "Operation mode: check for drift detection, fix to apply changes",
+      "enum": ["check", "fix"],
+      "default": "check"
+    },
+    "options": {
+      "type": [ "object", "null" ],
+      "description": "General behavior options",
+      "properties": {
+        "strict": {
+          "type": "boolean",
+          "description": "Enable strict mode (fail on any warnings or orphans)",
+          "default": false
+        },
+        "show_orphans": {
+          "type": "boolean",
+          "description": "List swagger paths/components without code handlers/models",
+          "default": false
+        },
+        "show_ignored": {
+          "type": "boolean",
+          "description": "List endpoints marked with @openapi: ignore",
+          "default": false
+        },
+        "show_missing_blocks": {
+          "type": "boolean",
+          "description": "List handlers without >>>openapi<<<openapi blocks",
+          "default": false
+        },
+        "verbose_coverage": {
+          "type": "boolean",
+          "description": "Show per-endpoint coverage details inline",
+          "default": false
+        },
+        "list_endpoints": {
+          "type": "boolean",
+          "description": "List all discovered endpoints and exit",
+          "default": false
+        },
+        "no_model_components": {
+          "type": "boolean",
+          "description": "Skip model component schema generation",
+          "default": false
+        },
+        "color": {
+          "type": "string",
+          "description": "Color output control",
+          "enum": ["auto", "always", "never"],
+          "default": "auto"
+        },
+        "fail_on_coverage_below": {
+          "type": "number",
+          "description": "Exit with error if coverage is below this threshold (0.0-1.0 or 0-100)",
+          "minimum": 0,
+          "maximum": 100,
+          "examples": [0.8, 80, 0.9, 90]
+        }
+      },
+      "additionalProperties": false
+    },
+    "markers": {
+      "type": ["object", "null"],
+      "description": "Delimiter markers for OpenAPI blocks in docstrings",
+      "properties": {
+        "start": {
+          "type": "string",
+          "description": "Start marker for OpenAPI blocks",
+          "default": ">>>openapi"
+        },
+        "end": {
+          "type": "string",
+          "description": "End marker for OpenAPI blocks",
+          "default": "<<<openapi"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ignore": {
+      "type": ["object", "null"],
+      "description": "Patterns and explicit items to ignore during synchronization",
+      "properties": {
+        "files": {
+          "type": ["array", "null"],
+          "description": "File glob patterns to ignore (e.g., test files)",
+          "items": {
+            "type": "string"
+          },
+          "examples": [
+            ["**/test_*.py", "**/__pycache__/**"],
+            ["**/tests/**", "**/fixtures/**"]
+          ]
+        },
+        "handlers": {
+          "type": ["array", "null"],
+          "description": "Specific handler function names to ignore",
+          "items": {
+            "type": "string"
+          },
+          "examples": [
+            ["internal_health_check", "debug_endpoint"],
+            ["_internal_*", "test_handler"]
+          ]
+        },
+        "paths": {
+          "type": ["array", "null"],
+          "description": "Specific API paths to ignore",
+          "items": {
+            "type": "string"
+          },
+          "examples": [
+            ["/internal/*", "/debug/*"],
+            ["/admin/internal", "/_healthz"]
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "environments": {
+      "type": [ "object", "null" ],
+      "description": "Environment-specific configuration profiles that override base settings",
+      "patternProperties": {
+        "^[a-zA-Z0-9_-]+$": {
+          "type": "object",
+          "description": "Environment profile (e.g., 'ci', 'local', 'prod')",
+          "properties": {
+            "mode": {
+              "$ref": "#/properties/mode"
+            },
+            "output": {
+              "$ref": "#/properties/output"
+            },
+            "options": {
+              "$ref": "#/properties/options"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "examples": [
+        {
+          "ci": {
+            "options": {
+              "color": "never",
+              "strict": true
+            }
+          },
+          "local": {
+            "options": {
+              "show_orphans": false,
+              "verbose_coverage": true,
+              "color": "always"
+            }
+          }
+        }
+      ]
+    },
+    "version": {
+      "type": "string",
+      "description": "Config file format version for future compatibility",
+      "pattern": "^\\d+\\.\\d+(\\.\\d+)?$",
+      "default": "1.0",
+      "examples": ["1.0", "1.1", "2.0"]
+    }
+  },
+  "additionalProperties": true,
+  "examples": [
+    {
+      "version": "1.0",
+      "swagger_file": ".swagger.v1.yaml",
+      "handlers_root": "bot/lib/http/handlers/",
+      "models_root": "bot/lib/models/",
+      "output": {
+        "directory": "./reports/openapi/",
+        "coverage_report": "openapi_coverage.json",
+        "coverage_format": "json",
+        "markdown_summary": "openapi_summary.md"
+      },
+      "mode": "check",
+      "options": {
+        "strict": true,
+        "show_orphans": true,
+        "show_missing_blocks": true,
+        "verbose_coverage": true,
+        "color": "auto"
+      },
+      "markers": {
+        "openapi_start": ">>>openapi",
+        "openapi_end": "<<<openapi"
+      },
+      "ignore": {
+        "files": ["**/test_*.py", "**/__pycache__/**"],
+        "handlers": ["internal_health_check", "debug_endpoint"]
+      },
+      "environments": {
+        "ci": {
+          "options": {
+            "color": "never",
+            "strict": true
+          }
+        },
+        "local": {
+          "options": {
+            "show_orphans": false,
+            "verbose_coverage": true
+          }
+        }
+      }
+    }
+  ]
+}

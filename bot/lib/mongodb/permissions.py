@@ -19,6 +19,8 @@ class PermissionsDatabase(BaseDatabase):
         Check if a user has a specific permission.
         """
         _method = inspect.stack()[0][3]
+        if self.connection is None or self.client is None:
+            self.open()
         permissions = self.connection.permissions.find_one(  # type: ignore
             {"user_id": str(user_id), "guild_id": str(guild_id)}
         )

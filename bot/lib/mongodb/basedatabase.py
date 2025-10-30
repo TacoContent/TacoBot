@@ -22,13 +22,30 @@ class BaseDatabase:
             os.environ, "MONGODB_URL", default_value=f"mongodb://localhost:27017/{self.database_name}"
         )
 
-    def open(self) -> None:
+    def getConnection(self, database: typing.Optional[str] = None) -> typing.Any:
+        if self.connection is None:
+            self.open()
+        return self.connection
+
+    def getCollection(self, collection: str, database: typing.Optional[str] = None) -> typing.Any:
+        if self.connection is None:
+            self.open()
+        if self.connection is None:
+            raise ValueError("No database connection")
+        if collection not in self.connection.list_collection_names():
+            raise ValueError(f"Collection '{collection}' does not exist in the database")
+        return self.connection[collection]
+
+    def open(self, database: typing.Optional[str] = None) -> None:
         if not self.db_url:
             raise ValueError("MONGODB_URL is not set")
         if self.client is not None and self.connection is not None:
             return
         self.client = MongoClientSingleton.get_client(self.db_url)
-        self.connection = self.client[self.database_name]
+        if database:
+            self.connection = self.client[database]
+        else:
+            self.connection = self.client[self.database_name]
 
     def close(self) -> None:
         _method = inspect.stack()[0][3]
@@ -107,7 +124,7 @@ class BaseDatabase:
                 "message": message,
                 "stack_trace": stack if stack else "",
             }
-            self.connection.logs.insert_one(payload)
+            self.connection.logs.insert_one(payload)  # type: ignore
         except Exception as ex:
             self.log(
                 guildId=guildId,
