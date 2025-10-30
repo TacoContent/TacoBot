@@ -8,8 +8,8 @@ import discord
 import pytz
 from bot.lib import utils
 from bot.lib.enums import loglevel
-from bot.lib.enums.member_status import MemberStatus
 from bot.lib.enums.system_actions import SystemActions
+from bot.lib.models.DiscordUser import DiscordUser
 from bot.lib.models.triviaquestion import TriviaQuestion
 from bot.lib.mongodb.database import Database
 
@@ -47,7 +47,7 @@ class TrackingDatabase(Database):
                 "arguments": args,
                 "timestamp": timestamp,
             }
-            self.connection.commands_usage.insert_one(payload)
+            self.connection.commands_usage.insert_one(payload)  # type: ignore
         except Exception as ex:
             self.log(
                 guildId=guildId,
@@ -73,7 +73,7 @@ class TrackingDatabase(Database):
             }
 
             # if self.is_first_message_today(guildId=guildId, userId=userId):
-            self.connection.first_message.update_one(
+            self.connection.first_message.update_one(  # type: ignore
                 {"guild_id": str(guildId), "user_id": str(userId), "timestamp": timestamp},
                 {"$set": payload},
                 upsert=True,
@@ -97,9 +97,11 @@ class TrackingDatabase(Database):
 
             payload = {"guild_id": str(guildId), "user_id": str(userId)}
 
-            result = self.connection.messages.find_one({"guild_id": str(guildId), "user_id": str(userId)})
+            result = self.connection.messages.find_one(  # type: ignore
+                {"guild_id": str(guildId), "user_id": str(userId)}
+            )
             if result:
-                self.connection.messages.update_one(
+                self.connection.messages.update_one(  # type: ignore
                     {"guild_id": str(guildId), "user_id": str(userId)},
                     {
                         "$push": {
@@ -113,7 +115,7 @@ class TrackingDatabase(Database):
                     upsert=True,
                 )
             else:
-                self.connection.messages.insert_one(
+                self.connection.messages.insert_one(  # type: ignore
                     {
                         **payload,
                         "messages": [
@@ -138,7 +140,7 @@ class TrackingDatabase(Database):
             date = datetime.datetime.utcnow().date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
-            result = self.connection.first_message.find_one(
+            result = self.connection.first_message.find_one(  # type: ignore
                 {"guild_id": str(guildId), "user_id": str(userId), "timestamp": timestamp}
             )
             if result:
@@ -154,51 +156,82 @@ class TrackingDatabase(Database):
             )
             return False
 
-    def track_user(
-        self,
-        guildId: int,
-        userId: int,
-        username: str,
-        discriminator: str,
-        avatar: typing.Optional[str],
-        displayname: str,
-        created: typing.Optional[datetime.datetime] = None,
-        bot: bool = False,
-        system: bool = False,
-        status: typing.Optional[typing.Union[str, MemberStatus]] = None,
-    ) -> None:
+    def track_discord_user(self, user: DiscordUser) -> None:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow()
+            date = datetime.datetime.now(pytz.UTC)
             timestamp = utils.to_timestamp(date)
-            created_timestamp = utils.to_timestamp(created) if created else None
-            payload = {
-                "guild_id": str(guildId),
-                "user_id": str(userId),
-                "username": username,
-                "discriminator": discriminator,
-                "avatar": avatar,
-                "displayname": displayname,
-                "created": created_timestamp,
-                "bot": bot,
-                "system": system,
-                "status": str(status) if status else None,
-                "timestamp": timestamp,
-            }
+            user.timestamp = timestamp
+            payload = user.to_dict()
+            payload["timestamp"] = timestamp
 
-            self.connection.users.update_one(
-                {"guild_id": str(guildId), "user_id": str(userId)}, {"$set": payload}, upsert=True
+            self.log(
+                guildId=int(user.guild_id),
+                level=loglevel.LogLevel.INFO,
+                method=f"{self._module}.{self._class}.{_method}",
+                message="Tracking Discord user",
+                stackTrace=f"{payload}",
+            )
+
+            self.connection.users.update_one(  # type: ignore
+                {"guild_id": str(user.guild_id), "user_id": str(user.id)}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
             self.log(
-                guildId=guildId,
+                guildId=int(user.guild_id) if user.guild_id and user.guild_id.isdigit() else 0,
                 level=loglevel.LogLevel.ERROR,
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+
+    # def track_user(
+    #     self,
+    #     guildId: int,
+    #     userId: int,
+    #     username: str,
+    #     discriminator: str,
+    #     avatar: typing.Optional[str],
+    #     displayname: str,
+    #     created: typing.Optional[datetime.datetime] = None,
+    #     bot: bool = False,
+    #     system: bool = False,
+    #     status: typing.Optional[typing.Union[str, MemberStatus]] = None,
+    # ) -> None:
+    #     _method = inspect.stack()[0][3]
+    #     try:
+    #         if self.connection is None or self.client is None:
+    #             self.open()
+    #         date = datetime.datetime.utcnow()
+    #         timestamp = utils.to_timestamp(date)
+    #         created_timestamp = utils.to_timestamp(created) if created else None
+    #         payload = {
+    #             "guild_id": str(guildId),
+    #             "user_id": str(userId),
+    #             "username": username,
+    #             "discriminator": discriminator,
+    #             "avatar": avatar,
+    #             "displayname": displayname,
+    #             "created": created_timestamp,
+    #             "bot": bot,
+    #             "system": system,
+    #             "status": str(status) if status else None,
+    #             "timestamp": timestamp,
+    #         }
+
+    #         self.connection.users.update_one(
+    #             {"guild_id": str(guildId), "user_id": str(userId)}, {"$set": payload}, upsert=True
+    #         )
+    #     except Exception as ex:
+    #         self.log(
+    #             guildId=guildId,
+    #             level=loglevel.LogLevel.ERROR,
+    #             method=f"{self._module}.{self._class}.{_method}",
+    #             message=f"{ex}",
+    #             stackTrace=traceback.format_exc(),
+    #         )
 
     def track_photo_post(
         self, guildId: int, userId: int, channelId: int, messageId: int, message: str, image: str, channelName: str
@@ -220,7 +253,7 @@ class TrackingDatabase(Database):
                 "timestamp": timestamp,
             }
 
-            self.connection.photo_posts.insert_one(payload)
+            self.connection.photo_posts.insert_one(payload)  # type: ignore
         except Exception as ex:
             self.log(
                 guildId=guildId,
@@ -244,7 +277,7 @@ class TrackingDatabase(Database):
                 "timestamp": timestamp,
             }
 
-            self.connection.user_join_leave.insert_one(payload)
+            self.connection.user_join_leave.insert_one(payload)  # type: ignore
         except Exception as ex:
             self.log(
                 guildId=guildId,
@@ -272,7 +305,9 @@ class TrackingDatabase(Database):
                 "timestamp": timestamp,
             }
 
-            self.connection.guilds.update_one({"guild_id": str(guild.id)}, {"$set": payload}, upsert=True)
+            self.connection.guilds.update_one(  # type: ignore
+                {"guild_id": str(guild.id)}, {"$set": payload}, upsert=True
+            )
         except Exception as ex:
             self.log(
                 guildId=guild.id,
@@ -307,7 +342,7 @@ class TrackingDatabase(Database):
                 "timestamp": timestamp,
             }
 
-            self.connection.trivia_questions.insert_one(payload)
+            self.connection.trivia_questions.insert_one(payload)  # type: ignore
         except Exception as ex:
             self.log(
                 guildId=triviaQuestion.guild_id,
@@ -334,7 +369,7 @@ class TrackingDatabase(Database):
                 "timestamp": timestamp,
                 "data": data,
             }
-            self.connection.system_actions.insert_one(payload)
+            self.connection.system_actions.insert_one(payload)  # type: ignore
         except Exception as ex:
             self.log(
                 guildId=guild_id,
@@ -363,7 +398,7 @@ class TrackingDatabase(Database):
                 "approved": approved,
                 "timestamp": timestamp,
             }
-            self.connection.introductions.update_one(
+            self.connection.introductions.update_one(  # type: ignore
                 {"guild_id": str(guild_id), "user_id": str(user_id)}, {"$set": payload}, upsert=True
             )
 
@@ -389,7 +424,7 @@ class TrackingDatabase(Database):
                 "game_id": str(gameId),
                 "timestamp": timestamp,
             }
-            self.connection.track_free_game_keys.update_one(
+            self.connection.track_free_game_keys.update_one(  # type: ignore
                 {
                     "guild_id": str(guildId),
                     "channel_id": str(channelId),
@@ -399,6 +434,44 @@ class TrackingDatabase(Database):
                 {"$set": payload},
                 upsert=True,
             )
+        except Exception as ex:
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+
+    def track_shift_code(self, guildId: int, channelId: int, messageId: int, code: str):
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+
+            payload = {"guild_id": str(guildId), "channel_id": str(channelId), "message_id": str(messageId)}
+
+            # {
+            #   _id: ObjectId("..."),
+            #   code: "SHIFT-CODE-1234",
+            #   ...
+            #   tracked_in: [
+            #     {
+            #       guild_id: "123456789012345678",
+            #       channel_id: "123456789012345678",
+            #       message_id: "123456789012345678",
+            #     },
+            #     ...
+            #   ]
+            # }
+
+            code = str(code).strip().upper().replace(" ", "")
+
+            # payload should exist in document as array element in the shift_codes collection
+            self.connection.shift_codes.update_one(  # type: ignore
+                {"code": code}, {"$addToSet": {"tracked_in": payload}}, upsert=True
+            )
+
         except Exception as ex:
             self.log(
                 guildId=guildId,

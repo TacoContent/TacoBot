@@ -14,6 +14,10 @@ This document provides a table of contents for all documentation in the `docs/` 
   - Prometheus metrics exported by TacoBot. See the [Metrics Exporter](./metrics/README.md) for all metrics.
 - [Node-RED](./nodered/README.md)
   - Node-RED flows and automation endpoints. See the [Node-RED Flows Documentation](./nodered/README.md) for details.
+- [HTTP API](./http/api.md)
+  - REST API endpoints for TacoBot. See the [API Endpoints](./http/api.md) for details.
+- [HTTP Webhooks](./http/webhook.md)
+  - Webhook endpoints for integrations. See the [Webhook Endpoints](./http/webhook.md) for details.
 
 ---
 

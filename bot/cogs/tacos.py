@@ -227,6 +227,7 @@ class TacosCog(TacobotCog):
         _method = inspect.stack()[0][3]
         guild_id = interaction.guild.id if interaction.guild else 0
         try:
+            await interaction.response.defer(ephemeral=True)
             # get taco count for message author
             taco_count = self.tacos_db.get_tacos_count(guild_id, interaction.user.id)
             tacos_word = self.settings.get_string(guild_id, "taco_singular")
@@ -234,7 +235,7 @@ class TacosCog(TacobotCog):
                 taco_count = 0
             if taco_count == 0 or taco_count > 1:
                 tacos_word = self.settings.get_string(guild_id, "taco_plural")
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 self.settings.get_string(
                     guild_id,
                     "taco_count_message",

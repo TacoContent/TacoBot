@@ -24,7 +24,7 @@ class MinecraftDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            result = self.connection.minecraft_users.find_one({"user_id": str(userId), "guild_id": str(guildId)})
+            result = self.connection.minecraft_users.find_one({"user_id": str(userId), "guild_id": str(guildId)})  # type: ignore
             if result:
                 return result
             return None
@@ -51,7 +51,7 @@ class MinecraftDatabase(Database):
                 "uuid": uuid,
                 "whitelist": whitelist,
             }
-            self.connection.minecraft_users.update_one(
+            self.connection.minecraft_users.update_one(  # type: ignore
                 {"user_id": str(userId), "guild_id": str(guildId)}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
@@ -83,7 +83,7 @@ class MinecraftDatabase(Database):
                 "uuid": uuid,
                 "op": {"enabled": op, "level": int(level), "bypassesPlayerLimit": bypassPlayerCount},
             }
-            self.connection.minecraft_users.update_one({"user_id": str(userId)}, {"$set": payload}, upsert=True)
+            self.connection.minecraft_users.update_one({"user_id": str(userId)}, {"$set": payload}, upsert=True)  # type: ignore
         except Exception as ex:
             self.log(
                 guildId=0,
@@ -98,7 +98,7 @@ class MinecraftDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            results = self.connection.minecraft_users.find({"guild_id": str(guildId), "whitelist": status})
+            results = self.connection.minecraft_users.find({"guild_id": str(guildId), "whitelist": status})  # type: ignore
             whitelist = []
             for result in results:
                 whitelist.append(MinecraftWhitelistUser(**result))
@@ -118,7 +118,7 @@ class MinecraftDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            results = self.connection.minecraft_users.find(
+            results = self.connection.minecraft_users.find(  # type: ignore
                 {"guild_id": str(guildId), "whitelist": status, "op": {"$exists": True}, "op.enabled": True}
             )
             whitelist = []
@@ -142,8 +142,8 @@ class MinecraftDatabase(Database):
                 self.open()
             query = {"guild_id": str(guildId)}
             if active is not None:
-                query["active"] = active
-            results = self.connection.minecraft_worlds.find(query)
+                query["active"] = active  # type: ignore
+            results = self.connection.minecraft_worlds.find(query)  # type: ignore
             worlds = []
             for result in results:
                 world = MinecraftWorld(
@@ -177,11 +177,11 @@ class MinecraftDatabase(Database):
 
             payload = {"active": active, "name": name, "world": worldId, "guild_id": str(guildId)}
             # set all other worlds to inactive
-            self.connection.minecraft_worlds.update(
+            self.connection.minecraft_worlds.update(  # type: ignore
                 {"guild_id": str(guildId), "world": worldId}, {"$set": {"active": False}}
             )
             # set the selected world to active
-            self.connection.minecraft_worlds.update_one(
+            self.connection.minecraft_worlds.update_one(  # type: ignore
                 {"guild_id": str(guildId), "world": worldId}, {"$set": payload}, upsert=True
             )
             return True

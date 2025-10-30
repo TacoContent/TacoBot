@@ -14,3 +14,7 @@ class TacoPermissions(Enum):
             return TacoPermissions.CLAIM_GAME_DISABLED
         else:
             return TacoPermissions.UNKNOWN
+
+    @staticmethod
+    def all_permissions() -> list["TacoPermissions"]:
+        return list(TacoPermissions)

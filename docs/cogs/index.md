@@ -9,6 +9,7 @@ This section contains documentation for each cog (modular feature) in TacoBot. E
 - [birthday](./birthday.md)
 - [command_sync](./command_sync.md)
 - [events](./events.md)
+- [announcements](./announcements.md)
 - [free_games](./free_games.md)
 - [game_keys](./game_keys.md)
 - [giphy](./giphy.md)

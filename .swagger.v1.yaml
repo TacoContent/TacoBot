@@ -1,185 +1,1630 @@
 openapi: 3.0.1
 info:
   title: TacoBot
-  description: ""
-  version: 1.0.1
+  description: Multi-Purpose Discord Bot with Minecraft, Twitch, and other integrations for the TACO community.
+  version: 1.0.0-snapshot
+  contact:
+    name: TacoBot
+    url: https://discord.gg/aQ37F2EcjF
 servers:
   - url: '{host}'
     variables:
       host:
         enum:
-          - 'http://localhost:8931'
-          - 'http://lb.bit13.local:8931'
-        default: 'http://lb.bit13.local:8931'
+          - http://localhost:8931
+          - http://lb.bit13.local:8931
+        default: http://lb.bit13.local:8931
 paths:
-  '/api/v1/swagger.yaml':
+  /api/v1/swagger.yaml:
     get:
+      summary: Serve the OpenAPI/Swagger YAML document
+      description: Serve the OpenAPI/Swagger YAML document
       tags:
         - swagger
-      summary: Get the swagger file
-      description: |
-        Gets the swagger file
-      parameters: []
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
-            application/yaml:
+            text/vnd.yaml:
               schema:
                 type: string
-
-  '/api/v1/minecraft/whitelist.json':
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /swagger.yaml:
     get:
+      summary: Serve the OpenAPI/Swagger YAML document
+      description: Serve the OpenAPI/Swagger YAML document
       tags:
-        - minecraft
-      summary: Get the whitelist JSON
-      description: |
-        Gets JSON formatted whitelist configuration
-      parameters: []
+        - swagger
       responses:
-        "200":
+        '200':
           description: Successful operation
+          content:
+            text/vnd.yaml:
+              schema:
+                type: string
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/health:
+    get:
+      description: Returns the health status of the service
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            plain/text:
+              schema:
+                type: string
+        5XX:
+          description: Internal server error
+          content:
+            plain/text:
+              schema:
+                type: string
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get the health status of the service
+  /api/v1/guilds:
+    get:
+      description: List all guilds the bot is currently a member of.
+      security:
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
+      summary: List Guilds
+      responses:
+        '200':
+          description: Successful guild list
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  "$ref": "#/components/schemas/MinecrafWhiteListUser"
-
-  '/api/v1/minecraft/ops.json':
-    get:
-      tags:
-        - minecraft
-      summary: Get the ops list JSON
-      description: |
-        Gets JSON formatted OPS configuration
-      parameters: []
-      responses:
-        "200":
-          description: Successful operation
+                  $ref: '#/components/schemas/DiscordGuild'
+        '401':
+          description: Unauthorized
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  "$ref": "#/components/schemas/MinecrafOpUser"
-
-  '/api/v1/minecraft/uuid/{username}':
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/guilds/lookup/{guild_id}:
     get:
+      security:
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
       tags:
-        - minecraft
-      summary: Get userid from username
-      description: |
-        Gets JSON payload of userid from username
+        - guilds
+      responses:
+        '200':
+          description: Successful guild lookup
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscordGuild'
+        '400':
+          description: Bad request (missing/invalid guild_id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Guild Lookup
+      description: Lookup a single guild by ID.
       parameters:
-        - name: username
-          description: Minecraft username
-          in: path
+        - in: path
           required: true
+          name: guild_id
+          description: The ID of the guild to look up.
+          schema:
+            type: string
+  /api/v1/guilds/lookup/batch/{guild_ids}:
+    get:
+      description: Lookup multiple guilds by ID.
+      security:
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
+      summary: Batch Guild Lookup
+      responses:
+        '200':
+          description: Successful batch guild lookup
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordGuild'
+        '400':
+          description: Bad request (invalid guild IDs)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      parameters:
+        - in: path
+          required: true
+          name: guild_ids
+          description: Comma-separated list of guild IDs to look up.
+          schema:
+            type: string
+  /api/v1/guilds/lookup/batch:
+    get:
+      description: Lookup multiple guilds by ID.
+      security: &id001
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags: &id002
+        - guilds
+      summary: Batch Guild Lookup
+      responses:
+        '200':
+          description: Successful batch guild lookup
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordGuild'
+        '400':
+          description: Bad request (invalid guild IDs)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      parameters: &id003
+        - in: query
+          name: ids
+          description: Guild IDs to look up (can be specified multiple times).
+          required: false
+          schema:
+            type: string
+    post:
+      description: Lookup multiple guilds by ID.
+      security: *id001
+      tags: *id002
+      requestBody:
+        description: Request body for batch guild lookup by IDs.
+        required: false
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: array
+                  items:
+                    type: string
+                - $ref: '#/components/schemas/GuildItemIdBatchRequestBody'
+      summary: Batch Guild Lookup
+      responses:
+        '200':
+          description: Successful batch guild lookup
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordGuild'
+        '400':
+          description: Bad request (invalid guild IDs)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      parameters: *id003
+  /api/v1/guild/{guild_id}/categories:
+    get:
+      description: Returns all channel categories in the guild. Each category object embeds its child channels.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
+        - channels
+      summary: List guild categories (with channels)
+      responses:
+        '200':
+          description: Successful response with list of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordCategory'
+        '404':
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: Discord guild (server) ID
+          schema:
+            type: string
+  /api/v1/guild/{guild_id}/category/{category_id}:
+    get:
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
+        - channels
+      responses:
+        '200':
+          description: Successful response with category and its channels
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscordCategory'
+        '404':
+          description: Guild or category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '400':
+          description: Missing or invalid guild_id or category_id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get category (with channels)
+      description: Returns a single category and its child channels.
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: Discord guild (server) ID
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: category_id
+          description: Discord category channel ID
+          schema:
+            type: string
+  /api/v1/guild/{guild_id}/channels:
+    get:
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
+        - channels
+      responses:
+        '200':
+          description: Successful response with top-level channels and categories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscordGuildChannels'
+        '404':
+          description: Guild or category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '400':
+          description: Missing or invalid guild_id or category_id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: List top-level guild channels
+      description: Returns channels that are not within a category. Use categories endpoint for nested channels.
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: Discord guild (server) ID
+          schema:
+            type: string
+  /api/v1/guild/{guild_id}/channels/batch/ids:
+    post:
+      description: Retrieve multiple channels by their IDs.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
+        - channels
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: array
+                  items:
+                    type: string
+                - $ref: '#/components/schemas/GuildItemIdBatchRequestBody'
+      summary: Batch fetch channels by IDs
+      responses:
+        '200':
+          description: Successful response with list of channels
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordChannel'
+        '400':
+          description: Missing/invalid guild_id or malformed body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: Discord guild (server) ID
+          schema:
+            type: string
+        - in: query
+          name: ids
+          description: Repeatable channel ID query parameter
+          required: false
+          schema:
+            type: string
+  /api/v1/guild/{guild_id}/channel/{channel_id}/messages:
+    get:
+      description: Returns up to the most recent 100 messages (default 50) for the specified text-capable channel in the guild.
+      summary: List recent messages from a text-capable channel
+      responses:
+        '200':
+          description: An array of DiscordMessage objects representing the most recent messages, ordered newest first.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordMessage'
+        '400':
+          description: Bad Request - Missing/invalid IDs or unsupported channel type / bad limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized - Missing or invalid authentication.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Not Found - Guild or channel not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal Server Error - Unexpected error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild containing the channel.
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: channel_id
+          description: The ID of the text-capable channel to retrieve messages from.
+          schema:
+            type: string
+        - in: query
+          name: limit
+          description: The number of most recent messages to retrieve (1-100, default 50).
+          required: false
+          schema:
+            type: integer
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
+        - channels
+        - messages
+  /api/v1/guild/{guild_id}/channel/{channel_id}/message/{message_id}:
+    get:
+      responses:
+        '200':
+          description: A DiscordMessage object representing the requested message.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscordMessage'
+        '400':
+          description: Bad Request - Missing/invalid IDs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized - Missing or invalid authentication.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Not Found - Guild, channel or message not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal Server Error - Unexpected error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - guilds
+        - channels
+        - messages
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild containing the channel.
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: channel_id
+          description: The ID of the text-capable channel containing the message.
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: message_id
+          description: The ID of the message to retrieve.
+          schema:
+            type: string
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      summary: Fetch a single message by ID
+      description: Returns the specified message from the text-capable channel in the guild.
+  /api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/ids:
+    post:
+      description: Fetches multiple messages by their IDs from the specified text-capable channel in the guild.
+      tags:
+        - guilds
+        - channels
+        - messages
+      requestBody:
+        description: Request body containing an array of message IDs or an object with an 'ids' field.
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: array
+                  items:
+                    type: string
+                - $ref: '#/components/schemas/GuildItemIdBatchRequestBody'
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      summary: Batch fetch multiple messages by IDs
+      responses:
+        '200':
+          description: An array of DiscordMessage objects representing the fetched messages.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordMessage'
+        '400':
+          description: Bad Request - Missing/invalid IDs or invalid JSON body.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized - Missing or invalid authentication.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Not Found - Guild or channel not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal Server Error - Unexpected error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild containing the channel.
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: channel_id
+          description: The ID of the text-capable channel to retrieve messages from.
+          schema:
+            type: string
+  /api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/reactions:
+    post:
+      requestBody:
+        description: Request body containing an array of message IDs or an object with an 'ids' field.
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: array
+                  items:
+                    type: string
+                - $ref: '#/components/schemas/GuildItemIdBatchRequestBody'
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      responses:
+        '200':
+          description: A JSON object keyed by message ID with arrays of DiscordMessageReaction objects.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/DiscordMessageReaction'
+        '400':
+          description: Bad Request - Missing/invalid IDs or invalid JSON body.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized - Missing or invalid authentication.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Not Found - Guild or channel not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal Server Error - Unexpected error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Fetches reactions for multiple messages by their IDs from the specified text-capable channel in the guild.
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild containing the channel.
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: channel_id
+          description: The ID of the text-capable channel to retrieve messages from.
+          schema:
+            type: string
+        - in: query
+          name: ids
+          description: Message IDs to fetch reactions for (merged with body / de-duped preserving order).
+          schema:
+            type: string
+      tags:
+        - guilds
+        - channels
+        - messages
+        - reactions
+      summary: Batch fetch reactions grouped per message
+  /api/v1/guild/{guild_id}/emojis:
+    get:
+      description: Returns all custom emojis for the specified guild.
+      security:
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
+        - emojis
+      summary: Get the list of emojis for a guild
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordEmoji'
+        '400':
+          description: Invalid guild id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild to retrieve emojis from.
+          schema:
+            type: string
+  /api/v1/guild/{guild_id}/emoji/id/{emoji_id}:
+    get:
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild to retrieve the emoji from.
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: emoji_id
+          description: The ID of the emoji to retrieve.
+          schema:
+            type: string
+      description: Returns a single emoji object for the given emoji ID.
+      security:
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscordEmoji'
+        '400':
+          description: Invalid guild or emoji id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild or Emoji not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - guilds
+        - emojis
+      summary: Get an emoji by ID
+  /api/v1/guild/{guild_id}/emoji/name/{emoji_name}:
+    get:
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscordEmoji'
+        '400':
+          description: Invalid guild id or emoji name missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild or Emoji not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get an emoji by name
+      security:
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      description: Returns a single emoji object for the given emoji name.
+      tags:
+        - guilds
+        - emojis
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild to retrieve the emoji from.
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: emoji_name
+          description: The name of the emoji to retrieve.
+          schema:
+            type: string
+  /api/v1/guild/{guild_id}/emojis/ids/batch:
+    post:
+      description: Fetch multiple emojis by their IDs in a single request.
+      security:
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
+        - emojis
+      requestBody:
+        description: List of emoji IDs to fetch.
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: array
+                  items:
+                    type: string
+                - $ref: '#/components/schemas/GuildItemIdBatchRequestBody'
+      summary: Batch fetch emojis by IDs
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordEmoji'
+        '400':
+          description: Invalid guild id or request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild to retrieve emojis from.
+          schema:
+            type: string
+  /api/v1/guild/{guild_id}/emojis/names/batch:
+    post:
+      description: Fetch multiple emojis by their names in a single request.
+      security:
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
+        - emojis
+      requestBody:
+        description: List of emoji names to fetch.
+        required: false
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: array
+                  items:
+                    type: string
+                - $ref: '#/components/schemas/GuildItemNameBatchRequestBody'
+      summary: Batch fetch emojis by names
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordEmoji'
+        '400':
+          description: Invalid guild id or request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild to retrieve emojis from.
+          schema:
+            type: string
+  /api/v1/guild/{guild_id}/roles:
+    get:
+      description: List all roles in a guild
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
+        - roles
+      responses:
+        '200':
+          description: Array of guild roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordRole'
+        '400':
+          description: Missing or invalid guild id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: List guild roles
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          schema:
+            type: string
+          description: Discord guild id
+  /api/v1/guild/{guild_id}/roles/batch/ids:
+    post:
+      description: Batch fetch roles by IDs
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: array
+                  items:
+                    type: string
+                - $ref: '#/components/schemas/GuildItemIdBatchRequestBody'
+      tags:
+        - guilds
+        - roles
+      responses:
+        '200':
+          description: Array of guild roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DiscordRole'
+        '400':
+          description: Missing or invalid guild id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Batch fetch guild roles by IDs
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          schema:
+            type: string
+          description: Discord guild id
+        - in: query
+          name: ids
+          description: Role IDs to fetch (can be provided in query string or request body)
+          required: false
+          schema:
+            type: string
+  /api/v1/guild/{guild_id}/join-whitelist:
+    get:
+      responses:
+        '200':
+          description: Array of JoinWhitelistUser objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JoinWhitelistUser'
+        '401':
+          description: Unauthorized - missing or invalid auth token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: For large lists, prefer the paginated variant.
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild to retrieve the join whitelist for
+          schema:
+            type: string
+      summary: Get the complete join whitelist for a guild
+    post:
+      responses:
+        '201':
+          description: The created JoinWhitelistUser object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JoinWhitelistUser'
+        '400':
+          description: Bad Request - missing or invalid body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized - missing or invalid auth token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      requestBody:
+        description: Join whitelist user to add
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JoinWhitelistUser'
+      description: If the user is already whitelisted, this updates their entry.
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild to add the user to the join whitelist
+          schema:
+            type: string
+      summary: Add (upsert) a user to the join whitelist
+  /api/v1/guild/{guild_id}/join-whitelist/page:
+    get:
+      summary: Get a paginated subset of the join whitelist for a guild
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild to retrieve the join whitelist for
+          schema:
+            type: integer
+        - in: query
+          name: skip
+          description: Number of entries to skip from the start (default 0)
+          required: false
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - in: query
+          name: take
+          description: Number of entries to return (default 50, max 200)
+          required: false
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 200
+      responses:
+        '200':
+          description: Paginated join whitelist response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedResultsJoinWhitelistUser'
+        '400':
+          description: Bad Request - invalid skip/take parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized - missing or invalid auth token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Supports skip & take query parameters for pagination.
+  /api/v1/guild/{guild_id}/join-whitelist/{user_id}:
+    put:
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild to update the join whitelist for
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: user_id
+          description: The ID of the user to update in the join whitelist
           schema:
             type: string
       responses:
-        "200":
-          description: Successful operation
+        '200':
+          description: The updated JoinWhitelistUser object
           content:
             application/json:
               schema:
-                "$ref": '#/components/schemas/MinecraftUser'
-        "500":
-          description: Server Error
+                $ref: '#/components/schemas/JoinWhitelistUser'
+        '400':
+          description: Bad Request - missing or invalid body
           content:
             application/json:
               schema:
-                "$ref": '#/components/schemas/ErrorStatusCodePayload'
-
-  '/api/v1/minecraft/status':
-    get:
-      tags:
-        - minecraft
-      summary: Get the server status information
-      description: |
-        Gets information on the server.
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized - missing or invalid auth token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Update (re-add) a whitelist entry for a user
+      description: If the user is not already whitelisted, this adds them.
+      requestBody:
+        description: Optional body to specify 'added_by' user ID
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JoinWhitelistAddedBy'
+    delete:
+      description: Removes a user from the join whitelist for a specific guild.
       responses:
-        "200":
-          description: Successful operation
+        '204':
+          description: No Content - user successfully removed
+        '401':
+          description: Unauthorized - missing or invalid auth token
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/MinecraftServerStatus"
-
-  '/api/v1/minecraft/version':
-    get:
-      tags:
-        - minecraft
-      summary: Get the minecraft server version information
-      responses:
-        "200":
-          description: Successful operation
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal Server Error
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/TacoMinecraftServerSettings"
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild to remove the user from the join whitelist
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: user_id
+          description: The ID of the user to remove from the join whitelist
+          schema:
+            type: string
+      summary: Remove a user from the join whitelist
+  /api/v1/guild/{guild_id}/mentionables/batch/ids:
     post:
+      description: Batch fetch mentionables (roles or users) by IDs
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: array
+                  items:
+                    type: string
+                - $ref: '#/components/schemas/GuildItemIdBatchRequestBody'
+      tags:
+        - guilds
+        - roles
+        - users
+        - mentionables
+      responses:
+        '200':
+          description: Array of mentionable roles and users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  oneOf:
+                    - $ref: '#/components/schemas/DiscordRole'
+                    - $ref: '#/components/schemas/DiscordUser'
+        '400':
+          description: Missing or invalid guild id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Batch fetch guild mentionables by IDs
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          schema:
+            type: string
+          description: Discord guild id
+        - in: query
+          name: ids
+          description: Role/User IDs to fetch (can be provided in query string or request body)
+          required: false
+          schema:
+            type: string
+  /api/v1/guild/{guild_id}/mentionables:
+    get:
+      description: List all mentionables (roles and users) in a guild
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - guilds
+        - roles
+        - users
+        - mentionables
+      responses:
+        '200':
+          description: Array of mentionable role and user objects
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      oneOf:
+                        - $ref: '#/components/schemas/DiscordRole'
+                        - $ref: '#/components/schemas/DiscordUser'
+                  - $ref: '#/components/schemas/DiscordMentionable'
+        '400':
+          description: Missing or invalid guild id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: List guild mentionables (roles + members)
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          schema:
+            type: string
+          description: Discord guild id
+  /api/v1/minecraft/whitelist.json:
+    get:
+      summary: Get Minecraft whitelist
+      description: Return the current Minecraft whitelist.
+      responses:
+        '200':
+          description: Array of whitelisted Minecraft users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MinecraftWhiteListUser'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/minecraft/ops.json:
+    get:
+      summary: Get Minecraft operator list
+      description: Return enabled operator (op) entries.
+      responses:
+        '200':
+          description: Array of enabled Minecraft operator users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MinecraftOpUser'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/minecraft/uuid/{username}:
+    get:
+      parameters:
+        - in: path
+          required: true
+          name: username
+          description: Mojang account name
+          schema:
+            type: string
+      tags:
+        - minecraft
+      summary: Mojang username to UUID lookup
+      responses:
+        '200':
+          description: Minecraft user with UUID and name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftUser'
+        '404':
+          description: Username missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Translate a Mojang / Minecraft username into a UUID.
+  /api/v1/minecraft/status:
+    get:
+      responses:
+        '200':
+          description: Live Minecraft server status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftServerStatus'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get live Minecraft server status
+      description: Return live Minecraft server status summary.
+  /api/v1/minecraft/version:
+    get:
+      responses:
+        '200':
+          description: Minecraft settings object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftServerSettingsSettingsModel'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get Minecraft settings
+      tags:
+        - minecraft
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      description: Fetch Minecraft settings for the primary guild.
+    post:
+      responses:
+        '200':
+          description: Simple status response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleStatusResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      requestBody:
+        description: Minecraft settings update payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftSettingsUpdatePayload'
+      description: Update Minecraft settings document for a guild.
+      summary: Update Minecraft settings
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
       tags:
         - minecraft
-      summary: Set the minecraft server version information
-      requestBody:
-        content:
-          application/json:
-            schema:
-              "$ref": "#/components/schemas/TacoMinecraftServerSettings"
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/TacoMinecraftServerSettings"
-
-  '/api/v1/minecraft/player/{user}/stats':
-    get:
-      parameters:
-        - name: user
-          description: The users minecraft username
-          in: path
-          required: true
-          schema:
-            type: string
-
-      tags:
-        - minecraft
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/MinecraftDiscordUserStatsInfo"
-    post:
-      parameters:
-        - name: user
-          description: The users minecraft uuid
-          in: path
-          required: true
-          schema:
-            type: string
-      tags:
-        - minecraft
-      responses:
-        "200":
-          description: Successful operation
-      requestBody:
-        content:
-          application/json:
-            schema:
-              "$ref": "#/components/schemas/MinecraftUserStatsPayload"
-
-  '/api/v1/minecraft/player/{username}/stats/{world}':
+  /api/v1/minecraft/player/{identifier}/stats/{world}:
     parameters:
-      - name: username
+      - name: identifier
         in: path
         required: true
         schema:
@@ -188,484 +1633,3015 @@ paths:
         in: path
         required: true
         schema:
-          "$ref": "#/components/schemas/TacoMinecraftWorlds"
+          $ref: '#/components/schemas/TacoMinecraftWorlds'
     get:
       tags:
         - minecraft
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/MinecraftDiscordUserStatsInfo"
-
-  '/api/v1/minecraft/world':
-    get:
-      tags:
-        - minecraft
-      summary: Get the active minecraft server world information
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/TacoMinecraftWorldInfo"
-    post:
-      tags:
-        - minecraft
-      summary: Set the active minecraft server world
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                guild_id:
-                  type: string
-                  description: Discord Guild ID
-                world:
-                  "$ref": "#/components/schemas/TacoMinecraftWorlds"
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/TacoMinecraftWorldInfo"
-
-  '/api/v1/minecraft/worlds':
-    get:
-      tags:
-        - minecraft
-      summary: Get the active minecraft server world information
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  "$ref": "#/components/schemas/TacoMinecraftWorldInfo"
-
-  '/tacobot/guild/{guild}/invite/{channel}':
-    post:
-      security:
-        - X-AUTH-TOKEN: []
-      tags:
-        - twitch
-      summary: Invite Bot to twitch channel
-      description: ''
       parameters:
-        - name: guild
-          in: path
-          description: The GUILD ID
+        - in: path
           required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
           schema:
             type: string
-            format: ''
-        - name: channel
-          in: path
-          description: The name of the twitch channel
+        - in: path
           required: true
-          schema:
-            type: string
-            format: ''
-
-      responses:
-        "200":
-          description: Successful operation
-
-  '/api/v1/minecraft/player/events':
-    get:
-      tags:
-        - minecraft
-      summary: Get the minecraft player events
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  "$ref": "#/components/schemas/MinecraftPlayerEvent"
-
-  '/api/v1/minecraft/player/event/{event}':
-    get:
-      tags:
-        - minecraft
-      summary: Get the minecraft player event
-      parameters:
-        - name: event
-          in: path
-          required: true
-          description: The event type. Values can be pulled from the /tacobot/minecraft/player/events endpoint
+          name: world
+          description: World identifier
           schema:
             type: string
             enum:
+              - taco_atm10
+              - taco_atm10-2
+              - taco_atm8
+              - taco_atm9
+      responses:
+        '200':
+          description: Player statistics by world (TBD)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftUserStats'
+        '404':
+          description: World ID missing or not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: (Placeholder) Get Minecraft player statistics by world.
+      summary: Get Minecraft player statistics by world (Placeholder)
+  /api/v1/minecraft/world:
+    get:
+      responses:
+        '200':
+          description: Active World object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TacoMinecraftWorldInfo'
+        '404':
+          description: No active worlds found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Return the currently active world for the primary guild.
+      summary: Get the currently active Minecraft world
+      tags:
+        - minecraft
+    post:
+      responses:
+        '200':
+          description: Simple status response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleStatusResponse'
+        '404':
+          description: World ID missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Set (and activate) a world for a guild.
+      tags:
+        - minecraft
+      requestBody:
+        description: World activation payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TacoMinecraftWorldInfo'
+      summary: Set the active Minecraft world
+  /api/v1/minecraft/worlds:
+    get:
+      responses:
+        '200':
+          description: Array of World objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TacoMinecraftWorldInfo'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: List all known worlds for the primary guild.
+      tags:
+        - minecraft
+      summary: List all known Minecraft worlds
+  /tacobot/guild/{guild}/invite/{channel}:
+    post:
+      parameters:
+        - in: path
+          required: true
+          name: guild
+          schema:
+            type: string
+          description: ID of the guild to invite.
+        - in: path
+          required: true
+          name: channel
+          schema:
+            type: string
+          description: ID of the channel to invite.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - minecraft
+        - nodered
+      responses:
+        '200':
+          description: Successful trigger of the event.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '302':
+          description: If called directly to TacoBot, it will redirect to Node-RED.
+      summary: Redirect Twitch guild invite to Node-RED
+      description: This endpoint redirects to a Node-RED flow.
+  /api/v1/minecraft/player/events:
+    get:
+      responses:
+        '200':
+          description: Array of lowercase event names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get supported Minecraft player events
+      tags:
+        - minecraft
+      description: Enumerate supported Minecraft player event identifiers.
+  /api/v1/minecraft/player/event/{event}:
+    get:
+      summary: Redirect Minecraft player event to Node-RED
+      description: This endpoint redirects Minecraft player events to a Node-RED flow.
+      parameters:
+        - in: path
+          required: true
+          name: event
+          schema:
+            type: string
+            enum:
+              - death
               - login
               - logout
-              - death
-
+              - unknown
+          description: Type of Minecraft player event to redirect.
       responses:
-        "200":
-          description: Successful operation
+        '200':
+          description: Successful trigger of the event.
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/MinecraftPlayerEventPayload"
-
-  '/webhook/minecraft/tacos/{action}':
-    parameters:
-      - name: action
-        in: path
-        required: true
-        description: What action was taken
-        schema:
-          type: string
-          enum:
-            - login
-            - custom
-    post:
+                $ref: '#/components/schemas/MinecraftPlayerEventPayload'
+        '302':
+          description: If called directly to TacoBot, it will redirect to Node-RED.
       security:
+        - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
       tags:
-        - webhook
-      summary: Minecraft Webhook to give tacos to a user
-      description: ''
-      requestBody:
-        content:
-          application/json:
-            schema:
-              "$ref": "#/components/schemas/TacoWebhookMinecraftTacosPayload"
+        - minecraft
+        - nodered
+  /api/v1/permissions/{guildId}/{userId}:
+    get:
+      summary: Get user permissions
+      tags:
+        - permissions
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/TacoWebhookMinecraftTacosResponsePayload"
+                type: array
+                items:
+                  type: string
+              examples:
+                admin_permissions:
+                  value:
+                    - permission_manage_server
+                    - permission_manage_users
+                    - permission_view_logs
+                  summary: Admin user with multiple permissions
+                single_permission:
+                  value:
+                    - permission_use_tacos
+                  summary: Regular user with single permission
+                no_permissions:
+                  value: []
+                  summary: User with no permissions (empty array)
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+              examples:
+                unauthorized_error:
+                  value:
+                    error: Invalid authentication token
+                  summary: Authentication failure
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: List permissions for a user.
+      parameters:
+        - in: path
+          required: true
+          name: guildId
+          schema:
+            type: string
+          description: Discord guild ID
+          examples:
+            guild_id_example:
+              value: '123456789012345678'
+              summary: Example Discord guild ID (18-digit snowflake)
+        - in: path
+          required: true
+          name: userId
+          schema:
+            type: string
+          description: Discord user ID
+          examples:
+            user_id_example:
+              value: '987654321098765432'
+              summary: Example Discord user ID (18-digit snowflake)
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /api/v1/permissions/{guildId}/{userId}/{permission}:
+    post:
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleStatusResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Add user permission
+      description: Add a permission to a user.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      parameters:
+        - in: path
+          required: true
+          name: guildId
+          schema:
+            type: string
+          description: Discord guild ID
+        - in: path
+          required: true
+          name: userId
+          schema:
+            type: string
+          description: Discord user ID
+        - in: path
+          required: true
+          name: permission
+          schema:
+            type: string
+          description: Permission to add
+      tags:
+        - permissions
+    put:
+      description: Add (ensure) a permission for a user.
+      summary: Add user permission
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - permissions
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleStatusResponse'
+              examples:
+                successful_put:
+                  value:
+                    status: ok
+                  summary: Successfully ensured permission exists
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      parameters:
+        - in: path
+          required: true
+          name: guildId
+          schema:
+            type: string
+          description: Discord guild ID
+        - in: path
+          required: true
+          name: userId
+          schema:
+            type: string
+          description: Discord user ID
+        - in: path
+          required: true
+          name: permission
+          schema:
+            type: string
+          description: Permission to add
+          examples:
+            permission_parameter_example:
+              value: permission_manage_server
+              summary: Example permission to add
     delete:
-      security:
-        - X-TACOBOT-TOKEN: []
-      tags:
-        - webhook
-      summary: Minecraft Webhook to remove tacos from a user
-      description: ''
-      requestBody:
-        content:
-          application/json:
-            schema:
-              "$ref": "#/components/schemas/TacoWebhookMinecraftTacosPayload"
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/TacoWebhookMinecraftTacosResponsePayload"
-
-  '/webhook/minecraft/player/event':
-    post:
+                $ref: '#/components/schemas/SimpleStatusResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Delete user permission
+      description: Delete (remove) a permission from a user.
       security:
+        - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
+      parameters:
+        - in: path
+          required: true
+          name: guildId
+          schema:
+            type: string
+          description: Discord guild ID
+        - in: path
+          required: true
+          name: userId
+          schema:
+            type: string
+          description: Discord user ID
+        - in: path
+          required: true
+          name: permission
+          schema:
+            type: string
+          description: Permission to remove
       tags:
-        - webhook
+        - permissions
+
+  /webhook/minecraft/player/event:
+    post:
       summary: Minecraft Webhook to send player events
-      description: ''
+      responses:
+        '200':
+          description: 'Success: Event processed successfully'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftPlayerEventPayloadResponse'
+        '401':
+          description: 'Unauthorized: Invalid webhook token'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '400':
+          description: 'Bad Request: No payload found in the request'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: 'Not Found: Missing/invalid fields or unknown event'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '500':
+          description: 'Internal Server Error: Unexpected processing failure'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      description: Ingress point for Minecraft player events such as login, logout, and death.
       requestBody:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/MinecraftPlayerEventPayload"
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/MinecraftPlayerEventPayload"
-
-  '/webhook/game':
-    post:
-      security:
-        - X-TACOBOT-TOKEN: []
+              $ref: '#/components/schemas/MinecraftPlayerEventPayload'
       tags:
         - webhook
-      summary: Submit Free Game Webhook
-      description: ''
+        - minecraft
+  /webhook/game:
+    post:
+      description: Handle inbound free game webhook event.
       requestBody:
+        required: true
+        description: Payload describing the free game offer.
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/TacoWebhookGamePayload"
+              $ref: '#/components/schemas/TacoWebhookGamePayload'
+      summary: Submit Free Game Webhook
       responses:
-        "200":
+        '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/TacoWebhookGamePayload"
+                $ref: '#/components/schemas/TacoWebhookGamePayload'
+        '400':
+          description: Bad Request - Client Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized - Invalid Webhook Token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - webhook
+      security:
+        - X-TACOBOT-TOKEN: []
+        - X-AUTH-TOKEN: []
+  /webhook/shift:
+    post:
+      description: Receive SHiFT code webhook payloads, validate, and broadcast to subscribed guild channels.
+      tags:
+        - webhook
+        - shift-codes
+      requestBody:
+        required: true
+        description: SHiFT code webhook payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShiftCodePayload'
+      responses:
+        '200':
+          description: JSON echo of original payload or expiry message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftCodePayload'
+        '400':
+          description: Client error due to invalid/missing payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Client error due to invalid/missing payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '500':
+          description: Client error due to invalid/missing payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Ingest SHiFT code webhook payloads
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /healthz:
+    get:
+      description: Returns the health status of the service
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            plain/text:
+              schema:
+                type: string
+        5XX:
+          description: Internal server error
+          content:
+            plain/text:
+              schema:
+                type: string
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get the health status of the service
+  /health:
+    get:
+      description: Returns the health status of the service
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            plain/text:
+              schema:
+                type: string
+        5XX:
+          description: Internal server error
+          content:
+            plain/text:
+              schema:
+                type: string
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get the health status of the service
+  /api/v1/settings/{section}:
+    get:
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild or Settings not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      parameters:
+        - in: path
+          required: true
+          name: section
+          description: Logical settings section name.
+          schema:
+            type: string
+      description: Retrieves the settings document for the primary guild and the specified section.
+      tags:
+        - settings
+      summary: Get settings for a guild and section
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /webhook/minecraft/tacos:
+    post:
+      tags:
+        - webhook
+        - minecraft
+      responses:
+        '200':
+          description: Tacos successfully granted or removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TacoWebhookMinecraftTacosPayload'
+        '400':
+          description: Bad request due to validation or limit error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Bad request due to validation or limit error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Bad request due to validation or limit error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /webhook/tacos:
+    post:
+      tags:
+        - webhook
+        - tacos
+      description: This endpoint allows for the granting or revocation of tacos between users through a webhook.
+      summary: Grant or revoke tacos between users via webhook
+      responses:
+        '200':
+          description: Tacos successfully granted or removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TacoWebhookMinecraftTacosPayload'
+        '400':
+          description: Bad request due to validation or limit error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Bad request due to validation or limit error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Bad request due to validation or limit error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /api/v1/guilds/lookup:
+    get:
+      description: Lookup a single guild by ID.
+      summary: Guild Lookup
+      security: &id004
+        - X-API-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      responses:
+        '200':
+          description: Successful guild lookup
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscordGuild'
+        '400':
+          description: Bad request (missing/invalid guild_id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags: &id005
+        - guilds
+      parameters: &id006
+        - in: query
+          name: id
+          description: The ID of the guild to look up.
+          required: false
+          schema:
+            type: string
+    post:
+      description: Lookup a single guild by ID.
+      summary: Guild Lookup
+      security: *id004
+      responses:
+        '200':
+          description: Successful guild lookup
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscordGuild'
+        '400':
+          description: Bad request (missing/invalid guild_id)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags: *id005
+      parameters: *id006
+      requestBody:
+        description: Request body for guild lookup by ID.
+        required: false
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: string
+  /api/v1/guilds/{guild_id}/settings/{section}:
+    get:
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Guild or Settings not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      parameters:
+        - in: path
+          required: true
+          name: section
+          description: Logical settings section name.
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: guild_id
+          description: Discord Guild ID.
+          schema:
+            type: integer
+      description: Retrieves the settings document for the guild and the specified section.
+      tags:
+        - settings
+      summary: Get settings for a guild and section
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /tacobot/minecraft/whitelist.json:
+    get:
+      summary: Get Minecraft whitelist
+      description: Return the current Minecraft whitelist.
+      responses:
+        '200':
+          description: Array of whitelisted Minecraft users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MinecraftWhiteListUser'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /taco/minecraft/whitelist.json:
+    get:
+      summary: Get Minecraft whitelist
+      description: Return the current Minecraft whitelist.
+      responses:
+        '200':
+          description: Array of whitelisted Minecraft users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MinecraftWhiteListUser'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /tacobot/minecraft/ops.json:
+    get:
+      summary: Get Minecraft operator list
+      description: Return enabled operator (op) entries.
+      responses:
+        '200':
+          description: Array of enabled Minecraft operator users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MinecraftOpUser'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /taco/minecraft/ops.json:
+    get:
+      summary: Get Minecraft operator list
+      description: Return enabled operator (op) entries.
+      responses:
+        '200':
+          description: Array of enabled Minecraft operator users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MinecraftOpUser'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /tacobot/minecraft/status:
+    get:
+      responses:
+        '200':
+          description: Live Minecraft server status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftServerStatus'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get live Minecraft server status
+      description: Return live Minecraft server status summary.
+  /taco/minecraft/status:
+    get:
+      responses:
+        '200':
+          description: Live Minecraft server status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftServerStatus'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get live Minecraft server status
+      description: Return live Minecraft server status summary.
+  /tacobot/minecraft/version:
+    post:
+      responses:
+        '200':
+          description: Simple status response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleStatusResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      requestBody:
+        description: Minecraft settings update payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftSettingsUpdatePayload'
+      description: Update Minecraft settings document for a guild.
+      summary: Update Minecraft settings
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - minecraft
+    get:
+      responses:
+        '200':
+          description: Minecraft settings object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftServerSettingsSettingsModel'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get Minecraft settings
+      tags:
+        - minecraft
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      description: Fetch Minecraft settings for the primary guild.
+  /taco/minecraft/version:
+    post:
+      responses:
+        '200':
+          description: Simple status response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleStatusResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      requestBody:
+        description: Minecraft settings update payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftSettingsUpdatePayload'
+      description: Update Minecraft settings document for a guild.
+      summary: Update Minecraft settings
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - minecraft
+    get:
+      responses:
+        '200':
+          description: Minecraft settings object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftServerSettingsSettingsModel'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get Minecraft settings
+      tags:
+        - minecraft
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      description: Fetch Minecraft settings for the primary guild.
+  /tacobot/minecraft/player/events:
+    get:
+      responses:
+        '200':
+          description: Array of lowercase event names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get supported Minecraft player events
+      tags:
+        - minecraft
+      description: Enumerate supported Minecraft player event identifiers.
+  /taco/minecraft/player/events:
+    get:
+      responses:
+        '200':
+          description: Array of lowercase event names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get supported Minecraft player events
+      tags:
+        - minecraft
+      description: Enumerate supported Minecraft player event identifiers.
+  /tacobot/minecraft/worlds:
+    get:
+      responses:
+        '200':
+          description: Array of World objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TacoMinecraftWorldInfo'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: List all known worlds for the primary guild.
+      tags:
+        - minecraft
+      summary: List all known Minecraft worlds
+  /taco/minecraft/worlds:
+    get:
+      responses:
+        '200':
+          description: Array of World objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TacoMinecraftWorldInfo'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: List all known worlds for the primary guild.
+      tags:
+        - minecraft
+      summary: List all known Minecraft worlds
+  /tacobot/minecraft/world:
+    get:
+      responses:
+        '200':
+          description: Active World object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TacoMinecraftWorldInfo'
+        '404':
+          description: No active worlds found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Return the currently active world for the primary guild.
+      summary: Get the currently active Minecraft world
+      tags:
+        - minecraft
+    post:
+      responses:
+        '200':
+          description: Simple status response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleStatusResponse'
+        '404':
+          description: World ID missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Set (and activate) a world for a guild.
+      tags:
+        - minecraft
+      requestBody:
+        description: World activation payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TacoMinecraftWorldInfo'
+      summary: Set the active Minecraft world
+  /taco/minecraft/world:
+    get:
+      responses:
+        '200':
+          description: Active World object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TacoMinecraftWorldInfo'
+        '404':
+          description: No active worlds found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Return the currently active world for the primary guild.
+      summary: Get the currently active Minecraft world
+      tags:
+        - minecraft
+    post:
+      responses:
+        '200':
+          description: Simple status response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleStatusResponse'
+        '404':
+          description: World ID missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Set (and activate) a world for a guild.
+      tags:
+        - minecraft
+      requestBody:
+        description: World activation payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TacoMinecraftWorldInfo'
+      summary: Set the active Minecraft world
+  /tacobot/minecraft/player/event/{event}:
+    get:
+      summary: Redirect Minecraft player event to Node-RED
+      description: This endpoint redirects Minecraft player events to a Node-RED flow.
+      parameters:
+        - in: path
+          required: true
+          name: event
+          schema:
+            type: string
+            enum:
+              - death
+              - login
+              - logout
+              - unknown
+          description: Type of Minecraft player event to redirect.
+      responses:
+        '200':
+          description: Successful trigger of the event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftPlayerEventPayload'
+        '302':
+          description: If called directly to TacoBot, it will redirect to Node-RED.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - minecraft
+        - nodered
+  /taco/minecraft/player/event/{event}:
+    get:
+      summary: Redirect Minecraft player event to Node-RED
+      description: This endpoint redirects Minecraft player events to a Node-RED flow.
+      parameters:
+        - in: path
+          required: true
+          name: event
+          schema:
+            type: string
+            enum:
+              - death
+              - login
+              - logout
+              - unknown
+          description: Type of Minecraft player event to redirect.
+      responses:
+        '200':
+          description: Successful trigger of the event.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftPlayerEventPayload'
+        '302':
+          description: If called directly to TacoBot, it will redirect to Node-RED.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - minecraft
+        - nodered
+  /taco/guild/{guild}/invite/{channel}:
+    post:
+      parameters:
+        - in: path
+          required: true
+          name: guild
+          schema:
+            type: string
+          description: ID of the guild to invite.
+        - in: path
+          required: true
+          name: channel
+          schema:
+            type: string
+          description: ID of the channel to invite.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - minecraft
+        - nodered
+      responses:
+        '200':
+          description: Successful trigger of the event.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '302':
+          description: If called directly to TacoBot, it will redirect to Node-RED.
+      summary: Redirect Twitch guild invite to Node-RED
+      description: This endpoint redirects to a Node-RED flow.
+  /api/v1/guild/{guild}/invite/{channel}:
+    post:
+      parameters:
+        - in: path
+          required: true
+          name: guild
+          schema:
+            type: string
+          description: ID of the guild to invite.
+        - in: path
+          required: true
+          name: channel
+          schema:
+            type: string
+          description: ID of the channel to invite.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      tags:
+        - minecraft
+        - nodered
+      responses:
+        '200':
+          description: Successful trigger of the event.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '302':
+          description: If called directly to TacoBot, it will redirect to Node-RED.
+      summary: Redirect Twitch guild invite to Node-RED
+      description: This endpoint redirects to a Node-RED flow.
+  /tacobot/minecraft/uuid/{username}:
+    get:
+      parameters:
+        - in: path
+          required: true
+          name: username
+          description: Mojang account name
+          schema:
+            type: string
+      tags:
+        - minecraft
+      summary: Mojang username to UUID lookup
+      responses:
+        '200':
+          description: Minecraft user with UUID and name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftUser'
+        '404':
+          description: Username missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Translate a Mojang / Minecraft username into a UUID.
+  /taco/minecraft/uuid/{username}:
+    get:
+      parameters:
+        - in: path
+          required: true
+          name: username
+          description: Mojang account name
+          schema:
+            type: string
+      tags:
+        - minecraft
+      summary: Mojang username to UUID lookup
+      responses:
+        '200':
+          description: Minecraft user with UUID and name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftUser'
+        '404':
+          description: Username missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Translate a Mojang / Minecraft username into a UUID.
+  /tacobot/minecraft/player/{identifier}/stats:
+    get:
+      tags:
+        - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Player statistics (TBD)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftUserStats'
+        '404':
+          description: Identifier missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: (Placeholder) Get Minecraft player statistics.
+      summary: Get Minecraft player statistics (Placeholder)
+    post:
+      tags:
+        - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      requestBody:
+        description: Player statistics payload (TBD)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftUserStats'
+      responses:
+        '200':
+          description: Player statistics (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: UUID missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: (Placeholder) Push Minecraft player statistics.
+      summary: Push Minecraft player statistics (Placeholder)
+  /api/v1/minecraft/player/{identifier}/stats:
+    get:
+      tags:
+        - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Player statistics (TBD)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftUserStats'
+        '404':
+          description: Identifier missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: (Placeholder) Get Minecraft player statistics.
+      summary: Get Minecraft player statistics (Placeholder)
+    post:
+      tags:
+        - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      requestBody:
+        description: Player statistics payload (TBD)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftUserStats'
+      responses:
+        '200':
+          description: Player statistics (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: UUID missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: (Placeholder) Push Minecraft player statistics.
+      summary: Push Minecraft player statistics (Placeholder)
+  /taco/minecraft/player/{identifier}/stats:
+    post:
+      tags:
+        - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      requestBody:
+        description: Player statistics payload (TBD)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftUserStats'
+      responses:
+        '200':
+          description: Player statistics (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: UUID missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: (Placeholder) Push Minecraft player statistics.
+      summary: Push Minecraft player statistics (Placeholder)
+    get:
+      tags:
+        - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Player statistics (TBD)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftUserStats'
+        '404':
+          description: Identifier missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: (Placeholder) Get Minecraft player statistics.
+      summary: Get Minecraft player statistics (Placeholder)
 components:
   schemas:
     ErrorStatusCodePayload:
       type: object
       properties:
         error:
+          type: string
+          nullable: true
+          description: Description of the error
+        message:
+          type: string
+          nullable: true
+          description: Error message
+        code:
           type: integer
+          nullable: true
+          description: Error code
+        stacktrace:
+          type: string
+          nullable: true
+          description: Stack trace of the error
+      description: Error status code payload
+      x-tacobot-managed: true
+    ShiftCodeGame:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the game.
+        name:
+          type: string
+          description: The name of the game.
+      required:
+        - id
+        - name
+      description: Represents a supported game for SHiFT codes.
+      x-tacobot-managed: true
+    ShiftCodePayload:
+      type: object
+      properties:
+        games:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShiftCodeGame'
+          description: List of games associated with the SHiFT code.
+        code:
+          type: string
+          description: The SHiFT code string.
+        platforms:
+          type: array
+          items:
+            type: string
+          description: List of platforms the SHiFT code is valid for.
+        expiry:
+          type: integer
+          nullable: true
+          description: The expiry timestamp of the SHiFT code, if any.
+        reward:
+          type: string
+          description: Description of the reward associated with the SHiFT code.
+        notes:
+          type: string
+          description: Additional notes about the SHiFT code.
+        source:
+          type: string
+          description: Source from where the SHiFT code was obtained.
+        created_at:
+          type: integer
+          description: Timestamp when the SHiFT code was created.
+      required:
+        - code
+        - created_at
+        - games
+        - notes
+        - platforms
+        - reward
+        - source
+      description: Payload for the SHiFT Code.
+      x-tacobot-managed: true
     TacoWebhookMinecraftTacosResponsePayload:
       type: object
       properties:
         success:
           type: boolean
+          description: Whether the operation was successful.
         payload:
-          "$ref": "#/components/schemas/TacoWebhookMinecraftTacosPayload"
+          $ref: '#/components/schemas/TacoWebhookMinecraftTacosPayload'
         total_tacos:
           type: integer
+          description: The total number of tacos.
+      required:
+        - payload
+        - success
+        - total_tacos
+      description: Represents a response payload for TacoWebhook Minecraft Tacos events.
+      x-tacobot-managed: true
     TacoWebhookMinecraftTacosPayload:
       type: object
       properties:
         guild_id:
           type: string
+          description: The ID of the guild where the tacos are being sent.
         from_user:
           type: string
+          description: The user who is sending the tacos.
         to_user_id:
           type: string
+          description: The ID of the user who is receiving the tacos.
         amount:
           type: integer
+          description: The number of tacos being sent.
         reason:
           type: string
+          description: The reason for sending the tacos.
         type:
           type: string
           enum:
-            - login
             - custom
+            - login
+          description: The event type for giving the tacos to the user.
+      required:
+        - amount
+        - from_user
+        - guild_id
+        - reason
+        - to_user_id
+        - type
+      description: Payload that is sent to give a Minecraft user tacos.
+      x-tacobot-managed: true
     TacoWebhookGamePayload:
       type: object
       properties:
         game_id:
-          type: integer
+          type: string
+          description: The unique identifier for the game.
         end_date:
-          type: number
+          type: integer
+          nullable: true
+          description: The end date of the game.
         worth:
           type: string
+          nullable: true
+          description: The worth of the game.
         open_giveaway_url:
           type: string
+          description: The URL to open the giveaway.
         title:
           type: string
+          description: The title of the game.
         thumbnail:
           type: string
+          description: The thumbnail image URL of the game.
         image:
           type: string
+          description: The main image URL of the game.
         description:
           type: string
+          description: The description of the game.
         instructions:
           type: string
+          nullable: true
+          description: The instructions for the game.
         published_date:
-          type: number
+          type: integer
+          description: The published date of the game.
         type:
           type: string
+          description: The type of the game.
         platforms:
           type: array
           items:
             type: string
+          description: The platforms the game is available on.
         formatted_published_date:
           type: string
+          nullable: true
+          description: The formatted published date of the game.
         formatted_end_date:
           type: string
-    TacoMinecraftWorlds:
-      default: taco_atm10
-      type: string
-      enum:
-        - taco_atm8
-        - taco_atm9
-        - taco_atm10
+          nullable: true
+          description: The formatted end date of the game.
+      required:
+        - description
+        - game_id
+        - image
+        - open_giveaway_url
+        - platforms
+        - published_date
+        - thumbnail
+        - title
+        - type
+      description: Represents the payload for a Taco webhook game event.
+      x-tacobot-managed: true
     TacoMinecraftWorldInfo:
       type: object
       properties:
         world:
-          "$ref": "#/components/schemas/TacoMinecraftWorlds"
+          type: string
+          enum:
+            - taco_atm10
+            - taco_atm10-2
+            - taco_atm8
+            - taco_atm9
+          description: This is the world identifier
         name:
           type: string
+          description: The display name of the world.
         active:
-          description: Indicates if the world is the active world
           type: boolean
+          description: Indicates if the world is the active world
         guild_id:
-          description: Discord Guild ID
           type: string
-    MinecraftUserStatsPayload:
-      type: object
-      properties:
-        stats:
-          "$ref": "#/components/schemas/MinecraftUserStats"
-        world_name:
-          "$ref": "#/components/schemas/TacoMinecraftWorlds"
+          description: Discord Guild ID
+      required:
+        - active
+        - guild_id
+        - name
+        - world
+      description: Represents a Minecraft world managed by Taco.
+      x-tacobot-managed: true
     MinecraftUserStats:
       type: object
-      properties:
-        minecraft:crafted:
-          type: object
-          properties:
-            minecraft:smooth_stone:
-              type: integer
-        minecraft:broken:
-          properties:
-            minecraft:stone_pickaxe:
-              type: integer
+      additionalProperties:
+        $ref: '#/components/schemas/MinecraftUserStatsItem'
+      description: Payload for Minecraft user statistics.
+      x-tacobot-managed: true
     MinecraftPlayerEvent:
       type: object
       properties:
         event:
           type: string
-    MinecraftPlayerEventPayload:
-      type: object
-      properties:
-        event:
-          type: string
-        guild_id:
-          type: string
-        payload:
-          type: object
-          description: The event payload. This can be different depending on the event type
-
-    MinecraftDiscordUserStatsInfo:
-      type: object
-      properties:
-        world:
-          "$ref": "#/components/schemas/TacoMinecraftWorlds"
-        uuid:
-          type: string
-        username:
-          type: string
-        user_id:
-          type: string
-          description: Discord User ID
-        modified:
-          type: number
-        stats:
-          "$ref": "#/components/schemas/MinecraftUserStats"
-    MinecraftServerSettings:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-        output_channel:
-          type: string
-        server:
-          type: string
-        forge_version:
-          type: string
-        version:
-          type: string
-        help:
-          type: string
-        mods:
-          type: array
-          items:
-            "$ref": "#/components/schemas/TacoMinecraftServerSettingsMod"
-    TacoMinecraftServerSettingsMod:
-      type: object
-      properties:
-        name:
-          type: string
-        version:
-          type: string
-    TacoMinecraftServerSettings:
-      type: object
-      properties:
-        guild_id:
-          type: string
-        name:
-          type: string
-        settings:
-          "$ref": "#/components/schemas/MinecraftServerSettings"
-        timestamp:
-          type: number
-    MinecraftServerStatus:
-      type: object
-      properties:
-        success:
-          type: boolean
-        host:
-          type: string
-        status:
           enum:
-            - online
-            - offline
-          type: string
-        description:
-          type: string
-          description: The server description message
-        motd:
-          type: object
-          properties:
-            plain:
-              type: string
-            ansi:
-              type: string
-            html:
-              type: string
-            raw:
-              type: string
-        online:
-          type: boolean
-          description: Indicates if the server is online
-        latency:
-          type: number
-          description: The latency to the server
-        enforces_secure_chat:
-          type: boolean
-          description: Indicates if the server enforces secure chat
-        icon:
-          type: string
-          description: The server icon data URI
-        players:
-          type: object
-          properties:
-            max:
-              description: Maximum number of players that can connect
-              type: integer
-            online:
-              description: Total number of players currently connected
-              type: integer
-        version:
-          type: object
-          properties:
-            name:
-              type: string
-            protocol:
-              type: integer
+            - death
+            - login
+            - logout
+            - unknown
+          description: Type of player event (login, logout, death).
+      required:
+        - event
+      description: Minecraft player event
+      x-tacobot-managed: true
     MinecraftUser:
       type: object
       properties:
         uuid:
           type: string
+          description: The unique identifier for the Minecraft user.
         name:
           type: string
-    MinecrafOpUser:
+          description: The username of the Minecraft user.
+      required:
+        - name
+        - uuid
+      description: Represents a Minecraft user with a unique ID.
+      x-tacobot-managed: true
+    MinecraftOpUser:
       type: object
       properties:
         uuid:
           type: string
-        username:
+          description: The unique identifier for the Minecraft user.
+        name:
           type: string
+          description: The username of the Minecraft user.
         level:
           type: integer
+          description: The operator level (e.g., 4 for admin, 2 for operator).
         bypassPlayerLimit:
           type: boolean
-    MinecrafWhiteListUser:
+      required:
+        - bypassPlayerLimit
+        - level
+        - name
+        - uuid
+      description: Minecraft operator user.
+      x-tacobot-managed: true
+    MinecraftWhiteListUser:
       type: object
       properties:
         uuid:
           type: string
+          description: The user's UUID.
+        name:
+          type: string
+          description: The user's Minecraft username.
+      required:
+        - name
+        - uuid
+      description: A user on the Minecraft whitelist.
+      x-tacobot-managed: true
+    DiscordGuild:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the guild
+        name:
+          type: string
+          description: The name of the guild
+        member_count:
+          type: integer
+          nullable: true
+          description: The number of members in the guild
+        icon:
+          type: string
+          nullable: true
+          description: The CDN URL for the guild icon
+        banner:
+          type: string
+          nullable: true
+          description: The CDN URL for the guild banner
+        owner_id:
+          type: string
+          nullable: true
+          description: The unique identifier for the guild owner
+        features:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: List of features enabled for the guild
+        description:
+          type: string
+          nullable: true
+          description: The description of the guild
+        vanity_url:
+          type: string
+          nullable: true
+          description: The vanity URL of the guild
+        vanity_url_code:
+          type: string
+          nullable: true
+          description: The vanity URL code of the guild
+        preferred_locale:
+          type: string
+          nullable: true
+          description: The preferred locale of the guild
+        verification_level:
+          type: string
+          nullable: true
+          description: The verification level of the guild
+        boost_level:
+          type: string
+          nullable: true
+          description: The boost level of the guild
+        boost_count:
+          type: integer
+          nullable: true
+          description: The number of boosts the guild has
+      required:
+        - id
+        - name
+      description: Discord guild (server) information
+      x-tacobot-managed: true
+    DiscordGuildChannels:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The guild ID
+        name:
+          type: string
+          description: The guild name
+        channels:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiscordChannel'
+          nullable: true
+          description: List of channels that are not under any category
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiscordCategory'
+          nullable: true
+          description: List of channel categories, each with its own channels
+      required:
+        - id
+        - name
+      description: Discord guild channels information
+      x-tacobot-managed: true
+
+    DiscordChannel:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the channel
+        name:
+          type: string
+          description: The name of the channel
+        type:
+          type: string
+          description: The type of the channel (e.g., text, voice)
+        guild_id:
+          type: string
+          nullable: true
+          description: The unique identifier for the guild this channel belongs to
+        position:
+          type: integer
+          description: The position of the channel in the guild's channel list
+        topic:
+          type: string
+          nullable: true
+          description: The topic of the channel, if applicable
+        nsfw:
+          type: boolean
+          description: Whether the channel is marked as NSFW
+        bitrate:
+          type: integer
+          nullable: true
+          description: The bitrate of the channel, if applicable
+        user_limit:
+          type: integer
+          nullable: true
+          description: The user limit of the channel, if applicable
+        created_at:
+          type: integer
+          nullable: true
+          description: The timestamp when the channel was created
+        category_id:
+          type: string
+          nullable: true
+          description: The ID of the parent category, if any
+      required:
+        - id
+        - name
+        - nsfw
+        - position
+        - type
+      description: Discord channel information
+      x-tacobot-managed: true
+    DiscordCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the category
+        type:
+          type: string
+          enum:
+            - category
+          description: The type of the channel, always 'category' for categories
+        guild_id:
+          type: string
+          description: The unique identifier for the guild this category belongs to
+        name:
+          type: string
+          description: The name of the category
+        position:
+          type: integer
+          description: The position of the category in the guild's channel list
+        category_id:
+          type: string
+          description: The ID of the parent category, if any
+        channels:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiscordChannel'
+          description: List of channels under this category
+      required:
+        - category_id
+        - channels
+        - guild_id
+        - id
+        - name
+        - position
+        - type
+      description: Discord category information
+      x-tacobot-managed: true
+    DiscordEmoji:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - emoji
+        id:
+          type: string
+          description: The unique identifier for the emoji
+        animated:
+          type: boolean
+          description: Whether the emoji is animated
+        available:
+          type: boolean
+          description: Whether the emoji is available
+        created_at:
+          type: integer
+          nullable: true
+          description: The timestamp when the emoji was created, in milliseconds since epoch
+        guild_id:
+          type: string
+          nullable: true
+          description: The unique identifier for the guild this emoji belongs to
+        managed:
+          type: boolean
+          description: Whether the emoji is managed by an integration
+        require_colons:
+          type: boolean
+          description: Whether the emoji requires colons to be used
+        name:
+          type: string
+          description: The name of the emoji
+        url:
+          type: string
+          nullable: true
+          description: The CDN URL for the emoji image
+      required:
+        - animated
+        - available
+        - id
+        - managed
+        - name
+        - require_colons
+        - type
+      description: Snapshot of a Discord emoji's core attributes.
+      x-tacobot-managed: true
+    DiscordRole:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - role
+        id:
+          type: string
+          description: The unique identifier for the role
+        guild_id:
+          type: string
+          description: The unique identifier for the guild this role belongs to
+        color:
+          type: integer
+          nullable: true
+          description: The color of the role as an integer value
+        created_at:
+          type: integer
+          nullable: true
+          description: The timestamp when the role was created
+        display_icon:
+          type: string
+          nullable: true
+          description: The URL of the role's display icon
+        flags:
+          type: integer
+          nullable: true
+          description: The flags associated with the role
+        hoist:
+          type: boolean
+          nullable: true
+          description: Whether the role is hoisted
+        icon:
+          type: string
+          nullable: true
+          description: The URL of the role's icon
+        managed:
+          type: boolean
+          nullable: true
+          description: Whether the role is managed by an integration
+        mention:
+          type: string
+          description: The mention string for the role
+        mentionable:
+          type: boolean
+          description: Whether the role is mentionable
+        name:
+          type: string
+          description: The name of the role
+        permissions:
+          type: integer
+          description: The permissions of the role as an integer value
+        position:
+          type: integer
+          description: The position of the role in the guild's role list
+        secondary_color:
+          type: integer
+          nullable: true
+          description: The secondary color of the role as an integer value
+        tertiary_color:
+          type: integer
+          nullable: true
+          description: The tertiary color of the role as an integer value
+        unicode_emoji:
+          type: string
+          nullable: true
+          description: The unicode emoji associated with the role, if any
+      required:
+        - guild_id
+        - id
+        - mention
+        - mentionable
+        - name
+        - permissions
+        - position
+        - type
+      description: Represents a Discord role with normalized primitive fields.
+      x-tacobot-managed: true
+    DiscordUser:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - user
+        id:
+          type: string
+          description: The unique identifier for the user
+        guild_id:
+          type: string
+          description: The unique identifier for the guild this member belongs to
+        accent_color:
+          type: integer
+          nullable: true
+          description: The accent color of the user as an integer value
+        avatar:
+          type: string
+          nullable: true
+          description: The URL of the user's avatar
+        banner:
+          type: string
+          nullable: true
+          description: The URL of the user's banner
+        bot:
+          type: boolean
+          description: Whether the user is a bot
+        color:
+          type: integer
+          nullable: true
+          description: The color of the user as an integer value
+        created_at:
+          type: integer
+          nullable: true
+          description: The timestamp when the user was created
+        default_avatar:
+          type: string
+          nullable: true
+          description: The URL of the user's default avatar
+        discriminator:
+          type: string
+          nullable: true
+          description: The discriminator of the user as a string
+        display_avatar:
+          type: string
+          nullable: true
+          description: The URL of the user's display avatar
+        display_name:
+          type: string
+          description: The display name of the user
+        global_name:
+          type: string
+          description: The global name of the user
+        mention:
+          type: string
+          description: The mention string for the user
+        name:
+          type: string
+          description: The name of the user
+        status:
+          type: string
+          nullable: true
+          description: The status of the user
+        system:
+          type: boolean
+          description: Whether the user is a system user
+        timestamp:
+          type: integer
+          nullable: true
+          description: The timestamp associated with the user
         username:
           type: string
+          description: The username of the user
       required:
-        - uuid
+        - bot
+        - display_name
+        - global_name
+        - guild_id
+        - id
+        - mention
+        - name
+        - system
+        - type
         - username
+      description: Discord user information
+      x-tacobot-managed: true
+    DiscordMentionable:
+      oneOf:
+        - $ref: '#/components/schemas/DiscordRole'
+        - $ref: '#/components/schemas/DiscordUser'
+      description: Represents a Discord mentionable entity.
+      x-tacobot-managed: true
+    DiscordMessage:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - message
+          description: The type of this object, always 'message' for messages
+        id:
+          type: string
+          description: The unique identifier for the message
+        channel_id:
+          type: string
+          description: The unique identifier for the channel
+        guild_id:
+          type: string
+          description: The unique identifier for the guild
+        author_id:
+          type: string
+          description: The unique identifier for the author
+        content:
+          type: string
+          description: The content of the message
+        created_at:
+          type: integer
+          description: The timestamp when the message was created
+        jump_url:
+          type: string
+          nullable: true
+          description: The URL to jump to the message
+        edited_at:
+          type: integer
+          description: The timestamp when the message was last edited
+        mention_everyone:
+          type: boolean
+          description: Whether the message mentions everyone
+        mentions:
+          type: array
+          items:
+            type: object
+          nullable: true
+          description: List of users mentioned in the message
+        attachments:
+          type: array
+          items:
+            type: object
+          nullable: true
+          description: List of attachments in the message
+        embeds:
+          type: array
+          items:
+            type: object
+          nullable: true
+          description: List of embeds in the message
+        reactions:
+          type: array
+          items:
+            type: object
+          nullable: true
+          description: List of reactions to the message
+        nonce:
+          type: string
+          nullable: true
+          description: The nonce of the message
+        pinned:
+          type: boolean
+          description: Whether the message is pinned
+        message_type:
+          type: integer
+          description: The type of the message
+      required:
+        - author_id
+        - channel_id
+        - content
+        - created_at
+        - edited_at
+        - guild_id
+        - id
+        - mention_everyone
+        - message_type
+        - pinned
+        - type
+      description: Discord message information
+      x-tacobot-managed: true
+    DiscordMessageReaction:
+      type: object
+      properties:
+        emoji:
+          type: string
+          description: The emoji used in the reaction
+        count:
+          type: integer
+          description: The number of times this reaction has been used
+      required:
+        - count
+        - emoji
+      description: Discord message reaction information
+      x-tacobot-managed: true
+    JoinWhitelistUser:
+      type: object
+      properties:
+        guild_id:
+          type: string
+          description: Discord guild (server) identifier scoping the whitelist entry.
+        user_id:
+          type: string
+          description: Discord user identifier for the whitelisted user.
+        added_by:
+          type: string
+          nullable: true
+          description: Discord user id (or system marker) of the actor who added the entry.
+        timestamp:
+          type: integer
+          nullable: true
+          description: Creation timestamp (seconds since epoch, or milliseconds depending on writer).
+      required:
+        - guild_id
+        - user_id
+      description: Container for a guild-scoped join whitelist record.
+      x-tacobot-managed: true
+    PagedResultsJoinWhitelistUser:
+      allOf:
+        - $ref: '#/components/schemas/PagedResults'
+        - properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/JoinWhitelistUser'
+              description: Page slice of JoinWhitelistUser items
+          required:
+            - items
+      description: Generic paginated results container.
+      x-tacobot-managed: true
+    PagedResults:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of matching items (unpaged)
+          default: 0
+        skip:
+          type: integer
+          description: Number of items skipped (offset)
+          default: 0
+          minimum: 0
+        take:
+          type: integer
+          description: Requested page size
+          default: 0
+          minimum: 0
+        items:
+          type: array
+          items:
+            type: object
+          description: Page slice of items
+      required:
+        - items
+        - skip
+        - take
+        - total
+      description: Generic paginated results container.
+      x-tacobot-managed: true
+    MinecraftServerStatusMotd:
+      type: object
+      properties:
+        plain:
+          type: string
+          description: The plain text version of the MOTD.
+        html:
+          type: string
+          description: The HTML formatted version of the MOTD.
+        raw:
+          type: string
+          description: The raw version of the MOTD with formatting codes.
+        ansi:
+          type: string
+          description: The ANSI formatted version of the MOTD.
+      required:
+        - ansi
+        - html
+        - plain
+        - raw
+      description: Represents the message of the day (MOTD) information in a Minecraft server status response.
+      x-tacobot-managed: true
+    MinecraftServerStatusPlayers:
+      type: object
+      properties:
+        online:
+          type: integer
+          description: Number of players currently online.
+        max:
+          type: integer
+          description: Maximum player capacity of the server.
+      required:
+        - max
+        - online
+      description: Represents player count information in a Minecraft server status response.
+      x-tacobot-managed: true
+    MinecraftServerStatusVersion:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The version name of the Minecraft server.
+        protocol:
+          type: integer
+          description: The protocol version number of the Minecraft server.
+      required:
+        - name
+        - protocol
+      description: Represents version information in a Minecraft server status response.
+      x-tacobot-managed: true
+    MinecraftDiscordUserStatsInfo:
+      type: object
+      properties:
+        world:
+          type: string
+          enum:
+            - taco_atm10
+            - taco_atm10-2
+            - taco_atm8
+            - taco_atm9
+          description: The name of the Minecraft world.
+        username:
+          type: string
+          description: The Minecraft username.
+        uuid:
+          type: string
+          description: The Minecraft UUID.
+        user_id:
+          type: string
+          description: The Discord user ID associated with this Minecraft account.
+        modified:
+          type: integer
+          description: Timestamp of the last modification to this record.
+        stats:
+          type: object
+          nullable: true
+          description: A dictionary of Minecraft stats.
+      required:
+        - modified
+        - user_id
+        - username
+        - uuid
+        - world
+      description: Minecraft discord user stats info.
+      x-tacobot-managed: true
+    MinecraftPlayerEventPayload:
+      type: object
+      properties:
+        user_id:
+          type: string
+          description: Discord user ID of the player.
+        guild_id:
+          type: string
+          description: Discord guild ID associated with the event.
+        payload:
+          type: object
+          nullable: true
+          description: Additional event-specific data (varies by event type).
+        event:
+          type: string
+          enum:
+            - death
+            - login
+            - logout
+            - unknown
+          description: Type of player event (login, logout, death).
+      required:
+        - event
+        - guild_id
+        - user_id
+      description: Minecraft player event payload
+      x-tacobot-managed: true
+    MinecraftServerSettings:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Whether the Minecraft server integration is enabled.
+        server:
+          type: string
+          description: The server address (IP or domain) and port.
+        forge_version:
+          type: string
+          description: The version of the Forge mod loader used by the server.
+        version:
+          type: string
+          description: The base version of the Minecraft server.
+        help:
+          type: string
+          description: A link to provide help information on connecting to the server.
+        mods:
+          type: array
+          items:
+            $ref: '#/components/schemas/TacoMinecraftServerSettingsMod'
+          description: A list of mods installed on the server.
+      required:
+        - enabled
+        - forge_version
+        - help
+        - mods
+        - server
+        - version
+      description: Minecraft server settings
+      x-tacobot-managed: true
+    MinecraftServerStatus:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether the status query was successful.
+        host:
+          type: string
+          description: The hostname or IP address of the Minecraft server.
+        status:
+          type: string
+          enum:
+            - offline
+            - online
+            - unknown
+          description: The current status of the server (e.g., online, offline, unknown).
+        description:
+          type: string
+          description: A brief description of the server.
+        motd:
+          $ref: '#/components/schemas/MinecraftServerStatusMotd'
+        online:
+          type: boolean
+          description: Whether the server is currently online.
+        latency:
+          type: integer
+          description: The latency to the server in milliseconds.
+        enforces_secure_chat:
+          type: boolean
+          description: Whether the server enforces secure chat.
+        icon:
+          type: string
+          description: The base64-encoded server icon image.
+        players:
+          $ref: '#/components/schemas/MinecraftServerStatusPlayers'
+        version:
+          $ref: '#/components/schemas/MinecraftServerStatusVersion'
+      required:
+        - description
+        - enforces_secure_chat
+        - host
+        - icon
+        - latency
+        - motd
+        - online
+        - players
+        - status
+        - success
+        - version
+      description: Represents the status of a Minecraft server.
+      x-tacobot-managed: true
+    TacoMinecraftServerSettings:
+      type: object
+      properties:
+        guild_id:
+          type: string
+          description: The Discord guild ID associated with these settings.
+        name:
+          type: string
+          description: The name of the Minecraft server configuration.
+        settings:
+          $ref: '#/components/schemas/MinecraftServerSettings'
+        timestamp:
+          type: integer
+          description: The last updated timestamp for these settings (epoch seconds).
+      required:
+        - guild_id
+        - name
+        - settings
+        - timestamp
+      description: Represents the settings for a Minecraft server managed by TacoBot.
+      x-tacobot-managed: true
+    TacoMinecraftServerSettingsMod:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the mod.
+        version:
+          type: string
+          description: The version of the mod.
+      required:
+        - name
+        - version
+      description: Represents a mod installed on the Minecraft server.
+      x-tacobot-managed: true
+    MinecraftUserStatsPayload:
+      type: object
+      properties:
+        world_name:
+          type: string
+          enum:
+            - taco_atm10
+            - taco_atm10-2
+            - taco_atm8
+            - taco_atm9
+          description: The name of the Minecraft world.
+        stats:
+          $ref: '#/components/schemas/MinecraftUserStats'
+      required:
+        - stats
+        - world_name
+      description: Payload container for user stats by world.
+      x-tacobot-managed: true
+    TacoMinecraftWorlds:
+      type: string
+      enum:
+        - taco_atm10
+        - taco_atm10-2
+        - taco_atm8
+        - taco_atm9
+      description: Represents a Minecraft world managed by TacoBot.
+      default: taco_atm10-2
+      x-tacobot-managed: true
+    MinecraftPlayerEventPayloadResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+          description: Status of the response, typically 'ok'.
+        data:
+          $ref: '#/components/schemas/MinecraftPlayerEventPayload'
+      required:
+        - data
+        - status
+      description: Response payload for Minecraft player event
+      x-tacobot-managed: true
+    GuildItemIdBatchRequestBody:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+          description: List of guild item IDs to fetch
+      required:
+        - ids
+      description: Request body for batch fetching guild item by IDs
+      x-tacobot-managed: true
+    GuildItemNameBatchRequestBody:
+      type: object
+      properties:
+        names:
+          type: array
+          items:
+            type: string
+          description: List of guild item names to fetch
+      required:
+        - names
+      description: Request body for batch fetching guild item by names
+      x-tacobot-managed: true
+    SimpleStatusResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: The status message.
+      required:
+        - status
+      description: Simple status response with a status string
+      x-tacobot-managed: true
+    JoinWhitelistAddedBy:
+      type: object
+      properties:
+        added_by:
+          type: string
+          nullable: true
+          description: Discord user id (or system marker) of the actor who added the entry.
+      description: Container for the 'added_by' field of a join whitelist entry.
+      x-tacobot-managed: true
+    MinecraftSettingsUpdatePayload:
+      type: object
+      properties:
+        guild_id:
+          type: string
+          description: The ID of the guild for which to update Minecraft settings.
+        settings:
+          type: string
+          description: The Minecraft settings to update.
+      required:
+        - guild_id
+        - settings
+      description: Payload for updating Minecraft settings for a guild.
+      x-tacobot-managed: true
+    TacoSettingsModel:
+      type: object
+      properties:
+        guild_id:
+          type: string
+          description: The ID of the guild.
+        name:
+          type: string
+          description: The name of the settings.
+        metadata:
+          type: object
+          description: Additional metadata for the settings.
+        settings:
+          type: object
+          description: The specific settings data.
+      required:
+        - guild_id
+        - metadata
+        - name
+        - settings
+      description: Generic Taco Settings Model
+    MinecraftServerSettingsSettingsModel:
+      allOf:
+        - $ref: '#/components/schemas/TacoSettingsModel'
+        - properties:
+            settings:
+              $ref: '#/components/schemas/MinecraftServerSettings'
+          required:
+            - settings
+      description: Generic Taco Settings Model
+    MinecraftUserStatsItem:
+      type: object
+      additionalProperties:
+        type: integer
+      description: TypedDict for individual Minecraft user statistics item.
+      x-tacobot-managed: true
   securitySchemes:
     X-AUTH-TOKEN:
       type: apiKey

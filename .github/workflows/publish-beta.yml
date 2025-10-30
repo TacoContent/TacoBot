@@ -1,6 +1,6 @@
 ---
 name: TacoBot Publish Beta
-"on": # quoted to avoid YAML lint 'truthy' warning
+on: # yamllint disable-line rule:truthy
   push:
     branches:
       - "**" # All branches

@@ -23,7 +23,7 @@ class SettingsDatabase(BaseDatabase):
             timestamp = utils.to_timestamp(datetime.datetime.utcnow())
             payload = {"guild_id": str(guildId), "name": name, "settings": settings, "timestamp": timestamp}
             # insert the settings for the guild in to the database with key name and timestamp
-            self.connection.settings.update_one(
+            self.connection.settings.update_one(  # type: ignore
                 {"guild_id": str(guildId), "name": name}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
@@ -64,7 +64,7 @@ class SettingsDatabase(BaseDatabase):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            settings = self.connection.settings.find_one({"guild_id": str(guildId), "name": name})
+            settings = self.connection.settings.find_one({"guild_id": str(guildId), "name": name})  # type: ignore
             # explicitly return None if no settings are found
             if settings is None:
                 return None

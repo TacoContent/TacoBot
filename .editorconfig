@@ -15,6 +15,13 @@ indent_size = 2
 
 [.vscode/settings.json]
 indent_style = tab
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+
+[.vscode/tasks.json]
+indent_style = tab
+insert_final_newline = unset
+trim_trailing_whitespace = unset
 
 [*.py]
 indent_style = space
@@ -23,3 +30,12 @@ indent_size = 4
 [*.md]
 trim_trailing_whitespace = false
 insert_final_newline = true
+
+[{tacobot.egg-info/**,tests/**}]
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+tab_width = unset
+charset = unset
+end_of_line = unset
+indent_style = unset
+indent_size = unset
