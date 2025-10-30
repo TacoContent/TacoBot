@@ -1137,7 +1137,6 @@ paths:
             type: string
   /api/v1/guild/{guild_id}/join-whitelist:
     get:
-      summary: Get the complete join whitelist for a guild
       responses:
         '200':
           description: Array of JoinWhitelistUser objects
@@ -1160,6 +1159,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
       description: For large lists, prefer the paginated variant.
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild to retrieve the join whitelist for
+          schema:
+            type: string
+      summary: Get the complete join whitelist for a guild
     post:
       responses:
         '201':
@@ -1194,6 +1201,13 @@ paths:
             schema:
               $ref: '#/components/schemas/JoinWhitelistUser'
       description: If the user is already whitelisted, this updates their entry.
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: The ID of the guild to add the user to the join whitelist
+          schema:
+            type: string
       summary: Add (upsert) a user to the join whitelist
   /api/v1/guild/{guild_id}/join-whitelist/page:
     get:

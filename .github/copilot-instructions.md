@@ -272,7 +272,7 @@ def get_resource(self, request, uri_variables):
 - Run `python -m black --config .github/linters/.python-black --fix .` to fix black formatting issues.
 - Run `python -m isort --settings-path .github/linters/.isort.cfg . --diff --check .` to verify import sorting.
 - Run `python -m isort --settings-path .github/linters/.isort.cfg .` to fix import sorting issues.
-- Always run python in a virtual environment by executing the activate script for the platform in `./.venv/scripts` 
+- Always run python in a virtual environment by executing the activate script for the platform in `./.venv/scripts`
 before running any python commands.
   - On Windows, use `Activate.ps1`.
 

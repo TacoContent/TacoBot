@@ -118,6 +118,12 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/join-whitelist", method=HTTPMethod.GET)
     @openapi.summary("Get the complete join whitelist for a guild")
     @openapi.description("For large lists, prefer the paginated variant.")
+    @openapi.pathParameter(
+        name="guild_id",
+        description="The ID of the guild to retrieve the join whitelist for",
+        schema=typing.Union[int, str],
+        methods=[HTTPMethod.GET],
+    )
     @openapi.response(
         200,
         description="Array of JoinWhitelistUser objects",
@@ -263,6 +269,12 @@ class JoinWhitelistApiHandler(BaseHttpHandler):
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/join-whitelist", method=HTTPMethod.POST)
     @openapi.summary("Add (upsert) a user to the join whitelist")
     @openapi.description("If the user is already whitelisted, this updates their entry.")
+    @openapi.pathParameter(
+        name="guild_id",
+        description="The ID of the guild to add the user to the join whitelist",
+        schema=str,
+        methods=[HTTPMethod.POST],
+    )
     @openapi.requestBody(
         description="Join whitelist user to add",
         contentType="application/json",
