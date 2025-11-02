@@ -68,8 +68,8 @@
 - [x] Run all Phase 1 tests ✅
 - [x] Run linters (Black, isort) ✅
 - [x] Run full test suite (no regressions) ✅
-- [ ] Create draft PR for Phase 1 for early feedback
-- [ ] Document Phase 1 helpers in `docs/lib/helpers/`
+- [x] Create draft PR for Phase 1 for early feedback
+- [x] Document Phase 1 helpers in `docs/lib/helpers/`
 
 ---
 
@@ -77,45 +77,45 @@
 
 ### MessageHelper
 
-- [ ] Create `bot/lib/helpers/message_helper.py`
-- [ ] Implement `move_message(message, targetChannel, ...)`
-- [ ] Implement `notify_bot_not_initialized(ctx, subcommand)`
-- [ ] Create `tests/lib/helpers/test_message_helper.py`
-- [ ] Write tests for:
-  - [ ] Embed extraction and merging
-  - [ ] Field removal logic
-  - [ ] Attachment handling
-  - [ ] Footer generation
-  - [ ] delete_original flag behavior
-  - [ ] Admin vs non-admin notification
-- [ ] All MessageHelper tests passing ✅
+- [x] Create `bot/lib/helpers/message_helper.py`
+- [x] Implement `move_message(message, targetChannel, ...)`
+- [x] Implement `notify_bot_not_initialized(ctx, subcommand)`
+- [x] Create `tests/lib/helpers/test_message_helper.py`
+- [x] Write tests for:
+  - [x] Embed extraction and merging
+  - [x] Field removal logic
+  - [x] Attachment handling
+  - [x] Footer generation
+  - [x] delete_original flag behavior
+  - [x] Admin vs non-admin notification
+- [x] All MessageHelper tests passing ✅
 
 ### TacoHelper
 
-- [ ] Create `bot/lib/helpers/taco_helper.py`
-- [ ] Implement `give_tacos(guildId, fromUser, toUser, reason, give_type, taco_amount)`
-- [ ] Implement `log_taco_transaction(guild_id, toMember, fromMember, count, total_tacos, reason, type)`
-- [ ] Implement `log_taco_purge(guild_id, toMember, fromMember, reason)`
-- [ ] Implement `get_taco_settings(guildId)`
-- [ ] Create `tests/lib/helpers/test_taco_helper.py`
-- [ ] Write tests for:
-  - [ ] Taco amount calculation from settings
-  - [ ] Database add_tacos call
-  - [ ] Database track_tacos_log call
-  - [ ] Log channel message formatting
-  - [ ] Plural/singular taco word logic
-  - [ ] Negative count handling (loss vs received)
-  - [ ] Purge logging
-- [ ] All TacoHelper tests passing ✅
+- [x] Create `bot/lib/helpers/taco_helper.py`
+- [x] Implement `give_tacos(guildId, fromUser, toUser, reason, give_type, taco_amount)`
+- [x] Implement `log_taco_transaction(guild_id, toMember, fromMember, count, total_tacos, reason, type)`
+- [x] Implement `log_taco_purge(guild_id, toMember, fromMember, reason)`
+- [x] Implement `get_taco_settings(guildId)`
+- [x] Create `tests/lib/helpers/test_taco_helper.py`
+- [x] Write tests for:
+  - [x] Taco amount calculation from settings
+  - [x] Database add_tacos call
+  - [x] Database track_tacos_log call
+  - [x] Log channel message formatting
+  - [x] Plural/singular taco word logic
+  - [x] Negative count handling (loss vs received)
+  - [x] Purge logging
+- [x] All TacoHelper tests passing ✅
 
 ### Phase 2 Wrap-up
 
-- [ ] Update `bot/lib/helpers/__init__.py` to export Phase 2 helpers
-- [ ] Run all Phase 2 tests ✅
-- [ ] Run linters (Black, isort) ✅
-- [ ] Run full test suite (no regressions) ✅
-- [ ] Update draft PR with Phase 2 changes
-- [ ] Document Phase 2 helpers in `docs/lib/helpers/`
+- [x] Update `bot/lib/helpers/__init__.py` to export Phase 2 helpers
+- [x] Run all Phase 2 tests ✅
+- [x] Run linters (Black, isort) ✅
+- [x] Run full test suite (no regressions) ✅
+- [x] Update draft PR with Phase 2 changes
+- [x] Document Phase 2 helpers in `docs/lib/helpers/`
 
 ---
 
@@ -433,8 +433,8 @@
 
 ### Overall Progress
 
-- [ ] Phase 1: Foundation (Week 1)
-- [ ] Phase 2: Message & Taco (Week 2)
+- [x] Phase 1: Foundation (Week 1)
+- [x] Phase 2: Message & Taco (Week 2)
 - [ ] Phase 3: Prompt Helper (Week 3)
 - [ ] Phase 4: Facade (Week 4)
 - [ ] Phase 5: Cog Migration (Weeks 5-7)
