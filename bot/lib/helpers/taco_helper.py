@@ -42,6 +42,7 @@ class TacoHelper:
         # Import here to avoid circular dependency
         if entity_helper is None:
             from bot.lib.helpers.entity_helper import EntityHelper
+
             self.entity_helper = EntityHelper(bot)
         else:
             self.entity_helper = entity_helper

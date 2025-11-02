@@ -1,8 +1,10 @@
 """Clean tests for MessageHelper class (temporary while original file is corrupted)."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from bot.lib.helpers.message_helper import MessageHelper
+
 
 class TestMessageHelperClean:
     @pytest.fixture
