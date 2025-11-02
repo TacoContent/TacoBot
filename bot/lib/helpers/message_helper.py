@@ -188,7 +188,7 @@ class MessageHelper:
             )
         else:
             # get the bot's prefix
-            prefix = await self.bot.get_prefix(ctx.message)[0]
+            prefix = (await self.bot.get_prefix(ctx.message))[0]
             await self.messaging.send_embed(
                 ctx.channel,
                 self.settings.get_string(guild_id, "error"),
