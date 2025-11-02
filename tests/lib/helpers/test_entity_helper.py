@@ -2,7 +2,6 @@ from unittest.mock import AsyncMock, MagicMock
 
 import discord
 import pytest
-
 from bot.lib.helpers import EntityHelper
 
 
