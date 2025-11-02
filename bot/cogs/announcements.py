@@ -46,7 +46,7 @@ import typing
 import discord
 import pytz
 from bot import tacobot  # pylint: disable=no-name-in-module
-from bot.lib import discordhelper, utils
+from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
 from bot.lib.models.AnnouncementEntry import AnnouncementEntry
@@ -62,8 +62,6 @@ class AnnouncementsCog(TacobotCog):
 
     Attributes
     ----------
-    discord_helper : discordhelper.DiscordHelper
-        Utility helper for common Discord-related convenience operations.
     messaging : Messaging
         Internal messaging/notification abstraction (unused directly here but
         injected for future extension potential).
@@ -84,7 +82,6 @@ class AnnouncementsCog(TacobotCog):
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
 
         self.announcements_db = AnnouncementsDatabase()

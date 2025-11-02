@@ -91,7 +91,7 @@ def get_random_name(noun_count=1, adjective_count=1) -> str:
                 )
 
 
-def get_user_display_name(user: typing.Union[discord.User, discord.Member]) -> str:
+def get_user_display_name(user: typing.Union[discord.User, discord.Member, discord.ClientUser]) -> str:
     """
     Gets the display name for the user.
     If the user has a discriminator of 0, then it will return the display name (new format).

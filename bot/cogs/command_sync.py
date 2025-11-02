@@ -4,7 +4,6 @@ import typing
 
 import discord
 from bot import tacobot  # pylint: disable=no-name-in-module
-from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
 from discord.ext import commands
@@ -18,7 +17,6 @@ class CommandSyncCog(TacobotCog):
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")

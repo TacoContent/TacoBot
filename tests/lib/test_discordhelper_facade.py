@@ -4,9 +4,9 @@ Tests that the facade correctly delegates to helper classes and exposes
 legacy properties for backward compatibility.
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
 from bot.lib.discordhelper import DiscordHelper
 from bot.lib.enums import tacotypes
 
@@ -104,6 +104,7 @@ class TestEntityHelperDelegation:
 
     def test_get_by_name_or_id_delegates(self, discord_helper):
         """Test that get_by_name_or_id delegates to EntityHelper."""
+
         # Create fake objects with id and name
         class FakeItem:
             def __init__(self, item_id, name):
@@ -262,9 +263,7 @@ class TestPromptHelperDelegation:
         # Mock the prompt helper method
         discord_helper.prompt_helper.ask_yes_no = AsyncMock()
 
-        await discord_helper.ask_yes_no(
-            mock_ctx, mock_channel, question="Test question?", title="Test", timeout=30
-        )
+        await discord_helper.ask_yes_no(mock_ctx, mock_channel, question="Test question?", title="Test", timeout=30)
 
         # Should have delegated to prompt helper
         discord_helper.prompt_helper.ask_yes_no.assert_called_once()
@@ -358,14 +357,7 @@ class TestHelperInstantiation:
 
     def test_helpers_have_correct_types(self, discord_helper):
         """Test that helpers are the correct type."""
-        from bot.lib.helpers import (
-            ContextHelper,
-            EntityHelper,
-            MessageHelper,
-            PromptHelper,
-            RoleHelper,
-            TacoHelper,
-        )
+        from bot.lib.helpers import ContextHelper, EntityHelper, MessageHelper, PromptHelper, RoleHelper, TacoHelper
 
         assert isinstance(discord_helper.entity_helper, EntityHelper)
         assert isinstance(discord_helper.message_helper, MessageHelper)

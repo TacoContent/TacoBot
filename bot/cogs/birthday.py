@@ -8,9 +8,9 @@ from random import random, randrange
 
 import discord
 import pytz
-from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
+from bot.lib.helpers import ContextHelper, EntityHelper, PromptHelper, RoleHelper, TacoHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.birthdays import BirthdaysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
@@ -30,10 +30,14 @@ class Birthday(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.birthdays_db = BirthdaysDatabase()
         self.tracking_db = TrackingDatabase()
+        self.tacos_helper = TacoHelper(bot)
+        self.entity_helper = EntityHelper(bot)
+        self.context_helper = ContextHelper()
+        self.prompt_helper = PromptHelper(bot)
+        self.role_helper = RoleHelper(bot)
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -57,7 +61,7 @@ class Birthday(TacobotCog):
                 taco_amount = taco_settings.get("birthday_count", 25)
                 reason_msg = self.settings.get_string(guild_id, "taco_reason_birthday")
 
-                await self.discord_helper.taco_give_user(
+                await self.tacos_helper.give_tacos(
                     guild_id,
                     self.bot.user,  # type: ignore
                     user,
@@ -100,10 +104,10 @@ class Birthday(TacobotCog):
             _ctx = ctx
             out_channel = ctx.author
             try:
-                _ctx = self.discord_helper.create_context(
-                    self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
+                _ctx = self.context_helper.create_context(
+                    bot=self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
                 )
-                month = await self.discord_helper.ask_number(
+                month = await self.prompt_helper.ask_number(
                     _ctx,
                     self.settings.get_string(guild_id, "birthday_set_title"),
                     self.settings.get_string(guild_id, "birthday_set_month_question"),
@@ -111,10 +115,10 @@ class Birthday(TacobotCog):
                     12,
                     timeout=60,
                 )
-                _ctx = self.discord_helper.create_context(
-                    self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
+                _ctx = self.context_helper.create_context(
+                    bot=self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
                 )
-                day = await self.discord_helper.ask_number(
+                day = await self.prompt_helper.ask_number(
                     _ctx,
                     self.settings.get_string(guild_id, "birthday_set_title"),
                     self.settings.get_string(guild_id, "birthday_set_day_question"),
@@ -126,7 +130,7 @@ class Birthday(TacobotCog):
                 self.log.info(guild_id, f"{self._module}.{self._class}.{_method}", "Forbidden", traceback.format_exc())
                 _ctx = ctx
                 out_channel = ctx.channel
-                month = await self.discord_helper.ask_number(
+                month = await self.prompt_helper.ask_number(
                     _ctx,
                     self.settings.get_string(guild_id, "birthday_set_title"),
                     self.settings.get_string(guild_id, "birthday_set_month_question"),
@@ -134,7 +138,7 @@ class Birthday(TacobotCog):
                     12,
                     timeout=60,
                 )
-                day = await self.discord_helper.ask_number(
+                day = await self.prompt_helper.ask_number(
                     _ctx,
                     self.settings.get_string(guild_id, "birthday_set_title"),
                     self.settings.get_string(guild_id, "birthday_set_day_question"),
@@ -150,7 +154,7 @@ class Birthday(TacobotCog):
                 taco_settings = self.get_tacos_settings(guild_id)
                 taco_amount = taco_settings.get("birthday_count", 25)
                 reason_msg = self.settings.get_string(guild_id, "taco_reason_birthday")
-                await self.discord_helper.taco_give_user(
+                await self.tacos_helper.give_tacos(
                     guild_id,
                     self.bot.user,  # type: ignore
                     ctx.author,
@@ -277,10 +281,10 @@ class Birthday(TacobotCog):
 
             for birthday in birthdays:
                 user_id = int(birthday["user_id"])
-                member = await self.discord_helper.get_or_fetch_member(guildId=guild_id, userId=user_id)
+                member = await self.entity_helper.get_or_fetch_member(guildId=guild_id, userId=user_id)
                 if member:
-                    await self.discord_helper.add_remove_roles(
-                        user=member, check_list=[], add_list=[birthday_role.id], remove_list=[], allow_everyone=True
+                    await self.role_helper.add_remove_roles(
+                        user=member, check_list=[], add_list=[str(birthday_role.id)], remove_list=[], allow_everyone=True
                     )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -334,8 +338,8 @@ class Birthday(TacobotCog):
                 return
             # remove all users from the role
             for member in birthday_role.members:
-                await self.discord_helper.add_remove_roles(
-                    user=member, check_list=[], add_list=[], remove_list=[birthday_role.id], allow_everyone=True
+                await self.role_helper.add_remove_roles(
+                    user=member, check_list=[], add_list=[], remove_list=[str(birthday_role.id)], allow_everyone=True
                 )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -373,7 +377,7 @@ class Birthday(TacobotCog):
             # get all the users
             users = []
             for birthday in birthdays:
-                user = await self.discord_helper.get_or_fetch_member(guildId=guild_id, userId=int(birthday["user_id"]))
+                user = await self.entity_helper.get_or_fetch_member(guildId=guild_id, userId=int(birthday["user_id"]))
                 # user = ctx.guild.get_member(int(birthday["user_id"])).mention
 
                 if user:
@@ -387,7 +391,7 @@ class Birthday(TacobotCog):
             output_channel_id = cog_settings.get("channel_id", "0")
 
             # output_channel = ctx.guild.get_channel(int(output_channel_id))
-            output_channel = await self.discord_helper.get_or_fetch_channel(channelId=int(output_channel_id))
+            output_channel = await self.entity_helper.get_or_fetch_channel(channelId=int(output_channel_id))
             if output_channel:
                 message = birthday_messages[int(random() * len(birthday_messages))]
                 image = birthday_images[int(random() * len(birthday_images))]

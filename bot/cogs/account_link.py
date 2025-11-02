@@ -4,7 +4,7 @@ import traceback
 import typing
 
 import discord
-from bot.lib import discordhelper, utils
+from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums.system_actions import SystemActions
 from bot.lib.messaging import Messaging
@@ -24,7 +24,6 @@ class AccountLink(TacobotCog):
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.twitch_db = TwitchDatabase()
         self.tracking_db = TrackingDatabase()

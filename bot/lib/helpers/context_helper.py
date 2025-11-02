@@ -12,7 +12,7 @@ class ContextHelper:
     - Success: returned object exposes attributes passed in kwargs
     """
 
-    def create_context(self, **kwargs: Any):
+    def create_context(self, **kwargs: Any) -> Any:
         """Create a simple context object with arbitrary attributes.
 
         Example:

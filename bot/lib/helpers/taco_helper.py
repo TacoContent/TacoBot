@@ -55,8 +55,8 @@ class TacoHelper:
     async def give_tacos(
         self,
         guildId: int,
-        fromUser: typing.Union[discord.User, discord.Member],
-        toUser: typing.Union[discord.User, discord.Member],
+        fromUser: typing.Optional[typing.Union[discord.User, discord.Member, discord.ClientUser]],
+        toUser: typing.Optional[typing.Union[discord.User, discord.Member, discord.ClientUser]],
         reason: typing.Optional[str],
         give_type: tacotypes.TacoTypes = tacotypes.TacoTypes.CUSTOM,
         taco_amount: int = 1,
@@ -76,6 +76,9 @@ class TacoHelper:
         """
         _method = inspect.stack()[0][3]
         try:
+            if toUser is None or fromUser is None:
+                self.log.warn(guildId, f"{self._module}.{self._class}.{_method}", "toUser or fromUser is None")
+                return 0
             # get taco settings
             taco_settings = self.get_taco_settings(guildId=guildId)
             taco_count = taco_amount
@@ -162,8 +165,8 @@ class TacoHelper:
     async def log_taco_transaction(
         self,
         guild_id: int,
-        toMember: typing.Union[discord.User, discord.Member],
-        fromMember: typing.Union[discord.User, discord.Member],
+        toMember: typing.Optional[typing.Union[discord.User, discord.Member, discord.ClientUser]],
+        fromMember: typing.Optional[typing.Union[discord.User, discord.Member, discord.ClientUser]],
         count: int,
         total_tacos: int,
         reason: str,
@@ -182,6 +185,9 @@ class TacoHelper:
         """
         _method = inspect.stack()[0][3]
         try:
+            if toMember is None or fromMember is None:
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "toMember or fromMember is None")
+                return
             taco_settings = self.get_taco_settings(guildId=guild_id)
             taco_log_channel_id = taco_settings["taco_log_channel_id"]
             log_channel = await self.entity_helper.get_or_fetch_channel(int(taco_log_channel_id))

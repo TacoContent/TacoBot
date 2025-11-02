@@ -2,9 +2,9 @@ import inspect
 import os
 import traceback
 
-from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
+from bot.lib.helpers import EntityHelper, TacoHelper
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.tacobot import TacoBot
 from discord.ext import commands
@@ -18,8 +18,10 @@ class MessageTracker(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.tracking_db = TrackingDatabase()
+        self.entity_helper = EntityHelper(bot)
+        self.tacos_helper = TacoHelper(bot, entity_helper=self.entity_helper)
+
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -38,7 +40,7 @@ class MessageTracker(TacobotCog):
 
             # if message is a bot command, ignore
             # loop all command prefixes
-            for prefix in await self.bot.command_prefix(message):
+            for prefix in await self.bot.command_prefix(message):  # type: ignore
                 if message.content.startswith(prefix):
                     return
 
@@ -55,10 +57,17 @@ class MessageTracker(TacobotCog):
         try:
             # create context
             # self, bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
-            # get guild from id
-            guild = self.bot.get_guild(guild_id)
             # fetch member from id
-            member = guild.get_member(user_id)
+            member = await self.entity_helper.get_or_fetch_member(guild_id, user_id)
+
+            if member is None:
+                self.log.error(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Could not fetch member {user_id} in guild {guild_id} to give first message tacos.",
+                )
+                return
+
             # get channel
             # channel = None
             # message = None
@@ -75,7 +84,7 @@ class MessageTracker(TacobotCog):
 
             reason_msg = self.settings.get_string(guild_id, "first_message_reason")
 
-            await self.discord_helper.taco_give_user(
+            await self.tacos_helper.give_tacos(
                 guild_id, self.bot.user, member, reason_msg, tacotypes.TacoTypes.FIRST_MESSAGE, taco_amount=amount
             )
 

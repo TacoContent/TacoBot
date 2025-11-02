@@ -3,9 +3,9 @@ import os
 import re
 import traceback
 
-from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
+from bot.lib.helpers import EntityHelper, TacoHelper
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.tacobot import TacoBot
 from discord.ext import commands
@@ -18,8 +18,9 @@ class PhotoPostCog(TacobotCog):
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
+        self.entity_helper = EntityHelper(bot)
+        self.taco_helper = TacoHelper(bot, entity_helper=self.entity_helper)
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.tracking_db = TrackingDatabase()
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -86,7 +87,7 @@ class PhotoPostCog(TacobotCog):
                 await message.add_reaction(r)
 
             # if the message is a photo, add tacos to the user
-            await self.discord_helper.taco_give_user(
+            await self.taco_helper.give_tacos(
                 guildId=guild_id,
                 fromUser=self.bot.user,
                 toUser=message.author,

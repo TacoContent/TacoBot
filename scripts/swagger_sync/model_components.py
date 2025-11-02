@@ -612,16 +612,19 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
 
                 # Fix OpenAPI no-$ref-siblings violation (OpenAPI 3.0 and below):
                 # According to OpenAPI spec, $ref must be the only property at that level.
-                # Any sibling properties (like description) will be ignored by compliant tooling.
-                # Warn and discard sibling properties to maintain spec compliance.
+                # Many tools tolerate 'description' alongside $ref for documentation purposes.
+                # To balance spec-compatibility and developer ergonomics, we KEEP 'description' but
+                # DISCARD any other sibling properties.
                 if '$ref' in schema:
-                    # Check if there are any sibling properties
-                    sibling_props = {k: v for k, v in schema.items() if k != '$ref'}
+                    ref_value = schema['$ref']
+                    allowed_siblings = {'description'}
+                    # Siblings other than $ref and allowed ones
+                    disallowed_siblings = {k: v for k, v in schema.items() if k not in allowed_siblings and k != '$ref'}
+                    # Preserve description if present and a string
+                    desc_value = schema.get('description') if isinstance(schema.get('description'), str) else None
 
-                    if sibling_props:
-                        # Warn about discarded properties
-                        ref_value = schema['$ref']
-                        sibling_keys = ', '.join(sorted(sibling_props.keys()))
+                    if disallowed_siblings:
+                        sibling_keys = ', '.join(sorted(disallowed_siblings.keys()))
                         print(
                             f"⚠️  WARNING: Component '{comp_name}', property '{attr}': "
                             f"Discarding sibling properties [{sibling_keys}] next to $ref={ref_value}. "
@@ -629,9 +632,13 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                             f"Move '{sibling_keys}' to the referenced schema instead.",
                             file=sys.stderr,
                         )
-                        # Keep only the $ref, discard siblings
-                        schema.clear()
-                        schema['$ref'] = ref_value
+
+                    # Rebuild schema allowing only $ref and optional description
+                    new_schema = {'$ref': ref_value}
+                    if desc_value:
+                        new_schema['description'] = desc_value
+                    schema.clear()
+                    schema.update(new_schema)
 
                 props[attr] = schema
                 if not nullable:

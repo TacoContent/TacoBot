@@ -20,9 +20,10 @@ class Events(TacobotCog):
     @commands.Cog.listener()
     async def on_ready(self):
         _method = inspect.stack()[0][3]
-        self.log.debug(
-            0, f"{self._module}.{self._class}.{_method}", f"Logged in as {self.bot.user.name}:{self.bot.user.id}"
-        )
+        if self.bot.user is not None:
+            self.log.debug(
+                0, f"{self._module}.{self._class}.{_method}", f"Logged in as {self.bot.user.name}:{self.bot.user.id}"
+            )
 
     @commands.Cog.listener()
     async def on_guild_available(self, guild):

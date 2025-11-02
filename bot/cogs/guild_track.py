@@ -2,7 +2,8 @@ import inspect
 import os
 import traceback
 
-from bot.lib import discordhelper
+# from bot.lib import discordhelper
+from bot.lib.helpers import EntityHelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.tacobot import TacoBot
@@ -17,7 +18,6 @@ class GuildTrack(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.tracking_db = TrackingDatabase()
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")

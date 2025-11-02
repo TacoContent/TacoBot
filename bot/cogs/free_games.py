@@ -1,7 +1,6 @@
 import inspect
 import os
 
-from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
@@ -19,7 +18,6 @@ class FreeGamesCog(TacobotCog):
         self._module = os.path.basename(__file__)[:-3]
         self.http_server = None
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.tracking_db = TrackingDatabase()
 

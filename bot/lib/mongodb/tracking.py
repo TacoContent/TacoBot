@@ -234,7 +234,14 @@ class TrackingDatabase(Database):
     #         )
 
     def track_photo_post(
-        self, guildId: int, userId: int, channelId: int, messageId: int, message: str, image: str, channelName: str
+        self,
+        guildId: int,
+        userId: int,
+        channelId: int,
+        messageId: int,
+        message: str,
+        image: typing.Optional[str],
+        channelName: str,
     ) -> None:
         _method = inspect.stack()[0][3]
         try:

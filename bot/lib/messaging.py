@@ -28,8 +28,9 @@ class Messaging:
             discord.DMChannel,
             discord.GroupChannel,
             discord.Thread,
-            discord.User,
+            # discord.User,
             discord.Member,
+            discord.ClientUser,
             discord.abc.Messageable,
         ],
         title: typing.Optional[str] = None,
@@ -39,7 +40,7 @@ class Messaging:
         footer: typing.Optional[typing.Any] = None,
         view: typing.Optional[discord.ui.View] = None,
         color: typing.Optional[int] = 0x7289DA,
-        author: typing.Optional[typing.Union[discord.User, discord.Member]] = None,
+        author: typing.Optional[typing.Union[discord.User, discord.Member, discord.ClientUser]] = None,
         thumbnail: typing.Optional[str] = None,
         image: typing.Optional[str] = None,
         url: typing.Optional[str] = "",
@@ -50,7 +51,11 @@ class Messaging:
             color = 0x7289DA
 
         guild_id = 0
-        if hasattr(channel, "guild") and channel.guild:
+        if (
+            not isinstance(channel, discord.ClientUser)
+            and not isinstance(channel, discord.User)
+            and not isinstance(channel, discord.abc.Messageable)
+        ):
             guild_id = channel.guild.id
 
         embed = discord.Embed(title=title, description=message, color=color, url=url)

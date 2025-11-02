@@ -219,12 +219,12 @@
 
 ### Week 5: Low Complexity Cogs (10-12 cogs)
 
-- [ ] **guild_track.py** (EntityHelper only)
-- [ ] **message_track.py** (EntityHelper only)
-- [ ] **voicechat.py** (EntityHelper only)
-- [ ] **command_sync.py** (EntityHelper only)
-- [ ] **free_games.py** (EntityHelper, MessageHelper)
-- [ ] **giphy.py** (EntityHelper, PromptHelper)
+- [x] **guild_track.py** (EntityHelper only)
+- [x] **message_track.py** (EntityHelper only)
+- [x] **voicechat.py** (EntityHelper only)
+- [x] **command_sync.py** (EntityHelper only)
+- [x] **free_games.py** (EntityHelper, MessageHelper)
+- [x] **giphy.py** (EntityHelper, PromptHelper)
 - [ ] **photo_post.py** (EntityHelper, PromptHelper)
 - [ ] **twitter_preview.py** (EntityHelper)
 - [ ] **message_preview.py** (EntityHelper)
@@ -235,7 +235,7 @@
 ### Week 6: Medium Complexity Cogs (10-12 cogs)
 
 - [ ] **join_leave.py** (EntityHelper, MessageHelper, TacoHelper)
-- [ ] **birthday.py** (EntityHelper, PromptHelper, TacoHelper)
+- [x] **birthday.py** (EntityHelper, PromptHelper, TacoHelper)
 - [ ] **introduction.py** (EntityHelper, PromptHelper)
 - [ ] **invite_tracker.py** (EntityHelper, TacoHelper)
 - [ ] **restricted.py** (EntityHelper, RoleHelper)
@@ -243,7 +243,7 @@
 - [ ] **streamteam.py** (EntityHelper, PromptHelper, RoleHelper)
 - [ ] **wdyctw.py** (EntityHelper, PromptHelper)
 - [ ] **account_link.py** (EntityHelper, PromptHelper)
-- [ ] **game_keys.py** (EntityHelper, PromptHelper)
+- [x] **game_keys.py** (EntityHelper, PromptHelper)
 - [ ] **_lfg.py** (EntityHelper, PromptHelper)
 - [ ] Run tests for each migrated cog ✅
 - [ ] Week 6 complete ✅

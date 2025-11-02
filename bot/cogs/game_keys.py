@@ -6,11 +6,13 @@ import traceback
 import typing
 
 import discord
-from bot.lib import discordhelper, utils
+from lib.models.InteractionContext import InteractionContext
+from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.enums.permissions import TacoPermissions
 from bot.lib.enums.system_actions import SystemActions
+from bot.lib.helpers import ContextHelper, EntityHelper, TacoHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.gamekeys import GameKeysDatabase
 from bot.lib.mongodb.tacos import TacosDatabase
@@ -30,13 +32,15 @@ class GameKeysCog(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.tacos_db = TacosDatabase()
         self.gamekeys_db = GameKeysDatabase()
         self.tracking_db = TrackingDatabase()
         self.permissions = Permissions(bot)
         self.steam_api = SteamApiClient()
+        self.entity_helper = EntityHelper(bot)
+        self.context_helper = ContextHelper()
+        self.taco_helper = TacoHelper(bot)
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Initialized settings: {self.SETTINGS_SECTION}")
 
@@ -164,10 +168,10 @@ class GameKeysCog(TacobotCog):
                 return
 
             reward_channel_id = cog_settings.get("reward_channel_id", "0")
-            reward_channel = await self.discord_helper.get_or_fetch_channel(int(reward_channel_id))
-            if not reward_channel:
+            reward_channel = await self.entity_helper.get_or_fetch_channel(int(reward_channel_id))
+            if not reward_channel or not isinstance(reward_channel, discord.TextChannel):
                 self.log.warn(
-                    guild_id, f"{self._module}.{self._class}.{_method}", f"No reward channel found for guild {guild_id}"
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"No reward compatible channel found for guild {guild_id}. Must be a text channel."
                 )
                 return
 
@@ -209,7 +213,7 @@ class GameKeysCog(TacobotCog):
                 tacos_word = self.settings.get_string(guild_id, "taco_plural")
 
             log_channel_id = cog_settings.get("log_channel_id", "0")
-            log_channel = await self.discord_helper.get_or_fetch_channel(int(log_channel_id))
+            log_channel = await self.entity_helper.get_or_fetch_channel(int(log_channel_id))
             if not log_channel:
                 self.log.warn(
                     guild_id, f"{self._module}.{self._class}.{_method}", f"No log channel found for guild {guild_id}"
@@ -263,7 +267,7 @@ class GameKeysCog(TacobotCog):
                         f"Steam App Id not found in info_url: {info_url}",
                     )
 
-            offered_by = await self.discord_helper.get_or_fetch_user(int(game_data["offered_by"]))
+            offered_by = await self.entity_helper.get_or_fetch_user(int(game_data["offered_by"]))
             expires = datetime.datetime.now() + datetime.timedelta(days=1)
             fields = [
                 {"name": self.settings.get_string(guild_id, "game"), "value": game_data.get("title", "UNKNOWN")},
@@ -325,6 +329,8 @@ class GameKeysCog(TacobotCog):
 
     async def _reset_offer_callback(self, interaction: discord.Interaction):
         _method = inspect.stack()[0][3]
+        if not interaction.guild:
+            return
         if interaction.response.is_done():
             self.log.debug(
                 interaction.guild.id,
@@ -335,7 +341,14 @@ class GameKeysCog(TacobotCog):
 
         cog_settings = self.get_cog_settings(interaction.guild.id)
         guild_id = interaction.guild.id if interaction.guild else 0
-        ctx = None
+
+        if interaction.data is None or "custom_id" not in interaction.data:
+            self.log.warn(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                "Reset offer callback called with no custom_id in interaction data.",
+            )
+            return
 
         if interaction.data["custom_id"] != "reset":
             self.log.warn(
@@ -378,8 +391,8 @@ class GameKeysCog(TacobotCog):
                 )
                 return
             # create context from interaction
-            ctx = self.discord_helper.create_context(
-                self.bot,
+            ctx: InteractionContext = self.context_helper.create_context(
+                bot=self.bot,
                 author=interaction.user,
                 channel=interaction.channel,
                 message=interaction.message,
@@ -390,11 +403,11 @@ class GameKeysCog(TacobotCog):
                 guild_id, f"{self._module}.{self._class}.{_method}", f"Claiming offer {interaction.data['custom_id']}"
             )
             # charge the user the reset cost
-            self.tacos_db.remove_tacos(guild_id, ctx.author.id, reset_cost)
+            self.tacos_db.remove_tacos(guild_id, interaction.user.id, reset_cost)
 
-            await self.discord_helper.tacos_log(
+            await self.taco_helper.log_taco_transaction(
                 guild_id=guild_id,
-                fromMember=ctx.author,
+                fromMember=interaction.user,
                 toMember=self.bot.user,
                 count=reset_cost * -1,
                 reason="New game key offer",
@@ -405,7 +418,7 @@ class GameKeysCog(TacobotCog):
             self.tacos_db.track_tacos_log(
                 guildId=guild_id,
                 fromUserId=ctx.author.id,
-                toUserId=self.bot.user.id,
+                toUserId=self.bot.user.id if self.bot.user else 0,
                 count=reset_cost * -1,
                 reason="New game key offer",
                 type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.GAME_KEY_RESET),
@@ -423,13 +436,12 @@ class GameKeysCog(TacobotCog):
         _method = inspect.stack()[0][3]
         if interaction.response.is_done():
             self.log.debug(
-                interaction.guild.id,
+                interaction.guild.id if interaction.guild else 0,
                 f"{self._module}.{self._class}.{_method}",
                 "Claim offer cancelled because it was already responded to.",
             )
             return
         guild_id = interaction.guild.id if interaction.guild else 0
-        ctx = None
 
         # does user have permission to claim game?
         if self.permissions.has_taco_permission(guild_id, interaction.user, TacoPermissions.CLAIM_GAME_DISABLED):
@@ -442,9 +454,16 @@ class GameKeysCog(TacobotCog):
             # if the defer fails, we can't respond to the interaction
             return
         try:
+            if interaction.data is None or "custom_id" not in interaction.data:
+                self.log.warn(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    "Reset offer callback called with no custom_id in interaction data.",
+                )
+                return
             # create context from interaction
-            ctx = self.discord_helper.create_context(
-                self.bot,
+            ctx: InteractionContext = self.context_helper.create_context(
+                bot=self.bot,
                 author=interaction.user,
                 channel=interaction.channel,
                 message=interaction.message,
@@ -474,7 +493,8 @@ class GameKeysCog(TacobotCog):
                         timeout=timeout,
                         info_url=info_url,
                     )
-                    await interaction.message.edit(view=claim_view)
+                    if interaction.message:
+                        await interaction.message.edit(view=claim_view)
                 else:
                     self.log.warn(
                         guild_id,
@@ -498,11 +518,11 @@ class GameKeysCog(TacobotCog):
         _method = inspect.stack()[0][3]
         try:
             # create context from interaction
-            ctx = self.discord_helper.create_context(
-                self.bot, author=ctx.author, channel=ctx.channel, message=ctx.message, guild=ctx.guild
+            context: InteractionContext = self.context_helper.create_context(
+                bot=self.bot, author=ctx.author, channel=ctx.channel, message=ctx.message, guild=ctx.guild
             )
-            self.log.debug(ctx.guild.id, f"{self._module}.{self._class}.{_method}", "Claim offer timed out")
-            await self._create_offer(ctx)
+            self.log.debug(context.guild.id, f"{self._module}.{self._class}.{_method}", "Claim offer timed out")
+            await self._create_offer(context)
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
@@ -531,11 +551,11 @@ class GameKeysCog(TacobotCog):
                 return
 
             reward_channel_id = cog_settings.get("reward_channel_id", "0")
-            reward_channel: typing.Union[discord.TextChannel, None] = await self.discord_helper.get_or_fetch_channel(
-                int(reward_channel_id)
+            reward_channel: typing.Optional[typing.Union[discord.TextChannel, discord.DMChannel, discord.Thread]] = (
+                await self.entity_helper.get_or_fetch_channel(int(reward_channel_id))
             )
 
-            if not reward_channel:
+            if not reward_channel or not isinstance(reward_channel, discord.TextChannel):
                 self.log.warn(
                     guild_id, f"{self._module}.{self._class}.{_method}", f"No reward channel found for guild {guild_id}"
                 )
@@ -578,6 +598,11 @@ class GameKeysCog(TacobotCog):
             if ctx.guild:
                 guild_id = ctx.guild.id
 
+            if self.bot.user is None:
+                self.log.error(
+                    guild_id, f"{self._module}.{self._class}.{_method}", "Bot user is None", traceback.format_exc()
+                )
+                return False
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings.get("enabled", False):
                 self.log.debug(
@@ -612,13 +637,16 @@ class GameKeysCog(TacobotCog):
                     return False
 
             reward_channel_id = cog_settings.get("reward_channel_id", "0")
-            reward_channel: typing.Union[discord.TextChannel, None] = await self.discord_helper.get_or_fetch_channel(
-                int(reward_channel_id)
+            reward_channel: typing.Optional[typing.Union[discord.TextChannel, discord.DMChannel, discord.Thread]] = (
+                await self.entity_helper.get_or_fetch_channel(int(reward_channel_id))
             )
-            log_channel_id = cog_settings.get("log_channel_id", "0")
-            log_channel = await self.discord_helper.get_or_fetch_channel(int(log_channel_id))
 
-            if not reward_channel:
+            log_channel_id = cog_settings.get("log_channel_id", "0")
+            log_channel: typing.Optional[typing.Union[discord.TextChannel, discord.DMChannel, discord.Thread]] = (
+                await self.entity_helper.get_or_fetch_channel(int(log_channel_id))
+            )
+
+            if not reward_channel or not isinstance(reward_channel, discord.TextChannel):
                 self.log.warn(
                     guild_id, f"{self._module}.{self._class}.{_method}", f"No reward channel found for guild {guild_id}"
                 )
@@ -768,18 +796,18 @@ class GameKeysCog(TacobotCog):
             self.tacos_db.track_tacos_log(
                 guildId=guild_id,
                 fromUserId=ctx.author.id,
-                toUserId=self.bot.user.id,
+                toUserId=self.bot.user.id if self.bot.user else 0,
                 count=cost * -1,
                 reason="Claim game key",
                 type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.GAME_REDEEM),
             )
             # get the user that offered the game key
             # int(game_data.get("offered_by", str(self.bot.user.id)))
-            offer_user = await self.discord_helper.get_or_fetch_user(
-                int(game_data['offered_by']) if 'offered_by' in game_data else self.bot.user.id
+            offer_user = await self.entity_helper.get_or_fetch_user(
+                int(game_data['offered_by']) if 'offered_by' in game_data else self.bot.user.id if self.bot.user else 0
             )
             if offer_user and offer_user.id != self.bot.user.id:
-                await self.discord_helper.taco_give_user(
+                await self.taco_helper.give_tacos(
                     guildId=guild_id,
                     fromUser=self.bot.user,
                     toUser=offer_user,
@@ -831,11 +859,11 @@ class GameKeysCog(TacobotCog):
                 return
 
             reward_channel_id = cog_settings.get("reward_channel_id", "0")
-            reward_channel: typing.Union[discord.TextChannel, None] = await self.discord_helper.get_or_fetch_channel(
-                int(reward_channel_id)
+            reward_channel: typing.Optional[typing.Union[discord.TextChannel, discord.DMChannel, discord.Thread]] = (
+                await self.entity_helper.get_or_fetch_channel(int(reward_channel_id))
             )
 
-            if not reward_channel:
+            if not reward_channel or not isinstance(reward_channel, discord.TextChannel):
                 self.log.warn(
                     guild_id, f"{self._module}.{self._class}.{_method}", f"No reward channel found for guild {guild_id}"
                 )
@@ -852,7 +880,9 @@ class GameKeysCog(TacobotCog):
                 channel_id = int(offer["channel_id"])
                 message_id = int(offer["message_id"])
                 # get the message
-                channel: discord.TextChannel = await self.discord_helper.get_or_fetch_channel(channel_id)
+                channel: typing.Optional[typing.Union[discord.TextChannel, discord.DMChannel, discord.Thread]] = (
+                    await self.entity_helper.get_or_fetch_channel(channel_id)
+                )
                 if not channel:
                     self.log.warn(
                         guild_id,
@@ -907,7 +937,7 @@ class GameKeysCog(TacobotCog):
             )
 
             # _claim_offer_callback
-            if "custom_id" not in interaction.data:
+            if interaction.data is None or "custom_id" not in interaction.data:
                 self.log.debug(
                     interaction.guild.id,
                     f"{self._module}.{self._class}.{_method}",

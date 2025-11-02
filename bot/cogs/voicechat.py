@@ -2,9 +2,9 @@ import inspect
 import os
 import traceback
 
-from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
+from bot.lib.helpers import EntityHelper, TacoHelper
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
@@ -17,7 +17,9 @@ class VoiceChatCog(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.entity_helper = EntityHelper(bot)
+        self.tacos_helper = TacoHelper(bot, entity_helper=self.entity_helper)
+
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -47,7 +49,7 @@ class VoiceChatCog(TacobotCog):
 
                 reason_msg = self.settings.get_string(guild_id, "voicechat_create_channel_reason")
 
-                await self.discord_helper.taco_give_user(
+                await self.tacos_helper.give_tacos(
                     guildId=guild_id,
                     fromUser=self.bot.user,  # type: ignore
                     toUser=member,
