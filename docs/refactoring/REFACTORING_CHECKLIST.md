@@ -123,34 +123,34 @@
 
 ### PromptHelper
 
-- [ ] Create `bot/lib/helpers/prompt_helper.py`
-- [ ] Implement `ask_yes_no(ctx, targetChannel, question, ...)`
-- [ ] Implement `ask_channel(ctx, title, message, ...)`
-- [ ] Implement `ask_channel_by_name_or_id(ctx, title, description, timeout)`
-- [ ] Implement `ask_number(ctx, title, message, min_value, max_value, timeout)`
-- [ ] Implement `ask_text(ctx, targetChannel, title, message, timeout, color)`
-- [ ] Implement `ask_for_image_or_text(ctx, targetChannel, title, message, timeout, color)`
-- [ ] Implement `ask_role_list(ctx, title, message, ...)`
-- [ ] Create `tests/lib/helpers/test_prompt_helper.py`
-- [ ] Write tests for:
-  - [ ] Messaging.send_embed call
-  - [ ] bot.wait_for call with correct check function
-  - [ ] Timeout handling (asyncio.TimeoutError)
-  - [ ] Callback invocation
-  - [ ] User message cleanup (delete)
-  - [ ] DM vs guild channel behavior
-  - [ ] View integration (YesOrNoView, ChannelSelectView, RoleSelectView)
-- [ ] All PromptHelper tests passing ✅
+- [x] Create `bot/lib/helpers/prompt_helper.py`
+- [x] Implement `ask_yes_no(ctx, targetChannel, question, ...)`
+- [x] Implement `ask_channel(ctx, title, message, ...)`
+- [x] Implement `ask_channel_by_name_or_id(ctx, title, description, timeout)`
+- [x] Implement `ask_number(ctx, title, message, min_value, max_value, timeout)`
+- [x] Implement `ask_text(ctx, targetChannel, title, message, timeout, color)`
+- [x] Implement `ask_for_image_or_text(ctx, targetChannel, title, message, timeout, color)`
+- [x] Implement `ask_role_list(ctx, title, message, ...)`
+- [x] Create `tests/lib/helpers/test_prompt_helper.py`
+- [x] Write tests for:
+  - [x] Messaging.send_embed call
+  - [x] bot.wait_for call with correct check function
+  - [x] Timeout handling (asyncio.TimeoutError)
+  - [x] Callback invocation
+  - [x] User message cleanup (delete)
+  - [x] DM vs guild channel behavior
+  - [x] View integration (YesOrNoView, ChannelSelectView, RoleSelectView)
+- [x] All PromptHelper tests passing ✅
 
 ### Phase 3 Wrap-up
 
-- [ ] Update `bot/lib/helpers/__init__.py` to export PromptHelper
-- [ ] Run all Phase 3 tests ✅
-- [ ] Run linters (Black, isort) ✅
-- [ ] Run full test suite (no regressions) ✅
-- [ ] Update draft PR with Phase 3 changes
-- [ ] Document PromptHelper in `docs/lib/helpers/prompt_helper.md`
-- [ ] All 6 helpers complete! 🎉
+- [x] Update `bot/lib/helpers/__init__.py` to export PromptHelper
+- [x] Run all Phase 3 tests ✅
+- [x] Run linters (Black, isort) ✅
+- [x] Run full test suite (no regressions) ✅
+- [x] Update draft PR with Phase 3 changes
+- [x] Document PromptHelper in `docs/lib/helpers/prompt_helper.md`
+- [x] All 6 helpers complete! 🎉
 
 ---
 
@@ -435,7 +435,7 @@
 
 - [x] Phase 1: Foundation (Week 1)
 - [x] Phase 2: Message & Taco (Week 2)
-- [ ] Phase 3: Prompt Helper (Week 3)
+- [x] Phase 3: Prompt Helper (Week 3)
 - [ ] Phase 4: Facade (Week 4)
 - [ ] Phase 5: Cog Migration (Weeks 5-7)
 - [ ] Phase 6: HTTP Migration (Week 8)
@@ -465,4 +465,4 @@ Use this section to track blockers, decisions, or important notes:
 **Status**: NOT STARTED  
 **Started**: ___________  
 **Completed**: ___________  
-**Last Updated**: 2025-11-01
+**Last Updated**: 2025-11-02
