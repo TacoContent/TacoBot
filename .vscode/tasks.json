@@ -6,7 +6,7 @@
 		{
 			"label": "TacoBot: Start Local Bot (source)",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python ${workspaceFolder}/main.py",
+			"command": "./.venv/scripts/Activate.ps1 && python ${workspaceFolder}/main.py",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"
@@ -67,7 +67,7 @@
 		{
 			"label": "Python: Run Tests",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python -m pytest tests/",
+			"command": "./.venv/scripts/Activate.ps1 && python -m pytest tests/",
 			"options": {
 				"env": {
 					"PYTHONPATH": "${workspaceFolder}/bot"
@@ -89,7 +89,7 @@
 		{
 			"label": "Python: Run Tests (Verbose)",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python -m pytest tests/ -v --tb=long",
+			"command": "./.venv/scripts/Activate.ps1 && python -m pytest tests/ -v --tb=long",
 			"options": {
 				"env": {
 					"PYTHONPATH": "${workspaceFolder}/bot"
@@ -110,7 +110,7 @@
 		{
 			"label": "Python: Run Tests (Fast)",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python -m pytest tests/ -q --disable-warnings",
+			"command": "./.venv/scripts/Activate.ps1 && python -m pytest tests/ -q --disable-warnings",
 			"options": {
 				"env": {
 					"PYTHONPATH": "${workspaceFolder}/bot"
@@ -131,7 +131,7 @@
 		{
 			"label": "Python: Run Tests (Coverage)",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python -m pytest tests/ --cov=bot --cov=httpserver --cov=metrics --cov=scripts --cov-config=.coveragerc --cov-report=html --cov-report=xml --cov-report=json --cov-report=term-missing",
+			"command": "./.venv/scripts/Activate.ps1 && python -m pytest tests/ --cov=bot --cov=httpserver --cov=metrics --cov=scripts --cov-config=.coveragerc --cov-report=html --cov-report=xml --cov-report=json --cov-report=term-missing",
 			"options": {
 				"env": {
 					"PYTHONPATH": "${workspaceFolder}/bot"
@@ -152,7 +152,7 @@
 		{
 			"label": "Python: Coverage Markdown Report",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python -m pytest --cov=bot --cov=httpserver --cov=metrics --cov=scripts --cov-config=.coveragerc --cov-report=term-missing tests/; python -m coverage report --format=markdown > reports/pytest/coverage.md",
+			"command": "./.venv/scripts/Activate.ps1 && python -m pytest --cov=bot --cov=httpserver --cov=metrics --cov=scripts --cov-config=.coveragerc --cov-report=term-missing tests/ && python -m coverage report --format=markdown > reports/pytest/coverage.md",
 			"options": {
 				"env": {
 					"PYTHONPATH": "${workspaceFolder}/bot"
@@ -174,7 +174,7 @@
 		{
 			"label": "Format Check (Black)",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python -m black --diff --check --config ./pyproject.toml .",
+			"command": "./.venv/scripts/Activate.ps1 && python -m black --diff --check --config ./pyproject.toml .",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"
@@ -188,7 +188,7 @@
 		{
 			"label": "Format Fix (Black)",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python -m black --config ./pyproject.toml .",
+			"command": "./.venv/scripts/Activate.ps1 && python -m black --config ./pyproject.toml .",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"
@@ -202,7 +202,7 @@
 		{
 			"label": "Format Fix (iSort)",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python -m isort --settings-path ./pyproject.toml .",
+			"command": "./.venv/scripts/Activate.ps1 && python -m isort --settings-path ./pyproject.toml .",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"
@@ -216,7 +216,7 @@
 		{
 			"label": "Format Check (iSort)",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python -m isort --check --diff --settings-path ./pyproject.toml .",
+			"command": "./.venv/scripts/Activate.ps1 && python -m isort --check --diff --settings-path ./pyproject.toml .",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"
@@ -260,7 +260,7 @@
 		{
 			"label": "Swagger Validation Quiet",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python scripts/swagger_sync.py --config=.swagger-sync.yaml --env=quiet",
+			"command": "./.venv/scripts/Activate.ps1 && python scripts/swagger_sync.py --config=.swagger-sync.yaml --env=quiet",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"
@@ -274,7 +274,7 @@
 		{
 			"label": "Swagger Validation",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python scripts/swagger_sync.py --config=.swagger-sync.yaml --env=local",
+			"command": "./.venv/scripts/Activate.ps1 && python scripts/swagger_sync.py --config=.swagger-sync.yaml --env=local",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"
@@ -288,7 +288,7 @@
 		{
 			"label": "Swagger FIX",
 			"type": "shell",
-			"command": "./.venv/scripts/Activate.ps1; python scripts/swagger_sync.py --fix --config=.swagger-sync.yaml --env=local",
+			"command": "./.venv/scripts/Activate.ps1 && python scripts/swagger_sync.py --fix --config=.swagger-sync.yaml --env=local",
 			"presentation": {
 				"reveal": "always",
 				"panel": "dedicated"

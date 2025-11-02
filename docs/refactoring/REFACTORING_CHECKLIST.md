@@ -1,0 +1,468 @@
+# DiscordHelper Refactoring - Implementation Checklist
+
+## Pre-Implementation
+
+- [ ] **Plan reviewed and approved** by project maintainer
+- [ ] **Timeline confirmed** (10 weeks acceptable)
+- [ ] **Team capacity verified** for 10-week effort
+- [ ] **Create tracking issue** in GitHub with all phases
+- [ ] **Set up project board** with phase columns
+- [ ] **Create branch**: `refactor/discordhelper-breakdown`
+
+---
+
+## Phase 1: Foundation & Infrastructure (Week 1)
+
+### Setup
+
+- [x] Create `bot/lib/helpers/` directory
+- [x] Create `bot/lib/helpers/__init__.py` with placeholder exports
+- [x] Create `tests/lib/helpers/` directory
+
+### ContextHelper
+
+- [x] Create `bot/lib/helpers/context_helper.py`
+- [x] Implement `create_context()` method
+- [x] Create `tests/lib/helpers/test_context_helper.py`
+- [x] Write tests for:
+  - [x] Standard parameter creation
+  - [x] **kwargs merging
+  - [x] None value handling
+  - [x] Returned namedtuple has correct attributes
+- [x] All ContextHelper tests passing ✅
+
+### EntityHelper
+
+- [x] Create `bot/lib/helpers/entity_helper.py`
+- [x] Implement `get_or_fetch_user(userId)`
+- [x] Implement `get_or_fetch_member(guildId, userId)`
+- [x] Implement `get_or_fetch_role(guild, roleId)`
+- [x] Implement `get_or_fetch_channel(channelId)`
+- [x] Implement `get_by_name_or_id(iterable, nameOrId)`
+- [x] Create `tests/lib/helpers/test_entity_helper.py`
+- [x] Write tests for:
+  - [x] Cache hit scenarios
+  - [x] Cache miss + fetch scenarios
+  - [x] NotFound error handling
+  - [x] None/invalid ID handling
+  - [x] Name vs ID lookup logic
+- [x] All EntityHelper tests passing ✅
+
+### RoleHelper
+
+- [x] Create `bot/lib/helpers/role_helper.py`
+- [x] Implement `add_remove_roles(user, check_list, add_list, remove_list, allow_everyone)`
+- [x] Create `tests/lib/helpers/test_role_helper.py`
+- [x] Write tests for:
+  - [x] Role addition logic
+  - [x] Role removal logic
+  - [x] check_list filtering
+  - [x] allow_everyone bypass
+  - [x] Exception handling during operations
+  - [x] Logging of role changes
+- [x] All RoleHelper tests passing ✅
+
+### Phase 1 Wrap-up
+
+- [x] Update `bot/lib/helpers/__init__.py` to export all Phase 1 helpers
+- [x] Run all Phase 1 tests ✅
+- [x] Run linters (Black, isort) ✅
+- [x] Run full test suite (no regressions) ✅
+- [ ] Create draft PR for Phase 1 for early feedback
+- [ ] Document Phase 1 helpers in `docs/lib/helpers/`
+
+---
+
+## Phase 2: Message & Taco Helpers (Week 2)
+
+### MessageHelper
+
+- [ ] Create `bot/lib/helpers/message_helper.py`
+- [ ] Implement `move_message(message, targetChannel, ...)`
+- [ ] Implement `notify_bot_not_initialized(ctx, subcommand)`
+- [ ] Create `tests/lib/helpers/test_message_helper.py`
+- [ ] Write tests for:
+  - [ ] Embed extraction and merging
+  - [ ] Field removal logic
+  - [ ] Attachment handling
+  - [ ] Footer generation
+  - [ ] delete_original flag behavior
+  - [ ] Admin vs non-admin notification
+- [ ] All MessageHelper tests passing ✅
+
+### TacoHelper
+
+- [ ] Create `bot/lib/helpers/taco_helper.py`
+- [ ] Implement `give_tacos(guildId, fromUser, toUser, reason, give_type, taco_amount)`
+- [ ] Implement `log_taco_transaction(guild_id, toMember, fromMember, count, total_tacos, reason, type)`
+- [ ] Implement `log_taco_purge(guild_id, toMember, fromMember, reason)`
+- [ ] Implement `get_taco_settings(guildId)`
+- [ ] Create `tests/lib/helpers/test_taco_helper.py`
+- [ ] Write tests for:
+  - [ ] Taco amount calculation from settings
+  - [ ] Database add_tacos call
+  - [ ] Database track_tacos_log call
+  - [ ] Log channel message formatting
+  - [ ] Plural/singular taco word logic
+  - [ ] Negative count handling (loss vs received)
+  - [ ] Purge logging
+- [ ] All TacoHelper tests passing ✅
+
+### Phase 2 Wrap-up
+
+- [ ] Update `bot/lib/helpers/__init__.py` to export Phase 2 helpers
+- [ ] Run all Phase 2 tests ✅
+- [ ] Run linters (Black, isort) ✅
+- [ ] Run full test suite (no regressions) ✅
+- [ ] Update draft PR with Phase 2 changes
+- [ ] Document Phase 2 helpers in `docs/lib/helpers/`
+
+---
+
+## Phase 3: Prompt Helper (Week 3)
+
+### PromptHelper
+
+- [ ] Create `bot/lib/helpers/prompt_helper.py`
+- [ ] Implement `ask_yes_no(ctx, targetChannel, question, ...)`
+- [ ] Implement `ask_channel(ctx, title, message, ...)`
+- [ ] Implement `ask_channel_by_name_or_id(ctx, title, description, timeout)`
+- [ ] Implement `ask_number(ctx, title, message, min_value, max_value, timeout)`
+- [ ] Implement `ask_text(ctx, targetChannel, title, message, timeout, color)`
+- [ ] Implement `ask_for_image_or_text(ctx, targetChannel, title, message, timeout, color)`
+- [ ] Implement `ask_role_list(ctx, title, message, ...)`
+- [ ] Create `tests/lib/helpers/test_prompt_helper.py`
+- [ ] Write tests for:
+  - [ ] Messaging.send_embed call
+  - [ ] bot.wait_for call with correct check function
+  - [ ] Timeout handling (asyncio.TimeoutError)
+  - [ ] Callback invocation
+  - [ ] User message cleanup (delete)
+  - [ ] DM vs guild channel behavior
+  - [ ] View integration (YesOrNoView, ChannelSelectView, RoleSelectView)
+- [ ] All PromptHelper tests passing ✅
+
+### Phase 3 Wrap-up
+
+- [ ] Update `bot/lib/helpers/__init__.py` to export PromptHelper
+- [ ] Run all Phase 3 tests ✅
+- [ ] Run linters (Black, isort) ✅
+- [ ] Run full test suite (no regressions) ✅
+- [ ] Update draft PR with Phase 3 changes
+- [ ] Document PromptHelper in `docs/lib/helpers/prompt_helper.md`
+- [ ] All 6 helpers complete! 🎉
+
+---
+
+## Phase 4: Backward Compatibility Facade (Week 4)
+
+### Facade Implementation
+
+- [ ] Modify `bot/lib/discordhelper.py` to create facade
+- [ ] Initialize all 6 helpers in `__init__`
+- [ ] Create delegation methods for all public methods:
+  - [ ] `create_context(...)` → `context_helper.create_context(...)`
+  - [ ] `get_or_fetch_user(userId)` → `entity_helper.get_or_fetch_user(userId)`
+  - [ ] `get_or_fetch_member(...)` → `entity_helper.get_or_fetch_member(...)`
+  - [ ] `get_or_fetch_role(...)` → `entity_helper.get_or_fetch_role(...)`
+  - [ ] `get_or_fetch_channel(...)` → `entity_helper.get_or_fetch_channel(...)`
+  - [ ] `get_by_name_or_id(...)` → `entity_helper.get_by_name_or_id(...)`
+  - [ ] `ask_yes_no(...)` → `prompt_helper.ask_yes_no(...)`
+  - [ ] `ask_channel(...)` → `prompt_helper.ask_channel(...)`
+  - [ ] `ask_channel_by_name_or_id(...)` → `prompt_helper.ask_channel_by_name_or_id(...)`
+  - [ ] `ask_number(...)` → `prompt_helper.ask_number(...)`
+  - [ ] `ask_text(...)` → `prompt_helper.ask_text(...)`
+  - [ ] `ask_for_image_or_text(...)` → `prompt_helper.ask_for_image_or_text(...)`
+  - [ ] `ask_role_list(...)` → `prompt_helper.ask_role_list(...)`
+  - [ ] `taco_give_user(...)` → `taco_helper.give_tacos(...)`
+  - [ ] `tacos_log(...)` → `taco_helper.log_taco_transaction(...)`
+  - [ ] `taco_purge_log(...)` → `taco_helper.log_taco_purge(...)`
+  - [ ] `_get_tacos_settings(...)` → `taco_helper.get_taco_settings(...)`
+  - [ ] `move_message(...)` → `message_helper.move_message(...)`
+  - [ ] `notify_bot_not_initialized(...)` → `message_helper.notify_bot_not_initialized(...)`
+  - [ ] `add_remove_roles(...)` → `role_helper.add_remove_roles(...)`
+- [ ] Expose legacy properties:
+  - [ ] `self.settings` → `self.taco_helper.settings`
+  - [ ] `self.log` → `self.entity_helper.log`
+  - [ ] `self.messaging` → `self.message_helper.messaging`
+  - [ ] `self.tacos_db` → `self.taco_helper.tacos_db`
+- [ ] Add deprecation warnings to class docstring
+
+### Integration Testing
+
+- [ ] Create `tests/lib/test_discordhelper_facade.py`
+- [ ] Test all delegation methods work correctly
+- [ ] Test all legacy properties are accessible
+- [ ] Run existing DiscordHelper tests against facade
+- [ ] All integration tests passing ✅
+
+### Documentation
+
+- [ ] Create `docs/refactoring/discordhelper_migration_guide.md`
+- [ ] Document before/after examples for each helper type
+- [ ] Add common migration patterns
+- [ ] Add FAQ section
+- [ ] Update deprecation notices in DiscordHelper docstrings
+
+### Phase 4 Wrap-up
+
+- [ ] Run all tests (unit + integration) ✅
+- [ ] Run linters (Black, isort) ✅
+- [ ] Run full test suite (no regressions) ✅
+- [ ] Verify all existing code still works ✅
+- [ ] Update draft PR with Phase 4 changes
+- [ ] Mark PR as "Ready for early review" (optional)
+
+---
+
+## Phase 5: Incremental Migration - Cogs (Weeks 5-7)
+
+### Week 5: Low Complexity Cogs (10-12 cogs)
+
+- [ ] **guild_track.py** (EntityHelper only)
+- [ ] **message_track.py** (EntityHelper only)
+- [ ] **voicechat.py** (EntityHelper only)
+- [ ] **command_sync.py** (EntityHelper only)
+- [ ] **free_games.py** (EntityHelper, MessageHelper)
+- [ ] **giphy.py** (EntityHelper, PromptHelper)
+- [ ] **photo_post.py** (EntityHelper, PromptHelper)
+- [ ] **twitter_preview.py** (EntityHelper)
+- [ ] **message_preview.py** (EntityHelper)
+- [ ] **_amazon_links.py** (EntityHelper)
+- [ ] Run tests for each migrated cog ✅
+- [ ] Week 5 complete ✅
+
+### Week 6: Medium Complexity Cogs (10-12 cogs)
+
+- [ ] **join_leave.py** (EntityHelper, MessageHelper, TacoHelper)
+- [ ] **birthday.py** (EntityHelper, PromptHelper, TacoHelper)
+- [ ] **introduction.py** (EntityHelper, PromptHelper)
+- [ ] **invite_tracker.py** (EntityHelper, TacoHelper)
+- [ ] **restricted.py** (EntityHelper, RoleHelper)
+- [ ] **server_event.py** (EntityHelper, PromptHelper)
+- [ ] **streamteam.py** (EntityHelper, PromptHelper, RoleHelper)
+- [ ] **wdyctw.py** (EntityHelper, PromptHelper)
+- [ ] **account_link.py** (EntityHelper, PromptHelper)
+- [ ] **game_keys.py** (EntityHelper, PromptHelper)
+- [ ] **_lfg.py** (EntityHelper, PromptHelper)
+- [ ] Run tests for each migrated cog ✅
+- [ ] Week 6 complete ✅
+
+### Week 7: High Complexity Cogs (remaining cogs)
+
+- [ ] **tacos.py** (All helpers)
+- [ ] **announcements.py** (EntityHelper, PromptHelper, MessageHelper)
+- [ ] **suggestions.py** (EntityHelper, PromptHelper, MessageHelper)
+- [ ] **move_message.py** (EntityHelper, MessageHelper)
+- [ ] **minecraft.py** (EntityHelper, PromptHelper, TacoHelper)
+- [ ] **new_account_check.py** (EntityHelper, RoleHelper, MessageHelper)
+- [ ] **live_now.py** (EntityHelper, PromptHelper, TacoHelper)
+- [ ] **taco_tuesday.py** (EntityHelper, PromptHelper, TacoHelper)
+- [ ] **tech_thursday.py** (EntityHelper, PromptHelper, TacoHelper)
+- [ ] **mental_monday.py** (EntityHelper, PromptHelper, TacoHelper)
+- [ ] **tqotd.py** (EntityHelper, PromptHelper, TacoHelper)
+- [ ] **trivia.py** (EntityHelper, PromptHelper, TacoHelper)
+- [ ] **twitchinfo.py** (EntityHelper, PromptHelper)
+- [ ] **user_lookup.py** (EntityHelper, PromptHelper)
+- [ ] **tacopost.py** (EntityHelper, TacoHelper)
+- [ ] **help.py** (EntityHelper, PromptHelper)
+- [ ] **_leave_survey.py** (EntityHelper, PromptHelper)
+- [ ] Run tests for each migrated cog ✅
+- [ ] Week 7 complete ✅
+
+### Phase 5 Wrap-up
+
+- [ ] All cogs migrated ✅
+- [ ] Run full cog test suite ✅
+- [ ] Run linters (Black, isort) ✅
+- [ ] No functionality regressions ✅
+- [ ] Update PR with all cog migrations
+
+---
+
+## Phase 6: HTTP Handler Migration (Week 8)
+
+### Base Handlers
+
+- [ ] **BaseHttpHandler.py**
+- [ ] **ApiHttpHandler.py**
+- [ ] **BaseWebhookHandler.py**
+
+### API v1 Handlers
+
+- [ ] **GuildRolesApiHandler.py**
+- [ ] **GuildMessagesApiHandler.py**
+- [ ] **GuildLookupApiHandler.py**
+- [ ] **GuildEmojisApiHandler.py**
+- [ ] **GuildChannelsApiHandler.py**
+- [ ] **HealthcheckApiHandler.py**
+- [ ] **MinecraftApiHandler.py**
+- [ ] **JoinWhitelistApiHandler.py**
+- [ ] **SettingsApiHandler.py**
+- [ ] **SwaggerHttpHandler.py**
+- [ ] **TacoPermissionsApiHandler.py**
+
+### Webhook Handlers
+
+- [ ] **MinecraftPlayerWebhookHandler.py**
+- [ ] **ShiftCodeWebhookHandler.py**
+- [ ] **GuildResolver.py** (helper for webhooks)
+
+### HTTP Handler Cog
+
+- [ ] **httphandler.py** (cog)
+
+### Phase 6 Wrap-up
+
+- [ ] All HTTP handlers migrated ✅
+- [ ] Run API tests ✅
+- [ ] Run swagger sync check (`python scripts/swagger_sync.py --check`) ✅
+- [ ] All endpoints functional ✅
+- [ ] Run linters (Black, isort) ✅
+- [ ] Update PR with handler migrations
+
+---
+
+## Phase 7: Migration of Permissions & Utilities (Week 9)
+
+### Library Utilities
+
+- [ ] **bot/lib/permissions.py** (migrate to EntityHelper)
+- [ ] Search `bot/lib/` for other DiscordHelper usages
+- [ ] Migrate any additional files found
+
+### Full Integration Testing
+
+- [ ] Run all unit tests ✅
+- [ ] Run all integration tests ✅
+- [ ] Run all API tests ✅
+- [ ] Run all cog tests ✅
+- [ ] Run full test suite with coverage ✅
+- [ ] Verify 80%+ coverage maintained ✅
+
+### Phase 7 Wrap-up
+
+- [ ] All non-facade code using new helpers ✅
+- [ ] Run linters (Black, isort) ✅
+- [ ] CI pipeline green ✅
+- [ ] Update PR with lib migrations
+
+---
+
+## Phase 8: Cleanup & Deprecation (Week 10)
+
+### Deprecation Warnings
+
+- [ ] Add deprecation warnings to DiscordHelper facade class
+- [ ] Update DiscordHelper docstring with deprecation notice
+- [ ] Add links to new helpers in deprecation message
+
+### Documentation
+
+- [ ] **README.md**: Add note about new helper structure
+- [ ] **docs/lib/helpers/README.md**: Overview of all helpers
+- [ ] **docs/lib/helpers/entity_helper.md**: EntityHelper docs
+- [ ] **docs/lib/helpers/prompt_helper.md**: PromptHelper docs
+- [ ] **docs/lib/helpers/taco_helper.md**: TacoHelper docs
+- [ ] **docs/lib/helpers/message_helper.md**: MessageHelper docs
+- [ ] **docs/lib/helpers/role_helper.md**: RoleHelper docs
+- [ ] **docs/lib/helpers/context_helper.md**: ContextHelper docs
+- [ ] **CHANGELOG.md**: Document refactoring changes
+- [ ] **.github/copilot-instructions.md**: Update with new patterns
+- [ ] Migration guide complete with all examples
+
+### Deprecation Timeline
+
+- [ ] Create deprecation timeline (6-12 months for facade removal)
+- [ ] Add timeline to CHANGELOG.md
+- [ ] Add timeline to project roadmap
+
+### Final Quality Checks
+
+- [ ] Run full test suite with coverage ✅
+- [ ] Ensure 80%+ coverage maintained ✅
+- [ ] Run Black formatter ✅
+- [ ] Run isort ✅
+- [ ] Run swagger sync check ✅
+- [ ] All linters passing ✅
+- [ ] CI pipeline green ✅
+
+### Pull Request
+
+- [ ] Update PR description with:
+  - [ ] Link to this refactoring plan
+  - [ ] Summary of changes
+  - [ ] Test coverage improvements
+  - [ ] Note: No breaking changes
+  - [ ] Migration guide link
+- [ ] Mark PR as "Ready for review"
+- [ ] Request review from maintainer
+- [ ] Address review comments
+- [ ] PR approved ✅
+- [ ] Merge to develop branch ✅
+
+---
+
+## Phase 9: Future Removal (Optional - 6-12 months later)
+
+### Facade Removal
+
+- [ ] **Confirm** all code migrated off facade
+- [ ] **Search** for any remaining DiscordHelper imports
+- [ ] **Delete** `bot/lib/discordhelper.py`
+- [ ] **Remove** facade tests
+- [ ] **Update** any remaining references
+
+### Documentation Cleanup
+
+- [ ] Remove all DiscordHelper references from docs
+- [ ] Update examples to use new helpers exclusively
+- [ ] Update migration guide to "historical" status
+
+### Final Checks
+
+- [ ] Run full test suite ✅
+- [ ] No references to DiscordHelper remain ✅
+- [ ] CI pipeline green ✅
+- [ ] Create PR for facade removal
+- [ ] PR approved and merged ✅
+
+---
+
+## Progress Tracking
+
+### Overall Progress
+
+- [ ] Phase 1: Foundation (Week 1)
+- [ ] Phase 2: Message & Taco (Week 2)
+- [ ] Phase 3: Prompt Helper (Week 3)
+- [ ] Phase 4: Facade (Week 4)
+- [ ] Phase 5: Cog Migration (Weeks 5-7)
+- [ ] Phase 6: HTTP Migration (Week 8)
+- [ ] Phase 7: Lib Migration (Week 9)
+- [ ] Phase 8: Cleanup (Week 10)
+- [ ] Phase 9: Removal (Optional, future)
+
+### Key Metrics
+
+- **Test Coverage**: ___% (Target: 80%+)
+- **Cogs Migrated**: ___/30+ (Target: 100%)
+- **Handlers Migrated**: ___/15+ (Target: 100%)
+- **Lib Files Migrated**: ___/2+ (Target: 100%)
+- **DiscordHelper Usage**: ___ files (Target: 0, excluding facade)
+
+---
+
+## Notes
+
+Use this section to track blockers, decisions, or important notes:
+
+- **Date**: Decision/note
+- **Date**: Decision/note
+
+---
+
+**Status**: NOT STARTED  
+**Started**: ___________  
+**Completed**: ___________  
+**Last Updated**: 2025-11-01
