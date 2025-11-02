@@ -158,60 +158,60 @@
 
 ### Facade Implementation
 
-- [ ] Modify `bot/lib/discordhelper.py` to create facade
-- [ ] Initialize all 6 helpers in `__init__`
-- [ ] Create delegation methods for all public methods:
-  - [ ] `create_context(...)` → `context_helper.create_context(...)`
-  - [ ] `get_or_fetch_user(userId)` → `entity_helper.get_or_fetch_user(userId)`
-  - [ ] `get_or_fetch_member(...)` → `entity_helper.get_or_fetch_member(...)`
-  - [ ] `get_or_fetch_role(...)` → `entity_helper.get_or_fetch_role(...)`
-  - [ ] `get_or_fetch_channel(...)` → `entity_helper.get_or_fetch_channel(...)`
-  - [ ] `get_by_name_or_id(...)` → `entity_helper.get_by_name_or_id(...)`
-  - [ ] `ask_yes_no(...)` → `prompt_helper.ask_yes_no(...)`
-  - [ ] `ask_channel(...)` → `prompt_helper.ask_channel(...)`
-  - [ ] `ask_channel_by_name_or_id(...)` → `prompt_helper.ask_channel_by_name_or_id(...)`
-  - [ ] `ask_number(...)` → `prompt_helper.ask_number(...)`
-  - [ ] `ask_text(...)` → `prompt_helper.ask_text(...)`
-  - [ ] `ask_for_image_or_text(...)` → `prompt_helper.ask_for_image_or_text(...)`
-  - [ ] `ask_role_list(...)` → `prompt_helper.ask_role_list(...)`
-  - [ ] `taco_give_user(...)` → `taco_helper.give_tacos(...)`
-  - [ ] `tacos_log(...)` → `taco_helper.log_taco_transaction(...)`
-  - [ ] `taco_purge_log(...)` → `taco_helper.log_taco_purge(...)`
-  - [ ] `_get_tacos_settings(...)` → `taco_helper.get_taco_settings(...)`
-  - [ ] `move_message(...)` → `message_helper.move_message(...)`
-  - [ ] `notify_bot_not_initialized(...)` → `message_helper.notify_bot_not_initialized(...)`
-  - [ ] `add_remove_roles(...)` → `role_helper.add_remove_roles(...)`
-- [ ] Expose legacy properties:
-  - [ ] `self.settings` → `self.taco_helper.settings`
-  - [ ] `self.log` → `self.entity_helper.log`
-  - [ ] `self.messaging` → `self.message_helper.messaging`
-  - [ ] `self.tacos_db` → `self.taco_helper.tacos_db`
-- [ ] Add deprecation warnings to class docstring
+- [x] Modify `bot/lib/discordhelper.py` to create facade
+- [x] Initialize all 6 helpers in `__init__`
+- [x] Create delegation methods for all public methods:
+  - [x] `create_context(...)` → `context_helper.create_context(...)`
+  - [x] `get_or_fetch_user(userId)` → `entity_helper.get_or_fetch_user(userId)`
+  - [x] `get_or_fetch_member(...)` → `entity_helper.get_or_fetch_member(...)`
+  - [x] `get_or_fetch_role(...)` → `entity_helper.get_or_fetch_role(...)`
+  - [x] `get_or_fetch_channel(...)` → `entity_helper.get_or_fetch_channel(...)`
+  - [x] `get_by_name_or_id(...)` → `entity_helper.get_by_name_or_id(...)`
+  - [x] `ask_yes_no(...)` → `prompt_helper.ask_yes_no(...)`
+  - [x] `ask_channel(...)` → `prompt_helper.ask_channel(...)`
+  - [x] `ask_channel_by_name_or_id(...)` → `prompt_helper.ask_channel_by_name_or_id(...)`
+  - [x] `ask_number(...)` → `prompt_helper.ask_number(...)`
+  - [x] `ask_text(...)` → `prompt_helper.ask_text(...)`
+  - [x] `ask_for_image_or_text(...)` → `prompt_helper.ask_for_image_or_text(...)`
+  - [x] `ask_role_list(...)` → `prompt_helper.ask_role_list(...)`
+  - [x] `taco_give_user(...)` → `taco_helper.give_tacos(...)`
+  - [x] `tacos_log(...)` → `taco_helper.log_taco_transaction(...)`
+  - [x] `taco_purge_log(...)` → `taco_helper.log_taco_purge(...)`
+  - [x] `_get_tacos_settings(...)` → `taco_helper.get_taco_settings(...)`
+  - [x] `move_message(...)` → `message_helper.move_message(...)`
+  - [x] `notify_bot_not_initialized(...)` → `message_helper.notify_bot_not_initialized(...)`
+  - [x] `add_remove_roles(...)` → `role_helper.add_remove_roles(...)`
+- [x] Expose legacy properties:
+  - [x] `self.settings` → `self.taco_helper.settings`
+  - [x] `self.log` → `self.entity_helper.log`
+  - [x] `self.messaging` → `self.message_helper.messaging`
+  - [x] `self.tacos_db` → `self.taco_helper.tacos_db`
+- [x] Add deprecation warnings to class docstring
 
 ### Integration Testing
 
-- [ ] Create `tests/lib/test_discordhelper_facade.py`
-- [ ] Test all delegation methods work correctly
-- [ ] Test all legacy properties are accessible
-- [ ] Run existing DiscordHelper tests against facade
-- [ ] All integration tests passing ✅
+- [x] Create `tests/lib/test_discordhelper_facade.py`
+- [x] Test all delegation methods work correctly
+- [x] Test all legacy properties are accessible
+- [x] Run existing DiscordHelper tests against facade
+- [x] All integration tests passing ✅
 
 ### Documentation
 
-- [ ] Create `docs/refactoring/discordhelper_migration_guide.md`
-- [ ] Document before/after examples for each helper type
-- [ ] Add common migration patterns
-- [ ] Add FAQ section
-- [ ] Update deprecation notices in DiscordHelper docstrings
+- [x] Create `docs/refactoring/discordhelper_migration_guide.md`
+- [x] Document before/after examples for each helper type
+- [x] Add common migration patterns
+- [x] Add FAQ section
+- [x] Update deprecation notices in DiscordHelper docstrings
 
 ### Phase 4 Wrap-up
 
-- [ ] Run all tests (unit + integration) ✅
-- [ ] Run linters (Black, isort) ✅
-- [ ] Run full test suite (no regressions) ✅
-- [ ] Verify all existing code still works ✅
-- [ ] Update draft PR with Phase 4 changes
-- [ ] Mark PR as "Ready for early review" (optional)
+- [x] Run all tests (unit + integration) ✅
+- [x] Run linters (Black, isort) ✅
+- [x] Run full test suite (no regressions) ✅
+- [x] Verify all existing code still works ✅
+- [x] Update draft PR with Phase 4 changes
+- [x] Mark PR as "Ready for early review" (optional)
 
 ---
 
