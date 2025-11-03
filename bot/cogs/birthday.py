@@ -284,7 +284,11 @@ class Birthday(TacobotCog):
                 member = await self.entity_helper.get_or_fetch_member(guildId=guild_id, userId=user_id)
                 if member:
                     await self.role_helper.add_remove_roles(
-                        user=member, check_list=[], add_list=[str(birthday_role.id)], remove_list=[], allow_everyone=True
+                        user=member,
+                        check_list=[],
+                        add_list=[str(birthday_role.id)],
+                        remove_list=[],
+                        allow_everyone=True,
                     )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())

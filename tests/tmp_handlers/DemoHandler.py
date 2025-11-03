@@ -1,4 +1,3 @@
-
 from httpserver.EndpointDecorators import uri_mapping, uri_pattern_mapping, uri_variable_mapping
 
 
@@ -14,7 +13,7 @@ class DemoHandler:
         """
         pass
 
-    @uri_mapping('/multi', method=['GET','POST'])
+    @uri_mapping('/multi', method=['GET', 'POST'])
     def multi(self, request):
         """multi endpoint
 

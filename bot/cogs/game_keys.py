@@ -171,7 +171,9 @@ class GameKeysCog(TacobotCog):
             reward_channel = await self.entity_helper.get_or_fetch_channel(int(reward_channel_id))
             if not reward_channel or not isinstance(reward_channel, discord.TextChannel):
                 self.log.warn(
-                    guild_id, f"{self._module}.{self._class}.{_method}", f"No reward compatible channel found for guild {guild_id}. Must be a text channel."
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"No reward compatible channel found for guild {guild_id}. Must be a text channel.",
                 )
                 return
 

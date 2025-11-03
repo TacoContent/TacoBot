@@ -20,7 +20,6 @@ class VoiceChatCog(TacobotCog):
         self.entity_helper = EntityHelper(bot)
         self.tacos_helper = TacoHelper(bot, entity_helper=self.entity_helper)
 
-
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
