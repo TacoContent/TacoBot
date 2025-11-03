@@ -2,7 +2,7 @@
 
 ## Current State (Before Refactoring)
 
-```
+``` text
 ┌─────────────────────────────────────────────────────────────┐
 │                      DiscordHelper                          │
 │                       (~800 lines)                          │
@@ -25,6 +25,7 @@
 ```
 
 **Problems:**
+
 - Single God Class with too many responsibilities
 - Hard to test individual concerns
 - Difficult to navigate 800+ lines
@@ -34,7 +35,7 @@
 
 ## Future State (After Refactoring)
 
-```
+``` text
 ┌──────────────────────────────────────────────────────────────────┐
 │                         Helper Layer                             │
 ├──────────────┬──────────────┬──────────────┬──────────────┬──────┤
@@ -63,6 +64,7 @@
 ```
 
 **Benefits:**
+
 - Single Responsibility per helper
 - Easy to test in isolation
 - Clear organization
@@ -72,7 +74,7 @@
 
 ## Dependency Graph
 
-```
+``` text
 ┌──────────────┐
 │ContextHelper │  (No dependencies)
 └──────────────┘
@@ -129,6 +131,7 @@
 ```
 
 **Dependency Rules:**
+
 1. ✅ Helpers can depend on other helpers (one-way, no cycles)
 2. ✅ Helpers can depend on shared services (Bot, Logger, Settings, Messaging)
 3. ❌ Helpers should NOT depend on Cogs or Handlers
@@ -138,7 +141,7 @@
 
 ## File Structure
 
-```
+``` text
 bot/lib/
 ├── helpers/
 │   ├── __init__.py                 # Exports all helpers
@@ -170,7 +173,7 @@ tests/lib/
 
 ### Example 1: Giving Tacos
 
-```
+``` text
 User runs /give @user 5 tacos
 
        │
@@ -205,7 +208,7 @@ User runs /give @user 5 tacos
 
 ### Example 2: Prompting User for Input
 
-```
+``` text
 Cog needs user to select a channel
 
        │
@@ -246,7 +249,7 @@ Cog needs user to select a channel
 
 ### Example 3: Moving a Message
 
-```
+``` text
 Moderator uses /move command
 
        │
@@ -272,7 +275,7 @@ Moderator uses /move command
 
 ## Migration Flow
 
-```
+``` text
 Phase 1 (Week 1)
 ┌──────────────────────────────────────┐
 │ Create Base Helpers                  │
@@ -343,7 +346,7 @@ Phase 9 (6-12 months later - Optional)
 
 ## Testing Architecture
 
-```
+``` text
 Unit Tests (Isolated)
 ┌──────────────────────────────────────┐
 │ test_entity_helper.py                │
@@ -383,7 +386,7 @@ Regression Tests (Optional)
 
 ## Legend
 
-```
+``` text
 ┌─────┐
 │ Box │  = Component/Class/File
 └─────┘

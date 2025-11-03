@@ -2,9 +2,10 @@ import inspect
 import os
 import traceback
 
+from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
+
 # from bot.lib import discordhelper
 from bot.lib.helpers import EntityHelper
-from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.tacobot import TacoBot
 from discord.ext import commands

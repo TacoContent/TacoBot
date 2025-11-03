@@ -162,6 +162,7 @@ class MyCog(commands.Cog):
 ```
 
 **Methods:**
+
 - `get_or_fetch_user(user_id)` - Get user from cache or fetch from API
 - `get_or_fetch_member(guild_id, user_id)` - Get member from cache or fetch
 - `get_or_fetch_role(guild, role_id)` - Get role from cache or fetch
@@ -174,7 +175,7 @@ class MyCog(commands.Cog):
 
 **Purpose:** Move messages and send bot initialization notifications.
 
-#### Before (DiscordHelper)
+#### Before (DiscordHelper) MessageHelper
 
 ```python
 from bot.lib.discordhelper import DiscordHelper
@@ -235,6 +236,7 @@ class MyCog(commands.Cog):
 ```
 
 **Methods:**
+
 - `move_message(message, target_channel, reason, delete_original)` - Move message with embeds/attachments
 - `notify_bot_not_initialized(ctx, subcommand)` - Send setup required notification
 
@@ -244,7 +246,7 @@ class MyCog(commands.Cog):
 
 **Purpose:** Interactive prompts for user input (yes/no, text, numbers, channel/role selection).
 
-#### Before (DiscordHelper)
+#### Before (DiscordHelper) PromptHelper
 
 ```python
 from bot.lib.discordhelper import DiscordHelper
@@ -351,6 +353,7 @@ class MyCog(commands.Cog):
 ```
 
 **Methods:**
+
 - `ask_yes_no(ctx, channel, question, title, timeout)` - Yes/No confirmation
 - `ask_text(ctx, channel, title, message, timeout, color)` - Text input
 - `ask_number(ctx, title, message, min_value, max_value, timeout)` - Number input
@@ -365,7 +368,7 @@ class MyCog(commands.Cog):
 
 **Purpose:** Bulk add/remove roles with filtering and validation.
 
-#### Before (DiscordHelper)
+#### Before (DiscordHelper) RoleHelper
 
 ```python
 from bot.lib.discordhelper import DiscordHelper
@@ -410,6 +413,7 @@ class MyCog(commands.Cog):
 ```
 
 **Methods:**
+
 - `add_remove_roles(user, check_list, add_list, remove_list, allow_everyone)` - Bulk role operations
 
 ---
@@ -418,7 +422,7 @@ class MyCog(commands.Cog):
 
 **Purpose:** Taco system operations (giving, logging, settings).
 
-#### Before (DiscordHelper)
+#### Before (DiscordHelper) TacoHelper
 
 ```python
 from bot.lib.discordhelper import DiscordHelper
@@ -502,6 +506,7 @@ class MyCog(commands.Cog):
 ```
 
 **Methods:**
+
 - `give_tacos(guildId, fromUser, toUser, reason, give_type, taco_amount)` - Give tacos to user
 - `log_taco_transaction(guild_id, toMember, fromMember, count, total_tacos, reason, type)` - Log transaction
 - `log_taco_purge(guild_id, toMember, fromMember, reason)` - Log purge event
@@ -513,7 +518,7 @@ class MyCog(commands.Cog):
 
 **Purpose:** Create mock context objects for testing.
 
-#### Before (DiscordHelper)
+#### Before (DiscordHelper) ContextHelper
 
 ```python
 from bot.lib.discordhelper import DiscordHelper
@@ -556,6 +561,7 @@ class MyCog(commands.Cog):
 ```
 
 **Methods:**
+
 - `create_context(**kwargs)` - Create namedtuple context with arbitrary attributes
 
 ---
@@ -790,6 +796,7 @@ class TestMyCog:
 ### Q: What if I find a bug in a helper?
 
 **A:** Report it in GitHub issues with the `refactoring` label. Include:
+
 - Which helper has the issue
 - Expected vs actual behavior
 - Minimal reproduction code

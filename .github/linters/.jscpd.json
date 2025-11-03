@@ -9,7 +9,8 @@
     "**/__pycache__/**",
     "**/.vscode/**",
     "**/.git/**",
-    "**/tests/**"
+    "**/tests/**",
+    "**/.venv/**"
   ],
   "absolute": true
 }

@@ -30,6 +30,7 @@ indent_size = 4
 [*.md]
 trim_trailing_whitespace = false
 insert_final_newline = true
+indent_size = unset
 
 [{tacobot.egg-info/**,tests/**}]
 insert_final_newline = unset

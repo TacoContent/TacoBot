@@ -1,5 +1,7 @@
 
 from httpserver.EndpointDecorators import uri_mapping
+
+
 class H:
     @uri_mapping('/color-test', method='GET')
     def c(self, request):
