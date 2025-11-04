@@ -3,8 +3,9 @@ import math
 import os
 import re
 import traceback
+import typing
 
-from bot.lib import discordhelper, utils
+from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
@@ -13,16 +14,15 @@ from discord.ext import commands
 
 
 class HelpCog(TacobotCog):
-    def __init__(self, bot: TacoBot):
+    def __init__(self, bot: TacoBot, tracking_db: typing.Optional[TrackingDatabase] = None):  # noqa: F821
         super().__init__(bot, "tacobot")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
-        self.tracking_db = TrackingDatabase()
+        self.tracking_db = tracking_db or TrackingDatabase()
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -39,9 +39,9 @@ class HelpCog(TacobotCog):
                 changelog_data = f.read().strip()
 
             # split changelog into sections based on '**\d{1,}\.\d{1,}\.\d{1,}**'
-            sections = re.split(r'(\*\*v?\d{1,}\.\d{1,}\.\d{1,}\*\*)', changelog_data)
+            sections: typing.List[str] = re.split(r'(\*\*v?\d{1,}\.\d{1,}\.\d{1,}\*\*)', changelog_data)
             versions = {}
-            cversion = None
+            cversion: typing.Optional[str] = None
             for s in list(filter(lambda x: x != '' and x is not None, sections)):
                 if s == '' or s is None:
                     continue

@@ -2,9 +2,10 @@ import datetime
 import inspect
 import os
 import traceback
+import typing
 
 import pytz
-from bot.lib import discordhelper, utils
+from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.models.DiscordUser import DiscordUser
 from bot.lib.mongodb.tracking import TrackingDatabase
@@ -13,16 +14,14 @@ from discord.ext import commands
 
 
 class UserLookupCog(TacobotCog):
-    def __init__(self, bot: TacoBot) -> None:
+    def __init__(self, bot: TacoBot, tracking_db: typing.Optional[TrackingDatabase] = None) -> None:
         super().__init__(bot, "user_lookup")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
-
-        self.tracking_db = TrackingDatabase()
+        self.tracking_db = tracking_db or TrackingDatabase()
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()

@@ -2,9 +2,10 @@
 import inspect
 import os
 import traceback
+import typing
 
-from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
+from bot.lib.helpers import MessageHelper, PromptHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.tacobot import TacoBot
@@ -12,17 +13,18 @@ from discord.ext import commands
 
 
 class TacoPostCog(TacobotCog):
-    def __init__(self, bot: TacoBot) -> None:
+    def __init__(self, bot: TacoBot, tacos_db: typing.Optional[TacosDatabase] = None) -> None:
         super().__init__(bot, "tacopost")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
+        self.message_helper = MessageHelper(bot)
+        self.prompt_helper = PromptHelper(bot)
 
-        self.tacos_db = TacosDatabase()
+        self.tacos_db = tacos_db or TacosDatabase()
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -49,7 +51,7 @@ class TacoPostCog(TacobotCog):
                     f"{self._module}.{self._class}.{_method}",
                     f"No tacopost settings found for guild {guild_id}",
                 )
-                await self.discord_helper.notify_bot_not_initialized(message, "tacopost")
+                await self.message_helper.notify_bot_not_initialized(message, "tacopost")
                 return
 
             # get the channels for tacopost out of the settings
@@ -120,7 +122,7 @@ class TacoPostCog(TacobotCog):
                         )
                         await message.delete()
 
-                await self.discord_helper.ask_yes_no(
+                await self.prompt_helper.ask_yes_no(
                     ctx=message,
                     targetChannel=message.channel,
                     question=f"{user.mention}, Are you sure you want to post in this channel?\n\n**It will cost you {taco_cost} tacos 🌮.**\n\nYou currently have {taco_count} tacos 🌮.",

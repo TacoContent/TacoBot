@@ -69,7 +69,7 @@ class AnnouncementsCog(TacobotCog):
         Database accessor handling announcement persistence (upsert writes).
     """
 
-    def __init__(self, bot: tacobot.TacoBot) -> None:
+    def __init__(self, bot: tacobot.TacoBot, announcements_db: typing.Optional[AnnouncementsDatabase] = None) -> None:
         """Initialize the announcements cog.
 
         Parameters
@@ -84,7 +84,7 @@ class AnnouncementsCog(TacobotCog):
         self._module = os.path.basename(__file__)[:-3]
         self.messaging = Messaging(bot)
 
-        self.announcements_db = AnnouncementsDatabase()
+        self.announcements_db = announcements_db or AnnouncementsDatabase()
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 

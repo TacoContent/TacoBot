@@ -246,8 +246,8 @@
   > I could not find any reference to discord helper here, not any spot that would need these helpers.
 - [x] **game_keys.py** (EntityHelper, PromptHelper)
 - [x] **_lfg.py** (EntityHelper, PromptHelper)
-- [ ] Run tests for each migrated cog ✅
-- [ ] Week 6 complete ✅
+- [x] Run tests for each migrated cog ✅
+- [x] Week 6 complete ✅
 
 ### Week 7: High Complexity Cogs (remaining cogs)
 
@@ -264,9 +264,9 @@
 - [ ] **tqotd.py** (EntityHelper, PromptHelper, TacoHelper)
 - [ ] **trivia.py** (EntityHelper, PromptHelper, TacoHelper)
 - [ ] **twitchinfo.py** (EntityHelper, PromptHelper)
-- [ ] **user_lookup.py** (EntityHelper, PromptHelper)
-- [ ] **tacopost.py** (EntityHelper, TacoHelper)
-- [ ] **help.py** (EntityHelper, PromptHelper)
+- [x] **user_lookup.py** (EntityHelper, PromptHelper)
+- [x] **tacopost.py** (EntityHelper, TacoHelper)
+- [x] **help.py** (EntityHelper, PromptHelper)
 - [ ] **_leave_survey.py** (EntityHelper, PromptHelper)
 - [ ] Run tests for each migrated cog ✅
 - [ ] Week 7 complete ✅
