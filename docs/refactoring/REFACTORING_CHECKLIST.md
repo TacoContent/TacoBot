@@ -239,8 +239,8 @@
 - [x] **invite_tracker.py** (EntityHelper, TacoHelper)
 - [x] **restricted.py** (EntityHelper, RoleHelper)
 - [x] **server_event.py** (EntityHelper, PromptHelper)
-- [ ] **streamteam.py** (EntityHelper, PromptHelper, RoleHelper)
-- [ ] **wdyctw.py** (EntityHelper, PromptHelper)
+- [x] **streamteam.py** (EntityHelper, PromptHelper, RoleHelper)
+- [x] **wdyctw.py** (EntityHelper, PromptHelper)
 - [x] **account_link.py** (EntityHelper, PromptHelper)
   > [!NOTE]
   > I could not find any reference to discord helper here, not any spot that would need these helpers.

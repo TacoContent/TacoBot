@@ -2,11 +2,12 @@ import datetime
 import inspect
 import os
 import traceback
+import typing
 
 import discord
-from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
+from bot.lib.helpers import EntityHelper, ContextHelper, PromptHelper, TacoHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.wdyctw import WDYCTWDatabase
@@ -17,20 +18,29 @@ from discord.ext.commands import Context
 
 
 class WhatDoYouCallThisWednesdayCog(TacobotCog):
-    def __init__(self, bot: TacoBot) -> None:
+    def __init__(
+            self,
+            bot: TacoBot,
+            wdyctw_db: typing.Optional[WDYCTWDatabase] = None,
+            tracking_db: typing.Optional[TrackingDatabase] = None,
+    ) -> None:
         super().__init__(bot, "wdyctw")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.permissions = Permissions(bot)
         self.SELF_DESTRUCT_TIMEOUT = 30
 
-        self.wdyctw_db = WDYCTWDatabase()
-        self.tracking_db = TrackingDatabase()
+        self.prompt_helper = PromptHelper(bot)
+        self.context_helper = ContextHelper()
+        self.entity_helper = EntityHelper(bot)
+        self.taco_helper = TacoHelper(bot, entity_helper=self.entity_helper)
+
+        self.wdyctw_db = wdyctw_db or WDYCTWDatabase()
+        self.tracking_db = tracking_db or TrackingDatabase()
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -48,12 +58,15 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
             if ctx.guild:
                 guild_id = ctx.guild.id
 
+            if ctx.guild is None:
+                return
+
             # needs to accept an image along with the text
             try:
-                _ctx = self.discord_helper.create_context(
-                    self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
+                _ctx = self.context_helper.create_context(
+                    bot=self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
                 )
-                twa = await self.discord_helper.ask_for_image_or_text(
+                twa = await self.prompt_helper.ask_for_image_or_text(
                     _ctx,
                     ctx.author,
                     self.settings.get_string(guild_id, "wdyctw_ask_title"),
@@ -62,7 +75,7 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
                 )
             except discord.Forbidden:
                 _ctx = ctx
-                twa = await self.discord_helper.ask_for_image_or_text(
+                twa = await self.prompt_helper.ask_for_image_or_text(
                     _ctx,
                     ctx.author,
                     self.settings.get_string(guild_id, "wdyctw_ask_title"),
@@ -80,7 +93,7 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
             amount = tacos_settings.get("wdyctw_amount", 5)
 
             role_tag = ""
-            role = ctx.guild.get_role(int(cog_settings.get("tag_role", 0)))
+            role = await self.entity_helper.get_or_fetch_role(ctx.guild, int(cog_settings.get("tag_role", 0)))
             if role:
                 role_tag = f"{role.mention}"
 
@@ -221,7 +234,14 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
         # in future, check if the user is in a defined role that can grant tacos (e.g. moderator)
 
         # get the message that was reacted to
-        channel = self.bot.get_channel(payload.channel_id)
+        channel = await self.entity_helper.get_or_fetch_channel(payload.channel_id)
+        if channel is None:
+            self.log.debug(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"Channel {payload.channel_id} not found for guild {guild_id}",
+            )
+            return
         message = await channel.fetch_message(payload.message_id)
         message_author = message.author
         # react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
@@ -284,7 +304,14 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
             )
             return
 
-        channel = self.bot.get_channel(payload.channel_id)
+        channel = await self.entity_helper.get_or_fetch_channel(payload.channel_id)
+        if channel is None:
+            self.log.debug(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"Channel {payload.channel_id} not found for guild {guild_id}",
+            )
+            return
         message = await channel.fetch_message(payload.message_id)
 
         # check if this reaction is the first one of this type on the message
@@ -336,7 +363,7 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
                 )
                 return
 
-            react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+            react_user = await self.entity_helper.get_or_fetch_user(payload.user_id)
             if not react_user or react_user.bot or react_user.system:
                 return
 
@@ -368,6 +395,11 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
 
     def _import_wdyctw(self, message: discord.Message) -> None:
         _method = inspect.stack()[0][3]
+        if message is None or message.guild is None:
+            self.log.debug(
+                0, f"{self._module}.{self._class}.{_method}", "Message or guild is None, cannot import WDYCTW"
+            )
+            return
         guild_id = message.guild.id
         channel_id = message.channel.id
         message_id = message.id
@@ -407,12 +439,24 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
             # self, bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
             # get guild from id
             guild = self.bot.get_guild(guild_id)
+            if not guild:
+                self.log.debug(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"Guild {guild_id} not found for taco giving"
+                )
+                return
             # fetch member from id
-            member = guild.get_member(user_id)
+            member = await self.entity_helper.get_or_fetch_member(guild_id, user_id)
+            if not member:
+                self.log.debug(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Member {user_id} not found in guild {guild_id} for taco giving",
+                )
+                return
             # get channel
             channel = None
             if channel_id:
-                channel = self.bot.get_channel(channel_id)
+                channel = await self.entity_helper.get_or_fetch_channel(channel_id)
             else:
                 channel = guild.system_channel
             if not channel:
@@ -421,13 +465,14 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
                 )
                 return
             message = None
+
             # get message
             if message_id and channel:
                 message = await channel.fetch_message(message_id)
 
             # get bot
             bot = self.bot
-            ctx = self.discord_helper.create_context(
+            ctx = self.context_helper.create_context(
                 bot=bot, guild=guild, author=member, channel=channel, message=message
             )
 
@@ -461,7 +506,7 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
                 delete_after=self.SELF_DESTRUCT_TIMEOUT,
             )
 
-            await self.discord_helper.taco_give_user(
+            await self.taco_helper.give_tacos(
                 guild_id, self.bot.user, member, reason_msg, tacotypes.TacoTypes.WDYCTW, taco_amount=amount
             )
 
