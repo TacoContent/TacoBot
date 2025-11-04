@@ -5,8 +5,8 @@ import re
 import traceback
 
 import discord
-from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
+from bot.lib.helpers import EntityHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.tacobot import TacoBot
@@ -21,7 +21,7 @@ class MessagePreview(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.entity_helper = EntityHelper(bot)
         self.messaging = Messaging(bot)
         self.tracking_db = TrackingDatabase()
 
@@ -50,7 +50,7 @@ class MessagePreview(TacobotCog):
             ref_guild_id = int(match.group(1))
             channel_id = int(match.group(2))
             message_id = int(match.group(3))
-            channel = self.bot.get_channel(channel_id)
+            channel = await self.entity_helper.get_or_fetch_channel(channel_id)
             if ref_guild_id == guild_id:
                 if channel:
                     ref_message = await channel.fetch_message(message_id)

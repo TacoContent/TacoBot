@@ -4,10 +4,15 @@ import os
 import traceback
 import typing
 
-from bot.lib import discordhelper, utils
+
+
+from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.enums.system_actions import SystemActions
+from bot.lib.helpers import EntityHelper, TacoHelper
+from bot.lib.models.InvitePayload import InvitePayload
+from bot.lib.models.UserInviteSystemActionData import UserInviteSystemActionData
 from bot.lib.mongodb.invites import InvitesDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.tacobot import TacoBot
@@ -22,9 +27,11 @@ class InviteTracker(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.invites_db = InvitesDatabase()
         self.tracking_db = TrackingDatabase()
+
+        self.entity_helper = EntityHelper(bot)
+        self.taco_helper = TacoHelper(bot, entity_helper=self.entity_helper)
 
         self.invites = {}
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
@@ -72,7 +79,7 @@ class InviteTracker(TacobotCog):
 
                     inviter = invite.inviter
                     if inviter is not None and not inviter.bot:
-                        timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+                        timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
 
                         # track the invite. add the invite to the database if it doesn't exist. add the new user to the invite
                         invite_payload = self.get_payload_for_invite(invite)
@@ -80,7 +87,7 @@ class InviteTracker(TacobotCog):
                         invite_use_payload = {"user_id": str(member.id), "timestamp": timestamp}
 
                         self.invites_db.track_invite_code(guild_id, invite.code, invite_payload, invite_use_payload)
-                        await self.discord_helper.taco_give_user(
+                        await self.taco_helper.give_tacos(
                             guild_id,
                             self.bot.user,
                             inviter,
@@ -90,20 +97,20 @@ class InviteTracker(TacobotCog):
                         self.tracking_db.track_system_action(
                             guild_id=guild_id,
                             action=SystemActions.USER_INVITE,
-                            data={
+                            data=UserInviteSystemActionData({
                                 "inviter_id": str(inviter.id),
                                 "inviter_name": inviter.name,
                                 "invited_id": str(member.id),
                                 "invited_name": member.name,
                                 "invite_code": invite.code,
-                            },
+                            }).to_dict(),
                         )
                     return
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
-    def get_payload_for_invite(self, invite) -> dict:
-        return {
+    def get_payload_for_invite(self, invite) -> InvitePayload:
+        return InvitePayload({
             "id": invite.id,
             "code": invite.code,
             "inviter_id": str(invite.inviter.id),
@@ -115,9 +122,9 @@ class InviteTracker(TacobotCog):
             "revoked": invite.revoked,
             "channel_id": str(invite.channel.id),
             "url": invite.url,
-        }
+        })
 
-    def find_invite_by_code(self, inviteList, code) -> typing.Optional[dict]:
+    def find_invite_by_code(self, inviteList: typing.List[InvitePayload], code: str) -> typing.Optional[InvitePayload]:
         for invite in inviteList:
             if invite.code == code:
                 return invite

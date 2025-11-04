@@ -5,7 +5,6 @@ import os
 import re
 import traceback
 
-from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
 from bot.tacobot import TacoBot
@@ -21,7 +20,6 @@ class AmazonLinkCog(TacobotCog):
         self._module = os.path.basename(__file__)[:-3]
         self.affiliate_tag = "darthminos0f-20"
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 

@@ -8,6 +8,7 @@ scan:
     - __pycache__/
     - .vscode/
     - .venv/
+    - pytest_cache/
     - node_modules/
     - .github/
     - tests/

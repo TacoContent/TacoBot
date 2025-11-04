@@ -3,9 +3,9 @@ import os
 import traceback
 
 import discord
-from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
+from bot.lib.helpers import EntityHelper, TacoHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.introductions import IntroductionsDatabase
 from bot.lib.mongodb.settings import SettingsDatabase
@@ -22,8 +22,9 @@ class IntroductionCog(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
+        self.entity_helper = EntityHelper(bot)
+        self.taco_helper = TacoHelper(bot, entity_helper=self.entity_helper)
 
         self.settings_db = SettingsDatabase()
         self.introductions_db = IntroductionsDatabase()
@@ -59,7 +60,7 @@ class IntroductionCog(TacobotCog):
             existing_introductions = [int(u['user_id']) for u in self.introductions_db.get_user_introductions(guild_id)]
 
             for channel_id in channels:
-                channel = await self.discord_helper.get_or_fetch_channel(channelId=int(channel_id))
+                channel = await self.entity_helper.get_or_fetch_channel(channelId=int(channel_id))
                 if not channel or not isinstance(channel, discord.TextChannel):
                     raise Exception(f"Channel {channel_id} not found when trying to import")
 
@@ -94,7 +95,7 @@ class IntroductionCog(TacobotCog):
                     reason_msg = f"Imported introduction from {channel.name} by {message.author.name}"
                     self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", reason_msg)
 
-                    await self.discord_helper.taco_give_user(
+                    await self.taco_helper.give_tacos(
                         guildId=guild_id,
                         fromUser=self.bot.user,
                         toUser=message.author,
@@ -106,7 +107,7 @@ class IntroductionCog(TacobotCog):
                     if has_approval_emoji:
                         reason_msg = f"{message.author.name} approved introduction in {channel.name}"
                         self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", reason_msg)
-                        await self.discord_helper.taco_give_user(
+                        await self.taco_helper.give_tacos(
                             guildId=guild_id,
                             fromUser=self.bot.user,
                             toUser=message.author,
@@ -153,7 +154,7 @@ class IntroductionCog(TacobotCog):
                 return
 
             # ignore messages that are commands
-            for prefix in await self.bot.command_prefix(message):
+            for prefix in await self.bot.command_prefix(message):  # type: ignore
                 if message.content.startswith(prefix):
                     return
 
@@ -184,7 +185,7 @@ class IntroductionCog(TacobotCog):
             #                 break
 
             reason_msg = self.settings.get_string(guild_id, "posting_introduction_reason")
-            await self.discord_helper.taco_give_user(
+            await self.taco_helper.give_tacos(
                 guildId=guild_id,
                 fromUser=self.bot.user,
                 toUser=message.author,
@@ -235,7 +236,7 @@ class IntroductionCog(TacobotCog):
                 return
 
             # get the channel
-            channel = await self.discord_helper.get_or_fetch_channel(payload.channel_id)
+            channel = await self.entity_helper.get_or_fetch_channel(payload.channel_id)
             if not channel:
                 return
             # get the original message
@@ -256,7 +257,7 @@ class IntroductionCog(TacobotCog):
                 return
 
             reason_msg = self.settings.get_string(guild_id, "approve_introduction_reason")
-            await self.discord_helper.taco_give_user(
+            await self.taco_helper.give_tacos(
                 guildId=guild_id,
                 fromUser=self.bot.user,
                 toUser=message.author,

@@ -3,10 +3,10 @@ import os
 import traceback
 
 import discord
-from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.enums.system_actions import SystemActions
+from bot.lib.helpers import EntityHelper, TacoHelper
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.tacobot import TacoBot
@@ -20,9 +20,10 @@ class JoinLeaveTracker(TacobotCog):
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.tracking_db = TrackingDatabase()
         self.taco_db = TacosDatabase()
+        self.entity_helper = EntityHelper(bot)
+        self.taco_helper = TacoHelper(bot, entity_helper=self.entity_helper)
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
@@ -40,7 +41,7 @@ class JoinLeaveTracker(TacobotCog):
             self.taco_db.track_tacos_log(
                 guildId=guild_id,
                 toUserId=member.id,
-                fromUserId=self.bot.user.id,
+                fromUserId=self.bot.user.id if self.bot.user else 0,
                 count=0,
                 reason="leaving the server",
                 type=tacotypes.TacoTypes.get_db_type_from_taco_type(tacotypes.TacoTypes.LEAVE_SERVER),
@@ -60,7 +61,7 @@ class JoinLeaveTracker(TacobotCog):
             if not member or member.bot or member.system:
                 return
 
-            await self.discord_helper.taco_give_user(
+            await self.taco_helper.give_tacos(
                 guild_id,
                 self.bot.user,
                 member,

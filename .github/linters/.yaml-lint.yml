@@ -2,8 +2,10 @@
 extends: default
 
 ignore:
-  # ignore helm templates
-  - "/github/workspace/templates/*.yaml"
+  - ".venv/**"
+  - ".vscode/**"
+  - ".pytests_cache/**"
+  - "__pycache__/**"
 
 yaml-files:
   - '*.yaml'

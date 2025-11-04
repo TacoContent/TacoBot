@@ -4,9 +4,10 @@ import traceback
 import typing
 
 import discord
-from bot.lib import discordhelper, utils
+from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums.system_actions import SystemActions
+from bot.lib.helpers import EntityHelper, MessageHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.twitch import TwitchDatabase
@@ -22,8 +23,9 @@ class StreamTeamCog(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
+        self.entity_helper = EntityHelper(bot)
+        self.message_helper = MessageHelper(bot)
 
         self.twitch_db = TwitchDatabase()
         self.tracking_db = TrackingDatabase()
@@ -39,9 +41,14 @@ class StreamTeamCog(TacobotCog):
                 return
             if payload.event_type != 'REACTION_REMOVE':
                 return
-            channel = await self.bot.fetch_channel(payload.channel_id)
+            channel = await self.entity_helper.get_or_fetch_channel(payload.channel_id)
+            if channel is None:
+                self.log.debug(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"Channel not found: {payload.channel_id}"
+                )
+                return
             message = await channel.fetch_message(payload.message_id)
-            user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+            user = await self.entity_helper.get_or_fetch_user(payload.user_id)
             if not user or user.bot or user.system:
                 return
 
@@ -54,7 +61,7 @@ class StreamTeamCog(TacobotCog):
                     f"{self._module}.{self._class}.{_method}",
                     f"No streamteam settings found for guild {guild_id}",
                 )
-                await self.discord_helper.notify_bot_not_initialized(message, "streamteam")
+                await self.message_helper.notify_bot_not_initialized(message, "streamteam")
                 return
 
             # get the reaction emoji
@@ -66,7 +73,7 @@ class StreamTeamCog(TacobotCog):
             log_channel_id = streamteam_settings["log_channel"]
             log_channel = None
             if log_channel_id:
-                log_channel = await self.discord_helper.get_or_fetch_channel(log_channel_id)
+                log_channel = await self.entity_helper.get_or_fetch_channel(log_channel_id)
 
             # check if the message that is reacted to is in the list of message ids and the emoji is one that is configured.
             if str(message.id) in watch_message_ids and str(payload.emoji) in emoji:
@@ -127,9 +134,14 @@ class StreamTeamCog(TacobotCog):
                 return
             if payload.event_type != 'REACTION_ADD':
                 return
-            channel = await self.bot.fetch_channel(payload.channel_id)
+            channel = await self.entity_helper.get_or_fetch_channel(payload.channel_id)
+            if channel is None:
+                self.log.debug(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"Channel not found: {payload.channel_id}"
+                )
+                return
             message = await channel.fetch_message(payload.message_id)
-            user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+            user = await self.entity_helper.get_or_fetch_user(payload.user_id)
             if user is None or user.system or user.bot:
                 return
 
@@ -149,7 +161,7 @@ class StreamTeamCog(TacobotCog):
             log_channel_id = cog_settings.get("log_channel", None)
             log_channel = None
             if log_channel_id:
-                log_channel = await self.discord_helper.get_or_fetch_channel(log_channel_id)
+                log_channel = await self.entity_helper.get_or_fetch_channel(log_channel_id)
 
             # check if the message that is reacted to is in the list of message ids and the emoji is one that is configured.
             if str(message.id) in watch_message_ids and str(payload.emoji) in emoji:
@@ -297,7 +309,7 @@ class StreamTeamCog(TacobotCog):
                     f"{self._module}.{self._class}.{_method}",
                     f"No streamteam settings found for guild {guild_id}",
                 )
-                await self.discord_helper.notify_bot_not_initialized(ctx, "streamteam")
+                await self.message_helper.notify_bot_not_initialized(ctx, "streamteam")
                 return
             unknown = self.settings.get_string(guild_id, "unknown")
             if twitchName is not None:
@@ -308,7 +320,7 @@ class StreamTeamCog(TacobotCog):
             log_channel_id = streamteam_settings["log_channel"]
             log_channel = None
             if log_channel_id:
-                log_channel = await self.discord_helper.get_or_fetch_channel(log_channel_id)
+                log_channel = await self.entity_helper.get_or_fetch_channel(log_channel_id)
             team_name = streamteam_settings["name"]
 
             self.twitch_db.set_user_twitch_info(user.id, twitchName)

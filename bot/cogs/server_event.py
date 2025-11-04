@@ -4,9 +4,9 @@ import os
 import traceback
 
 import discord
-from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
+from bot.lib.helpers import EntityHelper, TacoHelper
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
@@ -19,7 +19,8 @@ class ServerEventCog(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.entity_helper = EntityHelper(bot)
+        self.taco_helper = TacoHelper(bot, entity_helper=self.entity_helper)
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -31,7 +32,7 @@ class ServerEventCog(TacobotCog):
             return
         guild_id = event.guild.id
         try:
-            await self.discord_helper.taco_give_user(
+            await self.taco_helper.give_tacos(
                 guildId=guild_id,
                 fromUser=self.bot.user,
                 toUser=event.creator,
@@ -58,7 +59,7 @@ class ServerEventCog(TacobotCog):
                 return
 
             # if event hasn't started, take back the tacos
-            await self.discord_helper.taco_give_user(
+            await self.taco_helper.give_tacos(
                 guildId=guild_id,
                 fromUser=self.bot.user,
                 toUser=event.creator,
@@ -83,7 +84,7 @@ class ServerEventCog(TacobotCog):
 
             if after.status == discord.EventStatus.cancelled:
                 # if event hasn't started, take back the tacos
-                await self.discord_helper.taco_give_user(
+                await self.taco_helper.give_tacos(
                     guildId=guild_id,
                     fromUser=self.bot.user,
                     toUser=after.creator,
@@ -94,7 +95,7 @@ class ServerEventCog(TacobotCog):
 
             if after.status == discord.EventStatus.completed or after.status == discord.EventStatus.ended:
                 # if event hasn't started, take back the tacos
-                await self.discord_helper.taco_give_user(
+                await self.taco_helper.give_tacos(
                     guildId=guild_id,
                     fromUser=self.bot.user,
                     toUser=after.creator,
@@ -114,7 +115,7 @@ class ServerEventCog(TacobotCog):
             return
         guild_id = event.guild.id
         try:
-            await self.discord_helper.taco_give_user(
+            await self.taco_helper.give_tacos(
                 guildId=guild_id,
                 fromUser=self.bot.user,
                 toUser=user,
@@ -134,7 +135,7 @@ class ServerEventCog(TacobotCog):
             return
         guild_id = event.guild.id
         try:
-            await self.discord_helper.taco_give_user(
+            await self.taco_helper.give_tacos(
                 guildId=guild_id,
                 fromUser=self.bot.user,
                 toUser=user,

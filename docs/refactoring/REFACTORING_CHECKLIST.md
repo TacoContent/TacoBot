@@ -224,26 +224,28 @@
 - [x] **command_sync.py** (EntityHelper only)
 - [x] **free_games.py** (EntityHelper, MessageHelper)
 - [x] **giphy.py** (EntityHelper, PromptHelper)
-- [ ] **photo_post.py** (EntityHelper, PromptHelper)
-- [ ] **twitter_preview.py** (EntityHelper)
-- [ ] **message_preview.py** (EntityHelper)
-- [ ] **_amazon_links.py** (EntityHelper)
-- [ ] Run tests for each migrated cog ✅
-- [ ] Week 5 complete ✅
+- [x] **photo_post.py** (EntityHelper, PromptHelper)
+- [x] **twitter_preview.py** (EntityHelper)
+- [x] **message_preview.py** (EntityHelper)
+- [x] **_amazon_links.py** (EntityHelper)
+- [x] Run tests for each migrated cog ✅
+- [x] Week 5 complete ✅
 
 ### Week 6: Medium Complexity Cogs (10-12 cogs)
 
-- [ ] **join_leave.py** (EntityHelper, MessageHelper, TacoHelper)
+- [x] **join_leave.py** (EntityHelper, MessageHelper, TacoHelper)
 - [x] **birthday.py** (EntityHelper, PromptHelper, TacoHelper)
-- [ ] **introduction.py** (EntityHelper, PromptHelper)
-- [ ] **invite_tracker.py** (EntityHelper, TacoHelper)
-- [ ] **restricted.py** (EntityHelper, RoleHelper)
-- [ ] **server_event.py** (EntityHelper, PromptHelper)
+- [x] **introduction.py** (EntityHelper, PromptHelper)
+- [x] **invite_tracker.py** (EntityHelper, TacoHelper)
+- [x] **restricted.py** (EntityHelper, RoleHelper)
+- [x] **server_event.py** (EntityHelper, PromptHelper)
 - [ ] **streamteam.py** (EntityHelper, PromptHelper, RoleHelper)
 - [ ] **wdyctw.py** (EntityHelper, PromptHelper)
-- [ ] **account_link.py** (EntityHelper, PromptHelper)
+- [x] **account_link.py** (EntityHelper, PromptHelper)
+  > [!NOTE]
+  > I could not find any reference to discord helper here, not any spot that would need these helpers.
 - [x] **game_keys.py** (EntityHelper, PromptHelper)
-- [ ] **_lfg.py** (EntityHelper, PromptHelper)
+- [x] **_lfg.py** (EntityHelper, PromptHelper)
 - [ ] Run tests for each migrated cog ✅
 - [ ] Week 6 complete ✅
 

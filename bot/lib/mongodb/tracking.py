@@ -11,6 +11,7 @@ from bot.lib.enums import loglevel
 from bot.lib.enums.system_actions import SystemActions
 from bot.lib.models.DiscordUser import DiscordUser
 from bot.lib.models.triviaquestion import TriviaQuestion
+from bot.lib.models.UserInviteSystemActionData import UserInviteSystemActionData
 from bot.lib.mongodb.database import Database
 
 
@@ -360,7 +361,10 @@ class TrackingDatabase(Database):
             )
 
     def track_system_action(
-        self, guild_id: int, action: typing.Union[SystemActions, str], data: typing.Optional[dict] = None
+        self,
+        guild_id: int,
+        action: typing.Union[SystemActions, str],
+        data: typing.Optional[typing.Dict[str, typing.Any]] = None,
     ) -> None:
         """Track a system action."""
         _method = inspect.stack()[0][3]

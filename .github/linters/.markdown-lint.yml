@@ -7,6 +7,8 @@
 ignore:
   - .github/copilot-instructions.md
   - tests/**
+  - ".venv/**"
+  - ".vscode/**"
 
 # Linter rules doc:
 # - https://github.com/DavidAnson/markdownlint

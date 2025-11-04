@@ -47,6 +47,9 @@ class OfferUrlEnricher:
         Raises:
             ValueError: If URL is empty or invalid
         """
+        import logging
+        logger = logging.getLogger("OfferUrlEnricher")
+
         if not url:
             raise ValueError("URL cannot be empty")
 
@@ -54,8 +57,22 @@ class OfferUrlEnricher:
         shortened = self._shorten_url(resolved)
         launcher_name, launcher_url = self._build_launcher_deep_link(resolved)
 
+        # Always try to shorten the launcher link if present
+        shortened_launcher_url = ""
+        if launcher_url:
+            shortened_launcher_url = self._shorten_url(launcher_url)
+            # If shortening fails (returns original), log and omit launcher link
+            if shortened_launcher_url == launcher_url:
+                logger.error(f"Failed to shorten launcher URL: {launcher_url}")
+                launcher_name = ""
+                shortened_launcher_url = ""
+
         return EnrichedUrl(
-            original=url, resolved=resolved, shortened=shortened, launcher_name=launcher_name, launcher_url=launcher_url
+            original=url,
+            resolved=resolved,
+            shortened=shortened,
+            launcher_name=launcher_name,
+            launcher_url=shortened_launcher_url,
         )
 
     def _resolve_redirect_chain(self, url: str) -> str:

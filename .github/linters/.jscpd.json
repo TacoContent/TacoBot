@@ -10,7 +10,9 @@
     "**/.vscode/**",
     "**/.git/**",
     "**/tests/**",
-    "**/.venv/**"
+    "**/.venv/**",
+    "**/pytest_cache/**"
+
   ],
   "absolute": true
 }

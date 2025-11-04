@@ -28,6 +28,10 @@ export default defineConfig([
       "**/devcontainer.json",
       "**/.vscode/tasks.json",
       "**/tests/**",
+      "**/.venv/**",
+      "**/.vscode/**",
+      "**/__pycache__/**",
+      "**/pytest_cache/**",
     ]
   ),
   {
