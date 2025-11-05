@@ -1,7 +1,9 @@
+from unittest.mock import MagicMock, patch
+
 import discord
 import pytest
-from unittest.mock import MagicMock, patch
 from bot.cogs.announcements import AnnouncementsCog
+
 
 @pytest.fixture
 def bot():

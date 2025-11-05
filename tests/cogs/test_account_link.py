@@ -1,7 +1,9 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from bot.cogs.account_link import AccountLink
 from bot.lib.enums.system_actions import SystemActions
+
 
 @pytest.fixture
 def bot():

@@ -1,6 +1,8 @@
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from bot.cogs.user_lookup import UserLookupCog
+
 
 @pytest.fixture
 def bot():

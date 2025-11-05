@@ -1,6 +1,8 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from bot.cogs.streamteam import StreamTeamCog
+
 
 @pytest.fixture
 def bot():

@@ -4,7 +4,6 @@ import os
 import traceback
 import typing
 
-
 from bot.lib import utils
 from bot.lib.enums import loglevel
 from bot.lib.models.InvitePayload import InvitePayload

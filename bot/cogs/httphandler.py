@@ -1,8 +1,8 @@
 import inspect
 import os
 import traceback
-from importlib import import_module
 import typing
+from importlib import import_module
 
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging

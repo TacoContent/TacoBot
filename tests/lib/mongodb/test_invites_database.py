@@ -1,6 +1,8 @@
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from bot.lib.mongodb.invites import InvitesDatabase
+
 
 @pytest.fixture
 def db():

@@ -8,7 +8,7 @@ import uuid
 import discord
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
-from bot.lib.helpers import ContextHelper, EntityHelper, PromptHelper, MessageHelper, TacoHelper
+from bot.lib.helpers import ContextHelper, EntityHelper, MessageHelper, PromptHelper, TacoHelper
 from bot.lib.messaging import Messaging
 from bot.lib.models.suggestionstates import SuggestionStates
 from bot.lib.mongodb.settings import SettingsDatabase

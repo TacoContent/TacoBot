@@ -7,7 +7,7 @@ import typing
 import discord
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
-from bot.lib.helpers import EntityHelper, ContextHelper, PromptHelper, TacoHelper
+from bot.lib.helpers import ContextHelper, EntityHelper, PromptHelper, TacoHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.wdyctw import WDYCTWDatabase

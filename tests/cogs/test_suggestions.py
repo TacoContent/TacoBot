@@ -1,8 +1,10 @@
-import pytest
-from unittest.mock import MagicMock, AsyncMock
+from unittest.mock import AsyncMock, MagicMock
+
 import discord
+import pytest
 from bot.cogs.suggestions import SuggestionsCog
 from bot.lib.models.suggestionstates import SuggestionStates
+
 
 @pytest.fixture
 def cog():

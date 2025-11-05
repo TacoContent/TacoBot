@@ -1,7 +1,8 @@
-import pytest
- 
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from bot.cogs.tacopost import TacoPostCog
+
 
 @pytest.fixture
 def bot():

@@ -1,6 +1,8 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from bot.cogs.wdyctw import WhatDoYouCallThisWednesdayCog
+
 
 @pytest.fixture(autouse=True)
 def mock_databases(monkeypatch):

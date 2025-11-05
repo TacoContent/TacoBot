@@ -1,5 +1,6 @@
 from bot.lib.models.UserInviteSystemActionData import UserInviteSystemActionData
 
+
 def test_to_dict_basic_fields():
     data = {
         "inviter_id": "123",
