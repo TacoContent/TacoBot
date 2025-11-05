@@ -745,8 +745,6 @@ class SuggestionsCog(TacobotCog):
                         ],
                     )
             elif str(payload.emoji) in admin_emoji and await self.permissions.is_admin(user.id, guild_id):
-                states = SuggestionStates()
-
                 # admin removed reaction. do we need to set the state back to Active?
                 self.log.debug(
                     guild_id,
@@ -773,125 +771,54 @@ class SuggestionsCog(TacobotCog):
 
                 # if denied count is 0, set state back to active
                 if str(payload.emoji) == channel_settings["admin_reject_emoji"]:
-                    if reject_count <= 0:
-                        if implemented_count != 0:
-                            self.suggestions_db.set_state_suggestion_by_id(
-                                guild_id, suggestion['id'], states.IMPLEMENTED, user.id, "Reject State Was Removed"
-                            )
-                            await self.update_suggestion_state(
-                                message, states.IMPLEMENTED, user, "Reject State Was Removed", author=author
-                            )
-                        elif consider_count != 0:
-                            self.suggestions_db.set_state_suggestion_by_id(
-                                guild_id, suggestion['id'], states.CONSIDERED, user.id, "Reject State Was Removed"
-                            )
-                            await self.update_suggestion_state(
-                                message, states.CONSIDERED, user, "Reject State Was Removed", author=author
-                            )
-                        elif approve_count != 0:
-                            self.suggestions_db.set_state_suggestion_by_id(
-                                guild_id, suggestion['id'], states.APPROVED, user.id, "Reject State Was Removed"
-                            )
-                            await self.update_suggestion_state(
-                                message, states.APPROVED, user, "Reject State Was Removed", author=author
-                            )
-                        else:
-                            self.suggestions_db.set_state_suggestion_by_id(
-                                guild_id, suggestion['id'], states.ACTIVE, user.id, "Reject State Was Removed"
-                            )
-                            await self.update_suggestion_state(
-                                message, states.ACTIVE, user, "Reject State Was Removed", author=author
-                            )
+                    await self._handle_admin_reject_emoji_remove(
+                        reject_count=reject_count,
+                        implemented_count=implemented_count,
+                        consider_count=consider_count,
+                        approve_count=approve_count,
+                        guild_id=guild_id,
+                        suggestion=suggestion,
+                        user=user,
+                        message=message,
+                        author=author,
+                    )
                 elif str(payload.emoji) == channel_settings["admin_implemented_emoji"]:
-                    if implemented_count <= 0:
-                        if reject_count > 0:
-                            self.suggestions_db.set_state_suggestion_by_id(
-                                guild_id, suggestion['id'], states.REJECTED, user.id, "Implemented State Was Removed"
-                            )
-                            await self.update_suggestion_state(
-                                message, states.REJECTED, user, "Implemented State Was Removed", author=author
-                            )
-                        elif consider_count > 0:
-                            self.suggestions_db.set_state_suggestion_by_id(
-                                guild_id, suggestion['id'], states.CONSIDERED, user.id, "Implemented State Was Removed"
-                            )
-                            await self.update_suggestion_state(
-                                message, states.CONSIDERED, user, "Reject State Was Removed", author=author
-                            )
-                        elif approve_count > 0:
-                            self.suggestions_db.set_state_suggestion_by_id(
-                                guild_id, suggestion['id'], states.APPROVED, user.id, "Implemented State Was Removed"
-                            )
-                            await self.update_suggestion_state(
-                                message, states.APPROVED, user, "Reject State Was Removed", author=author
-                            )
-                        else:
-                            self.suggestions_db.set_state_suggestion_by_id(
-                                guild_id, suggestion['id'], states.ACTIVE, user.id, "Implemented State Was Removed"
-                            )
-                            await self.update_suggestion_state(
-                                message, states.ACTIVE, user, "Reject State Was Removed", author=author
-                            )
+                    await self._handle_admin_implemented_emoji_remove(
+                        reject_count=reject_count,
+                        implemented_count=implemented_count,
+                        consider_count=consider_count,
+                        approve_count=approve_count,
+                        guild_id=guild_id,
+                        suggestion=suggestion,
+                        user=user,
+                        message=message,
+                        author=author,
+                    )
                 elif str(payload.emoji) == channel_settings["admin_consider_emoji"]:
-                    if consider_count <= 0:
-                        if reject_count > 0:
-                            self.suggestions_db.set_state_suggestion_by_id(
-                                guild_id, suggestion['id'], states.REJECTED, user.id, "Consider State Was Removed"
-                            )
-                            await self.update_suggestion_state(
-                                message, states.REJECTED, user, "Consider State Was Removed", author=author
-                            )
-                        elif implemented_count > 0:
-                            self.suggestions_db.set_state_suggestion_by_id(
-                                guild_id, suggestion['id'], states.IMPLEMENTED, user.id, "Consider State Was Removed"
-                            )
-                            await self.update_suggestion_state(
-                                message, states.IMPLEMENTED, user, "Consider State Was Removed", author=author
-                            )
-                        elif approve_count > 0:
-                            self.suggestions_db.set_state_suggestion_by_id(
-                                guild_id, suggestion['id'], states.APPROVED, user.id, "Consider State Was Removed"
-                            )
-                            await self.update_suggestion_state(
-                                message, states.APPROVED, user, "Consider State Was Removed", author=author
-                            )
-                        else:
-                            self.suggestions_db.set_state_suggestion_by_id(
-                                guild_id, suggestion['id'], states.ACTIVE, user.id, "Consider State Was Removed"
-                            )
-                            await self.update_suggestion_state(
-                                message, states.ACTIVE, user, "Consider State Was Removed", author=author
-                            )
+                    await self._handle_admin_consider_emoji_remove(
+                        reject_count=reject_count,
+                        implemented_count=implemented_count,
+                        consider_count=consider_count,
+                        approve_count=approve_count,
+                        guild_id=guild_id,
+                        suggestion=suggestion,
+                        user=user,
+                        message=message,
+                        author=author,
+                    )
                 elif str(payload.emoji) == channel_settings["admin_approve_emoji"]:
-                    if approve_count <= 0:
-                        if reject_count > 0:
-                            self.suggestions_db.set_state_suggestion_by_id(
-                                guild_id, suggestion['id'], states.REJECTED, user.id, "Approve State Was Removed"
-                            )
-                            await self.update_suggestion_state(
-                                message, states.REJECTED, user, "Approve State Was Removed", author=author
-                            )
-                        elif implemented_count > 0:
-                            self.suggestions_db.set_state_suggestion_by_id(
-                                guild_id, suggestion['id'], states.IMPLEMENTED, user.id, "Approve State Was Removed"
-                            )
-                            await self.update_suggestion_state(
-                                message, states.IMPLEMENTED, user, "Approve State Was Removed", author=author
-                            )
-                        elif consider_count > 0:
-                            self.suggestions_db.set_state_suggestion_by_id(
-                                guild_id, suggestion['id'], states.CONSIDERED, user.id, "Approve State Was Removed"
-                            )
-                            await self.update_suggestion_state(
-                                message, states.CONSIDERED, user, "Approve State Was Removed", author=author
-                            )
-                        else:
-                            self.suggestions_db.set_state_suggestion_by_id(
-                                guild_id, suggestion['id'], states.ACTIVE, user.id, "Approve State Was Removed"
-                            )
-                            await self.update_suggestion_state(
-                                message, states.ACTIVE, user, "Approve State Was Removed", author=author
-                            )
+                    await self._handle_admin_approve_emoji_remove(
+                        reject_count=reject_count,
+                        implemented_count=implemented_count,
+                        consider_count=consider_count,
+                        approve_count=approve_count,
+                        guild_id=guild_id,
+                        suggestion=suggestion,
+                        user=user,
+                        message=message,
+                        author=author,
+                    )
+
                 self.tracking_db.track_command_usage(
                     guildId=guild_id,
                     channelId=payload.channel_id if payload.channel_id else None,
@@ -913,13 +840,146 @@ class SuggestionsCog(TacobotCog):
                         },
                     ],
                 )
-            else:
-                # unknown emoji. remove it
-                pass
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return
+
+    async def _handle_admin_approve_emoji_remove(
+        self,
+        reject_count: int,
+        implemented_count: int,
+        consider_count: int,
+        approve_count: int,
+        guild_id: int,
+        suggestion: dict,
+        user: discord.User,
+        message: discord.Message,
+        author: typing.Optional[typing.Union[discord.User, discord.Member, None]] = None,
+    ) -> None:
+        """Handle the removal of the admin approve emoji reaction.
+        If the approve count is 0, set the state to the next highest state."""
+        states: SuggestionStates = SuggestionStates()
+        next_state: typing.Optional[str] = None
+        reason: typing.Optional[str] = "Approve State Was Removed"
+
+        if approve_count <= 0:
+            if reject_count > 0:
+                next_state = states.REJECTED
+            elif implemented_count != 0:
+                next_state = states.IMPLEMENTED
+            elif consider_count != 0:
+                next_state = states.CONSIDERED
+            else:
+                next_state = states.ACTIVE
+
+            if next_state is not None:
+                self.suggestions_db.set_state_suggestion_by_id(
+                    guild_id, suggestion['id'], next_state, user.id, reason
+                )
+                await self.update_suggestion_state(message, next_state, user, reason, author=author)
+
+    async def _handle_admin_consider_emoji_remove(
+        self,
+        reject_count: int,
+        implemented_count: int,
+        consider_count: int,
+        approve_count: int,
+        guild_id: int,
+        suggestion: dict,
+        user: discord.User,
+        message: discord.Message,
+        author: typing.Optional[typing.Union[discord.User, discord.Member, None]] = None,
+    ) -> None:
+        """Handle the removal of the admin consider emoji reaction.
+        If the consider count is 0, set the state to the next highest state."""
+        states: SuggestionStates = SuggestionStates()
+        next_state: typing.Optional[str] = None
+        reason: typing.Optional[str] = "Consider State Was Removed"
+
+        if consider_count <= 0:
+            if reject_count > 0:
+                next_state = states.REJECTED
+            elif implemented_count != 0:
+                next_state = states.IMPLEMENTED
+            elif approve_count != 0:
+                next_state = states.APPROVED
+            else:
+                next_state = states.ACTIVE
+
+            if next_state is not None:
+                self.suggestions_db.set_state_suggestion_by_id(
+                    guild_id, suggestion['id'], next_state, user.id, reason
+                )
+                await self.update_suggestion_state(message, next_state, user, reason, author=author)
+
+    async def _handle_admin_implemented_emoji_remove(
+        self,
+        reject_count: int,
+        implemented_count: int,
+        consider_count: int,
+        approve_count: int,
+        guild_id: int,
+        suggestion: dict,
+        user: discord.User,
+        message: discord.Message,
+        author: typing.Optional[typing.Union[discord.User, discord.Member, None]] = None,
+    ):
+        """Handle the removal of the admin implemented emoji reaction.
+        If the implemented count is 0, set the state to the next highest state."""
+        states: SuggestionStates = SuggestionStates()
+        next_state: typing.Optional[str] = None
+        reason: typing.Optional[str] = "Implemented State Was Removed"
+
+        if implemented_count <= 0:
+            if reject_count > 0:
+                next_state = states.REJECTED
+
+            elif consider_count > 0:
+                next_state = states.CONSIDERED
+            elif approve_count > 0:
+                next_state = states.APPROVED
+            else:
+                next_state = states.ACTIVE
+
+            if next_state is not None:
+                self.suggestions_db.set_state_suggestion_by_id(
+                    guild_id, suggestion['id'], next_state, user.id, reason
+                )
+                await self.update_suggestion_state(message, next_state, user, reason, author=author)
+
+    async def _handle_admin_reject_emoji_remove(
+        self,
+        reject_count: int,
+        implemented_count: int,
+        consider_count: int,
+        approve_count: int,
+        guild_id: int,
+        suggestion: dict,
+        user: discord.User,
+        message: discord.Message,
+        author: typing.Optional[typing.Union[discord.User, discord.Member, None]] = None
+    ) -> None:
+        """Handle the removal of the admin reject emoji reaction.
+        If the reject count is 0, set the state to the next highest state."""
+        states: SuggestionStates = SuggestionStates()
+        next_state: typing.Optional[str] = None
+        reason: typing.Optional[str] = "Reject State Was Removed"
+        if reject_count <= 0:
+            if implemented_count != 0:
+                next_state = states.IMPLEMENTED
+            elif consider_count != 0:
+                next_state = states.CONSIDERED
+            elif approve_count != 0:
+                next_state = states.APPROVED
+            else:
+                next_state = states.ACTIVE
+
+            if next_state is not None:
+                self.suggestions_db.set_state_suggestion_by_id(
+                    guild_id, suggestion['id'], next_state, user.id, reason
+                )
+                await self.update_suggestion_state(message, next_state, user, reason, author=author)
 
     async def update_suggestion_state(
         self,
@@ -949,22 +1009,16 @@ class SuggestionsCog(TacobotCog):
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"The state is {state}")
         if state == states.APPROVED:
-            self.log.debug(0, "get_color_for_state", f"The state matches {states.APPROVED}")
             return 0x00FF00
         elif state == states.CONSIDERED:
-            self.log.debug(0, "get_color_for_state", f"The state matches {states.CONSIDERED}")
             return 0xFFFF00
         elif state == states.IMPLEMENTED:
-            self.log.debug(0, "get_color_for_state", f"The state matches {states.IMPLEMENTED}")
             return 0xAAAAAA
         elif state == states.REJECTED:
-            self.log.debug(0, "get_color_for_state", f"The state matches {states.REJECTED}")
             return 0xFF0000
         elif state == states.ACTIVE:
-            self.log.debug(0, "get_color_for_state", f"The state matches {states.ACTIVE}")
             return 0x7289DA
         elif state == states.CLOSED:
-            self.log.debug(0, "get_color_for_state", f"The state matches {states.CLOSED}")
             return None
 
 
