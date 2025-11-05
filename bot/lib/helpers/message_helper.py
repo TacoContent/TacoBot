@@ -75,7 +75,7 @@ class MessageHelper:
             self.log.debug(0, f"{self._module}.{self._class}.{_method}", "No target channel to move message to")
             return
 
-        target_author: typing.Optional[discord.User] = author
+        target_author: typing.Optional[typing.Union[discord.User, discord.Member]] = author
         if not target_author:
             target_author = message.author
 

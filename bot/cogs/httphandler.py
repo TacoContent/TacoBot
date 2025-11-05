@@ -2,8 +2,8 @@ import inspect
 import os
 import traceback
 from importlib import import_module
+import typing
 
-from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
@@ -15,7 +15,7 @@ from httpserver.server import HttpServer
 class HttpHandlerCog(TacobotCog):
     # group = app_commands.Group(name="webhook", description="Webhook Handler")
 
-    def __init__(self, bot: TacoBot):
+    def __init__(self, bot: TacoBot, tracking_db: typing.Optional[TrackingDatabase] = None) -> None:
         super().__init__(bot, "webhook")
 
         _method = inspect.stack()[0][3]
@@ -25,7 +25,6 @@ class HttpHandlerCog(TacobotCog):
 
         self.http_server = None
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.tracking_db = TrackingDatabase()
 

@@ -3,10 +3,12 @@ import inspect
 import math
 import os
 import traceback
+import typing
 
-from bot.lib import discordhelper, utils
+from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums.system_actions import SystemActions
+from bot.lib.helpers import EntityHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.settings import SettingsDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
@@ -16,20 +18,27 @@ from discord.ext import commands
 
 
 class NewAccountCheckCog(TacobotCog):
-    def __init__(self, bot: TacoBot) -> None:
+    def __init__(
+        self,
+        bot: TacoBot,
+        settings_db: typing.Optional[SettingsDatabase] = None,
+        tracking_db: typing.Optional[TrackingDatabase] = None,
+        whitelist_db: typing.Optional[WhitelistDatabase] = None,
+    ) -> None:
         super().__init__(bot, "account_age_check")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(self.bot)
         self.messaging = Messaging(self.bot)
 
         self.MINIMUM_ACCOUNT_AGE = 30  # days
-        self.settings_db = SettingsDatabase()
-        self.tracking_db = TrackingDatabase()
-        self.whitelist_db = WhitelistDatabase()
+        self.settings_db = settings_db or SettingsDatabase()
+        self.tracking_db = tracking_db or TrackingDatabase()
+        self.whitelist_db = whitelist_db or WhitelistDatabase()
+
+        self.entity_helper = EntityHelper(bot)
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -120,19 +129,6 @@ class NewAccountCheckCog(TacobotCog):
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
 
     @commands.Cog.listener()
-    async def on_ready(self) -> None:
-        pass
-        # self.MINIMUM_ACCOUNT_AGE = self.settings.get_setting(self.SETTINGS_SECTION, "minimum_account_age", 30)
-
-    @commands.Cog.listener()
-    async def on_disconnect(self) -> None:
-        pass
-
-    @commands.Cog.listener()
-    async def on_resumed(self) -> None:
-        pass
-
-    @commands.Cog.listener()
     async def on_error(self, event, *args, **kwargs) -> None:
         _method = inspect.stack()[0][3]
         self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(event)}", traceback.format_exc())
@@ -196,7 +192,7 @@ class NewAccountCheckCog(TacobotCog):
                 # kick the member
                 await member.kick(reason=message)
                 if notify_channel_id:
-                    notify_channel = await self.discord_helper.get_or_fetch_channel(notify_channel_id)
+                    notify_channel = await self.entity_helper.get_or_fetch_channel(notify_channel_id)
                     if notify_channel:
                         await notify_channel.send(message)
 

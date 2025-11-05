@@ -256,7 +256,7 @@
 - [x] **suggestions.py** (EntityHelper, PromptHelper, MessageHelper)
 - [x] **move_message.py** (EntityHelper, MessageHelper)
 - [ ] **minecraft.py** (EntityHelper, PromptHelper, TacoHelper)
-- [ ] **new_account_check.py** (EntityHelper, RoleHelper, MessageHelper)
+- [x] **new_account_check.py** (EntityHelper, RoleHelper, MessageHelper)
 - [ ] **live_now.py** (EntityHelper, PromptHelper, TacoHelper)
 - [ ] **taco_tuesday.py** (EntityHelper, PromptHelper, TacoHelper)
 - [ ] **tech_thursday.py** (EntityHelper, PromptHelper, TacoHelper)
@@ -311,7 +311,7 @@
 
 ### HTTP Handler Cog
 
-- [ ] **httphandler.py** (cog)
+- [x] **httphandler.py** (cog)
 
 ### Phase 6 Wrap-up
 

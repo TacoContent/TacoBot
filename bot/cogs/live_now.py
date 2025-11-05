@@ -6,10 +6,11 @@ import typing
 
 import discord
 import requests
-from bot.lib import discordhelper, utils
+from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.enums.system_actions import SystemActions
+from bot.lib.helpers import EntityHelper, RoleHelper, TacoHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.live import LiveDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
@@ -19,19 +20,28 @@ from discord.ext import commands
 
 
 class LiveNow(TacobotCog):
-    def __init__(self, bot: TacoBot):
+    def __init__(
+        self, 
+        bot: TacoBot, 
+        tracking_db: typing.Optional[TrackingDatabase] = None, 
+        twitch_db: typing.Optional[TwitchDatabase] = None, 
+        live_db: typing.Optional[LiveDatabase] = None,
+    ) -> None:
         super().__init__(bot, "live_now")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
 
-        self.live_db = LiveDatabase()
-        self.twitch_db = TwitchDatabase()
-        self.tracking_db = TrackingDatabase()
+        self.entity_helper = EntityHelper(bot)
+        self.role_helper = RoleHelper(bot)
+        self.taco_helper = TacoHelper(bot, entity_helper=self.entity_helper)
+
+        self.live_db = live_db or LiveDatabase()
+        self.twitch_db = twitch_db or TwitchDatabase()
+        self.tracking_db = tracking_db or TrackingDatabase()
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -139,7 +149,7 @@ class LiveNow(TacobotCog):
                 # technically this doesnt need to be sent to the db, but it is for consistency
                 taco_amount = taco_settings.get("stream_count", 5)
                 reason_msg = self.settings.get_string(guild_id, "taco_reason_stream")
-                await self.discord_helper.taco_give_user(
+                await self.taco_helper.give_tacos(
                     guildId=guild_id,
                     fromUser=self.bot.user,
                     toUser=before,
@@ -213,7 +223,7 @@ class LiveNow(TacobotCog):
             # we add the "remove_roles" and remove the "add_roles"
             add_roles = wg.get("remove_roles", [])
             remove_roles = wg.get("add_roles", [])
-            await self.discord_helper.add_remove_roles(
+            await self.role_helper.add_remove_roles(
                 user=user, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles
             )
 
@@ -225,7 +235,7 @@ class LiveNow(TacobotCog):
             add_roles = wg.get("add_roles", [])
             remove_roles = wg.get("remove_roles", [])
             # add / remove roles defined in the watch groups
-            await self.discord_helper.add_remove_roles(
+            await self.role_helper.add_remove_roles(
                 user=user, check_list=watch_roles, add_list=add_roles, remove_list=remove_roles
             )
 
@@ -344,7 +354,7 @@ class LiveNow(TacobotCog):
         # get the logging channel
         logging_channel = None
         if channel_id:
-            logging_channel = self.bot.get_channel(channel_id)
+            logging_channel = await self.entity_helper.get_or_fetch_channel(channel_id)
         # if we are logging this to a channel...
         if logging_channel:
             profile_icon: typing.Union[str, None] = None
@@ -406,11 +416,13 @@ class LiveNow(TacobotCog):
             return
 
         all_tracked_for_user = self.live_db.get_tracked_live_by_user(guildId=guild_id, userId=user_id)
+        if all_tracked_for_user is None:
+            return
         tracked_count = len(all_tracked_for_user)
-        if all_tracked_for_user is None or tracked_count == 0:
+        if tracked_count == 0:
             return
 
-        user = await self.discord_helper.get_or_fetch_member(guildId=guild_id, userId=user_id)
+        user = await self.entity_helper.get_or_fetch_member(guildId=guild_id, userId=user_id)
         if user is None:
             self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Could not find user {user_id}")
             return
@@ -425,7 +437,7 @@ class LiveNow(TacobotCog):
         logging_channel_id = cog_settings.get("logging_channel", None)
         logging_channel = None
         if logging_channel_id:
-            logging_channel = await self.discord_helper.get_or_fetch_channel(int(logging_channel_id))
+            logging_channel = await self.entity_helper.get_or_fetch_channel(int(logging_channel_id))
 
         for tracked in all_tracked_for_user:
             platform = tracked.get("platform", "UNKNOWN")
