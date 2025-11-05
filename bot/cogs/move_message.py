@@ -6,10 +6,12 @@
 import inspect
 import os
 import traceback
+import typing
 
 import discord
-from bot.lib import discordhelper, permissions
+from bot.lib import permissions
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
+from bot.lib.helpers import ContextHelper, EntityHelper, MessageHelper, PromptHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.tacobot import TacoBot
@@ -17,16 +19,20 @@ from discord.ext import commands
 
 
 class MoveMessageCog(TacobotCog):
-    def __init__(self, bot: TacoBot):
+    def __init__(self, bot: TacoBot, tracking_db: typing.Optional[TrackingDatabase] = None) -> None:
         super().__init__(bot, "move_message")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.permissions = permissions.Permissions(bot)
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
-        self.tracking_db = TrackingDatabase()
+        self.tracking_db = tracking_db or TrackingDatabase()
+
+        self.context_helper = ContextHelper()
+        self.entity_helper = EntityHelper(bot)
+        self.message_helper = MessageHelper(bot)
+        self.prompt_helper = PromptHelper(bot)
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -44,26 +50,26 @@ class MoveMessageCog(TacobotCog):
             if str(payload.emoji) != '⏭️':
                 return
 
-            channel = await self.discord_helper.get_or_fetch_channel(payload.channel_id)
+            channel = await self.entity_helper.get_or_fetch_channel(payload.channel_id)
             if channel is None:
                 return
             message = await channel.fetch_message(payload.message_id)
             if message is None:
                 return
-            user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+            user = await self.entity_helper.get_or_fetch_user(payload.user_id)
             if user is None or user.bot or user.system:
                 return
 
-            react_member = await self.discord_helper.get_or_fetch_member(guild_id, user.id)
+            react_member = await self.entity_helper.get_or_fetch_member(guild_id, user.id)
             if self.permissions.has_permission(react_member, discord.Permissions(manage_messages=True)):
                 # self.log.debug(guild_id, f"move_message.{_method}", f"{user.name} reacted to message {message.id} with {str(payload.emoji)}")
                 if str(payload.emoji) == '⏭️':
-                    ctx = self.discord_helper.create_context(
+                    ctx = self.context_helper.create_context(
                         bot=self.bot, message=message, channel=channel, author=user, guild=message.guild
                     )
 
                     async def callback(target_channel):
-                        await self.discord_helper.move_message(
+                        await self.message_helper.move_message(
                             message,
                             targetChannel=target_channel,
                             author=message.author,
@@ -72,7 +78,7 @@ class MoveMessageCog(TacobotCog):
                         )
                         await message.delete()
 
-                    await self.discord_helper.ask_channel(
+                    await self.prompt_helper.ask_channel(
                         ctx=ctx,
                         title=self.settings.get_string(guild_id, "move_choose_channel_title"),
                         message=self.settings.get_string(guild_id, "move_choose_channel_message"),
@@ -138,10 +144,10 @@ class MoveMessageCog(TacobotCog):
                     delete_after=20,
                 )
                 return
-            ctx = self.discord_helper.create_context(
+            ctx = self.context_helper.create_context(
                 bot=self.bot, message=message, channel=channel, author=message.author, guild=ctx.guild
             )
-            target_channel = await self.discord_helper.ask_channel(
+            target_channel = await self.prompt_helper.ask_channel(
                 ctx=ctx,
                 title=self.settings.get_string(guild_id, "move_choose_channel_title"),
                 message=self.settings.get_string(guild_id, "move_choose_channel_message"),
@@ -150,7 +156,7 @@ class MoveMessageCog(TacobotCog):
             if target_channel is None:
                 return
 
-            await self.discord_helper.move_message(
+            await self.message_helper.move_message(
                 message=message,
                 targetChannel=target_channel,
                 author=message.author,

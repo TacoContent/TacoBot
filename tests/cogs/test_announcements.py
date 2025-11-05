@@ -50,7 +50,10 @@ async def test_on_guild_available_imports_messages(cog, settings, announcements_
         for m in messages:
             yield m
     channel = MagicMock(spec=discord.TextChannel)
+    channel.id = 123
     channel.history = lambda limit: async_iter([message1, message2])
+    message1.channel = channel
+    message2.channel = channel
     guild = MagicMock()
     guild.id = 1
     guild.get_channel = MagicMock(return_value=channel)

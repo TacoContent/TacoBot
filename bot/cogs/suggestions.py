@@ -6,9 +6,9 @@ import typing
 import uuid
 
 import discord
-from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
+from bot.lib.helpers import ContextHelper, EntityHelper, PromptHelper, MessageHelper, TacoHelper
 from bot.lib.messaging import Messaging
 from bot.lib.models.suggestionstates import SuggestionStates
 from bot.lib.mongodb.settings import SettingsDatabase
@@ -20,20 +20,31 @@ from discord.ext import commands
 
 
 class SuggestionsCog(TacobotCog):
-    def __init__(self, bot: TacoBot) -> None:
+    def __init__(
+        self,
+        bot: TacoBot,
+        suggestions_db: typing.Optional[SuggestionsDatabase] = None,
+        tracking_db: typing.Optional[TrackingDatabase] = None,
+        settings_db: typing.Optional[SettingsDatabase] = None
+    ) -> None:
         super().__init__(bot, "suggestions")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.permissions = Permissions(bot)
 
-        self.settings_db = SettingsDatabase()
-        self.suggestions_db = SuggestionsDatabase()
-        self.tracking_db = TrackingDatabase()
+        self.entity_helper = EntityHelper(bot)
+        self.prompt_helper = PromptHelper(bot)
+        self.taco_helper = TacoHelper(bot, entity_helper=self.entity_helper)
+        self.context_helper = ContextHelper()
+        self.message_helper = MessageHelper(bot)
+
+        self.settings_db = settings_db or SettingsDatabase()
+        self.suggestions_db = suggestions_db or SuggestionsDatabase()
+        self.tracking_db = tracking_db or TrackingDatabase()
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -136,7 +147,7 @@ class SuggestionsCog(TacobotCog):
         else:
             channel_settings = channel_settings[0]
 
-        response_channel = await self.discord_helper.get_or_fetch_channel(int(channel_settings['id']))
+        response_channel = await self.entity_helper.get_or_fetch_channel(int(channel_settings['id']))
         if not response_channel:
             self.log.debug(
                 guild_id,
@@ -162,7 +173,7 @@ class SuggestionsCog(TacobotCog):
             message_ask = channel_settings['message_ask']
 
         # get suggestion title
-        suggestion_title = await self.discord_helper.ask_text(
+        suggestion_title = await self.prompt_helper.ask_text(
             ctx,
             ctx.channel,
             "Create Suggestion",
@@ -183,7 +194,7 @@ class SuggestionsCog(TacobotCog):
             suggestion_title = "Suggestion"
 
         # get suggestion message
-        suggestion_message = await self.discord_helper.ask_text(
+        suggestion_message = await self.prompt_helper.ask_text(
             ctx,
             ctx.channel,
             "Create Suggestion",
@@ -233,7 +244,7 @@ class SuggestionsCog(TacobotCog):
             # add reaction to the message from the bot
             await s_message.add_reaction(r)
 
-        await self.discord_helper.taco_give_user(
+        await self.taco_helper.give_tacos(
             guild_id, self.bot.user, ctx.author, "creating a new suggestion", tacotypes.TacoTypes.SUGGEST
         )
 
@@ -302,12 +313,12 @@ class SuggestionsCog(TacobotCog):
                 return
             if payload.event_type != 'REACTION_ADD':
                 return
-            channel = await self.discord_helper.get_or_fetch_channel(payload.channel_id)
+            channel = await self.entity_helper.get_or_fetch_channel(payload.channel_id)
             if channel is None:
                 return
 
             message = await channel.fetch_message(payload.message_id)
-            user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+            user = await self.entity_helper.get_or_fetch_user(payload.user_id)
             if not user or user.bot or user.system:
                 return
 
@@ -316,7 +327,7 @@ class SuggestionsCog(TacobotCog):
             if not suggestion or suggestion['message_id'] != str(payload.message_id):
                 return
 
-            author = await self.discord_helper.get_or_fetch_user(int(suggestion['author_id']))
+            author = await self.entity_helper.get_or_fetch_user(int(suggestion['author_id']))
 
             ss = self.settings.get_settings(guild_id, self.SETTINGS_SECTION)
             if not ss:
@@ -344,7 +355,7 @@ class SuggestionsCog(TacobotCog):
                 if channel_settings['log_channel_id'] == "0" or channel_settings['log_channel_id'] is None:
                     log_channel = None
                 else:
-                    log_channel = await self.discord_helper.get_or_fetch_channel(
+                    log_channel = await self.entity_helper.get_or_fetch_channel(
                         int(channel_settings['log_channel_id'])
                     )
 
@@ -429,11 +440,11 @@ class SuggestionsCog(TacobotCog):
                         f"{user.name} approved suggestion {suggestion['id']}",
                     )
                     # build ctx to pass to the ask_text function
-                    ctx = self.discord_helper.create_context(
+                    ctx = self.context_helper.create_context(
                         bot=self.bot, author=user, guild=None, channel=None, message=None
                     )
                     reason = (
-                        await self.discord_helper.ask_text(
+                        await self.prompt_helper.ask_text(
                             ctx,
                             user,
                             "Approve Suggestion",
@@ -453,11 +464,11 @@ class SuggestionsCog(TacobotCog):
                         f"{user.name} considered suggestion {suggestion['id']}",
                     )
                     # build ctx to pass to the ask_text function
-                    ctx = self.discord_helper.create_context(
+                    ctx = self.context_helper.create_context(
                         bot=self.bot, author=user, guild=None, channel=None, message=None
                     )
                     reason = (
-                        await self.discord_helper.ask_text(
+                        await self.prompt_helper.ask_text(
                             ctx,
                             user,
                             "Consider Suggestion",
@@ -477,11 +488,11 @@ class SuggestionsCog(TacobotCog):
                         f"{user.name} implemented suggestion {suggestion['id']}",
                     )
                     # build ctx to pass to the ask_text function
-                    ctx = self.discord_helper.create_context(
+                    ctx = self.context_helper.create_context(
                         bot=self.bot, author=user, guild=None, channel=None, message=None
                     )
                     reason = (
-                        await self.discord_helper.ask_text(
+                        await self.prompt_helper.ask_text(
                             ctx,
                             user,
                             "Implement Suggestion",
@@ -501,11 +512,11 @@ class SuggestionsCog(TacobotCog):
                         f"{user.name} rejected suggestion {suggestion['id']}",
                     )
                     # build ctx to pass to the ask_text function
-                    ctx = self.discord_helper.create_context(
+                    ctx = self.context_helper.create_context(
                         bot=self.bot, author=user, guild=None, channel=None, message=None
                     )
                     reason = (
-                        await self.discord_helper.ask_text(
+                        await self.prompt_helper.ask_text(
                             ctx,
                             user,
                             "Reject Suggestion",
@@ -539,11 +550,11 @@ class SuggestionsCog(TacobotCog):
                     )
 
                     # build ctx to pass to the ask_text function
-                    ctx = self.discord_helper.create_context(
+                    ctx = self.context_helper.create_context(
                         bot=self.bot, author=user, guild=None, channel=None, message=None
                     )
                     reason = (
-                        await self.discord_helper.ask_text(
+                        await self.prompt_helper.ask_text(
                             ctx,
                             user,
                             "Close Suggestion",
@@ -588,7 +599,7 @@ class SuggestionsCog(TacobotCog):
 {channel_settings['vote_down_emoji']} {len(down_votes)} Down {down_word}""",
                         }
                     ]
-                    await self.discord_helper.move_message(
+                    await self.message_helper.move_message(
                         message,
                         log_channel,
                         author=author,
@@ -606,11 +617,11 @@ class SuggestionsCog(TacobotCog):
                         f"{user.name} deleted suggestion {suggestion['id']}",
                     )
                     # build ctx to pass to the ask_text function
-                    ctx = self.discord_helper.create_context(
+                    ctx = self.context_helper.create_context(
                         bot=self.bot, author=user, guild=None, channel=None, message=None
                     )
                     reason = (
-                        await self.discord_helper.ask_text(
+                        await self.prompt_helper.ask_text(
                             ctx,
                             user,
                             "Delete Suggestion",
@@ -660,9 +671,12 @@ class SuggestionsCog(TacobotCog):
                 return
             if payload.event_type != 'REACTION_REMOVE':
                 return
-            channel = await self.bot.fetch_channel(payload.channel_id)
+            channel = await self.entity_helper.get_or_fetch_channel(payload.channel_id)
+            if channel is None:
+                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Channel {payload.channel_id} not found")
+                return
             message = await channel.fetch_message(payload.message_id)
-            user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+            user = await self.entity_helper.get_or_fetch_user(payload.user_id)
             if not user or user.bot or user.system:
                 return
 
@@ -671,7 +685,7 @@ class SuggestionsCog(TacobotCog):
             if not suggestion or suggestion['message_id'] != str(payload.message_id):
                 return
 
-            author = await self.discord_helper.get_or_fetch_user(int(suggestion['author_id']))
+            author = await self.entity_helper.get_or_fetch_user(int(suggestion['author_id']))
 
             cog_settings = self.get_cog_settings(guild_id)
 

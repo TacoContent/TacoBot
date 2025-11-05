@@ -252,9 +252,9 @@
 ### Week 7: High Complexity Cogs (remaining cogs)
 
 - [ ] **tacos.py** (All helpers)
-- [ ] **announcements.py** (EntityHelper, PromptHelper, MessageHelper)
-- [ ] **suggestions.py** (EntityHelper, PromptHelper, MessageHelper)
-- [ ] **move_message.py** (EntityHelper, MessageHelper)
+- [x] **announcements.py** (EntityHelper, PromptHelper, MessageHelper)
+- [x] **suggestions.py** (EntityHelper, PromptHelper, MessageHelper)
+- [x] **move_message.py** (EntityHelper, MessageHelper)
 - [ ] **minecraft.py** (EntityHelper, PromptHelper, TacoHelper)
 - [ ] **new_account_check.py** (EntityHelper, RoleHelper, MessageHelper)
 - [ ] **live_now.py** (EntityHelper, PromptHelper, TacoHelper)
