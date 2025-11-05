@@ -257,7 +257,7 @@
 - [x] **move_message.py** (EntityHelper, MessageHelper)
 - [ ] **minecraft.py** (EntityHelper, PromptHelper, TacoHelper)
 - [x] **new_account_check.py** (EntityHelper, RoleHelper, MessageHelper)
-- [ ] **live_now.py** (EntityHelper, PromptHelper, TacoHelper)
+- [x] **live_now.py** (EntityHelper, PromptHelper, TacoHelper)
 - [ ] **taco_tuesday.py** (EntityHelper, PromptHelper, TacoHelper)
 - [ ] **tech_thursday.py** (EntityHelper, PromptHelper, TacoHelper)
 - [ ] **mental_monday.py** (EntityHelper, PromptHelper, TacoHelper)
