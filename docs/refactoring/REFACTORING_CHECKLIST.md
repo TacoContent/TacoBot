@@ -254,6 +254,9 @@
 - [ ] **tacos.py** (All helpers)
 - [x] **announcements.py** (EntityHelper, PromptHelper, MessageHelper)
 - [x] **suggestions.py** (EntityHelper, PromptHelper, MessageHelper)
+  - [ ] add tests
+  - [ ] refactor for testability
+    - [x] partially completed
 - [x] **move_message.py** (EntityHelper, MessageHelper)
 - [ ] **minecraft.py** (EntityHelper, PromptHelper, TacoHelper)
 - [x] **new_account_check.py** (EntityHelper, RoleHelper, MessageHelper)
@@ -264,8 +267,11 @@
 - [ ] **tqotd.py** (EntityHelper, PromptHelper, TacoHelper)
 - [ ] **trivia.py** (EntityHelper, PromptHelper, TacoHelper)
 - [x] **twitchinfo.py** (EntityHelper, PromptHelper)
+  - [ ] add tests
 - [x] **user_lookup.py** (EntityHelper, PromptHelper)
+  - [ ] add tests
 - [x] **tacopost.py** (EntityHelper, TacoHelper)
+  - [ ] add tests
 - [x] **help.py** (EntityHelper, PromptHelper)
 - [ ] **_leave_survey.py** (EntityHelper, PromptHelper)
 - [ ] Run tests for each migrated cog ✅
