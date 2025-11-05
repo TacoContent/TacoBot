@@ -7,10 +7,11 @@ import typing
 
 import discord
 import requests
-from bot.lib import discordhelper, utils
+from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.enums.system_actions import SystemActions
+from bot.lib.helpers import PromptHelper, TacoHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.twitch import TwitchDatabase
@@ -19,18 +20,25 @@ from discord.ext import commands
 
 
 class TwitchInfoCog(TacobotCog):
-    def __init__(self, bot: TacoBot) -> None:
+    def __init__(
+        self,
+        bot: TacoBot,
+        twitch_db: typing.Optional[TwitchDatabase] = None,
+        tracking_db: typing.Optional[TrackingDatabase] = None,
+    ) -> None:
         super().__init__(bot, "twitchinfo")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
 
-        self.twitch_db = TwitchDatabase()
-        self.tracking_db = TrackingDatabase()
+        self.prompt_helper = PromptHelper(bot)
+        self.taco_helper = TacoHelper(bot)
+
+        self.twitch_db = twitch_db or TwitchDatabase()
+        self.tracking_db = tracking_db or TrackingDatabase()
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -55,6 +63,14 @@ class TwitchInfoCog(TacobotCog):
             channel = ctx.channel
             await ctx.message.delete()
 
+        if self.bot is None or self.bot.user is None:
+            self.log.error(
+                guild_id,
+                f"{self._module}.{self._class}.invite_bot",
+                "Bot instance is None, cannot proceed with invite_bot command.",
+            )
+            return
+
         if channel is None:
             return
 
@@ -74,7 +90,7 @@ class TwitchInfoCog(TacobotCog):
             # send http request to nodered tacobot api to add the channel to the bot
             # TODO: store this url in the settings database
             url = f"https://nodered.bit13.local/tacobot/guild/{guild_id}/invite/{twitch_name}"
-            result = requests.post(url, headers={"X-AUTH-TOKEN": str(self.bot.id)})
+            result = requests.post(url, headers={"X-AUTH-TOKEN": str(self.bot.user.id)})
             if result.status_code == 200:
                 await self.messaging.send_embed(
                     channel=channel,
@@ -114,6 +130,9 @@ class TwitchInfoCog(TacobotCog):
             guild_id = ctx.guild.id
             await ctx.message.delete()
 
+        if member is None:
+            return
+
         ctx_dict = {"bot": self.bot, "author": ctx.author, "guild": None, "channel": None}
         alt_ctx = collections.namedtuple("Context", ctx_dict.keys())(*ctx_dict.values())
 
@@ -122,7 +141,7 @@ class TwitchInfoCog(TacobotCog):
         # if ctx.author is administrator, then we can get the twitch name from the database
         if twitch_info is None:
             if ctx.author.guild_permissions.administrator or check_member is None:
-                twitch_name = await self.discord_helper.ask_text(
+                twitch_name = await self.prompt_helper.ask_text(
                     alt_ctx,
                     ctx.author,
                     "Twitch Name",
@@ -159,7 +178,7 @@ class TwitchInfoCog(TacobotCog):
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
     async def set_user(
-        self, ctx, user: discord.Member, twitch_name: typing.Optional[str] = None
+        self, ctx, user: typing.Union[discord.Member, discord.User], twitch_name: typing.Optional[str] = None
     ) -> typing.Optional[str]:
         guild_id = 0
         _method = inspect.stack()[0][3]
@@ -174,7 +193,7 @@ class TwitchInfoCog(TacobotCog):
             #     user = await self.discord_helper.ask_member(ctx, "User", "Please respond with the user you want to set the twitch name for.")
 
             if twitch_name is None:
-                twitch_name = await self.discord_helper.ask_text(
+                twitch_name = await self.prompt_helper.ask_text(
                     ctx, ctx.author, "Twitch Name", "Please respond with the twitch name you want to set for the user."
                 )
 
@@ -223,7 +242,7 @@ class TwitchInfoCog(TacobotCog):
                 # try DM. if that doesnt work, use channel that they used...
                 try:
                     resp_channel = ctx.author
-                    twitch_name = await self.discord_helper.ask_text(
+                    twitch_name = await self.prompt_helper.ask_text(
                         ctx,
                         ctx.author,
                         self.settings.get_string(guild_id, "twitch_ask_title"),
@@ -232,7 +251,7 @@ class TwitchInfoCog(TacobotCog):
                     )
                 except discord.errors.Forbidden:
                     resp_channel = ctx.channel
-                    twitch_name = await self.discord_helper.ask_text(
+                    twitch_name = await self.prompt_helper.ask_text(
                         ctx,
                         ctx.channel,
                         self.settings.get_string(guild_id, "twitch_ask_title"),
@@ -249,7 +268,7 @@ class TwitchInfoCog(TacobotCog):
                     taco_settings = self.get_tacos_settings(guild_id)
                     taco_amount = taco_settings.get("twitch_count", 25)
                     reason_msg = self.settings.get_string(guild_id, "taco_reason_twitch")
-                    await self.discord_helper.taco_give_user(
+                    await self.taco_helper.give_tacos(
                         guild_id,
                         self.bot.user,
                         ctx.author,

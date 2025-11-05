@@ -7,9 +7,10 @@ import typing
 
 import discord
 import pytz
-from bot.lib import discordhelper, utils
+from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
+from bot.lib.helpers import ContextHelper, EntityHelper, MessageHelper, RoleHelper, TacoHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tacotuesdays import TacoTuesdaysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
@@ -19,20 +20,29 @@ from discord.ext import commands
 
 
 class TacoTuesdayCog(TacobotCog):
-    def __init__(self, bot: TacoBot) -> None:
+    def __init__(
+        self,
+        bot: TacoBot,
+        tacotuesdays_db: typing.Optional[TacoTuesdaysDatabase] = None,
+        tracking_db: typing.Optional[TrackingDatabase] = None,
+    ) -> None:
         super().__init__(bot, "tacotuesday")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
         self.permissions = Permissions(bot)
-        self.SELF_DESTRUCT_TIMEOUT = 30
-        self.tacotuesdays_db = TacoTuesdaysDatabase()
-        self.tracking_db = TrackingDatabase()
+        self.entity_helper = EntityHelper(bot)
+        self.role_helper = RoleHelper(bot)
+        self.message_helper = MessageHelper(bot)
+        self.context_helper = ContextHelper()
+        self.taco_helper = TacoHelper(bot)
 
+        self.SELF_DESTRUCT_TIMEOUT = 30
+        self.tacotuesdays_db = tacotuesdays_db or TacoTuesdaysDatabase()
+        self.tracking_db = tracking_db or TrackingDatabase()
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.group()
@@ -66,7 +76,7 @@ class TacoTuesdayCog(TacobotCog):
                 self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", "Output channel not set")
                 return
 
-            output_channel = await self.discord_helper.get_or_fetch_channel(int(output_channel_id))
+            output_channel = await self.entity_helper.get_or_fetch_channel(int(output_channel_id))
             if not output_channel:
                 self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", "Output channel not found")
                 return
@@ -162,7 +172,14 @@ class TacoTuesdayCog(TacobotCog):
             )
             return
 
-        channel = self.bot.get_channel(payload.channel_id)
+        channel = await self.entity_helper.get_or_fetch_channel(payload.channel_id)
+        if not channel:
+            self.log.debug(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"Could not find channel {payload.channel_id}",
+            )
+            return
         message = await channel.fetch_message(payload.message_id)
 
         # check if this reaction is the first one of this type on the message
@@ -210,7 +227,14 @@ class TacoTuesdayCog(TacobotCog):
             )
             return
 
-        channel = self.bot.get_channel(payload.channel_id)
+        channel = await self.entity_helper.get_or_fetch_channel(payload.channel_id)
+        if not channel:
+            self.log.debug(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"Could not find channel {payload.channel_id}",
+            )
+            return
         message = await channel.fetch_message(payload.message_id)
 
         cog_settings = self.get_cog_settings(guild_id)
@@ -297,7 +321,7 @@ class TacoTuesdayCog(TacobotCog):
                 return
 
             # get the reaction user
-            user = await self.discord_helper.get_or_fetch_member(guild_id, payload.user_id)
+            user = await self.entity_helper.get_or_fetch_member(guild_id, payload.user_id)
             if not user or user.bot or user.system:
                 return
 
@@ -335,8 +359,19 @@ class TacoTuesdayCog(TacobotCog):
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             # await self.messaging.notify_of_error(ctx)
 
-    async def _archive_taco_tuesday(self, message: discord.Message, cog_settings: dict = None) -> None:
+    async def _archive_taco_tuesday(
+        self,
+        message: discord.Message,
+        cog_settings: typing.Optional[typing.Dict[str, typing.Any]] = None,
+    ) -> None:
         _method = inspect.stack()[0][3]
+
+        if message is None or message.guild is None:
+            return
+
+        if cog_settings is None:
+            cog_settings = self.get_cog_settings(message.guild.id)
+
         guild_id = message.guild.id
         try:
             archive_channel_id = cog_settings.get("archive_channel_id", None)
@@ -348,7 +383,7 @@ class TacoTuesdayCog(TacobotCog):
                 )
                 return
 
-            archive_channel = await self.discord_helper.get_or_fetch_channel(int(archive_channel_id))
+            archive_channel = await self.entity_helper.get_or_fetch_channel(int(archive_channel_id))
             if not archive_channel:
                 self.log.error(
                     guild_id,
@@ -366,14 +401,14 @@ class TacoTuesdayCog(TacobotCog):
                 user_id = taco_tuesday_info.get("user_id", None)
                 if user_id:
                     # get the member
-                    user = await self.discord_helper.get_or_fetch_member(guildId=guild_id, userId=int(user_id))
+                    user = await self.entity_helper.get_or_fetch_member(guildId=guild_id, userId=int(user_id))
                     if user:
                         cog_settings = self.get_cog_settings(guild_id)
                         focus_role_id = cog_settings.get("focus_role", None)
                         if focus_role_id:
                             remove_role_list = [focus_role_id]
                             # remove the user from the taco tuesday role
-                            await self.discord_helper.add_remove_roles(
+                            await self.role_helper.add_remove_roles(
                                 user=user, check_list=[], remove_list=remove_role_list, add_list=[], allow_everyone=True
                             )
 
@@ -391,13 +426,21 @@ class TacoTuesdayCog(TacobotCog):
                 for r in message.reactions:
                     fields.append({"name": str(r.emoji), "value": f"{r.count}", "inline": True})
 
-            moved_message = await self.discord_helper.move_message(
+            moved_message = await self.message_helper.move_message(
                 message=message,
                 targetChannel=archive_channel,
                 who=self.bot.user,
                 fields=fields,
                 reason="TACO Tuesday archive",
             )
+
+            if not moved_message:
+                self.log.error(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Could not move message {message.id} to archive channel {archive_channel.id}",
+                )
+                return
 
             # Should Update the entry to the new channel and message id
             self.tacotuesdays_db.taco_tuesday_update_message(
@@ -410,13 +453,14 @@ class TacoTuesdayCog(TacobotCog):
 
             await message.delete()
 
-            await self.messaging.send_embed(
-                channel=message.channel,
-                title="TACO Tuesday",
-                message=f"Message archived to {archive_channel.mention}",
-                color=discord.Color.green().value,
-                delete_after=10,
-            )
+            if isinstance(archive_channel, typing.Union[discord.TextChannel, discord.Thread]):
+                await self.messaging.send_embed(
+                    channel=message.channel,
+                    title="TACO Tuesday",
+                    message=f"Message archived to {archive_channel.mention}",
+                    color=discord.Color.green().value,
+                    delete_after=10,
+                )
 
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
@@ -443,12 +487,15 @@ class TacoTuesdayCog(TacobotCog):
             f"Adding user {member.id} to focus role {focus_role_id}",
         )
         # add user to focus_role
-        await self.discord_helper.add_remove_roles(
+        await self.role_helper.add_remove_roles(
             user=member, check_list=[], add_list=[focus_role_id], remove_list=[], allow_everyone=True
         )
 
     def _import_taco_tuesday(self, message: discord.Message, tweet: typing.Optional[str] = None) -> None:
         _method = inspect.stack()[0][3]
+        if message is None or message.guild is None:
+            return
+
         guild_id = message.guild.id
         channel_id = message.channel.id
         message_id = message.id
@@ -476,7 +523,8 @@ class TacoTuesdayCog(TacobotCog):
         self.log.debug(
             guild_id,
             f"{self._module}.{self._class}.{_method}",
-            f"Importing TACO Tuesday message {message_id} from channel {channel_id} in guild {guild_id} for user {message_author.id} with text {text} and image {image_url}",
+            f"Importing TACO Tuesday message {message_id} from channel {channel_id} in guild {guild_id} for user "
+            f"{message_author.id} with text {text} and image {image_url}",
         )
         self.tacotuesdays_db.save_taco_tuesday(
             guildId=guild_id,
@@ -488,7 +536,7 @@ class TacoTuesdayCog(TacobotCog):
             tweet=tweet or "",
         )
 
-    async def give_user_tacotuesday_tacos(self, guild_id, user_id, channel_id) -> None:
+    async def give_user_tacotuesday_tacos(self, guild_id: int, user_id: int, channel_id: int) -> None:
         _method = inspect.stack()[0][3]
         ctx = None
         try:
@@ -496,12 +544,24 @@ class TacoTuesdayCog(TacobotCog):
             # self, bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
             # get guild from id
             guild = self.bot.get_guild(guild_id)
+            if not guild:
+                self.log.warn(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"Guild {guild_id} not found in bot cache"
+                )
+                return
             # fetch member from id
-            member = guild.get_member(user_id)
+            member = await self.entity_helper.get_or_fetch_member(guild_id, user_id)
+            if not member:
+                self.log.warn(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Member {user_id} not found in guild {guild_id}",
+                )
+                return
             # get channel
             channel = None
             if channel_id:
-                channel = self.bot.get_channel(channel_id)
+                channel = await self.entity_helper.get_or_fetch_channel(channel_id)
             else:
                 channel = guild.system_channel
             if not channel:
@@ -513,7 +573,7 @@ class TacoTuesdayCog(TacobotCog):
 
             # get bot
             bot = self.bot
-            ctx = self.discord_helper.create_context(
+            ctx = self.context_helper.create_context(
                 bot=bot, guild=guild, author=member, channel=channel, message=message
             )
 
@@ -546,7 +606,7 @@ class TacoTuesdayCog(TacobotCog):
                 delete_after=self.SELF_DESTRUCT_TIMEOUT,
             )
 
-            await self.discord_helper.taco_give_user(
+            await self.taco_helper.give_tacos(
                 guild_id, self.bot.user, member, reason_msg, tacotypes.TacoTypes.TACO_TUESDAY, taco_amount=amount
             )
 
