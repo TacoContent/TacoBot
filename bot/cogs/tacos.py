@@ -332,7 +332,7 @@ class TacosCog(TacobotCog):
             max_gift_tacos: int = taco_settings.get("max_gift_tacos", 10)
             max_gift_taco_timespan = taco_settings.get("max_gift_taco_timespan", 86400)
 
-            eligible, err = await self._validate_gift_eligibility(
+            eligible, err = self._validate_gift_eligibility(
                 guild_id=guild_id,
                 giver_id=interaction.user.id,
                 recipient_id=user.id,
@@ -351,9 +351,9 @@ class TacosCog(TacobotCog):
             # )
             # remaining_gifts = max_gift_tacos - total_gifted
 
-            tacos_word = self.settings.get_string(guild_id, "taco_plural")
-            if amount > 1:
-                tacos_word = self.settings.get_string(guild_id, "taco_singular")
+            # tacos_word = self.settings.get_string(guild_id, "taco_plural")
+            # if amount > 1:
+            #     tacos_word = self.settings.get_string(guild_id, "taco_singular")
 
             # if remaining_gifts <= 0:
             #     await interaction.response.send_message(
@@ -378,29 +378,34 @@ class TacosCog(TacobotCog):
             if reason:
                 reason_msg = f"{reason}"
 
-            self.tacos_db.add_taco_gift(guild_id, interaction.user.id, amount)
-            await interaction.response.send_message(
-                self.settings.get_string(
-                    guild_id,
-                    "taco_gift_success",
-                    user=interaction.user.mention,
-                    touser=user.mention,
-                    amount=amount,
-                    taco_word=tacos_word,
-                    reason=reason_msg,
-                ),
-                ephemeral=True,
+            success_message = self._format_gift_success_message(
+                guild_id=guild_id,
+                giver_mention=interaction.user.mention,
+                receiver_mention=user.mention,
+                amount=amount,
+                reason=reason_msg,
             )
 
-            await self.taco_helper.give_tacos(
-                guild_id, interaction.user, user, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount
+            # self.tacos_db.add_taco_gift(guild_id, interaction.user.id, amount)
+            await interaction.response.send_message(success_message, ephemeral=True)
+
+            # await self.taco_helper.give_tacos(
+            #     guild_id, interaction.user, user, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount
+            # )
+
+            await self._process_taco_gift(
+                guild_id=guild_id,
+                giver=interaction.user,
+                receiver=user,
+                type=tacotypes.TacoTypes.CUSTOM,
+                amount=amount,
+                reason=reason_msg,
             )
 
-            self.tracking_db.track_command_usage(
-                guildId=guild_id,
-                channelId=interaction.channel.id if interaction.channel else None,
-                userId=interaction.user.id,
-                command="tacos",
+            self._track_tacos_command(
+                guild_id=guild_id,
+                channel_id=interaction.channel.id if interaction.channel else None,
+                user_id=interaction.user.id,
                 subcommand="gift",
                 args=[{"type": "slash_command"}, {"user_id": user.id}, {"amount": amount}, {"reason": reason_msg}],
             )
@@ -421,7 +426,7 @@ class TacosCog(TacobotCog):
             max_gift_tacos: int = taco_settings.get("max_gift_tacos", 10)
             max_gift_taco_timespan = taco_settings.get("max_gift_taco_timespan", 86400)
 
-            eligible, err = await self._validate_gift_eligibility(
+            eligible, err = self._validate_gift_eligibility(
                 guild_id=guild_id,
                 giver_id=ctx.author.id,
                 recipient_id=member.id,
@@ -460,9 +465,9 @@ class TacosCog(TacobotCog):
             # )
             # remaining_gifts = max_gift_tacos - total_gifted
 
-            tacos_word = self.settings.get_string(guild_id, "taco_plural")
-            if amount > 1:
-                tacos_word = self.settings.get_string(guild_id, "taco_singular")
+            # tacos_word = self.settings.get_string(guild_id, "taco_plural")
+            # if amount > 1:
+            #     tacos_word = self.settings.get_string(guild_id, "taco_singular")
 
             ### DEPRECATED CODE FOR _VALIDATE_GIFT_ELIGIBILITY FUNCTION ###
             # if remaining_gifts <= 0:
@@ -497,32 +502,39 @@ class TacosCog(TacobotCog):
             if reason:
                 reason_msg = f"{reason}"
 
-            self.tacos_db.add_taco_gift(ctx.guild.id, ctx.author.id, amount)
+            success_message = self._format_gift_success_message(
+                guild_id=guild_id,
+                giver_mention=ctx.author.mention,
+                receiver_mention=member.mention,
+                amount=amount,
+                reason=reason_msg,
+            )
+
+            # self.tacos_db.add_taco_gift(ctx.guild.id, ctx.author.id, amount)
             await self.messaging.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_gift_title"),
-                message=self.settings.get_string(
-                    guild_id,
-                    "taco_gift_success",
-                    user=ctx.message.author.mention,
-                    touser=member.mention,
-                    amount=amount,
-                    taco_word=tacos_word,
-                    reason=reason_msg,
-                ),
+                message=success_message,
                 footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT),
                 delete_after=self.SELF_DESTRUCT_TIMEOUT,
             )
 
-            await self.taco_helper.give_tacos(
-                guild_id, ctx.author, member, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount
+            # await self.taco_helper.give_tacos(
+            #     guild_id, ctx.author, member, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount
+            # )
+            await self._process_taco_gift(
+                guild_id=guild_id,
+                giver=ctx.author,
+                receiver=member,
+                type=tacotypes.TacoTypes.CUSTOM,
+                amount=amount,
+                reason=reason_msg,
             )
 
-            self.tracking_db.track_command_usage(
-                guildId=guild_id,
-                channelId=ctx.channel.id if ctx.channel.id else None,
-                userId=ctx.author.id,
-                command="tacos",
+            self._track_tacos_command(
+                guild_id=guild_id,
+                channel_id=ctx.channel.id if ctx.channel.id else None,
+                user_id=ctx.author.id,
                 subcommand="gift",
                 args=[{"type": "command"}, {"user_id": member.id}, {"amount": amount}, {"reason": reason_msg}],
             )
@@ -687,8 +699,61 @@ class TacosCog(TacobotCog):
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
 
+    def _track_tacos_command(
+        self,
+        guild_id: int,
+        channel_id: typing.Optional[int],
+        user_id: int,
+        subcommand: str,
+        args: typing.List[typing.Dict[str, typing.Union[str, int, dict]]],
+    ) -> None:
+        self.tracking_db.track_command_usage(
+            guildId=guild_id,
+            channelId=channel_id,
+            userId=user_id,
+            command="tacos",
+            subcommand=subcommand,
+            args=args,
+        )
 
-    async def _validate_gift_eligibility(
+    async def _process_taco_gift(
+        self,
+        guild_id: int,
+        giver: typing.Union[discord.Member, discord.User, discord.ClientUser],
+        receiver: typing.Union[discord.Member, discord.User, discord.ClientUser],
+        type: tacotypes.TacoTypes,
+        amount: int,
+        reason: str,
+    ) -> None:
+        self.tacos_db.add_taco_gift(guild_id, giver.id, amount)
+        await self.taco_helper.give_tacos(
+            guild_id, giver, receiver, reason, type, taco_amount=amount
+        )
+
+    def _format_gift_success_message(
+        self,
+        guild_id: int,
+        giver_mention: str,
+        receiver_mention: str,
+        amount: int,
+        reason: str,
+    ) -> str:
+        """Formats the gift success message."""
+        tacos_word = self.settings.get_string(guild_id, "taco_singular")
+        if amount > 1:
+            tacos_word = self.settings.get_string(guild_id, "taco_plural")
+
+        return self.settings.get_string(
+            guild_id,
+            "taco_gift_success",
+            user=giver_mention,
+            touser=receiver_mention,
+            amount=amount,
+            taco_word=tacos_word,
+            reason=reason,
+        )
+
+    def _validate_gift_eligibility(
         self,
         guild_id: int,
         giver_id: int,
