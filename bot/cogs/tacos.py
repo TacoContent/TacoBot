@@ -4,9 +4,9 @@ import traceback
 import typing
 
 import discord
-from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
+from bot.lib.helpers import EntityHelper, TacoHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
@@ -18,20 +18,26 @@ from discord.ext import commands
 class TacosCog(TacobotCog):
     group = app_commands.Group(name="tacos", description="Tacos commands")
 
-    def __init__(self, bot: TacoBot) -> None:
+    def __init__(
+        self,
+        bot: TacoBot,
+        tacos_db: typing.Optional[TacosDatabase] = None,
+        tracking_db: typing.Optional[TrackingDatabase] = None,
+    ) -> None:
         super().__init__(bot, "tacos")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
         self.messaging = Messaging(bot)
+        self.entity_helper = EntityHelper(bot)
+        self.taco_helper = TacoHelper(bot, entity_helper=self.entity_helper)
 
         self.SELF_DESTRUCT_TIMEOUT = 30
 
-        self.tacos_db = TacosDatabase()
-        self.tracking_db = TrackingDatabase()
+        self.tacos_db = tacos_db or TacosDatabase()
+        self.tracking_db = tracking_db or TrackingDatabase()
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -55,7 +61,7 @@ class TacosCog(TacobotCog):
                 message=f"{user.mention} has lost all their tacos.",
                 delete_after=self.SELF_DESTRUCT_TIMEOUT,
             )
-            await self.discord_helper.taco_purge_log(ctx.guild.id, user, ctx.author, reason_msg)
+            await self.taco_helper.log_taco_purge(ctx.guild.id, user, ctx.author, reason_msg)
 
             self.tracking_db.track_command_usage(
                 guildId=guild_id,
@@ -84,7 +90,7 @@ class TacosCog(TacobotCog):
             reason_msg = reason if reason else "No reason given."
             if interaction.channel:
                 await interaction.response.send_message(f"{user.mention} has lost all their tacos.", ephemeral=True)
-            await self.discord_helper.taco_purge_log(guild_id, user, interaction.user, reason_msg)
+            await self.taco_helper.log_taco_purge(guild_id, user, interaction.user, reason_msg)
 
             self.tracking_db.track_command_usage(
                 guildId=guild_id,
@@ -143,7 +149,7 @@ class TacosCog(TacobotCog):
                 ephemeral=True,
             )
 
-            await self.discord_helper.taco_give_user(
+            await self.taco_helper.give_tacos(
                 guild_id, interaction.user, user, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount
             )
 
@@ -205,7 +211,7 @@ class TacosCog(TacobotCog):
                 delete_after=self.SELF_DESTRUCT_TIMEOUT,
             )
 
-            await self.discord_helper.taco_give_user(
+            await self.taco_helper.give_tacos(
                 guild_id, ctx.author, member, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount
             )
 
@@ -369,7 +375,7 @@ class TacosCog(TacobotCog):
                 ephemeral=True,
             )
 
-            await self.discord_helper.taco_give_user(
+            await self.taco_helper.give_tacos(
                 guild_id, interaction.user, user, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount
             )
 
@@ -468,7 +474,7 @@ class TacosCog(TacobotCog):
                 delete_after=self.SELF_DESTRUCT_TIMEOUT,
             )
 
-            await self.discord_helper.taco_give_user(
+            await self.taco_helper.give_tacos(
                 guild_id, ctx.author, member, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount
             )
 
@@ -499,7 +505,7 @@ class TacosCog(TacobotCog):
 
                 if message.type == discord.MessageType.premium_guild_subscription:
                     # add tacos to user that boosted the server
-                    await self.discord_helper.taco_give_user(
+                    await self.taco_helper.give_tacos(
                         guild_id,
                         self.bot.user,
                         member,
@@ -522,7 +528,7 @@ class TacosCog(TacobotCog):
                                 )
                                 return
                             # it is a reply to another user
-                            await self.discord_helper.taco_give_user(
+                            await self.taco_helper.give_tacos(
                                 guild_id,
                                 self.bot.user,
                                 member,
@@ -561,11 +567,18 @@ class TacosCog(TacobotCog):
             )
 
             if str(payload.emoji) in reaction_emojis:
-                user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+                user = await self.entity_helper.get_or_fetch_user(payload.user_id)
                 # ignore if the user is a bot or system
                 if not user or user.bot or user.system:
                     return
-                channel = await self.bot.fetch_channel(payload.channel_id)
+                channel = await self.entity_helper.get_or_fetch_channel(payload.channel_id)
+                if not channel or not isinstance(channel, discord.TextChannel):
+                    self.log.debug(
+                        guild_id,
+                        f"{self._module}.{self._class}.{_method}",
+                        f"Channel {payload.channel_id} not found or not a TextChannel",
+                    )
+                    return
                 message = await channel.fetch_message(payload.message_id)
                 # if the message is from a bot, or reacted by the author, ignore it
                 if message.author.bot or message.author.id == user.id:
@@ -587,7 +600,7 @@ class TacosCog(TacobotCog):
                 # track the user's taco reaction
                 self.tacos_db.add_taco_reaction(guild_id, user.id, channel.id, message.id)
                 # # give the user the reaction reward tacos
-                await self.discord_helper.taco_give_user(
+                await self.taco_helper.give_tacos(
                     guild_id,
                     user,
                     message.author,
@@ -621,7 +634,7 @@ class TacosCog(TacobotCog):
                     # track that the user has gifted tacos via reactions
                     self.tacos_db.add_taco_gift(guild_id, user.id, reaction_count)
                     # give taco giver tacos too
-                    await self.discord_helper.taco_give_user(
+                    await self.taco_helper.give_tacos(
                         guild_id,
                         self.bot.user,
                         user,

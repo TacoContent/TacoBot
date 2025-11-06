@@ -242,8 +242,10 @@
 - [x] **streamteam.py** (EntityHelper, PromptHelper, RoleHelper)
 - [x] **wdyctw.py** (EntityHelper, PromptHelper)
 - [x] **account_link.py** (EntityHelper, PromptHelper)
+
   > [!NOTE]
   > I could not find any reference to discord helper here, not any spot that would need these helpers.
+
 - [x] **game_keys.py** (EntityHelper, PromptHelper)
 - [x] **_lfg.py** (EntityHelper, PromptHelper)
 - [x] Run tests for each migrated cog ✅
@@ -251,14 +253,18 @@
 
 ### Week 7: High Complexity Cogs (remaining cogs)
 
-- [ ] **tacos.py** (All helpers)
+- [x] **tacos.py** (All helpers)
+  - [ ] refactor for testability
+  - [ ] add tests
 - [x] **announcements.py** (EntityHelper, PromptHelper, MessageHelper)
 - [x] **suggestions.py** (EntityHelper, PromptHelper, MessageHelper)
   - [ ] add tests
   - [ ] refactor for testability
     - [x] partially completed
 - [x] **move_message.py** (EntityHelper, MessageHelper)
-- [ ] **minecraft.py** (EntityHelper, PromptHelper, TacoHelper)
+- [x] **minecraft.py** (EntityHelper, PromptHelper, TacoHelper)
+  - [ ] refactor for testability
+  - [ ] add tests
 - [x] **new_account_check.py** (EntityHelper, RoleHelper, MessageHelper)
 - [x] **live_now.py** (EntityHelper, PromptHelper, TacoHelper)
 - [x] **taco_tuesday.py** (EntityHelper, PromptHelper, TacoHelper)

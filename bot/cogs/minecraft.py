@@ -5,11 +5,12 @@
 import inspect
 import os
 import traceback
+import typing
 
 import discord
 import requests
-from bot.lib import discordhelper
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
+from bot.lib.helpers import ContextHelper, EntityHelper, PromptHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.minecraft import MinecraftDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
@@ -19,18 +20,26 @@ from discord.ext.commands import Context
 
 
 class MinecraftCog(TacobotCog):
-    def __init__(self, bot: TacoBot):
+    def __init__(
+        self,
+        bot: TacoBot,
+        minecraft_db: typing.Optional[MinecraftDatabase] = None,
+        tracking_db: typing.Optional[TrackingDatabase] = None,
+    ):
         super().__init__(bot, "minecraft")
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
+        self.entity_helper = EntityHelper(bot)
+        self.context_helper = ContextHelper()
+        self.prompt_helper = PromptHelper(bot)
+
         self.messaging = Messaging(bot)
         self.SELF_DESTRUCT_TIMEOUT = 30
-        self.minecraft_db = MinecraftDatabase()
-        self.tracking_db = TrackingDatabase()
+        self.minecraft_db = minecraft_db or MinecraftDatabase()
+        self.tracking_db = tracking_db or TrackingDatabase()
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -87,7 +96,7 @@ class MinecraftCog(TacobotCog):
 
             # get the output channel from settings:
             AUTO_DELETE_TIMEOUT = self.SELF_DESTRUCT_TIMEOUT
-            output_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel", 0)))
+            output_channel = await self.entity_helper.get_or_fetch_channel(int(cog_settings.get("output_channel", 0)))
             self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"output_channel: {output_channel}")
             if not output_channel or output_channel.id != ctx.channel.id:
                 self.log.debug(
@@ -188,7 +197,7 @@ class MinecraftCog(TacobotCog):
 
             # get the output channel from settings:
             AUTO_DELETE_TIMEOUT = self.SELF_DESTRUCT_TIMEOUT
-            output_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel", 0)))
+            output_channel = await self.entity_helper.get_or_fetch_channel(int(cog_settings.get("output_channel", 0)))
             if not output_channel or output_channel.id != ctx.channel.id:
                 output_channel = ctx.author
                 AUTO_DELETE_TIMEOUT = None
@@ -283,7 +292,7 @@ class MinecraftCog(TacobotCog):
 
             # get the output channel from settings:
             AUTO_DELETE_TIMEOUT = self.SELF_DESTRUCT_TIMEOUT
-            output_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel", 0)))
+            output_channel = await self.entity_helper.get_or_fetch_channel(int(cog_settings.get("output_channel", 0)))
             if not output_channel or output_channel.id != ctx.channel.id:
                 output_channel = ctx.author
                 AUTO_DELETE_TIMEOUT = None
@@ -373,10 +382,10 @@ class MinecraftCog(TacobotCog):
 
             # try DM first
             try:
-                _ctx = self.discord_helper.create_context(
-                    self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
+                _ctx = self.context_helper.create_context(
+                    bot=self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
                 )
-                mc_username = await self.discord_helper.ask_text(
+                mc_username = await self.prompt_helper.ask_text(
                     _ctx,
                     ctx.author,
                     self.settings.get_string(guild_id, "minecraft_ask_username_title"),
@@ -385,7 +394,7 @@ class MinecraftCog(TacobotCog):
                 )
             except discord.Forbidden:
                 _ctx = ctx
-                mc_username = await self.discord_helper.ask_text(
+                mc_username = await self.prompt_helper.ask_text(
                     _ctx,
                     ctx.author,
                     self.settings.get_string(guild_id, "minecraft_ask_username_title"),
@@ -505,7 +514,7 @@ class MinecraftCog(TacobotCog):
                         delete_after=30,
                     )
 
-            await self.discord_helper.ask_yes_no(
+            await self.prompt_helper.ask_yes_no(
                 _ctx,
                 _ctx.channel,
                 title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
