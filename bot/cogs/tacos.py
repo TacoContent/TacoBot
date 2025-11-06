@@ -23,6 +23,9 @@ class TacosCog(TacobotCog):
         bot: TacoBot,
         tacos_db: typing.Optional[TacosDatabase] = None,
         tracking_db: typing.Optional[TrackingDatabase] = None,
+        messaging: typing.Optional[Messaging] = None,
+        entity_helper: typing.Optional[EntityHelper] = None,
+        taco_helper: typing.Optional[TacoHelper] = None,
     ) -> None:
         super().__init__(bot, "tacos")
         _method = inspect.stack()[0][3]
@@ -30,9 +33,9 @@ class TacosCog(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = Messaging(bot)
-        self.entity_helper = EntityHelper(bot)
-        self.taco_helper = TacoHelper(bot, entity_helper=self.entity_helper)
+        self.messaging = messaging or Messaging(bot)
+        self.entity_helper = entity_helper or EntityHelper(bot)
+        self.taco_helper = taco_helper or TacoHelper(bot, entity_helper=self.entity_helper)
 
         self.SELF_DESTRUCT_TIMEOUT = 30
 
@@ -649,4 +652,18 @@ class TacosCog(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(TacosCog(bot))
+    messaging: Messaging = Messaging(bot)
+    entity_helper: EntityHelper = EntityHelper(bot)
+    taco_helper: TacoHelper = TacoHelper(bot, entity_helper=entity_helper)
+    tacos_db: TacosDatabase = TacosDatabase()
+    tracking_db: TrackingDatabase = TrackingDatabase()
+    await bot.add_cog(
+        TacosCog(
+            bot=bot,
+            messaging=messaging,
+            entity_helper=entity_helper,
+            taco_helper=taco_helper,
+            tacos_db=tacos_db,
+            tracking_db=tracking_db
+        )
+    )
