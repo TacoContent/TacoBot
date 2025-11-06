@@ -323,42 +323,56 @@ class TacosCog(TacobotCog):
             taco_settings = self.get_tacos_settings(guild_id)
 
             # if the user that ran the command is the same as member, then exit the function
-            if interaction.user.id == user.id:
-                await interaction.response.send_message(
-                    self.settings.get_string(guild_id, "taco_self_gift_message", user=interaction.user.mention),
-                    ephemeral=True,
-                )
-                return
+            # if interaction.user.id == user.id:
+            #     await interaction.response.send_message(
+            #         self.settings.get_string(guild_id, "taco_self_gift_message", user=interaction.user.mention),
+            #         ephemeral=True,
+            #     )
+            #     return
             max_gift_tacos: int = taco_settings.get("max_gift_tacos", 10)
             max_gift_taco_timespan = taco_settings.get("max_gift_taco_timespan", 86400)
-            # get the total number of tacos the user has gifted in the last 24 hours
-            total_gifted: int = self.tacos_db.get_total_gifted_tacos(
-                guild_id, interaction.user.id, max_gift_taco_timespan
+
+            eligible, err = await self._validate_gift_eligibility(
+                guild_id=guild_id,
+                giver_id=interaction.user.id,
+                recipient_id=user.id,
+                amount=amount,
+                max_gift_tacos=max_gift_tacos,
+                max_gift_taco_timespan=max_gift_taco_timespan,
             )
-            remaining_gifts = max_gift_tacos - total_gifted
+
+            if not eligible:
+                await interaction.response.send_message(err, ephemeral=True)
+                return
+
+            # get the total number of tacos the user has gifted in the last 24 hours
+            # total_gifted: int = self.tacos_db.get_total_gifted_tacos(
+            #     guild_id, interaction.user.id, max_gift_taco_timespan
+            # )
+            # remaining_gifts = max_gift_tacos - total_gifted
 
             tacos_word = self.settings.get_string(guild_id, "taco_plural")
             if amount > 1:
                 tacos_word = self.settings.get_string(guild_id, "taco_singular")
 
-            if remaining_gifts <= 0:
-                await interaction.response.send_message(
-                    self.settings.get_string(guild_id, "taco_gift_maximum", max=max_gift_tacos, taco_word=tacos_word),
-                    ephemeral=True,
-                )
-                return
-            if amount <= 0 or amount > remaining_gifts:
-                await interaction.response.send_message(
-                    self.settings.get_string(
-                        guild_id,
-                        "taco_gift_limit_exceeded",
-                        user=interaction.user.mention,
-                        remaining=remaining_gifts,
-                        taco_word=tacos_word,
-                    ),
-                    ephemeral=True,
-                )
-                return
+            # if remaining_gifts <= 0:
+            #     await interaction.response.send_message(
+            #         self.settings.get_string(guild_id, "taco_gift_maximum", max=max_gift_tacos, taco_word=tacos_word),
+            #         ephemeral=True,
+            #     )
+            #     return
+            # if amount <= 0 or amount > remaining_gifts:
+            #     await interaction.response.send_message(
+            #         self.settings.get_string(
+            #             guild_id,
+            #             "taco_gift_limit_exceeded",
+            #             user=interaction.user.mention,
+            #             remaining=remaining_gifts,
+            #             taco_word=tacos_word,
+            #         ),
+            #         ephemeral=True,
+            #     )
+            #     return
 
             reason_msg = self.settings.get_string(guild_id, "taco_reason_default")
             if reason:
@@ -404,57 +418,80 @@ class TacosCog(TacobotCog):
             await ctx.message.delete()
             taco_settings = self.get_tacos_settings(guild_id)
 
-            # if the user that ran the command is the same as member, then exit the function
-            if ctx.author.id == member.id:
+            max_gift_tacos: int = taco_settings.get("max_gift_tacos", 10)
+            max_gift_taco_timespan = taco_settings.get("max_gift_taco_timespan", 86400)
+
+            eligible, err = await self._validate_gift_eligibility(
+                guild_id=guild_id,
+                giver_id=ctx.author.id,
+                recipient_id=member.id,
+                amount=amount,
+                max_gift_tacos=max_gift_tacos,
+                max_gift_taco_timespan=max_gift_taco_timespan,)
+
+            if not eligible:
                 await self.messaging.send_embed(
                     channel=ctx.channel,
-                    title=self.settings.get_string(guild_id, "error"),
-                    message=self.settings.get_string(guild_id, "taco_self_gift_message", user=ctx.author.mention),
+                    title=self.settings.get_string(guild_id, "taco_gift_title"),
+                    message=err,
                     footer=self.settings.get_string(
                         guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT
                     ),
                     delete_after=self.SELF_DESTRUCT_TIMEOUT,
                 )
                 return
-            max_gift_tacos: int = taco_settings.get("max_gift_tacos", 10)
-            max_gift_taco_timespan = taco_settings.get("max_gift_taco_timespan", 86400)
+
+            ### DEPRECATED CODE FOR _VALIDATE_GIFT_ELIGIBILITY FUNCTION ###
+            # if the user that ran the command is the same as member, then exit the function
+            # if ctx.author.id == member.id:
+            #     await self.messaging.send_embed(
+            #         channel=ctx.channel,
+            #         title=self.settings.get_string(guild_id, "error"),
+            #         message=self.settings.get_string(guild_id, "taco_self_gift_message", user=ctx.author.mention),
+            #         footer=self.settings.get_string(
+            #             guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT
+            #         ),
+            #         delete_after=self.SELF_DESTRUCT_TIMEOUT,
+            #     )
+            #     return
             # get the total number of tacos the user has gifted in the last 24 hours
-            total_gifted: int = self.tacos_db.get_total_gifted_tacos(
-                ctx.guild.id, ctx.author.id, max_gift_taco_timespan
-            )
-            remaining_gifts = max_gift_tacos - total_gifted
+            # total_gifted: int = self.tacos_db.get_total_gifted_tacos(
+            #     ctx.guild.id, ctx.author.id, max_gift_taco_timespan
+            # )
+            # remaining_gifts = max_gift_tacos - total_gifted
 
             tacos_word = self.settings.get_string(guild_id, "taco_plural")
             if amount > 1:
                 tacos_word = self.settings.get_string(guild_id, "taco_singular")
 
-            if remaining_gifts <= 0:
-                await self.messaging.send_embed(
-                    channel=ctx.channel,
-                    title=self.settings.get_string(guild_id, "taco_gift_title"),
-                    message=self.settings.get_string(
-                        guild_id, "taco_gift_maximum", max=max_gift_tacos, taco_word=tacos_word
-                    ),
-                    delete_after=30,
-                )
-                return
-            if amount <= 0 or amount > remaining_gifts:
-                await self.messaging.send_embed(
-                    channel=ctx.channel,
-                    title=self.settings.get_string(guild_id, "taco_gift_title"),
-                    message=self.settings.get_string(
-                        guild_id,
-                        "taco_gift_limit_exceeded",
-                        user=ctx.author.mention,
-                        remaining=remaining_gifts,
-                        taco_word=tacos_word,
-                    ),
-                    footer=self.settings.get_string(
-                        guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT
-                    ),
-                    delete_after=self.SELF_DESTRUCT_TIMEOUT,
-                )
-                return
+            ### DEPRECATED CODE FOR _VALIDATE_GIFT_ELIGIBILITY FUNCTION ###
+            # if remaining_gifts <= 0:
+            #     await self.messaging.send_embed(
+            #         channel=ctx.channel,
+            #         title=self.settings.get_string(guild_id, "taco_gift_title"),
+            #         message=self.settings.get_string(
+            #             guild_id, "taco_gift_maximum", max=max_gift_tacos, taco_word=tacos_word
+            #         ),
+            #         delete_after=30,
+            #     )
+            #     return
+            # if amount <= 0 or amount > remaining_gifts:
+            #     await self.messaging.send_embed(
+            #         channel=ctx.channel,
+            #         title=self.settings.get_string(guild_id, "taco_gift_title"),
+            #         message=self.settings.get_string(
+            #             guild_id,
+            #             "taco_gift_limit_exceeded",
+            #             user=ctx.author.mention,
+            #             remaining=remaining_gifts,
+            #             taco_word=tacos_word,
+            #         ),
+            #         footer=self.settings.get_string(
+            #             guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT
+            #         ),
+            #         delete_after=self.SELF_DESTRUCT_TIMEOUT,
+            #     )
+            #     return
 
             reason_msg = self.settings.get_string(guild_id, "taco_reason_default")
             if reason:
@@ -650,6 +687,44 @@ class TacosCog(TacobotCog):
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
 
+
+    async def _validate_gift_eligibility(
+        self,
+        guild_id: int,
+        giver_id: int,
+        recipient_id: int,
+        amount: int,
+        max_gift_tacos: int,
+        max_gift_taco_timespan: int,
+    ) -> typing.Tuple[bool, typing.Optional[str]]:
+
+        if giver_id == recipient_id:
+            return False, self.settings.get_string(guild_id, "taco_self_gift_message", user=f"<@{giver_id}>")
+
+        # get the total number of tacos the user has gifted in the last 24 hours
+        total_gifted: int = self.tacos_db.get_total_gifted_tacos(
+            guild_id, giver_id, max_gift_taco_timespan
+        )
+        remaining_gifts = max_gift_tacos - total_gifted
+
+        tacos_word = self.settings.get_string(guild_id, "taco_plural")
+        if amount == 1:
+            tacos_word = self.settings.get_string(guild_id, "taco_singular")
+
+        if remaining_gifts <= 0:
+            return False, self.settings.get_string(
+                guild_id, "taco_gift_maximum", max=max_gift_tacos, taco_word=tacos_word
+            )
+        if amount <= 0 or amount > remaining_gifts:
+            return False, self.settings.get_string(
+                guild_id,
+                "taco_gift_limit_exceeded",
+                user=f"<@{giver_id}>",
+                remaining=remaining_gifts,
+                taco_word=tacos_word,
+            )
+
+        return True, None
 
 async def setup(bot):
     messaging: Messaging = Messaging(bot)
