@@ -10,25 +10,34 @@ from bot.lib.messaging import Messaging
 from bot.lib.mongodb.introductions import IntroductionsDatabase
 from bot.lib.mongodb.settings import SettingsDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class IntroductionCog(TacobotCog):
-    def __init__(self, bot: TacoBot) -> None:
-        super().__init__(bot, "introduction")
+    def __init__(
+        self,
+        bot: TacoBot,
+        messaging: Messaging,
+        entity_helper: EntityHelper,
+        taco_helper: TacoHelper,
+        introductions_db: IntroductionsDatabase,
+        tracking_db: TrackingDatabase,
+        settings: Settings,
+    ) -> None:
+        super().__init__(bot, "introduction", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = Messaging(bot)
-        self.entity_helper = EntityHelper(bot)
-        self.taco_helper = TacoHelper(bot, entity_helper=self.entity_helper)
+        self.messaging = messaging
+        self.entity_helper = entity_helper
+        self.taco_helper = taco_helper
 
-        self.settings_db = SettingsDatabase()
-        self.introductions_db = IntroductionsDatabase()
-        self.tracking_db = TrackingDatabase()
+        self.introductions_db = introductions_db
+        self.tracking_db = tracking_db
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -127,7 +136,10 @@ class IntroductionCog(TacobotCog):
                     )
 
             # set the was_imported flag to true
-            self.settings_db.set_setting(guildId=guild_id, name=self.SETTINGS_SECTION, key="was_imported", value=True)
+            # self.settings_db.set_setting(guildId=guild_id, name=self.SETTINGS_SECTION, key="was_imported", value=True)
+            self.settings.settings_db.set_setting(
+                guildId=guild_id, name=self.SETTINGS_SECTION, key="was_imported", value=True
+            )
 
             await self.messaging.send_embed(
                 channel=ctx.channel,
@@ -279,4 +291,20 @@ class IntroductionCog(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(IntroductionCog(bot))
+    settings = Settings()
+    messaging = Messaging(bot)
+    entity_helper = EntityHelper(bot)
+    taco_helper = TacoHelper(bot, entity_helper=entity_helper)
+    introductions_db = IntroductionsDatabase()
+    tracking_db = TrackingDatabase()
+    await bot.add_cog(
+        IntroductionCog(
+            bot=bot,
+            messaging=messaging,
+            entity_helper=entity_helper,
+            taco_helper=taco_helper,
+            introductions_db=introductions_db,
+            tracking_db=tracking_db,
+            settings=settings
+        )
+    )

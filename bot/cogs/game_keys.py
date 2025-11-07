@@ -17,6 +17,7 @@ from bot.lib.mongodb.gamekeys import GameKeysDatabase
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
+from bot.lib.settings import Settings
 from bot.lib.steam.steamapi import SteamApiClient
 from bot.tacobot import TacoBot
 from bot.ui.GameRewardView import GameRewardView
@@ -25,22 +26,35 @@ from lib.models.InteractionContext import InteractionContext
 
 
 class GameKeysCog(TacobotCog):
-    def __init__(self, bot: TacoBot):
-        super().__init__(bot, "game_keys")
+    def __init__(
+        self,
+        bot: TacoBot,
+        messaging: Messaging,
+        tacos_db: TacosDatabase,
+        gamekeys_db: GameKeysDatabase,
+        tracking_db: TrackingDatabase,
+        permissions: Permissions,
+        steam_api: SteamApiClient,
+        entity_helper: EntityHelper,
+        context_helper: ContextHelper,
+        taco_helper: TacoHelper,
+        settings: Settings,
+    ):
+        super().__init__(bot, "game_keys", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = Messaging(bot)
-        self.tacos_db = TacosDatabase()
-        self.gamekeys_db = GameKeysDatabase()
-        self.tracking_db = TrackingDatabase()
-        self.permissions = Permissions(bot)
-        self.steam_api = SteamApiClient()
-        self.entity_helper = EntityHelper(bot)
-        self.context_helper = ContextHelper()
-        self.taco_helper = TacoHelper(bot)
+        self.messaging = messaging
+        self.tacos_db = tacos_db
+        self.gamekeys_db = gamekeys_db
+        self.tracking_db = tracking_db
+        self.permissions = permissions
+        self.steam_api = steam_api
+        self.entity_helper = entity_helper
+        self.context_helper = context_helper
+        self.taco_helper = taco_helper
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Initialized settings: {self.SETTINGS_SECTION}")
 
@@ -981,4 +995,28 @@ class GameKeysCog(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(GameKeysCog(bot))
+    messaging = Messaging(bot)
+    tacos_db = TacosDatabase()
+    gamekeys_db = GameKeysDatabase()
+    tracking_db = TrackingDatabase()
+    permissions = Permissions(bot)
+    steam_api = SteamApiClient()
+    entity_helper = EntityHelper(bot)
+    context_helper = ContextHelper()
+    taco_helper = TacoHelper(bot, entity_helper=entity_helper)
+    settings = Settings()
+    await bot.add_cog(
+        GameKeysCog(
+            bot=bot,
+            messaging=messaging,
+            tacos_db=tacos_db,
+            gamekeys_db=gamekeys_db,
+            tracking_db=tracking_db,
+            permissions=permissions,
+            steam_api=steam_api,
+            entity_helper=entity_helper,
+            context_helper=context_helper,
+            taco_helper=taco_helper,
+            settings=settings,
+        )
+    )

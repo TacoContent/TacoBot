@@ -2,23 +2,28 @@ import inspect
 import json
 import os
 import traceback
+import typing
 
 import discord
+from lib.settings import Settings
+from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
+from bot.lib.helpers import EntityHelper
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.tacobot import TacoBot
 from discord.ext import commands
 from openai import OpenAI
 
 
-class Assistant(TacobotCog):
-    def __init__(self, bot: TacoBot):
-        super().__init__(bot, "assistant")
+class AssistantCog(TacobotCog):
+    def __init__(self, bot: TacoBot, tacos_db: TacosDatabase, entity_helper: EntityHelper, settings: Settings):
+        super().__init__(bot, "assistant", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.tacos_db = TacosDatabase()
+        self.tacos_db = tacos_db
+        self.entity_helper = entity_helper
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
@@ -40,41 +45,69 @@ class Assistant(TacobotCog):
             if not message.content.startswith(self.bot.user.mention):
                 return
 
-            cog_settings = self.get_cog_settings(guild_id)
-            if not cog_settings.get("enabled", False):
-                return
-
-            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", "Assistant Triggered")
-            # tacos_settings = self.get_tacos_settings(guild_id)
-
-            faq = await self._get_message_content_for_prompt(
-                guildId=guild_id, channelId=int("948278701290840074"), messageId=int("1243617386981232670")
-            )
-            system = f"Your name is {self.bot.user.name}. You are in the {message.guild.name} discord. You are a discord assistant. You are here to help users with their questions. You can answer questions, provide information, and help users with their needs. You can also provide links to resources, and help users find the information they need. Your responses should be positive and fun."
-            channels = json.dumps(await self._get_channels(guild_id))
-            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Channels: {channels}")
-            user_prompt = message.content.replace(self.bot.user.mention, "").strip()
-            user_json = self._get_user_json(guild_id, message.author)
-            openai = OpenAI()
-            airesponse = openai.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": f"{system}\nFAQ: {faq}\nJSON of the Channels: {channels}\nAlways use the channels mention to link to the channel.",
-                    },
-                    {
-                        "role": "user",
-                        "content": f"{user_prompt}\nJSON of my user info:\n{user_json}\nUse my mention to ping me in your response.",
-                    },
-                ],
-            )
-            aiquestion = airesponse.choices[0].message.content
-            await message.channel.send(aiquestion)
+            ai_question = await self._ai_request(guild_id, message)
+            if ai_question:
+                await message.channel.send(ai_question)
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{str(ex)}", traceback.format_exc())
 
-    def _get_user_json(self, guildId: int, user: discord.Member) -> str:
+    async def _ai_request(self, guild_id: int, message: discord.Message) -> typing.Optional[str]:
+        _method = inspect.stack()[0][3]
+
+        if message.author == self.bot.user:
+            return None
+        if message.guild is None:
+            return None
+        if self.bot.user is None:
+            return None
+
+        cog_settings = self.get_cog_settings(guild_id)
+        if not cog_settings.get("enabled", False):
+            return None
+
+        faq_settings = cog_settings.get("faq", {})
+
+        faq_channel_id = faq_settings.get("channel_id", "948278701290840074")
+        faq_message_id = faq_settings.get("message_id", "1243617386981232670")
+
+        faq = await self._get_message_content_for_prompt(
+            channel_id=int(faq_channel_id), message_id=int(faq_message_id)
+        )
+        prompt = utils.str_replace(
+            cog_settings.get("system_prompt", ""),
+            bot_name=self.bot.user.name,
+            guild_name=message.guild.name,
+        )
+
+        model = cog_settings.get("model", "gpt-3.5-turbo")
+
+        # system = f"Your name is {self.bot.user.name}. You are in the {message.guild.name} discord. You are a discord
+        # assistant. You are here to help users with their questions. You can answer questions, provide information,
+        # and help users with their needs. You can also provide links to resources, and help users find the information
+        # they need. Your responses should be positive and fun."
+
+        channels = json.dumps(await self._get_channels(guild_id))
+        self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Channels: {channels}")
+        user_prompt = message.content.replace(self.bot.user.mention, "").strip()
+        user_json = self._get_user_json(guild_id, message.author)
+        openai = OpenAI()
+        ai_response = openai.chat.completions.create(
+            model=model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": f"{prompt}\nFAQ: {faq}\nJSON of the Channels: {channels}\nAlways use the channels mention to link to the channel.",
+                },
+                {
+                    "role": "user",
+                    "content": f"{user_prompt}\nJSON of my user info:\n{user_json}\nUse my mention to ping me in your response.",
+                },
+            ],
+        )
+        ai_question = ai_response.choices[0].message.content
+        return ai_question
+
+    def _get_user_json(self, guildId: int, user: typing.Union[discord.Member, discord.User]) -> str:
         _method = inspect.stack()[0][3]
         try:
             # get_tacos_count(self, guildId: int, userId: int)
@@ -84,14 +117,13 @@ class Assistant(TacobotCog):
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(ex)}", traceback.format_exc())
             return ""
 
-    async def _get_message_content_for_prompt(self, guildId: int, channelId: int, messageId: int) -> str:
+    async def _get_message_content_for_prompt(self, channel_id: int, message_id: int) -> str:
         _method = inspect.stack()[0][3]
         try:
-            guild = await self.bot.fetch_guild(guildId)
-            channel = await guild.fetch_channel(channelId)
+            channel = await self.entity_helper.get_or_fetch_channel(channel_id)
             if not channel:
                 return ""
-            message = await channel.fetch_message(messageId)
+            message = await channel.fetch_message(message_id)
             return message.content
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(ex)}", traceback.format_exc())
@@ -129,4 +161,8 @@ class Assistant(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(Assistant(bot))
+    settings = Settings()
+    tacos_db = TacosDatabase()
+    entity_helper = EntityHelper(bot)
+
+    await bot.add_cog(AssistantCog(bot=bot, tacos_db=tacos_db, entity_helper=entity_helper, settings=settings))

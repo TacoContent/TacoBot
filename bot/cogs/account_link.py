@@ -19,7 +19,14 @@ from discord.ext import commands
 class AccountLinkCog(TacobotCog):
     group = app_commands.Group(name="link", description="Link your Twitch account to your Discord account")
 
-    def __init__(self, bot: TacoBot, messaging: Messaging, twitch_db: TwitchDatabase, tracking_db: TrackingDatabase, settings: Settings):
+    def __init__(
+        self,
+        bot: TacoBot,
+        messaging: Messaging,
+        twitch_db: TwitchDatabase,
+        tracking_db: TrackingDatabase,
+        settings: Settings,
+    ):
         super().__init__(bot, "account_link", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
@@ -50,14 +57,11 @@ class AccountLinkCog(TacobotCog):
                 data={"user_id": str(interaction.user.id), "code": code},
             )
             if result:
-                await interaction.response.send_message(
-                    content=self.settings.get_string(guild_id, key="account_link_success_message", code=code),
-                    ephemeral=True,
-                )
+                msg = self.settings.get_string(guild_id, key="account_link_success_message", code=code)
+                await self._send_from_context(interaction, msg)
             else:
-                await interaction.response.send_message(
-                    content=self.settings.get_string(guild_id, key="account_link_unknown_code_message"), ephemeral=True
-                )
+                msg = self.settings.get_string(guild_id, key="account_link_unknown_code_message")
+                await self._send_from_context(interaction, msg)
             self.tracking_db.track_command_usage(
                 guildId=guild_id,
                 channelId=interaction.channel.id if interaction.channel else None,
@@ -83,14 +87,12 @@ class AccountLinkCog(TacobotCog):
             code = utils.get_random_string(length=6)
             result = self.twitch_db.set_twitch_discord_link_code(interaction.user.id, code)
             if result:
-                await interaction.response.send_message(
-                    content=self.settings.get_string(guild_id, key="account_link_notice_message", code=code),
-                    ephemeral=True,
-                )
+                msg = self.settings.get_string(guild_id, key="account_link_notice_message", code=code)
+                await self._send_from_context(interaction, msg)
             else:
-                await interaction.response.send_message(
-                    content=self.settings.get_string(guild_id, key="account_link_save_error_message"), ephemeral=True
-                )
+                msg = self.settings.get_string(guild_id, key="account_link_save_error_message")
+                await self._send_from_context(interaction, msg)
+
             self.tracking_db.track_command_usage(
                 guildId=guild_id,
                 channelId=interaction.channel.id if interaction.channel else None,
@@ -113,70 +115,9 @@ class AccountLinkCog(TacobotCog):
                 await ctx.message.delete()
 
             if code:
-                try:
-                    result = self.twitch_db.link_twitch_to_discord_from_code(ctx.author.id, code)
-                    self.tracking_db.track_system_action(
-                        guild_id=guild_id,
-                        action=SystemActions.LINK_TWITCH_TO_DISCORD,
-                        data={"user_id": str(ctx.author.id), "code": code},
-                    )
-                    if result:
-                        # try DM, if that fails, use the channel that it originated in
-                        try:
-                            await ctx.author.send(
-                                self.settings.get_string(guild_id, "account_link_success_message", code=code)
-                            )
-                        except discord.Forbidden:
-                            await ctx.channel.send(
-                                f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_success_message", code=code)}',  # pylint: disable=line-too-long
-                                delete_after=10,
-                            )
-                    else:
-                        try:
-                            await ctx.author.send(
-                                self.settings.get_string(guild_id, key="account_link_unknown_code_message")
-                            )
-                        except discord.Forbidden:
-                            await ctx.channel.send(
-                                f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_unknown_code_message")}',  # pylint: disable=line-too-long
-                                delete_after=10,
-                            )
-                except ValueError as ve:
-                    try:
-                        await ctx.author.send(f"{ve}")
-                    except discord.Forbidden:
-                        await ctx.channel.send(f"{ctx.author.mention}, {ve}", delete_after=10)
-                except Exception as e:
-                    self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-                    await self.messaging.notify_of_error(ctx)
+                await self._link_from_code(ctx, code, guild_id)
             else:
-                try:
-                    # generate code
-                    code = utils.get_random_string(length=6)
-                    # save code to db
-                    result = self.twitch_db.set_twitch_discord_link_code(ctx.author.id, code)
-                    notice_message = self.settings.get_string(guild_id, "account_link_notice_message", code=code)
-                    if result:
-                        try:
-                            await ctx.author.send(notice_message)
-                        except discord.Forbidden:
-                            await ctx.channel.send(f"{ctx.author.mention}, {notice_message}", delete_after=10)
-                    else:
-                        try:
-                            await ctx.author.send(self.settings.get_string(guild_id, "account_link_save_error_message"))
-                        except discord.Forbidden:
-                            await ctx.channel.send(
-                                f'{ctx.author.mention}, {self.settings.get_string(guildId=guild_id, key="account_link_save_error_message")}',  # pylint: disable=line-too-long
-                                delete_after=10,
-                            )
-                except ValueError as ver:
-                    try:
-                        await ctx.author.send(f"{ver}")
-                    except discord.Forbidden:
-                        await ctx.channel.send(f"{ctx.author.mention}, {ver}", delete_after=10)
-                except Exception as e:
-                    self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-                    await self.messaging.notify_of_error(ctx)
+                await self._generate_code(ctx, guild_id)
 
             self.tracking_db.track_command_usage(
                 guildId=guild_id,
@@ -190,6 +131,70 @@ class AccountLinkCog(TacobotCog):
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
+    async def _send_from_context(self, ctx, message: str):
+        try:
+            if isinstance(ctx, discord.Interaction):
+                await ctx.response.send_message(content=message, ephemeral=True)
+            else:
+
+                if not ctx.guild:
+                    return
+                if not ctx.author:
+                    return
+                if not ctx.channel:
+                    return
+
+                try:
+                    await ctx.author.send(message)
+                except discord.Forbidden:
+                    await ctx.channel.send(f"{ctx.author.mention}, {message}", delete_after=10)
+
+        except discord.Forbidden:
+            pass
+
+    async def _link_from_code(self, ctx, code: str, guild_id: int):
+        _method = inspect.stack()[0][3]
+        try:
+            result = self.twitch_db.link_twitch_to_discord_from_code(ctx.author.id, code)
+            self.tracking_db.track_system_action(
+                guild_id=guild_id,
+                action=SystemActions.LINK_TWITCH_TO_DISCORD,
+                data={"user_id": str(ctx.author.id), "code": code},
+            )
+            if result:
+                await self._send_from_context(
+                    ctx, self.settings.get_string(guild_id, key="account_link_success_message", code=code)
+                )
+            else:
+                await self._send_from_context(
+                    ctx, self.settings.get_string(guild_id, key="account_link_unknown_code_message")
+                )
+        except ValueError as ve:
+            await self._send_from_context(ctx, str(ve))
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            await self.messaging.notify_of_error(ctx)
+
+    async def _generate_code(self, ctx, guild_id: int):
+        _method = inspect.stack()[0][3]
+        try:
+            # generate code
+            code = utils.get_random_string(length=6)
+            # save code to db
+            result = self.twitch_db.set_twitch_discord_link_code(ctx.author.id, code)
+            notice_message = self.settings.get_string(guild_id, "account_link_notice_message", code=code)
+            if result:
+                await self._send_from_context(ctx, notice_message)
+            else:
+                await self._send_from_context(
+                    ctx, self.settings.get_string(guild_id, "account_link_save_error_message")
+                )
+
+        except ValueError as ver:
+            await self._send_from_context(ctx, str(ver))
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            await self.messaging.notify_of_error(ctx)
 
 async def setup(bot):
     settings = Settings()

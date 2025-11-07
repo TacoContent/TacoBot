@@ -14,6 +14,7 @@ from bot.lib.helpers import ContextHelper, EntityHelper, PromptHelper, RoleHelpe
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.birthdays import BirthdaysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord import app_commands
 from discord.ext import commands
@@ -23,21 +24,33 @@ from discord.ext.commands import Context
 class Birthday(TacobotCog):
     group = app_commands.Group(name="birthday", description="Birthday commands")
 
-    def __init__(self, bot: TacoBot):
-        super().__init__(bot, "birthday")
+    def __init__(
+        self,
+        bot: TacoBot,
+        messaging: Messaging,
+        birthdays_db: BirthdaysDatabase,
+        tracking_db: TrackingDatabase,
+        taco_helper: TacoHelper,
+        entity_helper: EntityHelper,
+        context_helper: ContextHelper,
+        prompt_helper: PromptHelper,
+        role_helper: RoleHelper,
+        settings: Settings,
+    ):
+        super().__init__(bot, "birthday", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = Messaging(bot)
-        self.birthdays_db = BirthdaysDatabase()
-        self.tracking_db = TrackingDatabase()
-        self.tacos_helper = TacoHelper(bot)
-        self.entity_helper = EntityHelper(bot)
-        self.context_helper = ContextHelper()
-        self.prompt_helper = PromptHelper(bot)
-        self.role_helper = RoleHelper(bot)
+        self.messaging = messaging
+        self.birthdays_db = birthdays_db
+        self.tracking_db = tracking_db
+        self.tacos_helper = taco_helper
+        self.entity_helper = entity_helper
+        self.context_helper = context_helper
+        self.prompt_helper = prompt_helper
+        self.role_helper = role_helper
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -504,4 +517,26 @@ class Birthday(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(Birthday(bot))
+    settings = Settings()
+    birthday_db = BirthdaysDatabase()
+    tracking_db = TrackingDatabase()
+    messaging = Messaging(bot)
+    entity_helper = EntityHelper(bot)
+    taco_helper = TacoHelper(bot, entity_helper=entity_helper)
+    context_helper = ContextHelper()
+    prompt_helper = PromptHelper(bot)
+    role_helper = RoleHelper(bot)
+    await bot.add_cog(
+        Birthday(
+            bot=bot,
+            messaging=messaging,
+            birthdays_db=birthday_db,
+            tracking_db=tracking_db,
+            taco_helper=taco_helper,
+            entity_helper=entity_helper,
+            context_helper=context_helper,
+            prompt_helper=prompt_helper,
+            role_helper=role_helper,
+            settings=settings,
+        )
+    )

@@ -3,13 +3,15 @@ import os
 import traceback
 
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
-class Events(TacobotCog):
-    def __init__(self, bot: TacoBot):
-        super().__init__(bot, "tacobot")
+class EventsCog(TacobotCog):
+    """Just a simple cog to handle bot events."""
+    def __init__(self, bot: TacoBot, settings: Settings):
+        super().__init__(bot, "tacobot", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
@@ -46,4 +48,5 @@ class Events(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(Events(bot))
+    settings = Settings()
+    await bot.add_cog(EventsCog(bot=bot, settings=settings))

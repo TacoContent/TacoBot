@@ -6,18 +6,19 @@ import discord
 from bot import tacobot  # pylint: disable=no-name-in-module
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
+from bot.lib.settings import Settings
 from discord.ext import commands
 from discord.ext.commands import Context, Greedy
 
 
 class CommandSyncCog(TacobotCog):
-    def __init__(self, bot: tacobot.TacoBot) -> None:
-        super().__init__(bot, "command_sync")
+    def __init__(self, bot: tacobot.TacoBot, messaging: Messaging,settings: Settings) -> None:
+        super().__init__(bot, "command_sync", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.messaging = Messaging(bot)
+        self.messaging = messaging
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -89,4 +90,6 @@ class CommandSyncCog(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(CommandSyncCog(bot))
+    messaging = Messaging(bot)
+    settings = Settings()
+    await bot.add_cog(CommandSyncCog(bot=bot, messaging=messaging, settings=settings))
