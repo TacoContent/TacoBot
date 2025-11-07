@@ -2,25 +2,34 @@ import inspect
 import os
 import traceback
 
+
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.helpers import EntityHelper, TacoHelper
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class MessageTracker(TacobotCog):
-    def __init__(self, bot: TacoBot):
-        super().__init__(bot, "message_track")
+    def __init__(
+        self,
+        bot: TacoBot,
+        tracking_db: TrackingDatabase,
+        entity_helper: EntityHelper,
+        tacos_helper: TacoHelper,
+        settings: Settings,
+    ) -> None:
+        super().__init__(bot, "message_track", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.tracking_db = TrackingDatabase()
-        self.entity_helper = EntityHelper(bot)
-        self.tacos_helper = TacoHelper(bot, entity_helper=self.entity_helper)
+        self.tracking_db = tracking_db
+        self.entity_helper = entity_helper
+        self.tacos_helper = tacos_helper
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -92,4 +101,12 @@ class MessageTracker(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(MessageTracker(bot))
+    settings = Settings()
+    tracking_db = TrackingDatabase()
+    entity_helper = EntityHelper(bot)
+    taco_helper = TacoHelper(bot, entity_helper=entity_helper)
+    await bot.add_cog(
+        MessageTracker(
+            bot=bot, tracking_db=tracking_db, entity_helper=entity_helper, tacos_helper=taco_helper, settings=settings
+        )
+    )

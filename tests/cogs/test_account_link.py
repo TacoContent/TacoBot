@@ -8,31 +8,8 @@ from bot.lib.enums.system_actions import SystemActions
 
 
 @pytest.fixture
-def mock_bot():
-    bot = MagicMock()
-    bot.add_cog = AsyncMock()
-    return bot
-
-
-@pytest.fixture
-def mock_twitch_db():
-    return MagicMock()
-
-
-@pytest.fixture
-def mock_tracking_db():
-    return MagicMock()
-
-
-@pytest.fixture
-def mock_messaging():
-    messaging = MagicMock()
-    messaging.notify_of_error = AsyncMock()
-    return messaging
-
-
-@pytest.fixture
 def mock_settings():
+    """Specialized settings fixture with account_link-specific behavior."""
     settings = MagicMock()
     def mock_get_string(*args, **kwargs):
         key = kwargs.get('key') or (args[1] if len(args) > 1 else None)
@@ -52,12 +29,13 @@ def mock_settings():
 
 
 @pytest.fixture
-def cog(mock_bot, mock_messaging, mock_twitch_db, mock_tracking_db, mock_settings):
+def cog(bot, messaging, twitch_db, tracking_db, mock_settings):
+    """Create AccountLinkCog with injected dependencies from conftest.py."""
     c = AccountLinkCog(
-        bot=mock_bot,
-        messaging=mock_messaging,
-        twitch_db=mock_twitch_db,
-        tracking_db=mock_tracking_db,
+        bot=bot,
+        messaging=messaging,
+        twitch_db=twitch_db,
+        tracking_db=tracking_db,
         settings=mock_settings,
     )
     c.log = MagicMock()
@@ -95,28 +73,28 @@ def mock_ctx():
 
 
 class TestAccountLinkCog:
-    def test_init(self, cog, mock_bot, mock_messaging, mock_twitch_db, mock_tracking_db, mock_settings):
-        assert cog.bot == mock_bot
-        assert cog.messaging == mock_messaging
-        assert cog.twitch_db == mock_twitch_db
-        assert cog.tracking_db == mock_tracking_db
+    def test_init(self, cog, bot, messaging, twitch_db, tracking_db, mock_settings):
+        assert cog.bot == bot
+        assert cog.messaging == messaging
+        assert cog.twitch_db == twitch_db
+        assert cog.tracking_db == tracking_db
         assert cog.settings == mock_settings
         assert cog.invites == {}
         mock_settings.get_string.assert_not_called()  # Since it's not called in __init__
 
     @pytest.mark.asyncio
-    async def test_verify_success(self, cog, mock_interaction, mock_twitch_db, mock_tracking_db, mock_settings):
-        mock_twitch_db.link_twitch_to_discord_from_code.return_value = True
+    async def test_verify_success(self, cog, mock_interaction, twitch_db, tracking_db, mock_settings):
+        twitch_db.link_twitch_to_discord_from_code.return_value = True
 
         await cog.verify.callback(cog, mock_interaction, "ABC123")
 
-        mock_twitch_db.link_twitch_to_discord_from_code.assert_called_once_with(67890, "ABC123")
-        mock_tracking_db.track_system_action.assert_called_once_with(
+        twitch_db.link_twitch_to_discord_from_code.assert_called_once_with(67890, "ABC123")
+        tracking_db.track_system_action.assert_called_once_with(
             guild_id=12345,
             action=SystemActions.LINK_TWITCH_TO_DISCORD,
             data={"user_id": "67890", "code": "ABC123"},
         )
-        mock_tracking_db.track_command_usage.assert_called_once_with(
+        tracking_db.track_command_usage.assert_called_once_with(
             guildId=12345,
             channelId=11111,
             userId=67890,
@@ -128,24 +106,24 @@ class TestAccountLinkCog:
         mock_interaction.response.send_message.assert_called_once_with(content="Success: ABC123", ephemeral=True)
 
     @pytest.mark.asyncio
-    async def test_verify_unknown_code(self, cog, mock_interaction, mock_twitch_db, mock_tracking_db, mock_settings):
-        mock_twitch_db.link_twitch_to_discord_from_code.return_value = False
+    async def test_verify_unknown_code(self, cog, mock_interaction, twitch_db, tracking_db, mock_settings):
+        twitch_db.link_twitch_to_discord_from_code.return_value = False
 
         await cog.verify.callback(cog, mock_interaction, "XYZ789")
 
-        mock_twitch_db.link_twitch_to_discord_from_code.assert_called_once_with(67890, "XYZ789")
-        mock_tracking_db.track_system_action.assert_called_once()
-        mock_tracking_db.track_command_usage.assert_called_once()
+        twitch_db.link_twitch_to_discord_from_code.assert_called_once_with(67890, "XYZ789")
+        tracking_db.track_system_action.assert_called_once()
+        tracking_db.track_command_usage.assert_called_once()
         mock_settings.get_string.assert_called_with(12345, key="account_link_unknown_code_message")
         mock_interaction.response.send_message.assert_called_once_with(content="Unknown code", ephemeral=True)
 
     @pytest.mark.asyncio
-    async def test_verify_exception(self, cog, mock_interaction, mock_twitch_db, mock_tracking_db):
-        mock_twitch_db.link_twitch_to_discord_from_code.side_effect = Exception("DB error")
+    async def test_verify_exception(self, cog, mock_interaction, twitch_db, tracking_db):
+        twitch_db.link_twitch_to_discord_from_code.side_effect = Exception("DB error")
 
         await cog.verify.callback(cog, mock_interaction, "CODE")
 
-        mock_twitch_db.link_twitch_to_discord_from_code.assert_called_once_with(67890, "CODE")
+        twitch_db.link_twitch_to_discord_from_code.assert_called_once_with(67890, "CODE")
         cog.log.error.assert_called_once()
 
     @pytest.mark.asyncio
@@ -158,14 +136,14 @@ class TestAccountLinkCog:
         mock_interaction.response.send_message.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_request_success(self, cog, mock_interaction, mock_twitch_db, mock_tracking_db, mock_settings):
+    async def test_request_success(self, cog, mock_interaction, twitch_db, tracking_db, mock_settings):
         with patch('bot.lib.utils.get_random_string', return_value='RANDOM'):
-            mock_twitch_db.set_twitch_discord_link_code.return_value = True
+            twitch_db.set_twitch_discord_link_code.return_value = True
 
             await cog.request.callback(cog, mock_interaction)
 
-            mock_twitch_db.set_twitch_discord_link_code.assert_called_once_with(67890, 'RANDOM')
-            mock_tracking_db.track_command_usage.assert_called_once_with(
+            twitch_db.set_twitch_discord_link_code.assert_called_once_with(67890, 'RANDOM')
+            tracking_db.track_command_usage.assert_called_once_with(
                 guildId=12345,
                 channelId=11111,
                 userId=67890,
@@ -177,19 +155,19 @@ class TestAccountLinkCog:
             mock_interaction.response.send_message.assert_called_once_with(content="Notice: RANDOM", ephemeral=True)
 
     @pytest.mark.asyncio
-    async def test_request_save_error(self, cog, mock_interaction, mock_twitch_db, mock_tracking_db, mock_settings):
+    async def test_request_save_error(self, cog, mock_interaction, twitch_db, tracking_db, mock_settings):
         with patch('bot.lib.utils.get_random_string', return_value='RANDOM'):
-            mock_twitch_db.set_twitch_discord_link_code.return_value = False
+            twitch_db.set_twitch_discord_link_code.return_value = False
 
             await cog.request.callback(cog, mock_interaction)
 
-            mock_twitch_db.set_twitch_discord_link_code.assert_called_once_with(67890, 'RANDOM')
-            mock_tracking_db.track_command_usage.assert_called_once()
+            twitch_db.set_twitch_discord_link_code.assert_called_once_with(67890, 'RANDOM')
+            tracking_db.track_command_usage.assert_called_once()
             mock_settings.get_string.assert_called_with(12345, key="account_link_save_error_message")
             mock_interaction.response.send_message.assert_called_once_with(content="Save error", ephemeral=True)
 
     @pytest.mark.asyncio
-    async def test_request_exception(self, cog, mock_interaction, mock_twitch_db):
+    async def test_request_exception(self, cog, mock_interaction, twitch_db):
         with patch('bot.lib.utils.get_random_string', side_effect=Exception("Random error")):
             await cog.request.callback(cog, mock_interaction)
 
@@ -204,16 +182,16 @@ class TestAccountLinkCog:
         mock_interaction.response.send_message.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_link_with_code_success(self, cog, mock_ctx, mock_twitch_db, mock_tracking_db, mock_settings):
+    async def test_link_with_code_success(self, cog, mock_ctx, twitch_db, tracking_db, mock_settings):
         mock_ctx.message.delete = AsyncMock()
-        mock_twitch_db.link_twitch_to_discord_from_code.return_value = True
+        twitch_db.link_twitch_to_discord_from_code.return_value = True
 
         await cog.link.callback(cog, mock_ctx, code="ABC123")
 
         mock_ctx.message.delete.assert_called_once()
-        mock_twitch_db.link_twitch_to_discord_from_code.assert_called_once_with(67890, "ABC123")
-        mock_tracking_db.track_system_action.assert_called_once()
-        mock_tracking_db.track_command_usage.assert_called_once_with(
+        twitch_db.link_twitch_to_discord_from_code.assert_called_once_with(67890, "ABC123")
+        tracking_db.track_system_action.assert_called_once()
+        tracking_db.track_command_usage.assert_called_once_with(
             guildId=12345,
             channelId=11111,
             userId=67890,
@@ -224,29 +202,29 @@ class TestAccountLinkCog:
         mock_ctx.author.send.assert_called_once_with("Success: ABC123")
 
     @pytest.mark.asyncio
-    async def test_link_with_code_unknown(self, cog, mock_ctx, mock_twitch_db, mock_tracking_db, mock_settings):
+    async def test_link_with_code_unknown(self, cog, mock_ctx, twitch_db, tracking_db, mock_settings):
         mock_ctx.message.delete = AsyncMock()
-        mock_twitch_db.link_twitch_to_discord_from_code.return_value = False
+        twitch_db.link_twitch_to_discord_from_code.return_value = False
 
         await cog.link.callback(cog, mock_ctx, code="XYZ789")
 
         mock_ctx.message.delete.assert_called_once()
-        mock_twitch_db.link_twitch_to_discord_from_code.assert_called_once_with(67890, "XYZ789")
-        mock_tracking_db.track_system_action.assert_called_once()
-        mock_tracking_db.track_command_usage.assert_called_once()
+        twitch_db.link_twitch_to_discord_from_code.assert_called_once_with(67890, "XYZ789")
+        tracking_db.track_system_action.assert_called_once()
+        tracking_db.track_command_usage.assert_called_once()
         mock_ctx.author.send.assert_called_once_with("Unknown code")
 
     @pytest.mark.asyncio
-    async def test_link_without_code(self, cog, mock_ctx, mock_twitch_db, mock_tracking_db, mock_settings):
+    async def test_link_without_code(self, cog, mock_ctx, twitch_db, tracking_db, mock_settings):
         with patch('bot.lib.utils.get_random_string', return_value='RANDOM'):
             mock_ctx.message.delete = AsyncMock()
-            mock_twitch_db.set_twitch_discord_link_code.return_value = True
+            twitch_db.set_twitch_discord_link_code.return_value = True
 
             await cog.link.callback(cog, mock_ctx)
 
             mock_ctx.message.delete.assert_called_once()
-            mock_twitch_db.set_twitch_discord_link_code.assert_called_once_with(67890, 'RANDOM')
-            mock_tracking_db.track_command_usage.assert_called_once_with(
+            twitch_db.set_twitch_discord_link_code.assert_called_once_with(67890, 'RANDOM')
+            tracking_db.track_command_usage.assert_called_once_with(
                 guildId=12345,
                 channelId=11111,
                 userId=67890,
@@ -257,15 +235,15 @@ class TestAccountLinkCog:
             mock_ctx.author.send.assert_called_once_with("Notice: RANDOM")
 
     @pytest.mark.asyncio
-    async def test_link_exception(self, cog, mock_ctx, mock_twitch_db, mock_messaging):
+    async def test_link_exception(self, cog, mock_ctx, twitch_db, messaging):
         mock_ctx.message.delete = AsyncMock()
-        mock_twitch_db.link_twitch_to_discord_from_code.side_effect = Exception("DB error")
+        twitch_db.link_twitch_to_discord_from_code.side_effect = Exception("DB error")
 
         await cog.link.callback(cog, mock_ctx, code="CODE")
 
         mock_ctx.message.delete.assert_called_once()
         cog.log.error.assert_called_once()
-        mock_messaging.notify_of_error.assert_called_once_with(mock_ctx)
+        messaging.notify_of_error.assert_called_once_with(mock_ctx)
 
     @pytest.mark.asyncio
     async def test_link_no_guild(self, cog, mock_ctx):
@@ -317,68 +295,68 @@ class TestAccountLinkCog:
         mock_ctx.channel.send.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_link_from_code_success(self, cog, mock_ctx, mock_twitch_db, mock_tracking_db, mock_settings):
-        mock_twitch_db.link_twitch_to_discord_from_code.return_value = True
+    async def test_link_from_code_success(self, cog, mock_ctx, twitch_db, tracking_db, mock_settings):
+        twitch_db.link_twitch_to_discord_from_code.return_value = True
         mock_settings.get_string.return_value = "Success: {code}"
 
         await cog._link_from_code(mock_ctx, "ABC123", 12345)
 
-        mock_twitch_db.link_twitch_to_discord_from_code.assert_called_once_with(67890, "ABC123")
-        mock_tracking_db.track_system_action.assert_called_once()
+        twitch_db.link_twitch_to_discord_from_code.assert_called_once_with(67890, "ABC123")
+        tracking_db.track_system_action.assert_called_once()
         mock_ctx.author.send.assert_called_once_with("Success: ABC123")
 
     @pytest.mark.asyncio
-    async def test_link_from_code_unknown(self, cog, mock_ctx, mock_twitch_db, mock_tracking_db, mock_settings):
-        mock_twitch_db.link_twitch_to_discord_from_code.return_value = False
+    async def test_link_from_code_unknown(self, cog, mock_ctx, twitch_db, tracking_db, mock_settings):
+        twitch_db.link_twitch_to_discord_from_code.return_value = False
         mock_settings.get_string.return_value = "Unknown code"
 
         await cog._link_from_code(mock_ctx, "XYZ789", 12345)
 
-        mock_twitch_db.link_twitch_to_discord_from_code.assert_called_once_with(67890, "XYZ789")
-        mock_tracking_db.track_system_action.assert_called_once()
+        twitch_db.link_twitch_to_discord_from_code.assert_called_once_with(67890, "XYZ789")
+        tracking_db.track_system_action.assert_called_once()
         mock_ctx.author.send.assert_called_once_with("Unknown code")
 
     @pytest.mark.asyncio
-    async def test_link_from_code_value_error(self, cog, mock_ctx, mock_twitch_db):
-        mock_twitch_db.link_twitch_to_discord_from_code.side_effect = ValueError("Invalid code")
+    async def test_link_from_code_value_error(self, cog, mock_ctx, twitch_db):
+        twitch_db.link_twitch_to_discord_from_code.side_effect = ValueError("Invalid code")
 
         await cog._link_from_code(mock_ctx, "CODE", 12345)
 
         mock_ctx.author.send.assert_called_once_with("Invalid code")
 
     @pytest.mark.asyncio
-    async def test_link_from_code_exception(self, cog, mock_ctx, mock_twitch_db, mock_messaging):
-        mock_twitch_db.link_twitch_to_discord_from_code.side_effect = Exception("DB error")
+    async def test_link_from_code_exception(self, cog, mock_ctx, twitch_db, messaging):
+        twitch_db.link_twitch_to_discord_from_code.side_effect = Exception("DB error")
 
         await cog._link_from_code(mock_ctx, "CODE", 12345)
 
         cog.log.error.assert_called_once()
-        mock_messaging.notify_of_error.assert_called_once_with(mock_ctx)
+        messaging.notify_of_error.assert_called_once_with(mock_ctx)
 
     @pytest.mark.asyncio
-    async def test_generate_code_success(self, cog, mock_ctx, mock_twitch_db, mock_settings):
+    async def test_generate_code_success(self, cog, mock_ctx, twitch_db, mock_settings):
         with patch('bot.lib.utils.get_random_string', return_value='RANDOM'):
-            mock_twitch_db.set_twitch_discord_link_code.return_value = True
+            twitch_db.set_twitch_discord_link_code.return_value = True
             mock_settings.get_string.return_value = "Notice: {code}"
 
             await cog._generate_code(mock_ctx, 12345)
 
-            mock_twitch_db.set_twitch_discord_link_code.assert_called_once_with(67890, 'RANDOM')
+            twitch_db.set_twitch_discord_link_code.assert_called_once_with(67890, 'RANDOM')
             mock_ctx.author.send.assert_called_once_with("Notice: RANDOM")
 
     @pytest.mark.asyncio
-    async def test_generate_code_save_error(self, cog, mock_ctx, mock_twitch_db, mock_settings):
+    async def test_generate_code_save_error(self, cog, mock_ctx, twitch_db, mock_settings):
         with patch('bot.lib.utils.get_random_string', return_value='RANDOM'):
-            mock_twitch_db.set_twitch_discord_link_code.return_value = False
+            twitch_db.set_twitch_discord_link_code.return_value = False
             mock_settings.get_string.return_value = "Save error"
 
             await cog._generate_code(mock_ctx, 12345)
 
-            mock_twitch_db.set_twitch_discord_link_code.assert_called_once_with(67890, 'RANDOM')
+            twitch_db.set_twitch_discord_link_code.assert_called_once_with(67890, 'RANDOM')
             mock_ctx.author.send.assert_called_once_with("Save error")
 
     @pytest.mark.asyncio
-    async def test_generate_code_value_error(self, cog, mock_ctx, mock_twitch_db):
+    async def test_generate_code_value_error(self, cog, mock_ctx, twitch_db):
         with patch('bot.lib.utils.get_random_string', side_effect=ValueError("Random error")):
 
             await cog._generate_code(mock_ctx, 12345)
@@ -386,17 +364,24 @@ class TestAccountLinkCog:
             mock_ctx.author.send.assert_called_once_with("Random error")
 
     @pytest.mark.asyncio
-    async def test_generate_code_exception(self, cog, mock_ctx, mock_twitch_db, mock_messaging):
+    async def test_generate_code_exception(self, cog, mock_ctx, twitch_db, messaging):
         with patch('bot.lib.utils.get_random_string', side_effect=Exception("Random error")):
 
             await cog._generate_code(mock_ctx, 12345)
 
             cog.log.error.assert_called_once()
-            mock_messaging.notify_of_error.assert_called_once_with(mock_ctx)
+            messaging.notify_of_error.assert_called_once_with(mock_ctx)
 
 
 @pytest.mark.asyncio
-async def test_setup(mock_bot, mock_messaging, mock_twitch_db, mock_tracking_db, mock_settings):
+async def test_setup():
+    mock_bot = MagicMock()
+    mock_bot.add_cog = AsyncMock()
+    mock_messaging = MagicMock()
+    mock_twitch_db = MagicMock()
+    mock_tracking_db = MagicMock()
+    mock_settings = MagicMock()
+    
     with patch('bot.cogs.account_link.Settings', return_value=mock_settings), \
          patch('bot.cogs.account_link.Messaging', return_value=mock_messaging), \
          patch('bot.cogs.account_link.TwitchDatabase', return_value=mock_twitch_db), \

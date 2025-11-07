@@ -8,7 +8,6 @@ from bot.lib.enums import tacotypes
 from bot.lib.helpers import EntityHelper, TacoHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.introductions import IntroductionsDatabase
-from bot.lib.mongodb.settings import SettingsDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot

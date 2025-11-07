@@ -5,6 +5,23 @@ import pytest
 from bot.cogs.tacos import TacosCog
 
 
+@pytest.fixture
+def cog(bot, settings, tacos_db, tracking_db, messaging, permissions, entity_helper, taco_helper):
+    """Create TacosCog with injected dependencies from conftest.py."""
+    c = TacosCog(
+        bot=bot,
+        settings=settings,
+        tacos_db=tacos_db,
+        tracking_db=tracking_db,
+        messaging=messaging,
+        permissions=permissions,
+        entity_helper=entity_helper,
+        taco_helper=taco_helper,
+    )
+    c.log = MagicMock()
+    return c
+
+
 @pytest.mark.asyncio
 async def test_process_taco_gift(cog):
     cog.tacos_db.add_taco_gift = MagicMock()
@@ -59,34 +76,6 @@ def test_format_gift_success_message(cog):
     # Test plural
     msg = cog._format_gift_success_message(guild_id, "@giver", "@receiver", 3, "for fun")
     assert msg == "@giver gave @receiver 3 tacos. Reason: for fun"
-
-
-@pytest.fixture
-def cog():
-    bot = MagicMock()
-    settings = MagicMock()
-    settings.log_level = "debug"
-    tacos_db = MagicMock()
-    tracking_db = MagicMock()
-    messaging = MagicMock()
-    permissions = MagicMock()
-    # Mock permissions to return False (no restrictions) by default
-    permissions.has_taco_permission = MagicMock(return_value=False)
-    entity_helper = MagicMock()
-    taco_helper = MagicMock()
-    
-    c = TacosCog(
-        bot=bot,
-        settings=settings,
-        tacos_db=tacos_db,
-        tracking_db=tracking_db,
-        messaging=messaging,
-        permissions=permissions,
-        entity_helper=entity_helper,
-        taco_helper=taco_helper,
-    )
-    c.log = MagicMock()
-    return c
 
 
 @pytest.mark.asyncio

@@ -9,21 +9,29 @@ from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.helpers import EntityHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class MessagePreview(TacobotCog):
-    def __init__(self, bot: TacoBot) -> None:
-        super().__init__(bot, "message_preview")
+    def __init__(
+        self,
+        bot: TacoBot,
+        entity_helper: EntityHelper,
+        messaging: Messaging,
+        tracking_db: TrackingDatabase,
+        settings: Settings
+    ) -> None:
+        super().__init__(bot, "message_preview", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.entity_helper = EntityHelper(bot)
-        self.messaging = Messaging(bot)
-        self.tracking_db = TrackingDatabase()
+        self.entity_helper = entity_helper
+        self.messaging = messaging
+        self.tracking_db = tracking_db
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -146,4 +154,16 @@ class MessagePreview(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(MessagePreview(bot))
+    settings = Settings()
+    entity_helper = EntityHelper(bot)
+    messaging = Messaging(bot)
+    tracking_db = TrackingDatabase()
+    await bot.add_cog(
+        MessagePreview(
+            bot=bot,
+            entity_helper=entity_helper,
+            messaging=messaging,
+            tracking_db=tracking_db,
+            settings=settings,
+        )
+    )

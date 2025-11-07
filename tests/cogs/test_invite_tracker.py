@@ -1,31 +1,25 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bot.cogs.invite_tracker import InviteTracker
 
 
 @pytest.fixture
-def mock_bot():
-    bot = MagicMock()
+def cog(bot, invites_db, tracking_db, entity_helper, taco_helper, settings):
+    # Setup bot mock
     bot.user = MagicMock(id=999, name="Tacobot")
     bot.guilds = [MagicMock(id=123, invites=AsyncMock(return_value=[]))]
-    return bot
-
-
-@pytest.fixture
-def cog(mock_bot):
-    with (
-        patch("bot.cogs.invite_tracker.InvitesDatabase") as MockInvitesDB,
-        patch("bot.cogs.invite_tracker.TrackingDatabase") as MockTrackingDB,
-    ):
-        invites_db = MockInvitesDB.return_value
-        tracking_db = MockTrackingDB.return_value
-        # Patch helpers to avoid real Discord API
-        with patch("bot.cogs.invite_tracker.EntityHelper"), patch("bot.cogs.invite_tracker.TacoHelper"):
-            cog = InviteTracker(mock_bot)
-            cog.invites_db = invites_db
-            cog.tracking_db = tracking_db
-            return cog
+    # Create InviteTracker with injected dependencies
+    c = InviteTracker(
+        bot=bot,
+        invites_db=invites_db,
+        tracking_db=tracking_db,
+        entity_helper=entity_helper,
+        taco_helper=taco_helper,
+        settings=settings,
+    )
+    c.log = MagicMock()
+    return c
 
 
 class DummyInvite:
@@ -53,12 +47,12 @@ class DummyMember:
 
 
 @pytest.mark.asyncio
-async def test_on_ready_tracks_invites(cog, mock_bot):
+async def test_on_ready_tracks_invites(cog, bot):
     # Setup: guild.invites returns two invites with valid inviters
     inviter = MagicMock(id=111)
     invite1 = DummyInvite("abc123", uses=1, inviter=inviter)
     invite2 = DummyInvite("def456", uses=2, inviter=inviter)
-    mock_bot.guilds[0].invites = AsyncMock(return_value=[invite1, invite2])
+    bot.guilds[0].invites = AsyncMock(return_value=[invite1, invite2])
     cog.invites_db.track_invite_code = MagicMock()
     await cog.on_ready()
     # Should track both invites
@@ -165,7 +159,8 @@ def test_find_invite_by_code_finds_invite(cog):
     invite = DummyInvite("abc123", uses=1, inviter=inviter)
     invite_list = [invite]
     found = cog.find_invite_by_code(invite_list, "abc123")
-    assert found == invite
+    # Compare .code property for equality
+    assert getattr(found, "code", None) == invite.code
 
 
 def test_find_invite_by_code_returns_none(cog):

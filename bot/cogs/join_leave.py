@@ -24,7 +24,7 @@ class JoinLeaveTrackerCog(TacobotCog):
         entity_helper: EntityHelper,
         taco_helper: TacoHelper,
     ) -> None:
-        super().__init__(bot, "tacobot", settings)
+        super().__init__(bot, "tacobot", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory

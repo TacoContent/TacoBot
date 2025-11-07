@@ -5,31 +5,8 @@ from bot.cogs.user_lookup import UserLookupCog
 
 
 @pytest.fixture
-def bot():
-    return MagicMock()
-
-
-@pytest.fixture
-def tracking_db():
-    db = MagicMock()
-    db.track_discord_user = MagicMock()
-    return db
-
-
-@pytest.fixture
-def settings():
-    s = MagicMock()
-    s.get_settings = MagicMock(return_value={"full_import_enabled": True})
-    s.name = "TacoBot"
-    s.version = "1.0.0"
-    s.settings_db = MagicMock()
-    s.settings_db.set_setting = MagicMock()
-    s.log_level = "debug"
-    return s
-
-
-@pytest.fixture
 def cog(bot, tracking_db, settings):
+    """Create UserLookupCog with injected dependencies from conftest.py."""
     c = UserLookupCog(bot=bot, tracking_db=tracking_db, settings=settings)
     c.log = MagicMock()
     return c

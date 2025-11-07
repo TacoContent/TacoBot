@@ -15,6 +15,7 @@ from bot.lib.messaging import Messaging
 from bot.lib.mongodb.live import LiveDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.twitch import TwitchDatabase
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
@@ -23,25 +24,30 @@ class LiveNow(TacobotCog):
     def __init__(
         self,
         bot: TacoBot,
-        tracking_db: typing.Optional[TrackingDatabase] = None,
-        twitch_db: typing.Optional[TwitchDatabase] = None,
-        live_db: typing.Optional[LiveDatabase] = None,
+        tracking_db: TrackingDatabase,
+        twitch_db: TwitchDatabase,
+        live_db: LiveDatabase,
+        messaging: Messaging,
+        entity_helper: EntityHelper,
+        role_helper: RoleHelper,
+        taco_helper: TacoHelper,
+        settings: Settings,
     ) -> None:
-        super().__init__(bot, "live_now")
+        super().__init__(bot, "live_now", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = Messaging(bot)
+        self.messaging = messaging
 
-        self.entity_helper = EntityHelper(bot)
-        self.role_helper = RoleHelper(bot)
-        self.taco_helper = TacoHelper(bot, entity_helper=self.entity_helper)
+        self.entity_helper = entity_helper
+        self.role_helper = role_helper
+        self.taco_helper = taco_helper
 
-        self.live_db = live_db or LiveDatabase()
-        self.twitch_db = twitch_db or TwitchDatabase()
-        self.tracking_db = tracking_db or TrackingDatabase()
+        self.live_db = live_db
+        self.twitch_db = twitch_db
+        self.tracking_db = tracking_db
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -157,52 +163,6 @@ class LiveNow(TacobotCog):
                     give_type=tacotypes.TacoTypes.STREAM,
                     taco_amount=taco_amount,
                 )
-
-            # ENDED STREAM
-            # HMMMM. This is not triggering. Need to figure out why
-            # for bsa in before_streaming_activities:
-            #     # sleep for a bit to make sure the live role is removed before we clean up the db
-            #     await asyncio.sleep(1)
-
-            #     # check if bsa is in after_streaming_activities
-            #     found_bsa = len([a for a in after_streaming_activities if a.url == bsa.url and a.platform == bsa.platform]) > 0
-            #     if found_bsa:
-            #         self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"{after.display_name} is still live on {bsa.platform}")
-            #         # this activity exists in both lists, so it is still live
-            #         continue
-
-            #     tracked = self.live_db.get_tracked_live(guildId=guild_id, userId=before.id, platform=bsa.platform)
-            #     is_tracked = tracked != None and len(tracked) > 0
-            #     # if it is not tracked, then we don't need to do anything
-            #     if not is_tracked or not tracked:
-            #         self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"{after.display_name} is not tracked for {bsa.platform}")
-            #         await self.remove_live_roles(before, cog_settings)
-            #         continue
-
-            #     # if we get here, then we need to untrack the user live activity
-            #     self.log.info(guild_id, f"{self._module}.{self._class}.{_method}", f"{before.display_name} stopped streaming on {bsa.platform}")
-            #     # track the END activity
-            #     self.live_db.track_live_activity(guild_id, before.id, False, bsa.platform, url=bsa.url)
-
-            #     logging_channel_id = cog_settings.get("logging_channel", None)
-            #     if logging_channel_id:
-            #         logging_channel = await self.discord_helper.get_or_fetch_channel(int(logging_channel_id))
-            #         if logging_channel:
-            #             for tracked_item in tracked:
-            #                 message_id = tracked_item.get("message_id", None)
-            #                 if message_id:
-            #                     try:
-            #                         message = await logging_channel.fetch_message(int(message_id))
-            #                         if message:
-            #                             self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Deleting LIVE 🔴 message ({message_id}) from channel {logging_channel}")
-            #                             await message.delete()
-            #                     except discord.errors.NotFound:
-            #                         self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"Message {message_id} not found in channel {logging_channel}")
-
-            #     # remove all tracked items for this live platform (should only be one)
-            #     self.live_db.untrack_live(guild_id, before.id, bsa.platform)
-
-            #     await self.remove_live_roles(before, cog_settings)
 
             if len(before_streaming_activities) == 0 and len(after_streaming_activities) == 0:
                 try:
@@ -493,4 +453,24 @@ class LiveNow(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(LiveNow(bot))
+    settings = Settings()
+    tracking_db = TrackingDatabase()
+    twitch_db = TwitchDatabase()
+    live_db = LiveDatabase()
+    messaging = Messaging(bot)
+    entity_helper = EntityHelper(bot)
+    role_helper = RoleHelper(bot)
+    taco_helper = TacoHelper(bot, entity_helper=entity_helper)
+    await bot.add_cog(
+        LiveNow(
+            bot=bot,
+            settings=settings,
+            tracking_db=tracking_db,
+            twitch_db=twitch_db,
+            live_db=live_db,
+            messaging=messaging,
+            entity_helper=entity_helper,
+            role_helper=role_helper,
+            taco_helper=taco_helper,
+        )
+    )

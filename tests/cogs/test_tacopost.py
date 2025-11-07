@@ -5,53 +5,8 @@ from bot.cogs.tacopost import TacoPostCog
 
 
 @pytest.fixture
-def bot():
-    return MagicMock()
-
-
-@pytest.fixture
-def tacos_db():
-    db = MagicMock()
-    db.get_tacos_count = MagicMock(return_value=5)
-    db.remove_tacos = MagicMock()
-    return db
-
-
-@pytest.fixture
-def settings():
-    s = MagicMock()
-    s.get_settings = MagicMock(return_value={'channels': [{'id': '123', 'cost': 3, 'exempt': []}]})
-    s.get_string = MagicMock(return_value="Test string")
-    s.name = "TacoBot"
-    s.version = "1.0.0"
-    s.log_level = "debug"
-    return s
-
-
-@pytest.fixture
-def messaging():
-    m = MagicMock()
-    m.send_embed = AsyncMock()
-    return m
-
-
-@pytest.fixture
-def message_helper():
-    h = MagicMock()
-    h.notify_bot_not_initialized = AsyncMock()
-    return h
-
-
-@pytest.fixture
-def prompt_helper():
-    h = MagicMock()
-    h.ask_yes_no = AsyncMock()
-    return h
-
-
-@pytest.fixture
 def cog(bot, tacos_db, settings, messaging, message_helper, prompt_helper):
-    # Create the cog with dependency injection
+    """Create TacoPostCog with injected dependencies from conftest.py."""
     c = TacoPostCog(
         bot=bot,
         tacos_db=tacos_db,

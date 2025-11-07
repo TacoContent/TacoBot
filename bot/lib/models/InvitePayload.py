@@ -1,5 +1,7 @@
 import typing
 
+import discord
+
 
 class InvitePayload:
 
@@ -21,3 +23,29 @@ class InvitePayload:
         # it should __dict__ recursively
         # exclude None values
         return {k: v.to_dict() if hasattr(v, 'to_dict') else v for k, v in self.__dict__.items() if v is not None}
+
+
+class InvitePayloadFactory:
+
+    def __init__(self) -> None:
+        pass
+
+    def create_from_dict(self, data: typing.Dict[str, typing.Any]) -> InvitePayload:
+        return InvitePayload(data)
+
+    def create_from_invite(self, invite: discord.Invite) -> InvitePayload:
+        return InvitePayload(
+            {
+                "id": invite.id,
+                "code": invite.code,
+                "inviter_id": str(invite.inviter.id) if invite.inviter else "",
+                "uses": invite.uses if invite.uses is not None else 0,
+                "max_uses": invite.max_uses if invite.max_uses is not None else 0,
+                "max_age": invite.max_age if invite.max_age is not None else 0,
+                "temporary": invite.temporary if invite.temporary is not None else False,
+                "created_at": invite.created_at,
+                "revoked": invite.revoked if invite.revoked is not None else False,
+                "channel_id": str(invite.channel.id) if invite.channel else "",
+                "url": invite.url,
+            }
+        )

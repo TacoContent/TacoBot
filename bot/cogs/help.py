@@ -26,7 +26,7 @@ class HelpCog(TacobotCog):
         self._module = os.path.basename(__file__)[:-3]
 
         self.messaging = messaging
-        self.tracking_db = tracking_db or TrackingDatabase()
+        self.tracking_db = tracking_db
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 

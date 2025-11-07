@@ -4,34 +4,46 @@ import os
 import traceback
 import typing
 
+import discord
+
+
 from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.enums.system_actions import SystemActions
 from bot.lib.helpers import EntityHelper, TacoHelper
-from bot.lib.models.InvitePayload import InvitePayload
+from bot.lib.models.InvitePayload import InvitePayload, InvitePayloadFactory
 from bot.lib.models.UserInviteSystemActionData import UserInviteSystemActionData
 from bot.lib.mongodb.invites import InvitesDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class InviteTracker(TacobotCog):
-    def __init__(self, bot: TacoBot):
-        super().__init__(bot, "tacobot")
+    def __init__(
+        self,
+        bot: TacoBot,
+        invites_db: InvitesDatabase,
+        tracking_db: TrackingDatabase,
+        entity_helper: EntityHelper,
+        taco_helper: TacoHelper,
+        settings: Settings,
+    ) -> None:
+        super().__init__(bot, "tacobot", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.invites_db = InvitesDatabase()
-        self.tracking_db = TrackingDatabase()
+        self.invites_db = invites_db
+        self.tracking_db = tracking_db
 
-        self.entity_helper = EntityHelper(bot)
-        self.taco_helper = TacoHelper(bot, entity_helper=self.entity_helper)
+        self.entity_helper = entity_helper
+        self.taco_helper = taco_helper
 
-        self.invites = {}
+        self.invites: typing.Dict[int, typing.List[discord.Invite]] = {}
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
@@ -67,8 +79,8 @@ class InviteTracker(TacobotCog):
         guild_id = member.guild.id
         _method = inspect.stack()[0][3]
         try:
-            invites_before_join = self.invites[member.guild.id]
-            invites_after_join = await member.guild.invites()
+            invites_before_join: typing.List[discord.Invite] = self.invites[member.guild.id]
+            invites_after_join: typing.List[discord.Invite] = await member.guild.invites()
             for invite in invites_before_join:
                 found_code = self.find_invite_by_code(invites_after_join, invite.code)
                 if found_code is not None and invite.uses < found_code.uses:
@@ -110,28 +122,30 @@ class InviteTracker(TacobotCog):
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     def get_payload_for_invite(self, invite) -> InvitePayload:
-        return InvitePayload(
-            {
-                "id": invite.id,
-                "code": invite.code,
-                "inviter_id": str(invite.inviter.id),
-                "uses": invite.uses,
-                "max_uses": invite.max_uses,
-                "max_age": invite.max_age,
-                "temporary": invite.temporary,
-                "created_at": invite.created_at,
-                "revoked": invite.revoked,
-                "channel_id": str(invite.channel.id),
-                "url": invite.url,
-            }
-        )
+        factory = InvitePayloadFactory()
+        return factory.create_from_invite(invite)
 
-    def find_invite_by_code(self, inviteList: typing.List[InvitePayload], code: str) -> typing.Optional[InvitePayload]:
+    def find_invite_by_code(self, inviteList: typing.List[discord.Invite], code: str) -> typing.Optional[InvitePayload]:
+        factory = InvitePayloadFactory()
         for invite in inviteList:
             if invite.code == code:
-                return invite
+                return factory.create_from_invite(invite)
         return None
 
 
 async def setup(bot) -> None:
-    await bot.add_cog(InviteTracker(bot))
+    invites_db = InvitesDatabase()
+    tracking_db = TrackingDatabase()
+    entity_helper = EntityHelper(bot)
+    taco_helper = TacoHelper(bot, entity_helper=entity_helper)
+    settings = Settings()
+    await bot.add_cog(
+        InviteTracker(
+            bot=bot,
+            invites_db=invites_db,
+            tracking_db=tracking_db,
+            entity_helper=entity_helper,
+            taco_helper=taco_helper,
+            settings=settings,
+        )
+    )

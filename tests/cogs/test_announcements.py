@@ -6,39 +6,8 @@ from bot.cogs.announcements import AnnouncementsCog
 
 
 @pytest.fixture
-def bot():
-    return MagicMock()
-
-
-@pytest.fixture
-def announcements_db():
-    db = MagicMock()
-    db.track_announcement = MagicMock()
-    return db
-
-
-@pytest.fixture
-def settings():
-    s = MagicMock()
-    s.get_settings = MagicMock(
-        return_value={"enabled": True, "channels": ["123"], "import_existing": True, "import_limit": 2}
-    )
-    s.name = "TacoBot"
-    s.version = "1.0.0"
-    s.settings_db = MagicMock()
-    s.settings_db.set_setting = MagicMock()
-    s.log_level = "debug"
-    return s
-
-
-@pytest.fixture
-def messaging():
-    return MagicMock()
-
-
-@pytest.fixture
 def cog(bot, announcements_db, settings, messaging):
-    # Create the cog with dependency injection
+    """Create AnnouncementsCog with injected dependencies from conftest.py."""
     c = AnnouncementsCog(bot=bot, announcements_db=announcements_db, messaging=messaging, settings=settings)
     c.log = MagicMock()
     return c
