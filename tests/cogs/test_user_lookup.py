@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from bot.cogs.user_lookup import UserLookupCog
@@ -8,11 +8,13 @@ from bot.cogs.user_lookup import UserLookupCog
 def bot():
     return MagicMock()
 
+
 @pytest.fixture
 def tracking_db():
     db = MagicMock()
     db.track_discord_user = MagicMock()
     return db
+
 
 @pytest.fixture
 def settings():
@@ -25,22 +27,13 @@ def settings():
     s.log_level = "debug"
     return s
 
+
 @pytest.fixture
 def cog(bot, tracking_db, settings):
-    import bot.lib.discord.ext.commands.TacobotCog as tacobot_cog_mod
-    class TestSettings:
-        def __init__(self):
-            self.log_level = "debug"
-            self.get_settings = settings.get_settings
-            self.name = settings.name
-            self.version = settings.version
-            self.settings_db = settings.settings_db
-    with patch.object(tacobot_cog_mod, "settings", MagicMock(Settings=TestSettings)):
-        c = UserLookupCog(bot, tracking_db)
-        c.settings = settings
-        c.tracking_db = tracking_db
-        c.log = MagicMock()
-        return c
+    c = UserLookupCog(bot=bot, tracking_db=tracking_db, settings=settings)
+    c.log = MagicMock()
+    return c
+
 
 @pytest.mark.asyncio
 async def test_on_guild_available_enabled_tracks_all(cog, settings, tracking_db):
@@ -57,6 +50,7 @@ async def test_on_guild_available_enabled_tracks_all(cog, settings, tracking_db)
     assert tracking_db.track_discord_user.call_count == 2
     settings.settings_db.set_setting.assert_called_once()
 
+
 @pytest.mark.asyncio
 async def test_on_guild_available_disabled_does_nothing(cog, settings, tracking_db):
     guild = MagicMock()
@@ -67,10 +61,12 @@ async def test_on_guild_available_disabled_does_nothing(cog, settings, tracking_
     tracking_db.track_discord_user.assert_not_called()
     settings.settings_db.set_setting.assert_not_called()
 
+
 @pytest.mark.asyncio
 async def test_on_guild_available_none_guild(cog, tracking_db):
     await cog.on_guild_available(None)
     tracking_db.track_discord_user.assert_not_called()
+
 
 @pytest.mark.asyncio
 async def test_on_member_join_tracks_user(cog, tracking_db):
@@ -79,6 +75,7 @@ async def test_on_member_join_tracks_user(cog, tracking_db):
     member.id = 42
     await cog.on_member_join(member)
     tracking_db.track_discord_user.assert_called_once()
+
 
 @pytest.mark.asyncio
 async def test_on_member_join_none_member_or_guild(cog, tracking_db):
@@ -89,6 +86,7 @@ async def test_on_member_join_none_member_or_guild(cog, tracking_db):
     await cog.on_member_join(member)
     tracking_db.track_discord_user.assert_not_called()
 
+
 @pytest.mark.asyncio
 async def test_on_member_update_tracks_user(cog, tracking_db):
     before = MagicMock()
@@ -97,6 +95,7 @@ async def test_on_member_update_tracks_user(cog, tracking_db):
     after.id = 99
     await cog.on_member_update(before, after)
     tracking_db.track_discord_user.assert_called_once()
+
 
 @pytest.mark.asyncio
 async def test_on_member_update_none_after_or_guild(cog, tracking_db):

@@ -48,6 +48,7 @@ class OfferUrlEnricher:
             ValueError: If URL is empty or invalid
         """
         import logging
+
         logger = logging.getLogger("OfferUrlEnricher")
 
         if not url:

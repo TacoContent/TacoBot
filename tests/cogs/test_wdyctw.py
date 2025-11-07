@@ -12,6 +12,7 @@ def mock_databases(monkeypatch):
     monkeypatch.setattr("bot.cogs.wdyctw.TrackingDatabase", lambda *a, **kw: mock_tracking_db)
     return mock_wdyctw_db, mock_tracking_db
 
+
 @pytest.fixture
 def mock_bot():
     bot = MagicMock()
@@ -19,10 +20,12 @@ def mock_bot():
     bot.get_guild = MagicMock(return_value=MagicMock())
     return bot
 
+
 @pytest.fixture
 def cog(mock_bot, mock_databases):
     mock_wdyctw_db, mock_tracking_db = mock_databases
     return WhatDoYouCallThisWednesdayCog(mock_bot, wdyctw_db=mock_wdyctw_db, tracking_db=mock_tracking_db)
+
 
 @pytest.mark.asyncio
 async def test_wdyctw_command_invoked_subcommand(cog):
@@ -34,6 +37,7 @@ async def test_wdyctw_command_invoked_subcommand(cog):
     result = await cog.wdyctw.callback(cog, ctx)
     assert result is None
 
+
 @pytest.mark.asyncio
 async def test_wdyctw_command_no_guild(cog):
     ctx = MagicMock()
@@ -43,6 +47,7 @@ async def test_wdyctw_command_no_guild(cog):
     # Call the command's callback directly
     result = await cog.wdyctw.callback(cog, ctx)
     assert result is None
+
 
 @pytest.mark.asyncio
 async def test_import_wdyctw_no_out_channel(cog):
@@ -60,6 +65,7 @@ async def test_import_wdyctw_no_out_channel(cog):
         await cog.import_wdyctw.callback(cog, ctx, 456)
         mock_warn.assert_called()
 
+
 @pytest.mark.asyncio
 async def test_give_command_member_not_found(cog):
     ctx = MagicMock()
@@ -71,6 +77,7 @@ async def test_give_command_member_not_found(cog):
     await cog.give.callback(cog, ctx, member)
     cog.give_user_wdyctw_tacos.assert_awaited()
 
+
 @pytest.mark.asyncio
 async def test_on_raw_reaction_add_not_admin(cog):
     payload = MagicMock()
@@ -81,6 +88,7 @@ async def test_on_raw_reaction_add_not_admin(cog):
         await cog.on_raw_reaction_add(payload)
         mock_debug.assert_called()
 
+
 @pytest.mark.asyncio
 async def test_on_raw_reaction_add_wrong_event_type(cog):
     payload = MagicMock()
@@ -90,12 +98,14 @@ async def test_on_raw_reaction_add_wrong_event_type(cog):
     result = await cog.on_raw_reaction_add(payload)
     assert result is None
 
+
 def test_import_wdyctw_message_none(cog):
     message = MagicMock()
     message.guild = None
     with patch.object(cog.log, "debug") as mock_debug:
         cog._import_wdyctw(message)
         mock_debug.assert_called()
+
 
 @pytest.mark.asyncio
 async def test_give_user_wdyctw_tacos_guild_not_found(cog):

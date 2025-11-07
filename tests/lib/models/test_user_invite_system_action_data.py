@@ -7,20 +7,15 @@ def test_to_dict_basic_fields():
         "inviter_name": "Alice",
         "invited_id": "456",
         "invited_name": "Bob",
-        "invite_code": "XYZ123"
+        "invite_code": "XYZ123",
     }
     obj = UserInviteSystemActionData(data)
     result = obj.to_dict()
     assert result == data
 
+
 def test_to_dict_excludes_none():
-    data = {
-        "inviter_id": "123",
-        "inviter_name": None,
-        "invited_id": "456",
-        "invited_name": "Bob",
-        "invite_code": None
-    }
+    data = {"inviter_id": "123", "inviter_name": None, "invited_id": "456", "invited_name": "Bob", "invite_code": None}
     obj = UserInviteSystemActionData(data)
     result = obj.to_dict()
     # None values should be excluded
@@ -30,16 +25,18 @@ def test_to_dict_excludes_none():
     assert result["invited_id"] == "456"
     assert result["invited_name"] == "Bob"
 
+
 def test_to_dict_nested_to_dict():
     class Dummy:
         def to_dict(self):
             return {"foo": "bar"}
+
     data = {
         "inviter_id": Dummy(),
         "inviter_name": "Alice",
         "invited_id": "456",
         "invited_name": "Bob",
-        "invite_code": "XYZ123"
+        "invite_code": "XYZ123",
     }
     obj = UserInviteSystemActionData(data)
     result = obj.to_dict()
@@ -48,6 +45,7 @@ def test_to_dict_nested_to_dict():
     assert result["invited_id"] == "456"
     assert result["invited_name"] == "Bob"
     assert result["invite_code"] == "XYZ123"
+
 
 def test_defaults_when_missing():
     obj = UserInviteSystemActionData({})

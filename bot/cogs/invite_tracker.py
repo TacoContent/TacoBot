@@ -95,32 +95,36 @@ class InviteTracker(TacobotCog):
                         self.tracking_db.track_system_action(
                             guild_id=guild_id,
                             action=SystemActions.USER_INVITE,
-                            data=UserInviteSystemActionData({
-                                "inviter_id": str(inviter.id),
-                                "inviter_name": inviter.name,
-                                "invited_id": str(member.id),
-                                "invited_name": member.name,
-                                "invite_code": invite.code,
-                            }).to_dict(),
+                            data=UserInviteSystemActionData(
+                                {
+                                    "inviter_id": str(inviter.id),
+                                    "inviter_name": inviter.name,
+                                    "invited_id": str(member.id),
+                                    "invited_name": member.name,
+                                    "invite_code": invite.code,
+                                }
+                            ).to_dict(),
                         )
                     return
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     def get_payload_for_invite(self, invite) -> InvitePayload:
-        return InvitePayload({
-            "id": invite.id,
-            "code": invite.code,
-            "inviter_id": str(invite.inviter.id),
-            "uses": invite.uses,
-            "max_uses": invite.max_uses,
-            "max_age": invite.max_age,
-            "temporary": invite.temporary,
-            "created_at": invite.created_at,
-            "revoked": invite.revoked,
-            "channel_id": str(invite.channel.id),
-            "url": invite.url,
-        })
+        return InvitePayload(
+            {
+                "id": invite.id,
+                "code": invite.code,
+                "inviter_id": str(invite.inviter.id),
+                "uses": invite.uses,
+                "max_uses": invite.max_uses,
+                "max_age": invite.max_age,
+                "temporary": invite.temporary,
+                "created_at": invite.created_at,
+                "revoked": invite.revoked,
+                "channel_id": str(invite.channel.id),
+                "url": invite.url,
+            }
+        )
 
     def find_invite_by_code(self, inviteList: typing.List[InvitePayload], code: str) -> typing.Optional[InvitePayload]:
         for invite in inviteList:

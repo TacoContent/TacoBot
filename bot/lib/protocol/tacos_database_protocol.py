@@ -1,5 +1,6 @@
 from typing import Protocol
 
+
 class TacosDatabaseProtocol(Protocol):
     def get_tacos_count(self, guild_id: int, user_id: int) -> int: ...
     def remove_all_tacos(self, guild_id: int, user_id: int) -> None: ...

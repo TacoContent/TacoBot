@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bot.cogs.tacopost import TacoPostCog
@@ -8,6 +8,7 @@ from bot.cogs.tacopost import TacoPostCog
 def bot():
     return MagicMock()
 
+
 @pytest.fixture
 def tacos_db():
     db = MagicMock()
@@ -15,42 +16,53 @@ def tacos_db():
     db.remove_tacos = MagicMock()
     return db
 
+
 @pytest.fixture
 def settings():
     s = MagicMock()
-    s.get_settings = MagicMock(return_value={
-        'channels': [
-            {'id': '123', 'cost': 3, 'exempt': []}
-        ]
-    })
+    s.get_settings = MagicMock(return_value={'channels': [{'id': '123', 'cost': 3, 'exempt': []}]})
     s.get_string = MagicMock(return_value="Test string")
     s.name = "TacoBot"
     s.version = "1.0.0"
     s.log_level = "debug"
     return s
 
+
 @pytest.fixture
-def cog(bot, tacos_db, settings):
-    # Patch TacobotCog.settings.Settings to return our test settings
-    import bot.lib.discord.ext.commands.TacobotCog as tacobot_cog_mod
-    class TestSettings:
-        def __init__(self):
-            self.log_level = "debug"
-            self.get_settings = settings.get_settings
-            self.get_string = settings.get_string
-            self.name = settings.name
-            self.version = settings.version
-    with patch.object(tacobot_cog_mod, "settings", MagicMock(Settings=TestSettings)):
-        c = TacoPostCog(bot, tacos_db)
-        c.settings = settings
-        c.messaging = MagicMock()
-        c.messaging.send_embed = AsyncMock()
-        c.message_helper = MagicMock()
-        c.message_helper.notify_bot_not_initialized = AsyncMock()
-        c.prompt_helper = MagicMock()
-        c.prompt_helper.ask_yes_no = AsyncMock()
-        c.log = MagicMock()
-        return c
+def messaging():
+    m = MagicMock()
+    m.send_embed = AsyncMock()
+    return m
+
+
+@pytest.fixture
+def message_helper():
+    h = MagicMock()
+    h.notify_bot_not_initialized = AsyncMock()
+    return h
+
+
+@pytest.fixture
+def prompt_helper():
+    h = MagicMock()
+    h.ask_yes_no = AsyncMock()
+    return h
+
+
+@pytest.fixture
+def cog(bot, tacos_db, settings, messaging, message_helper, prompt_helper):
+    # Create the cog with dependency injection
+    c = TacoPostCog(
+        bot=bot,
+        tacos_db=tacos_db,
+        messaging=messaging,
+        messaging_helper=message_helper,
+        prompt_helper=prompt_helper,
+        settings=settings,
+    )
+    c.log = MagicMock()
+    return c
+
 
 @pytest.mark.asyncio
 async def test_on_message_dm_ignored(cog):
@@ -60,6 +72,7 @@ async def test_on_message_dm_ignored(cog):
     # Should do nothing
     cog.messaging.send_embed.assert_not_called()
 
+
 @pytest.mark.asyncio
 async def test_on_message_bot_ignored(cog):
     message = MagicMock()
@@ -67,6 +80,7 @@ async def test_on_message_bot_ignored(cog):
     message.author.bot = True
     await cog.on_message(message)
     cog.messaging.send_embed.assert_not_called()
+
 
 @pytest.mark.asyncio
 async def test_on_message_no_settings_calls_notify(cog):
@@ -77,6 +91,7 @@ async def test_on_message_no_settings_calls_notify(cog):
     await cog.on_message(message)
     cog.message_helper.notify_bot_not_initialized.assert_awaited_once()
 
+
 @pytest.mark.asyncio
 async def test_on_message_channel_not_in_channels_ignored(cog):
     message = MagicMock()
@@ -86,6 +101,7 @@ async def test_on_message_channel_not_in_channels_ignored(cog):
     cog.settings.get_settings.return_value = {'channels': [{'id': '123', 'cost': 3, 'exempt': []}]}
     await cog.on_message(message)
     cog.messaging.send_embed.assert_not_called()
+
 
 @pytest.mark.asyncio
 async def test_on_message_user_exempt_ignored(cog):
@@ -98,6 +114,7 @@ async def test_on_message_user_exempt_ignored(cog):
     cog.settings.get_settings.return_value = {'channels': [{'id': '123', 'cost': 3, 'exempt': ['42']}]}  # user exempt
     await cog.on_message(message)
     cog.messaging.send_embed.assert_not_called()
+
 
 @pytest.mark.asyncio
 async def test_on_message_role_exempt_ignored(cog):
@@ -113,6 +130,7 @@ async def test_on_message_role_exempt_ignored(cog):
     await cog.on_message(message)
     cog.messaging.send_embed.assert_not_called()
 
+
 @pytest.mark.asyncio
 async def test_on_message_command_prefix_ignored(cog):
     message = MagicMock()
@@ -123,6 +141,7 @@ async def test_on_message_command_prefix_ignored(cog):
     cog.bot.get_prefix = AsyncMock(return_value=[".taco "])
     await cog.on_message(message)
     cog.messaging.send_embed.assert_not_called()
+
 
 @pytest.mark.asyncio
 async def test_on_message_not_enough_tacos_sends_embed_and_deletes(cog, tacos_db):
@@ -141,6 +160,7 @@ async def test_on_message_not_enough_tacos_sends_embed_and_deletes(cog, tacos_db
     await cog.on_message(message)
     cog.messaging.send_embed.assert_awaited_once()
     message.delete.assert_awaited_once()
+
 
 @pytest.mark.asyncio
 async def test_on_message_enough_tacos_prompts(cog, tacos_db):

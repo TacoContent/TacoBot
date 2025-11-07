@@ -6,10 +6,13 @@ import typing
 import discord
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
+from bot.lib.enums.permissions import TacoPermissions
 from bot.lib.helpers import EntityHelper, TacoHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.permissions import Permissions
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord import app_commands
 from discord.ext import commands
@@ -21,26 +24,29 @@ class TacosCog(TacobotCog):
     def __init__(
         self,
         bot: TacoBot,
-        tacos_db: typing.Optional[TacosDatabase] = None,
-        tracking_db: typing.Optional[TrackingDatabase] = None,
-        messaging: typing.Optional[Messaging] = None,
-        entity_helper: typing.Optional[EntityHelper] = None,
-        taco_helper: typing.Optional[TacoHelper] = None,
+        settings: Settings,
+        tacos_db: TacosDatabase,
+        tracking_db: TrackingDatabase,
+        messaging: Messaging,
+        permissions: Permissions,
+        entity_helper: EntityHelper,
+        taco_helper: TacoHelper,
     ) -> None:
-        super().__init__(bot, "tacos")
+        super().__init__(bot, "tacos", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = messaging or Messaging(bot)
-        self.entity_helper = entity_helper or EntityHelper(bot)
-        self.taco_helper = taco_helper or TacoHelper(bot, entity_helper=self.entity_helper)
+        self.messaging = messaging
+        self.entity_helper = entity_helper
+        self.taco_helper = taco_helper
+        self.permissions = permissions
 
         self.SELF_DESTRUCT_TIMEOUT = 30
 
-        self.tacos_db = tacos_db or TacosDatabase()
-        self.tracking_db = tracking_db or TrackingDatabase()
+        self.tacos_db = tacos_db
+        self.tracking_db = tracking_db
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -177,11 +183,14 @@ class TacosCog(TacobotCog):
         try:
             await ctx.message.delete()
             # if the user that ran the command is the same as member, then exit the function
-            if ctx.author.id == member.id:
+            eligible, err = self._validate_give_eligibility(
+                guild_id=guild_id, giver_id=ctx.author.id, recipient_id=member.id
+            )
+            if not eligible:
                 await self.messaging.send_embed(
                     channel=ctx.channel,
                     title=self.settings.get_string(guild_id, "error"),
-                    message=self.settings.get_string(guild_id, "taco_self_gift_message", user=ctx.author.mention),
+                    message=err,
                     footer=self.settings.get_string(
                         guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT
                     ),
@@ -189,27 +198,26 @@ class TacosCog(TacobotCog):
                 )
                 return
 
-            tacos_word = self.settings.get_string(guild_id, "taco_singular")
-            if amount > 1:
-                tacos_word = self.settings.get_string(guild_id, "taco_plural")
+            # tacos_word = self.settings.get_string(guild_id, "taco_singular")
+            # if amount > 1:
+            #     tacos_word = self.settings.get_string(guild_id, "taco_plural")
 
             reason_msg = self.settings.get_string(guild_id, "taco_reason_default")
             if reason:
                 reason_msg = f"{reason}"
 
+            success_message = self._format_gift_success_message(
+                guild_id=guild_id,
+                giver_mention=ctx.author.mention,
+                receiver_mention=member.mention,
+                amount=amount,
+                reason=reason_msg,
+            )
+
             await self.messaging.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_give_title"),
-                # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",
-                message=self.settings.get_string(
-                    guild_id,
-                    "taco_gift_success",
-                    user=ctx.author.mention,
-                    touser=member.mention,
-                    amount=amount,
-                    taco_word=tacos_word,
-                    reason=reason_msg,
-                ),
+                message=success_message,
                 footer=self.settings.get_string(guild_id, "embed_delete_footer", seconds=self.SELF_DESTRUCT_TIMEOUT),
                 delete_after=self.SELF_DESTRUCT_TIMEOUT,
             )
@@ -218,11 +226,10 @@ class TacosCog(TacobotCog):
                 guild_id, ctx.author, member, reason_msg, tacotypes.TacoTypes.CUSTOM, taco_amount=amount
             )
 
-            self.tracking_db.track_command_usage(
-                guildId=guild_id,
-                channelId=ctx.channel.id if ctx.channel.id else None,
-                userId=ctx.author.id,
-                command="tacos",
+            self._track_tacos_command(
+                guild_id=guild_id,
+                channel_id=ctx.channel.id if ctx.channel.id else None,
+                user_id=ctx.author.id,
                 subcommand="give",
                 args=[{"type": "command"}, {"user_id": member.id}, {"amount": amount}, {"reason": reason_msg}],
             )
@@ -432,7 +439,8 @@ class TacosCog(TacobotCog):
                 recipient_id=member.id,
                 amount=amount,
                 max_gift_tacos=max_gift_tacos,
-                max_gift_taco_timespan=max_gift_taco_timespan,)
+                max_gift_taco_timespan=max_gift_taco_timespan,
+            )
 
             if not eligible:
                 await self.messaging.send_embed(
@@ -708,12 +716,7 @@ class TacosCog(TacobotCog):
         args: typing.List[typing.Dict[str, typing.Union[str, int, dict]]],
     ) -> None:
         self.tracking_db.track_command_usage(
-            guildId=guild_id,
-            channelId=channel_id,
-            userId=user_id,
-            command="tacos",
-            subcommand=subcommand,
-            args=args,
+            guildId=guild_id, channelId=channel_id, userId=user_id, command="tacos", subcommand=subcommand, args=args
         )
 
     async def _process_taco_gift(
@@ -726,17 +729,10 @@ class TacosCog(TacobotCog):
         reason: str,
     ) -> None:
         self.tacos_db.add_taco_gift(guild_id, giver.id, amount)
-        await self.taco_helper.give_tacos(
-            guild_id, giver, receiver, reason, type, taco_amount=amount
-        )
+        await self.taco_helper.give_tacos(guild_id, giver, receiver, reason, type, taco_amount=amount)
 
     def _format_gift_success_message(
-        self,
-        guild_id: int,
-        giver_mention: str,
-        receiver_mention: str,
-        amount: int,
-        reason: str,
+        self, guild_id: int, giver_mention: str, receiver_mention: str, amount: int, reason: str
     ) -> str:
         """Formats the gift success message."""
         tacos_word = self.settings.get_string(guild_id, "taco_singular")
@@ -766,10 +762,14 @@ class TacosCog(TacobotCog):
         if giver_id == recipient_id:
             return False, self.settings.get_string(guild_id, "taco_self_gift_message", user=f"<@{giver_id}>")
 
+        if self.permissions.has_taco_permission(guild_id, giver_id, TacoPermissions.TACOS_NO_GIVE):
+            return False, self.settings.get_string(guild_id, "taco_give_no_permission", user=f"<@{giver_id}>")
+
+        if self.permissions.has_taco_permission(guild_id, recipient_id, TacoPermissions.TACOS_NO_RECEIVE):
+            return False, self.settings.get_string(guild_id, "taco_receive_no_permission", user=f"<@{recipient_id}>")
+
         # get the total number of tacos the user has gifted in the last 24 hours
-        total_gifted: int = self.tacos_db.get_total_gifted_tacos(
-            guild_id, giver_id, max_gift_taco_timespan
-        )
+        total_gifted: int = self.tacos_db.get_total_gifted_tacos(guild_id, giver_id, max_gift_taco_timespan)
         remaining_gifts = max_gift_tacos - total_gifted
 
         tacos_word = self.settings.get_string(guild_id, "taco_plural")
@@ -791,19 +791,36 @@ class TacosCog(TacobotCog):
 
         return True, None
 
+    def _validate_give_eligibility(
+        self, guild_id: int, giver_id: int, recipient_id: int
+    ) -> typing.Tuple[bool, typing.Optional[str]]:
+
+        if giver_id == recipient_id:
+            return False, self.settings.get_string(guild_id, "taco_self_gift_message", user=f"<@{giver_id}>")
+
+        if self.permissions.has_taco_permission(guild_id, giver_id, TacoPermissions.TACOS_NO_GIVE):
+            return False, self.settings.get_string(guild_id, "taco_give_no_permission", user=f"<@{giver_id}>")
+
+        return True, None
+
+
 async def setup(bot):
     messaging: Messaging = Messaging(bot)
     entity_helper: EntityHelper = EntityHelper(bot)
     taco_helper: TacoHelper = TacoHelper(bot, entity_helper=entity_helper)
     tacos_db: TacosDatabase = TacosDatabase()
     tracking_db: TrackingDatabase = TrackingDatabase()
+    permissions: Permissions = Permissions(bot)
+    settings: Settings = Settings()
     await bot.add_cog(
         TacosCog(
             bot=bot,
+            settings=settings,
             messaging=messaging,
             entity_helper=entity_helper,
             taco_helper=taco_helper,
+            permissions=permissions,
             tacos_db=tacos_db,
-            tracking_db=tracking_db
+            tracking_db=tracking_db,
         )
     )

@@ -4,9 +4,11 @@ import traceback
 import typing
 from importlib import import_module
 
+
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 from httpserver.server import HttpServer
@@ -15,8 +17,14 @@ from httpserver.server import HttpServer
 class HttpHandlerCog(TacobotCog):
     # group = app_commands.Group(name="webhook", description="Webhook Handler")
 
-    def __init__(self, bot: TacoBot, tracking_db: typing.Optional[TrackingDatabase] = None) -> None:
-        super().__init__(bot, "webhook")
+    def __init__(
+        self,
+        bot: TacoBot,
+        tracking_db: TrackingDatabase,
+        messaging: Messaging,
+        settings: Settings,
+    ) -> None:
+        super().__init__(bot, "webhook", settings=settings)
 
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
@@ -25,8 +33,8 @@ class HttpHandlerCog(TacobotCog):
 
         self.http_server = None
 
-        self.messaging = Messaging(bot)
-        self.tracking_db = TrackingDatabase()
+        self.messaging = messaging
+        self.tracking_db = tracking_db
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -34,35 +42,39 @@ class HttpHandlerCog(TacobotCog):
     async def initialize_server(self):
         _method = inspect.stack()[0][3]
         try:
-            settings = self.get_cog_settings()
-            if not settings.get("enabled", False):
-                # the cog is disabled, so we don't need to start the server
-                return
-
-            if self.http_server is None or not await self.http_server.is_running():
-                self.http_server = HttpServer()
-
-                self.http_server.set_http_debug_enabled(True)
-                # self.load_webhook_handlers()
-                # self.recursive_load_handlers("bot/lib/http/handlers/api")
-                # self.recursive_load_handlers("bot/lib/http/handlers/webhook")
-                self.recursive_load_handlers("bot/lib/http/handlers")
-
-                self.http_server.add_default_response_headers(
-                    {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': '*'}
-                )
-
-                listen_address = "0.0.0.0"
-                listen_port = settings.get("port", 8090)
-
-                await self.http_server.start(listen_address, listen_port)
-                self.log.info(
-                    0, f"{self._module}.{self._class}.{_method}", f'Webhook Started Listening => :{listen_port}'
-                )
-                # we dont need to call "serve_forever" because this task is already running in the background
+            await self._initialize_server()
 
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
+
+    async def _initialize_server(self):
+        _method = inspect.stack()[0][3]
+        settings = self.get_cog_settings()
+        if not settings.get("enabled", False):
+            # the cog is disabled, so we don't need to start the server
+            return
+
+        if self.http_server is None or not await self.http_server.is_running():
+            self.http_server = HttpServer()
+
+            self.http_server.set_http_debug_enabled(True)
+            # self.load_webhook_handlers()
+            # self.recursive_load_handlers("bot/lib/http/handlers/api")
+            # self.recursive_load_handlers("bot/lib/http/handlers/webhook")
+            self.recursive_load_handlers("bot/lib/http/handlers")
+
+            self.http_server.add_default_response_headers(
+                {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': '*'}
+            )
+
+            listen_address = "0.0.0.0"
+            listen_port = settings.get("port", 8090)
+
+            await self.http_server.start(listen_address, listen_port)
+            self.log.info(
+                0, f"{self._module}.{self._class}.{_method}", f'Webhook Started Listening => :{listen_port}'
+            )
+            # we dont need to call "serve_forever" because this task is already running in the background
 
     def load_webhook_handlers(self):
         _method = inspect.stack()[0][3]
@@ -146,21 +158,10 @@ class HttpHandlerCog(TacobotCog):
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
 
-    # def get_cog_settings(self, guildId: int = 0) -> dict:
-    #     return self.get_settings(guildId=guildId, section=self.SETTINGS_SECTION)
-
-    # def get_settings(self, guildId: int, section: str) -> dict:
-    #     if not section or section == "":
-    #         raise Exception("No section provided")
-    #     cog_settings = self.settings.get_settings(guildId, section)
-    #     if not cog_settings:
-    #         raise Exception(f"No '{section}' settings found for guild {guildId}")
-    #     return cog_settings
-
-    # def get_tacos_settings(self, guildId: int = 0) -> dict:
-    #     return self.get_settings(guildId=guildId, section="tacos")
-
 
 async def setup(bot):
-    httphanlder = HttpHandlerCog(bot)
-    await bot.add_cog(httphanlder)
+    settings = Settings()
+    tracking_db = TrackingDatabase()
+    messaging = Messaging(bot)
+    handler = HttpHandlerCog(bot, settings=settings, tracking_db=tracking_db, messaging=messaging)
+    await bot.add_cog(handler)

@@ -2,29 +2,38 @@
 import inspect
 import os
 import traceback
-import typing
+
 
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.helpers import MessageHelper, PromptHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tacos import TacosDatabase
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class TacoPostCog(TacobotCog):
-    def __init__(self, bot: TacoBot, tacos_db: typing.Optional[TacosDatabase] = None) -> None:
-        super().__init__(bot, "tacopost")
+    def __init__(
+        self,
+        bot: TacoBot,
+        tacos_db: TacosDatabase,
+        messaging: Messaging,
+        messaging_helper: MessageHelper,
+        prompt_helper: PromptHelper,
+        settings: Settings,
+    ) -> None:
+        super().__init__(bot, "tacopost", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = Messaging(bot)
-        self.message_helper = MessageHelper(bot)
-        self.prompt_helper = PromptHelper(bot)
+        self.messaging = messaging
+        self.message_helper = messaging_helper
+        self.prompt_helper = prompt_helper
 
-        self.tacos_db = tacos_db or TacosDatabase()
+        self.tacos_db = tacos_db
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -134,4 +143,18 @@ class TacoPostCog(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(TacoPostCog(bot))
+    settings = Settings()
+    messaging = Messaging(bot)
+    messaging_helper = MessageHelper(bot)
+    prompt_helper = PromptHelper(bot)
+    tacos_db = TacosDatabase()
+    await bot.add_cog(
+        TacoPostCog(
+            bot=bot,
+            tacos_db=tacos_db,
+            messaging=messaging,
+            messaging_helper=messaging_helper,
+            prompt_helper=prompt_helper,
+            settings=settings,
+        )
+    )

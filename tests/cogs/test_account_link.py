@@ -1,23 +1,50 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from bot.cogs.account_link import AccountLink
+from bot.cogs.account_link import AccountLinkCog
 from bot.lib.enums.system_actions import SystemActions
 
 
 @pytest.fixture
 def bot():
-    bot = MagicMock()
-    bot.settings = MagicMock()
-    bot.settings.get_string = MagicMock(return_value="Test message")
-    return bot
+    return MagicMock()
+
 
 @pytest.fixture
-def cog(bot):
-    with patch("bot.cogs.account_link.Messaging"), \
-         patch("bot.cogs.account_link.TwitchDatabase"), \
-         patch("bot.cogs.account_link.TrackingDatabase"):
-        return AccountLink(bot)
+def messaging():
+    return MagicMock()
+
+
+@pytest.fixture
+def twitch_db():
+    return MagicMock()
+
+
+@pytest.fixture
+def tracking_db():
+    return MagicMock()
+
+
+@pytest.fixture
+def settings():
+    s = MagicMock()
+    s.get_string = MagicMock(return_value="Test message")
+    s.log_level = "debug"
+    return s
+
+
+@pytest.fixture
+def cog(bot, messaging, twitch_db, tracking_db, settings):
+    c = AccountLinkCog(
+        bot=bot,
+        messaging=messaging,
+        twitch_db=twitch_db,
+        tracking_db=tracking_db,
+        settings=settings,
+    )
+    c.log = MagicMock()
+    return c
+
 
 @pytest.mark.asyncio
 async def test_verify_success(cog, bot):
@@ -32,11 +59,10 @@ async def test_verify_success(cog, bot):
     await cog.verify.callback(cog, interaction, "abc123")
     interaction.response.send_message.assert_called_once()
     cog.tracking_db.track_system_action.assert_called_once_with(
-        guild_id=123,
-        action=SystemActions.LINK_TWITCH_TO_DISCORD,
-        data={"user_id": "456", "code": "abc123"},
+        guild_id=123, action=SystemActions.LINK_TWITCH_TO_DISCORD, data={"user_id": "456", "code": "abc123"}
     )
     cog.tracking_db.track_command_usage.assert_called_once()
+
 
 @pytest.mark.asyncio
 async def test_verify_failure(cog, bot):
@@ -53,6 +79,7 @@ async def test_verify_failure(cog, bot):
     cog.tracking_db.track_system_action.assert_called_once()
     cog.tracking_db.track_command_usage.assert_called_once()
 
+
 @pytest.mark.asyncio
 async def test_request_success(cog, bot):
     interaction = MagicMock()
@@ -67,6 +94,7 @@ async def test_request_success(cog, bot):
     interaction.response.send_message.assert_called_once()
     cog.tracking_db.track_command_usage.assert_called_once()
 
+
 @pytest.mark.asyncio
 async def test_request_failure(cog, bot):
     interaction = MagicMock()
@@ -80,6 +108,7 @@ async def test_request_failure(cog, bot):
         await cog.request.callback(cog, interaction)
     interaction.response.send_message.assert_called_once()
     cog.tracking_db.track_command_usage.assert_called_once()
+
 
 @pytest.mark.asyncio
 async def test_link_command_success(monkeypatch, cog, bot):
@@ -100,6 +129,7 @@ async def test_link_command_success(monkeypatch, cog, bot):
     cog.tracking_db.track_system_action.assert_called_once()
     cog.tracking_db.track_command_usage.assert_called_once()
 
+
 @pytest.mark.asyncio
 async def test_link_command_no_code(monkeypatch, cog, bot):
     ctx = MagicMock()
@@ -117,6 +147,7 @@ async def test_link_command_no_code(monkeypatch, cog, bot):
         await cog.link.callback(cog, ctx, code=None)
     ctx.author.send.assert_called()
     cog.tracking_db.track_command_usage.assert_called_once()
+
 
 @pytest.mark.asyncio
 async def test_link_command_save_error(monkeypatch, cog, bot):
@@ -136,6 +167,7 @@ async def test_link_command_save_error(monkeypatch, cog, bot):
     ctx.author.send.assert_called()
     cog.tracking_db.track_command_usage.assert_called_once()
 
+
 @pytest.mark.asyncio
 async def test_link_command_value_error(monkeypatch, cog, bot):
     ctx = MagicMock()
@@ -152,6 +184,7 @@ async def test_link_command_value_error(monkeypatch, cog, bot):
         await cog.link.callback(cog, ctx, code=None)
     ctx.author.send.assert_called()
     cog.tracking_db.track_command_usage.assert_called_once()
+
 
 @pytest.mark.asyncio
 async def test_link_command_exception(monkeypatch, cog, bot):

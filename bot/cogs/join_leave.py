@@ -9,21 +9,30 @@ from bot.lib.enums.system_actions import SystemActions
 from bot.lib.helpers import EntityHelper, TacoHelper
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
-class JoinLeaveTracker(TacobotCog):
-    def __init__(self, bot: TacoBot) -> None:
-        super().__init__(bot, "tacobot")
+class JoinLeaveTrackerCog(TacobotCog):
+    def __init__(
+        self,
+        bot: TacoBot,
+        settings: Settings,
+        tracking_db: TrackingDatabase,
+        taco_db: TacosDatabase,
+        entity_helper: EntityHelper,
+        taco_helper: TacoHelper,
+    ) -> None:
+        super().__init__(bot, "tacobot", settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.tracking_db = TrackingDatabase()
-        self.taco_db = TacosDatabase()
-        self.entity_helper = EntityHelper(bot)
-        self.taco_helper = TacoHelper(bot, entity_helper=self.entity_helper)
+        self.tracking_db = tracking_db
+        self.taco_db = taco_db
+        self.entity_helper = entity_helper
+        self.taco_helper = taco_helper
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
@@ -78,4 +87,9 @@ class JoinLeaveTracker(TacobotCog):
 
 
 async def setup(bot) -> None:
-    await bot.add_cog(JoinLeaveTracker(bot))
+    settings = Settings()
+    tracking_db = TrackingDatabase()
+    taco_db = TacosDatabase()
+    entity_helper = EntityHelper(bot)
+    taco_helper = TacoHelper(bot, entity_helper=entity_helper)
+    await bot.add_cog(JoinLeaveTrackerCog(bot, settings, tracking_db, taco_db, entity_helper, taco_helper))

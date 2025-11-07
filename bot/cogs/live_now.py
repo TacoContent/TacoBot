@@ -21,10 +21,10 @@ from discord.ext import commands
 
 class LiveNow(TacobotCog):
     def __init__(
-        self, 
-        bot: TacoBot, 
-        tracking_db: typing.Optional[TrackingDatabase] = None, 
-        twitch_db: typing.Optional[TwitchDatabase] = None, 
+        self,
+        bot: TacoBot,
+        tracking_db: typing.Optional[TrackingDatabase] = None,
+        twitch_db: typing.Optional[TwitchDatabase] = None,
         live_db: typing.Optional[LiveDatabase] = None,
     ) -> None:
         super().__init__(bot, "live_now")

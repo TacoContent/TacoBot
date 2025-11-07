@@ -10,23 +10,24 @@ from bot.lib.enums.system_actions import SystemActions
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.twitch import TwitchDatabase
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord import app_commands
 from discord.ext import commands
 
 
-class AccountLink(TacobotCog):
+class AccountLinkCog(TacobotCog):
     group = app_commands.Group(name="link", description="Link your Twitch account to your Discord account")
 
-    def __init__(self, bot: TacoBot):
-        super().__init__(bot, "account_link")
+    def __init__(self, bot: TacoBot, messaging: Messaging, twitch_db: TwitchDatabase, tracking_db: TrackingDatabase, settings: Settings):
+        super().__init__(bot, "account_link", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.messaging = Messaging(bot)
-        self.twitch_db = TwitchDatabase()
-        self.tracking_db = TrackingDatabase()
+        self.messaging = messaging
+        self.twitch_db = twitch_db
+        self.tracking_db = tracking_db
 
         self.invites = {}
 
@@ -191,4 +192,10 @@ class AccountLink(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(AccountLink(bot))
+    settings = Settings()
+    messaging = Messaging(bot)
+    twitch_db = TwitchDatabase()
+    tracking_db = TrackingDatabase()
+    await bot.add_cog(
+        AccountLinkCog(bot=bot, messaging=messaging, twitch_db=twitch_db, tracking_db=tracking_db, settings=settings)
+    )

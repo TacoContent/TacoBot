@@ -58,6 +58,7 @@
 		"Haximus",
 		"healthcheck",
 		"healthz",
+		"httphanlder",
 		"httpserver",
 		"irongut",
 		"isinstance",

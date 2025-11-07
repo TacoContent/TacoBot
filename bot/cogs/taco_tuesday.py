@@ -175,9 +175,7 @@ class TacoTuesdayCog(TacobotCog):
         channel = await self.entity_helper.get_or_fetch_channel(payload.channel_id)
         if not channel:
             self.log.debug(
-                guild_id,
-                f"{self._module}.{self._class}.{_method}",
-                f"Could not find channel {payload.channel_id}",
+                guild_id, f"{self._module}.{self._class}.{_method}", f"Could not find channel {payload.channel_id}"
             )
             return
         message = await channel.fetch_message(payload.message_id)
@@ -230,9 +228,7 @@ class TacoTuesdayCog(TacobotCog):
         channel = await self.entity_helper.get_or_fetch_channel(payload.channel_id)
         if not channel:
             self.log.debug(
-                guild_id,
-                f"{self._module}.{self._class}.{_method}",
-                f"Could not find channel {payload.channel_id}",
+                guild_id, f"{self._module}.{self._class}.{_method}", f"Could not find channel {payload.channel_id}"
             )
             return
         message = await channel.fetch_message(payload.message_id)
@@ -360,9 +356,7 @@ class TacoTuesdayCog(TacobotCog):
             # await self.messaging.notify_of_error(ctx)
 
     async def _archive_taco_tuesday(
-        self,
-        message: discord.Message,
-        cog_settings: typing.Optional[typing.Dict[str, typing.Any]] = None,
+        self, message: discord.Message, cog_settings: typing.Optional[typing.Dict[str, typing.Any]] = None
     ) -> None:
         _method = inspect.stack()[0][3]
 

@@ -44,6 +44,7 @@ import traceback
 import typing
 
 import discord
+from lib.settings import Settings
 import pytz
 from bot import tacobot  # pylint: disable=no-name-in-module
 from bot.lib import utils
@@ -69,7 +70,13 @@ class AnnouncementsCog(TacobotCog):
         Database accessor handling announcement persistence (upsert writes).
     """
 
-    def __init__(self, bot: tacobot.TacoBot, announcements_db: typing.Optional[AnnouncementsDatabase] = None) -> None:
+    def __init__(
+        self,
+        bot: tacobot.TacoBot,
+        announcements_db: AnnouncementsDatabase,
+        messaging: Messaging,
+        settings: Settings,
+    ) -> None:
         """Initialize the announcements cog.
 
         Parameters
@@ -77,14 +84,14 @@ class AnnouncementsCog(TacobotCog):
         bot : tacobot.TacoBot
             The running bot instance used for event dispatch and settings access.
         """
-        super().__init__(bot, "announcements")
+        super().__init__(bot, "announcements", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.messaging = Messaging(bot)
+        self.messaging = messaging
 
-        self.announcements_db = announcements_db or AnnouncementsDatabase()
+        self.announcements_db = announcements_db
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -256,4 +263,9 @@ async def setup(bot):
     bot : tacobot.TacoBot
         The bot instance to which this cog will be added.
     """
-    await bot.add_cog(AnnouncementsCog(bot))
+    settings = Settings()
+    messaging = Messaging(bot)
+    announcements_db = AnnouncementsDatabase()
+    await bot.add_cog(
+        AnnouncementsCog(bot=bot, messaging=messaging, announcements_db=announcements_db, settings=settings)
+    )

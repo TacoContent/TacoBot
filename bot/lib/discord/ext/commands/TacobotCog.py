@@ -1,16 +1,19 @@
-from bot.lib import logger, settings
+import typing
+
+from bot.lib import logger
 from bot.lib.enums import loglevel
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class TacobotCog(commands.Cog):
-    def __init__(self, bot: TacoBot, settingsSection: str) -> None:
+    def __init__(self, bot: TacoBot, settingsSection: str, settings: typing.Optional[Settings] = None) -> None:
         super().__init__()
         self.bot = bot
 
         self.SETTINGS_SECTION = settingsSection
-        self.settings = settings.Settings()
+        self.settings = settings or Settings()
 
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:

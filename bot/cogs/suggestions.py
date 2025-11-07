@@ -25,7 +25,7 @@ class SuggestionsCog(TacobotCog):
         bot: TacoBot,
         suggestions_db: typing.Optional[SuggestionsDatabase] = None,
         tracking_db: typing.Optional[TrackingDatabase] = None,
-        settings_db: typing.Optional[SettingsDatabase] = None
+        settings_db: typing.Optional[SettingsDatabase] = None,
     ) -> None:
         super().__init__(bot, "suggestions")
         _method = inspect.stack()[0][3]
@@ -355,9 +355,7 @@ class SuggestionsCog(TacobotCog):
                 if channel_settings['log_channel_id'] == "0" or channel_settings['log_channel_id'] is None:
                     log_channel = None
                 else:
-                    log_channel = await self.entity_helper.get_or_fetch_channel(
-                        int(channel_settings['log_channel_id'])
-                    )
+                    log_channel = await self.entity_helper.get_or_fetch_channel(int(channel_settings['log_channel_id']))
 
             vote_emoji = [
                 channel_settings["vote_up_emoji"],
@@ -673,7 +671,9 @@ class SuggestionsCog(TacobotCog):
                 return
             channel = await self.entity_helper.get_or_fetch_channel(payload.channel_id)
             if channel is None:
-                self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Channel {payload.channel_id} not found")
+                self.log.debug(
+                    guild_id, f"{self._module}.{self._class}.{_method}", f"Channel {payload.channel_id} not found"
+                )
                 return
             message = await channel.fetch_message(payload.message_id)
             user = await self.entity_helper.get_or_fetch_user(payload.user_id)
@@ -874,9 +874,7 @@ class SuggestionsCog(TacobotCog):
                 next_state = states.ACTIVE
 
             if next_state is not None:
-                self.suggestions_db.set_state_suggestion_by_id(
-                    guild_id, suggestion['id'], next_state, user.id, reason
-                )
+                self.suggestions_db.set_state_suggestion_by_id(guild_id, suggestion['id'], next_state, user.id, reason)
                 await self.update_suggestion_state(message, next_state, user, reason, author=author)
 
     async def _handle_admin_consider_emoji_remove(
@@ -908,9 +906,7 @@ class SuggestionsCog(TacobotCog):
                 next_state = states.ACTIVE
 
             if next_state is not None:
-                self.suggestions_db.set_state_suggestion_by_id(
-                    guild_id, suggestion['id'], next_state, user.id, reason
-                )
+                self.suggestions_db.set_state_suggestion_by_id(guild_id, suggestion['id'], next_state, user.id, reason)
                 await self.update_suggestion_state(message, next_state, user, reason, author=author)
 
     async def _handle_admin_implemented_emoji_remove(
@@ -943,9 +939,7 @@ class SuggestionsCog(TacobotCog):
                 next_state = states.ACTIVE
 
             if next_state is not None:
-                self.suggestions_db.set_state_suggestion_by_id(
-                    guild_id, suggestion['id'], next_state, user.id, reason
-                )
+                self.suggestions_db.set_state_suggestion_by_id(guild_id, suggestion['id'], next_state, user.id, reason)
                 await self.update_suggestion_state(message, next_state, user, reason, author=author)
 
     async def _handle_admin_reject_emoji_remove(
@@ -958,7 +952,7 @@ class SuggestionsCog(TacobotCog):
         suggestion: dict,
         user: discord.User,
         message: discord.Message,
-        author: typing.Optional[typing.Union[discord.User, discord.Member, None]] = None
+        author: typing.Optional[typing.Union[discord.User, discord.Member, None]] = None,
     ) -> None:
         """Handle the removal of the admin reject emoji reaction.
         If the reject count is 0, set the state to the next highest state."""
@@ -976,9 +970,7 @@ class SuggestionsCog(TacobotCog):
                 next_state = states.ACTIVE
 
             if next_state is not None:
-                self.suggestions_db.set_state_suggestion_by_id(
-                    guild_id, suggestion['id'], next_state, user.id, reason
-                )
+                self.suggestions_db.set_state_suggestion_by_id(guild_id, suggestion['id'], next_state, user.id, reason)
                 await self.update_suggestion_state(message, next_state, user, reason, author=author)
 
     async def update_suggestion_state(

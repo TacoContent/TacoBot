@@ -11,19 +11,22 @@ def mock_bot():
     bot.guilds = [MagicMock(id=123, invites=AsyncMock(return_value=[]))]
     return bot
 
+
 @pytest.fixture
 def cog(mock_bot):
-    with patch("bot.cogs.invite_tracker.InvitesDatabase") as MockInvitesDB, \
-         patch("bot.cogs.invite_tracker.TrackingDatabase") as MockTrackingDB:
+    with (
+        patch("bot.cogs.invite_tracker.InvitesDatabase") as MockInvitesDB,
+        patch("bot.cogs.invite_tracker.TrackingDatabase") as MockTrackingDB,
+    ):
         invites_db = MockInvitesDB.return_value
         tracking_db = MockTrackingDB.return_value
         # Patch helpers to avoid real Discord API
-        with patch("bot.cogs.invite_tracker.EntityHelper"), \
-             patch("bot.cogs.invite_tracker.TacoHelper"):
+        with patch("bot.cogs.invite_tracker.EntityHelper"), patch("bot.cogs.invite_tracker.TacoHelper"):
             cog = InviteTracker(mock_bot)
             cog.invites_db = invites_db
             cog.tracking_db = tracking_db
             return cog
+
 
 class DummyInvite:
     def __init__(self, code, uses=0, inviter=None):
@@ -39,6 +42,7 @@ class DummyInvite:
         self.channel = MagicMock(id=456)
         self.url = f"https://discord.gg/{code}"
         self.id = 789
+
 
 class DummyMember:
     def __init__(self, id, name, inviter=None):
@@ -71,12 +75,14 @@ async def test_on_invite_create_tracks_new_invite(cog):
     # Should track the invite
     assert cog.invites_db.track_invite_code.called
 
+
 @pytest.mark.asyncio
 async def test_on_invite_delete_updates_invites(cog):
     invite = DummyInvite("gone123", uses=0)
     await cog.on_invite_delete(invite)
     # Should update invites for the guild
     assert 123 in cog.invites
+
 
 @pytest.mark.asyncio
 async def test_on_member_join_tracks_invite_and_gives_tacos(cog):
@@ -97,6 +103,7 @@ async def test_on_member_join_tracks_invite_and_gives_tacos(cog):
     assert cog.taco_helper.give_tacos.called
     assert cog.tracking_db.track_system_action.called
 
+
 @pytest.mark.asyncio
 async def test_on_member_join_handles_no_invite_used(cog):
     inviter = MagicMock(id=111, name="Inviter", bot=False)
@@ -115,6 +122,7 @@ async def test_on_member_join_handles_no_invite_used(cog):
     assert not cog.taco_helper.give_tacos.called
     assert not cog.tracking_db.track_system_action.called
 
+
 @pytest.mark.asyncio
 async def test_on_member_join_handles_inviter_is_bot(cog):
     inviter = MagicMock(id=111, name="Inviter", bot=True)
@@ -132,6 +140,7 @@ async def test_on_member_join_handles_inviter_is_bot(cog):
     assert not cog.taco_helper.give_tacos.called
     assert not cog.tracking_db.track_system_action.called
 
+
 @pytest.mark.asyncio
 async def test_on_member_join_handles_exception(cog):
     member = DummyMember(222, "NewUser")
@@ -141,6 +150,7 @@ async def test_on_member_join_handles_exception(cog):
     await cog.on_member_join(member)
     assert cog.log.error.called
 
+
 @pytest.mark.asyncio
 async def test_get_payload_for_invite_returns_payload(cog):
     inviter = MagicMock(id=111)
@@ -149,12 +159,14 @@ async def test_get_payload_for_invite_returns_payload(cog):
     assert payload.code == "abc123"
     assert payload.inviter_id == str(inviter.id)
 
+
 def test_find_invite_by_code_finds_invite(cog):
     inviter = MagicMock(id=111)
     invite = DummyInvite("abc123", uses=1, inviter=inviter)
     invite_list = [invite]
     found = cog.find_invite_by_code(invite_list, "abc123")
     assert found == invite
+
 
 def test_find_invite_by_code_returns_none(cog):
     inviter = MagicMock(id=111)

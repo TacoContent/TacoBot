@@ -14,11 +14,13 @@ def db():
         db.log = MagicMock()
         return db
 
+
 @pytest.fixture
 def invite_payload():
     payload = MagicMock()
     payload.to_dict.return_value = {"foo": "bar"}
     return payload
+
 
 @patch("bot.lib.mongodb.invites.utils.to_timestamp", return_value=1234567890)
 @patch("bot.lib.mongodb.invites.datetime")
@@ -34,6 +36,7 @@ def test_track_invite_code_no_user_invite(mock_datetime, mock_to_timestamp, db, 
     assert "info" in args[1]["$set"]
     assert kwargs["upsert"] is True
 
+
 @patch("bot.lib.mongodb.invites.utils.to_timestamp", return_value=1234567890)
 @patch("bot.lib.mongodb.invites.datetime")
 def test_track_invite_code_with_user_invite(mock_datetime, mock_to_timestamp, db, invite_payload):
@@ -48,22 +51,26 @@ def test_track_invite_code_with_user_invite(mock_datetime, mock_to_timestamp, db
     assert "$push" in args[1]
     assert kwargs["upsert"] is True
 
+
 @patch("bot.lib.mongodb.invites.utils.to_timestamp", return_value=1234567890)
 @patch("bot.lib.mongodb.invites.datetime")
 def test_track_invite_code_opens_if_no_connection(mock_datetime, mock_to_timestamp, db, invite_payload):
     db.connection = None
     db.client = None
     db.open = MagicMock()
+
     # update_one will be called after open() sets up connection, so patch after open
     def fake_open():
         db.connection = MagicMock()
         db.client = MagicMock()
         db.connection.invite_codes = MagicMock()
         db.connection.invite_codes.update_one = MagicMock()
+
     db.open.side_effect = fake_open
     db.track_invite_code(3, "code789", invite_payload, None)
     db.open.assert_called_once()
     db.connection.invite_codes.update_one.assert_called_once()  # type: ignore[attr-defined]
+
 
 @patch("bot.lib.mongodb.invites.utils.to_timestamp", return_value=1234567890)
 @patch("bot.lib.mongodb.invites.datetime")
@@ -77,12 +84,14 @@ def test_track_invite_code_handles_exception(mock_datetime, mock_to_timestamp, d
     assert kwargs["level"]
     assert "fail" in kwargs["message"]
 
+
 @patch("bot.lib.mongodb.invites.Database")
 def test_get_invite_code_success(_, db):
     db.connection.invite_codes.find_one = MagicMock(return_value={"code": "abc"})
     db.client = MagicMock()
     result = db.get_invite_code(5, "abc")
     assert result == {"code": "abc"}
+
 
 @patch("bot.lib.mongodb.invites.Database")
 def test_get_invite_code_handles_exception(_, db):

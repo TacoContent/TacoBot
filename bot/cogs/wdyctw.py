@@ -19,10 +19,10 @@ from discord.ext.commands import Context
 
 class WhatDoYouCallThisWednesdayCog(TacobotCog):
     def __init__(
-            self,
-            bot: TacoBot,
-            wdyctw_db: typing.Optional[WDYCTWDatabase] = None,
-            tracking_db: typing.Optional[TrackingDatabase] = None,
+        self,
+        bot: TacoBot,
+        wdyctw_db: typing.Optional[WDYCTWDatabase] = None,
+        tracking_db: typing.Optional[TrackingDatabase] = None,
     ) -> None:
         super().__init__(bot, "wdyctw")
         _method = inspect.stack()[0][3]

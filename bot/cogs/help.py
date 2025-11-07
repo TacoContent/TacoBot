@@ -5,23 +5,27 @@ import re
 import traceback
 import typing
 
+
 from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class HelpCog(TacobotCog):
-    def __init__(self, bot: TacoBot, tracking_db: typing.Optional[TrackingDatabase] = None):  # noqa: F821
-        super().__init__(bot, "tacobot")
+    def __init__(
+        self, bot: TacoBot, tracking_db: TrackingDatabase, messaging: Messaging, settings: Settings
+    ):  # noqa: F821
+        super().__init__(bot, "tacobot", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = Messaging(bot)
+        self.messaging = messaging
         self.tracking_db = tracking_db or TrackingDatabase()
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
@@ -266,4 +270,7 @@ class HelpCog(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(HelpCog(bot))
+    settings = Settings()
+    tracking_db = TrackingDatabase()
+    messaging = Messaging(bot)
+    await bot.add_cog(HelpCog(bot=bot, tracking_db=tracking_db, messaging=messaging, settings=settings))

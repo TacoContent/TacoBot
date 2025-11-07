@@ -18,13 +18,24 @@ class InvitesDatabase(Database):
         self._class = self.__class__.__name__
         pass
 
-    def track_invite_code(self, guildId: int, inviteCode: str, inviteInfo: InvitePayload, userInvite: typing.Optional[typing.Dict[str, typing.Any]]) -> None:
+    def track_invite_code(
+        self,
+        guildId: int,
+        inviteCode: str,
+        inviteInfo: InvitePayload,
+        userInvite: typing.Optional[typing.Dict[str, typing.Any]],
+    ) -> None:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
             timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
-            payload = {"guild_id": str(guildId), "code": inviteCode, "info": inviteInfo.to_dict(), "timestamp": timestamp}
+            payload = {
+                "guild_id": str(guildId),
+                "code": inviteCode,
+                "info": inviteInfo.to_dict(),
+                "timestamp": timestamp,
+            }
             if userInvite is None:
                 self.connection.invite_codes.update_one(  # type: ignore
                     {"guild_id": str(guildId), "code": inviteCode}, {"$set": payload}, upsert=True

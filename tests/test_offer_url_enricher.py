@@ -161,11 +161,13 @@ def test_microsoft_store_launcher_deep_link_success():
     launcher_deep_link = "ms-windows-store://pdp?productid=9p83lmp6gdpk&mode=mini&hl=en-us&gl=US&referrer=storeforweb"
     shortened_launcher = "https://short.url/msstore"
     mock_shortener = Mock(spec=UrlShortener)
+
     # Shorten both resolved and launcher URLs
     def shorten_side_effect(url):
         if url == launcher_deep_link:
             return {"url": shortened_launcher}
         return {"url": "https://short.url/msmain"}
+
     mock_shortener.shorten.side_effect = shorten_side_effect
     enricher = OfferUrlEnricher(url_shortener=mock_shortener)
     with patch('requests.get') as mock_get:
@@ -176,14 +178,17 @@ def test_microsoft_store_launcher_deep_link_success():
     assert result.launcher_name == "Microsoft Store"
     assert result.launcher_url == shortened_launcher
 
+
 def test_microsoft_store_launcher_deep_link_failure():
     """Test Microsoft Store launcher deep link generation with failed shortening (launcher omitted)."""
     ms_url = "https://apps.microsoft.com/detail/9p83lmp6gdpk"
     launcher_deep_link = "ms-windows-store://pdp?productid=9p83lmp6gdpk&mode=mini&hl=en-us&gl=US&referrer=storeforweb"
     mock_shortener = Mock(spec=UrlShortener)
+
     # Shortener returns original launcher URL (failure)
     def shorten_side_effect(url):
         return {"url": url}
+
     mock_shortener.shorten.side_effect = shorten_side_effect
     enricher = OfferUrlEnricher(url_shortener=mock_shortener)
     with patch('requests.get') as mock_get:
@@ -201,10 +206,12 @@ def test_steam_launcher_deep_link_success():
     launcher_deep_link = f"steam://openurl/{steam_url}"
     shortened_launcher = "https://short.url/steam"
     mock_shortener = Mock(spec=UrlShortener)
+
     def shorten_side_effect(url):
         if url == launcher_deep_link:
             return {"url": shortened_launcher}
         return {"url": "https://short.url/steam-main"}
+
     mock_shortener.shorten.side_effect = shorten_side_effect
     enricher = OfferUrlEnricher(url_shortener=mock_shortener)
     with patch('requests.get') as mock_get:
@@ -215,13 +222,16 @@ def test_steam_launcher_deep_link_success():
     assert result.launcher_name == "Steam"
     assert result.launcher_url == shortened_launcher
 
+
 def test_steam_launcher_deep_link_failure():
     """Test Steam launcher deep link generation with failed shortening (launcher omitted)."""
     steam_url = "https://store.steampowered.com/app/12345/GameName"
     launcher_deep_link = f"steam://openurl/{steam_url}"
     mock_shortener = Mock(spec=UrlShortener)
+
     def shorten_side_effect(url):
         return {"url": url}
+
     mock_shortener.shorten.side_effect = shorten_side_effect
     enricher = OfferUrlEnricher(url_shortener=mock_shortener)
     with patch('requests.get') as mock_get:
@@ -239,10 +249,12 @@ def test_epic_games_launcher_deep_link_success():
     launcher_deep_link = "com.epicgames.launcher://store/p/game-slug-here"
     shortened_launcher = "https://short.url/epic"
     mock_shortener = Mock(spec=UrlShortener)
+
     def shorten_side_effect(url):
         if url == launcher_deep_link:
             return {"url": shortened_launcher}
         return {"url": "https://short.url/epic-main"}
+
     mock_shortener.shorten.side_effect = shorten_side_effect
     enricher = OfferUrlEnricher(url_shortener=mock_shortener)
     with patch('requests.get') as mock_get:
@@ -253,13 +265,16 @@ def test_epic_games_launcher_deep_link_success():
     assert result.launcher_name == "Epic Games Launcher"
     assert result.launcher_url == shortened_launcher
 
+
 def test_epic_games_launcher_deep_link_failure():
     """Test Epic Games Launcher deep link generation with failed shortening (launcher omitted)."""
     epic_url = "https://store.epicgames.com/en-US/p/game-slug-here"
     launcher_deep_link = "com.epicgames.launcher://store/p/game-slug-here"
     mock_shortener = Mock(spec=UrlShortener)
+
     def shorten_side_effect(url):
         return {"url": url}
+
     mock_shortener.shorten.side_effect = shorten_side_effect
     enricher = OfferUrlEnricher(url_shortener=mock_shortener)
     with patch('requests.get') as mock_get:
