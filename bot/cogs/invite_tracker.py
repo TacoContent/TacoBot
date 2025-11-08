@@ -5,8 +5,6 @@ import traceback
 import typing
 
 import discord
-
-
 from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes

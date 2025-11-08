@@ -1,16 +1,18 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
 import discord
-from discord import Interaction
-from discord.ext import commands
+import pytest
 from bot.cogs.account_link import AccountLinkCog
 from bot.lib.enums.system_actions import SystemActions
+from discord import Interaction
+from discord.ext import commands
 
 
 @pytest.fixture
 def mock_settings():
     """Specialized settings fixture with account_link-specific behavior."""
     settings = MagicMock()
+
     def mock_get_string(*args, **kwargs):
         key = kwargs.get('key') or (args[1] if len(args) > 1 else None)
         if key == "account_link_success_message":
@@ -23,6 +25,7 @@ def mock_settings():
             return "Save error"
         else:
             return "Mock message"
+
     settings.get_string.side_effect = mock_get_string
     settings.log_level = "INFO"
     return settings
@@ -32,11 +35,7 @@ def mock_settings():
 def cog(bot, messaging, twitch_db, tracking_db, mock_settings):
     """Create AccountLinkCog with injected dependencies from conftest.py."""
     c = AccountLinkCog(
-        bot=bot,
-        messaging=messaging,
-        twitch_db=twitch_db,
-        tracking_db=tracking_db,
-        settings=mock_settings,
+        bot=bot, messaging=messaging, twitch_db=twitch_db, tracking_db=tracking_db, settings=mock_settings
     )
     c.log = MagicMock()
     return c
@@ -90,9 +89,7 @@ class TestAccountLinkCog:
 
         twitch_db.link_twitch_to_discord_from_code.assert_called_once_with(67890, "ABC123")
         tracking_db.track_system_action.assert_called_once_with(
-            guild_id=12345,
-            action=SystemActions.LINK_TWITCH_TO_DISCORD,
-            data={"user_id": "67890", "code": "ABC123"},
+            guild_id=12345, action=SystemActions.LINK_TWITCH_TO_DISCORD, data={"user_id": "67890", "code": "ABC123"}
         )
         tracking_db.track_command_usage.assert_called_once_with(
             guildId=12345,
@@ -381,16 +378,19 @@ async def test_setup():
     mock_twitch_db = MagicMock()
     mock_tracking_db = MagicMock()
     mock_settings = MagicMock()
-    
-    with patch('bot.cogs.account_link.Settings', return_value=mock_settings), \
-         patch('bot.cogs.account_link.Messaging', return_value=mock_messaging), \
-         patch('bot.cogs.account_link.TwitchDatabase', return_value=mock_twitch_db), \
-         patch('bot.cogs.account_link.TrackingDatabase', return_value=mock_tracking_db), \
-         patch('bot.cogs.account_link.AccountLinkCog') as mock_cog_class:
+
+    with (
+        patch('bot.cogs.account_link.Settings', return_value=mock_settings),
+        patch('bot.cogs.account_link.Messaging', return_value=mock_messaging),
+        patch('bot.cogs.account_link.TwitchDatabase', return_value=mock_twitch_db),
+        patch('bot.cogs.account_link.TrackingDatabase', return_value=mock_tracking_db),
+        patch('bot.cogs.account_link.AccountLinkCog') as mock_cog_class,
+    ):
         mock_cog_instance = MagicMock()
         mock_cog_class.return_value = mock_cog_instance
 
         from bot.cogs.account_link import setup
+
         await setup(mock_bot)
 
         mock_cog_class.assert_called_once_with(

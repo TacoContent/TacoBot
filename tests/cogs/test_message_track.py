@@ -3,32 +3,33 @@ Covers message event handling, first message taco logic, and error handling.
 """
 
 from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 from bot.cogs.message_track import MessageTracker
 from bot.lib.enums.tacotypes import TacoTypes
+
 
 @pytest.fixture
 def cog(bot, tracking_db, entity_helper, taco_helper, settings):
     """Create a MessageTracker cog instance with all mocked dependencies."""
     with patch("bot.lib.discord.ext.commands.TacobotCog.logger.Log"):
         cog_instance = MessageTracker(
-            bot=bot,
-            tracking_db=tracking_db,
-            entity_helper=entity_helper,
-            tacos_helper=taco_helper,
-            settings=settings,
+            bot=bot, tracking_db=tracking_db, entity_helper=entity_helper, tacos_helper=taco_helper, settings=settings
         )
         # Patch get_tacos_settings to return a default value
         cog_instance.get_tacos_settings = MagicMock(return_value={"first_message_count": 5})
         return cog_instance
 
+
 class DummyGuild:
     def __init__(self, id):
         self.id = id
 
+
 class DummyChannel:
     def __init__(self, id):
         self.id = id
+
 
 class DummyUser:
     def __init__(self, id, bot=False):
@@ -39,6 +40,7 @@ class DummyUser:
         self.discriminator = "0"
         self.global_name = "TestUser"
 
+
 class DummyMessage:
     def __init__(self, id, guild, channel, author, content="!cmd", created_at=None):
         self.id = id
@@ -48,6 +50,7 @@ class DummyMessage:
         self.content = content
         self.created_at = created_at or MagicMock()
         self.created_at.strftime = MagicMock(return_value="2025-01-01 12:00:00")
+
 
 @pytest.mark.asyncio
 class TestMessageTrackerOnMessage:
@@ -92,19 +95,10 @@ class TestMessageTrackerOnMessage:
         cog.settings.get_string = MagicMock(return_value="First message!")
         await cog.on_message(message)
         taco_helper.give_tacos.assert_awaited_once_with(
-            guild.id,
-            cog.bot.user,
-            author,
-            "First message!",
-            TacoTypes.FIRST_MESSAGE,
-            taco_amount=5,
+            guild.id, cog.bot.user, author, "First message!", TacoTypes.FIRST_MESSAGE, taco_amount=5
         )
-        tracking_db.track_first_message.assert_called_once_with(
-            guild.id, author.id, channel.id, message.id
-        )
-        tracking_db.track_message.assert_called_once_with(
-            guild.id, author.id, channel.id, message.id
-        )
+        tracking_db.track_first_message.assert_called_once_with(guild.id, author.id, channel.id, message.id)
+        tracking_db.track_message.assert_called_once_with(guild.id, author.id, channel.id, message.id)
 
     async def test_on_message_not_first_message(self, cog, tracking_db):
         """Test that non-first message does not trigger taco reward."""
@@ -116,9 +110,7 @@ class TestMessageTrackerOnMessage:
         tracking_db.is_first_message_today = MagicMock(return_value=False)
         tracking_db.track_message = MagicMock()
         await cog.on_message(message)
-        tracking_db.track_message.assert_called_once_with(
-            guild.id, author.id, channel.id, message.id
-        )
+        tracking_db.track_message.assert_called_once_with(guild.id, author.id, channel.id, message.id)
 
     async def test_on_message_exception_handling(self, cog):
         """Test exception handling in on_message."""
@@ -129,6 +121,7 @@ class TestMessageTrackerOnMessage:
         cog.bot.command_prefix = AsyncMock(side_effect=Exception("Test error"))
         await cog.on_message(message)
         cog.log.error.assert_called()
+
 
 @pytest.mark.asyncio
 class TestMessageTrackerGiveUserFirstMessageTacos:
@@ -144,16 +137,9 @@ class TestMessageTrackerGiveUserFirstMessageTacos:
         taco_helper.give_tacos = AsyncMock()
         cog.settings.get_string = MagicMock(return_value="First message!")
         await cog.give_user_first_message_tacos(guild_id, user_id, channel_id, message_id)
-        tracking_db.track_first_message.assert_called_once_with(
-            guild_id, user_id, channel_id, message_id
-        )
+        tracking_db.track_first_message.assert_called_once_with(guild_id, user_id, channel_id, message_id)
         taco_helper.give_tacos.assert_awaited_once_with(
-            guild_id,
-            cog.bot.user,
-            member,
-            "First message!",
-            TacoTypes.FIRST_MESSAGE,
-            taco_amount=5,
+            guild_id, cog.bot.user, member, "First message!", TacoTypes.FIRST_MESSAGE, taco_amount=5
         )
 
     async def test_give_user_first_message_tacos_member_not_found(self, cog, entity_helper, tracking_db):
@@ -177,21 +163,25 @@ class TestMessageTrackerGiveUserFirstMessageTacos:
         await cog.give_user_first_message_tacos(guild_id, user_id, channel_id, message_id)
         cog.log.error.assert_called()
 
+
 @pytest.mark.asyncio
 class TestMessageTrackerSetup:
     async def test_setup_creates_cog_with_dependencies(self):
         """Test that setup function creates cog with all dependencies."""
         mock_bot = MagicMock()
         mock_bot.add_cog = AsyncMock()
-        with patch("bot.cogs.message_track.Settings") as mock_settings_class, \
-             patch("bot.cogs.message_track.TrackingDatabase") as mock_tracking_class, \
-             patch("bot.cogs.message_track.EntityHelper") as mock_entity_class, \
-             patch("bot.cogs.message_track.TacoHelper") as mock_taco_helper_class, \
-             patch("bot.lib.discord.ext.commands.TacobotCog.logger.Log"):
+        with (
+            patch("bot.cogs.message_track.Settings") as mock_settings_class,
+            patch("bot.cogs.message_track.TrackingDatabase") as mock_tracking_class,
+            patch("bot.cogs.message_track.EntityHelper") as mock_entity_class,
+            patch("bot.cogs.message_track.TacoHelper") as mock_taco_helper_class,
+            patch("bot.lib.discord.ext.commands.TacobotCog.logger.Log"),
+        ):
             mock_settings_instance = MagicMock()
             mock_settings_instance.log_level = "DEBUG"
             mock_settings_class.return_value = mock_settings_instance
             from bot.cogs.message_track import setup
+
             await setup(mock_bot)
             mock_settings_class.assert_called_once()
             mock_tracking_class.assert_called_once()

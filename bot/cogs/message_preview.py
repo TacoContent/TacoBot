@@ -21,7 +21,7 @@ class MessagePreview(TacobotCog):
         entity_helper: EntityHelper,
         messaging: Messaging,
         tracking_db: TrackingDatabase,
-        settings: Settings
+        settings: Settings,
     ) -> None:
         super().__init__(bot, "message_preview", settings=settings)
         _method = inspect.stack()[0][3]
@@ -160,10 +160,6 @@ async def setup(bot):
     tracking_db = TrackingDatabase()
     await bot.add_cog(
         MessagePreview(
-            bot=bot,
-            entity_helper=entity_helper,
-            messaging=messaging,
-            tracking_db=tracking_db,
-            settings=settings,
+            bot=bot, entity_helper=entity_helper, messaging=messaging, tracking_db=tracking_db, settings=settings
         )
     )

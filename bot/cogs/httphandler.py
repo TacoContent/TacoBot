@@ -4,7 +4,6 @@ import traceback
 import typing
 from importlib import import_module
 
-
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
@@ -17,13 +16,7 @@ from httpserver.server import HttpServer
 class HttpHandlerCog(TacobotCog):
     # group = app_commands.Group(name="webhook", description="Webhook Handler")
 
-    def __init__(
-        self,
-        bot: TacoBot,
-        tracking_db: TrackingDatabase,
-        messaging: Messaging,
-        settings: Settings,
-    ) -> None:
+    def __init__(self, bot: TacoBot, tracking_db: TrackingDatabase, messaging: Messaging, settings: Settings) -> None:
         super().__init__(bot, "webhook", settings=settings)
 
         _method = inspect.stack()[0][3]
@@ -71,9 +64,7 @@ class HttpHandlerCog(TacobotCog):
             listen_port = settings.get("port", 8090)
 
             await self.http_server.start(listen_address, listen_port)
-            self.log.info(
-                0, f"{self._module}.{self._class}.{_method}", f'Webhook Started Listening => :{listen_port}'
-            )
+            self.log.info(0, f"{self._module}.{self._class}.{_method}", f'Webhook Started Listening => :{listen_port}')
             # we dont need to call "serve_forever" because this task is already running in the background
 
     def load_webhook_handlers(self):

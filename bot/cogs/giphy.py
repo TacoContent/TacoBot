@@ -7,7 +7,6 @@ import uuid
 from random import random
 from urllib import parse, request
 
-
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase

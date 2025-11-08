@@ -12,7 +12,7 @@ from discord.ext.commands import Context, Greedy
 
 
 class CommandSyncCog(TacobotCog):
-    def __init__(self, bot: tacobot.TacoBot, messaging: Messaging,settings: Settings) -> None:
+    def __init__(self, bot: tacobot.TacoBot, messaging: Messaging, settings: Settings) -> None:
         super().__init__(bot, "command_sync", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__

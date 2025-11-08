@@ -4,7 +4,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import discord
 import pytest
-
 from bot.cogs.assistant import AssistantCog
 
 
@@ -41,12 +40,7 @@ def mock_settings():
 
 @pytest.fixture
 def cog(mock_bot, mock_tacos_db, mock_entity_helper, mock_settings):
-    c = AssistantCog(
-        bot=mock_bot,
-        tacos_db=mock_tacos_db,
-        entity_helper=mock_entity_helper,
-        settings=mock_settings,
-    )
+    c = AssistantCog(bot=mock_bot, tacos_db=mock_tacos_db, entity_helper=mock_entity_helper, settings=mock_settings)
     c.log = MagicMock()
     c.get_cog_settings = MagicMock()
     return c
@@ -210,15 +204,23 @@ class TestAssistantCog:
         mock_openai_response.choices = [MagicMock()]
         mock_openai_response.choices[0].message.content = "AI Response"
 
-        with patch.object(cog, '_get_message_content_for_prompt', return_value="FAQ Content") as mock_faq, \
-             patch.object(cog, '_get_channels', return_value=[{"id": 22222, "name": "general"}]) as mock_channels, \
-             patch.object(cog, '_get_user_json', return_value='{"id": 33333, "name": "TestUser"}') as mock_user_json, \
-             patch('bot.lib.utils.str_replace', return_value="You are TacoBot in Test Guild") as mock_str_replace, \
-             patch('bot.cogs.assistant.OpenAI') as mock_openai_class:
-            
-            mock_openai_instance = MagicMock()
-            mock_openai_instance.chat.completions.create.return_value = mock_openai_response
-            mock_openai_class.return_value = mock_openai_instance
+        with (
+            patch.object(cog, '_get_message_content_for_prompt', return_value="FAQ Content") as mock_faq,
+            patch.object(cog, '_get_channels', return_value=[{"id": 22222, "name": "general"}]) as mock_channels,
+            patch.object(cog, '_get_user_json', return_value='{"id": 33333, "name": "TestUser"}') as mock_user_json,
+            patch.object(
+                cog,
+                'get_settings',
+                return_value={"endpoint": "https://test-endpoint.com/v1", "token": "test-token", "model": "gpt-4"},
+            ) as mock_get_settings,
+            patch('bot.lib.utils.str_replace', return_value="You are TacoBot in Test Guild") as mock_str_replace,
+            patch('bot.cogs.assistant.OpenAIHelper') as mock_openai_helper_class,
+        ):
+
+            mock_openai_helper = MagicMock()
+            mock_openai_helper.chat_completion.return_value = mock_openai_response
+            mock_openai_helper.get_response_text.return_value = "AI Response"
+            mock_openai_helper_class.return_value = mock_openai_helper
 
             result = await cog._ai_request(12345, mock_message)
 
@@ -226,17 +228,22 @@ class TestAssistantCog:
             mock_faq.assert_called_once_with(channel_id=22222, message_id=44444)
             mock_channels.assert_called_once_with(12345)
             mock_user_json.assert_called_once_with(12345, mock_message.author)
+            mock_get_settings.assert_called_once_with(12345, "openai")
             mock_str_replace.assert_called_once_with(
-                "You are {bot_name} in {guild_name}",
-                bot_name="TacoBot",
-                guild_name="Test Guild",
+                "You are {bot_name} in {guild_name}", bot_name="TacoBot", guild_name="Test Guild"
             )
-            mock_openai_instance.chat.completions.create.assert_called_once()
-            call_args = mock_openai_instance.chat.completions.create.call_args
-            assert call_args[1]['model'] == 'gpt-4'
+            # Verify OpenAIHelper was initialized with settings
+            mock_openai_helper_class.assert_called_once_with(
+                settings={"endpoint": "https://test-endpoint.com/v1", "token": "test-token", "model": "gpt-4"}
+            )
+            # Verify chat_completion was called
+            mock_openai_helper.chat_completion.assert_called_once()
+            call_args = mock_openai_helper.chat_completion.call_args
             assert len(call_args[1]['messages']) == 2
             assert call_args[1]['messages'][0]['role'] == 'system'
             assert call_args[1]['messages'][1]['role'] == 'user'
+            # Verify get_response_text was called
+            mock_openai_helper.get_response_text.assert_called_once_with(mock_openai_response)
 
     @pytest.mark.asyncio
     async def test_ai_request_default_settings(self, cog, mock_message, mock_bot):
@@ -246,39 +253,34 @@ class TestAssistantCog:
         mock_openai_response.choices = [MagicMock()]
         mock_openai_response.choices[0].message.content = "AI Response"
 
-        with patch.object(cog, '_get_message_content_for_prompt', return_value="") as mock_faq, \
-             patch.object(cog, '_get_channels', return_value=[]) as mock_channels, \
-             patch.object(cog, '_get_user_json', return_value='{}') as mock_user_json, \
-             patch('bot.lib.utils.str_replace', return_value="") as mock_str_replace, \
-             patch('bot.cogs.assistant.OpenAI') as mock_openai_class:
-            
-            mock_openai_instance = MagicMock()
-            mock_openai_instance.chat.completions.create.return_value = mock_openai_response
-            mock_openai_class.return_value = mock_openai_instance
+        with (
+            patch.object(cog, '_get_message_content_for_prompt', return_value="") as mock_faq,
+            patch.object(cog, '_get_channels', return_value=[]),
+            patch.object(cog, '_get_user_json', return_value='{}'),
+            patch.object(cog, 'get_settings', return_value={"model": "gpt-3.5-turbo"}),
+            patch('bot.lib.utils.str_replace', return_value=""),
+            patch('bot.cogs.assistant.OpenAIHelper') as mock_openai_helper_class,
+        ):
+
+            mock_openai_helper = MagicMock()
+            mock_openai_helper.chat_completion.return_value = mock_openai_response
+            mock_openai_helper.get_response_text.return_value = "AI Response"
+            mock_openai_helper_class.return_value = mock_openai_helper
 
             result = await cog._ai_request(12345, mock_message)
 
             assert result == "AI Response"
             # Check default FAQ settings
-            mock_faq.assert_called_once_with(
-                channel_id=948278701290840074,
-                message_id=1243617386981232670
-            )
-            # Check default model
-            call_args = mock_openai_instance.chat.completions.create.call_args
-            assert call_args[1]['model'] == 'gpt-3.5-turbo'
+            mock_faq.assert_called_once_with(channel_id=948278701290840074, message_id=1243617386981232670)
+            # Verify OpenAIHelper was initialized with default model settings
+            mock_openai_helper_class.assert_called_once_with(settings={"model": "gpt-3.5-turbo"})
 
     def test_get_user_json_success(self, cog, mock_user, mock_tacos_db):
         mock_tacos_db.get_tacos_count.return_value = 42
 
         result = cog._get_user_json(12345, mock_user)
 
-        expected = json.dumps({
-            "name": "<@33333>",
-            "id": 33333,
-            "mention": "<@33333>",
-            "taco_count": 42
-        })
+        expected = json.dumps({"name": "<@33333>", "id": 33333, "mention": "<@33333>", "taco_count": 42})
         assert result == expected
         mock_tacos_db.get_tacos_count.assert_called_once_with(guildId=12345, userId=33333)
 
@@ -445,20 +447,20 @@ class TestAssistantCog:
 
 @pytest.mark.asyncio
 async def test_setup(mock_bot, mock_tacos_db, mock_entity_helper, mock_settings):
-    with patch('bot.cogs.assistant.Settings', return_value=mock_settings), \
-         patch('bot.cogs.assistant.TacosDatabase', return_value=mock_tacos_db), \
-         patch('bot.cogs.assistant.EntityHelper', return_value=mock_entity_helper), \
-         patch('bot.cogs.assistant.AssistantCog') as mock_cog_class:
+    with (
+        patch('bot.cogs.assistant.Settings', return_value=mock_settings),
+        patch('bot.cogs.assistant.TacosDatabase', return_value=mock_tacos_db),
+        patch('bot.cogs.assistant.EntityHelper', return_value=mock_entity_helper),
+        patch('bot.cogs.assistant.AssistantCog') as mock_cog_class,
+    ):
         mock_cog_instance = MagicMock()
         mock_cog_class.return_value = mock_cog_instance
 
         from bot.cogs.assistant import setup
+
         await setup(mock_bot)
 
         mock_cog_class.assert_called_once_with(
-            bot=mock_bot,
-            tacos_db=mock_tacos_db,
-            entity_helper=mock_entity_helper,
-            settings=mock_settings,
+            bot=mock_bot, tacos_db=mock_tacos_db, entity_helper=mock_entity_helper, settings=mock_settings
         )
         mock_bot.add_cog.assert_called_once_with(mock_cog_instance)

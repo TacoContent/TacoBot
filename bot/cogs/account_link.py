@@ -196,6 +196,7 @@ class AccountLinkCog(TacobotCog):
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.messaging.notify_of_error(ctx)
 
+
 async def setup(bot):
     settings = Settings()
     messaging = Messaging(bot)

@@ -304,6 +304,6 @@ async def setup(bot):
             taco_helper=taco_helper,
             introductions_db=introductions_db,
             tracking_db=tracking_db,
-            settings=settings
+            settings=settings,
         )
     )

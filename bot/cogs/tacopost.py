@@ -3,7 +3,6 @@ import inspect
 import os
 import traceback
 
-
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.helpers import MessageHelper, PromptHelper
 from bot.lib.messaging import Messaging

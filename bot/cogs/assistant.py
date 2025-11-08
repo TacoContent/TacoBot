@@ -5,14 +5,14 @@ import traceback
 import typing
 
 import discord
-from lib.settings import Settings
 from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.helpers import EntityHelper
 from bot.lib.mongodb.tacos import TacosDatabase
+from bot.lib.openai import OpenAIHelper
 from bot.tacobot import TacoBot
 from discord.ext import commands
-from openai import OpenAI
+from lib.settings import Settings
 
 
 class AssistantCog(TacobotCog):
@@ -70,29 +70,24 @@ class AssistantCog(TacobotCog):
         faq_channel_id = faq_settings.get("channel_id", "948278701290840074")
         faq_message_id = faq_settings.get("message_id", "1243617386981232670")
 
-        faq = await self._get_message_content_for_prompt(
-            channel_id=int(faq_channel_id), message_id=int(faq_message_id)
-        )
+        faq = await self._get_message_content_for_prompt(channel_id=int(faq_channel_id), message_id=int(faq_message_id))
         prompt = utils.str_replace(
-            cog_settings.get("system_prompt", ""),
-            bot_name=self.bot.user.name,
-            guild_name=message.guild.name,
+            cog_settings.get("system_prompt", ""), bot_name=self.bot.user.name, guild_name=message.guild.name
         )
 
-        model = cog_settings.get("model", "gpt-3.5-turbo")
+        # Get OpenAI settings from the 'openai' section
+        openai_settings = self.get_settings(guild_id, "openai")
 
-        # system = f"Your name is {self.bot.user.name}. You are in the {message.guild.name} discord. You are a discord
-        # assistant. You are here to help users with their questions. You can answer questions, provide information,
-        # and help users with their needs. You can also provide links to resources, and help users find the information
-        # they need. Your responses should be positive and fun."
+        # Initialize OpenAI helper with settings
+        openai_helper = OpenAIHelper(settings=openai_settings)
 
         channels = json.dumps(await self._get_channels(guild_id))
         self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"Channels: {channels}")
         user_prompt = message.content.replace(self.bot.user.mention, "").strip()
         user_json = self._get_user_json(guild_id, message.author)
-        openai = OpenAI()
-        ai_response = openai.chat.completions.create(
-            model=model,
+
+        # Use the helper to make the chat completion request
+        ai_response = openai_helper.chat_completion(
             messages=[
                 {
                     "role": "system",
@@ -102,9 +97,11 @@ class AssistantCog(TacobotCog):
                     "role": "user",
                     "content": f"{user_prompt}\nJSON of my user info:\n{user_json}\nUse my mention to ping me in your response.",
                 },
-            ],
+            ]
         )
-        ai_question = ai_response.choices[0].message.content
+
+        # Extract response text using the helper
+        ai_question = openai_helper.get_response_text(ai_response)
         return ai_question
 
     def _get_user_json(self, guildId: int, user: typing.Union[discord.Member, discord.User]) -> str:

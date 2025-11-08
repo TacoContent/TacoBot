@@ -10,6 +10,7 @@ from discord.ext import commands
 
 class EventsCog(TacobotCog):
     """Just a simple cog to handle bot events."""
+
     def __init__(self, bot: TacoBot, settings: Settings):
         super().__init__(bot, "tacobot", settings=settings)
         _method = inspect.stack()[0][3]

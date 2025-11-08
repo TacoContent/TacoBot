@@ -35,9 +35,11 @@ def cog():
         )
         return cog_instance
 
+
 class DummyGuild:
     def __init__(self, id):
         self.id = id
+
 
 class DummyMember:
     def __init__(self, id, guild, bot=False, system=False):
@@ -45,6 +47,7 @@ class DummyMember:
         self.guild = guild
         self.bot = bot
         self.system = system
+
 
 @pytest.mark.asyncio
 class TestJoinLeaveTrackerCog:
@@ -172,14 +175,13 @@ class TestJoinLeaveSetup:
         mock_bot = MagicMock()
         mock_bot.add_cog = AsyncMock()
 
-        with patch("bot.cogs.join_leave.Settings") as mock_settings_class, patch(
-            "bot.cogs.join_leave.TrackingDatabase"
-        ) as mock_tracking_class, patch("bot.cogs.join_leave.TacosDatabase") as mock_tacos_class, patch(
-            "bot.cogs.join_leave.EntityHelper"
-        ) as mock_entity_class, patch(
-            "bot.cogs.join_leave.TacoHelper"
-        ) as mock_taco_helper_class, patch(
-            "bot.lib.discord.ext.commands.TacobotCog.logger.Log"
+        with (
+            patch("bot.cogs.join_leave.Settings") as mock_settings_class,
+            patch("bot.cogs.join_leave.TrackingDatabase") as mock_tracking_class,
+            patch("bot.cogs.join_leave.TacosDatabase") as mock_tacos_class,
+            patch("bot.cogs.join_leave.EntityHelper") as mock_entity_class,
+            patch("bot.cogs.join_leave.TacoHelper") as mock_taco_helper_class,
+            patch("bot.lib.discord.ext.commands.TacobotCog.logger.Log"),
         ):
             # Configure mock settings to have log_level attribute
             mock_settings_instance = MagicMock()
