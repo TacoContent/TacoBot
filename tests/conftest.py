@@ -178,6 +178,7 @@ def prompt_helper():
     h.ask_yes_no = AsyncMock()
     return h
 
+
 @pytest.fixture
 def context_helper():
     """Function-scoped mock context helper."""

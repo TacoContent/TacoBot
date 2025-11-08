@@ -412,7 +412,7 @@ class MinecraftCog(TacobotCog):
                 # raise Exception(f"Failed to find player {mc_username} from playerdb.co api call ({result.status_code} - {result.text})")
 
             data = result.json()
-            
+
             # Process player data from API response
             player_info = self._process_player_data(data)
             if not player_info:
@@ -432,7 +432,7 @@ class MinecraftCog(TacobotCog):
 
             mc_uuid = player_info["uuid"]
             avatar_url = player_info["avatar_url"]
-            
+
             # Build name history fields
             fields = []
             for n in player_info["name_history"]:
@@ -515,42 +515,42 @@ class MinecraftCog(TacobotCog):
 
     def _process_player_data(self, api_response_data: dict) -> dict | None:
         """Process the PlayerDB API response and extract player information.
-        
+
         Args:
             api_response_data: JSON data from PlayerDB API response
-            
+
         Returns:
             Dictionary containing player info (uuid, raw_id, username, name_history, avatar_url)
             or None if player data is invalid
         """
         if not api_response_data.get("success") or api_response_data.get("code") != "player.found":
             return None
-            
+
         player_data = api_response_data.get("data", {}).get("player", {})
         if not player_data:
             return None
-            
+
         mc_uuid = player_data.get("id")
         mc_raw_id = player_data.get("raw_id")
         mc_username = player_data.get("username")
         name_history = player_data.get("meta", {}).get("name_history", [])
-        
+
         if not mc_uuid or not mc_raw_id:
             return None
-            
+
         avatar_url = f"{self.avatar_api}/{mc_raw_id}"
-        
+
         return {
             "uuid": mc_uuid,
             "raw_id": mc_raw_id,
             "username": mc_username,
             "name_history": name_history,
-            "avatar_url": avatar_url
+            "avatar_url": avatar_url,
         }
 
     def _call_minecraft_start_api(self) -> requests.Response:
         """Call the Minecraft server start API endpoint.
-        
+
         Returns:
             Response object from the API call
         """
@@ -559,7 +559,7 @@ class MinecraftCog(TacobotCog):
 
     def _call_minecraft_stop_api(self) -> requests.Response:
         """Call the Minecraft server stop API endpoint.
-        
+
         Returns:
             Response object from the API call
         """
@@ -568,10 +568,10 @@ class MinecraftCog(TacobotCog):
 
     def _call_player_db_api(self, username: str) -> requests.Response:
         """Look up a Minecraft player by username using the PlayerDB API.
-        
+
         Args:
             username: Minecraft username to look up (will be cleaned)
-            
+
         Returns:
             Response object from the API call
         """
@@ -581,7 +581,7 @@ class MinecraftCog(TacobotCog):
 
     def _call_minecraft_status_api(self) -> requests.Response:
         """Get the current Minecraft server status.
-        
+
         Returns:
             Response object from the API call
         """
@@ -590,35 +590,35 @@ class MinecraftCog(TacobotCog):
 
     async def _determine_output_channel(self, ctx: Context, cog_settings: dict) -> tuple:
         """Determine the appropriate output channel and timeout for a command.
-        
+
         Args:
             ctx: Discord command context
             cog_settings: Cog settings dictionary
-            
+
         Returns:
             Tuple of (output_channel, auto_delete_timeout)
         """
         AUTO_DELETE_TIMEOUT = self.SELF_DESTRUCT_TIMEOUT
         output_channel = await self.entity_helper.get_or_fetch_channel(int(cog_settings.get("output_channel", 0)))
-        
+
         if not output_channel or output_channel.id != ctx.channel.id:
             output_channel = ctx.author
             AUTO_DELETE_TIMEOUT = None
-            
+
         return output_channel, AUTO_DELETE_TIMEOUT
 
     async def _safe_delete_context_message(self, ctx: Context) -> bool:
         """Safely attempt to delete the context message.
-        
+
         Args:
             ctx: Discord command context
-            
+
         Returns:
             True if deletion succeeded or message doesn't exist, False if deletion failed
         """
         if not ctx.message:
             return True
-            
+
         try:
             await ctx.message.delete()
             return True
@@ -628,12 +628,12 @@ class MinecraftCog(TacobotCog):
 
     def _build_status_fields(self, guild_id: int, status: dict, cog_settings: dict) -> list[dict]:
         """Build the status embed fields for the Minecraft server status display.
-        
+
         Args:
             guild_id: Discord guild ID for localized strings
             status: Server status data from the API
             cog_settings: Cog configuration settings
-            
+
         Returns:
             List of embed field dictionaries
         """

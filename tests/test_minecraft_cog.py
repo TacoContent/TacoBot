@@ -4,7 +4,6 @@ import discord
 import pytest
 from bot.cogs.minecraft import MinecraftCog
 
-
 # Minecraft-specific fixtures (not in conftest.py)
 
 
@@ -127,7 +126,9 @@ def cog(bot, minecraft_db, tracking_db, messaging, entity_helper, context_helper
 class TestMinecraftCogInit:
     """Tests for MinecraftCog initialization."""
 
-    def test_init(self, cog, bot, minecraft_db, tracking_db, messaging, entity_helper, context_helper, prompt_helper, settings):
+    def test_init(
+        self, cog, bot, minecraft_db, tracking_db, messaging, entity_helper, context_helper, prompt_helper, settings
+    ):
         assert cog.bot == bot
         assert cog.minecraft_db == minecraft_db
         assert cog.tracking_db == tracking_db
@@ -140,7 +141,9 @@ class TestMinecraftCogInit:
         assert cog._class == "MinecraftCog"
         assert cog.SELF_DESTRUCT_TIMEOUT == 30
 
-    def test_init_default_api_endpoints(self, bot, minecraft_db, tracking_db, messaging, entity_helper, context_helper, prompt_helper, settings):
+    def test_init_default_api_endpoints(
+        self, bot, minecraft_db, tracking_db, messaging, entity_helper, context_helper, prompt_helper, settings
+    ):
         """Test that default API endpoints are set correctly."""
         c = MinecraftCog(
             bot=bot,
@@ -159,7 +162,9 @@ class TestMinecraftCogInit:
         assert c.player_db_api == MinecraftCog.DEFAULT_PLAYER_DB_API
         assert c.avatar_api == MinecraftCog.DEFAULT_AVATAR_API
 
-    def test_init_custom_api_endpoints(self, bot, minecraft_db, tracking_db, messaging, entity_helper, context_helper, prompt_helper, settings):
+    def test_init_custom_api_endpoints(
+        self, bot, minecraft_db, tracking_db, messaging, entity_helper, context_helper, prompt_helper, settings
+    ):
         """Test that custom API endpoints can be injected for testing."""
         custom_api = "http://test-api.local:8080"
         custom_player_db = "https://test-playerdb.com/api"
@@ -195,7 +200,18 @@ class TestMinecraftCogHelperMethods:
         assert cog._clean_username("TEST_USER") == "test_user"
 
     @patch('bot.cogs.minecraft.requests.get')
-    def test_api_calls_use_injected_endpoints(self, mock_get, bot, minecraft_db, tracking_db, messaging, entity_helper, context_helper, prompt_helper, settings):
+    def test_api_calls_use_injected_endpoints(
+        self,
+        mock_get,
+        bot,
+        minecraft_db,
+        tracking_db,
+        messaging,
+        entity_helper,
+        context_helper,
+        prompt_helper,
+        settings,
+    ):
         """Test that API calls use injected custom endpoints - demonstrating improved testability."""
         custom_base = "http://test-server.local:9999"
         custom_player = "https://test-player-api.test/lookup"
@@ -365,19 +381,11 @@ class TestMinecraftCogHelperMethods:
     def test_build_status_fields_online_server(self, cog, settings):
         """Test building status fields for an online server."""
         guild_id = 12345
-        status = {
-            'online': True,
-            'players': {'online': 5, 'max': 20},
-            'version': '1.19.2',
-            'title': 'Test Server'
-        }
+        status = {'online': True, 'players': {'online': 5, 'max': 20}, 'version': '1.19.2', 'title': 'Test Server'}
         cog_settings = {
             'server': 'test.server.com',
             'forge_version': '43.2.0',
-            'mods': [
-                {'name': 'ModA', 'version': '1.0'},
-                {'name': 'ModB', 'version': '2.0'}
-            ]
+            'mods': [{'name': 'ModA', 'version': '1.0'}, {'name': 'ModB', 'version': '2.0'}],
         }
 
         fields = cog._build_status_fields(guild_id, status, cog_settings)
@@ -396,17 +404,8 @@ class TestMinecraftCogHelperMethods:
     def test_build_status_fields_offline_server(self, cog, settings):
         """Test building status fields for an offline server."""
         guild_id = 12345
-        status = {
-            'online': False,
-            'players': {'online': 0, 'max': 20},
-            'version': '1.19.2',
-            'title': 'Test Server'
-        }
-        cog_settings = {
-            'server': 'test.server.com',
-            'forge_version': '43.2.0',
-            'mods': []
-        }
+        status = {'online': False, 'players': {'online': 0, 'max': 20}, 'version': '1.19.2', 'title': 'Test Server'}
+        cog_settings = {'server': 'test.server.com', 'forge_version': '43.2.0', 'mods': []}
 
         fields = cog._build_status_fields(guild_id, status, cog_settings)
 
@@ -418,17 +417,8 @@ class TestMinecraftCogHelperMethods:
     def test_build_status_fields_no_mods(self, cog, settings):
         """Test building status fields with no mods."""
         guild_id = 12345
-        status = {
-            'online': True,
-            'players': {'online': 0, 'max': 20},
-            'version': '1.19.2',
-            'title': 'Test Server'
-        }
-        cog_settings = {
-            'server': 'test.server.com',
-            'forge_version': '43.2.0',
-            'mods': []
-        }
+        status = {'online': True, 'players': {'online': 0, 'max': 20}, 'version': '1.19.2', 'title': 'Test Server'}
+        cog_settings = {'server': 'test.server.com', 'forge_version': '43.2.0', 'mods': []}
 
         fields = cog._build_status_fields(guild_id, status, cog_settings)
 
@@ -446,13 +436,10 @@ class TestMinecraftCogHelperMethods:
                     "raw_id": "1b313cdd7465422795aaca5503beba85",
                     "username": "TestPlayer",
                     "meta": {
-                        "name_history": [
-                            {"name": "OldName"},
-                            {"name": "TestPlayer", "changedToAt": 1577518972000}
-                        ]
-                    }
+                        "name_history": [{"name": "OldName"}, {"name": "TestPlayer", "changedToAt": 1577518972000}]
+                    },
                 }
-            }
+            },
         }
 
         result = cog._process_player_data(api_response)
@@ -466,10 +453,7 @@ class TestMinecraftCogHelperMethods:
 
     def test_process_player_data_not_found(self, cog):
         """Test processing player data when player is not found."""
-        api_response = {
-            "success": False,
-            "code": "player.notfound"
-        }
+        api_response = {"success": False, "code": "player.notfound"}
 
         result = cog._process_player_data(api_response)
 
@@ -477,10 +461,7 @@ class TestMinecraftCogHelperMethods:
 
     def test_process_player_data_invalid_code(self, cog):
         """Test processing player data with invalid response code."""
-        api_response = {
-            "success": True,
-            "code": "player.error"
-        }
+        api_response = {"success": True, "code": "player.error"}
 
         result = cog._process_player_data(api_response)
 
@@ -488,11 +469,7 @@ class TestMinecraftCogHelperMethods:
 
     def test_process_player_data_missing_player_data(self, cog):
         """Test processing player data when player data is missing."""
-        api_response = {
-            "success": True,
-            "code": "player.found",
-            "data": {}
-        }
+        api_response = {"success": True, "code": "player.found", "data": {}}
 
         result = cog._process_player_data(api_response)
 
@@ -508,7 +485,7 @@ class TestMinecraftCogHelperMethods:
                     "username": "TestPlayer"
                     # Missing id and raw_id
                 }
-            }
+            },
         }
 
         result = cog._process_player_data(api_response)
@@ -546,7 +523,7 @@ class TestMinecraftCogHelperMethods:
             "online": True,
             "players": {"online": 5, "max": 20},
             "version": "1.19.2",
-            "title": "Test Server"
+            "title": "Test Server",
         }
         mock_get.return_value = mock_response
 
@@ -645,7 +622,7 @@ class TestMinecraftCogStatusCommand:
             "server": "test.server.com",
             "forge_version": "40.1.0",
             "mods": [{"name": "Mod1", "version": "1.0.0"}],
-            "help": "Help text"
+            "help": "Help text",
         }
         entity_helper.get_or_fetch_channel.return_value = context.channel
         minecraft_db.get_minecraft_user.return_value = {"whitelist": True, "username": "TestUser", "uuid": "test-uuid"}
@@ -657,7 +634,7 @@ class TestMinecraftCogStatusCommand:
             "online": True,
             "players": {"online": 5, "max": 20},
             "version": "1.19.2",
-            "title": "Test Server"
+            "title": "Test Server",
         }
         mock_get.return_value = mock_response
 
@@ -677,7 +654,7 @@ class TestMinecraftCogStatusCommand:
             "server": "test.server.com",
             "forge_version": "40.1.0",
             "mods": [],
-            "help": "Help text"
+            "help": "Help text",
         }
         entity_helper.get_or_fetch_channel.return_value = context.channel
         minecraft_db.get_minecraft_user.return_value = {"whitelist": True, "username": "TestUser", "uuid": "test-uuid"}
@@ -689,7 +666,7 @@ class TestMinecraftCogStatusCommand:
             "online": False,
             "players": {"online": 0, "max": 20},
             "version": "1.19.2",
-            "title": "Test Server"
+            "title": "Test Server",
         }
         mock_get.return_value = mock_response
 
@@ -748,7 +725,9 @@ class TestMinecraftCogStartCommand:
     @pytest.mark.asyncio
     @patch('bot.cogs.minecraft.requests.post')
     @patch('bot.cogs.minecraft.requests.get')
-    async def test_start_server_success(self, mock_get, mock_post, cog, context, entity_helper, minecraft_db, tracking_db):
+    async def test_start_server_success(
+        self, mock_get, mock_post, cog, context, entity_helper, minecraft_db, tracking_db
+    ):
         cog.get_cog_settings.return_value = {"enabled": True, "output_channel": 22222}
         entity_helper.get_or_fetch_channel.return_value = context.channel
         minecraft_db.get_minecraft_user.return_value = {"whitelist": True, "username": "TestUser", "uuid": "test-uuid"}
@@ -880,7 +859,9 @@ class TestMinecraftCogWhitelistCommand:
 
     @pytest.mark.asyncio
     @patch('bot.cogs.minecraft.requests.get')
-    async def test_whitelist_success_with_dm(self, mock_get, cog, context, minecraft_db, prompt_helper, context_helper, tracking_db):
+    async def test_whitelist_success_with_dm(
+        self, mock_get, cog, context, minecraft_db, prompt_helper, context_helper, tracking_db
+    ):
         minecraft_db.get_minecraft_user.return_value = None
         prompt_helper.ask_text.return_value = "TestMCUser"
 
@@ -898,9 +879,9 @@ class TestMinecraftCogWhitelistCommand:
                     "id": "test-uuid",
                     "raw_id": "testuuid",
                     "username": "TestMCUser",
-                    "name_history": [{"name": "TestMCUser"}]
+                    "name_history": [{"name": "TestMCUser"}],
                 }
-            }
+            },
         }
         mock_get.return_value = mock_response
 
@@ -929,7 +910,9 @@ class TestMinecraftCogWhitelistCommand:
 
     @pytest.mark.asyncio
     @patch('bot.cogs.minecraft.requests.get')
-    async def test_whitelist_player_not_found(self, mock_get, cog, context, minecraft_db, prompt_helper, context_helper):
+    async def test_whitelist_player_not_found(
+        self, mock_get, cog, context, minecraft_db, prompt_helper, context_helper
+    ):
         minecraft_db.get_minecraft_user.return_value = None
         prompt_helper.ask_text.return_value = "InvalidUser"
 
@@ -939,10 +922,7 @@ class TestMinecraftCogWhitelistCommand:
 
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "success": False,
-            "code": "player.not_found"
-        }
+        mock_response.json.return_value = {"success": False, "code": "player.not_found"}
         mock_get.return_value = mock_response
 
         await cog.whitelist.callback(cog, context)

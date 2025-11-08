@@ -1,10 +1,13 @@
-import pytest
-
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from bot.cogs.move_message import MoveMessageCog, setup
 
+
 @pytest.fixture
-def cog(bot, tracking_db, messaging, permissions, context_helper, entity_helper, message_helper, prompt_helper, settings):
+def cog(
+    bot, tracking_db, messaging, permissions, context_helper, entity_helper, message_helper, prompt_helper, settings
+):
     return MoveMessageCog(
         bot=bot,
         tracking_db=tracking_db,
@@ -16,6 +19,7 @@ def cog(bot, tracking_db, messaging, permissions, context_helper, entity_helper,
         prompt_helper=prompt_helper,
         settings=settings,
     )
+
 
 @pytest.mark.asyncio
 async def test_on_raw_reaction_add_admin_move(cog, entity_helper, message_helper, prompt_helper, permissions):
@@ -45,19 +49,20 @@ async def test_on_raw_reaction_add_admin_move(cog, entity_helper, message_helper
     permissions.has_permission = MagicMock(return_value=True)
     context = MagicMock()
     cog.context_helper.create_context = MagicMock(return_value=context)
-    
+
     # Capture the callback and invoke it to test the inner function
     callback_captured = None
+
     async def capture_callback(ctx, title, message, timeout, callback):
         nonlocal callback_captured
         callback_captured = callback
         # Call the callback with a mock target channel
         target_channel = MagicMock()
         await callback(target_channel)
-    
+
     prompt_helper.ask_channel = AsyncMock(side_effect=capture_callback)
     message_helper.move_message = AsyncMock()
-    
+
     with patch.object(cog.tracking_db, "track_command_usage") as track_usage:
         await cog.on_raw_reaction_add(payload)
         entity_helper.get_or_fetch_channel.assert_awaited_with(456)
@@ -70,6 +75,7 @@ async def test_on_raw_reaction_add_admin_move(cog, entity_helper, message_helper
         message_helper.move_message.assert_awaited_once()
         message.delete.assert_awaited_once()
         track_usage.assert_called_once()
+
 
 @pytest.mark.asyncio
 async def test_on_raw_reaction_add_non_admin(cog, entity_helper, permissions):
@@ -100,6 +106,7 @@ async def test_on_raw_reaction_add_non_admin(cog, entity_helper, permissions):
         await cog.on_raw_reaction_add(payload)
         permissions.has_permission.assert_called()
         create_context.assert_not_called()
+
 
 @pytest.mark.asyncio
 async def test_on_raw_reaction_add_admin_wrong_emoji_inner_check(cog, entity_helper, permissions):
@@ -134,6 +141,7 @@ async def test_on_raw_reaction_add_admin_wrong_emoji_inner_check(cog, entity_hel
         # Should not create context because inner emoji check fails
         create_context.assert_not_called()
 
+
 @pytest.mark.asyncio
 async def test_on_raw_reaction_add_wrong_emoji(cog):
     payload = MagicMock()
@@ -144,11 +152,13 @@ async def test_on_raw_reaction_add_wrong_emoji(cog):
     await cog.on_raw_reaction_add(payload)
     # Should return early, nothing to assert
 
+
 @pytest.mark.asyncio
 async def test_on_raw_reaction_add_no_guild(cog):
     payload = MagicMock()
     payload.guild_id = None
     await cog.on_raw_reaction_add(payload)
+
 
 @pytest.mark.asyncio
 async def test_on_raw_reaction_add_event_type_not_add(cog):
@@ -158,6 +168,7 @@ async def test_on_raw_reaction_add_event_type_not_add(cog):
     payload.emoji = MagicMock()
     payload.emoji.__str__.return_value = '⏭️'
     await cog.on_raw_reaction_add(payload)
+
 
 @pytest.mark.asyncio
 async def test_on_raw_reaction_add_channel_not_found(cog, entity_helper):
@@ -170,6 +181,7 @@ async def test_on_raw_reaction_add_channel_not_found(cog, entity_helper):
     entity_helper.get_or_fetch_channel = AsyncMock(return_value=None)
     await cog.on_raw_reaction_add(payload)
     entity_helper.get_or_fetch_channel.assert_awaited_with(456)
+
 
 @pytest.mark.asyncio
 async def test_on_raw_reaction_add_message_not_found(cog, entity_helper):
@@ -185,6 +197,7 @@ async def test_on_raw_reaction_add_message_not_found(cog, entity_helper):
     entity_helper.get_or_fetch_channel = AsyncMock(return_value=channel)
     await cog.on_raw_reaction_add(payload)
     channel.fetch_message.assert_awaited_with(789)
+
 
 @pytest.mark.asyncio
 async def test_on_raw_reaction_add_user_not_found(cog, entity_helper):
@@ -203,6 +216,7 @@ async def test_on_raw_reaction_add_user_not_found(cog, entity_helper):
     entity_helper.get_or_fetch_user = AsyncMock(return_value=None)
     await cog.on_raw_reaction_add(payload)
     entity_helper.get_or_fetch_user.assert_awaited_with(1011)
+
 
 @pytest.mark.asyncio
 async def test_on_raw_reaction_add_user_is_bot(cog, entity_helper):
@@ -225,6 +239,7 @@ async def test_on_raw_reaction_add_user_is_bot(cog, entity_helper):
     await cog.on_raw_reaction_add(payload)
     # Should return early without fetching member
 
+
 @pytest.mark.asyncio
 async def test_on_raw_reaction_add_user_is_system(cog, entity_helper):
     payload = MagicMock()
@@ -246,6 +261,7 @@ async def test_on_raw_reaction_add_user_is_system(cog, entity_helper):
     await cog.on_raw_reaction_add(payload)
     # Should return early without fetching member
 
+
 @pytest.mark.asyncio
 async def test_on_raw_reaction_add_exception(cog, entity_helper):
     payload = MagicMock()
@@ -259,8 +275,11 @@ async def test_on_raw_reaction_add_exception(cog, entity_helper):
         await cog.on_raw_reaction_add(payload)
         mock_log.assert_called_once()
 
+
 @pytest.mark.asyncio
-async def test_move_command_success(cog, context_helper, prompt_helper, message_helper, messaging, tracking_db, settings):
+async def test_move_command_success(
+    cog, context_helper, prompt_helper, message_helper, messaging, tracking_db, settings
+):
     ctx = MagicMock()
     ctx.invoked_subcommand = None
     ctx.guild = MagicMock()
@@ -288,6 +307,7 @@ async def test_move_command_success(cog, context_helper, prompt_helper, message_
     message.delete.assert_awaited()
     tracking_db.track_command_usage.assert_called_once()
 
+
 @pytest.mark.asyncio
 async def test_move_command_message_not_found(cog, context_helper, prompt_helper, messaging, settings):
     ctx = MagicMock()
@@ -306,6 +326,7 @@ async def test_move_command_message_not_found(cog, context_helper, prompt_helper
     messaging.send_embed.assert_awaited()
     ctx.message.delete.assert_awaited()
 
+
 @pytest.mark.asyncio
 async def test_move_command_no_guild(cog):
     ctx = MagicMock()
@@ -313,11 +334,13 @@ async def test_move_command_no_guild(cog):
     ctx.guild = None
     await cog.move.callback(cog, ctx, 789)
 
+
 @pytest.mark.asyncio
 async def test_move_command_subcommand_present(cog):
     ctx = MagicMock()
     ctx.invoked_subcommand = MagicMock()
     await cog.move.callback(cog, ctx, 789)
+
 
 @pytest.mark.asyncio
 async def test_move_command_target_channel_none(cog, context_helper, prompt_helper, messaging, settings):
@@ -341,6 +364,7 @@ async def test_move_command_target_channel_none(cog, context_helper, prompt_help
     prompt_helper.ask_channel.assert_awaited()
     # Should return early when target_channel is None
 
+
 @pytest.mark.asyncio
 async def test_move_command_exception(cog):
     ctx = MagicMock()
@@ -354,18 +378,21 @@ async def test_move_command_exception(cog):
         await cog.move.callback(cog, ctx, 789)
         mock_log.assert_called_once()
 
+
 @pytest.mark.asyncio
 async def test_setup():
     bot = MagicMock()
     bot.add_cog = AsyncMock()
-    with patch("bot.cogs.move_message.Settings") as MockSettings, \
-         patch("bot.cogs.move_message.TrackingDatabase") as MockTrackingDB, \
-         patch("bot.cogs.move_message.Permissions") as MockPermissions, \
-         patch("bot.cogs.move_message.Messaging") as MockMessaging, \
-         patch("bot.cogs.move_message.ContextHelper") as MockContextHelper, \
-         patch("bot.cogs.move_message.EntityHelper") as MockEntityHelper, \
-         patch("bot.cogs.move_message.MessageHelper") as MockMessageHelper, \
-         patch("bot.cogs.move_message.PromptHelper") as MockPromptHelper:
+    with (
+        patch("bot.cogs.move_message.Settings") as MockSettings,
+        patch("bot.cogs.move_message.TrackingDatabase") as MockTrackingDB,
+        patch("bot.cogs.move_message.Permissions") as MockPermissions,
+        patch("bot.cogs.move_message.Messaging") as MockMessaging,
+        patch("bot.cogs.move_message.ContextHelper") as MockContextHelper,
+        patch("bot.cogs.move_message.EntityHelper") as MockEntityHelper,
+        patch("bot.cogs.move_message.MessageHelper") as MockMessageHelper,
+        patch("bot.cogs.move_message.PromptHelper") as MockPromptHelper,
+    ):
         settings = MockSettings.return_value
         settings.log_level = "INFO"  # Ensure log_level is a real string
         tracking_db = MockTrackingDB.return_value
@@ -375,9 +402,9 @@ async def test_setup():
         entity_helper = MockEntityHelper.return_value
         message_helper = MockMessageHelper.return_value
         prompt_helper = MockPromptHelper.return_value
-        
+
         await setup(bot)
-        
+
         bot.add_cog.assert_awaited_once()
         args, kwargs = bot.add_cog.call_args
         assert isinstance(args[0], MoveMessageCog)

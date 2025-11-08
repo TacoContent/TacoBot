@@ -1,8 +1,10 @@
-import pytest
-import discord
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import discord
+import pytest
 from bot.cogs.mod_events import ModEventsCog, setup
 from bot.lib.enums.system_actions import SystemActions
+
 
 @pytest.mark.asyncio
 async def test_on_member_ban(bot, tracking_db, settings):
@@ -20,6 +22,7 @@ async def test_on_member_ban(bot, tracking_db, settings):
             guild_id=123, action=SystemActions.USER_BAN, data={"user_id": 456}
         )
 
+
 @pytest.mark.asyncio
 async def test_on_member_unban(bot, tracking_db, settings):
     cog = ModEventsCog(bot=bot, tracking_db=tracking_db, settings=settings)
@@ -35,6 +38,7 @@ async def test_on_member_unban(bot, tracking_db, settings):
         tracking_db.track_system_action.assert_called_once_with(
             guild_id=123, action=SystemActions.USER_UNBAN, data={"user_id": 789}
         )
+
 
 @pytest.mark.asyncio
 async def test_on_automod_action(bot, tracking_db, settings):
@@ -70,12 +74,15 @@ async def test_on_automod_action(bot, tracking_db, settings):
         assert "rule" in kwargs["data"]
         assert "matched" in kwargs["data"]
 
+
 @pytest.mark.asyncio
 async def test_setup():
     bot = MagicMock()
     bot.add_cog = AsyncMock()
-    with patch("bot.cogs.mod_events.Settings") as MockSettings, \
-         patch("bot.cogs.mod_events.TrackingDatabase") as MockTrackingDB:
+    with (
+        patch("bot.cogs.mod_events.Settings") as MockSettings,
+        patch("bot.cogs.mod_events.TrackingDatabase") as MockTrackingDB,
+    ):
         settings = MagicMock()
         settings.log_level = "INFO"
         MockSettings.return_value = settings

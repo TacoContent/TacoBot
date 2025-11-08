@@ -9,11 +9,11 @@ import traceback
 import typing
 
 import discord
-from bot.lib.permissions import Permissions
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.helpers import ContextHelper, EntityHelper, MessageHelper, PromptHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.permissions import Permissions
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
