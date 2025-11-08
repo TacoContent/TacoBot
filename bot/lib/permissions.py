@@ -5,7 +5,7 @@ from bot.lib.enums.permissions import TacoPermissions
 from bot.lib.helpers import EntityHelper
 from bot.lib.mongodb.permissions import PermissionsDatabase
 from bot.lib.settings import Settings
-from tacobot import TacoBot
+from bot.tacobot import TacoBot
 
 
 class Permissions:

@@ -6,19 +6,20 @@ import discord
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums.system_actions import SystemActions
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class ModEventsCog(TacobotCog):
-    def __init__(self, bot: TacoBot):
-        super().__init__(bot, "mod_events")
+    def __init__(self, bot: TacoBot, tracking_db: TrackingDatabase, settings: Settings):
+        super().__init__(bot, "mod_events", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.tracking_db = TrackingDatabase()
+        self.tracking_db = tracking_db
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -63,4 +64,6 @@ class ModEventsCog(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(ModEventsCog(bot))
+    settings = Settings()
+    tracking_db = TrackingDatabase()
+    await bot.add_cog(ModEventsCog(bot=bot, tracking_db=tracking_db, settings=settings))

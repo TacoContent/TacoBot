@@ -13,6 +13,7 @@ from bot.lib.messaging import Messaging
 from bot.lib.mongodb.settings import SettingsDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.whitelist import WhitelistDatabase
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
@@ -21,24 +22,27 @@ class NewAccountCheckCog(TacobotCog):
     def __init__(
         self,
         bot: TacoBot,
-        settings_db: typing.Optional[SettingsDatabase] = None,
-        tracking_db: typing.Optional[TrackingDatabase] = None,
-        whitelist_db: typing.Optional[WhitelistDatabase] = None,
+        settings_db: SettingsDatabase,
+        tracking_db: TrackingDatabase,
+        whitelist_db: WhitelistDatabase,
+        messaging: Messaging,
+        entity_helper: EntityHelper,
+        settings: Settings,
     ) -> None:
-        super().__init__(bot, "account_age_check")
+        super().__init__(bot, "account_age_check", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = Messaging(self.bot)
+        self.messaging = messaging
 
         self.MINIMUM_ACCOUNT_AGE = 30  # days
-        self.settings_db = settings_db or SettingsDatabase()
-        self.tracking_db = tracking_db or TrackingDatabase()
-        self.whitelist_db = whitelist_db or WhitelistDatabase()
+        self.settings_db = settings_db
+        self.tracking_db = tracking_db
+        self.whitelist_db = whitelist_db
 
-        self.entity_helper = EntityHelper(bot)
+        self.entity_helper = entity_helper
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -202,4 +206,20 @@ class NewAccountCheckCog(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(NewAccountCheckCog(bot))
+    settings = Settings()
+    settings_db = settings.settings_db
+    tracking_db = TrackingDatabase()
+    whitelist_db = WhitelistDatabase()
+    messaging = Messaging(bot)
+    entity_helper = EntityHelper(bot)
+    await bot.add_cog(
+        NewAccountCheckCog(
+            bot=bot,
+            settings_db=settings_db,
+            tracking_db=tracking_db,
+            whitelist_db=whitelist_db,
+            messaging=messaging,
+            entity_helper=entity_helper,
+            settings=settings,
+        )
+    )

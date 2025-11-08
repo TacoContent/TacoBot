@@ -32,7 +32,7 @@ def module_settings():
     s.get_string = MagicMock(return_value="Test string")
     s.name = "TacoBot"
     s.version = "1.0.0"
-    s.log_level = "debug"
+    s.log_level = "INFO"  # Ensure this is a real string, not a mock
     s.settings_db = MagicMock()
     s.settings_db.set_setting = MagicMock()
     return s
@@ -65,7 +65,7 @@ def settings():
     s.get_string = MagicMock(return_value="Test string")
     s.name = "TacoBot"
     s.version = "1.0.0"
-    s.log_level = "debug"
+    s.log_level = "INFO"  # Ensure this is a real string, not a mock
     s.settings_db = MagicMock()
     s.settings_db.set_setting = MagicMock()
     return s
@@ -176,4 +176,10 @@ def prompt_helper():
     """Function-scoped mock prompt helper with async methods."""
     h = MagicMock()
     h.ask_yes_no = AsyncMock()
+    return h
+
+@pytest.fixture
+def context_helper():
+    """Function-scoped mock context helper."""
+    h = MagicMock()
     return h
