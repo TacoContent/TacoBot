@@ -5,13 +5,15 @@ import traceback
 import typing
 
 import discord
-from bot.lib import discordhelper, utils
+from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
+from bot.lib.helpers import ContextHelper, EntityHelper, PromptHelper, TacoHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.mentalmondays import MentalMondaysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord import app_commands
 from discord.ext import commands
@@ -22,20 +24,36 @@ from openai import OpenAI
 class MentalMondays(TacobotCog):
     group = app_commands.Group(name="mentalmondays", description="Commands for the Mental Monday's")
 
-    def __init__(self, bot: TacoBot) -> None:
-        super().__init__(bot, "mentalmondays")
+    def __init__(
+        self, 
+        bot: TacoBot, 
+        settings: Settings,
+        context_helper: ContextHelper,
+        prompt_helper: PromptHelper,
+        entity_helper: EntityHelper,
+        taco_helper: TacoHelper,
+        messaging: Messaging, 
+        permissions: Permissions, 
+        tracking_db: TrackingDatabase, 
+        mentalmondays_db: MentalMondaysDatabase
+    ) -> None:
+        super().__init__(bot, "mentalmondays", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
-        self.messaging = Messaging(bot)
-        self.permissions = Permissions(bot)
+        self.messaging = messaging
+        self.permissions = permissions
+
+        self.context_helper = context_helper
+        self.prompt_helper = prompt_helper
+        self.entity_helper = entity_helper
+        self.taco_helper = taco_helper
 
         self.SELF_DESTRUCT_TIMEOUT = 30
-        self.mentalmondays_db = MentalMondaysDatabase()
-        self.tracking_db = TrackingDatabase()
+        self.mentalmondays_db = mentalmondays_db
+        self.tracking_db = tracking_db
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.group(name="mentalmondays", invoke_without_command=True)
@@ -54,10 +72,10 @@ class MentalMondays(TacobotCog):
 
             # needs to accept an image along with the text
             try:
-                _ctx = self.discord_helper.create_context(
-                    self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
+                _ctx = self.context_helper.create_context(
+                    bot=self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
                 )
-                twa = await self.discord_helper.ask_for_image_or_text(
+                twa = await self.prompt_helper.ask_for_image_or_text(
                     _ctx,
                     ctx.author,
                     self.settings.get_string(guild_id, "mentalmondays_ask_title"),
@@ -66,7 +84,7 @@ class MentalMondays(TacobotCog):
                 )
             except discord.Forbidden:
                 _ctx = ctx
-                twa = await self.discord_helper.ask_for_image_or_text(
+                twa = await self.prompt_helper.ask_for_image_or_text(
                     _ctx,
                     ctx.author,
                     self.settings.get_string(guild_id, "mentalmondays_ask_title"),
@@ -302,7 +320,14 @@ class MentalMondays(TacobotCog):
         # in future, check if the user is in a defined role that can grant tacos (e.g. moderator)
 
         # get the message that was reacted to
-        channel = self.bot.get_channel(payload.channel_id)
+        channel = await self.entity_helper.get_or_fetch_channel(payload.channel_id)
+        if not channel:
+            self.log.warn(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"Channel {payload.channel_id} not found for guild {guild_id}",
+            )
+            return
         message = await channel.fetch_message(payload.message_id)
         message_author = message.author
         # react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
@@ -348,7 +373,14 @@ class MentalMondays(TacobotCog):
             )
             return
 
-        channel = self.bot.get_channel(payload.channel_id)
+        channel = await self.entity_helper.get_or_fetch_channel(payload.channel_id)
+        if not channel:
+            self.log.warn(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"Channel {payload.channel_id} not found for guild {guild_id}",
+            )
+            return
         message = await channel.fetch_message(payload.message_id)
 
         # check if this reaction is the first one of this type on the message
@@ -378,7 +410,7 @@ class MentalMondays(TacobotCog):
                 )
                 return
 
-            react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+            react_user = await self.entity_helper.get_or_fetch_user(payload.user_id)
             if not react_user or react_user.bot or react_user.system:
                 return
 
@@ -484,7 +516,7 @@ class MentalMondays(TacobotCog):
         )
 
     async def give_user_mentalmondays_tacos(
-        self, guild_id: int, user_id: int, channel_id: int, message_id: int
+        self, guild_id: int, user_id: int, channel_id: int, message_id: typing.Optional[int]
     ) -> None:
         _method = inspect.stack()[0][3]
         ctx = None
@@ -493,8 +525,15 @@ class MentalMondays(TacobotCog):
             # self, bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
             # get guild from id
             guild = self.bot.get_guild(guild_id)
+            if not guild:
+                self.log.warn(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"No guild found for id {guild_id}",
+                )
+                return
             # fetch member from id
-            member = await self.discord_helper.get_or_fetch_member(guild_id, user_id)
+            member = await self.entity_helper.get_or_fetch_member(guild_id, user_id)
             if not member:
                 self.log.warn(
                     guild_id,
@@ -505,7 +544,7 @@ class MentalMondays(TacobotCog):
             # get channel
             channel = None
             if channel_id:
-                channel = await self.discord_helper.get_or_fetch_channel(channel_id)
+                channel = await self.entity_helper.get_or_fetch_channel(channel_id)
             else:
                 channel = guild.system_channel
             if not channel:
@@ -513,6 +552,7 @@ class MentalMondays(TacobotCog):
                     guild_id, f"{self._module}.{self._class}.{_method}", f"No tacos settings found for guild {guild_id}"
                 )
                 return
+            
             message = None
             # get message
             if message_id and channel:
@@ -520,7 +560,7 @@ class MentalMondays(TacobotCog):
 
             # get bot
             bot = self.bot
-            ctx = self.discord_helper.create_context(
+            ctx = self.context_helper.create_context(
                 bot=bot, guild=guild, author=member, channel=channel, message=message
             )
 
@@ -553,7 +593,7 @@ class MentalMondays(TacobotCog):
                 delete_after=self.SELF_DESTRUCT_TIMEOUT,
             )
 
-            await self.discord_helper.taco_give_user(
+            await self.taco_helper.give_tacos(
                 guild_id, self.bot.user, member, reason_msg, tacotypes.TacoTypes.MENTAL_MONDAY, taco_amount=amount
             )
 
@@ -572,9 +612,9 @@ class MentalMondays(TacobotCog):
             self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No guild found for context")
             return
         user: typing.Optional[typing.Union[discord.Member, discord.User]] = None
-        if ctx and hasattr(ctx, "author"):
+        if ctx and isinstance(ctx, Context):
             user = ctx.author
-        elif ctx and hasattr(ctx, "user"):
+        elif ctx and isinstance(ctx, discord.Interaction):
             user = ctx.user
         else:
             self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No user found for context")
@@ -592,11 +632,11 @@ class MentalMondays(TacobotCog):
         amount = tacos_settings.get("mentalmondays_amount", 5)
 
         message_content = ""
-        role = await self.discord_helper.get_or_fetch_role(ctx.guild, int(cog_settings.get("tag_role", 0)))
+        role = await self.entity_helper.get_or_fetch_role(ctx.guild, int(cog_settings.get("tag_role", 0)))
         if role:
             message_content = f"{role.mention}"
 
-        out_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel_id", 0)))
+        out_channel = await self.entity_helper.get_or_fetch_channel(int(cog_settings.get("output_channel_id", 0)))
         if not out_channel:
             self.log.warn(
                 guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
@@ -692,4 +732,26 @@ class MentalMondays(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(MentalMondays(bot))
+    context_helper = ContextHelper()
+    prompt_helper = PromptHelper(bot)
+    entity_helper = EntityHelper(bot)
+    taco_helper = TacoHelper(bot, entity_helper=entity_helper)
+    settings = Settings()
+    messaging = Messaging(bot)
+    permissions = Permissions(bot, settings)
+    tracking_db = TrackingDatabase()
+    mentalmondays_db = MentalMondaysDatabase()
+    await bot.add_cog(
+        MentalMondays(
+            bot=bot,
+            settings=settings,
+            context_helper=context_helper,
+            prompt_helper=prompt_helper,
+            entity_helper=entity_helper,
+            taco_helper=taco_helper,
+            messaging=messaging,
+            permissions=permissions,
+            tracking_db=tracking_db,
+            mentalmondays_db=mentalmondays_db,
+        )
+    )

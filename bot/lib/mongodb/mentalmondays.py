@@ -17,7 +17,7 @@ class MentalMondaysDatabase(Database):
         self._class = self.__class__.__name__
         pass
 
-    def track_mentalmondays_answer(self, guild_id: int, user_id: int, message_id: int) -> None:
+    def track_mentalmondays_answer(self, guild_id: int, user_id: int, message_id: typing.Optional[int]) -> None:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
@@ -32,10 +32,12 @@ class MentalMondaysDatabase(Database):
             timestamp = utils.to_timestamp(ts_date)
             ts_track = utils.to_timestamp(datetime.datetime.utcnow())
 
-            result = self.connection.mentalmondays.find_one({"guild_id": str(guild_id), "timestamp": timestamp})
+            result = self.connection.mentalmondays.find_one(  # type: ignore
+                {"guild_id": str(guild_id), "timestamp": timestamp}
+            )
 
             if result:
-                self.connection.mentalmondays.update_one(
+                self.connection.mentalmondays.update_one(  # type: ignore
                     {"guild_id": str(guild_id), "timestamp": timestamp},
                     {"$push": {"answered": {"user_id": str(user_id), "message_id": messageId, "timestamp": ts_track}}},
                     upsert=True,
@@ -46,7 +48,7 @@ class MentalMondaysDatabase(Database):
                 ts_now_date = datetime.datetime.combine(now_date, datetime.time.max)
                 ts_back_date = datetime.datetime.combine(back_date, datetime.time.min)
                 # timestamp = utils.to_timestamp(ts_date)
-                result = self.connection.mentalmondays.find_one(
+                result = self.connection.mentalmondays.find_one(  # type: ignore
                     {
                         "guild_id": str(guild_id),
                         "timestamp": {
@@ -56,7 +58,7 @@ class MentalMondaysDatabase(Database):
                     }
                 )
                 if result:
-                    self.connection.mentalmondays.update_one(
+                    self.connection.mentalmondays.update_one(  # type: ignore
                         {"guild_id": str(guild_id), "timestamp": result['timestamp']},
                         {
                             "$push": {
@@ -80,7 +82,7 @@ class MentalMondaysDatabase(Database):
         self,
         guildId: int,
         message: str,
-        image: str,
+        image: typing.Optional[str],
         author: int,
         channel_id: typing.Optional[int] = None,
         message_id: typing.Optional[int] = None,
@@ -102,7 +104,7 @@ class MentalMondaysDatabase(Database):
                 "channel_id": str(channel_id),
                 "message_id": str(message_id),
             }
-            self.connection.mentalmondays.update_one(
+            self.connection.mentalmondays.update_one(  # type: ignore
                 {"guild_id": str(guildId), "timestamp": timestamp}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
@@ -123,7 +125,9 @@ class MentalMondaysDatabase(Database):
             date = datetime.datetime.utcnow().date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
-            result = self.connection.mentalmondays.find_one({"guild_id": str(guildId), "timestamp": timestamp})
+            result = self.connection.mentalmondays.find_one(  # type: ignore
+                {"guild_id": str(guildId), "timestamp": timestamp}
+            )
             if result:
                 for answer in result["answered"]:
                     if answer["user_id"] == str(userId) and answer["message_id"] == str(messageId):
@@ -133,7 +137,9 @@ class MentalMondaysDatabase(Database):
                 date = date - datetime.timedelta(days=1)
                 ts_date = datetime.datetime.combine(date, datetime.time.min)
                 timestamp = utils.to_timestamp(ts_date)
-                result = self.connection.mentalmondays.find_one({"guild_id": str(guildId), "timestamp": timestamp})
+                result = self.connection.mentalmondays.find_one(  # type: ignore
+                    {"guild_id": str(guildId), "timestamp": timestamp}
+                )
                 if result:
                     for answer in result["answered"]:
                         if answer["user_id"] == str(userId) and answer["message_id"] == str(messageId):
