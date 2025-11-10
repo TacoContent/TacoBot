@@ -21,21 +21,25 @@
 ## What We Changed
 
 ### 1. Added Parallel Test Execution ✅
+
 - Installed `pytest-xdist` package
 - Tests now run on multiple CPU cores simultaneously
 - Uses `--dist loadgroup` to group tests by module for better isolation
 
 ### 2. Created Shared Fixtures ✅
+
 - New `tests/conftest.py` with common fixtures
 - Reduces duplicate mock object creation
 - Session and module-scoped fixtures for expensive setup
 
 ### 3. Updated VS Code Tasks ✅
+
 - **Python: Run Tests (Parallel)** - Fast parallel execution
 - **Python: Run Tests (Parallel + Coverage)** - With full coverage reports
 - Both use optimal settings out of the box
 
 ### 4. Updated Configuration ✅
+
 - `pyproject.toml` includes pytest-xdist in dev dependencies
 - pytest config optimized with `--tb=short` for cleaner output
 - Markers added for categorizing slow tests
@@ -43,6 +47,7 @@
 ## How to Use
 
 ### Quick Start
+
 ```powershell
 # Activate virtual environment
 ./.venv/scripts/Activate.ps1
@@ -55,6 +60,7 @@ python -m pytest tests/ -n auto --dist loadgroup --cov=bot --cov=httpserver --co
 ```
 
 ### VS Code Integration
+
 1. Press `Ctrl+Shift+B` or `Ctrl+Shift+P` → "Run Task"
 2. Select "Python: Run Tests (Parallel)"
 3. See results in ~12-18 minutes instead of 60+ minutes
@@ -69,17 +75,20 @@ python -m pytest tests/ -n auto --dist loadgroup --cov=bot --cov=httpserver --co
 ## Next Steps (Optional)
 
 ### Immediate Actions
+
 1. Update CI/CD pipelines to use parallel execution
 2. Update README with new test commands
 3. Share this with the team!
 
 ### Future Optimizations
+
 1. **Identify slow tests**: `pytest tests/ --durations=20 -n auto`
 2. **Incremental testing**: Install `pytest-testmon` to run only affected tests
 3. **Test categorization**: Mark slow integration tests for selective runs
 4. **Async optimization**: Review which tests actually need `@pytest.mark.asyncio`
 
 ### Monitoring Performance
+
 ```powershell
 # See slowest 20 tests
 python -m pytest tests/ --durations=20 -n auto
@@ -97,7 +106,7 @@ python -m pytest tests/ --profile -n auto
 
 ## Files Modified
 
-```
+``` text
 Modified:
   .vscode/tasks.json                 - Added parallel test tasks
   pyproject.toml                     - Added pytest-xdist dependency + config

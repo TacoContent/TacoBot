@@ -1,16 +1,19 @@
 # HttpHandlerCog Test Coverage Report
 
 ## Overview
+
 This document describes the test coverage for the `HttpHandlerCog` class in `bot/cogs/httphandler.py`.
 
 ## Test File
+
 - **Location**: `tests/cogs/test_httphandler.py`
 - **Test Count**: 24 tests
 - **Coverage**: 98% (91 statements, 2 missing)
 - **Status**: ✅ All tests passing
 
 ## Coverage Summary
-```
+
+``` text
 Name                      Stmts   Miss Branch BrPart  Cover   Missing
 ---------------------------------------------------------------------
 bot\cogs\httphandler.py      91      2     20      0    98%   114-115
@@ -20,9 +23,11 @@ bot\cogs\httphandler.py      91      2     20      0    98%   114-115
 ## Test Structure
 
 ### 1. TestHttpHandlerCogInit (3 tests)
+
 Tests for HttpHandlerCog initialization and attribute setup.
 
 **Tests:**
+
 - ✅ `test_init_attributes` - Verifies all required attributes are initialized
 - ✅ `test_init_with_custom_settings` - Tests initialization with custom settings
 - ✅ `test_init_parent_class` - Verifies TacobotCog parent initialization
@@ -32,9 +37,11 @@ Tests for HttpHandlerCog initialization and attribute setup.
 ---
 
 ### 2. TestInitializeServer (4 tests)
+
 Tests for the `initialize_server` method that starts the HTTP server.
 
 **Tests:**
+
 - ✅ `test_initialize_server_disabled` - Verifies server not started when disabled
 - ✅ `test_initialize_server_already_running` - Skips startup if already running
 - ✅ `test_initialize_server_success` - Complete successful server startup flow
@@ -45,9 +52,11 @@ Tests for the `initialize_server` method that starts the HTTP server.
 ---
 
 ### 3. TestInternalInitializeServer (4 tests)
+
 Tests for the internal `_internal_initialize_server` method.
 
 **Tests:**
+
 - ✅ `test_internal_initialize_creates_server` - HttpServer instance creation
 - ✅ `test_internal_initialize_sets_debug` - Debug mode configuration
 - ✅ `test_internal_initialize_loads_handlers` - Handler loading integration
@@ -58,9 +67,11 @@ Tests for the internal `_internal_initialize_server` method.
 ---
 
 ### 4. TestLoadWebhookHandlers (4 tests)
+
 Tests for `load_webhook_handlers` method that loads handlers from flat directory.
 
 **Tests:**
+
 - ✅ `test_load_webhook_handlers_no_directory` - Error handling when directory missing
 - ✅ `test_load_webhook_handlers_no_server` - Error handling when server not initialized
 - ✅ `test_load_webhook_handlers_success` - Successful loading of multiple handlers
@@ -69,6 +80,7 @@ Tests for `load_webhook_handlers` method that loads handlers from flat directory
 **Coverage:** Directory checks, file filtering, module import, error handling
 
 **Filtering Logic Tested:**
+
 - ✅ Loads files ending with `.py`
 - ✅ Skips files starting with `_`
 - ✅ Skips `BaseWebhookHandler.py` specifically
@@ -78,9 +90,11 @@ Tests for `load_webhook_handlers` method that loads handlers from flat directory
 ---
 
 ### 5. TestRecursiveLoadHandlers (6 tests)
+
 Tests for `recursive_load_handlers` method that walks directory tree.
 
 **Tests:**
+
 - ✅ `test_recursive_load_handlers_no_server` - Error handling when server not initialized
 - ✅ `test_recursive_load_handlers_single_file` - Loading single handler file
 - ✅ `test_recursive_load_handlers_multiple_files` - Loading handlers from multiple directories
@@ -91,6 +105,7 @@ Tests for `recursive_load_handlers` method that walks directory tree.
 **Coverage:** os.walk integration, file filtering, path conversion, error handling
 
 **Known Implementation Issues:**
+
 - ⚠️ **Bug at line 153**: `self.recursive_load_handlers(dir)` should use `os.path.join(root, dir)`
 - ⚠️ **Redundant logic**: Manual recursion is unnecessary since `os.walk()` already recurses
 - 🧪 **Test workaround**: Tests use `iter()` to prevent infinite recursion from the bug
@@ -98,9 +113,11 @@ Tests for `recursive_load_handlers` method that walks directory tree.
 ---
 
 ### 6. TestSetupFunction (1 test)
+
 Tests for the async `setup` function that registers the cog with the bot.
 
 **Tests:**
+
 - ✅ `test_setup_creates_cog_with_dependencies` - Verifies dependency injection
 
 **Coverage:** Setup function, dependency creation, bot.add_cog call
@@ -108,9 +125,11 @@ Tests for the async `setup` function that registers the cog with the bot.
 ---
 
 ### 7. TestHttpHandlerCogIntegration (2 tests)
+
 Integration tests for complete workflows.
 
 **Tests:**
+
 - ✅ `test_full_initialization_flow` - End-to-end server initialization
 - ✅ `test_handler_loading_filters_correctly` - Comprehensive file filtering validation
 
@@ -121,6 +140,7 @@ Integration tests for complete workflows.
 ## Uncovered Code
 
 ### Lines 114-115
+
 ```python
 except Exception as e:
     self.log.error(...)
@@ -135,15 +155,18 @@ except Exception as e:
 ## Implementation Issues Discovered
 
 ### 1. 🐛 Infinite Recursion Bug (httphandler.py:153)
+
 **Location:** `recursive_load_handlers` method, line 153
 
 **Issue:**
+
 ```python
 for dir in dirs:
     self.recursive_load_handlers(dir)  # Bug: 'dir' is relative name, not full path
 ```
 
 **Should be:**
+
 ```python
 for dir in dirs:
     self.recursive_load_handlers(os.path.join(root, dir))
@@ -156,11 +179,13 @@ for dir in dirs:
 ---
 
 ### 2. ⚠️ Redundant Recursion Logic
+
 **Location:** `recursive_load_handlers` method, lines 129-153
 
 **Issue:** Manual recursion at line 153 is unnecessary because `os.walk()` already traverses subdirectories automatically.
 
-**Impact:** 
+**Impact:**
+
 - Causes duplicate processing if bug at line 153 is fixed
 - Performance overhead from redundant directory traversal
 - Code complexity without benefit
@@ -170,11 +195,13 @@ for dir in dirs:
 ---
 
 ### 3. ⚠️ Inconsistent Base Class Filtering
+
 **Location:** `load_webhook_handlers` method, lines 89-97
 
 **Issue:** Filters `BaseWebhookHandler` and `BaseHttpHandler` specifically, but allows `BaseHandler.py` to load.
 
 **Current behavior:**
+
 ```python
 not f.startswith("BaseWebhookHandler")  # Filters BaseWebhookHandler.py
 and not f.startswith("BaseHttpHandler")  # Filters BaseHttpHandler.py
@@ -190,6 +217,7 @@ and not f.startswith("BaseHttpHandler")  # Filters BaseHttpHandler.py
 ## Test Patterns Used
 
 ### 1. Fixture-Based Setup
+
 ```python
 @pytest.fixture
 def cog():
@@ -198,12 +226,14 @@ def cog():
 ```
 
 ### 2. Context Manager Mocking
+
 ```python
 with patch("bot.cogs.httphandler.HttpServer") as mock_server:
     # Test code
 ```
 
 ### 3. AsyncMock for Async Methods
+
 ```python
 mock_server.start = AsyncMock()
 await cog.initialize_server()
@@ -211,6 +241,7 @@ mock_server.start.assert_awaited_once()
 ```
 
 ### 4. AAA Pattern
+
 - **Arrange**: Setup mocks and test data
 - **Act**: Call method under test
 - **Assert**: Verify behavior and state
@@ -220,17 +251,20 @@ mock_server.start.assert_awaited_once()
 ## Test Execution
 
 ### Run All Tests
+
 ```bash
 .\.venv\scripts\Activate.ps1
 python -m pytest tests/cogs/test_httphandler.py -v
 ```
 
 ### Run with Coverage
+
 ```bash
 python -m pytest tests/cogs/test_httphandler.py --cov=bot.cogs.httphandler --cov-report=term-missing
 ```
 
 ### Run Specific Test Class
+
 ```bash
 python -m pytest tests/cogs/test_httphandler.py::TestInitializeServer -v
 ```
@@ -238,6 +272,7 @@ python -m pytest tests/cogs/test_httphandler.py::TestInitializeServer -v
 ---
 
 ## Dependencies Mocked
+
 - `bot.lib.discord.ext.commands.TacobotCog.logger.Log` - Logger instance
 - `bot.cogs.httphandler.HttpServer` - HTTP server class
 - `bot.cogs.httphandler.Settings` - Bot settings
@@ -254,35 +289,43 @@ python -m pytest tests/cogs/test_httphandler.py::TestInitializeServer -v
 ## Key Testing Challenges
 
 ### 1. Logger Patching
+
 **Challenge:** TacobotCog initializes logger in `__init__`, requiring class-level patch before instantiation.
 
 **Solution:**
+
 ```python
 with patch("bot.lib.discord.ext.commands.TacobotCog.logger.Log"):
     cog = HttpHandlerCog(mock_bot, ...)
 ```
 
 ### 2. Async Methods
+
 **Challenge:** Discord bot methods are async and require proper mocking.
 
 **Solution:** Use `AsyncMock` for all async methods:
+
 ```python
 mock_server.start = AsyncMock()
 ```
 
 ### 3. Dynamic Imports
+
 **Challenge:** Handler loading uses `import_module` with runtime paths.
 
 **Solution:** Mock at module level:
+
 ```python
 with patch("bot.cogs.httphandler.import_module") as mock_import:
     # Test code
 ```
 
 ### 4. File System Operations
+
 **Challenge:** Tests should not depend on actual file system state.
 
 **Solution:** Mock all file operations:
+
 ```python
 with patch("os.path.exists"), patch("os.listdir"), patch("os.walk"):
     # Test code
@@ -293,12 +336,14 @@ with patch("os.path.exists"), patch("os.listdir"), patch("os.walk"):
 ## Recommendations for Improvement
 
 ### Production Code
+
 1. **Fix recursion bug**: Update line 153 to use full path
 2. **Remove redundant recursion**: Let `os.walk()` handle subdirectories
 3. **Add generic Base filter**: Prevent loading any `Base*.py` files
 4. **Add validation**: Check that imported handlers implement expected interface
 
 ### Test Code
+
 1. **Add test for bug**: Create test that would catch the recursion bug once fixed
 2. **Test base class filtering**: Add explicit test for `BaseHandler.py` behavior
 3. **Test module path edge cases**: Test handlers in deeply nested directories
@@ -317,6 +362,7 @@ The HttpHandlerCog test suite provides excellent coverage (98%) of the HTTP serv
 ✅ Integration workflows  
 
 The tests discovered three implementation issues that should be addressed:
+
 1. 🐛 Infinite recursion bug in `recursive_load_handlers`
 2. ⚠️ Redundant manual recursion logic
 3. ⚠️ Inconsistent base class filtering
