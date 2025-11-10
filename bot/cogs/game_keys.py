@@ -1000,7 +1000,7 @@ async def setup(bot):
     gamekeys_db = GameKeysDatabase()
     tracking_db = TrackingDatabase()
     permissions = Permissions(bot)
-    steam_api = SteamApiClient()
+    steam_api = SteamApiClient(settings=bot.settings)
     entity_helper = EntityHelper(bot)
     context_helper = ContextHelper()
     taco_helper = TacoHelper(bot, entity_helper=entity_helper)
