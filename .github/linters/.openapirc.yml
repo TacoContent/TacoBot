@@ -9,3 +9,4 @@ extends: spectral:oas
 
 rules:
   no-$ref-siblings: off
+  no-ref-siblings: off
