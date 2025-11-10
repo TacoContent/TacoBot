@@ -8,10 +8,39 @@ from bot.lib.models.suggestionstates import SuggestionStates
 
 @pytest.fixture
 def cog():
+    """Create a SuggestionsCog instance with all required dependencies mocked."""
     bot = MagicMock()
-    cog = SuggestionsCog(bot)
-    cog.suggestions_db = MagicMock()
+    suggestions_db = MagicMock()
+    tracking_db = MagicMock()
+    messaging = MagicMock()
+    permissions = MagicMock()
+    entity_helper = MagicMock()
+    prompt_helper = MagicMock()
+    taco_helper = MagicMock()
+    context_helper = MagicMock()
+    message_helper = MagicMock()
+    settings = MagicMock()
+    settings.get_settings = MagicMock(return_value={})
+    settings.get_string = MagicMock(return_value="Test string")
+    settings.log_level = "INFO"
+    
+    cog = SuggestionsCog(
+        bot=bot,
+        suggestions_db=suggestions_db,
+        tracking_db=tracking_db,
+        messaging=messaging,
+        permissions=permissions,
+        entity_helper=entity_helper,
+        prompt_helper=prompt_helper,
+        taco_helper=taco_helper,
+        context_helper=context_helper,
+        message_helper=message_helper,
+        settings=settings,
+    )
+    # Mock the logger to prevent actual logging during tests
     cog.log = MagicMock()
+    cog.log.debug = MagicMock()
+    cog.log.error = MagicMock()
     return cog
 
 

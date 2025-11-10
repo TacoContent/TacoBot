@@ -9,19 +9,20 @@ import typing
 import discord
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class RestrictedCog(TacobotCog):
-    def __init__(self, bot: TacoBot) -> None:
-        super().__init__(bot, "restricted")
+    def __init__(self, bot: TacoBot, messaging: Messaging, settings: Settings) -> None:
+        super().__init__(bot, "restricted", settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = Messaging(bot)
+        self.messaging = messaging
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -98,4 +99,6 @@ class RestrictedCog(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(RestrictedCog(bot))
+    settings = Settings()
+    messaging = Messaging(bot)
+    await bot.add_cog(RestrictedCog(bot=bot, messaging=messaging, settings=settings))

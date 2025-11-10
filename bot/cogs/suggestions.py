@@ -11,10 +11,10 @@ from bot.lib.enums import tacotypes
 from bot.lib.helpers import ContextHelper, EntityHelper, MessageHelper, PromptHelper, TacoHelper
 from bot.lib.messaging import Messaging
 from bot.lib.models.suggestionstates import SuggestionStates
-from bot.lib.mongodb.settings import SettingsDatabase
 from bot.lib.mongodb.suggestions import SuggestionsDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
@@ -23,28 +23,34 @@ class SuggestionsCog(TacobotCog):
     def __init__(
         self,
         bot: TacoBot,
-        suggestions_db: typing.Optional[SuggestionsDatabase] = None,
-        tracking_db: typing.Optional[TrackingDatabase] = None,
-        settings_db: typing.Optional[SettingsDatabase] = None,
+        suggestions_db: SuggestionsDatabase,
+        tracking_db: TrackingDatabase,
+        messaging: Messaging,
+        permissions: Permissions,
+        entity_helper: EntityHelper,
+        prompt_helper: PromptHelper,
+        taco_helper: TacoHelper,
+        context_helper: ContextHelper,
+        message_helper: MessageHelper,
+        settings: Settings,
     ) -> None:
-        super().__init__(bot, "suggestions")
+        super().__init__(bot, "suggestions", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = Messaging(bot)
-        self.permissions = Permissions(bot)
+        self.messaging = messaging
+        self.permissions = permissions
 
-        self.entity_helper = EntityHelper(bot)
-        self.prompt_helper = PromptHelper(bot)
-        self.taco_helper = TacoHelper(bot, entity_helper=self.entity_helper)
-        self.context_helper = ContextHelper()
-        self.message_helper = MessageHelper(bot)
+        self.entity_helper = entity_helper
+        self.prompt_helper = prompt_helper
+        self.taco_helper = taco_helper
+        self.context_helper = context_helper
+        self.message_helper = message_helper
 
-        self.settings_db = settings_db or SettingsDatabase()
-        self.suggestions_db = suggestions_db or SuggestionsDatabase()
-        self.tracking_db = tracking_db or TrackingDatabase()
+        self.suggestions_db = suggestions_db
+        self.tracking_db = tracking_db
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -80,7 +86,7 @@ class SuggestionsCog(TacobotCog):
                         )
                         ss['channels'].remove(c)
                 if changed:
-                    self.settings_db.add_settings(guild_id, self.SETTINGS_SECTION, ss)
+                    self.settings.settings_db.add_settings(guild_id, self.SETTINGS_SECTION, ss)
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
@@ -104,7 +110,7 @@ class SuggestionsCog(TacobotCog):
             if tracked_channel and len(tracked_channel) > 0:
                 # if this channel was in the settings, remove it
                 ss['channels'].remove(tracked_channel[0])
-                self.settings_db.add_settings(guild_id, self.SETTINGS_SECTION, ss)
+                self.settings.settings_db.add_settings(guild_id, self.SETTINGS_SECTION, ss)
 
         except Exception as e:
             self.log.error(channel.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
@@ -1015,4 +1021,26 @@ class SuggestionsCog(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(SuggestionsCog(bot))
+    settings = Settings()
+    context_helper = ContextHelper()
+    prompt_helper = PromptHelper(bot)
+    message_helper = MessageHelper(bot)
+    messaging = Messaging(bot)
+    permissions = Permissions(bot, settings)
+    suggestions_db = SuggestionsDatabase()
+    tracking_db = TrackingDatabase()
+    entity_helper = EntityHelper(bot)
+    taco_helper = TacoHelper(bot, entity_helper=entity_helper)
+    await bot.add_cog(SuggestionsCog(
+        bot=bot,
+        context_helper=context_helper,
+        prompt_helper=prompt_helper,
+        message_helper=message_helper,
+        messaging=messaging,
+        permissions=permissions,
+        suggestions_db=suggestions_db,
+        tracking_db=tracking_db,
+        entity_helper=entity_helper,
+        taco_helper=taco_helper,
+        settings=settings,
+    ))

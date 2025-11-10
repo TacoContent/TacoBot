@@ -1,27 +1,25 @@
 import inspect
 import os
 import traceback
+import typing
 
 import requests
-from bot.lib import logger, settings
+from bot.lib import logger
+from bot.lib.settings import Settings
 from bot.lib.enums import loglevel
 
 
 class SteamApiClient:
-    def __init__(self):
+    def __init__(self, settings: Settings):
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
-        # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        # self.api_key = os.environ.get('STEAM_API_KEY')
         self.base_url = 'https://store.steampowered.com/api'
-        self.settings = settings.Settings()
+        self.settings = settings
         self.headers = {'User-Agent': f'TacoBot/{self.settings.APP_VERSION}'}
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
-        if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
-
+        log_level_str = getattr(self.settings, 'log_level', 'DEBUG')
+        log_level = loglevel.LogLevel[log_level_str.upper()] if log_level_str.upper() in loglevel.LogLevel.__members__ else loglevel.LogLevel.DEBUG
         self.log = logger.Log(minimumLogLevel=log_level)
 
     def get_app_id_from_url(self, url: str):
@@ -50,7 +48,7 @@ class SteamApiClient:
         try:
             url = f'{self.base_url}/appdetails?appids={app_id}&cc=us&l=en'
             response = requests.get(url, headers=self.headers)
-            result = response.json()
+            result: typing.Any = response.json()
             return result
         except Exception as e:
             self.log.error(

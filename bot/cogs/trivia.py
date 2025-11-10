@@ -8,32 +8,43 @@ import traceback
 import typing
 
 import requests
-from bot.lib import discordhelper, utils
+from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
+from bot.lib.helpers import EntityHelper, TacoHelper
 from bot.lib.messaging import Messaging
 from bot.lib.models.triviaquestion import TriviaQuestion
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 from discord.ext.commands import Context
 
 
 class TriviaCog(TacobotCog):
-    def __init__(self, bot: TacoBot) -> None:
-        super().__init__(bot, "trivia")
+    def __init__(
+        self,
+        bot: TacoBot,
+        tracking_db: TrackingDatabase,
+        messaging: Messaging,
+        entity_helper: EntityHelper,
+        taco_helper: TacoHelper,
+        settings: Settings,
+    ) -> None:
+        super().__init__(bot, "trivia", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.discord_helper = discordhelper.DiscordHelper(bot)
-        self.messaging = Messaging(bot)
+        self.messaging = messaging
+        self.entity_helper = entity_helper
+        self.taco_helper = taco_helper
 
         self.CATEGORY_POINTS_DEFAULTS = {"hard": 15, "medium": 10, "easy": 5}
         self.CHOICE_EMOJIS_DEFAULTS = ['🇦', '🇧', '🇨', '🇩']
         self.TRIVIA_TIMEOUT_DEFAULT = 60
 
-        self.tracking_db = TrackingDatabase()
+        self.tracking_db = tracking_db
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -179,8 +190,8 @@ class TriviaCog(TacobotCog):
                                         incorrect_users.append(user)
                                     return True
 
-                            reaction, user = await self.bot.wait_for(
-                                'reaction_add', timeout=trivia_timeout, check=check
+                            reaction, user = await self.bot.wait_for(  # type: ignore
+                                event='reaction_add', timeout=trivia_timeout, check=check
                             )
                         except asyncio.TimeoutError:
                             correct_list = '\n'.join([u.mention for u in correct_users])
@@ -206,9 +217,9 @@ class TriviaCog(TacobotCog):
                             reason_msg = self.settings.get_string(guild_id, "taco_reason_trivia_correct")
                             for u in correct_users:
                                 if not u.bot:
-                                    await self.discord_helper.taco_give_user(
+                                    await self.taco_helper.give_tacos(
                                         guildId=guild_id,
-                                        fromUser=self.bot.user,
+                                        fromUser=self.bot.user,  # type: ignore
                                         toUser=u,
                                         reason=reason_msg,
                                         give_type=tacotypes.TacoTypes.TRIVIA_CORRECT,
@@ -218,9 +229,9 @@ class TriviaCog(TacobotCog):
                             reason_msg = self.settings.get_string(guild_id, "taco_reason_trivia_incorrect")
                             for u in incorrect_users:
                                 if not u.bot:
-                                    await self.discord_helper.taco_give_user(
+                                    await self.taco_helper.give_tacos(
                                         guildId=guild_id,
-                                        fromUser=self.bot.user,
+                                        fromUser=self.bot.user,  # type: ignore
                                         toUser=u,
                                         reason=reason_msg,
                                         give_type=tacotypes.TacoTypes.TRIVIA_INCORRECT,
@@ -317,4 +328,18 @@ class TriviaCog(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(TriviaCog(bot))
+    settings = Settings()
+    tracking_db = TrackingDatabase()
+    messaging = Messaging(bot)
+    entity_helper = EntityHelper(bot)
+    taco_helper = TacoHelper(bot, entity_helper=entity_helper)
+    await bot.add_cog(
+        TriviaCog(
+            bot=bot, 
+            tracking_db=tracking_db, 
+            messaging=messaging, 
+            entity_helper=entity_helper, 
+            taco_helper=taco_helper, 
+            settings=settings,
+        )
+    )

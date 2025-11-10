@@ -3,25 +3,27 @@ import os
 import re
 import traceback
 
+
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.helpers import EntityHelper, TacoHelper
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class PhotoPostCog(TacobotCog):
-    def __init__(self, bot: TacoBot):
-        super().__init__(bot, "photo_post")
+    def __init__(self, bot: TacoBot, tracking_db: TrackingDatabase, entity_helper: EntityHelper, taco_helper: TacoHelper, settings: Settings):
+        super().__init__(bot, "photo_post", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.entity_helper = EntityHelper(bot)
-        self.taco_helper = TacoHelper(bot, entity_helper=self.entity_helper)
+        self.entity_helper = entity_helper
+        self.taco_helper = taco_helper
 
-        self.tracking_db = TrackingDatabase()
+        self.tracking_db = tracking_db
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.Cog.listener()
@@ -114,4 +116,12 @@ class PhotoPostCog(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(PhotoPostCog(bot))
+    settings = Settings()
+    tracking_db = TrackingDatabase()
+    entity_helper = EntityHelper(bot)
+    taco_helper = TacoHelper(bot, entity_helper=entity_helper)
+    await bot.add_cog(
+        PhotoPostCog(
+            bot=bot, tracking_db=tracking_db, entity_helper=entity_helper, taco_helper=taco_helper, settings=settings
+        )
+    )
