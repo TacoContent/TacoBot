@@ -335,11 +335,11 @@ async def setup(bot):
     taco_helper = TacoHelper(bot, entity_helper=entity_helper)
     await bot.add_cog(
         TriviaCog(
-            bot=bot, 
-            tracking_db=tracking_db, 
-            messaging=messaging, 
-            entity_helper=entity_helper, 
-            taco_helper=taco_helper, 
+            bot=bot,
+            tracking_db=tracking_db,
+            messaging=messaging,
+            entity_helper=entity_helper,
+            taco_helper=taco_helper,
             settings=settings,
         )
     )

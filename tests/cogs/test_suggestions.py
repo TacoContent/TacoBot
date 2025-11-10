@@ -23,7 +23,7 @@ def cog():
     settings.get_settings = MagicMock(return_value={})
     settings.get_string = MagicMock(return_value="Test string")
     settings.log_level = "INFO"
-    
+
     cog = SuggestionsCog(
         bot=bot,
         suggestions_db=suggestions_db,

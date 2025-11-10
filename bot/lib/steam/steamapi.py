@@ -5,8 +5,8 @@ import typing
 
 import requests
 from bot.lib import logger
-from bot.lib.settings import Settings
 from bot.lib.enums import loglevel
+from bot.lib.settings import Settings
 
 
 class SteamApiClient:
@@ -19,7 +19,11 @@ class SteamApiClient:
         self.settings = settings
         self.headers = {'User-Agent': f'TacoBot/{self.settings.APP_VERSION}'}
         log_level_str = getattr(self.settings, 'log_level', 'DEBUG')
-        log_level = loglevel.LogLevel[log_level_str.upper()] if log_level_str.upper() in loglevel.LogLevel.__members__ else loglevel.LogLevel.DEBUG
+        log_level = (
+            loglevel.LogLevel[log_level_str.upper()]
+            if log_level_str.upper() in loglevel.LogLevel.__members__
+            else loglevel.LogLevel.DEBUG
+        )
         self.log = logger.Log(minimumLogLevel=log_level)
 
     def get_app_id_from_url(self, url: str):

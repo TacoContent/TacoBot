@@ -3,7 +3,6 @@ import os
 import re
 import traceback
 
-
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.helpers import EntityHelper, TacoHelper
@@ -14,7 +13,14 @@ from discord.ext import commands
 
 
 class PhotoPostCog(TacobotCog):
-    def __init__(self, bot: TacoBot, tracking_db: TrackingDatabase, entity_helper: EntityHelper, taco_helper: TacoHelper, settings: Settings):
+    def __init__(
+        self,
+        bot: TacoBot,
+        tracking_db: TrackingDatabase,
+        entity_helper: EntityHelper,
+        taco_helper: TacoHelper,
+        settings: Settings,
+    ):
         super().__init__(bot, "photo_post", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__

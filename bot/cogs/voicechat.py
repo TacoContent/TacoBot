@@ -2,7 +2,6 @@ import inspect
 import os
 import traceback
 
-
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.helpers import EntityHelper, TacoHelper
@@ -12,13 +11,7 @@ from discord.ext import commands
 
 
 class VoiceChatCog(TacobotCog):
-    def __init__(
-        self, 
-        bot: TacoBot, 
-        entity_helper: EntityHelper, 
-        tacos_helper: TacoHelper,
-        settings: Settings,
-    ) -> None:
+    def __init__(self, bot: TacoBot, entity_helper: EntityHelper, tacos_helper: TacoHelper, settings: Settings) -> None:
         super().__init__(bot, "voicechat", settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__

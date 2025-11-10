@@ -25,17 +25,17 @@ class MentalMondays(TacobotCog):
     group = app_commands.Group(name="mentalmondays", description="Commands for the Mental Monday's")
 
     def __init__(
-        self, 
-        bot: TacoBot, 
+        self,
+        bot: TacoBot,
         settings: Settings,
         context_helper: ContextHelper,
         prompt_helper: PromptHelper,
         entity_helper: EntityHelper,
         taco_helper: TacoHelper,
-        messaging: Messaging, 
-        permissions: Permissions, 
-        tracking_db: TrackingDatabase, 
-        mentalmondays_db: MentalMondaysDatabase
+        messaging: Messaging,
+        permissions: Permissions,
+        tracking_db: TrackingDatabase,
+        mentalmondays_db: MentalMondaysDatabase,
     ) -> None:
         super().__init__(bot, "mentalmondays", settings=settings)
         _method = inspect.stack()[0][3]
@@ -526,11 +526,7 @@ class MentalMondays(TacobotCog):
             # get guild from id
             guild = self.bot.get_guild(guild_id)
             if not guild:
-                self.log.warn(
-                    guild_id,
-                    f"{self._module}.{self._class}.{_method}",
-                    f"No guild found for id {guild_id}",
-                )
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No guild found for id {guild_id}")
                 return
             # fetch member from id
             member = await self.entity_helper.get_or_fetch_member(guild_id, user_id)
@@ -552,7 +548,7 @@ class MentalMondays(TacobotCog):
                     guild_id, f"{self._module}.{self._class}.{_method}", f"No tacos settings found for guild {guild_id}"
                 )
                 return
-            
+
             message = None
             # get message
             if message_id and channel:

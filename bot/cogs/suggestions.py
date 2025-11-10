@@ -1031,16 +1031,18 @@ async def setup(bot):
     tracking_db = TrackingDatabase()
     entity_helper = EntityHelper(bot)
     taco_helper = TacoHelper(bot, entity_helper=entity_helper)
-    await bot.add_cog(SuggestionsCog(
-        bot=bot,
-        context_helper=context_helper,
-        prompt_helper=prompt_helper,
-        message_helper=message_helper,
-        messaging=messaging,
-        permissions=permissions,
-        suggestions_db=suggestions_db,
-        tracking_db=tracking_db,
-        entity_helper=entity_helper,
-        taco_helper=taco_helper,
-        settings=settings,
-    ))
+    await bot.add_cog(
+        SuggestionsCog(
+            bot=bot,
+            context_helper=context_helper,
+            prompt_helper=prompt_helper,
+            message_helper=message_helper,
+            messaging=messaging,
+            permissions=permissions,
+            suggestions_db=suggestions_db,
+            tracking_db=tracking_db,
+            entity_helper=entity_helper,
+            taco_helper=taco_helper,
+            settings=settings,
+        )
+    )

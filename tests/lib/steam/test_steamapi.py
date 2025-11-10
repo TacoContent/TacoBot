@@ -1,19 +1,24 @@
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from bot.lib.steam.steamapi import SteamApiClient
+
 
 class DummySettings:
     APP_VERSION = "1.2.3"
     log_level = "DEBUG"
+
 
 @pytest.fixture
 def settings():
     s = DummySettings()
     return s
 
+
 @pytest.fixture
 def client(settings):
     return SteamApiClient(settings)
+
 
 class TestSteamApiClient:
     def test_constructor_sets_headers_and_log_level(self, settings):
@@ -22,33 +27,39 @@ class TestSteamApiClient:
         assert client.settings.APP_VERSION == settings.APP_VERSION
         assert hasattr(client, "log")
 
-    @pytest.mark.parametrize("url,expected", [
-        # URL with trailing slash removed, numeric ID at end
-        ("https://store.steampowered.com/app/123456/Some_Game/", "123456"),
-        # URL with trailing slash removed, only numeric ID
-        ("https://store.steampowered.com/app/654321/", "654321"),
-        # URL without trailing slash, only numeric ID
-        ("https://store.steampowered.com/app/654321", "654321"),
-        # URL with numeric ID at end (after removing slash)
-        ("https://store.steampowered.com/app/123456", "123456"),
-        # URL with non-numeric last segment, returns -2 which is 'app'
-        ("https://store.steampowered.com/app/abcde/", "app"),
-        # URL with numeric at end, non-numeric before (returns numeric)
-        ("https://store.steampowered.com/app/123456/extra", "123456"),
-        # URL with non-numeric at end after slash removal (returns -2 which is '123456')
-        ("https://store.steampowered.com/app/123456/extra/", "123456"),
-    ])
+    @pytest.mark.parametrize(
+        "url,expected",
+        [
+            # URL with trailing slash removed, numeric ID at end
+            ("https://store.steampowered.com/app/123456/Some_Game/", "123456"),
+            # URL with trailing slash removed, only numeric ID
+            ("https://store.steampowered.com/app/654321/", "654321"),
+            # URL without trailing slash, only numeric ID
+            ("https://store.steampowered.com/app/654321", "654321"),
+            # URL with numeric ID at end (after removing slash)
+            ("https://store.steampowered.com/app/123456", "123456"),
+            # URL with non-numeric last segment, returns -2 which is 'app'
+            ("https://store.steampowered.com/app/abcde/", "app"),
+            # URL with numeric at end, non-numeric before (returns numeric)
+            ("https://store.steampowered.com/app/123456/extra", "123456"),
+            # URL with non-numeric at end after slash removal (returns -2 which is '123456')
+            ("https://store.steampowered.com/app/123456/extra/", "123456"),
+        ],
+    )
     def test_get_app_id_from_url_valid(self, client, url, expected):
         # The logic: if last segment is numeric, return it; else return second-to-last segment
         result = client.get_app_id_from_url(url)
         assert result == expected
 
-    @pytest.mark.parametrize("url", [
-        "https://notsteam.com/app/123456/",
-        "https://example.com/",
-        "https://store.steampowered.com/other/123456/",
-        "https://store.steampowered.com/",
-    ])
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "https://notsteam.com/app/123456/",
+            "https://example.com/",
+            "https://store.steampowered.com/other/123456/",
+            "https://store.steampowered.com/",
+        ],
+    )
     def test_get_app_id_from_url_invalid(self, client, url):
         result = client.get_app_id_from_url(url)
         assert result is None

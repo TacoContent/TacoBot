@@ -171,10 +171,12 @@ class TestRestrictedCogOnMessage:
                 ]
             }
         )
-        cog.settings.get_string = MagicMock(side_effect=lambda gid, key, **kwargs: {
-            "restricted": "Restricted Channel",
-            "restricted_deny_message": f"User {kwargs.get('user', '')} - {kwargs.get('reason', '')}",
-        }[key])
+        cog.settings.get_string = MagicMock(
+            side_effect=lambda gid, key, **kwargs: {
+                "restricted": "Restricted Channel",
+                "restricted_deny_message": f"User {kwargs.get('user', '')} - {kwargs.get('reason', '')}",
+            }[key]
+        )
         cog.messaging.send_embed = AsyncMock()
 
         await cog.on_message(message)
@@ -204,14 +206,22 @@ class TestRestrictedCogOnMessage:
         cog.get_cog_settings = MagicMock(
             return_value={
                 "channels": [
-                    {"id": "chan1", "allowed": [r"!allowed"], "denied": [], "silent": False, "deny_message": custom_deny}
+                    {
+                        "id": "chan1",
+                        "allowed": [r"!allowed"],
+                        "denied": [],
+                        "silent": False,
+                        "deny_message": custom_deny,
+                    }
                 ]
             }
         )
-        cog.settings.get_string = MagicMock(side_effect=lambda gid, key, **kwargs: {
-            "restricted": "Restricted Channel",
-            "restricted_deny_message": f"User {kwargs.get('user', '')} - {kwargs.get('reason', '')}",
-        }[key])
+        cog.settings.get_string = MagicMock(
+            side_effect=lambda gid, key, **kwargs: {
+                "restricted": "Restricted Channel",
+                "restricted_deny_message": f"User {kwargs.get('user', '')} - {kwargs.get('reason', '')}",
+            }[key]
+        )
         cog.messaging.send_embed = AsyncMock()
 
         await cog.on_message(message)

@@ -11,8 +11,9 @@ Tests cover:
 Target: 100% code coverage
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 from bot.cogs.photo_post import PhotoPostCog
 from bot.lib.enums import tacotypes
 
@@ -29,11 +30,7 @@ class TestPhotoPostCogInitialization:
         - Logger is initialized
         """
         cog = PhotoPostCog(
-            bot=bot,
-            tracking_db=tracking_db,
-            entity_helper=entity_helper,
-            taco_helper=taco_helper,
-            settings=settings,
+            bot=bot, tracking_db=tracking_db, entity_helper=entity_helper, taco_helper=taco_helper, settings=settings
         )
 
         assert cog.bot == bot
@@ -59,11 +56,7 @@ class TestPhotoPostCogOnMessage:
     def cog(self, bot, tracking_db, entity_helper, taco_helper, settings):
         """Create a PhotoPostCog instance with mocked dependencies."""
         cog_instance = PhotoPostCog(
-            bot=bot,
-            tracking_db=tracking_db,
-            entity_helper=entity_helper,
-            taco_helper=taco_helper,
-            settings=settings,
+            bot=bot, tracking_db=tracking_db, entity_helper=entity_helper, taco_helper=taco_helper, settings=settings
         )
         cog_instance.log = MagicMock()
         cog_instance.log.debug = MagicMock()
@@ -356,8 +349,9 @@ class TestPhotoPostCogSetup:
         - PhotoPostCog is instantiated with correct parameters
         - bot.add_cog is called with the cog instance
         """
-        from bot.cogs.photo_post import setup
         from unittest.mock import patch
+
+        from bot.cogs.photo_post import setup
 
         bot = MagicMock()
         bot.add_cog = AsyncMock()

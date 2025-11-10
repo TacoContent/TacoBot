@@ -31,12 +31,7 @@ class TestVoiceChatCogInitialization:
         entity_helper = MagicMock()
         tacos_helper = MagicMock()
 
-        cog = VoiceChatCog(
-            bot=bot,
-            entity_helper=entity_helper,
-            tacos_helper=tacos_helper,
-            settings=settings,
-        )
+        cog = VoiceChatCog(bot=bot, entity_helper=entity_helper, tacos_helper=tacos_helper, settings=settings)
 
         assert cog.bot == bot
         assert cog.entity_helper == entity_helper
@@ -65,10 +60,7 @@ class TestVoiceChatCogVoiceStateUpdate:
     def cog(self, bot, mock_entity_helper, mock_tacos_helper, settings):
         """Create a VoiceChatCog instance with mocked dependencies."""
         cog_instance = VoiceChatCog(
-            bot=bot,
-            entity_helper=mock_entity_helper,
-            tacos_helper=mock_tacos_helper,
-            settings=settings,
+            bot=bot, entity_helper=mock_entity_helper, tacos_helper=mock_tacos_helper, settings=settings
         )
         # Mock the log to avoid actual logging during tests
         cog_instance.log = MagicMock()
@@ -223,9 +215,7 @@ class TestVoiceChatCogVoiceStateUpdate:
         )
 
     @pytest.mark.asyncio
-    async def test_member_joined_untracked_channel(
-        self, cog, mock_member, mock_before_state, mock_after_state
-    ):
+    async def test_member_joined_untracked_channel(self, cog, mock_member, mock_before_state, mock_after_state):
         """Test that listener doesn't give tacos when member joins untracked channel.
 
         Verifies:
@@ -248,9 +238,7 @@ class TestVoiceChatCogVoiceStateUpdate:
         cog.tacos_helper.give_tacos.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_member_joined_no_channels_configured(
-        self, cog, mock_member, mock_before_state, mock_after_state
-    ):
+    async def test_member_joined_no_channels_configured(self, cog, mock_member, mock_before_state, mock_after_state):
         """Test that listener doesn't give tacos when no channels are configured.
 
         Verifies:
@@ -272,9 +260,7 @@ class TestVoiceChatCogVoiceStateUpdate:
         cog.tacos_helper.give_tacos.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_member_joined_empty_channels_list(
-        self, cog, mock_member, mock_before_state, mock_after_state
-    ):
+    async def test_member_joined_empty_channels_list(self, cog, mock_member, mock_before_state, mock_after_state):
         """Test that listener doesn't give tacos when channels list is empty.
 
         Verifies:
@@ -296,9 +282,7 @@ class TestVoiceChatCogVoiceStateUpdate:
         cog.tacos_helper.give_tacos.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_member_moved_between_channels(
-        self, cog, mock_member, mock_voice_channel, bot
-    ):
+    async def test_member_moved_between_channels(self, cog, mock_member, mock_voice_channel, bot):
         """Test behavior when member moves from one voice channel to another.
 
         Verifies:
