@@ -23,14 +23,16 @@ The `TacosCog` is a critical component of TacoBot that handles taco gifting, cou
 
 ## 1. Dependency Injection & Interface Abstraction
 
-### Current State
+### 1.b Current State
+
 - Database dependencies (`tacos_db`, `tracking_db`) are optional parameters but instantiated directly in `__init__` if not provided
 - Helper classes (`messaging`, `entity_helper`, `taco_helper`) are instantiated directly without injection
 - Direct coupling to concrete implementations makes mocking difficult
 
-### Suggestions
+### 1.b Suggestions
 
 #### 1.1 Full Constructor Injection
+
 **Priority:** High  
 **Effort:** Medium
 
@@ -49,17 +51,20 @@ def __init__(
 ```
 
 **Benefits:**
+
 - Explicit dependencies visible in constructor
 - Forces test setup to provide all dependencies (no hidden instantiation)
 - Makes mocking straightforward
 - Eliminates conditional logic in constructor
 
 **Implementation Notes:**
+
 - Update cog loader in `setup()` function to instantiate all dependencies
 - Consider creating a factory method or builder if dependency graph becomes complex
 - Add type hints for all injected dependencies
 
 #### 1.2 Protocol/Interface Definitions
+
 **Priority:** Medium  
 **Effort:** High
 
@@ -79,6 +84,7 @@ class TacosDatabaseProtocol(Protocol):
 ```
 
 **Benefits:**
+
 - Type-safe mocking with proper IDE support
 - Clear contract definition for what the cog needs
 - Easier to create test doubles that match expected behavior
@@ -88,14 +94,16 @@ class TacosDatabaseProtocol(Protocol):
 
 ## 2. Method Decomposition & Single Responsibility
 
-### Current State
+### 2.a Current State
+
 - Methods like `gift()` and `gift_interaction()` contain complex business logic mixed with presentation logic
 - Validation, calculation, and action are intertwined
 - Duplicate logic between command and interaction variants
 
-### Suggestions
+### 2.b Suggestions
 
 #### 2.1 Extract Business Logic Methods
+
 **Priority:** High  
 **Effort:** Medium
 
@@ -138,12 +146,14 @@ def _validate_gift_eligibility(
 ```
 
 **Benefits:**
+
 - Testable without Discord context
 - Can test all validation paths independently
 - Reusable between command and interaction handlers
 - Clear input/output contract
 
 #### 2.2 Extract Presentation Logic
+
 **Priority:** Medium  
 **Effort:** Low
 
@@ -175,12 +185,14 @@ def _format_gift_success_message(
 ```
 
 **Benefits:**
+
 - Testable message formatting logic
 - Consistent message format across commands
 - Easy to verify pluralization logic
 - Separates concerns (business vs presentation)
 
 #### 2.3 Consolidate Duplicate Logic
+
 **Priority:** High  
 **Effort:** Medium
 
@@ -206,6 +218,7 @@ async def _process_gift(
 ```
 
 **Benefits:**
+
 - Single source of truth for gift logic
 - Changes only need to be made once
 - Tests cover both command variants
@@ -215,14 +228,16 @@ async def _process_gift(
 
 ## 3. Testable Error Handling
 
-### Current State
+### 3.a Current State
+
 - Try-catch blocks catch `Exception` (too broad)
 - Error handling mixed with business logic
 - Difficult to test error paths without triggering actual exceptions
 
-### Suggestions
+### 3.b Suggestions
 
 #### 3.1 Specific Exception Types
+
 **Priority:** Medium  
 **Effort:** Low
 
@@ -253,12 +268,14 @@ class TacoInsufficientFundsException(TacoException):
 ```
 
 **Benefits:**
+
 - Testable error conditions without triggering database failures
 - Semantic exception types improve code clarity
 - Can test exception handling independently
 - Better error messages for debugging
 
 #### 3.2 Error Handling Strategy Pattern
+
 **Priority:** Low  
 **Effort:** Medium
 
@@ -287,6 +304,7 @@ class ErrorHandler:
 ```
 
 **Benefits:**
+
 - Testable error responses
 - Consistent error handling across commands
 - Easy to verify correct error messages are sent
@@ -296,14 +314,16 @@ class ErrorHandler:
 
 ## 4. Discord API Interaction Isolation
 
-### Current State
+### 4.a Current State
+
 - Direct Discord API calls throughout methods
 - Tightly coupled to Discord.py objects
 - Difficult to test without mocking entire Discord context
 
-### Suggestions
+### 4.b Suggestions
 
 #### 4.1 Discord Adapter Layer
+
 **Priority:** High  
 **Effort:** High
 
@@ -353,12 +373,14 @@ class MockDiscordAdapter:
 ```
 
 **Benefits:**
+
 - Test without actual Discord API calls
 - Verify messages are sent with correct content
 - Fast test execution
 - Can simulate Discord failures
 
 #### 4.2 Extract Discord Context Dependencies
+
 **Priority:** Medium  
 **Effort:** Medium
 
@@ -399,6 +421,7 @@ async def _execute_gift(
 ```
 
 **Benefits:**
+
 - Test with simple data types
 - No need to mock complex Discord objects
 - Clear data dependencies
@@ -408,15 +431,17 @@ async def _execute_gift(
 
 ## 5. Configuration & Settings Management
 
-### Current State
+### 5.a Current State
+
 - Settings accessed via `self.settings.get_string()` throughout methods
 - Taco settings fetched with `self.get_tacos_settings()` (inherited method)
 - Hard to test with different configurations
 - Magic strings for setting keys
 
-### Suggestions
+### 5.b Suggestions
 
 #### 5.1 Configuration Value Objects
+
 **Priority:** Medium  
 **Effort:** Medium
 
@@ -467,6 +492,7 @@ class TacoMessages:
 ```
 
 **Benefits:**
+
 - Type-safe configuration access
 - Easy to create test configurations
 - Clear documentation of all config values
@@ -474,6 +500,7 @@ class TacoMessages:
 - Can validate configuration values
 
 #### 5.2 Configuration Injection
+
 **Priority:** Medium  
 **Effort:** Low
 
@@ -493,6 +520,7 @@ async def _process_gift(
 ```
 
 **Benefits:**
+
 - Test with different configurations easily
 - No database/settings dependency in business logic
 - Clear what configuration affects behavior
@@ -502,14 +530,16 @@ async def _process_gift(
 
 ## 6. Time-Based Logic Testability
 
-### Current State
+### 6.a Current State
+
 - Time-based logic (24-hour gift limits) uses implicit current time
 - `max_gift_taco_timespan` used for lookback period
 - Cannot test time-dependent behavior without waiting
 
-### Suggestions
+### 6.b Suggestions
 
 #### 6.1 Clock Abstraction
+
 **Priority:** Medium  
 **Effort:** Low
 
@@ -549,12 +579,14 @@ class MockClock:
 ```
 
 **Benefits:**
+
 - Test time-based logic without waiting
 - Simulate different timespan scenarios
 - Test edge cases (exactly at limit, one second over, etc.)
 - Fast, deterministic tests
 
 #### 6.2 Time-Aware Method Signatures
+
 **Priority:** Low  
 **Effort:** Low
 
@@ -575,6 +607,7 @@ def get_total_gifted_tacos(
 ```
 
 **Benefits:**
+
 - Test with specific timestamps
 - Verify boundary conditions
 - No need to mock datetime globally
@@ -584,14 +617,16 @@ def get_total_gifted_tacos(
 
 ## 7. Event Handler Testability
 
-### Current State
+### 7.a Current State
+
 - `on_message()` and `on_raw_reaction_add()` are large, complex methods
 - Mix event parsing, validation, and business logic
 - Difficult to test individual aspects
 
-### Suggestions
+### 7.b Suggestions
 
 #### 7.1 Decompose Event Handlers
+
 **Priority:** High  
 **Effort:** Medium
 
@@ -626,12 +661,14 @@ async def _handle_reply_message(self, message: discord.Message) -> None:
 ```
 
 **Benefits:**
+
 - Test validation logic separately
 - Test each event type independently
 - Can mock only what specific handler needs
 - Easier to understand what each handler does
 
 #### 7.2 Event Data Objects
+
 **Priority:** Low  
 **Effort:** Medium
 
@@ -671,6 +708,7 @@ async def _process_reaction(self, event: ReactionEventData) -> None:
 ```
 
 **Benefits:**
+
 - Test with simple data structures
 - No Discord.py dependencies in tests
 - Clear data contract
@@ -681,6 +719,7 @@ async def _process_reaction(self, event: ReactionEventData) -> None:
 ## 8. Testing Infrastructure Suggestions
 
 ### 8.1 Test Fixtures
+
 **Priority:** High  
 **Effort:** Medium
 
@@ -724,6 +763,7 @@ def tacos_cog(mock_bot, mock_tacos_db, mock_tracking_db):
 ```
 
 ### 8.2 Mock Implementations
+
 **Priority:** High  
 **Effort:** High
 
@@ -761,12 +801,13 @@ class MockTacosDatabase:
 ```
 
 ### 8.3 Test Categories
+
 **Priority:** Medium  
 **Effort:** Low
 
 Organize tests by category for clarity:
 
-```
+``` text
 tests/
   unit/
     cogs/
@@ -782,6 +823,7 @@ tests/
 ```
 
 **Benefits:**
+
 - Clear test organization
 - Can run specific test categories
 - Easier to identify coverage gaps
@@ -794,11 +836,13 @@ tests/
 ### 9.1 `remove_all_tacos()` / `_remove_all_tacos_interaction()`
 
 **Current Issues:**
+
 - Direct database call
 - Mixed logging and error handling
 - Duplicate logic between variants
 
 **Improvements:**
+
 ```python
 def _validate_purge_permission(self, executor_id: int, target_id: int) -> bool:
     """Validate purge permissions (extendable for future rules)."""
@@ -822,6 +866,7 @@ async def _execute_purge(
 ```
 
 **Testing Benefits:**
+
 - Test purge without Discord context
 - Verify logging is called correctly
 - Test with various reason strings
@@ -829,11 +874,13 @@ async def _execute_purge(
 ### 9.2 `gift()` / `gift_interaction()`
 
 **Current Issues:**
+
 - Complex validation mixed with presentation
 - Duplicate code
 - Hard to test individual validation rules
 
 **Improvements:**
+
 ```python
 class GiftValidationResult:
     """Result of gift validation."""
@@ -885,6 +932,7 @@ async def _validate_gift(
 ```
 
 **Testing Benefits:**
+
 - Test each validation rule independently
 - Test boundary conditions easily
 - Clear validation result contract
@@ -893,12 +941,14 @@ async def _validate_gift(
 ### 9.3 `on_raw_reaction_add()`
 
 **Current Issues:**
+
 - Very long method (80+ lines)
 - Multiple responsibilities
 - Complex nested conditions
 - Hard to test specific scenarios
 
 **Improvements:**
+
 ```python
 async def on_raw_reaction_add(self, payload) -> None:
     """Entry point for reaction events."""
@@ -964,6 +1014,7 @@ async def _process_taco_reaction(self, event: ReactionEventData) -> None:
 ```
 
 **Testing Benefits:**
+
 - Test validation logic separately from processing
 - Test each early-exit condition independently
 - Mock only what each component needs
@@ -974,6 +1025,7 @@ async def _process_taco_reaction(self, event: ReactionEventData) -> None:
 ## 10. Implementation Roadmap
 
 ### Phase 1: Foundation (High Priority, Low Risk)
+
 **Estimated Effort:** 2-3 days
 
 1. Add custom exception types
@@ -985,6 +1037,7 @@ async def _process_taco_reaction(self, event: ReactionEventData) -> None:
 **Rationale:** These changes are low-risk, don't affect existing functionality, and provide immediate testing benefits.
 
 ### Phase 2: Method Decomposition (High Priority, Medium Risk)
+
 **Estimated Effort:** 3-4 days
 
 1. Extract validation methods
@@ -995,6 +1048,7 @@ async def _process_taco_reaction(self, event: ReactionEventData) -> None:
 **Rationale:** Improves testability significantly while maintaining existing behavior. Requires careful refactoring but is well-scoped.
 
 ### Phase 3: Dependency Injection (Medium Priority, Medium Risk)
+
 **Estimated Effort:** 2-3 days
 
 1. Add protocol definitions
@@ -1005,6 +1059,7 @@ async def _process_taco_reaction(self, event: ReactionEventData) -> None:
 **Rationale:** Makes testing much easier but requires coordinated changes across multiple files.
 
 ### Phase 4: Discord Abstraction (Medium Priority, High Effort)
+
 **Estimated Effort:** 5-7 days
 
 1. Create Discord adapter interface
@@ -1015,6 +1070,7 @@ async def _process_taco_reaction(self, event: ReactionEventData) -> None:
 **Rationale:** Largest improvement to testability but most invasive change. Consider if benefits justify effort.
 
 ### Phase 5: Advanced Testing (Low Priority, Ongoing)
+
 **Estimated Effort:** Ongoing
 
 1. Add clock abstraction for time-based tests
@@ -1029,6 +1085,7 @@ async def _process_taco_reaction(self, event: ReactionEventData) -> None:
 ## 11. Success Metrics
 
 ### Code Coverage
+
 - **Current:** Unknown (needs baseline measurement)
 - **Target Phase 1:** 40%
 - **Target Phase 2:** 60%
@@ -1036,14 +1093,17 @@ async def _process_taco_reaction(self, event: ReactionEventData) -> None:
 - **Target Phase 5:** 90%+
 
 ### Test Execution Speed
+
 - **Target:** Unit tests complete in <5 seconds
 - **Target:** Full test suite completes in <30 seconds
 
 ### Test Independence
+
 - **Target:** All tests can run in any order
 - **Target:** No external dependencies (database, Discord API) in unit tests
 
 ### Maintenance Metrics
+
 - **Target:** New features come with tests (100% of PRs)
 - **Target:** Bug fixes include regression tests (100% of bug PRs)
 - **Target:** No duplicate test code (DRY principle)
@@ -1214,23 +1274,27 @@ class TestReactionProcessing:
 ## 13. Additional Recommendations
 
 ### Documentation
+
 - Add docstrings to all private methods explaining testing considerations
 - Document expected behavior for edge cases
 - Include examples of test usage in method docstrings
 
 ### Continuous Integration
+
 - Run tests on every PR
 - Require minimum code coverage (start at 60%, increase over time)
 - Run linting to enforce code quality
 - Add test performance monitoring
 
 ### Refactoring Safety
+
 - Use feature flags for major refactoring
 - Keep old and new code paths temporarily during migration
 - Add integration tests before refactoring to catch regressions
 - Refactor incrementally (one method at a time)
 
 ### Team Practices
+
 - Require tests for all new features
 - Require regression tests for all bug fixes
 - Code review checklist includes testability review
@@ -1241,28 +1305,36 @@ class TestReactionProcessing:
 ## 14. Potential Risks & Mitigation
 
 ### Risk: Breaking Existing Functionality
+
 **Mitigation:**
+
 - Add integration tests before refactoring
 - Refactor in small, reviewable chunks
 - Use feature flags for large changes
 - Keep old code paths until new ones are verified
 
 ### Risk: Increased Complexity
+
 **Mitigation:**
+
 - Follow YAGNI principle (don't over-engineer)
 - Start with high-value, low-complexity improvements
 - Document architectural decisions
 - Regular code reviews to catch complexity creep
 
 ### Risk: Time Investment
+
 **Mitigation:**
+
 - Prioritize improvements by value/effort ratio
 - Implement in phases (can stop after any phase)
 - Measure test coverage improvements to show value
 - Automate what can be automated (test generation tools)
 
 ### Risk: Incomplete Test Coverage
+
 **Mitigation:**
+
 - Set realistic coverage goals (90% not 100%)
 - Focus on critical paths first
 - Use mutation testing to verify test quality
@@ -1275,12 +1347,14 @@ class TestReactionProcessing:
 The TacosCog is a functional, feature-rich component but has significant room for testability improvements. The suggestions in this document range from low-effort quick wins (exception types, message formatting extraction) to high-effort architectural changes (Discord adapter, full dependency injection).
 
 **Recommended Approach:**
+
 1. Start with **Phase 1** (Foundation) - low risk, immediate benefits
 2. Measure success with code coverage metrics
 3. Proceed to **Phase 2** (Method Decomposition) if Phase 1 is successful
 4. Evaluate **Phase 3** and **Phase 4** based on testing pain points discovered
 
 **Key Takeaways:**
+
 - Testability improvements make code more maintainable, not just more testable
 - Small, incremental changes are safer than large rewrites
 - Focus on separating concerns: business logic, presentation, persistence, Discord API
