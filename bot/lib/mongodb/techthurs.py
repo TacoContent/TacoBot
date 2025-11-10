@@ -27,26 +27,28 @@ class TechThursDatabase(Database):
             if message_id is None or messageId == "" or messageId == "0" or messageId == "None":
                 messageId = None
 
-            now_date = datetime.datetime.utcnow().date()
+            now_date = datetime.datetime.now(tz=datetime.timezone.utc).date()
             ts_date = datetime.datetime.combine(now_date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
-            ts_track = utils.to_timestamp(datetime.datetime.utcnow())
+            ts_track = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
 
-            result = self.connection.techthurs.find_one({"guild_id": str(guild_id), "timestamp": timestamp})
+            result = self.connection.techthurs.find_one(  # type: ignore
+                {"guild_id": str(guild_id), "timestamp": timestamp}
+            )
 
             if result:
-                self.connection.techthurs.update_one(
+                self.connection.techthurs.update_one(  # type: ignore
                     {"guild_id": str(guild_id), "timestamp": timestamp},
                     {"$push": {"answered": {"user_id": str(user_id), "message_id": messageId, "timestamp": ts_track}}},
                     upsert=True,
                 )
             else:
-                now_date = datetime.datetime.utcnow().date()
+                now_date = datetime.datetime.now(tz=datetime.timezone.utc).date()
                 back_date = now_date - datetime.timedelta(days=7)
                 ts_now_date = datetime.datetime.combine(now_date, datetime.time.max)
                 ts_back_date = datetime.datetime.combine(back_date, datetime.time.min)
                 # timestamp = utils.to_timestamp(ts_date)
-                result = self.connection.techthurs.find_one(
+                result = self.connection.techthurs.find_one(  # type: ignore
                     {
                         "guild_id": str(guild_id),
                         "timestamp": {
@@ -56,7 +58,7 @@ class TechThursDatabase(Database):
                     }
                 )
                 if result:
-                    self.connection.techthurs.update_one(
+                    self.connection.techthurs.update_one(  # type: ignore
                         {"guild_id": str(guild_id), "timestamp": result['timestamp']},
                         {
                             "$push": {
@@ -89,7 +91,7 @@ class TechThursDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow().date()
+            date = datetime.datetime.now(tz=datetime.timezone.utc).date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
             payload = {
@@ -102,7 +104,7 @@ class TechThursDatabase(Database):
                 "channel_id": str(channel_id),
                 "message_id": str(message_id),
             }
-            self.connection.techthurs.update_one(
+            self.connection.techthurs.update_one(  # type: ignore
                 {"guild_id": str(guildId), "timestamp": timestamp}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
@@ -120,10 +122,12 @@ class TechThursDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow().date()
+            date = datetime.datetime.now(tz=datetime.timezone.utc).date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
-            result = self.connection.techthurs.find_one({"guild_id": str(guildId), "timestamp": timestamp})
+            result = self.connection.techthurs.find_one(  # type: ignore
+                {"guild_id": str(guildId), "timestamp": timestamp}
+            )
             if result:
                 for answer in result["answered"]:
                     if answer["user_id"] == str(userId) and answer["message_id"] == str(messageId):
@@ -133,14 +137,16 @@ class TechThursDatabase(Database):
                 date = date - datetime.timedelta(days=1)
                 ts_date = datetime.datetime.combine(date, datetime.time.min)
                 timestamp = utils.to_timestamp(ts_date)
-                result = self.connection.techthurs.find_one({"guild_id": str(guildId), "timestamp": timestamp})
+                result = self.connection.techthurs.find_one(  # type: ignore
+                    {"guild_id": str(guildId), "timestamp": timestamp}
+                )
                 if result:
                     for answer in result["answered"]:
                         if answer["user_id"] == str(userId) and answer["message_id"] == str(messageId):
                             return True
                     return False
                 else:
-                    raise Exception(f"No techthurs found for guild {guildId} for {datetime.datetime.utcnow().date()}")
+                    raise Exception(f"No techthurs found for guild {guildId} for today or yesterday")
         except Exception as ex:
             self.log(
                 guildId=guildId,

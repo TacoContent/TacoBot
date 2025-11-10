@@ -27,10 +27,10 @@ class MentalMondaysDatabase(Database):
             if message_id is None or messageId == "" or messageId == "0" or messageId == "None":
                 messageId = None
 
-            now_date = datetime.datetime.utcnow().date()
+            now_date = datetime.datetime.now(tz=datetime.timezone.utc).date()
             ts_date = datetime.datetime.combine(now_date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
-            ts_track = utils.to_timestamp(datetime.datetime.utcnow())
+            ts_track = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
 
             result = self.connection.mentalmondays.find_one(  # type: ignore
                 {"guild_id": str(guild_id), "timestamp": timestamp}
@@ -43,7 +43,7 @@ class MentalMondaysDatabase(Database):
                     upsert=True,
                 )
             else:
-                now_date = datetime.datetime.utcnow().date()
+                now_date = datetime.datetime.now(tz=datetime.timezone.utc).date()
                 back_date = now_date - datetime.timedelta(days=7)
                 ts_now_date = datetime.datetime.combine(now_date, datetime.time.max)
                 ts_back_date = datetime.datetime.combine(back_date, datetime.time.min)
@@ -91,7 +91,7 @@ class MentalMondaysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow().date()
+            date = datetime.datetime.now(tz=datetime.timezone.utc).date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
             payload = {
@@ -122,7 +122,7 @@ class MentalMondaysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow().date()
+            date = datetime.datetime.now(tz=datetime.timezone.utc).date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
             result = self.connection.mentalmondays.find_one(  # type: ignore
@@ -146,8 +146,9 @@ class MentalMondaysDatabase(Database):
                             return True
                     return False
                 else:
+                    from_dates = f"{datetime.datetime.now(tz=datetime.timezone.utc).date()} and {date}"
                     raise Exception(
-                        f"No mentalmondays found for guild {guildId} for {datetime.datetime.utcnow().date()}"
+                        f"No mentalmondays found for guild {guildId} for {from_dates}"
                     )
         except Exception as ex:
             self.log(

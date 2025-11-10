@@ -25,7 +25,7 @@ class SuggestionsDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
             payload = {
                 "guild_id": str(guildId),
                 "channel_id": str(channelId),
@@ -39,7 +39,7 @@ class SuggestionsDatabase(Database):
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"Adding suggestion create message for guild {guildId}",
             )
-            self.connection.suggestion_create_messages.update_one(
+            self.connection.suggestion_create_messages.update_one(  # type: ignore
                 {"guild_id": str(guildId), "channel_id": str(channelId), "message_id": messageId},
                 {"$set": payload},
                 upsert=True,
@@ -59,8 +59,8 @@ class SuggestionsDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
-            self.connection.suggestion_create_messages.delete_one(
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
+            self.connection.suggestion_create_messages.delete_one(  # type: ignore
                 {
                     "guild_id": str(guildId),
                     "channel_id": str(channelId),
@@ -82,7 +82,9 @@ class SuggestionsDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            suggestion = self.connection.suggestions.find_one({"guild_id": str(guildId), "message_id": str(messageId)})
+            suggestion = self.connection.suggestions.find_one(  # type: ignore
+                {"guild_id": str(guildId), "message_id": str(messageId)}
+            )
             # explicitly return None if no suggestion is found
             if suggestion is None:
                 return None
@@ -103,7 +105,9 @@ class SuggestionsDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            suggestion = self.connection.suggestions.find_one({"guild_id": str(guildId), "id": str(suggestionId)})
+            suggestion = self.connection.suggestions.find_one(  # type: ignore
+                {"guild_id": str(guildId), "id": str(suggestionId)}
+            )
             # explicitly return None if no suggestion is found
             if suggestion is None:
                 return None
@@ -123,7 +127,7 @@ class SuggestionsDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
             payload = {"guild_id": str(guildId), "id": suggestionId, "state": state.upper().strip()}
             # insert the suggestion into the database
             action_payload = {
@@ -133,7 +137,7 @@ class SuggestionsDatabase(Database):
                 "timestamp": timestamp,
             }
             # insert the suggestion into the database
-            self.connection.suggestions.update_one(
+            self.connection.suggestions.update_one(  # type: ignore
                 {"guild_id": str(guildId), "id": str(suggestionId)},
                 {"$set": payload, "$push": {"actions": action_payload}},
                 upsert=True,
@@ -153,7 +157,7 @@ class SuggestionsDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
             payload = {"guild_id": str(guildId), "message_id": str(messageId), "state": state.upper().strip()}
             action_payload = {
                 "state": state.upper().strip(),
@@ -162,7 +166,7 @@ class SuggestionsDatabase(Database):
                 "timestamp": timestamp,
             }
             # insert the suggestion into the database
-            self.connection.suggestions.update_one(
+            self.connection.suggestions.update_one(  # type: ignore
                 {"guild_id": str(guildId), "message_id": str(messageId)},
                 {"$set": payload, "$push": {"actions": action_payload}},
                 upsert=True,
@@ -181,7 +185,7 @@ class SuggestionsDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            suggestion = self.connection.suggestions.find_one({"id": str(suggestionId)})
+            suggestion = self.connection.suggestions.find_one({"id": str(suggestionId)})  # type: ignore
             if suggestion is None:
                 return False
             if suggestion['votes'] is None:
@@ -205,7 +209,7 @@ class SuggestionsDatabase(Database):
             if self.connection is None or self.client is None:
                 self.open()
             # insert the suggestion into the database
-            self.connection.suggestions.update_one(
+            self.connection.suggestions.update_one(  # type: ignore
                 {"guild_id": str(guildId), "id": str(suggestionId)},
                 {"$pull": {"votes": {"user_id": str(userId)}}},
                 upsert=True,
@@ -226,7 +230,7 @@ class SuggestionsDatabase(Database):
             if self.connection is None or self.client is None:
                 self.open()
             # insert the suggestion into the database
-            self.connection.suggestions.update_one(
+            self.connection.suggestions.update_one(  # type: ignore
                 {"guild_id": str(guildId), "message_id": str(messageId)},
                 {"$push": {"votes": {"user_id": str(userId)}}},
                 upsert=True,
@@ -245,7 +249,7 @@ class SuggestionsDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            suggestion = self.connection.suggestions.find_one({"id": str(suggestionId)})
+            suggestion = self.connection.suggestions.find_one({"id": str(suggestionId)})  # type: ignore
             if suggestion is None:
                 return None
             return suggestion['votes']
@@ -264,11 +268,11 @@ class SuggestionsDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
             vote = vote if vote in [1, -1] else 0
             payload = {"user_id": userId, "vote": vote, "timestamp": timestamp}
             # insert the suggestion into the database
-            self.connection.suggestions.update_one(
+            self.connection.suggestions.update_one(  # type: ignore
                 {"guild_id": str(guildId), "message_id": str(messageId)}, {"$push": {"votes": payload}}, upsert=True
             )
         except Exception as ex:
@@ -285,11 +289,13 @@ class SuggestionsDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
             vote = vote if vote in [1, -1] else 0
             payload = {"user_id": str(userId), "vote": vote, "timestamp": timestamp}
             # insert the suggestion into the database
-            self.connection.suggestions.update_one({"id": suggestionId}, {"$push": {"votes": payload}}, upsert=True)
+            self.connection.suggestions.update_one(  # type: ignore
+                {"id": suggestionId}, {"$push": {"votes": payload}}, upsert=True
+            )
         except Exception as ex:
             self.log(
                 guildId=0,
@@ -304,7 +310,7 @@ class SuggestionsDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
             suggestion_data = utils.dict_get(suggestion, "suggestion", {})
             payload = {
                 "id": utils.dict_get(suggestion, 'id', uuid.uuid4().hex),
@@ -318,7 +324,7 @@ class SuggestionsDatabase(Database):
                 "timestamp": timestamp,
             }
             # insert the suggestion for the guild in to the database with key name and timestamp
-            self.connection.suggestions.insert_one(payload)
+            self.connection.suggestions.insert_one(payload)  # type: ignore
         except Exception as ex:
             self.log(
                 guildId=guildId,
@@ -333,7 +339,7 @@ class SuggestionsDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
             states = SuggestionStates()
             state = states.DELETED
             action_payload = {
@@ -343,7 +349,7 @@ class SuggestionsDatabase(Database):
                 "timestamp": timestamp,
             }
             # insert the suggestion into the database
-            self.connection.suggestions.update_one(
+            self.connection.suggestions.update_one(  # type: ignore
                 {"guild_id": str(guildId), "id": str(suggestionId)},
                 {"$set": {"state": state}, "$push": {"actions": action_payload}},
                 upsert=True,

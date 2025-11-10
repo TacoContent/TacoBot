@@ -23,7 +23,7 @@ class GameKeysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            result = self.connection.game_key_offers.find_one(
+            result = self.connection.game_key_offers.find_one(  # type: ignore
                 {"guild_id": str(guild_id), "channel_id": str(channel_id)}
             )
             if result:
@@ -50,7 +50,7 @@ class GameKeysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
             if expires:
                 expires_ts = utils.to_timestamp(expires)
             else:
@@ -65,7 +65,7 @@ class GameKeysDatabase(Database):
                 "timestamp": timestamp,
                 "expires": expires_ts,
             }
-            self.connection.game_key_offers.update_one(
+            self.connection.game_key_offers.update_one(  # type: ignore
                 {"guild_id": str(guild_id), "game_key_id": game_key_id}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
@@ -82,7 +82,9 @@ class GameKeysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            self.connection.game_key_offers.delete_one({"guild_id": str(guild_id), "message_id": str(message_id)})
+            self.connection.game_key_offers.delete_one(  # type: ignore
+                {"guild_id": str(guild_id), "message_id": str(message_id)}
+            )
         except Exception as ex:
             self.log(
                 guildId=guild_id,
@@ -97,7 +99,9 @@ class GameKeysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            self.connection.game_key_offers.delete_one({"guild_id": str(guild_id), "game_key_id": game_key_id})
+            self.connection.game_key_offers.delete_one(  # type: ignore
+                {"guild_id": str(guild_id), "game_key_id": game_key_id}
+            )
         except Exception as ex:
             self.log(
                 guildId=guild_id,
@@ -112,9 +116,11 @@ class GameKeysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
             payload = {"redeemed_by": str(user_id), "redeemed_timestamp": timestamp}
-            self.connection.game_keys.update_one({"_id": ObjectId(game_key_id)}, {"$set": payload}, upsert=True)
+            self.connection.game_keys.update_one(  # type: ignore
+                {"_id": ObjectId(game_key_id)}, {"$set": payload}, upsert=True
+            )
         except Exception as ex:
             self.log(
                 guildId=0,
@@ -130,7 +136,9 @@ class GameKeysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            result = self.connection.game_keys.find_one({"_id": ObjectId(game_key_id), "guild_id": str(guild_id)})
+            result = self.connection.game_keys.find_one(  # type: ignore
+                {"_id": ObjectId(game_key_id), "guild_id": str(guild_id)}
+            )
             if result:
                 return {
                     "id": str(result["_id"]),
@@ -161,7 +169,7 @@ class GameKeysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            result = self.connection.game_keys.find_one({"_id": ObjectId(game_key_id)})
+            result = self.connection.game_keys.find_one({"_id": ObjectId(game_key_id)})  # type: ignore
             if result:
                 return {
                     "id": str(result["_id"]),
@@ -187,7 +195,7 @@ class GameKeysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            result = self.connection.game_keys.aggregate(
+            result = self.connection.game_keys.aggregate(  # type: ignore
                 [{"$match": {"redeemed_by": None, "guild_id": str(guild_id)}}, {"$sample": {"size": 1}}]
             )
             records = list(result)
@@ -218,8 +226,8 @@ class GameKeysDatabase(Database):
                 self.open()
 
             # this returns a count for people that have not redeemed recently.
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
-            result = self.connection.game_keys.count_documents(
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
+            result = self.connection.game_keys.count_documents(  # type: ignore
                 {
                     "guild_id": str(guild_id),
                     "redeemed_by": str(user_id),

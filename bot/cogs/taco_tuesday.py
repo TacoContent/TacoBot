@@ -15,6 +15,7 @@ from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tacotuesdays import TacoTuesdaysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
@@ -23,26 +24,34 @@ class TacoTuesdayCog(TacobotCog):
     def __init__(
         self,
         bot: TacoBot,
-        tacotuesdays_db: typing.Optional[TacoTuesdaysDatabase] = None,
-        tracking_db: typing.Optional[TrackingDatabase] = None,
+        tacotuesdays_db: TacoTuesdaysDatabase,
+        tracking_db: TrackingDatabase,
+        messaging: Messaging,
+        permissions: Permissions,
+        entity_helper: EntityHelper,
+        role_helper: RoleHelper,
+        message_helper: MessageHelper,
+        context_helper: ContextHelper,
+        taco_helper: TacoHelper,
+        settings: Settings,
     ) -> None:
-        super().__init__(bot, "tacotuesday")
+        super().__init__(bot, "tacotuesday", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = Messaging(bot)
-        self.permissions = Permissions(bot)
-        self.entity_helper = EntityHelper(bot)
-        self.role_helper = RoleHelper(bot)
-        self.message_helper = MessageHelper(bot)
-        self.context_helper = ContextHelper()
-        self.taco_helper = TacoHelper(bot)
+        self.messaging = messaging
+        self.permissions = permissions
+        self.entity_helper = entity_helper
+        self.role_helper = role_helper
+        self.message_helper = message_helper
+        self.context_helper = context_helper
+        self.taco_helper = taco_helper
 
         self.SELF_DESTRUCT_TIMEOUT = 30
-        self.tacotuesdays_db = tacotuesdays_db or TacoTuesdaysDatabase()
-        self.tracking_db = tracking_db or TrackingDatabase()
+        self.tacotuesdays_db = tacotuesdays_db
+        self.tracking_db = tracking_db
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
     @commands.group()
@@ -611,4 +620,28 @@ class TacoTuesdayCog(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(TacoTuesdayCog(bot))
+    settings = Settings()
+    messaging = Messaging(bot)
+    tacotuesdays_db = TacoTuesdaysDatabase()
+    tracking_db = TrackingDatabase()
+    permissions = Permissions(bot)
+    entity_helper = EntityHelper(bot)
+    role_helper = RoleHelper(bot)
+    message_helper = MessageHelper(bot)
+    context_helper = ContextHelper()
+    taco_helper = TacoHelper(bot, entity_helper=entity_helper)
+    await bot.add_cog(
+        TacoTuesdayCog(
+            bot=bot, 
+            settings=settings, 
+            messaging=messaging, 
+            tacotuesdays_db=tacotuesdays_db, 
+            tracking_db=tracking_db, 
+            permissions=permissions, 
+            entity_helper=entity_helper, 
+            role_helper=role_helper, 
+            message_helper=message_helper, 
+            context_helper=context_helper, 
+            taco_helper=taco_helper,
+        )
+    )

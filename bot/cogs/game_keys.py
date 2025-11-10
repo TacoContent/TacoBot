@@ -723,7 +723,7 @@ class GameKeysCog(TacobotCog):
                 return False
 
             # check if the game key offer is expired
-            # if offer["expires"] < datetime.datetime.utcnow():
+            # if offer["expires"] < datetime.datetime.now(tz=datetime.timezone.utc):
             #     self.log.debug(
             #         guild_id,
             #         f"{self._module}.{self._class}.{_method}",

@@ -52,7 +52,7 @@ class ServerEventCog(TacobotCog):
             return
         guild_id = event.guild.id
         try:
-            now = datetime.datetime.utcnow()
+            now = datetime.datetime.now(tz=datetime.timezone.utc)
             if event.start_time < now:
                 return
 

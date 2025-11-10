@@ -22,7 +22,7 @@ class LiveDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
             payload = {
                 "guild_id": str(guildId),
                 "user_id": str(userId),
@@ -31,7 +31,7 @@ class LiveDatabase(Database):
                 "url": url,
                 "timestamp": timestamp,
             }
-            self.connection.live_activity.insert_one(payload)
+            self.connection.live_activity.insert_one(payload)  # type: ignore
         except Exception as ex:
             self.log(
                 guildId=guildId,
@@ -62,7 +62,7 @@ class LiveDatabase(Database):
             if guildId is None:
                 raise ValueError("guildId cannot be None")
 
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
             payload = {
                 "guild_id": str(guildId),
                 "user_id": str(userId),
@@ -72,7 +72,7 @@ class LiveDatabase(Database):
                 "message_id": str(messageId) if messageId is not None else None,
                 "timestamp": timestamp,
             }
-            self.connection.live_tracked.update_one(
+            self.connection.live_tracked.update_one(  # type: ignore
                 {"guild_id": str(guildId), "user_id": str(userId), "platform": platform.upper().strip()},
                 {"$set": payload},
                 upsert=True,
@@ -92,7 +92,7 @@ class LiveDatabase(Database):
             if self.connection is None or self.client is None:
                 self.open()
             return list(
-                self.connection.live_tracked.find(
+                self.connection.live_tracked.find(  # type: ignore
                     {"guild_id": str(guildId), "user_id": str(userId), "platform": platform.upper().strip()}
                 )
             )
@@ -110,7 +110,7 @@ class LiveDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            return self.connection.live_tracked.find({"guild_id": str(guildId), "url": url})
+            return self.connection.live_tracked.find({"guild_id": str(guildId), "url": url})  # type: ignore
         except Exception as ex:
             self.log(
                 guildId=guildId,
@@ -125,7 +125,11 @@ class LiveDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            return list(self.connection.live_tracked.find({"guild_id": str(guildId), "user_id": str(userId)}))
+            return list(
+                self.connection.live_tracked.find(  # type: ignore
+                    {"guild_id": str(guildId), "user_id": str(userId)}
+                )
+            )
         except Exception as ex:
             self.log(
                 guildId=guildId,
@@ -140,7 +144,7 @@ class LiveDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            self.connection.live_tracked.delete_many(
+            self.connection.live_tracked.delete_many(  # type: ignore
                 {"guild_id": str(guildId), "user_id": str(userId), "platform": platform.upper().strip()}
             )
         except Exception as ex:

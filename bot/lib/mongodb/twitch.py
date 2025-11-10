@@ -22,7 +22,7 @@ class TwitchDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            return self.connection.twitch_user.find_one({"user_id": str(userId)})
+            return self.connection.twitch_user.find_one({"user_id": str(userId)})  # type: ignore
         except Exception as ex:
             self.log(
                 guildId=0,
@@ -37,7 +37,7 @@ class TwitchDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            result = self.connection.twitch_user.find_one({"twitch_name": twitchName})
+            result = self.connection.twitch_user.find_one({"twitch_name": twitchName})  # type: ignore
             if result:
                 return int(result["user_id"])
             return None
@@ -58,7 +58,9 @@ class TwitchDatabase(Database):
                 self.open()
             payload = {"user_id": str(userId), "twitch_name": twitchName}
             # insert or update user twitch info
-            self.connection.twitch_user.update_one({"user_id": str(userId)}, {"$set": payload}, upsert=True)
+            self.connection.twitch_user.update_one(  # type: ignore
+                {"user_id": str(userId)}, {"$set": payload}, upsert=True
+            )
         except Exception as ex:
             self.log(
                 guildId=0,
@@ -73,7 +75,7 @@ class TwitchDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            return self.connection.twitch_user.find_one({"user_id": str(userId)})
+            return self.connection.twitch_user.find_one({"user_id": str(userId)})  # type: ignore
         except Exception as ex:
             self.log(
                 guildId=0,
@@ -88,7 +90,7 @@ class TwitchDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
             payload = {
                 "guild_id": str(guildId),
                 "user_id": str(userId),
@@ -96,8 +98,8 @@ class TwitchDatabase(Database):
                 "timestamp": timestamp,
             }
             # if not in table, insert
-            if not self.connection.stream_team_requests.find_one(payload):
-                self.connection.stream_team_requests.insert_one(payload)
+            if not self.connection.stream_team_requests.find_one(payload):  # type: ignore
+                self.connection.stream_team_requests.insert_one(payload)  # type: ignore
             else:
                 self.log(
                     guildId=guildId,
@@ -119,7 +121,9 @@ class TwitchDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            self.connection.stream_team_requests.delete_many({"guild_id": str(guildId), "user_id": str(userId)})
+            self.connection.stream_team_requests.delete_many(  # type: ignore
+                {"guild_id": str(guildId), "user_id": str(userId)}
+            )
         except Exception as ex:
             self.log(
                 guildId=guildId,
@@ -136,11 +140,11 @@ class TwitchDatabase(Database):
                 self.open()
             twitch_channel = utils.clean_channel_name(twitch_channel)
 
-            date = datetime.datetime.utcnow().date()
+            date = datetime.datetime.now(tz=datetime.timezone.utc).date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
             payload = {"guild_id": str(guildId), "channel": twitch_channel, "timestamp": timestamp}
-            self.connection.twitch_channels.update_one(
+            self.connection.twitch_channels.update_one(  # type: ignore
                 {"guild_id": str(guildId), "channel": twitch_channel}, {"$set": payload}, upsert=True
             )
             return True
@@ -162,7 +166,9 @@ class TwitchDatabase(Database):
             twitch_name = self._get_twitch_name(userId)
             if not twitch_name:
                 payload = {"user_id": str(userId), "link_code": code.strip()}
-                self.connection.twitch_user.update_one({"user_id": str(userId)}, {"$set": payload}, upsert=True)
+                self.connection.twitch_user.update_one(  # type: ignore
+                    {"user_id": str(userId)}, {"$set": payload}, upsert=True
+                )
                 return True
             else:
                 raise ValueError(f"Twitch user {twitch_name} already linked")
@@ -184,7 +190,7 @@ class TwitchDatabase(Database):
             twitch_name = self._get_twitch_name(userId)
             if not twitch_name:
                 payload = {"user_id": str(userId)}
-                result = self.connection.twitch_user.update_one(
+                result = self.connection.twitch_user.update_one(  # type: ignore
                     {"link_code": code.strip()}, {"$set": payload}, upsert=True
                 )
                 if result.modified_count == 1:
@@ -208,7 +214,7 @@ class TwitchDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            result = self.connection.twitch_names.find_one({"user_id": str(userId)})
+            result = self.connection.twitch_names.find_one({"user_id": str(userId)})  # type: ignore
             if result:
                 return result["twitch_name"]
             return None

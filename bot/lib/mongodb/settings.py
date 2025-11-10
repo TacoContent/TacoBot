@@ -20,7 +20,7 @@ class SettingsDatabase(BaseDatabase):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
             payload = {"guild_id": str(guildId), "name": name, "settings": settings, "timestamp": timestamp}
             # insert the settings for the guild in to the database with key name and timestamp
             self.connection.settings.update_one(  # type: ignore

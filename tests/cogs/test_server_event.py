@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock
 
 import discord
@@ -138,7 +138,7 @@ class TestServerEventCogOnScheduledEventDelete:
         event.creator = MagicMock(spec=discord.User)
         event.name = "Test Event"
         # Event started in the past
-        event.start_time = datetime.utcnow() - timedelta(hours=1)
+        event.start_time = datetime.now(tz=timezone.utc) - timedelta(hours=1)
         event.status = discord.EventStatus.active
 
         await cog.on_scheduled_event_delete(event)
@@ -151,7 +151,7 @@ class TestServerEventCogOnScheduledEventDelete:
         event.guild = MagicMock(id=123)
         event.creator = MagicMock(spec=discord.User)
         event.name = "Test Event"
-        event.start_time = datetime.utcnow() + timedelta(hours=1)
+        event.start_time = datetime.now(tz=timezone.utc) + timedelta(hours=1)
         event.status = discord.EventStatus.completed
 
         await cog.on_scheduled_event_delete(event)
@@ -164,7 +164,7 @@ class TestServerEventCogOnScheduledEventDelete:
         event.guild = MagicMock(id=123)
         event.creator = MagicMock(spec=discord.User)
         event.name = "Test Event"
-        event.start_time = datetime.utcnow() + timedelta(hours=1)
+        event.start_time = datetime.now(tz=timezone.utc) + timedelta(hours=1)
         event.status = discord.EventStatus.ended
 
         await cog.on_scheduled_event_delete(event)
@@ -177,7 +177,7 @@ class TestServerEventCogOnScheduledEventDelete:
         event.guild = MagicMock(id=123)
         event.creator = MagicMock(spec=discord.User)
         event.name = "Test Event"
-        event.start_time = datetime.utcnow() + timedelta(hours=1)
+        event.start_time = datetime.now(tz=timezone.utc) + timedelta(hours=1)
         event.status = discord.EventStatus.scheduled
 
         await cog.on_scheduled_event_delete(event)
@@ -198,7 +198,7 @@ class TestServerEventCogOnScheduledEventDelete:
         event.guild = MagicMock(id=123)
         event.creator = MagicMock(spec=discord.User)
         event.name = "Test Event"
-        event.start_time = datetime.utcnow() + timedelta(hours=1)
+        event.start_time = datetime.now(tz=timezone.utc) + timedelta(hours=1)
         event.status = discord.EventStatus.scheduled
 
         cog.taco_helper.give_tacos = AsyncMock(side_effect=Exception("Taco error"))

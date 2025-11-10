@@ -31,7 +31,7 @@ class TacoTuesdaysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow().date()
+            date = datetime.datetime.now(tz=datetime.timezone.utc).date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
             payload = {
@@ -45,7 +45,7 @@ class TacoTuesdaysDatabase(Database):
                 "channel_id": str(channel_id),
                 "message_id": str(message_id),
             }
-            self.connection.taco_tuesday.update_one(
+            self.connection.taco_tuesday.update_one(  # type: ignore
                 {"guild_id": str(guildId), "timestamp": timestamp}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
@@ -63,26 +63,28 @@ class TacoTuesdaysDatabase(Database):
             if self.connection is None or self.client is None:
                 self.open()
 
-            now_date = datetime.datetime.utcnow().date()
+            now_date = datetime.datetime.now(tz=datetime.timezone.utc).date()
             ts_date = datetime.datetime.combine(now_date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
-            ts_track = utils.to_timestamp(datetime.datetime.utcnow())
+            ts_track = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
 
-            result = self.connection.taco_tuesday.find_one({"guild_id": str(guild_id), "timestamp": timestamp})
+            result = self.connection.taco_tuesday.find_one(  # type: ignore
+                {"guild_id": str(guild_id), "timestamp": timestamp}
+            )
 
             if result:
-                self.connection.taco_tuesday.update_one(
+                self.connection.taco_tuesday.update_one(  # type: ignore
                     {"guild_id": str(guild_id), "timestamp": timestamp},
                     {"$push": {"answered": {"user_id": str(user_id), "timestamp": ts_track}}},
                     upsert=True,
                 )
             else:
-                now_date = datetime.datetime.utcnow().date()
+                now_date = datetime.datetime.now(tz=datetime.timezone.utc).date()
                 back_date = now_date - datetime.timedelta(days=7)
                 ts_now_date = datetime.datetime.combine(now_date, datetime.time.max)
                 ts_back_date = datetime.datetime.combine(back_date, datetime.time.min)
                 # timestamp = utils.to_timestamp(ts_date)
-                result = self.connection.taco_tuesday.find_one(
+                result = self.connection.taco_tuesday.find_one(  # type: ignore
                     {
                         "guild_id": str(guild_id),
                         "timestamp": {
@@ -92,7 +94,7 @@ class TacoTuesdaysDatabase(Database):
                     }
                 )
                 if result:
-                    self.connection.taco_tuesday.update_one(
+                    self.connection.taco_tuesday.update_one(  # type: ignore
                         {"guild_id": str(guild_id), "timestamp": result['timestamp']},
                         {"$push": {"answered": {"user_id": str(user_id), "timestamp": ts_track}}},
                         upsert=True,
@@ -115,10 +117,12 @@ class TacoTuesdaysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow().date()
+            date = datetime.datetime.now(tz=datetime.timezone.utc).date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
-            result = self.connection.taco_tuesday.find_one({"guild_id": str(guildId), "timestamp": timestamp})
+            result = self.connection.taco_tuesday.find_one(  # type: ignore
+                {"guild_id": str(guildId), "timestamp": timestamp}
+            )
             if result:
                 for answer in result["answered"]:
                     if answer["user_id"] == str(userId):
@@ -128,15 +132,19 @@ class TacoTuesdaysDatabase(Database):
                 date = date - datetime.timedelta(days=1)
                 ts_date = datetime.datetime.combine(date, datetime.time.min)
                 timestamp = utils.to_timestamp(ts_date)
-                result = self.connection.taco_tuesday.find_one({"guild_id": str(guildId), "timestamp": timestamp})
+                result = self.connection.taco_tuesday.find_one(  # type: ignore
+                    {"guild_id": str(guildId), "timestamp": timestamp}
+                )
                 if result:
                     for answer in result["answered"]:
                         if answer["user_id"] == str(userId):
                             return True
                     return False
                 else:
+                    start_date = datetime.datetime.now(tz=datetime.timezone.utc).date() 
+                    from_dates = f"{start_date} and {start_date - datetime.timedelta(days=1)}"
                     raise Exception(
-                        f"No Taco Tuesday found for guild {guildId} for {datetime.datetime.utcnow().date()}"
+                        f"No Taco Tuesday found for guild {guildId} for {from_dates}"
                     )
         except Exception as ex:
             self.log(
@@ -153,21 +161,23 @@ class TacoTuesdaysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow().date()
+            date = datetime.datetime.now(tz=datetime.timezone.utc).date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
             # find the most recent taco tuesday
-            result = self.connection.taco_tuesday.find_one({"guild_id": str(guildId), "timestamp": timestamp})
+            result = self.connection.taco_tuesday.find_one(  # type: ignore
+                {"guild_id": str(guildId), "timestamp": timestamp}
+            )
             if result:
-                self.connection.taco_tuesday.update_one(
+                self.connection.taco_tuesday.update_one(  # type: ignore
                     {"guild_id": str(guildId), "timestamp": timestamp}, {"$set": {"user_id": str(userId)}}, upsert=True
                 )
             else:
-                now_date = datetime.datetime.utcnow().date()
+                now_date = datetime.datetime.now(tz=datetime.timezone.utc).date()
                 back_date = now_date - datetime.timedelta(days=7)
                 ts_now_date = datetime.datetime.combine(now_date, datetime.time.max)
                 ts_back_date = datetime.datetime.combine(back_date, datetime.time.min)
-                result = self.connection.taco_tuesday.find_one(
+                result = self.connection.taco_tuesday.find_one(  # type: ignore
                     {
                         "guild_id": str(guildId),
                         "timestamp": {
@@ -177,14 +187,14 @@ class TacoTuesdaysDatabase(Database):
                     }
                 )
                 if result:
-                    self.connection.taco_tuesday.update_one(
+                    self.connection.taco_tuesday.update_one(  # type: ignore
                         {"guild_id": str(guildId), "timestamp": result['timestamp']},
                         {"$set": {"user_id": str(userId)}},
                         upsert=True,
                     )
                 else:
                     raise Exception(
-                        f"No Taco Tuesday found for guild {guildId} for {datetime.datetime.utcnow().date()}"
+                        f"No Taco Tuesday found for guild {guildId} for {now_date} and {back_date}"
                     )
         except Exception as ex:
             self.log(
@@ -201,7 +211,7 @@ class TacoTuesdaysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            result = self.connection.taco_tuesday.find_one(
+            result = self.connection.taco_tuesday.find_one(  # type: ignore
                 {"guild_id": str(guildId), "channel_id": str(channelId), "message_id": str(messageId)}
             )
             return result
@@ -222,7 +232,7 @@ class TacoTuesdaysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            result = self.connection.taco_tuesday.update_one(
+            result = self.connection.taco_tuesday.update_one(  # type: ignore
                 {"guild_id": str(guildId), "channel_id": str(channelId), "message_id": str(messageId)},
                 {"$set": {"channel_id": str(newChannelId), "message_id": str(newMessageId)}},
             )

@@ -12,19 +12,19 @@ In strict mode the collector should raise a ValueError detailing the mismatch.
 from __future__ import annotations
 
 import io
-import pathlib
 import sys
 import textwrap
 
 import pytest
 from scripts.swagger_sync import collect_endpoints
 
-TMP_ROOT = pathlib.Path('tests/tmp_handlers_strict_validation')
 
-
-def setup_module(module):  # noqa: D401
-    TMP_ROOT.mkdir(exist_ok=True)
-    (TMP_ROOT / '__init__.py').write_text('', encoding='utf-8')
+@pytest.fixture
+def tmp_handler_dir(tmp_path):
+    """Create a temporary handler directory with test files."""
+    handler_root = tmp_path / 'handlers'
+    handler_root.mkdir()
+    (handler_root / '__init__.py').write_text('', encoding='utf-8')
     src = textwrap.dedent(
         '''
         from httpserver.EndpointDecorators import uri_mapping
@@ -46,18 +46,15 @@ def setup_module(module):  # noqa: D401
                 pass
         '''
     )
-    (TMP_ROOT / 'OnlyGetHandler.py').write_text(src, encoding='utf-8')
+    (handler_root / 'OnlyGetHandler.py').write_text(src, encoding='utf-8')
+    return handler_root
 
 
-def teardown_module(module):  # noqa: D401 - leave artifacts for debugging
-    pass
-
-
-def test_non_strict_extraneous_method_warns_and_ignores(monkeypatch):
+def test_non_strict_extraneous_method_warns_and_ignores(monkeypatch, tmp_handler_dir):
     # Capture stderr to assert warning presence.
     stderr = io.StringIO()
     monkeypatch.setattr(sys, 'stderr', stderr)
-    endpoints, ignored = collect_endpoints(TMP_ROOT, strict=False)
+    endpoints, ignored = collect_endpoints(tmp_handler_dir, strict=False)
     assert ignored == []
     # Only GET endpoint should be present
     methods = {(e.path, e.method) for e in endpoints}
@@ -67,7 +64,7 @@ def test_non_strict_extraneous_method_warns_and_ignores(monkeypatch):
     assert 'not declared in decorator' in err_output.lower(), 'Expected mismatch warning in non-strict mode'
 
 
-def test_strict_extraneous_method_raises():
+def test_strict_extraneous_method_raises(tmp_handler_dir):
     with pytest.raises(ValueError) as exc:
-        collect_endpoints(TMP_ROOT, strict=True)
+        collect_endpoints(tmp_handler_dir, strict=True)
     assert 'not declared in decorator' in str(exc.value).lower()

@@ -11,7 +11,6 @@ from bot.lib.enums import loglevel
 from bot.lib.enums.system_actions import SystemActions
 from bot.lib.models.DiscordUser import DiscordUser
 from bot.lib.models.triviaquestion import TriviaQuestion
-from bot.lib.models.UserInviteSystemActionData import UserInviteSystemActionData
 from bot.lib.mongodb.database import Database
 
 
@@ -36,7 +35,7 @@ class TrackingDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow().date()
+            date = datetime.datetime.now(tz=datetime.timezone.utc).date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
             payload = {
@@ -62,7 +61,7 @@ class TrackingDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow().date()
+            date = datetime.datetime.now(tz=datetime.timezone.utc).date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
             payload = {
@@ -93,7 +92,7 @@ class TrackingDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow()
+            date = datetime.datetime.now(tz=datetime.timezone.utc)
             timestamp = utils.to_timestamp(date)
 
             payload = {"guild_id": str(guildId), "user_id": str(userId)}
@@ -138,7 +137,7 @@ class TrackingDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow().date()
+            date = datetime.datetime.now(tz=datetime.timezone.utc).date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
             result = self.connection.first_message.find_one(  # type: ignore
@@ -167,14 +166,6 @@ class TrackingDatabase(Database):
             user.timestamp = timestamp
             payload = user.to_dict()
             payload["timestamp"] = timestamp
-
-            self.log(
-                guildId=int(user.guild_id),
-                level=loglevel.LogLevel.INFO,
-                method=f"{self._module}.{self._class}.{_method}",
-                message="Tracking Discord user",
-                stackTrace=f"{payload}",
-            )
 
             self.connection.users.update_one(  # type: ignore
                 {"guild_id": str(user.guild_id), "user_id": str(user.id)}, {"$set": payload}, upsert=True
@@ -205,7 +196,7 @@ class TrackingDatabase(Database):
     #     try:
     #         if self.connection is None or self.client is None:
     #             self.open()
-    #         date = datetime.datetime.utcnow()
+    #         date = datetime.datetime.now(tz=datetime.timezone.utc)
     #         timestamp = utils.to_timestamp(date)
     #         created_timestamp = utils.to_timestamp(created) if created else None
     #         payload = {
@@ -248,7 +239,7 @@ class TrackingDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow()
+            date = datetime.datetime.now(tz=datetime.timezone.utc)
             timestamp = utils.to_timestamp(date)
             payload = {
                 "guild_id": str(guildId),
@@ -276,7 +267,7 @@ class TrackingDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow()
+            date = datetime.datetime.now(tz=datetime.timezone.utc)
             timestamp = utils.to_timestamp(date)
             payload = {
                 "guild_id": str(guildId),
@@ -300,7 +291,7 @@ class TrackingDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow()
+            date = datetime.datetime.now(tz=datetime.timezone.utc)
             timestamp = utils.to_timestamp(date)
             payload = {
                 "guild_id": str(guild.id),
@@ -330,7 +321,7 @@ class TrackingDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow()
+            date = datetime.datetime.now(tz=datetime.timezone.utc)
             timestamp = utils.to_timestamp(date)
             payload = {
                 "guild_id": str(triviaQuestion.guild_id),
@@ -371,7 +362,7 @@ class TrackingDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow()
+            date = datetime.datetime.now(tz=datetime.timezone.utc)
             timestamp = utils.to_timestamp(date)
 
             payload = {
@@ -398,7 +389,7 @@ class TrackingDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow()
+            date = datetime.datetime.now(tz=datetime.timezone.utc)
             timestamp = utils.to_timestamp(date)
 
             payload = {

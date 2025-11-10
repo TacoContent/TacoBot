@@ -2,6 +2,7 @@ import datetime
 import inspect
 import os
 import traceback
+import typing
 
 from bot.lib import utils
 from bot.lib.enums import loglevel
@@ -26,26 +27,28 @@ class WDYCTWDatabase(Database):
             if message_id is None or messageId == "" or messageId == "0" or messageId == "None":
                 messageId = None
 
-            now_date = datetime.datetime.utcnow().date()
+            now_date = datetime.datetime.now(tz=datetime.timezone.utc).date()
             ts_date = datetime.datetime.combine(now_date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
-            ts_track = utils.to_timestamp(datetime.datetime.utcnow())
+            ts_track = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
 
-            result = self.connection.wdyctw.find_one({"guild_id": str(guild_id), "timestamp": timestamp})
+            result = self.connection.wdyctw.find_one(  # type: ignore
+                {"guild_id": str(guild_id), "timestamp": timestamp}
+            )
 
             if result:
-                self.connection.wdyctw.update_one(
+                self.connection.wdyctw.update_one(  # type: ignore
                     {"guild_id": str(guild_id), "timestamp": timestamp},
                     {"$push": {"answered": {"user_id": str(user_id), "message_id": messageId, "timestamp": ts_track}}},
                     upsert=True,
                 )
             else:
-                now_date = datetime.datetime.utcnow().date()
+                now_date = datetime.datetime.now(tz=datetime.timezone.utc).date()
                 back_date = now_date - datetime.timedelta(days=7)
                 ts_now_date = datetime.datetime.combine(now_date, datetime.time.max)
                 ts_back_date = datetime.datetime.combine(back_date, datetime.time.min)
                 # timestamp = utils.to_timestamp(ts_date)
-                result = self.connection.wdyctw.find_one(
+                result = self.connection.wdyctw.find_one(  # type: ignore
                     {
                         "guild_id": str(guild_id),
                         "timestamp": {
@@ -55,7 +58,7 @@ class WDYCTWDatabase(Database):
                     }
                 )
                 if result:
-                    self.connection.wdyctw.update_one(
+                    self.connection.wdyctw.update_one(  # type: ignore
                         {"guild_id": str(guild_id), "timestamp": result['timestamp']},
                         {
                             "$push": {
@@ -76,7 +79,13 @@ class WDYCTWDatabase(Database):
             )
 
     def save_wdyctw(
-        self, guildId: int, message: str, image: str, author: int, channel_id: int = None, message_id: int = None
+        self, 
+        guildId: int, 
+        message: str, 
+        image: str, 
+        author: int, 
+        channel_id: typing.Optional[int] = None, 
+        message_id: typing.Optional[int] = None,
     ) -> None:
         _method = inspect.stack()[0][3]
         try:
@@ -95,7 +104,7 @@ class WDYCTWDatabase(Database):
                 "channel_id": str(channel_id),
                 "message_id": str(message_id),
             }
-            self.connection.wdyctw.update_one(
+            self.connection.wdyctw.update_one(  # type: ignore
                 {"guild_id": str(guildId), "timestamp": timestamp}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
@@ -116,7 +125,9 @@ class WDYCTWDatabase(Database):
             date = datetime.datetime.utcnow().date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
-            result = self.connection.wdyctw.find_one({"guild_id": str(guildId), "timestamp": timestamp})
+            result = self.connection.wdyctw.find_one(  # type: ignore
+                {"guild_id": str(guildId), "timestamp": timestamp}
+            )
             if result:
                 for answer in result["answered"]:
                     if answer["user_id"] == str(userId) and answer["message_id"] == str(messageId):
@@ -126,7 +137,9 @@ class WDYCTWDatabase(Database):
                 date = date - datetime.timedelta(days=1)
                 ts_date = datetime.datetime.combine(date, datetime.time.min)
                 timestamp = utils.to_timestamp(ts_date)
-                result = self.connection.wdyctw.find_one({"guild_id": str(guildId), "timestamp": timestamp})
+                result = self.connection.wdyctw.find_one(  # type: ignore
+                    {"guild_id": str(guildId), "timestamp": timestamp}
+                )
                 if result:
                     for answer in result["answered"]:
                         if answer["user_id"] == str(userId) and answer["message_id"] == str(messageId):

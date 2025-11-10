@@ -73,7 +73,7 @@ class PhotoPostCog(TacobotCog):
 
             # # check if the user posted a photo in the channel within the last 5 minutes
             # # if so, ignore
-            # now = datetime.datetime.utcnow()
+            # now = datetime.datetime.now(tz=datetime.timezone.utc)
             # five_minutes_ago = now - datetime.timedelta(minutes=5)
             # async for m in message.channel.history(limit=100, after=five_minutes_ago):
             #     if m.author == message.author and m.attachments:

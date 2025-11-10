@@ -607,7 +607,9 @@ class MetricsDatabase(Database):
             if self.connection is None:
                 self.open()
             # get UTC time for midnight today
-            utc_today = datetime.datetime.combine(datetime.datetime.utcnow().today(), datetime.datetime.min.time())
+            utc_today = datetime.datetime.combine(
+                datetime.datetime.now(tz=datetime.timezone.utc).today(), datetime.datetime.min.time()
+            )
             # convert utc_today to unix timestamp
             utc_today_ts = int((utc_today - datetime.datetime(1970, 1, 1)).total_seconds())
 

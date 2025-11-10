@@ -29,7 +29,7 @@ class TacosDatabase(Database):
             )
             if self.connection is None or self.client is None or self.connection.tacos is None:
                 self.open()
-            self.connection.tacos.delete_many({"guild_id": str(guildId), "user_id": str(userId)})
+            self.connection.tacos.delete_many({"guild_id": str(guildId), "user_id": str(userId)})  # type: ignore
         except Exception as ex:
             self.log(
                 guildId=guildId,
@@ -72,7 +72,7 @@ class TacosDatabase(Database):
             )
             if self.connection is None or self.client is None:
                 self.open()
-            self.connection.tacos.update_one(
+            self.connection.tacos.update_one(  # type: ignore
                 {"guild_id": str(guildId), "user_id": str(userId)}, {"$set": {"count": user_tacos}}, upsert=True
             )
             return user_tacos
@@ -131,7 +131,7 @@ class TacosDatabase(Database):
             if self.connection is None or self.client is None:
                 self.open()
 
-            self.connection.tacos.update_one(
+            self.connection.tacos.update_one(  # type: ignore
                 {"guild_id": str(guildId), "user_id": str(userId)}, {"$set": {"count": user_tacos}}, upsert=True
             )
             return user_tacos
@@ -149,7 +149,7 @@ class TacosDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            data = self.connection.tacos.find_one({"guild_id": str(guildId), "user_id": str(userId)})
+            data = self.connection.tacos.find_one({"guild_id": str(guildId), "user_id": str(userId)})  # type: ignore
             if data is None:
                 self.log(
                     guildId=guildId,
@@ -173,8 +173,8 @@ class TacosDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
-            data = self.connection.taco_gifts.find(
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
+            data = self.connection.taco_gifts.find(  # type: ignore
                 {"guild_id": str(guildId), "user_id": str(userId), "timestamp": {"$gt": timestamp - timespan_seconds}}
             )
             if data is None:
@@ -200,10 +200,10 @@ class TacosDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
             payload = {"guild_id": str(guildId), "user_id": str(userId), "count": count, "timestamp": timestamp}
             # add the gift
-            self.connection.taco_gifts.insert_one(payload)
+            self.connection.taco_gifts.insert_one(payload)  # type: ignore
             return True
 
         except Exception as ex:
@@ -221,7 +221,7 @@ class TacosDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
             payload = {
                 "guild_id": str(guildId),
                 "user_id": str(userId),
@@ -236,7 +236,7 @@ class TacosDatabase(Database):
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"Adding taco reaction for user {userId}",
             )
-            self.connection.tacos_reactions.update_one(
+            self.connection.tacos_reactions.update_one(  # type: ignore
                 {"guild_id": str(guildId), "user_id": str(userId), "timestamp": timestamp},
                 {"$set": payload},
                 upsert=True,
@@ -255,7 +255,7 @@ class TacosDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            reaction = self.connection.tacos_reactions.find_one(
+            reaction = self.connection.tacos_reactions.find_one(  # type: ignore
                 {
                     "guild_id": str(guildId),
                     "user_id": str(userId),
@@ -280,7 +280,7 @@ class TacosDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow()
+            date = datetime.datetime.now(tz=datetime.timezone.utc)
             timestamp = utils.to_timestamp(date)
             payload = {
                 "guild_id": str(guildId),
@@ -292,7 +292,7 @@ class TacosDatabase(Database):
                 "timestamp": timestamp,
             }
 
-            self.connection.tacos_log.insert_one(payload)
+            self.connection.tacos_log.insert_one(payload)  # type: ignore
         except Exception as ex:
             self.log(
                 guildId=guildId,
@@ -307,9 +307,9 @@ class TacosDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
             channel = utils.clean_channel_name(channel)
-            data = self.connection.twitch_tacos_gifts.find(
+            data = self.connection.twitch_tacos_gifts.find(  # type: ignore
                 {"guild_id": str(guild_id), "channel": channel, "timestamp": {"$gt": timestamp - timespan_seconds}}
             )
             if data is None:
@@ -336,10 +336,10 @@ class TacosDatabase(Database):
         try:
             if self.connection is None:
                 self.open()
-            timestamp = utils.to_timestamp(datetime.datetime.utcnow())
+            timestamp = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
             channel = utils.clean_channel_name(channel)
             user = utils.clean_channel_name(user)
-            data = self.connection.twitch_tacos_gifts.find(
+            data = self.connection.twitch_tacos_gifts.find(  # type: ignore
                 {
                     "guild_id": str(guild_id),
                     "channel": channel,
