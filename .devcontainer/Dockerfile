@@ -1,5 +1,5 @@
 # Python 3.11 base image with pip
-FROM mcr.microsoft.com/devcontainers/python:3.11
+FROM mcr.microsoft.com/devcontainers/python:3.13
 
 # Install any OS dependencies here if needed
 # RUN apt-get update && apt-get install -y <package-name>
@@ -8,11 +8,11 @@ FROM mcr.microsoft.com/devcontainers/python:3.11
 WORKDIR /workspace
 
 # Copy requirements for pre-caching (optional, speeds up builds)
-# COPY setup/requirements.txt /tmp/requirements.txt
+# COPY pyproject.toml /tmp/pyproject.toml
 
 # Install Python dependencies
 # RUN pip install --upgrade pip \
-#     && pip install -r /tmp/requirements.txt
+#     && pip install -e /tmp/.[dev,docs] # ???
 
 USER vscode
 

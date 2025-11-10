@@ -17,7 +17,6 @@ RUN \
     apk add --no-cache git curl build-base tcl tk && \
     mkdir -p /app /data && \
     pip install --no-cache-dir --upgrade pip && \
-    # pip install --no-cache-dir -r /app/setup/requirements.txt && \
     pip install --no-cache-dir -e /app && \
     sed -i "s/APP_VERSION = \"1.0.0-snapshot\"/APP_VERSION = \"${APP_VERSION}\"/g" "/app/bot/lib/settings.py" && \
     sed -i "s/\"version\": \"1.0.0-snapshot\"/\"version\": \"${APP_VERSION}\"/g" "/app/app.manifest" && \

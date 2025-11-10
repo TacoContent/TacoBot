@@ -21,6 +21,6 @@
             ]
         }
     },
-    "postCreateCommand": "pip install --upgrade pip && pip install -r setup/requirements.txt",
+    "postCreateCommand": "pip install --upgrade pip && pip install -e .[dev,docs]",
     "remoteUser": "vscode"
 }
