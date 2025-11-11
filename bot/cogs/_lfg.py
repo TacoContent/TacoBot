@@ -4,12 +4,13 @@ import os
 import discord
 from bot import tacobot  # pylint: disable=relative-beyond-top-level
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
+from bot.lib.settings import Settings
 from discord.ext import commands
 
 
 class LookingForGamersCog(TacobotCog):
-    def __init__(self, bot: tacobot.TacoBot) -> None:
-        super().__init__(bot, "lfg")
+    def __init__(self, bot: tacobot.TacoBot, settings: Settings) -> None:
+        super().__init__(bot, "lfg", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
@@ -34,4 +35,5 @@ class LookingForGamersCog(TacobotCog):
 
 
 async def setup(bot) -> None:
-    await bot.add_cog(LookingForGamersCog(bot))
+    settings = Settings()
+    await bot.add_cog(LookingForGamersCog(bot=bot, settings=settings))

@@ -7,20 +7,21 @@ import traceback
 
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class AmazonLinkCog(TacobotCog):
-    def __init__(self, bot: TacoBot):
-        super().__init__(bot, "amazon_links")
+    def __init__(self, bot: TacoBot, messaging: Messaging, settings: Settings):
+        super().__init__(bot, "amazon_links", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.affiliate_tag = "darthminos0f-20"
 
-        self.messaging = Messaging(bot)
+        self.messaging = messaging
         self.log.debug(0, f"{self._module}.{_method}", "Initialized")
 
     @commands.Cog.listener()
@@ -75,4 +76,7 @@ class AmazonLinkCog(TacobotCog):
 
 
 def setup(bot):
-    bot.add_cog(AmazonLinkCog(bot))
+    settings = Settings()
+    messaging = Messaging(bot)
+
+    bot.add_cog(AmazonLinkCog(bot=bot, messaging=messaging, settings=settings))

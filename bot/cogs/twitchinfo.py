@@ -11,10 +11,11 @@ from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.enums.system_actions import SystemActions
-from bot.lib.helpers import PromptHelper, TacoHelper
+from bot.lib.helpers import EntityHelper, PromptHelper, TacoHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.twitch import TwitchDatabase
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
@@ -23,22 +24,28 @@ class TwitchInfoCog(TacobotCog):
     def __init__(
         self,
         bot: TacoBot,
-        twitch_db: typing.Optional[TwitchDatabase] = None,
-        tracking_db: typing.Optional[TrackingDatabase] = None,
+        twitch_db: TwitchDatabase,
+        tracking_db: TrackingDatabase,
+        prompt_helper: PromptHelper,
+        messaging: Messaging,
+        entity_helper: EntityHelper,
+        taco_helper: TacoHelper,
+        settings: Settings,
     ) -> None:
-        super().__init__(bot, "twitchinfo")
+        super().__init__(bot, "twitchinfo", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = Messaging(bot)
+        self.messaging = messaging
 
-        self.prompt_helper = PromptHelper(bot)
-        self.taco_helper = TacoHelper(bot)
+        self.prompt_helper = prompt_helper
+        self.entity_helper = entity_helper
+        self.taco_helper = taco_helper
 
-        self.twitch_db = twitch_db or TwitchDatabase()
-        self.tracking_db = tracking_db or TrackingDatabase()
+        self.twitch_db = twitch_db
+        self.tracking_db = tracking_db
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -312,4 +319,22 @@ class TwitchInfoCog(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(TwitchInfoCog(bot))
+    prompt_helper = PromptHelper(bot)
+    messaging = Messaging(bot)
+    entity_helper = EntityHelper(bot)
+    taco_helper = TacoHelper(bot, entity_helper=entity_helper)
+    twitch_db = TwitchDatabase()
+    tracking_db = TrackingDatabase()
+    settings = Settings()
+    await bot.add_cog(
+        TwitchInfoCog(
+            bot=bot,
+            prompt_helper=prompt_helper,
+            messaging=messaging,
+            entity_helper=entity_helper,
+            taco_helper=taco_helper,
+            twitch_db=twitch_db,
+            tracking_db=tracking_db,
+            settings=settings,
+        )
+    )
