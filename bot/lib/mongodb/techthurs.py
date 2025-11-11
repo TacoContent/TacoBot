@@ -82,8 +82,8 @@ class TechThursDatabase(Database):
         self,
         guildId: int,
         message: str,
-        image: str,
         author: int,
+        image: typing.Optional[str] = None,
         channel_id: typing.Optional[int] = None,
         message_id: typing.Optional[int] = None,
     ) -> None:

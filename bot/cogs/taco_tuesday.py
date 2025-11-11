@@ -632,16 +632,16 @@ async def setup(bot):
     taco_helper = TacoHelper(bot, entity_helper=entity_helper)
     await bot.add_cog(
         TacoTuesdayCog(
-            bot=bot, 
-            settings=settings, 
-            messaging=messaging, 
-            tacotuesdays_db=tacotuesdays_db, 
-            tracking_db=tracking_db, 
-            permissions=permissions, 
-            entity_helper=entity_helper, 
-            role_helper=role_helper, 
-            message_helper=message_helper, 
-            context_helper=context_helper, 
+            bot=bot,
+            settings=settings,
+            messaging=messaging,
+            tacotuesdays_db=tacotuesdays_db,
+            tracking_db=tracking_db,
+            permissions=permissions,
+            entity_helper=entity_helper,
+            role_helper=role_helper,
+            message_helper=message_helper,
+            context_helper=context_helper,
             taco_helper=taco_helper,
         )
     )

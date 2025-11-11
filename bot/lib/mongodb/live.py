@@ -126,9 +126,7 @@ class LiveDatabase(Database):
             if self.connection is None or self.client is None:
                 self.open()
             return list(
-                self.connection.live_tracked.find(  # type: ignore
-                    {"guild_id": str(guildId), "user_id": str(userId)}
-                )
+                self.connection.live_tracked.find({"guild_id": str(guildId), "user_id": str(userId)})  # type: ignore
             )
         except Exception as ex:
             self.log(

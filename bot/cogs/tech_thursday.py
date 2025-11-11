@@ -5,13 +5,15 @@ import traceback
 import typing
 
 import discord
-from bot.lib import discordhelper, utils
+from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
+from bot.lib.helpers import ContextHelper, EntityHelper, PromptHelper, TacoHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.techthurs import TechThursDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord import app_commands
 from discord.ext import commands
@@ -22,20 +24,36 @@ from openai import OpenAI
 class TechThursdaysCog(TacobotCog):
     group = app_commands.Group(name="techthurs", description="Commands for the Tech Thursdays")
 
-    def __init__(self, bot: TacoBot) -> None:
-        super().__init__(bot, "techthurs")
+    def __init__(
+        self,
+        bot: TacoBot,
+        techthurs_db: TechThursDatabase,
+        tracking_db: TrackingDatabase,
+        messaging: Messaging,
+        permissions: Permissions,
+        context_helper: ContextHelper,
+        entity_helper: EntityHelper,
+        prompt_helper: PromptHelper,
+        taco_helper: TacoHelper,
+        settings: Settings,
+    ) -> None:
+        super().__init__(bot, "techthurs", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.discord_helper = discordhelper.DiscordHelper(bot)
-        self.messaging = Messaging(bot)
-        self.permissions = Permissions(bot)
+
+        self.messaging = messaging
+        self.permissions = permissions
+        self.context_helper = context_helper
+        self.entity_helper = entity_helper
+        self.prompt_helper = prompt_helper
+        self.taco_helper = taco_helper
 
         self.SELF_DESTRUCT_TIMEOUT = 30
 
-        self.techthurs_db = TechThursDatabase()
-        self.tracking_db = TrackingDatabase()
+        self.techthurs_db = techthurs_db
+        self.tracking_db = tracking_db
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -55,10 +73,10 @@ class TechThursdaysCog(TacobotCog):
 
             # needs to accept an image along with the text
             try:
-                _ctx = self.discord_helper.create_context(
-                    self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
+                _ctx = self.context_helper.create_context(
+                    bot=self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
                 )
-                twa = await self.discord_helper.ask_for_image_or_text(
+                twa = await self.prompt_helper.ask_for_image_or_text(
                     _ctx,
                     ctx.author,
                     self.settings.get_string(guild_id, "techthurs_ask_title"),
@@ -67,7 +85,7 @@ class TechThursdaysCog(TacobotCog):
                 )
             except discord.Forbidden:
                 _ctx = ctx
-                twa = await self.discord_helper.ask_for_image_or_text(
+                twa = await self.prompt_helper.ask_for_image_or_text(
                     _ctx,
                     ctx.author,
                     self.settings.get_string(guild_id, "techthurs_ask_title"),
@@ -306,10 +324,17 @@ class TechThursdaysCog(TacobotCog):
         # in future, check if the user is in a defined role that can grant tacos (e.g. moderator)
 
         # get the message that was reacted to
-        channel = self.bot.get_channel(payload.channel_id)
+        channel = await self.entity_helper.get_or_fetch_channel(payload.channel_id)
+        if not channel:
+            self.log.warn(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"Channel {payload.channel_id} not found for guild {guild_id}",
+            )
+            return
         message = await channel.fetch_message(payload.message_id)
         message_author = message.author
-        react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+        react_user = await self.entity_helper.get_or_fetch_user(payload.user_id)
 
         if not react_user or react_user.bot or react_user.system:
             return
@@ -373,7 +398,15 @@ class TechThursdaysCog(TacobotCog):
             )
             return
 
-        channel = self.bot.get_channel(payload.channel_id)
+        channel = await self.entity_helper.get_or_fetch_channel(payload.channel_id)
+        if not channel:
+            self.log.warn(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"Channel {payload.channel_id} not found for guild {guild_id}",
+            )
+            return
+
         message = await channel.fetch_message(payload.message_id)
 
         # check if this reaction is the first one of this type on the message
@@ -425,7 +458,7 @@ class TechThursdaysCog(TacobotCog):
                 )
                 return
 
-            react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
+            react_user = await self.entity_helper.get_or_fetch_user(payload.user_id)
             if not react_user or react_user.bot or react_user.system:
                 return
 
@@ -455,6 +488,10 @@ class TechThursdaysCog(TacobotCog):
 
     def _import_techthurs(self, message: discord.Message) -> None:
         _method = inspect.stack()[0][3]
+        if not message:
+            return
+        if not message.guild:
+            return
         guild_id = message.guild.id
         channel_id = message.channel.id
         message_id = message.id
@@ -492,12 +529,22 @@ class TechThursdaysCog(TacobotCog):
             # self, bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
             # get guild from id
             guild = self.bot.get_guild(guild_id)
+            if not guild:
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No guild found for id {guild_id}")
+                return
             # fetch member from id
             member = guild.get_member(user_id)
+            if not member:
+                self.log.warn(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"No member found for id {user_id} in guild {guild_id}",
+                )
+                return
             # get channel
             channel = None
             if channel_id:
-                channel = self.bot.get_channel(channel_id)
+                channel = await self.entity_helper.get_or_fetch_channel(channel_id)
             else:
                 channel = guild.system_channel
             if not channel:
@@ -512,7 +559,7 @@ class TechThursdaysCog(TacobotCog):
 
             # get bot
             bot = self.bot
-            ctx = self.discord_helper.create_context(
+            ctx = self.context_helper.create_context(
                 bot=bot, guild=guild, author=member, channel=channel, message=message
             )
 
@@ -545,7 +592,7 @@ class TechThursdaysCog(TacobotCog):
                 delete_after=self.SELF_DESTRUCT_TIMEOUT,
             )
 
-            await self.discord_helper.taco_give_user(
+            await self.taco_helper.give_tacos(
                 guild_id, self.bot.user, member, reason_msg, tacotypes.TacoTypes.TECH_THURSDAY, taco_amount=amount
             )
 
@@ -563,9 +610,9 @@ class TechThursdaysCog(TacobotCog):
             self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No guild found for context")
             return
         user: typing.Optional[typing.Union[discord.Member, discord.User]] = None
-        if ctx and hasattr(ctx, "author"):
+        if ctx and isinstance(ctx, Context):
             user = ctx.author
-        elif ctx and hasattr(ctx, "user"):
+        elif ctx and isinstance(ctx, discord.Interaction):
             user = ctx.user
         else:
             self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No user found for context")
@@ -583,11 +630,11 @@ class TechThursdaysCog(TacobotCog):
         amount = tacos_settings.get("techthurs_amount", 5)
 
         message_content = ""
-        role = await self.discord_helper.get_or_fetch_role(ctx.guild, int(cog_settings.get("tag_role", 0)))
+        role = await self.entity_helper.get_or_fetch_role(ctx.guild, int(cog_settings.get("tag_role", 0)))
         if role:
             message_content = f"{role.mention}"
 
-        out_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel_id", 0)))
+        out_channel = await self.entity_helper.get_or_fetch_channel(int(cog_settings.get("output_channel_id", 0)))
         if not out_channel:
             self.log.warn(
                 guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
@@ -661,4 +708,26 @@ class TechThursdaysCog(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(TechThursdaysCog(bot))
+    settings = Settings()
+    techthurs_db = TechThursDatabase()
+    tracking_db = TrackingDatabase()
+    messaging = Messaging(bot)
+    permissions = Permissions(bot, settings)
+    context_helper = ContextHelper()
+    entity_helper = EntityHelper(bot)
+    prompt_helper = PromptHelper(bot)
+    taco_helper = TacoHelper(bot, entity_helper=entity_helper)
+    await bot.add_cog(
+        TechThursdaysCog(
+            bot=bot,
+            settings=settings,
+            techthurs_db=techthurs_db,
+            tracking_db=tracking_db,
+            messaging=messaging,
+            permissions=permissions,
+            context_helper=context_helper,
+            entity_helper=entity_helper,
+            prompt_helper=prompt_helper,
+            taco_helper=taco_helper,
+        )
+    )

@@ -147,9 +147,7 @@ class MentalMondaysDatabase(Database):
                     return False
                 else:
                     from_dates = f"{datetime.datetime.now(tz=datetime.timezone.utc).date()} and {date}"
-                    raise Exception(
-                        f"No mentalmondays found for guild {guildId} for {from_dates}"
-                    )
+                    raise Exception(f"No mentalmondays found for guild {guildId} for {from_dates}")
         except Exception as ex:
             self.log(
                 guildId=guildId,

@@ -141,11 +141,9 @@ class TacoTuesdaysDatabase(Database):
                             return True
                     return False
                 else:
-                    start_date = datetime.datetime.now(tz=datetime.timezone.utc).date() 
+                    start_date = datetime.datetime.now(tz=datetime.timezone.utc).date()
                     from_dates = f"{start_date} and {start_date - datetime.timedelta(days=1)}"
-                    raise Exception(
-                        f"No Taco Tuesday found for guild {guildId} for {from_dates}"
-                    )
+                    raise Exception(f"No Taco Tuesday found for guild {guildId} for {from_dates}")
         except Exception as ex:
             self.log(
                 guildId=guildId,
@@ -193,9 +191,7 @@ class TacoTuesdaysDatabase(Database):
                         upsert=True,
                     )
                 else:
-                    raise Exception(
-                        f"No Taco Tuesday found for guild {guildId} for {now_date} and {back_date}"
-                    )
+                    raise Exception(f"No Taco Tuesday found for guild {guildId} for {now_date} and {back_date}")
         except Exception as ex:
             self.log(
                 guildId=guildId,

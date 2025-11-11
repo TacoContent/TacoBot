@@ -79,12 +79,12 @@ class WDYCTWDatabase(Database):
             )
 
     def save_wdyctw(
-        self, 
-        guildId: int, 
-        message: str, 
-        image: str, 
-        author: int, 
-        channel_id: typing.Optional[int] = None, 
+        self,
+        guildId: int,
+        message: str,
+        image: str,
+        author: int,
+        channel_id: typing.Optional[int] = None,
         message_id: typing.Optional[int] = None,
     ) -> None:
         _method = inspect.stack()[0][3]
@@ -125,9 +125,7 @@ class WDYCTWDatabase(Database):
             date = datetime.datetime.utcnow().date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
-            result = self.connection.wdyctw.find_one(  # type: ignore
-                {"guild_id": str(guildId), "timestamp": timestamp}
-            )
+            result = self.connection.wdyctw.find_one({"guild_id": str(guildId), "timestamp": timestamp})  # type: ignore
             if result:
                 for answer in result["answered"]:
                     if answer["user_id"] == str(userId) and answer["message_id"] == str(messageId):

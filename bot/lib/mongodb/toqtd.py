@@ -54,9 +54,7 @@ class TQOTDDatabase(Database):
                 self.open()
             timestamp = self._get_timestamp()
             ts_track = utils.to_timestamp(datetime.datetime.now(tz=datetime.timezone.utc))
-            result = self.connection.tqotd.find_one(  # type: ignore
-                {"guild_id": str(guildId), "timestamp": timestamp}
-            )
+            result = self.connection.tqotd.find_one({"guild_id": str(guildId), "timestamp": timestamp})  # type: ignore
 
             messageId = str(message_id)
             if message_id is None or messageId == "" or messageId == "0" or messageId == "None":
@@ -103,9 +101,7 @@ class TQOTDDatabase(Database):
             if self.connection is None or self.client is None:
                 self.open()
             timestamp = self._get_timestamp()
-            result = self.connection.tqotd.find_one(  # type: ignore
-                {"guild_id": str(guildId), "timestamp": timestamp}
-            )
+            result = self.connection.tqotd.find_one({"guild_id": str(guildId), "timestamp": timestamp})  # type: ignore
             if result:
                 for answer in result["answered"]:
                     if answer["user_id"] == str(userId) and answer["message_id"] == str(messageId):
