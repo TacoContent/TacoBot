@@ -7,13 +7,15 @@ import typing
 
 import aiohttp
 import discord
-from bot.lib import discordhelper, utils
+from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
+from bot.lib.helpers import ContextHelper, EntityHelper, MessageHelper, PromptHelper, TacoHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.toqtd import TQOTDDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord import app_commands
 from discord.ext import commands
@@ -24,21 +26,38 @@ from openai import OpenAI
 class TacoQuestionOfTheDayCog(TacobotCog):
     group = app_commands.Group(name="tqotd", description="Commands for the Taco Question of the Day")
 
-    def __init__(self, bot: TacoBot) -> None:
-        super().__init__(bot, "tqotd")
+    def __init__(
+        self,
+        bot: TacoBot,
+        messaging: Messaging,
+        permissions: Permissions,
+        context_helper: ContextHelper,
+        entity_helper: EntityHelper,
+        message_helper: MessageHelper,
+        prompt_helper: PromptHelper,
+        taco_helper: TacoHelper,
+        tqotd_db: TQOTDDatabase,
+        tracking_db: TrackingDatabase,
+        settings: Settings,
+    ) -> None:
+        super().__init__(bot, "tqotd", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
-        self.messaging = Messaging(bot)
-        self.permissions = Permissions(bot)
+        self.messaging = messaging
+        self.permissions = permissions
+        self.entity_helper = entity_helper
+        self.message_helper = message_helper
+        self.taco_helper = taco_helper
+        self.context_helper = context_helper
+        self.prompt_helper = prompt_helper
 
         self.SELF_DESTRUCT_TIMEOUT = 30
 
-        self.tqotd_db = TQOTDDatabase()
-        self.tracking_db = TrackingDatabase()
+        self.tqotd_db = tqotd_db
+        self.tracking_db = tracking_db
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -48,6 +67,8 @@ class TacoQuestionOfTheDayCog(TacobotCog):
     async def tqotd(self, ctx: Context) -> None:
         _method = inspect.stack()[0][3]
         if ctx.invoked_subcommand is not None:
+            return
+        if not ctx or not ctx.guild:
             return
         guild_id = 0
         try:
@@ -59,10 +80,10 @@ class TacoQuestionOfTheDayCog(TacobotCog):
             qotd = None
 
             try:
-                _ctx = self.discord_helper.create_context(
-                    self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
+                _ctx = self.context_helper.create_context(
+                    bot=self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
                 )
-                qotd = await self.discord_helper.ask_for_image_or_text(
+                qotd = await self.prompt_helper.ask_for_image_or_text(
                     _ctx,
                     ctx.author,
                     self.settings.get_string(guild_id, "tqotd_ask_title"),
@@ -71,7 +92,7 @@ class TacoQuestionOfTheDayCog(TacobotCog):
                 )
             except discord.Forbidden:
                 _ctx = ctx
-                qotd = await self.discord_helper.ask_for_image_or_text(
+                qotd = await self.prompt_helper.ask_for_image_or_text(
                     _ctx,
                     ctx.author,
                     self.settings.get_string(guild_id, "tqotd_ask_title"),
@@ -95,11 +116,11 @@ class TacoQuestionOfTheDayCog(TacobotCog):
             amount = tacos_settings.get("tqotd_amount", 5)
 
             role_tag = ""
-            role = await self.discord_helper.get_or_fetch_role(ctx.guild, int(cog_settings.get("tag_role", 0)))
+            role = await self.entity_helper.get_or_fetch_role(ctx.guild, int(cog_settings.get("tag_role", 0)))
             if role:
                 role_tag = f"{role.mention}"
 
-            out_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel_id", 0)))
+            out_channel = await self.entity_helper.get_or_fetch_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
                 self.log.warn(
                     guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
@@ -135,7 +156,7 @@ class TacoQuestionOfTheDayCog(TacobotCog):
                             files.append(discord.File(data, filename=attachment.filename))
 
             await self.messaging.send_embed(
-                channel=out_channel,
+                channel=out_channel,  # type: ignore
                 title=self.settings.get_string(guild_id, "tqotd_out_title"),
                 message=save_message,
                 content=role_tag,
@@ -227,9 +248,9 @@ class TacoQuestionOfTheDayCog(TacobotCog):
             self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No guild found for context")
             return
         user: typing.Optional[typing.Union[discord.Member, discord.User]] = None
-        if ctx and hasattr(ctx, "author"):
+        if ctx and isinstance(ctx, Context):
             user = ctx.author
-        elif ctx and hasattr(ctx, "user"):
+        elif ctx and isinstance(ctx, discord.Interaction):
             user = ctx.user
         else:
             self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No user found for context")
@@ -247,11 +268,11 @@ class TacoQuestionOfTheDayCog(TacobotCog):
         amount = tacos_settings.get("tqotd_amount", 5)
 
         role_tag = ""
-        role = await self.discord_helper.get_or_fetch_role(ctx.guild, int(cog_settings.get("tag_role", 0)))
+        role = await self.entity_helper.get_or_fetch_role(ctx.guild, int(cog_settings.get("tag_role", 0)))
         if role:
             role_tag = f"{role.mention}"
 
-        out_channel = await self.discord_helper.get_or_fetch_channel(int(cog_settings.get("output_channel_id", 0)))
+        out_channel = await self.entity_helper.get_or_fetch_channel(int(cog_settings.get("output_channel_id", 0)))
         if not out_channel:
             self.log.warn(
                 guild_id, f"{self._module}.{self._class}.{_method}", f"No output channel found for guild {guild_id}"
@@ -374,7 +395,14 @@ class TacoQuestionOfTheDayCog(TacobotCog):
             # in the future, check if the user is in a defined role that can grant tacos (e.g. moderator)
 
             # get the message that was reacted to
-            channel = self.bot.get_channel(payload.channel_id)
+            channel = await self.entity_helper.get_or_fetch_channel(payload.channel_id)
+            if not channel:
+                self.log.warn(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Channel {payload.channel_id} not found for guild {guild_id}",
+                )
+                return
             message = await channel.fetch_message(payload.message_id)
             message_author = message.author
             # react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
@@ -435,12 +463,22 @@ class TacoQuestionOfTheDayCog(TacobotCog):
             # self, bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
             # get guild from id
             guild = self.bot.get_guild(guild_id)
+            if not guild:
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", f"No guild found for id {guild_id}")
+                return
             # fetch member from id
             member = guild.get_member(user_id)
+            if not member:
+                self.log.warn(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"No member found for id {user_id} in guild {guild_id}",
+                )
+                return
             # get channel
             channel = None
             if channel_id:
-                channel = self.bot.get_channel(channel_id)
+                channel = await self.entity_helper.get_or_fetch_channel(channel_id)
             else:
                 channel = guild.system_channel
             if not channel:
@@ -455,7 +493,7 @@ class TacoQuestionOfTheDayCog(TacobotCog):
 
             # get bot
             bot = self.bot
-            ctx = self.discord_helper.create_context(
+            ctx = self.context_helper.create_context(
                 bot=bot, guild=guild, author=member, channel=channel, message=message
             )
             # track that the user answered the question.
@@ -488,7 +526,7 @@ class TacoQuestionOfTheDayCog(TacobotCog):
                 delete_after=self.SELF_DESTRUCT_TIMEOUT,
             )
 
-            await self.discord_helper.taco_give_user(
+            await self.taco_helper.give_tacos(
                 guild_id, self.bot.user, member, reason_msg, tacotypes.TacoTypes.TQOTD, taco_amount=amount
             )
 
@@ -498,4 +536,28 @@ class TacoQuestionOfTheDayCog(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(TacoQuestionOfTheDayCog(bot))
+    settings = Settings()
+    tracking_db = TrackingDatabase()
+    tqotd_db = TQOTDDatabase()
+    permissions = Permissions(bot)
+    messaging = Messaging(bot)
+    context_helper = ContextHelper()
+    entity_helper = EntityHelper(bot)
+    message_helper = MessageHelper(bot)
+    prompt_helper = PromptHelper(bot)
+    taco_helper = TacoHelper(bot)
+    await bot.add_cog(
+        TacoQuestionOfTheDayCog(
+            bot=bot,
+            settings=settings,
+            tracking_db=tracking_db,
+            tqotd_db=tqotd_db,
+            permissions=permissions,
+            messaging=messaging,
+            context_helper=context_helper,
+            entity_helper=entity_helper,
+            message_helper=message_helper,
+            prompt_helper=prompt_helper,
+            taco_helper=taco_helper,
+        )
+    )

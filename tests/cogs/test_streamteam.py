@@ -1,30 +1,20 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bot.cogs.streamteam import StreamTeamCog
 
 
 @pytest.fixture
-def bot():
-    bot = MagicMock()
-    bot.settings = MagicMock()
-    bot.settings.get_settings = MagicMock(
+def cog(bot, messaging, entity_helper, message_helper, twitch_db, tracking_db, settings):
+    """Create StreamTeamCog instance with all dependencies injected."""
+    # Configure settings for streamteam cog
+    settings.log_level = "DEBUG"  # Set valid log level for TacobotCog initialization
+    settings.get_settings = MagicMock(
         return_value={"emoji": ["star"], "name": "Team", "message_ids": ["123"], "log_channel": "456"}
     )
-    bot.settings.get_string = MagicMock(return_value="msg")
-    return bot
+    settings.get_string = MagicMock(return_value="msg")
 
-
-@pytest.fixture
-def cog(bot):
-    with (
-        patch("bot.cogs.streamteam.Messaging"),
-        patch("bot.cogs.streamteam.EntityHelper"),
-        patch("bot.cogs.streamteam.MessageHelper"),
-        patch("bot.cogs.streamteam.TwitchDatabase"),
-        patch("bot.cogs.streamteam.TrackingDatabase"),
-    ):
-        return StreamTeamCog(bot)
+    return StreamTeamCog(bot, messaging, entity_helper, message_helper, twitch_db, tracking_db, settings)
 
 
 @pytest.mark.asyncio

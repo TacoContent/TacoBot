@@ -45,12 +45,12 @@ import typing
 
 import discord
 import pytz
-from bot import tacobot  # pylint: disable=no-name-in-module
 from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.messaging import Messaging
 from bot.lib.models.AnnouncementEntry import AnnouncementEntry
 from bot.lib.mongodb.announcements import AnnouncementsDatabase
+from bot.tacobot import TacoBot
 from discord.ext import commands
 from lib.settings import Settings
 
@@ -71,7 +71,7 @@ class AnnouncementsCog(TacobotCog):
     """
 
     def __init__(
-        self, bot: tacobot.TacoBot, announcements_db: AnnouncementsDatabase, messaging: Messaging, settings: Settings
+        self, bot: TacoBot, announcements_db: AnnouncementsDatabase, messaging: Messaging, settings: Settings
     ) -> None:
         """Initialize the announcements cog.
 

@@ -11,10 +11,11 @@ from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.enums.system_actions import SystemActions
-from bot.lib.helpers import PromptHelper, TacoHelper
+from bot.lib.helpers import EntityHelper, PromptHelper, TacoHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.twitch import TwitchDatabase
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
@@ -23,28 +24,35 @@ class TwitchInfoCog(TacobotCog):
     def __init__(
         self,
         bot: TacoBot,
-        twitch_db: typing.Optional[TwitchDatabase] = None,
-        tracking_db: typing.Optional[TrackingDatabase] = None,
+        settings: Settings,
+        messaging: Messaging,
+        prompt_helper: PromptHelper,
+        taco_helper: TacoHelper,
+        twitch_db: TwitchDatabase,
+        tracking_db: TrackingDatabase,
     ) -> None:
-        super().__init__(bot, "twitchinfo")
+        super().__init__(bot, "twitchinfo", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = Messaging(bot)
+        self.messaging = messaging
 
-        self.prompt_helper = PromptHelper(bot)
-        self.taco_helper = TacoHelper(bot)
+        self.prompt_helper = prompt_helper
+        self.taco_helper = taco_helper
 
-        self.twitch_db = twitch_db or TwitchDatabase()
-        self.tracking_db = tracking_db or TrackingDatabase()
+        self.twitch_db = twitch_db
+        self.tracking_db = tracking_db
+
+        # Configuration for testability
+        self.invite_bot_url_template = "https://nodered.bit13.local/tacobot/guild/{guild_id}/invite/{twitch_name}"
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
-    @commands.Cog.listener()
-    async def on_message(self, message) -> None:
-        pass
+    def _make_http_request(self, url: str, auth_token: str) -> requests.Response:
+        """Make HTTP request - extracted for testability."""
+        return requests.post(url, headers={"X-AUTH-TOKEN": auth_token})
 
     @commands.group()
     async def twitch(self, ctx) -> None:
@@ -88,9 +96,8 @@ class TwitchInfoCog(TacobotCog):
         if twitch_name:
             # add the twitch name to the twitch_channels collection
             # send http request to nodered tacobot api to add the channel to the bot
-            # TODO: store this url in the settings database
-            url = f"https://nodered.bit13.local/tacobot/guild/{guild_id}/invite/{twitch_name}"
-            result = requests.post(url, headers={"X-AUTH-TOKEN": str(self.bot.user.id)})
+            url = self.invite_bot_url_template.format(guild_id=guild_id, twitch_name=twitch_name)
+            result = self._make_http_request(url, str(self.bot.user.id))
             if result.status_code == 200:
                 await self.messaging.send_embed(
                     channel=channel,
@@ -112,16 +119,17 @@ class TwitchInfoCog(TacobotCog):
 
     @twitch.command()
     async def get(self, ctx, member: typing.Optional[typing.Union[discord.Member, discord.User]] = None) -> None:
-        if member is None or member.bot or member.system:
-            return
-
         check_member = member
 
         if check_member is None:
             member = ctx.author
             who = "you"
         else:
-            who = utils.get_user_display_name(member)
+            who = utils.get_user_display_name(check_member)
+
+        # Early return for bots and system users
+        if member is None or member.bot or member.system:
+            return
 
         guild_id = 0
         # channel = ctx.author
@@ -312,4 +320,21 @@ class TwitchInfoCog(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(TwitchInfoCog(bot))
+    settings = Settings()
+    messaging = Messaging(bot)
+    prompt_helper = PromptHelper(bot)
+    entity_helper = EntityHelper(bot)
+    taco_helper = TacoHelper(bot, entity_helper=entity_helper)
+    twitch_db = TwitchDatabase()
+    tracking_db = TrackingDatabase()
+    await bot.add_cog(
+        TwitchInfoCog(
+            bot=bot,
+            messaging=messaging,
+            prompt_helper=prompt_helper,
+            taco_helper=taco_helper,
+            twitch_db=twitch_db,
+            tracking_db=tracking_db,
+            settings=settings,
+        )
+    )

@@ -3,7 +3,6 @@ import inspect
 import math
 import os
 import traceback
-import typing
 
 from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog

@@ -31,7 +31,7 @@ class BirthdaysDatabase(Database):
                 "day": day,
                 "timestamp": timestamp,
             }
-            self.connection.birthdays.update_one(
+            self.connection.birthdays.update_one(  # type: ignore
                 {"guild_id": str(guildId), "user_id": str(userId)}, {"$set": payload}, upsert=True
             )
         except Exception as ex:
@@ -48,7 +48,9 @@ class BirthdaysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            return self.connection.birthdays.find_one({"guild_id": str(guildId), "user_id": str(userId)})
+            return self.connection.birthdays.find_one(  # type: ignore
+                {"guild_id": str(guildId), "user_id": str(userId)}
+            )
         except Exception as ex:
             self.log(
                 guildId=guildId,
@@ -63,7 +65,9 @@ class BirthdaysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            return list(self.connection.birthdays.find({"guild_id": str(guildId), "month": month, "day": day}))
+            return list(
+                self.connection.birthdays.find({"guild_id": str(guildId), "month": month, "day": day})  # type: ignore
+            )
         except Exception as ex:
             self.log(
                 guildId=guildId,
@@ -81,7 +85,9 @@ class BirthdaysDatabase(Database):
                 self.open()
             timestamp = utils.to_timestamp(datetime.datetime.now(tz=pytz.timezone(self.settings.timezone)))
             payload = {"guild_id": str(guildId), "timestamp": timestamp}
-            self.connection.birthday_checks.update_one({"guild_id": str(guildId)}, {"$set": payload}, upsert=True)
+            self.connection.birthday_checks.update_one(  # type: ignore
+                {"guild_id": str(guildId)}, {"$set": payload}, upsert=True
+            )
         except Exception as ex:
             self.log(
                 guildId=guildId,
@@ -96,7 +102,7 @@ class BirthdaysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            self.connection.birthday_checks.delete_one({"guild_id": str(guildId)})
+            self.connection.birthday_checks.delete_one({"guild_id": str(guildId)})  # type: ignore
         except Exception as ex:
             self.log(
                 guildId=guildId,
@@ -111,7 +117,7 @@ class BirthdaysDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            checks = list(self.connection.birthday_checks.find({"guild_id": str(guildId)}))
+            checks = list(self.connection.birthday_checks.find({"guild_id": str(guildId)}))  # type: ignore
             if len(checks) > 0:
                 # set the tz to settings timezone
                 date = datetime.datetime.now(tz=pytz.timezone(self.settings.timezone)).date()

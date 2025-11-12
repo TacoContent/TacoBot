@@ -4,9 +4,28 @@ This conftest.py provides session and module-scoped fixtures to reduce
 test initialization overhead and improve overall test suite performance.
 """
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
+# ==============================================================================
+# Autouse fixtures (automatically applied to all tests)
+# ==============================================================================
+
+
+@pytest.fixture(scope="session", autouse=True)
+def mock_logs_database():
+    """Mock LogsDatabase to prevent MongoDB connection attempts during tests.
+
+    This fixture patches the LogsDatabase class at the logger module level
+    so that when TacobotCog creates a Log instance, it doesn't try to connect to MongoDB.
+    """
+    with patch("bot.lib.logger.LogsDatabase") as mock_logs_db:
+        mock_instance = MagicMock()
+        mock_instance.insert_log = MagicMock()
+        mock_logs_db.return_value = mock_instance
+        yield mock_logs_db
+
 
 # ==============================================================================
 # Session-scoped fixtures (created once per test session)
@@ -159,8 +178,10 @@ def entity_helper():
 
 @pytest.fixture
 def taco_helper():
-    """Function-scoped mock taco helper."""
-    return MagicMock()
+    """Function-scoped mock taco helper with async methods."""
+    h = MagicMock()
+    h.give_tacos = AsyncMock()
+    return h
 
 
 @pytest.fixture
@@ -176,6 +197,8 @@ def prompt_helper():
     """Function-scoped mock prompt helper with async methods."""
     h = MagicMock()
     h.ask_yes_no = AsyncMock()
+    h.ask_text = AsyncMock()
+    h.ask_number = AsyncMock()
     return h
 
 
@@ -183,4 +206,36 @@ def prompt_helper():
 def context_helper():
     """Function-scoped mock context helper."""
     h = MagicMock()
+    h.create_context = MagicMock()
     return h
+
+
+@pytest.fixture
+def birthdays_db():
+    """Function-scoped mock birthdays database."""
+    db = MagicMock()
+    db.get_user_birthday = MagicMock(return_value=None)
+    db.add_user_birthday = MagicMock()
+    db.get_user_birthdays = MagicMock(return_value=[])
+    db.birthday_was_checked_today = MagicMock(return_value=False)
+    db.track_birthday_check = MagicMock()
+    db.untrack_birthday_check = MagicMock()
+    return db
+
+
+@pytest.fixture
+def introductions_db():
+    """Function-scoped mock introductions database."""
+    db = MagicMock()
+    db.get_user_introduction = MagicMock(return_value=None)
+    db.get_user_introductions = MagicMock(return_value=[])
+    return db
+
+
+@pytest.fixture
+def minecraft_db():
+    """Function-scoped mock minecraft database."""
+    db = MagicMock()
+    db.get_minecraft_user = MagicMock()
+    db.whitelist_minecraft_user = MagicMock()
+    return db

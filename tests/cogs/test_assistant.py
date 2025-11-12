@@ -275,6 +275,53 @@ class TestAssistantCog:
             # Verify OpenAIHelper was initialized with default model settings
             mock_openai_helper_class.assert_called_once_with(settings={"model": "gpt-3.5-turbo"})
 
+    @pytest.mark.asyncio
+    async def test_ai_request_model_override_from_cog_settings(self, cog, mock_message, mock_bot):
+        """Test that model in cog_settings overrides the model from openai settings."""
+        cog.get_cog_settings.return_value = {
+            "enabled": True,
+            "model": "gpt-4-turbo",  # This should override the openai settings model
+        }
+
+        mock_openai_response = MagicMock()
+        mock_openai_response.choices = [MagicMock()]
+        mock_openai_response.choices[0].message.content = "AI Response"
+
+        with (
+            patch.object(cog, '_get_message_content_for_prompt', return_value=""),
+            patch.object(cog, '_get_channels', return_value=[]),
+            patch.object(cog, '_get_user_json', return_value='{}'),
+            patch.object(
+                cog,
+                'get_settings',
+                return_value={
+                    "endpoint": "https://api.openai.com/v1",
+                    "token": "test-token",
+                    "model": "gpt-3.5-turbo",  # This should be overridden
+                },
+            ) as mock_get_settings,
+            patch('bot.lib.utils.str_replace', return_value=""),
+            patch('bot.cogs.assistant.OpenAIHelper') as mock_openai_helper_class,
+        ):
+
+            mock_openai_helper = MagicMock()
+            mock_openai_helper.chat_completion.return_value = mock_openai_response
+            mock_openai_helper.get_response_text.return_value = "AI Response"
+            mock_openai_helper_class.return_value = mock_openai_helper
+
+            result = await cog._ai_request(12345, mock_message)
+
+            assert result == "AI Response"
+            mock_get_settings.assert_called_once_with(12345, "openai")
+            # Verify OpenAIHelper was initialized with cog_settings model overriding openai settings
+            mock_openai_helper_class.assert_called_once_with(
+                settings={
+                    "endpoint": "https://api.openai.com/v1",
+                    "token": "test-token",
+                    "model": "gpt-4-turbo",  # Overridden by cog_settings
+                }
+            )
+
     def test_get_user_json_success(self, cog, mock_user, mock_tacos_db):
         mock_tacos_db.get_tacos_count.return_value = 42
 

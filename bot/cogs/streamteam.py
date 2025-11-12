@@ -11,24 +11,34 @@ from bot.lib.helpers import EntityHelper, MessageHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.twitch import TwitchDatabase
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class StreamTeamCog(TacobotCog):
-    def __init__(self, bot: TacoBot) -> None:
-        super().__init__(bot, "streamteam")
+    def __init__(
+        self,
+        bot: TacoBot,
+        messaging: Messaging,
+        entity_helper: EntityHelper,
+        message_helper: MessageHelper,
+        twitch_db: TwitchDatabase,
+        tracking_db: TrackingDatabase,
+        settings: Settings,
+    ) -> None:
+        super().__init__(bot, "streamteam", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = Messaging(bot)
-        self.entity_helper = EntityHelper(bot)
-        self.message_helper = MessageHelper(bot)
+        self.messaging = messaging
+        self.entity_helper = entity_helper
+        self.message_helper = message_helper
 
-        self.twitch_db = TwitchDatabase()
-        self.tracking_db = TrackingDatabase()
+        self.twitch_db = twitch_db
+        self.tracking_db = tracking_db
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -367,4 +377,20 @@ class StreamTeamCog(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(StreamTeamCog(bot))
+    settings = Settings()
+    messaging = Messaging(bot)
+    entity_helper = EntityHelper(bot)
+    message_helper = MessageHelper(bot)
+    twitch_db = TwitchDatabase()
+    tracking_db = TrackingDatabase()
+    await bot.add_cog(
+        StreamTeamCog(
+            bot=bot,
+            messaging=messaging,
+            entity_helper=entity_helper,
+            message_helper=message_helper,
+            twitch_db=twitch_db,
+            tracking_db=tracking_db,
+            settings=settings,
+        )
+    )

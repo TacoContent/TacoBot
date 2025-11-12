@@ -6,7 +6,6 @@
 import inspect
 import os
 import traceback
-import typing
 
 import discord
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog

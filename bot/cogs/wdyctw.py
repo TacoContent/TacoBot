@@ -2,7 +2,6 @@ import datetime
 import inspect
 import os
 import traceback
-import typing
 
 import discord
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
@@ -12,6 +11,7 @@ from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.wdyctw import WDYCTWDatabase
 from bot.lib.permissions import Permissions
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -21,26 +21,33 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
     def __init__(
         self,
         bot: TacoBot,
-        wdyctw_db: typing.Optional[WDYCTWDatabase] = None,
-        tracking_db: typing.Optional[TrackingDatabase] = None,
+        messaging: Messaging,
+        permissions: Permissions,
+        prompt_helper: PromptHelper,
+        context_helper: ContextHelper,
+        entity_helper: EntityHelper,
+        taco_helper: TacoHelper,
+        wdyctw_db: WDYCTWDatabase,
+        tracking_db: TrackingDatabase,
+        settings: Settings,
     ) -> None:
-        super().__init__(bot, "wdyctw")
+        super().__init__(bot, "wdyctw", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = Messaging(bot)
-        self.permissions = Permissions(bot)
+        self.messaging = messaging
+        self.permissions = permissions
         self.SELF_DESTRUCT_TIMEOUT = 30
 
-        self.prompt_helper = PromptHelper(bot)
-        self.context_helper = ContextHelper()
-        self.entity_helper = EntityHelper(bot)
-        self.taco_helper = TacoHelper(bot, entity_helper=self.entity_helper)
+        self.prompt_helper = prompt_helper
+        self.context_helper = context_helper
+        self.entity_helper = entity_helper
+        self.taco_helper = taco_helper
 
-        self.wdyctw_db = wdyctw_db or WDYCTWDatabase()
-        self.tracking_db = tracking_db or TrackingDatabase()
+        self.wdyctw_db = wdyctw_db
+        self.tracking_db = tracking_db
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -516,4 +523,26 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
 
 
 async def setup(bot):
-    await bot.add_cog(WhatDoYouCallThisWednesdayCog(bot))
+    settings = Settings()
+    messaging = Messaging(bot)
+    permissions = Permissions(bot)
+    prompt_helper = PromptHelper(bot)
+    context_helper = ContextHelper()
+    entity_helper = EntityHelper(bot)
+    taco_helper = TacoHelper(bot, entity_helper=entity_helper)
+    wdyctw_db = WDYCTWDatabase()
+    tracking_db = TrackingDatabase()
+    await bot.add_cog(
+        WhatDoYouCallThisWednesdayCog(
+            bot=bot,
+            messaging=messaging,
+            permissions=permissions,
+            prompt_helper=prompt_helper,
+            context_helper=context_helper,
+            entity_helper=entity_helper,
+            taco_helper=taco_helper,
+            wdyctw_db=wdyctw_db,
+            tracking_db=tracking_db,
+            settings=settings,
+        )
+    )

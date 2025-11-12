@@ -12,13 +12,13 @@ from bot.lib.helpers import ContextHelper, EntityHelper, PromptHelper, TacoHelpe
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.mentalmondays import MentalMondaysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.openai.openai_helper import OpenAIHelper
 from bot.lib.permissions import Permissions
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Context
-from openai import OpenAI
 
 
 class MentalMondays(TacobotCog):
@@ -676,21 +676,29 @@ class MentalMondays(TacobotCog):
         ai_settings = cog_settings.get("ai", {})
         ai_prompt = ai_settings.get("prompt", {})
 
-        openai = OpenAI()
-        airesponse = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
+        # Get OpenAI settings from the 'openai' section
+        openai_settings = self.get_settings(guild_id, "openai")
+
+        # use the Model from the cog settings if specified
+        if "model" in cog_settings:
+            openai_settings["model"] = cog_settings["model"]
+
+        # Initialize OpenAI helper with settings
+        openai_helper = OpenAIHelper(settings=openai_settings)
+
+        ai_response = openai_helper.chat_completion(
             messages=[
                 {"role": "system", "content": utils.str_replace(ai_prompt.get("system", ""))},
                 {"role": "user", "content": utils.str_replace(ai_prompt.get("user", ""), week=week_name)},
-            ],
+            ]
         )
 
-        aiquestion = airesponse.choices[0].message.content
+        ai_question = openai_helper.get_response_text(ai_response)
         out_message = self.settings.get_string(
-            guild_id, "mentalmondays_out_message", message=aiquestion, taco_count=amount, taco_word=taco_word
+            guild_id, "mentalmondays_out_message", message=ai_question, taco_count=amount, taco_word=taco_word
         )
 
-        if not aiquestion:
+        if not ai_question:
             self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No mental monday generated")
             return
 
@@ -705,7 +713,7 @@ class MentalMondays(TacobotCog):
             )
             self.mentalmondays_db.save_mentalmondays(
                 guildId=guild_id,
-                message=aiquestion,
+                message=ai_question,
                 image=None,
                 author=user.id,
                 channel_id=out_channel.id,

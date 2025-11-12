@@ -4,27 +4,38 @@ import pytest
 from bot.cogs.wdyctw import WhatDoYouCallThisWednesdayCog
 
 
-@pytest.fixture(autouse=True)
-def mock_databases(monkeypatch):
-    mock_wdyctw_db = MagicMock()
-    mock_tracking_db = MagicMock()
-    monkeypatch.setattr("bot.cogs.wdyctw.WDYCTWDatabase", lambda *a, **kw: mock_wdyctw_db)
-    monkeypatch.setattr("bot.cogs.wdyctw.TrackingDatabase", lambda *a, **kw: mock_tracking_db)
-    return mock_wdyctw_db, mock_tracking_db
+@pytest.fixture
+def wdyctw_db():
+    """Function-scoped mock WDYCTW database."""
+    return MagicMock()
 
 
 @pytest.fixture
-def mock_bot():
-    bot = MagicMock()
-    bot.user = MagicMock()
-    bot.get_guild = MagicMock(return_value=MagicMock())
-    return bot
-
-
-@pytest.fixture
-def cog(mock_bot, mock_databases):
-    mock_wdyctw_db, mock_tracking_db = mock_databases
-    return WhatDoYouCallThisWednesdayCog(mock_bot, wdyctw_db=mock_wdyctw_db, tracking_db=mock_tracking_db)
+def cog(
+    bot,
+    messaging,
+    permissions,
+    prompt_helper,
+    context_helper,
+    entity_helper,
+    taco_helper,
+    wdyctw_db,
+    tracking_db,
+    settings,
+):
+    """Create a WhatDoYouCallThisWednesdayCog instance with all required fixtures."""
+    return WhatDoYouCallThisWednesdayCog(
+        bot=bot,
+        messaging=messaging,
+        permissions=permissions,
+        prompt_helper=prompt_helper,
+        context_helper=context_helper,
+        entity_helper=entity_helper,
+        taco_helper=taco_helper,
+        wdyctw_db=wdyctw_db,
+        tracking_db=tracking_db,
+        settings=settings,
+    )
 
 
 @pytest.mark.asyncio

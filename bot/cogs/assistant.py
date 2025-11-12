@@ -78,6 +78,10 @@ class AssistantCog(TacobotCog):
         # Get OpenAI settings from the 'openai' section
         openai_settings = self.get_settings(guild_id, "openai")
 
+        # use the Model from the cog settings if specified
+        if "model" in cog_settings:
+            openai_settings["model"] = cog_settings["model"]
+
         # Initialize OpenAI helper with settings
         openai_helper = OpenAIHelper(settings=openai_settings)
 
