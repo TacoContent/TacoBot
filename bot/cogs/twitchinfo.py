@@ -12,9 +12,11 @@ from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.enums.system_actions import SystemActions
 from bot.lib.helpers import EntityHelper, PromptHelper, TacoHelper
+from bot.lib.helpers import EntityHelper, PromptHelper, TacoHelper
 from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.twitch import TwitchDatabase
+from bot.lib.settings import Settings
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
@@ -31,6 +33,7 @@ class TwitchInfoCog(TacobotCog):
         twitch_db: TwitchDatabase,
         tracking_db: TrackingDatabase,
     ) -> None:
+        super().__init__(bot, "twitchinfo", settings=settings)
         super().__init__(bot, "twitchinfo", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__

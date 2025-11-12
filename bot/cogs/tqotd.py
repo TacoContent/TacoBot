@@ -8,6 +8,7 @@ import typing
 import aiohttp
 import discord
 from bot.lib import utils
+from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.helpers import ContextHelper, EntityHelper, MessageHelper, PromptHelper, TacoHelper
@@ -15,6 +16,7 @@ from bot.lib.messaging import Messaging
 from bot.lib.mongodb.toqtd import TQOTDDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
+from bot.lib.settings import Settings
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord import app_commands
@@ -58,6 +60,8 @@ class TacoQuestionOfTheDayCog(TacobotCog):
 
         self.tqotd_db = tqotd_db
         self.tracking_db = tracking_db
+        self.tqotd_db = tqotd_db
+        self.tracking_db = tracking_db
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -77,12 +81,18 @@ class TacoQuestionOfTheDayCog(TacobotCog):
             guild_id = 0
             if ctx.guild:
                 guild_id = ctx.guild.id
+            else:
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No guild found for context")
+                return
             qotd = None
 
             try:
                 _ctx = self.context_helper.create_context(
                     bot=self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
+                _ctx = self.context_helper.create_context(
+                    bot=self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
                 )
+                qotd = await self.prompt_helper.ask_for_image_or_text(
                 qotd = await self.prompt_helper.ask_for_image_or_text(
                     _ctx,
                     ctx.author,
@@ -92,6 +102,7 @@ class TacoQuestionOfTheDayCog(TacobotCog):
                 )
             except discord.Forbidden:
                 _ctx = ctx
+                qotd = await self.prompt_helper.ask_for_image_or_text(
                 qotd = await self.prompt_helper.ask_for_image_or_text(
                     _ctx,
                     ctx.author,
@@ -117,9 +128,11 @@ class TacoQuestionOfTheDayCog(TacobotCog):
 
             role_tag = ""
             role = await self.entity_helper.get_or_fetch_role(ctx.guild, int(cog_settings.get("tag_role", 0)))
+            role = await self.entity_helper.get_or_fetch_role(ctx.guild, int(cog_settings.get("tag_role", 0)))
             if role:
                 role_tag = f"{role.mention}"
 
+            out_channel = await self.entity_helper.get_or_fetch_channel(int(cog_settings.get("output_channel_id", 0)))
             out_channel = await self.entity_helper.get_or_fetch_channel(int(cog_settings.get("output_channel_id", 0)))
             if not out_channel:
                 self.log.warn(
@@ -156,6 +169,7 @@ class TacoQuestionOfTheDayCog(TacobotCog):
                             files.append(discord.File(data, filename=attachment.filename))
 
             await self.messaging.send_embed(
+                channel=out_channel,  # type: ignore
                 channel=out_channel,  # type: ignore
                 title=self.settings.get_string(guild_id, "tqotd_out_title"),
                 message=save_message,
@@ -249,7 +263,9 @@ class TacoQuestionOfTheDayCog(TacobotCog):
             return
         user: typing.Optional[typing.Union[discord.Member, discord.User]] = None
         if ctx and isinstance(ctx, Context):
+        if ctx and isinstance(ctx, Context):
             user = ctx.author
+        elif ctx and isinstance(ctx, discord.Interaction):
         elif ctx and isinstance(ctx, discord.Interaction):
             user = ctx.user
         else:
@@ -269,9 +285,11 @@ class TacoQuestionOfTheDayCog(TacobotCog):
 
         role_tag = ""
         role = await self.entity_helper.get_or_fetch_role(ctx.guild, int(cog_settings.get("tag_role", 0)))
+        role = await self.entity_helper.get_or_fetch_role(ctx.guild, int(cog_settings.get("tag_role", 0)))
         if role:
             role_tag = f"{role.mention}"
 
+        out_channel = await self.entity_helper.get_or_fetch_channel(int(cog_settings.get("output_channel_id", 0)))
         out_channel = await self.entity_helper.get_or_fetch_channel(int(cog_settings.get("output_channel_id", 0)))
         if not out_channel:
             self.log.warn(
@@ -479,6 +497,7 @@ class TacoQuestionOfTheDayCog(TacobotCog):
             channel = None
             if channel_id:
                 channel = await self.entity_helper.get_or_fetch_channel(channel_id)
+                channel = await self.entity_helper.get_or_fetch_channel(channel_id)
             else:
                 channel = guild.system_channel
             if not channel:
@@ -493,6 +512,7 @@ class TacoQuestionOfTheDayCog(TacobotCog):
 
             # get bot
             bot = self.bot
+            ctx = self.context_helper.create_context(
             ctx = self.context_helper.create_context(
                 bot=bot, guild=guild, author=member, channel=channel, message=message
             )
@@ -526,6 +546,7 @@ class TacoQuestionOfTheDayCog(TacobotCog):
                 delete_after=self.SELF_DESTRUCT_TIMEOUT,
             )
 
+            await self.taco_helper.give_tacos(
             await self.taco_helper.give_tacos(
                 guild_id, self.bot.user, member, reason_msg, tacotypes.TacoTypes.TQOTD, taco_amount=amount
             )

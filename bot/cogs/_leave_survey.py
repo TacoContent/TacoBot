@@ -6,23 +6,33 @@ import os
 import traceback
 
 import discord
-from bot.lib import discordhelper, utils
+from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
+from bot.lib.helpers import ContextHelper, PromptHelper
 from bot.lib.messaging import Messaging
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class LeaveSurveyCog(TacobotCog):
-    def __init__(self, bot: TacoBot):
-        super().__init__(bot, "leave_survey")
+    def __init__(
+        self,
+        bot: TacoBot,
+        messaging: Messaging,
+        context_helper: ContextHelper,
+        prompt_helper: PromptHelper,
+        settings: Settings,
+    ):
+        super().__init__(bot, "leave_survey", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.discord_helper = discordhelper.DiscordHelper(bot)
-        self.messaging = Messaging(bot)
+        self.messaging = messaging
+        self.context_helper = context_helper
+        self.prompt_helper = prompt_helper
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -70,13 +80,13 @@ class LeaveSurveyCog(TacobotCog):
             # take_survey = False
             # reason = "Did not answer the survey asking why they left."
             try:
-                ctx = self.discord_helper.create_context(bot=self.bot, author=member, guild=member.guild, channel=None)
+                ctx = self.context_helper.create_context(bot=self.bot, author=member, guild=member.guild, channel=None)
 
                 async def response_callback(result):
                     if result:
                         reason = "No reason given."
                         try:
-                            reason = await self.discord_helper.ask_text(
+                            reason = await self.prompt_helper.ask_text(
                                 ctx, member, "Leave Survey", "Please tell us why you are leaving.", timeout=600
                             )
                             await self.messaging.send_embed(
@@ -108,7 +118,7 @@ We will review your feedback and take action accordingly.""",
 
                         if log_channel:
                             await self.messaging.send_embed(
-                                channel=log_channel,
+                                channel=log_channel,  # type: ignore
                                 title="Leave Survey",
                                 message=f"""{utils.get_user_display_name(member)} ({member.id}) has left the server.
 
@@ -116,7 +126,7 @@ We will review your feedback and take action accordingly.""",
                                 author=member,
                             )
 
-                await self.discord_helper.ask_yes_no(
+                await self.prompt_helper.ask_yes_no(
                     ctx=ctx,
                     targetChannel=member,
                     question="""We are very sorry to see you leave.
@@ -157,4 +167,12 @@ Would you be willing to let us know why you are leaving?""",
 
 
 async def setup(bot):
-    await bot.add_cog(LeaveSurveyCog(bot))
+    settings = Settings()
+    messaging = Messaging(bot)
+    context_helper = ContextHelper()
+    prompt_helper = PromptHelper(bot)
+    await bot.add_cog(
+        LeaveSurveyCog(
+            bot=bot, messaging=messaging, context_helper=context_helper, prompt_helper=prompt_helper, settings=settings
+        )
+    )

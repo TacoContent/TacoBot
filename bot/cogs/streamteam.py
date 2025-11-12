@@ -12,6 +12,7 @@ from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.twitch import TwitchDatabase
 from bot.lib.settings import Settings
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
@@ -36,7 +37,12 @@ class StreamTeamCog(TacobotCog):
         self.messaging = messaging
         self.entity_helper = entity_helper
         self.message_helper = message_helper
+        self.messaging = messaging
+        self.entity_helper = entity_helper
+        self.message_helper = message_helper
 
+        self.twitch_db = twitch_db
+        self.tracking_db = tracking_db
         self.twitch_db = twitch_db
         self.tracking_db = tracking_db
 
