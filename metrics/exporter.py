@@ -12,15 +12,19 @@ from prometheus_client import start_http_server
 
 
 class MetricsExporter:
-    def __init__(self):
+    def __init__(self, settings: Settings):
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         self._module = os.path.basename(__file__)[:-3]
-        self.settings = Settings()
-        log_level = LogLevel[self.settings.log_level.upper()]
-        if not log_level:
-            log_level = LogLevel.DEBUG
-        self.log = Log(log_level)
+        self.settings = settings
+
+        log_level = LogLevel.DEBUG
+        try:
+            log_level = LogLevel[self.settings.log_level.upper()]
+            self.log = Log(log_level)
+        except Exception as ex:
+            self.log = Log(log_level)
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Exporter initialized")
 

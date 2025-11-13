@@ -4,6 +4,7 @@ import os
 import signal
 from concurrent.futures import ProcessPoolExecutor
 
+
 if os.name == 'nt':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
@@ -12,6 +13,7 @@ import discord
 from bot.lib.colors import Colors
 from bot.lib.mongodb.migration_runner import MigrationRunner
 from bot.lib.mongodb.mongo_singleton import MongoClientSingleton
+from bot.lib.settings import Settings
 from dotenv import find_dotenv, load_dotenv
 from metrics.exporter import MetricsExporter
 
@@ -51,7 +53,8 @@ def start_tacobot():
 
 def exporter():
     try:
-        exporter = MetricsExporter()
+        settings = Settings()
+        exporter = MetricsExporter(settings)
         exporter.run()
     except KeyboardInterrupt:
         print(Colors.colorize(Colors.FGYELLOW, "<KeyboardInterrupt received>"))
