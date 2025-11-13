@@ -32,10 +32,10 @@ def mock_settings():
 
 
 @pytest.fixture
-def cog(bot, messaging, twitch_db, tracking_db, mock_settings):
+def cog(bot, message_helper, twitch_db, tracking_db, mock_settings):
     """Create AccountLinkCog with injected dependencies from conftest.py."""
     c = AccountLinkCog(
-        bot=bot, messaging=messaging, twitch_db=twitch_db, tracking_db=tracking_db, settings=mock_settings
+        bot=bot, messaging=message_helper, twitch_db=twitch_db, tracking_db=tracking_db, settings=mock_settings
     )
     c.log = MagicMock()
     return c
@@ -72,9 +72,9 @@ def mock_ctx():
 
 
 class TestAccountLinkCog:
-    def test_init(self, cog, bot, messaging, twitch_db, tracking_db, mock_settings):
+    def test_init(self, cog, bot, message_helper, twitch_db, tracking_db, mock_settings):
         assert cog.bot == bot
-        assert cog.messaging == messaging
+        assert cog.messaging == message_helper
         assert cog.twitch_db == twitch_db
         assert cog.tracking_db == tracking_db
         assert cog.settings == mock_settings
@@ -232,7 +232,7 @@ class TestAccountLinkCog:
             mock_ctx.author.send.assert_called_once_with("Notice: RANDOM")
 
     @pytest.mark.asyncio
-    async def test_link_exception(self, cog, mock_ctx, twitch_db, messaging):
+    async def test_link_exception(self, cog, mock_ctx, twitch_db, message_helper):
         mock_ctx.message.delete = AsyncMock()
         twitch_db.link_twitch_to_discord_from_code.side_effect = Exception("DB error")
 
@@ -240,7 +240,7 @@ class TestAccountLinkCog:
 
         mock_ctx.message.delete.assert_called_once()
         cog.log.error.assert_called_once()
-        messaging.notify_of_error.assert_called_once_with(mock_ctx)
+        message_helper.notify_of_error.assert_called_once_with(mock_ctx)
 
     @pytest.mark.asyncio
     async def test_link_no_guild(self, cog, mock_ctx):
@@ -322,13 +322,13 @@ class TestAccountLinkCog:
         mock_ctx.author.send.assert_called_once_with("Invalid code")
 
     @pytest.mark.asyncio
-    async def test_link_from_code_exception(self, cog, mock_ctx, twitch_db, messaging):
+    async def test_link_from_code_exception(self, cog, mock_ctx, twitch_db, message_helper):
         twitch_db.link_twitch_to_discord_from_code.side_effect = Exception("DB error")
 
         await cog._link_from_code(mock_ctx, "CODE", 12345)
 
         cog.log.error.assert_called_once()
-        messaging.notify_of_error.assert_called_once_with(mock_ctx)
+        message_helper.notify_of_error.assert_called_once_with(mock_ctx)
 
     @pytest.mark.asyncio
     async def test_generate_code_success(self, cog, mock_ctx, twitch_db, mock_settings):
@@ -361,29 +361,22 @@ class TestAccountLinkCog:
             mock_ctx.author.send.assert_called_once_with("Random error")
 
     @pytest.mark.asyncio
-    async def test_generate_code_exception(self, cog, mock_ctx, twitch_db, messaging):
+    async def test_generate_code_exception(self, cog, mock_ctx, twitch_db, message_helper):
         with patch('bot.lib.utils.get_random_string', side_effect=Exception("Random error")):
 
             await cog._generate_code(mock_ctx, 12345)
 
             cog.log.error.assert_called_once()
-            messaging.notify_of_error.assert_called_once_with(mock_ctx)
+            message_helper.notify_of_error.assert_called_once_with(mock_ctx)
 
 
 @pytest.mark.asyncio
-async def test_setup():
-    mock_bot = MagicMock()
-    mock_bot.add_cog = AsyncMock()
-    mock_messaging = MagicMock()
-    mock_twitch_db = MagicMock()
-    mock_tracking_db = MagicMock()
-    mock_settings = MagicMock()
-
+async def test_setup(bot, twitch_db, tracking_db, settings, message_helper):
     with (
-        patch('bot.cogs.account_link.Settings', return_value=mock_settings),
-        patch('bot.cogs.account_link.Messaging', return_value=mock_messaging),
-        patch('bot.cogs.account_link.TwitchDatabase', return_value=mock_twitch_db),
-        patch('bot.cogs.account_link.TrackingDatabase', return_value=mock_tracking_db),
+        patch('bot.cogs.account_link.Settings', return_value=settings),
+        patch('bot.cogs.account_link.MessageHelper', return_value=message_helper),
+        patch('bot.cogs.account_link.TwitchDatabase', return_value=twitch_db),
+        patch('bot.cogs.account_link.TrackingDatabase', return_value=tracking_db),
         patch('bot.cogs.account_link.AccountLinkCog') as mock_cog_class,
     ):
         mock_cog_instance = MagicMock()
@@ -391,13 +384,13 @@ async def test_setup():
 
         from bot.cogs.account_link import setup
 
-        await setup(mock_bot)
+        await setup(bot)
 
         mock_cog_class.assert_called_once_with(
-            bot=mock_bot,
-            messaging=mock_messaging,
-            twitch_db=mock_twitch_db,
-            tracking_db=mock_tracking_db,
-            settings=mock_settings,
+            bot=bot,
+            messaging=message_helper,
+            twitch_db=twitch_db,
+            tracking_db=tracking_db,
+            settings=settings,
         )
-        mock_bot.add_cog.assert_called_once_with(mock_cog_instance)
+        bot.add_cog.assert_called_once_with(mock_cog_instance)

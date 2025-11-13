@@ -16,7 +16,7 @@ from bot.cogs.twitchinfo import TwitchInfoCog
 
 
 @pytest.fixture
-def cog(bot, settings, messaging, prompt_helper, taco_helper, twitch_db, tracking_db):
+def cog(bot, settings, message_helper, prompt_helper, taco_helper, twitch_db, tracking_db):
     """Create TwitchInfoCog instance with all dependencies injected."""
     # Configure settings for twitchinfo cog
     settings.log_level = "DEBUG"
@@ -32,7 +32,7 @@ def cog(bot, settings, messaging, prompt_helper, taco_helper, twitch_db, trackin
         }.get(key, "default_string")
     )
 
-    return TwitchInfoCog(bot, settings, messaging, prompt_helper, taco_helper, twitch_db, tracking_db)
+    return TwitchInfoCog(bot, settings, message_helper, prompt_helper, taco_helper, twitch_db, tracking_db)
 
 
 @pytest.fixture
@@ -84,7 +84,7 @@ async def test_invite_bot_no_user_provided(cog, mock_ctx):
 
 
 @pytest.mark.asyncio
-async def test_invite_bot_success_existing_twitch_info(cog, mock_ctx, twitch_db, messaging, tracking_db):
+async def test_invite_bot_success_existing_twitch_info(cog, mock_ctx, twitch_db, message_helper, tracking_db):
     """Test invite_bot successfully invites bot when twitch info exists."""
     user = MagicMock()
     user.id = 67890
@@ -106,15 +106,15 @@ async def test_invite_bot_success_existing_twitch_info(cog, mock_ctx, twitch_db,
     assert str(cog.bot.user.id) == call_args[0][1]
 
     # Verify success message sent
-    messaging.send_embed.assert_called_once()
-    assert "test_streamer" in str(messaging.send_embed.call_args)
+    message_helper.send_embed.assert_called_once()
+    assert "test_streamer" in str(message_helper.send_embed.call_args)
 
     # Verify tracking
     tracking_db.track_command_usage.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_invite_bot_success_no_existing_twitch_info(cog, mock_ctx, twitch_db, messaging):
+async def test_invite_bot_success_no_existing_twitch_info(cog, mock_ctx, twitch_db, message_helper):
     """Test invite_bot when twitch info doesn't exist (calls set_user)."""
     user = MagicMock()
     user.id = 67890
@@ -142,7 +142,7 @@ async def test_invite_bot_success_no_existing_twitch_info(cog, mock_ctx, twitch_
 
 
 @pytest.mark.asyncio
-async def test_invite_bot_http_failure(cog, mock_ctx, twitch_db, messaging):
+async def test_invite_bot_http_failure(cog, mock_ctx, twitch_db, message_helper):
     """Test invite_bot when HTTP request fails."""
     user = MagicMock()
     user.id = 67890
@@ -157,7 +157,7 @@ async def test_invite_bot_http_failure(cog, mock_ctx, twitch_db, messaging):
     await cog.invite_bot.callback(cog, mock_ctx, user=user)
 
     # Verify no success message sent
-    messaging.send_embed.assert_not_called()
+    message_helper.send_embed.assert_not_called()
 
 
 # ==============================================================================
@@ -194,7 +194,7 @@ async def test_get_member_is_system(cog, mock_ctx, twitch_db):
 
 
 @pytest.mark.asyncio
-async def test_get_self_with_existing_twitch_info(cog, mock_ctx, twitch_db, messaging, tracking_db):
+async def test_get_self_with_existing_twitch_info(cog, mock_ctx, twitch_db, message_helper, tracking_db):
     """Test get command for self when twitch info exists."""
     mock_ctx.author.bot = False
     mock_ctx.author.system = False
@@ -206,8 +206,8 @@ async def test_get_self_with_existing_twitch_info(cog, mock_ctx, twitch_db, mess
     twitch_db.get_user_twitch_info.assert_called_with(mock_ctx.author.id)
 
     # Verify message sent to author
-    messaging.send_embed.assert_called_once()
-    call_kwargs = messaging.send_embed.call_args[1]
+    message_helper.send_embed.assert_called_once()
+    call_kwargs = message_helper.send_embed.call_args[1]
     assert call_kwargs["channel"] == mock_ctx.author
     assert "my_twitch" in call_kwargs["message"]
 
@@ -216,7 +216,7 @@ async def test_get_self_with_existing_twitch_info(cog, mock_ctx, twitch_db, mess
 
 
 @pytest.mark.asyncio
-async def test_get_other_user_with_existing_twitch_info(cog, mock_ctx, twitch_db, messaging):
+async def test_get_other_user_with_existing_twitch_info(cog, mock_ctx, twitch_db, message_helper):
     """Test get command for another user when twitch info exists."""
     other_user = MagicMock()
     other_user.id = 99999
@@ -233,13 +233,13 @@ async def test_get_other_user_with_existing_twitch_info(cog, mock_ctx, twitch_db
     twitch_db.get_user_twitch_info.assert_called_with(other_user.id)
 
     # Verify message sent
-    messaging.send_embed.assert_called_once()
-    call_kwargs = messaging.send_embed.call_args[1]
+    message_helper.send_embed.assert_called_once()
+    call_kwargs = message_helper.send_embed.call_args[1]
     assert "other_twitch" in call_kwargs["message"]
 
 
 @pytest.mark.asyncio
-async def test_get_no_twitch_info_admin_prompt(cog, mock_ctx, twitch_db, messaging, prompt_helper, tracking_db):
+async def test_get_no_twitch_info_admin_prompt(cog, mock_ctx, twitch_db, message_helper, prompt_helper, tracking_db):
     """Test get command when no twitch info exists and user is admin."""
     mock_ctx.author.bot = False
     mock_ctx.author.system = False
@@ -258,8 +258,8 @@ async def test_get_no_twitch_info_admin_prompt(cog, mock_ctx, twitch_db, messagi
     twitch_db.set_user_twitch_info.assert_called_once_with(mock_ctx.author.id, "new_twitch_name")
 
     # Verify message sent
-    messaging.send_embed.assert_called_once()
-    call_kwargs = messaging.send_embed.call_args[1]
+    message_helper.send_embed.assert_called_once()
+    call_kwargs = message_helper.send_embed.call_args[1]
     assert "new_twitch_name" in call_kwargs["message"]
 
     # Verify tracking for both system action and command usage
@@ -268,7 +268,7 @@ async def test_get_no_twitch_info_admin_prompt(cog, mock_ctx, twitch_db, messagi
 
 
 @pytest.mark.asyncio
-async def test_get_no_twitch_info_prompt_cancelled(cog, mock_ctx, twitch_db, messaging, prompt_helper):
+async def test_get_no_twitch_info_prompt_cancelled(cog, mock_ctx, twitch_db, message_helper, prompt_helper):
     """Test get command when prompt is cancelled."""
     mock_ctx.author.guild_permissions.administrator = True
     twitch_db.get_user_twitch_info.return_value = None
@@ -282,7 +282,7 @@ async def test_get_no_twitch_info_prompt_cancelled(cog, mock_ctx, twitch_db, mes
     twitch_db.set_user_twitch_info.assert_not_called()
 
     # Verify no message sent
-    messaging.send_embed.assert_not_called()
+    message_helper.send_embed.assert_not_called()
 
 
 # ==============================================================================
@@ -291,7 +291,7 @@ async def test_get_no_twitch_info_prompt_cancelled(cog, mock_ctx, twitch_db, mes
 
 
 @pytest.mark.asyncio
-async def test_set_user_success_with_twitch_name_provided(cog, mock_ctx, twitch_db, messaging, tracking_db):
+async def test_set_user_success_with_twitch_name_provided(cog, mock_ctx, twitch_db, message_helper, tracking_db):
     """Test set_user command when twitch name is provided."""
     user = MagicMock()
     user.id = 11111
@@ -312,8 +312,8 @@ async def test_set_user_success_with_twitch_name_provided(cog, mock_ctx, twitch_
     tracking_db.track_command_usage.assert_called_once()
 
     # Verify success message
-    messaging.send_embed.assert_called_once()
-    call_kwargs = messaging.send_embed.call_args[1]
+    message_helper.send_embed.assert_called_once()
+    call_kwargs = message_helper.send_embed.call_args[1]
     assert "clean_twitch_name" in call_kwargs["message"]
     assert "TestUser" in call_kwargs["message"]
 
@@ -322,7 +322,7 @@ async def test_set_user_success_with_twitch_name_provided(cog, mock_ctx, twitch_
 
 
 @pytest.mark.asyncio
-async def test_set_user_success_with_prompt(cog, mock_ctx, twitch_db, messaging, prompt_helper):
+async def test_set_user_success_with_prompt(cog, mock_ctx, twitch_db, message_helper, prompt_helper):
     """Test set_user command when twitch name is prompted."""
     user = MagicMock()
     user.id = 11111
@@ -366,7 +366,7 @@ async def test_set_user_prompt_cancelled(cog, mock_ctx, twitch_db, prompt_helper
 
 
 @pytest.mark.asyncio
-async def test_set_user_exception_handling(cog, mock_ctx, messaging):
+async def test_set_user_exception_handling(cog, mock_ctx, message_helper):
     """Test set_user command exception handling."""
     user = MagicMock()
     user.id = 11111
@@ -378,7 +378,7 @@ async def test_set_user_exception_handling(cog, mock_ctx, messaging):
         result = await cog.set_user.callback(cog, mock_ctx, user, twitch_name="test_name")
 
     # Verify error notification sent
-    messaging.notify_of_error.assert_called_once_with(mock_ctx)
+    message_helper.notify_of_error.assert_called_once_with(mock_ctx)
 
     # Verify None returned
     assert result is None
@@ -390,7 +390,7 @@ async def test_set_user_exception_handling(cog, mock_ctx, messaging):
 
 
 @pytest.mark.asyncio
-async def test_set_success_with_twitch_name_provided_guild(cog, mock_ctx, twitch_db, messaging, tracking_db):
+async def test_set_success_with_twitch_name_provided_guild(cog, mock_ctx, twitch_db, message_helper, tracking_db):
     """Test set command when twitch name is provided in guild."""
     twitch_db.get_user_twitch_info.return_value = {"twitch_name": "existing_name"}
 
@@ -408,13 +408,13 @@ async def test_set_success_with_twitch_name_provided_guild(cog, mock_ctx, twitch
     tracking_db.track_command_usage.assert_called_once()
 
     # Verify success message sent to channel
-    messaging.send_embed.assert_called_once()
-    call_kwargs = messaging.send_embed.call_args[1]
+    message_helper.send_embed.assert_called_once()
+    call_kwargs = message_helper.send_embed.call_args[1]
     assert call_kwargs["channel"] == mock_ctx.channel
 
 
 @pytest.mark.asyncio
-async def test_set_success_first_time_gets_tacos(cog, mock_ctx, twitch_db, messaging, taco_helper):
+async def test_set_success_first_time_gets_tacos(cog, mock_ctx, twitch_db, message_helper, taco_helper):
     """Test set command gives tacos on first time linking."""
     twitch_db.get_user_twitch_info.return_value = None  # First time
 
@@ -436,7 +436,7 @@ async def test_set_success_first_time_gets_tacos(cog, mock_ctx, twitch_db, messa
 
 
 @pytest.mark.asyncio
-async def test_set_success_with_url_parsing(cog, mock_ctx, twitch_db, messaging):
+async def test_set_success_with_url_parsing(cog, mock_ctx, twitch_db, message_helper):
     """Test set command parses URLs correctly."""
     twitch_db.get_user_twitch_info.return_value = {"twitch_name": "old"}
 
@@ -452,7 +452,7 @@ async def test_set_success_with_url_parsing(cog, mock_ctx, twitch_db, messaging)
 
 
 @pytest.mark.asyncio
-async def test_set_prompt_in_dm(cog, mock_ctx, twitch_db, messaging, prompt_helper):
+async def test_set_prompt_in_dm(cog, mock_ctx, twitch_db, message_helper, prompt_helper):
     """Test set command prompts in DM when no name provided."""
     mock_ctx.guild = MagicMock()
     twitch_db.get_user_twitch_info.return_value = {"twitch_name": "old"}
@@ -468,12 +468,12 @@ async def test_set_prompt_in_dm(cog, mock_ctx, twitch_db, messaging, prompt_help
     assert call_args[1] == mock_ctx.author
 
     # Verify response sent to author
-    call_kwargs = messaging.send_embed.call_args[1]
+    call_kwargs = message_helper.send_embed.call_args[1]
     assert call_kwargs["channel"] == mock_ctx.author
 
 
 @pytest.mark.asyncio
-async def test_set_prompt_in_channel_when_dm_forbidden(cog, mock_ctx, twitch_db, messaging, prompt_helper):
+async def test_set_prompt_in_channel_when_dm_forbidden(cog, mock_ctx, twitch_db, message_helper, prompt_helper):
     """Test set command falls back to channel when DM fails."""
     mock_ctx.guild = MagicMock()
     twitch_db.get_user_twitch_info.return_value = {"twitch_name": "old"}
@@ -511,7 +511,7 @@ async def test_set_no_guild(cog, mock_ctx, twitch_db):
 
 
 @pytest.mark.asyncio
-async def test_set_exception_handling(cog, mock_ctx, messaging):
+async def test_set_exception_handling(cog, mock_ctx, message_helper):
     """Test set command exception handling."""
     # Make twitch_db raise exception
     cog.twitch_db.get_user_twitch_info = MagicMock(side_effect=Exception("Database error"))
@@ -519,4 +519,4 @@ async def test_set_exception_handling(cog, mock_ctx, messaging):
     await cog.set.callback(cog, mock_ctx, twitch_name="test")
 
     # Verify error notification sent
-    messaging.notify_of_error.assert_called_once_with(mock_ctx)
+    message_helper.notify_of_error.assert_called_once_with(mock_ctx)

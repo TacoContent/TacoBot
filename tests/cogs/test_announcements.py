@@ -6,9 +6,9 @@ from bot.cogs.announcements import AnnouncementsCog
 
 
 @pytest.fixture
-def cog(bot, announcements_db, settings, messaging):
+def cog(bot, announcements_db, settings, message_helper):
     """Create AnnouncementsCog with injected dependencies from conftest.py."""
-    c = AnnouncementsCog(bot=bot, announcements_db=announcements_db, messaging=messaging, settings=settings)
+    c = AnnouncementsCog(bot=bot, announcements_db=announcements_db, messaging=message_helper, settings=settings)
     c.log = MagicMock()
     return c
 

@@ -8,39 +8,8 @@ from bot.cogs.assistant import AssistantCog
 
 
 @pytest.fixture
-def mock_bot():
-    bot = MagicMock()
-    bot.user = MagicMock()
-    bot.user.id = 11111
-    bot.user.name = "TacoBot"
-    bot.user.mention = "<@11111>"
-    bot.guilds = []
-    bot.add_cog = AsyncMock()
-    return bot
-
-
-@pytest.fixture
-def mock_tacos_db():
-    return MagicMock()
-
-
-@pytest.fixture
-def mock_entity_helper():
-    helper = MagicMock()
-    helper.get_or_fetch_channel = AsyncMock()
-    return helper
-
-
-@pytest.fixture
-def mock_settings():
-    settings = MagicMock()
-    settings.log_level = "INFO"
-    return settings
-
-
-@pytest.fixture
-def cog(mock_bot, mock_tacos_db, mock_entity_helper, mock_settings):
-    c = AssistantCog(bot=mock_bot, tacos_db=mock_tacos_db, entity_helper=mock_entity_helper, settings=mock_settings)
+def cog(bot, tacos_db, entity_helper, settings):
+    c = AssistantCog(bot=bot, tacos_db=tacos_db, entity_helper=entity_helper, settings=settings)
     c.log = MagicMock()
     c.get_cog_settings = MagicMock()
     return c
@@ -80,21 +49,21 @@ def mock_user():
 
 
 @pytest.fixture
-def mock_message(mock_guild, mock_channel, mock_user, mock_bot):
+def mock_message(mock_guild, mock_channel, mock_user, bot):
     message = MagicMock()
     message.guild = mock_guild
     message.channel = mock_channel
     message.author = mock_user
-    message.content = f"{mock_bot.user.mention} What is this server about?"
+    message.content = f"{bot.user.mention} What is this server about?"
     return message
 
 
 class TestAssistantCog:
-    def test_init(self, cog, mock_bot, mock_tacos_db, mock_entity_helper, mock_settings):
-        assert cog.bot == mock_bot
-        assert cog.tacos_db == mock_tacos_db
-        assert cog.entity_helper == mock_entity_helper
-        assert cog.settings == mock_settings
+    def test_init(self, cog, bot, tacos_db, entity_helper, settings):
+        assert cog.bot == bot
+        assert cog.tacos_db == tacos_db
+        assert cog.entity_helper == entity_helper
+        assert cog.settings == settings
         assert cog._module == "assistant"
         assert cog._class == "AssistantCog"
 
@@ -108,8 +77,8 @@ class TestAssistantCog:
         mock_message.channel.send.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_on_message_bot_author(self, cog, mock_message, mock_bot):
-        mock_message.author = mock_bot.user
+    async def test_on_message_bot_author(self, cog, mock_message, bot):
+        mock_message.author = bot.user
 
         await cog.on_message(mock_message)
 
@@ -117,8 +86,8 @@ class TestAssistantCog:
         mock_message.channel.send.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_on_message_no_bot_user(self, cog, mock_message, mock_bot):
-        mock_bot.user = None
+    async def test_on_message_no_bot_user(self, cog, mock_message, bot):
+        bot.user = None
 
         await cog.on_message(mock_message)
 
@@ -159,8 +128,8 @@ class TestAssistantCog:
             mock_message.channel.send.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_ai_request_bot_is_author(self, cog, mock_message, mock_bot):
-        mock_message.author = mock_bot.user
+    async def test_ai_request_bot_is_author(self, cog, mock_message, bot):
+        mock_message.author = bot.user
 
         result = await cog._ai_request(12345, mock_message)
 
@@ -175,8 +144,8 @@ class TestAssistantCog:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_ai_request_no_bot_user(self, cog, mock_message, mock_bot):
-        mock_bot.user = None
+    async def test_ai_request_no_bot_user(self, cog, mock_message, bot):
+        bot.user = None
 
         result = await cog._ai_request(12345, mock_message)
 
@@ -192,7 +161,7 @@ class TestAssistantCog:
         cog.get_cog_settings.assert_called_once_with(12345)
 
     @pytest.mark.asyncio
-    async def test_ai_request_success(self, cog, mock_message, mock_bot):
+    async def test_ai_request_success(self, cog, mock_message, bot):
         cog.get_cog_settings.return_value = {
             "enabled": True,
             "faq": {"channel_id": "22222", "message_id": "44444"},
@@ -246,7 +215,7 @@ class TestAssistantCog:
             mock_openai_helper.get_response_text.assert_called_once_with(mock_openai_response)
 
     @pytest.mark.asyncio
-    async def test_ai_request_default_settings(self, cog, mock_message, mock_bot):
+    async def test_ai_request_default_settings(self, cog, mock_message, bot):
         cog.get_cog_settings.return_value = {"enabled": True}
 
         mock_openai_response = MagicMock()
@@ -276,7 +245,7 @@ class TestAssistantCog:
             mock_openai_helper_class.assert_called_once_with(settings={"model": "gpt-3.5-turbo"})
 
     @pytest.mark.asyncio
-    async def test_ai_request_model_override_from_cog_settings(self, cog, mock_message, mock_bot):
+    async def test_ai_request_model_override_from_cog_settings(self, cog, mock_message, bot):
         """Test that model in cog_settings overrides the model from openai settings."""
         cog.get_cog_settings.return_value = {
             "enabled": True,
@@ -371,7 +340,7 @@ class TestAssistantCog:
         cog.log.error.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_get_channels_success(self, cog, mock_bot, mock_guild):
+    async def test_get_channels_success(self, cog, bot, mock_guild):
         # Create multiple channels with different types
         text_channel = MagicMock()
         text_channel.id = 1001
@@ -408,7 +377,7 @@ class TestAssistantCog:
         forum_channel.created_at = datetime(2020, 3, 1, 12, 0, 0, tzinfo=timezone.utc)
 
         mock_guild.channels = [text_channel, news_channel, voice_channel, forum_channel]
-        mock_bot.guilds = [mock_guild]
+        bot.guilds = [mock_guild]
 
         result = await cog._get_channels(12345)
 
@@ -439,21 +408,21 @@ class TestAssistantCog:
         }
 
     @pytest.mark.asyncio
-    async def test_get_channels_different_guild(self, cog, mock_bot, mock_guild):
+    async def test_get_channels_different_guild(self, cog, bot, mock_guild):
         other_guild = MagicMock()
         other_guild.id = 99999
         other_guild.channels = []
 
         mock_guild.channels = []
-        mock_bot.guilds = [other_guild, mock_guild]
+        bot.guilds = [other_guild, mock_guild]
 
         result = await cog._get_channels(12345)
 
         assert result == []
 
     @pytest.mark.asyncio
-    async def test_get_channels_exception(self, cog, mock_bot):
-        mock_bot.guilds = None
+    async def test_get_channels_exception(self, cog, bot):
+        bot.guilds = None
 
         result = await cog._get_channels(12345)
 
@@ -461,7 +430,7 @@ class TestAssistantCog:
         cog.log.error.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_get_channels_all_channel_types(self, cog, mock_bot, mock_guild):
+    async def test_get_channels_all_channel_types(self, cog, bot, mock_guild):
         # Test all supported channel types
         channel_types = [
             discord.ChannelType.text,
@@ -485,7 +454,7 @@ class TestAssistantCog:
             channels.append(ch)
 
         mock_guild.channels = channels
-        mock_bot.guilds = [mock_guild]
+        bot.guilds = [mock_guild]
 
         result = await cog._get_channels(12345)
 
@@ -493,11 +462,11 @@ class TestAssistantCog:
 
 
 @pytest.mark.asyncio
-async def test_setup(mock_bot, mock_tacos_db, mock_entity_helper, mock_settings):
+async def test_setup(bot, tacos_db, entity_helper, settings):
     with (
-        patch('bot.cogs.assistant.Settings', return_value=mock_settings),
-        patch('bot.cogs.assistant.TacosDatabase', return_value=mock_tacos_db),
-        patch('bot.cogs.assistant.EntityHelper', return_value=mock_entity_helper),
+        patch('bot.cogs.assistant.Settings', return_value=settings),
+        patch('bot.cogs.assistant.TacosDatabase', return_value=tacos_db),
+        patch('bot.cogs.assistant.EntityHelper', return_value=entity_helper),
         patch('bot.cogs.assistant.AssistantCog') as mock_cog_class,
     ):
         mock_cog_instance = MagicMock()
@@ -505,9 +474,9 @@ async def test_setup(mock_bot, mock_tacos_db, mock_entity_helper, mock_settings)
 
         from bot.cogs.assistant import setup
 
-        await setup(mock_bot)
+        await setup(bot)
 
         mock_cog_class.assert_called_once_with(
-            bot=mock_bot, tacos_db=mock_tacos_db, entity_helper=mock_entity_helper, settings=mock_settings
+            bot=bot, tacos_db=tacos_db, entity_helper=entity_helper, settings=settings
         )
-        mock_bot.add_cog.assert_called_once_with(mock_cog_instance)
+        bot.add_cog.assert_called_once_with(mock_cog_instance)

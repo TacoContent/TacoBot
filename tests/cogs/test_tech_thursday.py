@@ -1069,7 +1069,7 @@ async def test_setup():
         patch("bot.cogs.tech_thursday.Settings") as mock_settings_class,
         patch("bot.cogs.tech_thursday.TechThursDatabase"),
         patch("bot.cogs.tech_thursday.TrackingDatabase"),
-        patch("bot.cogs.tech_thursday.Messaging"),
+        patch("bot.cogs.tech_thursday.MessageHelper"),
         patch("bot.cogs.tech_thursday.Permissions"),
         patch("bot.cogs.tech_thursday.ContextHelper"),
         patch("bot.cogs.tech_thursday.EntityHelper"),
