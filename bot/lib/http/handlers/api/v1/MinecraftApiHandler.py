@@ -45,9 +45,10 @@ import requests
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
+from bot.lib.minecraft.status import MinecraftStatus
 from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
 from bot.lib.models.MinecraftOpUser import MinecraftOpUser
-from bot.lib.models.MinecraftServerSettings import  MinecraftServerSettingsSettingsModel
+from bot.lib.models.MinecraftServerSettings import MinecraftServerSettingsSettingsModel
 from bot.lib.models.MinecraftServerStatus import MinecraftServerStatus
 from bot.lib.models.MinecraftSettingsUpdatePayload import MinecraftSettingsUpdatePayload
 from bot.lib.models.MinecraftUser import MinecraftUser
@@ -57,7 +58,6 @@ from bot.lib.models.openapi import openapi
 from bot.lib.models.SimpleStatusResponse import SimpleStatusResponse
 from bot.lib.models.TacoMinecraftWorldInfo import TacoMinecraftWorldInfo
 from bot.lib.models.TacoMinecraftWorlds import TacoMinecraftWorlds
-from bot.lib.minecraft.status import MinecraftStatus
 from bot.lib.mongodb.minecraft import MinecraftDatabase
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot

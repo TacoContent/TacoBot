@@ -8,7 +8,7 @@ import traceback
 import discord
 from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
-from bot.lib.helpers import ContextHelper, PromptHelper, MessageHelper
+from bot.lib.helpers import ContextHelper, MessageHelper, PromptHelper
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands

@@ -22,9 +22,7 @@ from httpserver.server import HttpResponseException
 @pytest.fixture
 def handler(bot, settings, entity_helper, taco_helper, users_utils, tacos_db):
     """Create handler with mocked dependencies."""
-    handler = TacosWebhookHandler(
-        bot, settings, entity_helper, taco_helper, users_utils, tacos_db
-    )
+    handler = TacosWebhookHandler(bot, settings, entity_helper, taco_helper, users_utils, tacos_db)
     handler.log = Mock()
     handler.settings = settings
     handler.tacos_db = tacos_db

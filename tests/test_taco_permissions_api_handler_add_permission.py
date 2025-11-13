@@ -14,6 +14,7 @@ def handler(bot, settings, permissions_db):
     handler._class = "TacoPermissionsApiHandler"
     return handler
 
+
 @pytest.mark.asyncio
 class TestAddPermission:
 

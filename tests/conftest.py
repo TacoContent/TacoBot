@@ -73,6 +73,8 @@ def bot():
     bot.user.mention = "<@999888777666555444>"
     bot.fetch_guild = AsyncMock()
     bot.settings = MagicMock()
+    bot.wait_for = AsyncMock()
+
     return bot
 
 
@@ -108,7 +110,6 @@ def settings():
     s.changelog = "changelog.txt"
     s.prefixes = [".taco "]
 
-    
     def settings_get(key, default=None):
         if key == "commands":
             return s.commands
@@ -129,6 +130,7 @@ def permissions_db():
     db = MagicMock()
     db.remove_user_permission = MagicMock()
     return db
+
 
 @pytest.fixture
 def tacos_db():
@@ -217,6 +219,7 @@ def entity_helper():
     h.get_or_fetch_user = AsyncMock()
     return h
 
+
 @pytest.fixture
 def users_utils():
     """Function-scoped mock user utilities with async methods."""
@@ -224,11 +227,13 @@ def users_utils():
     u.fetch_user_by_discord_id = AsyncMock()
     return u
 
+
 @pytest.fixture
 def taco_helper():
     """Function-scoped mock taco helper with async methods."""
     h = MagicMock()
     h.give_tacos = AsyncMock()
+    h.settings = MagicMock()
     return h
 
 
@@ -278,6 +283,7 @@ def shift_codes_db():
     """Function-scoped mock shift codes database."""
     db = MagicMock()
     return db
+
 
 @pytest.fixture
 def introductions_db():

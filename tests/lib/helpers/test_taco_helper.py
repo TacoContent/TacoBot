@@ -11,41 +11,26 @@ class TestTacoHelper:
     """Test suite for TacoHelper."""
 
     @pytest.fixture
-    def mock_bot(self):
-        bot = MagicMock()
-        bot.user = MagicMock()
-        bot.user.id = 12345
-        bot.user.name = "TestBot"
-        return bot
-
-    @pytest.fixture
-    def mock_entity_helper(self):
-        entity_helper = MagicMock()
-        entity_helper.get_or_fetch_channel = AsyncMock(return_value=None)
-        return entity_helper
-
-    @pytest.fixture
-    def taco_helper(self, mock_bot, mock_entity_helper):
+    def taco_helper(self, bot, entity_helper, settings):
         with (
-            patch('bot.lib.helpers.taco_helper.settings.Settings') as mock_settings_class,
+            patch('bot.lib.helpers.taco_helper.Settings') as mock_settings_class,
             patch('bot.lib.helpers.taco_helper.TacosDatabase') as mock_db_class,
-            patch('bot.lib.helpers.taco_helper.Messaging') as mock_messaging_class,
+            patch('bot.lib.helpers.taco_helper.MessageHelper') as mock_message_helper_class,
         ):
-            mock_settings = MagicMock()
-            mock_settings.log_level = "DEBUG"
-            mock_settings.get_string = MagicMock(return_value="test string")
-            mock_settings.get_settings = MagicMock(
+            settings.log_level = "DEBUG"
+            settings.get_string = MagicMock(return_value="test string")
+            settings.get_settings = MagicMock(
                 return_value={"taco_log_channel_id": "12345", "taco_reaction_count": 5, "taco_custom_count": 1}
             )
-            mock_settings_class.return_value = mock_settings
+            mock_settings_class.return_value = settings
             mock_db = MagicMock()
             mock_db.add_tacos = MagicMock(return_value=10)
             mock_db.track_tacos_log = MagicMock()
             mock_db_class.return_value = mock_db
-            mock_messaging = MagicMock()
-            mock_messaging.send_embed = AsyncMock()
-            mock_messaging_class.return_value = mock_messaging
-            helper = TacoHelper(mock_bot, entity_helper=mock_entity_helper)
+            mock_message_helper_class = MagicMock()
+            mock_message_helper_class.send_embed = AsyncMock()
+            mock_message_helper_class.return_value = mock_message_helper_class
+            helper = TacoHelper(bot, entity_helper=entity_helper)
             return helper
 
     @pytest.fixture
@@ -145,10 +130,10 @@ class TestTacoHelper:
 
     @pytest.mark.asyncio
     async def test_log_taco_transaction_positive_count(
-        self, taco_helper, mock_from_user, mock_to_user, mock_entity_helper
+        self, taco_helper, mock_from_user, mock_to_user, entity_helper
     ):
         mock_channel = MagicMock()
-        mock_entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
+        entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
         await taco_helper.log_taco_transaction(
             guild_id=999,
             toMember=mock_to_user,
@@ -158,16 +143,16 @@ class TestTacoHelper:
             reason="Good work",
             type=tacotypes.TacoTypes.CUSTOM,
         )
-        taco_helper.messaging.send_embed.assert_called_once()
-        call_kwargs = taco_helper.messaging.send_embed.call_args.kwargs
+        taco_helper.message_helper.send_embed.assert_called_once()
+        call_kwargs = taco_helper.message_helper.send_embed.call_args.kwargs
         assert call_kwargs['channel'] == mock_channel
 
     @pytest.mark.asyncio
     async def test_log_taco_transaction_negative_count(
-        self, taco_helper, mock_from_user, mock_to_user, mock_entity_helper
+        self, taco_helper, mock_from_user, mock_to_user, entity_helper
     ):
         mock_channel = MagicMock()
-        mock_entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
+        entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
         await taco_helper.log_taco_transaction(
             guild_id=999,
             toMember=mock_to_user,
@@ -177,14 +162,14 @@ class TestTacoHelper:
             reason="Penalty",
             type=tacotypes.TacoTypes.CUSTOM,
         )
-        taco_helper.messaging.send_embed.assert_called_once()
+        taco_helper.message_helper.send_embed.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_log_taco_transaction_singular_taco(
-        self, taco_helper, mock_from_user, mock_to_user, mock_entity_helper
+        self, taco_helper, mock_from_user, mock_to_user, entity_helper
     ):
         mock_channel = MagicMock()
-        mock_entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
+        entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
         taco_helper.settings.get_string = MagicMock(
             side_effect=lambda gid, key, **kwargs: {
                 "taco_singular": "taco",
@@ -205,9 +190,9 @@ class TestTacoHelper:
 
     @pytest.mark.asyncio
     async def test_log_taco_transaction_no_log_channel(
-        self, taco_helper, mock_from_user, mock_to_user, mock_entity_helper
+        self, taco_helper, mock_from_user, mock_to_user, entity_helper
     ):
-        mock_entity_helper.get_or_fetch_channel = AsyncMock(return_value=None)
+        entity_helper.get_or_fetch_channel = AsyncMock(return_value=None)
         await taco_helper.log_taco_transaction(
             guild_id=999,
             toMember=mock_to_user,
@@ -217,13 +202,13 @@ class TestTacoHelper:
             reason="Test",
             type=tacotypes.TacoTypes.CUSTOM,
         )
-        taco_helper.messaging.send_embed.assert_not_called()
+        taco_helper.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_log_taco_transaction_exception_handling(
-        self, taco_helper, mock_from_user, mock_to_user, mock_entity_helper
+        self, taco_helper, mock_from_user, mock_to_user, entity_helper
     ):
-        mock_entity_helper.get_or_fetch_channel = AsyncMock(side_effect=Exception("Channel fetch failed"))
+        entity_helper.get_or_fetch_channel = AsyncMock(side_effect=Exception("Channel fetch failed"))
         await taco_helper.log_taco_transaction(
             guild_id=999,
             toMember=mock_to_user,
@@ -235,10 +220,10 @@ class TestTacoHelper:
         )
 
     @pytest.mark.asyncio
-    async def test_log_taco_purge_success(self, taco_helper, mock_from_user, mock_to_user, mock_entity_helper):
+    async def test_log_taco_purge_success(self, taco_helper, mock_from_user, mock_to_user, entity_helper):
         mock_channel = MagicMock()
         mock_channel.send = AsyncMock()
-        mock_entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
+        entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
         await taco_helper.log_taco_purge(
             guild_id=999, toMember=mock_to_user, fromMember=mock_from_user, reason="Violated rules"
         )
@@ -249,8 +234,8 @@ class TestTacoHelper:
         assert call_kwargs['reason'] == "Violated rules"
 
     @pytest.mark.asyncio
-    async def test_log_taco_purge_no_log_channel(self, taco_helper, mock_from_user, mock_to_user, mock_entity_helper):
-        mock_entity_helper.get_or_fetch_channel = AsyncMock(return_value=None)
+    async def test_log_taco_purge_no_log_channel(self, taco_helper, mock_from_user, mock_to_user, entity_helper):
+        entity_helper.get_or_fetch_channel = AsyncMock(return_value=None)
         await taco_helper.log_taco_purge(
             guild_id=999, toMember=mock_to_user, fromMember=mock_from_user, reason="Test purge"
         )
@@ -258,7 +243,7 @@ class TestTacoHelper:
 
     @pytest.mark.asyncio
     async def test_log_taco_purge_exception_handling(
-        self, taco_helper, mock_from_user, mock_to_user, mock_entity_helper
+        self, taco_helper, mock_from_user, mock_to_user, entity_helper
     ):
-        mock_entity_helper.get_or_fetch_channel = AsyncMock(side_effect=Exception("Channel error"))
+        entity_helper.get_or_fetch_channel = AsyncMock(side_effect=Exception("Channel error"))
         await taco_helper.log_taco_purge(guild_id=999, toMember=mock_to_user, fromMember=mock_from_user, reason="Test")

@@ -12,7 +12,6 @@ from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
 from bot.lib.http.handlers.webhook.MinecraftPlayerWebhookHandler import MinecraftPlayerWebhookHandler
 from httpserver.http_util import HttpHeaders, HttpResponse
 
-
 # Note: entity_helper fixture is now provided by conftest.py with all required async methods
 
 

@@ -33,10 +33,10 @@ from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
 from bot.lib.models.openapi import openapi
 from bot.lib.settings import Settings
+from bot.tacobot import TacoBot
 from httpserver.EndpointDecorators import uri_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException, HttpServer
-from bot.tacobot import TacoBot
 
 
 class SwaggerHttpHandler(BaseHttpHandler):

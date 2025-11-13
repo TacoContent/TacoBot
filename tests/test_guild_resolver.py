@@ -23,9 +23,7 @@ def mock_get_settings():
 @pytest.fixture
 def resolver(mock_get_settings, freegame_db, entity_helper):
     """Create GuildResolver with mocked dependencies."""
-    return GuildResolver(
-        get_settings_func=mock_get_settings, freegame_db=freegame_db, entity_helper=entity_helper
-    )
+    return GuildResolver(get_settings_func=mock_get_settings, freegame_db=freegame_db, entity_helper=entity_helper)
 
 
 @pytest.fixture
@@ -316,7 +314,7 @@ class TestResolveEligibleGuilds:
         assert result[1].notify_role_ids == [1011]
 
     @pytest.mark.asyncio
-    async def test_filters_out_disabled_guilds(self, entity_helper,resolver, mock_guild, mock_get_settings):
+    async def test_filters_out_disabled_guilds(self, entity_helper, resolver, mock_guild, mock_get_settings):
         """Test filters out guilds with disabled notifications."""
         guild1 = mock_guild(111, "Enabled Guild")
         guild2 = mock_guild(222, "Disabled Guild")
@@ -340,7 +338,9 @@ class TestResolveEligibleGuilds:
         assert result[0].guild_id == 111
 
     @pytest.mark.asyncio
-    async def test_filters_out_already_tracked_guilds(self, entity_helper, resolver, mock_guild, mock_get_settings, freegame_db):
+    async def test_filters_out_already_tracked_guilds(
+        self, entity_helper, resolver, mock_guild, mock_get_settings, freegame_db
+    ):
         """Test filters out guilds where game is already tracked."""
         guild1 = mock_guild(111, "New Guild")
         guild2 = mock_guild(222, "Tracked Guild")
@@ -364,9 +364,7 @@ class TestResolveEligibleGuilds:
         assert result[0].guild_id == 111
 
     @pytest.mark.asyncio
-    async def test_filters_out_guilds_with_no_channels(
-        self, resolver, mock_guild, mock_get_settings, entity_helper
-    ):
+    async def test_filters_out_guilds_with_no_channels(self, resolver, mock_guild, mock_get_settings, entity_helper):
         """Test filters out guilds where channels cannot be resolved."""
         guild = mock_guild(111, "Guild")
 

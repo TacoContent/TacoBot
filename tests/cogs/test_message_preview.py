@@ -14,10 +14,10 @@ def cog(bot, entity_helper, message_helper, tracking_db, settings):
     """Create a MessagePreview cog instance with all mocked dependencies."""
     with patch("bot.lib.discord.ext.commands.TacobotCog.logger.Log"):
         cog_instance = MessagePreview(
-            bot=bot, 
-            entity_helper=entity_helper, 
-            message_helper=message_helper, 
-            tracking_db=tracking_db, 
+            bot=bot,
+            entity_helper=entity_helper,
+            message_helper=message_helper,
+            tracking_db=tracking_db,
             settings=settings,
         )
         return cog_instance
@@ -511,7 +511,7 @@ class TestMessagePreviewSetup:
             # Configure mock settings to have log_level attribute
             mock_settings_instance = mock_settings_class.return_value
             mock_settings_instance.log_level = "INFO"
-            
+
             from bot.cogs.message_preview import setup
 
             await setup(bot)

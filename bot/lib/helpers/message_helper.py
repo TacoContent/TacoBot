@@ -17,7 +17,6 @@ from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 
 
-
 class MessageHelper:
     """Helper class for message manipulation and bot notification messages."""
 

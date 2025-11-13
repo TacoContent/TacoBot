@@ -10,9 +10,9 @@ from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.helpers import EntityHelper
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.openai import OpenAIHelper
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
-from bot.lib.settings import Settings
 
 
 class AssistantCog(TacobotCog):

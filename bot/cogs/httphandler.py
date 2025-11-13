@@ -115,10 +115,7 @@ class HttpHandlerCog(TacobotCog):
                     )
         except Exception as e:
             self.log.error(
-                0,
-                f"{self._module}.{self._class}.{_method}",
-                f"Failed to load handlers: {e}",
-                traceback.format_exc(),
+                0, f"{self._module}.{self._class}.{_method}", f"Failed to load handlers: {e}", traceback.format_exc()
             )
 
     def recursive_load_handlers(self, path: str):

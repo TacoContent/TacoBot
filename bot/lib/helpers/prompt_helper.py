@@ -23,7 +23,7 @@ class PromptHelper:
     yes/no confirmations, channel selection, role selection, and image/text collection.
     """
 
-    def __init__(self, bot, settings: Settings, messaging: MessageHelper) -> None:
+    def __init__(self, bot, settings: Settings, message_helper: MessageHelper) -> None:
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
@@ -31,7 +31,7 @@ class PromptHelper:
         self.settings = settings
         self.bot = bot
 
-        self.messaging = messaging
+        self.message_helper = message_helper
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -80,13 +80,15 @@ class PromptHelper:
         channel = targetChannel if targetChannel else ctx.channel if ctx.channel else ctx.author
 
         async def answer_callback(caller: YesOrNoView, interaction: discord.Interaction):
-            result_id = interaction.data["custom_id"]
+            if interaction is None or interaction.data is None:
+                return
+            result_id = interaction.data["custom_id"]  # type: ignore
             result = utils.str2bool(result_id)
             if result_callback:
                 await result_callback(result)
 
         async def timeout_callback(caller: YesOrNoView, interaction: discord.Interaction):
-            await self.messaging.send_embed(
+            await self.message_helper.send_embed(
                 channel=channel,
                 title=title,
                 message=self.settings.get_string(ctx.guild.id, "took_too_long"),
@@ -98,7 +100,7 @@ class PromptHelper:
         yes_no_view = YesOrNoView(
             ctx, answer_callback=answer_callback, timeout=timeout, timeout_callback=timeout_callback
         )
-        await self.messaging.send_embed(
+        await self.message_helper.send_embed(
             channel,
             title,
             question,
@@ -142,7 +144,7 @@ class PromptHelper:
 
             target_channel = ctx.channel if ctx.channel else ctx.author
 
-            channel_ask = await self.messaging.send_embed(
+            channel_ask = await self.message_helper.send_embed(
                 target_channel,
                 title,
                 f"{description}",
@@ -152,7 +154,7 @@ class PromptHelper:
             try:
                 channelResp = await self.bot.wait_for("message", check=check_channel, timeout=timeout)
             except asyncio.TimeoutError:
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     target_channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
                 )
                 return None
@@ -194,6 +196,8 @@ class PromptHelper:
             # if not the user that triggered the interaction, ignore
             if interaction.user.id != ctx.author.id:
                 return
+            if interaction is None or interaction.message is None:
+                return
             chan_id = int(select.values[0])
             await interaction.message.delete()
 
@@ -205,7 +209,7 @@ class PromptHelper:
 
             if chan_id is None:
                 # manual entered channel not found
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     ctx.channel,
                     title,
                     self.settings.get_string(guild_id, "unknown_channel", user=ctx.author.mention, channel_id=chan_id),
@@ -223,7 +227,7 @@ class PromptHelper:
                     f"{self._module}.{self._class}.{_method}",
                     f"{utils.get_user_display_name(ctx.author)} selected the channel '{selected_channel.name}'",
                 )
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     ctx.channel,
                     title,
                     self.settings.get_string(
@@ -235,7 +239,7 @@ class PromptHelper:
                     await callback(selected_channel)
                 return
             else:
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     ctx.channel,
                     title,
                     self.settings.get_string(guild_id, "unknown_channel", user=ctx.author.mention, channel_id=chan_id),
@@ -246,7 +250,7 @@ class PromptHelper:
                 return
 
         async def select_timeout():
-            await self.messaging.send_embed(
+            await self.message_helper.send_embed(
                 ctx.channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
             )
 
@@ -259,7 +263,7 @@ class PromptHelper:
             timeout_callback=select_timeout,
         )
         # action_row = ActionRow(select)
-        await self.messaging.send_embed(
+        await self.message_helper.send_embed(
             ctx.channel,
             title,
             message,
@@ -276,7 +280,7 @@ class PromptHelper:
         min_value: int = 0,
         max_value: int = 100,
         timeout: int = 60,
-    ) -> int:
+    ) -> typing.Optional[int]:
         """
         Ask user to enter a number within a range.
 
@@ -310,7 +314,7 @@ class PromptHelper:
 
         # channel = ctx.channel if ctx.channel else ctx.author
 
-        number_ask = await self.messaging.send_embed(
+        number_ask = await self.message_helper.send_embed(
             ctx.channel,
             title,
             f"{message}",
@@ -320,7 +324,7 @@ class PromptHelper:
         try:
             numberResp = await self.bot.wait_for("message", check=check_range, timeout=timeout)
         except asyncio.TimeoutError:
-            await self.messaging.send_embed(
+            await self.message_helper.send_embed(
                 ctx.channel, title, self.settings.get_string(guild_id, "took_too_long"), delete_after=5
             )
             return None
@@ -394,7 +398,7 @@ class PromptHelper:
             channel = ctx.author
             delete_user_message = False
 
-        text_ask = await self.messaging.send_embed(
+        text_ask = await self.message_helper.send_embed(
             channel,
             title,
             f"{message}",
@@ -405,7 +409,7 @@ class PromptHelper:
         try:
             textResp = await self.bot.wait_for("message", check=check_user, timeout=timeout)
         except asyncio.TimeoutError:
-            await self.messaging.send_embed(
+            await self.message_helper.send_embed(
                 channel, title, self.settings.get_string(guild_id, "took_too_long"), delete_after=5
             )
             return None
@@ -469,7 +473,7 @@ class PromptHelper:
             channel = ctx.author
             delete_user_message = False
 
-        ask_image_or_text = await self.messaging.send_embed(
+        ask_image_or_text = await self.message_helper.send_embed(
             channel,
             title,
             f"{message}",
@@ -480,7 +484,7 @@ class PromptHelper:
         try:
             textResp = await self.bot.wait_for("message", check=check_user, timeout=timeout)
         except asyncio.TimeoutError:
-            await self.messaging.send_embed(
+            await self.message_helper.send_embed(
                 channel, title, self.settings.get_string(guild_id, "took_too_long"), delete_after=5
             )
             return None
@@ -499,9 +503,9 @@ class PromptHelper:
         title: str = "Choose Role",
         message: str = "Please choose a role.",
         allow_none: bool = False,
-        exclude_roles: list = None,
+        exclude_roles: typing.Optional[list] = None,
         timeout: int = 60,
-        select_callback: typing.Callable = None,
+        select_callback: typing.Optional[typing.Callable] = None,
         # timeout_callback: typing.Callable = None,
     ) -> typing.Union[discord.Role, None]:
         """
@@ -531,7 +535,7 @@ class PromptHelper:
                         role_id = select.values[0]
 
                     if role_id == 0:
-                        await self.messaging.send_embed(
+                        await self.message_helper.send_embed(
                             ctx.channel, title, f"{ctx.author.mention}, ENTER ROLE NAME", delete_after=5
                         )
                         # need to ask for role name
@@ -550,7 +554,7 @@ class PromptHelper:
                         await select_callback(selected_role)
                         return
                     else:
-                        await self.messaging.send_embed(
+                        await self.message_helper.send_embed(
                             ctx.channel, title, f"{ctx.author.mention}, Unknown Role.", delete_after=5
                         )
                         await select_callback(None)
@@ -560,7 +564,7 @@ class PromptHelper:
 
         async def timeout_callback(select: RoleSelect, interaction: discord.Interaction):
             await interaction.delete_original_response()
-            await self.messaging.send_embed(
+            await self.message_helper.send_embed(
                 ctx.channel, title, self.settings.get_string(ctx.guild.id, "took_too_long"), delete_after=5
             )
 
@@ -573,7 +577,7 @@ class PromptHelper:
             timeout=timeout,
         )
 
-        await self.messaging.send_embed(
+        await self.message_helper.send_embed(
             ctx.channel,
             title,
             message,

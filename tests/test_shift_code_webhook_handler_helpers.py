@@ -11,8 +11,6 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 from bot.lib.http.handlers.webhook.ShiftCodeWebhookHandler import ShiftCodeWebhookHandler
-from bot.lib.mongodb.shift_codes import ShiftCodesDatabase
-from bot.lib.mongodb.tracking import TrackingDatabase
 from httpserver.http_util import HttpHeaders, HttpRequest
 from httpserver.server import HttpResponseException
 
@@ -22,13 +20,13 @@ from httpserver.server import HttpResponseException
 
 
 @pytest.fixture
-def handler(bot, settings, entity_helper, messaging, tracking_db, shift_codes_db):
+def handler(bot, settings, entity_helper, message_helper, tracking_db, shift_codes_db):
     """Create handler with mocked dependencies."""
     handler = ShiftCodeWebhookHandler(
-        bot=bot, 
-        settings=settings, 
-        entity_helper=entity_helper, 
-        messaging=messaging, 
+        bot=bot,
+        settings=settings,
+        entity_helper=entity_helper,
+        message_helper=message_helper,
         tracking_db=tracking_db,
         shift_codes_db=shift_codes_db,
     )

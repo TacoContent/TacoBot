@@ -7,12 +7,12 @@ from http import HTTPMethod
 
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
-from bot.lib.models.openapi import openapi
+from bot.lib.models.DiscordMentionable import DiscordMentionable
 from bot.lib.models.DiscordRole import DiscordRole
 from bot.lib.models.DiscordUser import DiscordUser
-from bot.lib.models.DiscordMentionable import DiscordMentionable
 from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
 from bot.lib.models.GuildItemIdBatchRequestBody import GuildItemIdBatchRequestBody
+from bot.lib.models.openapi import openapi
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from httpserver.EndpointDecorators import uri_variable_mapping

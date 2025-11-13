@@ -30,9 +30,9 @@ from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
 from bot.lib.models.openapi import openapi
 from bot.lib.settings import Settings
+from bot.tacobot import TacoBot
 from httpserver.EndpointDecorators import uri_variable_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from bot.tacobot import TacoBot
 from httpserver.server import HttpServer
 
 

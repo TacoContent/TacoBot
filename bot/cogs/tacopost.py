@@ -146,10 +146,6 @@ async def setup(bot):
     tacos_db = TacosDatabase()
     await bot.add_cog(
         TacoPostCog(
-            bot=bot,
-            tacos_db=tacos_db,
-            message_helper=message_helper,
-            prompt_helper=prompt_helper,
-            settings=settings,
+            bot=bot, tacos_db=tacos_db, message_helper=message_helper, prompt_helper=prompt_helper, settings=settings
         )
     )

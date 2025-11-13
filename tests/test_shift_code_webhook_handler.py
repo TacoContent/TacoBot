@@ -19,13 +19,13 @@ from httpserver.http_util import HttpRequest
 
 
 @pytest.fixture
-def handler(bot, settings, entity_helper, messaging, tracking_db, shift_codes_db):
+def handler(bot, settings, entity_helper, message_helper, tracking_db, shift_codes_db):
     """Create handler with mocked dependencies."""
     handler = ShiftCodeWebhookHandler(
-        bot=bot, 
-        settings=settings, 
-        entity_helper=entity_helper, 
-        messaging=messaging, 
+        bot=bot,
+        settings=settings,
+        entity_helper=entity_helper,
+        message_helper=message_helper,
         tracking_db=tracking_db,
         shift_codes_db=shift_codes_db,
     )
@@ -234,7 +234,7 @@ class TestShiftCodeWebhookHandler:
         )
         handler.shift_codes_db.is_code_tracked = MagicMock(return_value=False)
         handler.entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
-        handler.messaging.send_embed = AsyncMock(return_value=mock_message)
+        handler.message_helper.send_embed = AsyncMock(return_value=mock_message)
 
         response = await handler.shift_code(mock_request)
 
@@ -263,7 +263,7 @@ class TestShiftCodeWebhookHandler:
         )
         handler.shift_codes_db.is_code_tracked = MagicMock(return_value=False)
         handler.entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
-        handler.messaging.send_embed = AsyncMock(return_value=mock_message)
+        handler.message_helper.send_embed = AsyncMock(return_value=mock_message)
 
         response = await handler.shift_code(mock_request)
 
@@ -412,9 +412,7 @@ class TestShiftCodeWebhookHandler:
         handler.entity_helper.get_or_fetch_channel.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_shift_code_channel_not_found(
-        self, handler, mock_request, valid_shift_code_payload, bot, mock_guild
-    ):
+    async def test_shift_code_channel_not_found(self, handler, mock_request, valid_shift_code_payload, bot, mock_guild):
         """Test shift_code handles channels that can't be fetched.
 
         Verifies:
@@ -432,7 +430,7 @@ class TestShiftCodeWebhookHandler:
             response = await handler.shift_code(mock_request)
 
         assert response.status_code == 200
-        handler.messaging.send_embed.assert_not_called()
+        handler.message_helper.send_embed.assert_not_called()
 
     # =======================
     # Message Broadcasting Tests
@@ -458,13 +456,13 @@ class TestShiftCodeWebhookHandler:
         )
         handler.shift_codes_db.is_code_tracked = MagicMock(return_value=False)
         handler.entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
-        handler.messaging.send_embed = AsyncMock(return_value=mock_message)
+        handler.message_helper.send_embed = AsyncMock(return_value=mock_message)
 
         with patch('bot.lib.utils.get_seconds_until', return_value=86400):
             response = await handler.shift_code(mock_request)
 
         assert response.status_code == 200
-        handler.messaging.send_embed.assert_called_once()
+        handler.message_helper.send_embed.assert_called_once()
         mock_message.add_reaction.assert_any_call("✅")
         mock_message.add_reaction.assert_any_call("❌")
         handler.shift_codes_db.add_shift_code.assert_called_once()

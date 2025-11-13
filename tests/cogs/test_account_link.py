@@ -387,10 +387,6 @@ async def test_setup(bot, twitch_db, tracking_db, settings, message_helper):
         await setup(bot)
 
         mock_cog_class.assert_called_once_with(
-            bot=bot,
-            messaging=message_helper,
-            twitch_db=twitch_db,
-            tracking_db=tracking_db,
-            settings=settings,
+            bot=bot, messaging=message_helper, twitch_db=twitch_db, tracking_db=tracking_db, settings=settings
         )
         bot.add_cog.assert_called_once_with(mock_cog_instance)

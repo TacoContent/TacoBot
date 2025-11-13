@@ -43,8 +43,8 @@ from http import HTTPMethod
 
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
-from bot.lib.models.JoinWhitelistUser import JoinWhitelistAddedBy, JoinWhitelistUser
 from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from bot.lib.models.JoinWhitelistUser import JoinWhitelistAddedBy, JoinWhitelistUser
 from bot.lib.models.openapi import openapi
 from bot.lib.models.PagedResults import PagedResultsJoinWhitelistUser
 from bot.lib.mongodb.whitelist import WhitelistDatabase

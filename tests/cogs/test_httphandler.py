@@ -35,9 +35,7 @@ class TestHttpHandlerCogInit:
     def test_init_with_all_parameters(self, bot, settings, tracking_db, message_helper):
         """Test initialization with all parameters provided."""
         with patch("bot.lib.discord.ext.commands.TacobotCog.logger.Log"):
-            cog = HttpHandlerCog(
-                bot=bot, tracking_db=tracking_db, message_helper=message_helper, settings=settings
-            )
+            cog = HttpHandlerCog(bot=bot, tracking_db=tracking_db, message_helper=message_helper, settings=settings)
 
             assert cog.bot is bot
             assert cog.tracking_db is tracking_db
@@ -517,7 +515,6 @@ class TestSetupFunction:
 
     async def test_setup_passes_correct_parameters(self, bot, tracking_db, message_helper, settings):
         """Test that setup passes correct parameters to HttpHandlerCog."""
-
 
         with (
             patch("bot.cogs.httphandler.Settings", return_value=settings),

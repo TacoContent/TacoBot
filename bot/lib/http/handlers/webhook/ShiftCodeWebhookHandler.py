@@ -66,7 +66,7 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
         bot: TacoBot,
         settings: Settings,
         entity_helper: EntityHelper,
-        messaging: MessageHelper,
+        message_helper: MessageHelper,
         tracking_db: TrackingDatabase,
         shift_codes_db: ShiftCodesDatabase,
     ):
@@ -80,7 +80,7 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
         self.tracking_db = tracking_db
         self.shift_codes_db = shift_codes_db
         self.entity_helper = entity_helper
-        self.messaging = messaging
+        self.message_helper = message_helper
 
     @uri_mapping("/webhook/shift", method=HTTPMethod.POST)
     @openapi.summary("Ingest SHiFT code webhook payloads")
@@ -422,7 +422,7 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
             payload: Original webhook payload
         """
         for channel in channels:
-            message = await self.messaging.send_embed(
+            message = await self.message_helper.send_embed(
                 channel=channel,
                 title="SHiFT CODE ↗️",
                 message=embed_data["message"],
@@ -456,6 +456,6 @@ def setup(bot: TacoBot, http_server: HttpServer):
     entity_helper = EntityHelper(bot)
     tracking_db = TrackingDatabase()
     shift_codes_db = ShiftCodesDatabase()
-    messaging = MessageHelper(bot=bot, settings=settings)
-    handler = ShiftCodeWebhookHandler(bot, settings, entity_helper, messaging, tracking_db, shift_codes_db)
+    message_helper = MessageHelper(bot=bot, settings=settings)
+    handler = ShiftCodeWebhookHandler(bot, settings, entity_helper, message_helper, tracking_db, shift_codes_db)
     http_server.add_handler(handler)

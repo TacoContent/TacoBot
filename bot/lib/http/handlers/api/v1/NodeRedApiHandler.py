@@ -104,6 +104,7 @@ class NodeRedApiHandler(ApiHttpHandler):
         headers.add("Location", f"{self.NODERED_URL}/tacobot/guild/{guild}/invite/{channel}")
         return self._create_error_response(302, "Redirecting to Node-RED for Twitch guild invite", headers=headers)
 
+
 def setup(bot: TacoBot, http_server: HttpServer):
     settings = Settings()
     handler = NodeRedApiHandler(bot, settings)

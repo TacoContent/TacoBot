@@ -385,10 +385,12 @@ class TestIntroductionImportCommand:
         # Create a reaction
         reaction = MagicMock()
         reaction.emoji = '🌟'
+
         # Use AsyncMock to return an async iterator over the author
         async def async_iter(users):
             for user in users:
                 yield user
+
         reaction.users = lambda: async_iter([mock_message.author])
         mock_message.reactions = [reaction]
 

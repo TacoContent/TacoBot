@@ -37,7 +37,7 @@ class TacoHelper:
         self.bot = bot
         self.settings = Settings()
         self.tacos_db = TacosDatabase()
-        self.messaging = MessageHelper(bot=self.bot, settings=self.settings)
+        self.message_helper = MessageHelper(bot=self.bot, settings=self.settings)
 
         # EntityHelper for fetching channels
         # Import here to avoid circular dependency
@@ -221,7 +221,7 @@ class TacoHelper:
                     {"name": "✨ TYPE", "value": type.name},
                 ]
 
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=log_channel, title="", message="", fields=fields, author=fromMember
                 )
         except Exception as e:

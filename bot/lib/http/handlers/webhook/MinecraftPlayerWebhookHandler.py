@@ -69,7 +69,6 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
         self.SETTINGS_SECTION = "webhook/minecraft/player"
         self.entity_helper = entity_helper
 
-
     @uri_mapping("/webhook/minecraft/player/event", method=HTTPMethod.POST)
     @openapi.response(
         200,

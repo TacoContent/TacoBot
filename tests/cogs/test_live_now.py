@@ -596,7 +596,6 @@ class TestLiveNowSetup:
 
     async def test_setup_creates_cog_with_dependencies(self, bot):
         """Test that setup function creates cog with all dependencies."""
-        
 
         with (
             patch("bot.cogs.live_now.Settings") as mock_settings_class,

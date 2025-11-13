@@ -5,9 +5,7 @@ from bot.cogs.move_message import MoveMessageCog, setup
 
 
 @pytest.fixture
-def cog(
-    bot, tracking_db, permissions, context_helper, entity_helper, message_helper, prompt_helper, settings
-):
+def cog(bot, tracking_db, permissions, context_helper, entity_helper, message_helper, prompt_helper, settings):
     return MoveMessageCog(
         bot=bot,
         tracking_db=tracking_db,
@@ -276,9 +274,7 @@ async def test_on_raw_reaction_add_exception(cog, entity_helper):
 
 
 @pytest.mark.asyncio
-async def test_move_command_success(
-    cog, context_helper, prompt_helper, message_helper, tracking_db, settings
-):
+async def test_move_command_success(cog, context_helper, prompt_helper, message_helper, tracking_db, settings):
     ctx = MagicMock()
     ctx.invoked_subcommand = None
     ctx.guild = MagicMock()
