@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Callable, List, Optional
 
 import discord
-from bot.lib import discordhelper
+from bot.lib.helpers import EntityHelper
 from bot.lib.mongodb.free_game_keys import FreeGameKeysDatabase
 
 
@@ -24,11 +24,11 @@ class GuildResolver:
         self,
         get_settings_func: Callable[[int, str], dict],
         freegame_db: FreeGameKeysDatabase,
-        discord_helper: discordhelper.DiscordHelper,
+        entity_helper: EntityHelper,
     ):
         self.get_settings: Callable[[int, str], dict] = get_settings_func
         self.freegame_db: FreeGameKeysDatabase = freegame_db
-        self.discord_helper: discordhelper.DiscordHelper = discord_helper
+        self.entity_helper: EntityHelper = entity_helper
 
     async def resolve_eligible_guilds(
         self, guilds: List[discord.Guild], game_id: int, settings_section: str
@@ -87,7 +87,7 @@ class GuildResolver:
 
         channels = []
         for channel_id in channel_ids:
-            channel = await self.discord_helper.get_or_fetch_channel(int(channel_id))
+            channel = await self.entity_helper.get_or_fetch_channel(int(channel_id))
             if channel:
                 channels.append(channel)
         return channels

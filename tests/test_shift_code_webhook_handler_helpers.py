@@ -22,22 +22,17 @@ from httpserver.server import HttpResponseException
 
 
 @pytest.fixture
-def mock_bot():
-    """Create a mock TacoBot instance."""
-    bot = MagicMock()
-    bot.guilds = []
-    return bot
-
-
-@pytest.fixture
-def handler(mock_bot):
+def handler(bot, settings, entity_helper, messaging, tracking_db, shift_codes_db):
     """Create handler with mocked dependencies."""
-    handler = ShiftCodeWebhookHandler(mock_bot)
+    handler = ShiftCodeWebhookHandler(
+        bot=bot, 
+        settings=settings, 
+        entity_helper=entity_helper, 
+        messaging=messaging, 
+        tracking_db=tracking_db,
+        shift_codes_db=shift_codes_db,
+    )
     handler.log = Mock()
-    handler.discord_helper = AsyncMock()
-    handler.shift_codes_db = Mock(spec=ShiftCodesDatabase)
-    handler.tracking_db = Mock(spec=TrackingDatabase)
-    handler.messaging = AsyncMock()
     return handler
 
 
@@ -559,7 +554,7 @@ class TestShiftCodeWebhookHandlerResolveChannels:
         result = await handler._resolve_guild_channels(123456, settings)
 
         assert len(result) == 0
-        handler.discord_helper.get_or_fetch_channel.assert_not_called()
+        handler.entity_helper.get_or_fetch_channel.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_resolve_channels_missing_channel_ids_key(self, handler):
@@ -585,13 +580,13 @@ class TestShiftCodeWebhookHandlerResolveChannels:
         mock_channel = MagicMock()
         mock_channel.id = 111
         settings = {"channel_ids": [111]}
-        handler.discord_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
+        handler.entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
 
         result = await handler._resolve_guild_channels(123456, settings)
 
         assert len(result) == 1
         assert result[0] == mock_channel
-        handler.discord_helper.get_or_fetch_channel.assert_called_once_with(111)
+        handler.entity_helper.get_or_fetch_channel.assert_called_once_with(111)
 
     @pytest.mark.asyncio
     async def test_resolve_channels_multiple_valid_channels(self, handler):
@@ -607,7 +602,7 @@ class TestShiftCodeWebhookHandlerResolveChannels:
         channel2.id = 222
 
         settings = {"channel_ids": [111, 222]}
-        handler.discord_helper.get_or_fetch_channel = AsyncMock(side_effect=[channel1, channel2])
+        handler.entity_helper.get_or_fetch_channel = AsyncMock(side_effect=[channel1, channel2])
 
         result = await handler._resolve_guild_channels(123456, settings)
 
@@ -627,7 +622,7 @@ class TestShiftCodeWebhookHandlerResolveChannels:
         channel1.id = 111
 
         settings = {"channel_ids": [111, 222, 333]}
-        handler.discord_helper.get_or_fetch_channel = AsyncMock(side_effect=[channel1, None, None])
+        handler.entity_helper.get_or_fetch_channel = AsyncMock(side_effect=[channel1, None, None])
 
         result = await handler._resolve_guild_channels(123456, settings)
 
@@ -643,12 +638,12 @@ class TestShiftCodeWebhookHandlerResolveChannels:
         - Log message generated
         """
         settings = {"channel_ids": [111, 222]}
-        handler.discord_helper.get_or_fetch_channel = AsyncMock(return_value=None)
+        handler.entity_helper.get_or_fetch_channel = AsyncMock(return_value=None)
 
         result = await handler._resolve_guild_channels(123456, settings)
 
         assert len(result) == 0
-        assert handler.discord_helper.get_or_fetch_channel.call_count == 2
+        assert handler.entity_helper.get_or_fetch_channel.call_count == 2
 
 
 class TestShiftCodeWebhookHandlerAddValidationReactions:

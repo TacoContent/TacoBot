@@ -8,14 +8,14 @@ import typing
 
 import discord
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
-from bot.lib.messaging import Messaging
+from bot.lib.helpers import MessageHelper
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class RestrictedCog(TacobotCog):
-    def __init__(self, bot: TacoBot, messaging: Messaging, settings: Settings) -> None:
+    def __init__(self, bot: TacoBot, messaging: MessageHelper, settings: Settings) -> None:
         super().__init__(bot, "restricted", settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
@@ -100,5 +100,5 @@ class RestrictedCog(TacobotCog):
 
 async def setup(bot):
     settings = Settings()
-    messaging = Messaging(bot)
+    messaging = MessageHelper(bot, settings)
     await bot.add_cog(RestrictedCog(bot=bot, messaging=messaging, settings=settings))

@@ -20,7 +20,7 @@ def cog(
     bot,
     techthurs_db,
     tracking_db,
-    messaging,
+    message_helper,
     permissions,
     context_helper,
     entity_helper,
@@ -33,7 +33,7 @@ def cog(
         bot=bot,
         techthurs_db=techthurs_db,
         tracking_db=tracking_db,
-        messaging=messaging,
+        messaging=message_helper,
         permissions=permissions,
         context_helper=context_helper,
         entity_helper=entity_helper,
@@ -116,7 +116,7 @@ class TestTechThursdaysCogInit:
         bot,
         techthurs_db,
         tracking_db,
-        messaging,
+        message_helper,
         permissions,
         context_helper,
         entity_helper,
@@ -128,7 +128,7 @@ class TestTechThursdaysCogInit:
         assert cog.bot == bot
         assert cog.techthurs_db == techthurs_db
         assert cog.tracking_db == tracking_db
-        assert cog.messaging == messaging
+        assert cog.message_helper == message_helper
         assert cog.permissions == permissions
         assert cog.context_helper == context_helper
         assert cog.entity_helper == entity_helper

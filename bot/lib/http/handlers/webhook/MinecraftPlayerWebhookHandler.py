@@ -38,19 +38,19 @@ import typing
 import uuid
 from http import HTTPMethod
 from time import time
-from typing import Optional
 
 import discord
-from bot.lib import discordhelper
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
+from bot.lib.helpers import EntityHelper
 from bot.lib.http.handlers.BaseWebhookHandler import BaseWebhookHandler
+from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from bot.lib.models.MinecraftPlayerEventPayload import MinecraftPlayerEventPayload, MinecraftPlayerEventPayloadResponse
+from bot.lib.models.openapi import openapi
+from bot.lib.settings import Settings
+from bot.tacobot import TacoBot
 from httpserver.EndpointDecorators import uri_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException
-from lib.models import openapi
-from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
-from lib.models.MinecraftPlayerEventPayload import MinecraftPlayerEventPayload, MinecraftPlayerEventPayloadResponse
-from tacobot import TacoBot
+from httpserver.server import HttpResponseException, HttpServer
 
 
 class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
@@ -63,12 +63,12 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
         * Delegate to event-specific handlers for response construction.
     """
 
-    def __init__(self, bot: TacoBot, discord_helper: Optional[discordhelper.DiscordHelper] = None):
-        super().__init__(bot, discord_helper)
+    def __init__(self, bot: TacoBot, settings: Settings, entity_helper: EntityHelper):
+        super().__init__(bot, settings=settings)
         self._class = self.__class__.__name__
         self.SETTINGS_SECTION = "webhook/minecraft/player"
+        self.entity_helper = entity_helper
 
-        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
     @uri_mapping("/webhook/minecraft/player/event", method=HTTPMethod.POST)
     @openapi.response(
@@ -387,7 +387,7 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
             HttpResponseException: If any object cannot be found
         """
         # Get discord user from user_id
-        discord_user = await self.discord_helper.get_or_fetch_user(user_id)
+        discord_user = await self.entity_helper.get_or_fetch_user(user_id)
         if not discord_user:
             err = ErrorStatusCodePayload({"code": 404, "error": f"User {user_id} not found"})
             raise HttpResponseException(err.code, headers, json.dumps(err.to_dict()).encode())
@@ -405,3 +405,11 @@ class MinecraftPlayerWebhookHandler(BaseWebhookHandler):
             raise HttpResponseException(err.code, headers, json.dumps(err.to_dict()).encode())
 
         return discord_user, guild, member
+
+
+def setup(bot: TacoBot, http_server: HttpServer):
+    """Setup the MinecraftPlayerWebhookHandler routes."""
+    settings = Settings()
+    entity_helper = EntityHelper(bot)
+    handler = MinecraftPlayerWebhookHandler(bot, settings, entity_helper)
+    http_server.add_handler(handler)

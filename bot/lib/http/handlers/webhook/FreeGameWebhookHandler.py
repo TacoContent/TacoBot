@@ -34,22 +34,23 @@ import typing
 from http import HTTPMethod
 
 import discord
+from bot.lib.helpers import EntityHelper, MessageHelper
 from bot.lib.http.handlers.BaseWebhookHandler import BaseWebhookHandler
+from bot.lib.http.handlers.webhook.helpers.GuildResolver import GuildResolver, ResolvedGuild
+from bot.lib.http.handlers.webhook.helpers.OfferMessageFormatter import FormattedOffer, OfferMessageFormatter
+from bot.lib.http.handlers.webhook.helpers.OfferUrlEnricher import EnrichedUrl, OfferUrlEnricher
+from bot.lib.models import openapi
+from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from bot.lib.models.TacoWebhookGamePayload import TacoWebhookGamePayload
 from bot.lib.mongodb.free_game_keys import FreeGameKeysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.settings import Settings
 from bot.lib.UrlShortener import UrlShortener
+from bot.tacobot import TacoBot
 from bot.ui.ExternalUrlButtonView import ExternalUrlButtonView
 from httpserver.EndpointDecorators import uri_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException
-from lib import discordhelper
-from lib.http.handlers.webhook.helpers.GuildResolver import GuildResolver, ResolvedGuild
-from lib.http.handlers.webhook.helpers.OfferMessageFormatter import FormattedOffer, OfferMessageFormatter
-from lib.http.handlers.webhook.helpers.OfferUrlEnricher import EnrichedUrl, OfferUrlEnricher
-from lib.models import openapi
-from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
-from lib.models.TacoWebhookGamePayload import TacoWebhookGamePayload
-from tacobot import TacoBot
+from httpserver.server import HttpResponseException, HttpServer
 
 
 class FreeGameWebhookHandler(BaseWebhookHandler):
@@ -63,15 +64,25 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
         * Record announcements in tracking DB to suppress duplicates.
     """
 
-    def __init__(self, bot: TacoBot, discord_helper: typing.Optional[discordhelper.DiscordHelper] = None):
-        super().__init__(bot, discord_helper)
+    def __init__(
+        self,
+        bot: TacoBot,
+        settings: Settings,
+        freegame_db: FreeGameKeysDatabase,
+        tracking_db: TrackingDatabase,
+        entity_helper: EntityHelper,
+        messaging: MessageHelper,
+    ):
+        super().__init__(bot, settings=settings)
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.SETTINGS_SECTION = "free_games"
 
-        self.tracking_db = TrackingDatabase()
-        self.freegame_db = FreeGameKeysDatabase()
+        self.freegame_db = freegame_db
+        self.tracking_db = tracking_db
+        self.entity_helper = entity_helper
+        self.messaging = messaging
 
         self.url_shortener = UrlShortener(
             api_url=os.getenv("SHORTENER_API_URL", None), access_token=os.getenv("SHORTENER_ACCESS_TOKEN", None)
@@ -191,7 +202,7 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
 
     async def _resolve_eligible_guilds(self, game_id: str) -> typing.List[ResolvedGuild]:
         """Resolve guilds eligible for offer notification."""
-        resolver = GuildResolver(self.get_settings, self.freegame_db, self.discord_helper)
+        resolver = GuildResolver(self.get_settings, freegame_db=self.freegame_db, entity_helper=self.entity_helper)
         return await resolver.resolve_eligible_guilds([g for g in self.bot.guilds], int(game_id), self.SETTINGS_SECTION)
 
     async def _broadcast_to_guilds(
@@ -255,3 +266,22 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
         return headers
+
+
+def setup(bot: TacoBot, http_server: HttpServer):
+    """Cog setup function."""
+    settings = Settings()
+    freegame_db = FreeGameKeysDatabase()
+    tracking_db = TrackingDatabase()
+    entity_helper = EntityHelper(bot)
+    messaging = MessageHelper(bot=bot, settings=settings)
+
+    handler = FreeGameWebhookHandler(
+        bot=bot,
+        settings=settings,
+        freegame_db=freegame_db,
+        tracking_db=tracking_db,
+        entity_helper=entity_helper,
+        messaging=messaging,
+    )
+    http_server.add_handler(handler)

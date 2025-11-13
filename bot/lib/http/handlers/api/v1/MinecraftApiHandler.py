@@ -45,28 +45,25 @@ import requests
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
+from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from bot.lib.models.MinecraftOpUser import MinecraftOpUser
+from bot.lib.models.MinecraftServerSettings import  MinecraftServerSettingsSettingsModel
+from bot.lib.models.MinecraftServerStatus import MinecraftServerStatus
+from bot.lib.models.MinecraftSettingsUpdatePayload import MinecraftSettingsUpdatePayload
+from bot.lib.models.MinecraftUser import MinecraftUser
+from bot.lib.models.MinecraftUserStats import MinecraftUserStats
+from bot.lib.models.MinecraftWhiteListUser import MinecraftWhiteListUser
+from bot.lib.models.openapi import openapi
+from bot.lib.models.SimpleStatusResponse import SimpleStatusResponse
+from bot.lib.models.TacoMinecraftWorldInfo import TacoMinecraftWorldInfo
+from bot.lib.models.TacoMinecraftWorlds import TacoMinecraftWorlds
 from bot.lib.minecraft.status import MinecraftStatus
 from bot.lib.mongodb.minecraft import MinecraftDatabase
-from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
+from bot.tacobot import TacoBot
 from httpserver.EndpointDecorators import uri_mapping, uri_variable_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException
-from lib import discordhelper
-from lib.models import ErrorStatusCodePayload
-from lib.models.MinecraftOpUser import MinecraftOpUser
-from lib.models.MinecraftServerSettings import MinecraftServerSettings, MinecraftServerSettingsSettingsModel
-from lib.models.MinecraftServerStatus import MinecraftServerStatus
-from lib.models.MinecraftSettingsUpdatePayload import MinecraftSettingsUpdatePayload
-from lib.models.MinecraftUser import MinecraftUser
-from lib.models.MinecraftUserStats import MinecraftUserStats
-from lib.models.MinecraftWhiteListUser import MinecraftWhiteListUser
-from lib.models.openapi import openapi
-from lib.models.SimpleStatusResponse import SimpleStatusResponse
-from lib.models.TacoMinecraftWorldInfo import TacoMinecraftWorldInfo
-from lib.models.TacoMinecraftWorlds import TacoMinecraftWorlds
-from lib.models.TacoSettingsModel import TacoSettingsModel
-from tacobot import TacoBot
+from httpserver.server import HttpResponseException, HttpServer
 
 
 class MinecraftApiHandler(BaseHttpHandler):
@@ -84,18 +81,15 @@ class MinecraftApiHandler(BaseHttpHandler):
             payload rather than raising, assisting external health dashboards.
     """
 
-    def __init__(self, bot: TacoBot, discord_helper: typing.Optional[discordhelper.DiscordHelper] = None):
-        super().__init__(bot, discord_helper)
+    def __init__(self, bot: TacoBot, settings: Settings, minecraft_db: MinecraftDatabase):
+        super().__init__(bot, settings=settings)
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.SETTINGS_SECTION = f"minecraft/api/{API_VERSION}"
 
-        self.settings = Settings()
-
-        self.minecraft_db = MinecraftDatabase()
-        self.tracking_db = TrackingDatabase()
-        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
+        self.minecraft_db = minecraft_db
+        # self.tracking_db = TrackingDatabase()
 
     @uri_mapping(f"/api/{API_VERSION}/minecraft/whitelist.json", method=HTTPMethod.GET)
     @uri_mapping("/tacobot/minecraft/whitelist.json", method=HTTPMethod.GET)
@@ -974,3 +968,10 @@ class MinecraftApiHandler(BaseHttpHandler):
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
+
+
+def setup(bot: TacoBot, http_server: HttpServer):
+    settings = Settings()
+    minecraft_db = MinecraftDatabase()
+    handler = MinecraftApiHandler(bot=bot, settings=settings, minecraft_db=minecraft_db)
+    http_server.add_handler(handler)

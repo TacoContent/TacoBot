@@ -6,17 +6,15 @@ from http import HTTPMethod
 
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
+from bot.lib.models import openapi
 from bot.lib.models.DiscordGuild import DiscordGuild
-from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from bot.lib.models.GuildItemIdBatchRequestBody import GuildItemIdBatchRequestBody
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from httpserver.EndpointDecorators import uri_mapping, uri_variable_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException
-from lib import discordhelper
-from lib.models import openapi
-from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
-from lib.models.GuildItemIdBatchRequestBody import GuildItemIdBatchRequestBody
+from httpserver.server import HttpResponseException, HttpServer
 
 
 class GuildLookupApiHandler(BaseHttpHandler):
@@ -52,13 +50,10 @@ class GuildLookupApiHandler(BaseHttpHandler):
         - Returned guild objects conform to the DiscordGuild schema (as represented by DiscordGuild.to_dict()).
     """
 
-    def __init__(self, bot: TacoBot, discord_helper: typing.Optional[discordhelper.DiscordHelper] = None):
-        super().__init__(bot, discord_helper)
+    def __init__(self, bot: TacoBot, settings: Settings):
+        super().__init__(bot, settings=settings)
         self._class = self.__class__.__name__
         self._module = os.path.basename(__file__)[:-3]
-        self.settings = Settings()
-        self.tracking_db = TrackingDatabase()
-        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
     @openapi.description("Lookup a single guild by ID.")
     @openapi.summary("Guild Lookup")
@@ -495,3 +490,9 @@ class GuildLookupApiHandler(BaseHttpHandler):
         except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}")
             return self._create_error_response(500, f"Internal server error: {str(e)}", headers)
+
+
+def setup(bot: TacoBot, http_server: HttpServer):
+    settings = Settings()
+    handler = GuildLookupApiHandler(bot, settings)
+    http_server.add_handler(handler)

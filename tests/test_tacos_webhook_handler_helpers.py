@@ -11,8 +11,6 @@ from unittest.mock import AsyncMock, MagicMock, Mock
 import pytest
 from bot.lib.enums.tacotypes import TacoTypes
 from bot.lib.http.handlers.webhook.TacosWebhookHandler import TacosWebhookHandler
-from bot.lib.mongodb.tacos import TacosDatabase
-from bot.lib.mongodb.tracking import TrackingDatabase
 from httpserver.http_util import HttpHeaders, HttpRequest
 from httpserver.server import HttpResponseException
 
@@ -22,24 +20,15 @@ from httpserver.server import HttpResponseException
 
 
 @pytest.fixture
-def mock_bot():
-    """Create a mock TacoBot instance."""
-    bot = MagicMock()
-    bot.user = MagicMock()
-    bot.user.id = 999888777666555444
-    return bot
-
-
-@pytest.fixture
-def handler(mock_bot):
+def handler(bot, settings, entity_helper, taco_helper, users_utils, tacos_db):
     """Create handler with mocked dependencies."""
-    handler = TacosWebhookHandler(mock_bot)
+    handler = TacosWebhookHandler(
+        bot, settings, entity_helper, taco_helper, users_utils, tacos_db
+    )
     handler.log = Mock()
-    handler.discord_helper = AsyncMock()
-    handler.settings = Mock()
-    handler.tacos_db = Mock(spec=TacosDatabase)
-    handler.tracking_db = Mock(spec=TrackingDatabase)
-    handler.users_utils = Mock()
+    handler.settings = settings
+    handler.tacos_db = tacos_db
+    handler.users_utils = users_utils
     return handler
 
 
@@ -434,7 +423,7 @@ class TestFetchDiscordUsers:
         """Test successful fetch for both users."""
         to_user = mock_discord_user(111111111111, "viewer", False)
         from_user = mock_discord_user(222222222222, "streamer", False)
-        handler.discord_helper.get_or_fetch_user.side_effect = [to_user, from_user]
+        handler.entity_helper.get_or_fetch_user.side_effect = [to_user, from_user]
 
         result_to, result_from = await handler._fetch_discord_users(
             to_user_id=111111111111,
@@ -451,7 +440,7 @@ class TestFetchDiscordUsers:
     async def test_fetch_to_user_not_found(self, handler, http_headers, mock_discord_user):
         """Test exception when to_user fetch returns None."""
         from_user = mock_discord_user(222222222222, "streamer", False)
-        handler.discord_helper.get_or_fetch_user.side_effect = [None, from_user]
+        handler.entity_helper.get_or_fetch_user.side_effect = [None, from_user]
 
         with pytest.raises(HttpResponseException) as exc_info:
             await handler._fetch_discord_users(
@@ -474,7 +463,7 @@ class TestFetchDiscordUsers:
     async def test_fetch_from_user_not_found(self, handler, http_headers, mock_discord_user):
         """Test exception when from_user fetch returns None."""
         to_user = mock_discord_user(111111111111, "viewer", False)
-        handler.discord_helper.get_or_fetch_user.side_effect = [to_user, None]
+        handler.entity_helper.get_or_fetch_user.side_effect = [to_user, None]
 
         with pytest.raises(HttpResponseException) as exc_info:
             await handler._fetch_discord_users(
@@ -496,7 +485,7 @@ class TestFetchDiscordUsers:
     @pytest.mark.asyncio
     async def test_fetch_both_not_found(self, handler, http_headers):
         """Test exception when both users not found (first failure wins)."""
-        handler.discord_helper.get_or_fetch_user.side_effect = [None, None]
+        handler.entity_helper.get_or_fetch_user.side_effect = [None, None]
 
         with pytest.raises(HttpResponseException) as exc_info:
             await handler._fetch_discord_users(
@@ -845,7 +834,7 @@ class TestExecuteTacoTransfer:
         from_user = mock_discord_user(222222222222, "streamer", False)
         to_user = mock_discord_user(111111111111, "viewer", False)
 
-        handler.discord_helper.taco_give_user = AsyncMock()
+        handler.taco_helper.taco_give_user = AsyncMock()
         handler.tacos_db.get_tacos_count.return_value = 105
 
         total = await handler._execute_taco_transfer(
@@ -858,7 +847,7 @@ class TestExecuteTacoTransfer:
         )
 
         assert total == 105
-        handler.discord_helper.taco_give_user.assert_called_once_with(
+        handler.taco_helper.give_tacos.assert_called_once_with(
             123456, from_user, to_user, "Great work!", TacoTypes.CUSTOM, taco_amount=5
         )
 
@@ -868,7 +857,6 @@ class TestExecuteTacoTransfer:
         from_user = mock_discord_user(222222222222, "streamer", False)
         to_user = mock_discord_user(111111111111, "viewer", False)
 
-        handler.discord_helper.taco_give_user = AsyncMock()
         handler.tacos_db.get_tacos_count.return_value = 95
 
         total = await handler._execute_taco_transfer(
@@ -881,7 +869,7 @@ class TestExecuteTacoTransfer:
         )
 
         assert total == 95
-        handler.discord_helper.taco_give_user.assert_called_once_with(
+        handler.taco_helper.give_tacos.assert_called_once_with(
             123456, from_user, to_user, "Mistake", TacoTypes.CUSTOM, taco_amount=-5
         )
 
@@ -891,7 +879,6 @@ class TestExecuteTacoTransfer:
         from_user = mock_discord_user(222222222222, "streamer", False)
         to_user = mock_discord_user(111111111111, "viewer", False)
 
-        handler.discord_helper.taco_give_user = AsyncMock()
         handler.tacos_db.get_tacos_count.return_value = 100
 
         total = await handler._execute_taco_transfer(
@@ -905,7 +892,7 @@ class TestExecuteTacoTransfer:
 
         assert total == 100
         # Should still call transfer even with 0
-        handler.discord_helper.taco_give_user.assert_called_once()
+        handler.taco_helper.give_tacos.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_execute_returns_zero_when_count_is_none(self, handler, mock_discord_user):
@@ -913,7 +900,6 @@ class TestExecuteTacoTransfer:
         from_user = mock_discord_user(222222222222, "streamer", False)
         to_user = mock_discord_user(111111111111, "viewer", False)
 
-        handler.discord_helper.taco_give_user = AsyncMock()
         handler.tacos_db.get_tacos_count.return_value = None
 
         total = await handler._execute_taco_transfer(

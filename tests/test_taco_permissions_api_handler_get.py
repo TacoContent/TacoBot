@@ -7,10 +7,8 @@ from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 
 
 @pytest.fixture
-def handler():
-    bot = MagicMock()
-    discord_helper = MagicMock()
-    handler = TacoPermissionsApiHandler(bot, discord_helper)
+def handler(bot, settings, permissions_db):
+    handler = TacoPermissionsApiHandler(bot=bot, settings=settings, permissions_db=permissions_db)
     handler.log = MagicMock()
     handler.validate_auth_token = MagicMock()
     handler._list_permissions = AsyncMock()

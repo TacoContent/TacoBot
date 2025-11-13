@@ -96,18 +96,18 @@ from typing import Any, Dict, Optional, Tuple
 
 import discord
 from bot.lib.enums.tacotypes import TacoTypes
+from bot.lib.helpers import EntityHelper, TacoHelper
 from bot.lib.http.handlers.BaseWebhookHandler import BaseWebhookHandler
 from bot.lib.models import openapi
 from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
 from bot.lib.models.TacoWebhookMinecraftTacosPayload import TacoWebhookMinecraftTacosPayload
 from bot.lib.mongodb.tacos import TacosDatabase
-from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.settings import Settings
 from bot.lib.users_utils import UsersUtils
+from bot.tacobot import TacoBot
 from httpserver.EndpointDecorators import uri_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException
-from lib import discordhelper
-from tacobot import TacoBot
+from httpserver.server import HttpResponseException, HttpServer
 
 
 class TacosWebhookHandler(BaseWebhookHandler):
@@ -124,16 +124,27 @@ class TacosWebhookHandler(BaseWebhookHandler):
     or achievements.
     """
 
-    def __init__(self, bot: TacoBot, discord_helper: Optional[discordhelper.DiscordHelper] = None):
-        super().__init__(bot, discord_helper)
+    def __init__(
+        self,
+        bot: TacoBot,
+        settings: Settings,
+        entity_helper: EntityHelper,
+        taco_helper: TacoHelper,
+        users_utils: UsersUtils,
+        tacos_db: TacosDatabase,
+    ):
+        super().__init__(bot, settings=settings)
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.SETTINGS_SECTION = "tacos"
 
-        self.tracking_db = TrackingDatabase()
-        self.tacos_db = TacosDatabase()
-        self.users_utils = UsersUtils()
+        self.entity_helper = entity_helper
+        self.taco_helper = taco_helper
+
+        # self.tracking_db = tracking_db
+        self.tacos_db = tacos_db
+        self.users_utils = users_utils
 
     @uri_mapping("/webhook/minecraft/tacos", method=HTTPMethod.POST)
     @openapi.response(
@@ -459,8 +470,8 @@ class TacosWebhookHandler(BaseWebhookHandler):
         Raises:
             HttpResponseException: If user fetch fails
         """
-        to_user = await self.discord_helper.get_or_fetch_user(to_user_id)
-        from_user = await self.discord_helper.get_or_fetch_user(from_user_id)
+        to_user = await self.entity_helper.get_or_fetch_user(to_user_id)
+        from_user = await self.entity_helper.get_or_fetch_user(from_user_id)
 
         if not to_user:
             err = ErrorStatusCodePayload(
@@ -620,7 +631,7 @@ class TacosWebhookHandler(BaseWebhookHandler):
         Returns:
             Recipient's new total taco count
         """
-        await self.discord_helper.taco_give_user(guild_id, from_user, to_user, reason, taco_type, taco_amount=amount)
+        await self.taco_helper.give_tacos(guild_id, from_user, to_user, reason, taco_type, taco_amount=amount)
 
         total_tacos = self.tacos_db.get_tacos_count(guild_id, to_user.id)
         return total_tacos if total_tacos is not None else 0
@@ -639,3 +650,14 @@ class TacosWebhookHandler(BaseWebhookHandler):
         response_payload = {"success": True, "payload": payload, "total_tacos": total_tacos}
         body = json.dumps(response_payload, indent=4).encode("utf-8")
         return HttpResponse(200, headers, body)
+
+
+def setup(bot: TacoBot, http_server: HttpServer):
+    """Setup the TacosWebhookHandler routes."""
+    settings = Settings()
+    entity_helper = EntityHelper(bot)
+    taco_helper = TacoHelper(bot, entity_helper=entity_helper)
+    users_utils = UsersUtils()
+    tacos_db = TacosDatabase()
+    handler = TacosWebhookHandler(bot, settings, entity_helper, taco_helper, users_utils, tacos_db)
+    http_server.add_handler(handler)

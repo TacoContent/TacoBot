@@ -11,8 +11,7 @@ import requests
 from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
-from bot.lib.helpers import EntityHelper, TacoHelper
-from bot.lib.messaging import Messaging
+from bot.lib.helpers import EntityHelper, MessageHelper, TacoHelper
 from bot.lib.models.triviaquestion import TriviaQuestion
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
@@ -26,7 +25,7 @@ class TriviaCog(TacobotCog):
         self,
         bot: TacoBot,
         tracking_db: TrackingDatabase,
-        messaging: Messaging,
+        messaging: MessageHelper,
         entity_helper: EntityHelper,
         taco_helper: TacoHelper,
         settings: Settings,
@@ -330,7 +329,7 @@ class TriviaCog(TacobotCog):
 async def setup(bot):
     settings = Settings()
     tracking_db = TrackingDatabase()
-    messaging = Messaging(bot)
+    messaging = MessageHelper(bot, settings=settings)
     entity_helper = EntityHelper(bot)
     taco_helper = TacoHelper(bot, entity_helper=entity_helper)
     await bot.add_cog(

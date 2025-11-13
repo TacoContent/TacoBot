@@ -7,22 +7,21 @@ from http import HTTPMethod
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.models.DiscordEmoji import DiscordEmoji
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from httpserver.EndpointDecorators import uri_variable_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException
-from lib import discordhelper
+from httpserver.server import HttpResponseException, HttpServer
 from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
 from lib.models.GuildItemIdBatchRequestBody import GuildItemIdBatchRequestBody, GuildItemNameBatchRequestBody
 from lib.models.openapi import openapi
 
 
 class GuildEmojisApiHandler(BaseHttpHandler):
-    def __init__(self, bot: TacoBot, discord_helper: typing.Optional[discordhelper.DiscordHelper] = None):
-        super().__init__(bot, discord_helper)
+    def __init__(self, bot: TacoBot, settings: Settings):
+        super().__init__(bot, settings=settings)
         self._class = self.__class__.__name__
         self._module = os.path.basename(__file__)[:-3]
-        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/emojis", method=HTTPMethod.GET)
     @openapi.security("X-API-TOKEN", "X-TACOBOT-TOKEN")
@@ -496,3 +495,9 @@ class GuildEmojisApiHandler(BaseHttpHandler):
         except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e))
             return self._create_error_response(500, f'Internal server error: {str(e)}', headers=headers)
+
+
+def setup(bot: TacoBot, http_server: HttpServer):
+    settings = Settings()
+    handler = GuildEmojisApiHandler(bot, settings)
+    http_server.add_handler(handler)

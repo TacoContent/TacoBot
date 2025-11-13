@@ -8,10 +8,8 @@ from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums.system_actions import SystemActions
 from bot.lib.helpers import EntityHelper, MessageHelper
-from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.twitch import TwitchDatabase
-from bot.lib.settings import Settings
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
@@ -21,7 +19,6 @@ class StreamTeamCog(TacobotCog):
     def __init__(
         self,
         bot: TacoBot,
-        messaging: Messaging,
         entity_helper: EntityHelper,
         message_helper: MessageHelper,
         twitch_db: TwitchDatabase,
@@ -34,15 +31,9 @@ class StreamTeamCog(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = messaging
+        self.messaging = message_helper
         self.entity_helper = entity_helper
-        self.message_helper = message_helper
-        self.messaging = messaging
-        self.entity_helper = entity_helper
-        self.message_helper = message_helper
 
-        self.twitch_db = twitch_db
-        self.tracking_db = tracking_db
         self.twitch_db = twitch_db
         self.tracking_db = tracking_db
 
@@ -77,7 +68,7 @@ class StreamTeamCog(TacobotCog):
                     f"{self._module}.{self._class}.{_method}",
                     f"No streamteam settings found for guild {guild_id}",
                 )
-                await self.message_helper.notify_bot_not_initialized(message, "streamteam")
+                await self.messaging.notify_bot_not_initialized(message, "streamteam")
                 return
 
             # get the reaction emoji
@@ -325,7 +316,7 @@ class StreamTeamCog(TacobotCog):
                     f"{self._module}.{self._class}.{_method}",
                     f"No streamteam settings found for guild {guild_id}",
                 )
-                await self.message_helper.notify_bot_not_initialized(ctx, "streamteam")
+                await self.messaging.notify_bot_not_initialized(ctx, "streamteam")
                 return
             unknown = self.settings.get_string(guild_id, "unknown")
             if twitchName is not None:
@@ -384,15 +375,13 @@ class StreamTeamCog(TacobotCog):
 
 async def setup(bot):
     settings = Settings()
-    messaging = Messaging(bot)
     entity_helper = EntityHelper(bot)
-    message_helper = MessageHelper(bot)
+    message_helper = MessageHelper(bot, settings)
     twitch_db = TwitchDatabase()
     tracking_db = TrackingDatabase()
     await bot.add_cog(
         StreamTeamCog(
             bot=bot,
-            messaging=messaging,
             entity_helper=entity_helper,
             message_helper=message_helper,
             twitch_db=twitch_db,

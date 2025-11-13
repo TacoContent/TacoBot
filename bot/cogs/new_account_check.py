@@ -7,8 +7,7 @@ import traceback
 from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums.system_actions import SystemActions
-from bot.lib.helpers import EntityHelper
-from bot.lib.messaging import Messaging
+from bot.lib.helpers import EntityHelper, MessageHelper
 from bot.lib.mongodb.settings import SettingsDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.whitelist import WhitelistDatabase
@@ -24,7 +23,7 @@ class NewAccountCheckCog(TacobotCog):
         settings_db: SettingsDatabase,
         tracking_db: TrackingDatabase,
         whitelist_db: WhitelistDatabase,
-        messaging: Messaging,
+        messaging: MessageHelper,
         entity_helper: EntityHelper,
         settings: Settings,
     ) -> None:
@@ -209,7 +208,7 @@ async def setup(bot):
     settings_db = settings.settings_db
     tracking_db = TrackingDatabase()
     whitelist_db = WhitelistDatabase()
-    messaging = Messaging(bot)
+    messaging = MessageHelper(bot, settings)
     entity_helper = EntityHelper(bot)
     await bot.add_cog(
         NewAccountCheckCog(

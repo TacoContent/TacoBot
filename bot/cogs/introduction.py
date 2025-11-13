@@ -5,8 +5,7 @@ import traceback
 import discord
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
-from bot.lib.helpers import EntityHelper, TacoHelper
-from bot.lib.messaging import Messaging
+from bot.lib.helpers import EntityHelper, MessageHelper, TacoHelper
 from bot.lib.mongodb.introductions import IntroductionsDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
@@ -18,7 +17,7 @@ class IntroductionCog(TacobotCog):
     def __init__(
         self,
         bot: TacoBot,
-        messaging: Messaging,
+        messaging: MessageHelper,
         entity_helper: EntityHelper,
         taco_helper: TacoHelper,
         introductions_db: IntroductionsDatabase,
@@ -291,7 +290,7 @@ class IntroductionCog(TacobotCog):
 
 async def setup(bot):
     settings = Settings()
-    messaging = Messaging(bot)
+    messaging = MessageHelper(bot, settings)
     entity_helper = EntityHelper(bot)
     taco_helper = TacoHelper(bot, entity_helper=entity_helper)
     introductions_db = IntroductionsDatabase()

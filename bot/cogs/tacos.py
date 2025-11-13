@@ -7,8 +7,7 @@ import discord
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.enums.permissions import TacoPermissions
-from bot.lib.helpers import EntityHelper, TacoHelper
-from bot.lib.messaging import Messaging
+from bot.lib.helpers import EntityHelper, MessageHelper, TacoHelper
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
@@ -27,7 +26,7 @@ class TacosCog(TacobotCog):
         settings: Settings,
         tacos_db: TacosDatabase,
         tracking_db: TrackingDatabase,
-        messaging: Messaging,
+        messaging: MessageHelper,
         permissions: Permissions,
         entity_helper: EntityHelper,
         taco_helper: TacoHelper,
@@ -805,13 +804,13 @@ class TacosCog(TacobotCog):
 
 
 async def setup(bot):
-    messaging: Messaging = Messaging(bot)
+    settings: Settings = Settings()
+    messaging: MessageHelper = MessageHelper(bot, settings=settings)
     entity_helper: EntityHelper = EntityHelper(bot)
     taco_helper: TacoHelper = TacoHelper(bot, entity_helper=entity_helper)
     tacos_db: TacosDatabase = TacosDatabase()
     tracking_db: TrackingDatabase = TrackingDatabase()
     permissions: Permissions = Permissions(bot)
-    settings: Settings = Settings()
     await bot.add_cog(
         TacosCog(
             bot=bot,

@@ -11,12 +11,9 @@ from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.enums.system_actions import SystemActions
-from bot.lib.helpers import EntityHelper, PromptHelper, TacoHelper
-from bot.lib.helpers import EntityHelper, PromptHelper, TacoHelper
-from bot.lib.messaging import Messaging
+from bot.lib.helpers import EntityHelper, MessageHelper, PromptHelper, TacoHelper
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.twitch import TwitchDatabase
-from bot.lib.settings import Settings
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
@@ -27,13 +24,12 @@ class TwitchInfoCog(TacobotCog):
         self,
         bot: TacoBot,
         settings: Settings,
-        messaging: Messaging,
+        messaging: MessageHelper,
         prompt_helper: PromptHelper,
         taco_helper: TacoHelper,
         twitch_db: TwitchDatabase,
         tracking_db: TrackingDatabase,
     ) -> None:
-        super().__init__(bot, "twitchinfo", settings=settings)
         super().__init__(bot, "twitchinfo", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
@@ -200,9 +196,6 @@ class TwitchInfoCog(TacobotCog):
                 channel = ctx.channel
                 await ctx.message.delete()
 
-            # if user is None:
-            #     user = await self.discord_helper.ask_member(ctx, "User", "Please respond with the user you want to set the twitch name for.")
-
             if twitch_name is None:
                 twitch_name = await self.prompt_helper.ask_text(
                     ctx, ctx.author, "Twitch Name", "Please respond with the twitch name you want to set for the user."
@@ -324,8 +317,8 @@ class TwitchInfoCog(TacobotCog):
 
 async def setup(bot):
     settings = Settings()
-    messaging = Messaging(bot)
-    prompt_helper = PromptHelper(bot)
+    messaging = MessageHelper(bot, settings=settings)
+    prompt_helper = PromptHelper(bot, settings, messaging)
     entity_helper = EntityHelper(bot)
     taco_helper = TacoHelper(bot, entity_helper=entity_helper)
     twitch_db = TwitchDatabase()

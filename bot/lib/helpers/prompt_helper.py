@@ -5,12 +5,13 @@ import traceback
 import typing
 
 import discord
-from bot.lib import logger, settings, utils
+from bot.lib import logger, utils
 from bot.lib.ChannelSelect import ChannelSelectView
 from bot.lib.enums import loglevel
-from bot.lib.messaging import Messaging
+from bot.lib.helpers.message_helper import MessageHelper
 from bot.lib.models.textwithattachments import TextWithAttachments
 from bot.lib.RoleSelectView import RoleSelect, RoleSelectView
+from bot.lib.settings import Settings
 from bot.lib.YesOrNoView import YesOrNoView
 
 
@@ -22,15 +23,15 @@ class PromptHelper:
     yes/no confirmations, channel selection, role selection, and image/text collection.
     """
 
-    def __init__(self, bot) -> None:
+    def __init__(self, bot, settings: Settings, messaging: MessageHelper) -> None:
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.settings = settings.Settings()
+        self.settings = settings
         self.bot = bot
 
-        self.messaging = Messaging(bot=self.bot)
+        self.messaging = messaging
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
@@ -56,10 +57,10 @@ class PromptHelper:
         title: str = "Yes or No?",
         timeout: int = 60,
         fields=None,
-        thumbnail: str = None,
-        image: str = None,
-        content: str = None,
-        result_callback: typing.Callable = None,
+        thumbnail: typing.Optional[str] = None,
+        image: typing.Optional[str] = None,
+        content: typing.Optional[str] = None,
+        result_callback: typing.Optional[typing.Callable] = None,
     ):
         """
         Display a yes/no confirmation prompt with buttons.

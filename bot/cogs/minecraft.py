@@ -9,8 +9,7 @@ import traceback
 import discord
 import requests
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
-from bot.lib.helpers import ContextHelper, EntityHelper, PromptHelper
-from bot.lib.messaging import Messaging
+from bot.lib.helpers import ContextHelper, EntityHelper, MessageHelper, PromptHelper
 from bot.lib.mongodb.minecraft import MinecraftDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
@@ -30,7 +29,7 @@ class MinecraftCog(TacobotCog):
         bot: TacoBot,
         minecraft_db: MinecraftDatabase,
         tracking_db: TrackingDatabase,
-        messaging: Messaging,
+        messaging: MessageHelper,
         entity_helper: EntityHelper,
         context_helper: ContextHelper,
         prompt_helper: PromptHelper,
@@ -714,10 +713,10 @@ async def setup(bot):
     settings = Settings()
     minecraft_db = MinecraftDatabase()
     tracking_db = TrackingDatabase()
-    messaging = Messaging(bot)
+    messaging = MessageHelper(bot, settings)
     entity_helper = EntityHelper(bot)
     context_helper = ContextHelper()
-    prompt_helper = PromptHelper(bot)
+    prompt_helper = PromptHelper(bot, settings, messaging)
     await bot.add_cog(
         MinecraftCog(
             bot=bot,

@@ -7,7 +7,7 @@ import typing
 
 from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
-from bot.lib.messaging import Messaging
+from bot.lib.helpers import MessageHelper
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
@@ -16,7 +16,7 @@ from discord.ext import commands
 
 class HelpCog(TacobotCog):
     def __init__(
-        self, bot: TacoBot, tracking_db: TrackingDatabase, messaging: Messaging, settings: Settings
+        self, bot: TacoBot, tracking_db: TrackingDatabase, messaging: MessageHelper, settings: Settings
     ):  # noqa: F821
         super().__init__(bot, "tacobot", settings=settings)
         _method = inspect.stack()[0][3]
@@ -271,5 +271,5 @@ class HelpCog(TacobotCog):
 async def setup(bot):
     settings = Settings()
     tracking_db = TrackingDatabase()
-    messaging = Messaging(bot)
+    messaging = MessageHelper(bot, settings)
     await bot.add_cog(HelpCog(bot=bot, tracking_db=tracking_db, messaging=messaging, settings=settings))

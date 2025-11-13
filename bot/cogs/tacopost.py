@@ -5,7 +5,6 @@ import traceback
 
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.helpers import MessageHelper, PromptHelper
-from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
@@ -17,8 +16,7 @@ class TacoPostCog(TacobotCog):
         self,
         bot: TacoBot,
         tacos_db: TacosDatabase,
-        messaging: Messaging,
-        messaging_helper: MessageHelper,
+        message_helper: MessageHelper,
         prompt_helper: PromptHelper,
         settings: Settings,
     ) -> None:
@@ -28,8 +26,8 @@ class TacoPostCog(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = messaging
-        self.message_helper = messaging_helper
+        self.messaging = message_helper
+        self.message_helper = message_helper
         self.prompt_helper = prompt_helper
 
         self.tacos_db = tacos_db
@@ -143,16 +141,14 @@ class TacoPostCog(TacobotCog):
 
 async def setup(bot):
     settings = Settings()
-    messaging = Messaging(bot)
-    messaging_helper = MessageHelper(bot)
-    prompt_helper = PromptHelper(bot)
+    message_helper = MessageHelper(bot, settings)
+    prompt_helper = PromptHelper(bot, settings, message_helper)
     tacos_db = TacosDatabase()
     await bot.add_cog(
         TacoPostCog(
             bot=bot,
             tacos_db=tacos_db,
-            messaging=messaging,
-            messaging_helper=messaging_helper,
+            message_helper=message_helper,
             prompt_helper=prompt_helper,
             settings=settings,
         )

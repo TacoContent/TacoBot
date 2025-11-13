@@ -11,8 +11,6 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 from bot.lib.http.handlers.webhook.ShiftCodeWebhookHandler import ShiftCodeWebhookHandler
-from bot.lib.mongodb.shift_codes import ShiftCodesDatabase
-from bot.lib.mongodb.tracking import TrackingDatabase
 from httpserver.http_util import HttpRequest
 
 # =======================
@@ -21,22 +19,17 @@ from httpserver.http_util import HttpRequest
 
 
 @pytest.fixture
-def mock_bot():
-    """Create a mock TacoBot instance."""
-    bot = MagicMock()
-    bot.guilds = []
-    return bot
-
-
-@pytest.fixture
-def handler(mock_bot):
+def handler(bot, settings, entity_helper, messaging, tracking_db, shift_codes_db):
     """Create handler with mocked dependencies."""
-    handler = ShiftCodeWebhookHandler(mock_bot)
+    handler = ShiftCodeWebhookHandler(
+        bot=bot, 
+        settings=settings, 
+        entity_helper=entity_helper, 
+        messaging=messaging, 
+        tracking_db=tracking_db,
+        shift_codes_db=shift_codes_db,
+    )
     handler.log = Mock()
-    handler.discord_helper = AsyncMock()
-    handler.shift_codes_db = Mock(spec=ShiftCodesDatabase)
-    handler.tracking_db = Mock(spec=TrackingDatabase)
-    handler.messaging = AsyncMock()
     return handler
 
 
@@ -224,7 +217,7 @@ class TestShiftCodeWebhookHandler:
 
     @pytest.mark.asyncio
     async def test_shift_code_normalization_uppercase(
-        self, handler, mock_request, mock_bot, mock_guild, mock_channel, mock_message
+        self, handler, mock_request, bot, mock_guild, mock_channel, mock_message
     ):
         """Test shift_code normalizes code to uppercase.
 
@@ -235,12 +228,12 @@ class TestShiftCodeWebhookHandler:
         payload = {"code": "abcd-1234", "games": [{"name": "Borderlands 3"}], "reward": "Test"}
         mock_request.body = json.dumps(payload).encode()
         handler.validate_webhook_token = MagicMock(return_value=True)
-        mock_bot.guilds = [mock_guild]
+        bot.guilds = [mock_guild]
         handler.get_settings = MagicMock(
             return_value={"enabled": True, "channel_ids": [mock_channel.id], "notify_role_ids": []}
         )
         handler.shift_codes_db.is_code_tracked = MagicMock(return_value=False)
-        handler.discord_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
+        handler.entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
         handler.messaging.send_embed = AsyncMock(return_value=mock_message)
 
         response = await handler.shift_code(mock_request)
@@ -253,7 +246,7 @@ class TestShiftCodeWebhookHandler:
 
     @pytest.mark.asyncio
     async def test_shift_code_normalization_strip_spaces(
-        self, handler, mock_request, mock_bot, mock_guild, mock_channel, mock_message
+        self, handler, mock_request, bot, mock_guild, mock_channel, mock_message
     ):
         """Test shift_code strips spaces from code.
 
@@ -264,12 +257,12 @@ class TestShiftCodeWebhookHandler:
         payload = {"code": " ABCD 1234 ", "games": [{"name": "Borderlands 3"}], "reward": "Test"}
         mock_request.body = json.dumps(payload).encode()
         handler.validate_webhook_token = MagicMock(return_value=True)
-        mock_bot.guilds = [mock_guild]
+        bot.guilds = [mock_guild]
         handler.get_settings = MagicMock(
             return_value={"enabled": True, "channel_ids": [mock_channel.id], "notify_role_ids": []}
         )
         handler.shift_codes_db.is_code_tracked = MagicMock(return_value=False)
-        handler.discord_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
+        handler.entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
         handler.messaging.send_embed = AsyncMock(return_value=mock_message)
 
         response = await handler.shift_code(mock_request)
@@ -309,7 +302,7 @@ class TestShiftCodeWebhookHandler:
         assert "Code is expired" in body["error"]
 
     @pytest.mark.asyncio
-    async def test_shift_code_future_expiry(self, handler, mock_request, valid_shift_code_payload, mock_bot):
+    async def test_shift_code_future_expiry(self, handler, mock_request, valid_shift_code_payload, bot):
         """Test shift_code processes codes with future expiry.
 
         Verifies:
@@ -318,7 +311,7 @@ class TestShiftCodeWebhookHandler:
         """
         mock_request.body = json.dumps(valid_shift_code_payload).encode()
         handler.validate_webhook_token = MagicMock(return_value=True)
-        mock_bot.guilds = []  # No guilds to process
+        bot.guilds = []  # No guilds to process
 
         with patch('bot.lib.utils.get_seconds_until', return_value=86400):  # Expires in 1 day
             response = await handler.shift_code(mock_request)
@@ -326,7 +319,7 @@ class TestShiftCodeWebhookHandler:
         assert response.status_code == 200
 
     @pytest.mark.asyncio
-    async def test_shift_code_no_expiry(self, handler, mock_request, mock_bot):
+    async def test_shift_code_no_expiry(self, handler, mock_request, bot):
         """Test shift_code processes codes without expiry field.
 
         Verifies:
@@ -341,7 +334,7 @@ class TestShiftCodeWebhookHandler:
         }
         mock_request.body = json.dumps(payload).encode()
         handler.validate_webhook_token = MagicMock(return_value=True)
-        mock_bot.guilds = []
+        bot.guilds = []
 
         response = await handler.shift_code(mock_request)
 
@@ -353,7 +346,7 @@ class TestShiftCodeWebhookHandler:
 
     @pytest.mark.asyncio
     async def test_shift_code_guild_feature_disabled(
-        self, handler, mock_request, valid_shift_code_payload, mock_bot, mock_guild
+        self, handler, mock_request, valid_shift_code_payload, bot, mock_guild
     ):
         """Test shift_code skips guilds with feature disabled.
 
@@ -364,18 +357,18 @@ class TestShiftCodeWebhookHandler:
         """
         mock_request.body = json.dumps(valid_shift_code_payload).encode()
         handler.validate_webhook_token = MagicMock(return_value=True)
-        mock_bot.guilds = [mock_guild]
+        bot.guilds = [mock_guild]
         handler.get_settings = MagicMock(return_value={"enabled": False})
 
         with patch('bot.lib.utils.get_seconds_until', return_value=86400):
             response = await handler.shift_code(mock_request)
 
         assert response.status_code == 200
-        handler.discord_helper.get_or_fetch_channel.assert_not_called()
+        handler.entity_helper.get_or_fetch_channel.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_shift_code_code_already_tracked(
-        self, handler, mock_request, valid_shift_code_payload, mock_bot, mock_guild
+        self, handler, mock_request, valid_shift_code_payload, bot, mock_guild
     ):
         """Test shift_code skips guilds already tracking the code.
 
@@ -386,7 +379,7 @@ class TestShiftCodeWebhookHandler:
         """
         mock_request.body = json.dumps(valid_shift_code_payload).encode()
         handler.validate_webhook_token = MagicMock(return_value=True)
-        mock_bot.guilds = [mock_guild]
+        bot.guilds = [mock_guild]
         handler.get_settings = MagicMock(return_value={"enabled": True})
         handler.shift_codes_db.is_code_tracked = MagicMock(return_value=True)  # Already tracked
 
@@ -394,11 +387,11 @@ class TestShiftCodeWebhookHandler:
             response = await handler.shift_code(mock_request)
 
         assert response.status_code == 200
-        handler.discord_helper.get_or_fetch_channel.assert_not_called()
+        handler.entity_helper.get_or_fetch_channel.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_shift_code_no_channel_ids_configured(
-        self, handler, mock_request, valid_shift_code_payload, mock_bot, mock_guild
+        self, handler, mock_request, valid_shift_code_payload, bot, mock_guild
     ):
         """Test shift_code skips guilds with no configured channels.
 
@@ -408,7 +401,7 @@ class TestShiftCodeWebhookHandler:
         """
         mock_request.body = json.dumps(valid_shift_code_payload).encode()
         handler.validate_webhook_token = MagicMock(return_value=True)
-        mock_bot.guilds = [mock_guild]
+        bot.guilds = [mock_guild]
         handler.get_settings = MagicMock(return_value={"enabled": True, "channel_ids": []})
         handler.shift_codes_db.is_code_tracked = MagicMock(return_value=False)
 
@@ -416,11 +409,11 @@ class TestShiftCodeWebhookHandler:
             response = await handler.shift_code(mock_request)
 
         assert response.status_code == 200
-        handler.discord_helper.get_or_fetch_channel.assert_not_called()
+        handler.entity_helper.get_or_fetch_channel.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_shift_code_channel_not_found(
-        self, handler, mock_request, valid_shift_code_payload, mock_bot, mock_guild
+        self, handler, mock_request, valid_shift_code_payload, bot, mock_guild
     ):
         """Test shift_code handles channels that can't be fetched.
 
@@ -430,10 +423,10 @@ class TestShiftCodeWebhookHandler:
         """
         mock_request.body = json.dumps(valid_shift_code_payload).encode()
         handler.validate_webhook_token = MagicMock(return_value=True)
-        mock_bot.guilds = [mock_guild]
+        bot.guilds = [mock_guild]
         handler.get_settings = MagicMock(return_value={"enabled": True, "channel_ids": [123]})
         handler.shift_codes_db.is_code_tracked = MagicMock(return_value=False)
-        handler.discord_helper.get_or_fetch_channel = AsyncMock(return_value=None)
+        handler.entity_helper.get_or_fetch_channel = AsyncMock(return_value=None)
 
         with patch('bot.lib.utils.get_seconds_until', return_value=86400):
             response = await handler.shift_code(mock_request)
@@ -447,7 +440,7 @@ class TestShiftCodeWebhookHandler:
 
     @pytest.mark.asyncio
     async def test_shift_code_successful_broadcast(
-        self, handler, mock_request, valid_shift_code_payload, mock_bot, mock_guild, mock_channel, mock_message
+        self, handler, mock_request, valid_shift_code_payload, bot, mock_guild, mock_channel, mock_message
     ):
         """Test shift_code successfully broadcasts to configured channels.
 
@@ -459,12 +452,12 @@ class TestShiftCodeWebhookHandler:
         """
         mock_request.body = json.dumps(valid_shift_code_payload).encode()
         handler.validate_webhook_token = MagicMock(return_value=True)
-        mock_bot.guilds = [mock_guild]
+        bot.guilds = [mock_guild]
         handler.get_settings = MagicMock(
             return_value={"enabled": True, "channel_ids": [mock_channel.id], "notify_role_ids": []}
         )
         handler.shift_codes_db.is_code_tracked = MagicMock(return_value=False)
-        handler.discord_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
+        handler.entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
         handler.messaging.send_embed = AsyncMock(return_value=mock_message)
 
         with patch('bot.lib.utils.get_seconds_until', return_value=86400):
@@ -477,7 +470,7 @@ class TestShiftCodeWebhookHandler:
         handler.shift_codes_db.add_shift_code.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_shift_code_response_echoes_payload(self, handler, mock_request, valid_shift_code_payload, mock_bot):
+    async def test_shift_code_response_echoes_payload(self, handler, mock_request, valid_shift_code_payload, bot):
         """Test shift_code response contains original payload.
 
         Verifies:
@@ -486,7 +479,7 @@ class TestShiftCodeWebhookHandler:
         """
         mock_request.body = json.dumps(valid_shift_code_payload).encode()
         handler.validate_webhook_token = MagicMock(return_value=True)
-        mock_bot.guilds = []
+        bot.guilds = []
 
         with patch('bot.lib.utils.get_seconds_until', return_value=86400):
             response = await handler.shift_code(mock_request)

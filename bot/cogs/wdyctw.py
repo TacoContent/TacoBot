@@ -6,8 +6,7 @@ import traceback
 import discord
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
-from bot.lib.helpers import ContextHelper, EntityHelper, PromptHelper, TacoHelper
-from bot.lib.messaging import Messaging
+from bot.lib.helpers import ContextHelper, EntityHelper, MessageHelper, PromptHelper, TacoHelper
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.wdyctw import WDYCTWDatabase
 from bot.lib.permissions import Permissions
@@ -21,7 +20,7 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
     def __init__(
         self,
         bot: TacoBot,
-        messaging: Messaging,
+        messaging: MessageHelper,
         permissions: Permissions,
         prompt_helper: PromptHelper,
         context_helper: ContextHelper,
@@ -251,7 +250,6 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
             return
         message = await channel.fetch_message(payload.message_id)
         message_author = message.author
-        # react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
 
         # check if this reaction is the first one of this type on the message
         reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)
@@ -524,9 +522,9 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
 
 async def setup(bot):
     settings = Settings()
-    messaging = Messaging(bot)
+    messaging = MessageHelper(bot, settings=settings)
     permissions = Permissions(bot)
-    prompt_helper = PromptHelper(bot)
+    prompt_helper = PromptHelper(bot, settings, messaging)
     context_helper = ContextHelper()
     entity_helper = EntityHelper(bot)
     taco_helper = TacoHelper(bot, entity_helper=entity_helper)

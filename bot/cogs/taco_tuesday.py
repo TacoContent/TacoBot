@@ -11,7 +11,6 @@ from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.helpers import ContextHelper, EntityHelper, MessageHelper, RoleHelper, TacoHelper
-from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tacotuesdays import TacoTuesdaysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
@@ -26,7 +25,6 @@ class TacoTuesdayCog(TacobotCog):
         bot: TacoBot,
         tacotuesdays_db: TacoTuesdaysDatabase,
         tracking_db: TrackingDatabase,
-        messaging: Messaging,
         permissions: Permissions,
         entity_helper: EntityHelper,
         role_helper: RoleHelper,
@@ -41,11 +39,10 @@ class TacoTuesdayCog(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = messaging
+        self.messaging = message_helper
         self.permissions = permissions
         self.entity_helper = entity_helper
         self.role_helper = role_helper
-        self.message_helper = message_helper
         self.context_helper = context_helper
         self.taco_helper = taco_helper
 
@@ -429,7 +426,7 @@ class TacoTuesdayCog(TacobotCog):
                 for r in message.reactions:
                     fields.append({"name": str(r.emoji), "value": f"{r.count}", "inline": True})
 
-            moved_message = await self.message_helper.move_message(
+            moved_message = await self.messaging.move_message(
                 message=message,
                 targetChannel=archive_channel,
                 who=self.bot.user,
@@ -621,20 +618,18 @@ class TacoTuesdayCog(TacobotCog):
 
 async def setup(bot):
     settings = Settings()
-    messaging = Messaging(bot)
     tacotuesdays_db = TacoTuesdaysDatabase()
     tracking_db = TrackingDatabase()
     permissions = Permissions(bot)
     entity_helper = EntityHelper(bot)
     role_helper = RoleHelper(bot)
-    message_helper = MessageHelper(bot)
+    message_helper = MessageHelper(bot, settings)
     context_helper = ContextHelper()
     taco_helper = TacoHelper(bot, entity_helper=entity_helper)
     await bot.add_cog(
         TacoTuesdayCog(
             bot=bot,
             settings=settings,
-            messaging=messaging,
             tacotuesdays_db=tacotuesdays_db,
             tracking_db=tracking_db,
             permissions=permissions,

@@ -8,8 +8,7 @@ import discord
 from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
-from bot.lib.helpers import ContextHelper, EntityHelper, PromptHelper, TacoHelper
-from bot.lib.messaging import Messaging
+from bot.lib.helpers import ContextHelper, EntityHelper, MessageHelper, PromptHelper, TacoHelper
 from bot.lib.mongodb.mentalmondays import MentalMondaysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.openai.openai_helper import OpenAIHelper
@@ -32,7 +31,7 @@ class MentalMondays(TacobotCog):
         prompt_helper: PromptHelper,
         entity_helper: EntityHelper,
         taco_helper: TacoHelper,
-        messaging: Messaging,
+        messaging: MessageHelper,
         permissions: Permissions,
         tracking_db: TrackingDatabase,
         mentalmondays_db: MentalMondaysDatabase,
@@ -330,7 +329,6 @@ class MentalMondays(TacobotCog):
             return
         message = await channel.fetch_message(payload.message_id)
         message_author = message.author
-        # react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
 
         # check if this reaction is the first one of this type on the message
         reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)
@@ -737,11 +735,11 @@ class MentalMondays(TacobotCog):
 
 async def setup(bot):
     context_helper = ContextHelper()
-    prompt_helper = PromptHelper(bot)
     entity_helper = EntityHelper(bot)
     taco_helper = TacoHelper(bot, entity_helper=entity_helper)
     settings = Settings()
-    messaging = Messaging(bot)
+    messaging = MessageHelper(bot, settings)
+    prompt_helper = PromptHelper(bot, settings, messaging)
     permissions = Permissions(bot, settings)
     tracking_db = TrackingDatabase()
     mentalmondays_db = MentalMondaysDatabase()

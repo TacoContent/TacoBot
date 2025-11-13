@@ -377,6 +377,7 @@ class TestIntroductionImportCommand:
         assert "1 introduction" in call_kwargs["message"]
 
     @pytest.mark.asyncio
+    @pytest.mark.filterwarnings("ignore::RuntimeWarning")
     async def test_introduction_import_with_approval_emoji(
         self, cog, mock_context, mock_channel, mock_message, entity_helper, taco_helper
     ):
@@ -401,7 +402,6 @@ class TestIntroductionImportCommand:
         )
         entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
         cog.introductions_db.get_user_introductions = MagicMock(return_value=[])
-        cog.taco_helper.give_tacos = AsyncMock()
         cog.tracking_db.track_user_introduction = MagicMock()
         cog.settings.settings_db.set_setting = MagicMock()
 

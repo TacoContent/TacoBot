@@ -51,13 +51,11 @@ import os
 import random
 import string
 import traceback
-import typing
 
 import discord.ext.commands as commands
-from bot.lib import discordhelper, logger, settings
+from bot.lib import logger
 from bot.lib.enums import loglevel
-from bot.lib.messaging import Messaging
-from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.settings import Settings
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException
 from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
@@ -77,18 +75,14 @@ class BaseHttpHandler:
         client access, and shared caches.
     """
 
-    def __init__(self, bot: commands.Bot, discord_helper: typing.Optional[discordhelper.DiscordHelper] = None):
+    def __init__(self, bot: commands.Bot, settings: Settings):
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.SETTINGS_SECTION = "http"
         self.WEBHOOK_SETTINGS_SECTION = "webhook"
-        self.settings = settings.Settings()
-
-        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
-        self.messaging = Messaging(bot)
-        self.tracking_db = TrackingDatabase()
+        self.settings = settings
 
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:

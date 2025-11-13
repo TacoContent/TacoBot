@@ -1,11 +1,10 @@
 import inspect
 import os
 import traceback
-import typing
 from importlib import import_module
 
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
-from bot.lib.messaging import Messaging
+from bot.lib.helpers import MessageHelper
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
@@ -16,7 +15,7 @@ from httpserver.server import HttpServer
 class HttpHandlerCog(TacobotCog):
     # group = app_commands.Group(name="webhook", description="Webhook Handler")
 
-    def __init__(self, bot: TacoBot, tracking_db: TrackingDatabase, messaging: Messaging, settings: Settings) -> None:
+    def __init__(self, bot: TacoBot, tracking_db: TrackingDatabase, messaging: MessageHelper, settings: Settings) -> None:
         super().__init__(bot, "webhook", settings=settings)
 
         _method = inspect.stack()[0][3]
@@ -82,6 +81,7 @@ class HttpHandlerCog(TacobotCog):
                 for f in os.listdir("bot/lib/http/handlers")
                 if f.endswith(".py")
                 and not f.startswith("_")
+                and not f.startswith("ApiHttpHandler")
                 and not f.startswith("BaseWebhookHandler")
                 and not f.startswith("BaseHttpHandler")
             ]
@@ -92,9 +92,18 @@ class HttpHandlerCog(TacobotCog):
                     full_module_path = f"{module_path}.{class_name}"
                     module = import_module(full_module_path)
                     # create an instance of the handler
-                    handler_instance = getattr(module, class_name)
+                    # handler_instance = getattr(module, class_name)
+                    handler_instance = getattr(module, "setup", None)
+                    if handler_instance is None or not callable(handler_instance):
+                        self.log.error(
+                            0,
+                            f"{self._module}.{self._class}.{_method}",
+                            f"No setup function found in {full_module_path}",
+                        )
+                        continue
                     self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Loading handler {handler}")
-                    self.http_server.add_handler(handler_instance(self.bot))
+                    handler_instance(bot=self.bot, http_server=self.http_server)
+                    # self.http_server.add_handler(handler_instance(self.bot))
                 except Exception as e:
                     self.log.error(
                         0,
@@ -106,7 +115,7 @@ class HttpHandlerCog(TacobotCog):
             self.log.error(
                 0,
                 f"{self._module}.{self._class}.{_method}",
-                f"Failed to load handler {handler}: {e}",
+                f"Failed to load handlers: {e}",
                 traceback.format_exc(),
             )
 
@@ -124,6 +133,7 @@ class HttpHandlerCog(TacobotCog):
                         file.endswith(".py")
                         and not file.startswith("_")
                         and not file.startswith("Base")
+                        and not file.startswith("ApiHttpHandler")
                         and file.endswith("Handler.py")
                     ):
                         # convert the file path to a module path by replacing the path separator with a dot
@@ -138,11 +148,21 @@ class HttpHandlerCog(TacobotCog):
                         full_module_path = f"{mod_path}.{class_name}"
                         module = import_module(full_module_path)
 
-                        handler_instance = getattr(module, class_name)
+                        # handler_instance = getattr(module, class_name)
+                        # call setup from the module if it exists
+                        handler_instance = getattr(module, "setup", None)
+                        if handler_instance is None or not callable(handler_instance):
+                            self.log.error(
+                                0,
+                                f"{self._module}.{self._class}.{_method}",
+                                f"No setup function found in {full_module_path}",
+                            )
+                            continue
                         self.log.debug(
                             0, f"{self._module}.{self._class}.{_method}", f"Loading handler {full_module_path}"
                         )
-                        self.http_server.add_handler(handler_instance(self.bot))
+                        # self.http_server.add_handler(handler_instance(self.bot))
+                        handler_instance(bot=self.bot, http_server=self.http_server)
 
                 for dir in dirs:
                     self.recursive_load_handlers(dir)
@@ -153,6 +173,6 @@ class HttpHandlerCog(TacobotCog):
 async def setup(bot):
     settings = Settings()
     tracking_db = TrackingDatabase()
-    messaging = Messaging(bot)
+    messaging = MessageHelper(bot, settings)
     handler = HttpHandlerCog(bot, settings=settings, tracking_db=tracking_db, messaging=messaging)
     await bot.add_cog(handler)

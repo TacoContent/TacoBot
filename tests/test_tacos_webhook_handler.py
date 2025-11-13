@@ -9,8 +9,6 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 from bot.lib.http.handlers.webhook.TacosWebhookHandler import TacosWebhookHandler
-from bot.lib.mongodb.tacos import TacosDatabase
-from bot.lib.mongodb.tracking import TrackingDatabase
 from httpserver.http_util import HttpRequest
 
 # =======================
@@ -19,24 +17,17 @@ from httpserver.http_util import HttpRequest
 
 
 @pytest.fixture
-def mock_bot():
-    """Create a mock TacoBot instance."""
-    bot = MagicMock()
-    bot.user = MagicMock()
-    bot.user.id = 999888777666555444
-    return bot
-
-
-@pytest.fixture
-def handler(mock_bot):
+def handler(bot, settings, entity_helper, taco_helper, users_utils, tacos_db):
     """Create handler with mocked dependencies."""
-    handler = TacosWebhookHandler(mock_bot)
+    handler = TacosWebhookHandler(
+        bot=bot,
+        settings=settings,
+        entity_helper=entity_helper,
+        taco_helper=taco_helper,
+        users_utils=users_utils,
+        tacos_db=tacos_db,
+    )
     handler.log = Mock()
-    handler.discord_helper = AsyncMock()
-    handler.settings = Mock()
-    handler.tacos_db = Mock(spec=TacosDatabase)
-    handler.tracking_db = Mock(spec=TrackingDatabase)
-    handler.users_utils = Mock()
     return handler
 
 
@@ -105,15 +96,12 @@ class TestTacosWebhookHandlerGiveTacos:
             # Mock Discord user fetching
             from_user = mock_discord_user(222222222222, "streamer", False)
             to_user = mock_discord_user(111111111111, "viewer", False)
-            handler.discord_helper.get_or_fetch_user.side_effect = [to_user, from_user]
+            handler.entity_helper.get_or_fetch_user.side_effect = [to_user, from_user]
 
             # Mock rate limit checks
             handler.tacos_db.get_total_gifted_tacos_to_user.return_value = 10
             handler.tacos_db.get_total_gifted_tacos_for_channel.return_value = 50
             handler.tacos_db.get_tacos_count.return_value = 105
-
-            # Mock taco transfer
-            handler.discord_helper.taco_give_user = AsyncMock()
 
             # Execute
             response = await handler.give_tacos(mock_request)
@@ -126,7 +114,7 @@ class TestTacosWebhookHandlerGiveTacos:
             assert response_data["payload"] == valid_tacos_payload
 
             # Verify transfer was called
-            handler.discord_helper.taco_give_user.assert_called_once()
+            handler.taco_helper.give_tacos.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_give_tacos_invalid_token(self, handler, mock_request, valid_tacos_payload):
@@ -220,7 +208,7 @@ class TestTacosWebhookHandlerGiveTacos:
             handler.users_utils.twitch_user_to_discord_user.return_value = 111111111111
 
             same_user = mock_discord_user(111111111111, "same_user", False)
-            handler.discord_helper.get_or_fetch_user.return_value = same_user
+            handler.entity_helper.get_or_fetch_user.return_value = same_user
 
             response = await handler.give_tacos(mock_request)
 
@@ -245,7 +233,7 @@ class TestTacosWebhookHandlerGiveTacos:
 
             from_user = mock_discord_user(222222222222, "streamer", False)
             to_user = mock_discord_user(111111111111, "bot_user", True)  # Bot!
-            handler.discord_helper.get_or_fetch_user.side_effect = [to_user, from_user]
+            handler.entity_helper.get_or_fetch_user.side_effect = [to_user, from_user]
 
             response = await handler.give_tacos(mock_request)
 
@@ -273,7 +261,7 @@ class TestTacosWebhookHandlerGiveTacos:
 
             from_user = mock_discord_user(222222222222, "streamer", False)
             to_user = mock_discord_user(111111111111, "viewer", False)
-            handler.discord_helper.get_or_fetch_user.side_effect = [to_user, from_user]
+            handler.entity_helper.get_or_fetch_user.side_effect = [to_user, from_user]
 
             # Already at max overall limit
             handler.tacos_db.get_total_gifted_tacos_to_user.return_value = 10
@@ -306,7 +294,7 @@ class TestTacosWebhookHandlerGiveTacos:
 
             from_user = mock_discord_user(222222222222, "streamer", False)
             to_user = mock_discord_user(111111111111, "viewer", False)
-            handler.discord_helper.get_or_fetch_user.side_effect = [to_user, from_user]
+            handler.entity_helper.get_or_fetch_user.side_effect = [to_user, from_user]
 
             # Already at max per-user limit
             handler.tacos_db.get_total_gifted_tacos_to_user.return_value = 50  # At limit!
@@ -344,7 +332,7 @@ class TestTacosWebhookHandlerGiveTacos:
 
             from_user = mock_discord_user(222222222222, "streamer", False)
             to_user = mock_discord_user(111111111111, "viewer", False)
-            handler.discord_helper.get_or_fetch_user.side_effect = [to_user, from_user]
+            handler.entity_helper.get_or_fetch_user.side_effect = [to_user, from_user]
 
             handler.tacos_db.get_total_gifted_tacos_to_user.return_value = 10
             handler.tacos_db.get_total_gifted_tacos_for_channel.return_value = 50
@@ -380,7 +368,7 @@ class TestTacosWebhookHandlerGiveTacos:
 
             from_user = mock_discord_user(222222222222, "streamer", False)
             to_user = mock_discord_user(111111111111, "viewer", False)
-            handler.discord_helper.get_or_fetch_user.side_effect = [to_user, from_user]
+            handler.entity_helper.get_or_fetch_user.side_effect = [to_user, from_user]
 
             # Only 10 tacos given to this user, so can only take back 10
             handler.tacos_db.get_total_gifted_tacos_to_user.return_value = 10
@@ -417,10 +405,9 @@ class TestTacosWebhookHandlerGiveTacos:
             # from_user is the bot itself
             from_user = handler.bot.user  # Bot user (immune)
             to_user = mock_discord_user(111111111111, "viewer", False)
-            handler.discord_helper.get_or_fetch_user.side_effect = [to_user, from_user]
+            handler.entity_helper.get_or_fetch_user.side_effect = [to_user, from_user]
 
             handler.tacos_db.get_tacos_count.return_value = 200
-            handler.discord_helper.taco_give_user = AsyncMock()
 
             response = await handler.give_tacos(mock_request)
 
@@ -459,12 +446,11 @@ class TestTacosWebhookHandlerGiveTacos:
 
             from_user = mock_discord_user(222222222222, "streamer", False)
             to_user = mock_discord_user(111111111111, "viewer", False)
-            handler.discord_helper.get_or_fetch_user.side_effect = [to_user, from_user]
+            handler.entity_helper.get_or_fetch_user.side_effect = [to_user, from_user]
 
             handler.tacos_db.get_total_gifted_tacos_to_user.return_value = 5
             handler.tacos_db.get_total_gifted_tacos_for_channel.return_value = 20
             handler.tacos_db.get_tacos_count.return_value = 55
-            handler.discord_helper.taco_give_user = AsyncMock()
 
             response = await handler.give_tacos(mock_request)
 
@@ -514,7 +500,7 @@ class TestTacosWebhookHandlerGiveTacos:
             handler.users_utils.twitch_user_to_discord_user.side_effect = [111111111111, 222222222222]
 
             # to_user fetch fails
-            handler.discord_helper.get_or_fetch_user.side_effect = [
+            handler.entity_helper.get_or_fetch_user.side_effect = [
                 None,
                 mock_discord_user(222222222222, "streamer", False),
             ]

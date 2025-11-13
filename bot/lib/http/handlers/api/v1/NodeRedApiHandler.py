@@ -2,17 +2,15 @@ import os
 import typing
 from http import HTTPMethod
 
+from bot.lib.enums.minecraft_player_events import MinecraftPlayerEventLiteral
+from bot.lib.http.handlers.ApiHttpHandler import ApiHttpHandler
+from bot.lib.models import MinecraftPlayerEventPayload
+from bot.lib.models.openapi import openapi
+from bot.lib.settings import Settings
+from bot.tacobot import TacoBot
 from httpserver.EndpointDecorators import uri_variable_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from lib import discordhelper
-from lib.enums.minecraft_player_events import MinecraftPlayerEventLiteral
-from lib.http.handlers.ApiHttpHandler import ApiHttpHandler
-from lib.models import MinecraftPlayerEventPayload
-from lib.models.openapi import openapi
-from lib.mongodb.minecraft import MinecraftDatabase
-from lib.mongodb.tracking import TrackingDatabase
-from lib.settings import Settings
-from tacobot import TacoBot
+from httpserver.server import HttpServer
 
 
 class NodeRedApiHandler(ApiHttpHandler):
@@ -20,18 +18,16 @@ class NodeRedApiHandler(ApiHttpHandler):
     This is a placeholder for Node-RED API handler.
     """
 
-    def __init__(self, bot: TacoBot, discord_helper: typing.Optional[discordhelper.DiscordHelper] = None):
-        super().__init__(bot, discord_helper)
+    def __init__(self, bot: TacoBot, settings: Settings):
+        super().__init__(bot, settings=settings)
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.SETTINGS_SECTION = "http"
         self.NODERED_URL = "https://nodered.bit13.local"
 
-        self.settings = Settings()
-
-        self.minecraft_db = MinecraftDatabase()
-        self.tracking_db = TrackingDatabase()
+        # self.minecraft_db = MinecraftDatabase()
+        # self.tracking_db = TrackingDatabase()
 
     @uri_variable_mapping("/tacobot/minecraft/player/event/{event}")
     @uri_variable_mapping("/taco/minecraft/player/event/{event}")
@@ -107,3 +103,8 @@ class NodeRedApiHandler(ApiHttpHandler):
 
         headers.add("Location", f"{self.NODERED_URL}/tacobot/guild/{guild}/invite/{channel}")
         return self._create_error_response(302, "Redirecting to Node-RED for Twitch guild invite", headers=headers)
+
+def setup(bot: TacoBot, http_server: HttpServer):
+    settings = Settings()
+    handler = NodeRedApiHandler(bot, settings)
+    http_server.add_handler(handler)

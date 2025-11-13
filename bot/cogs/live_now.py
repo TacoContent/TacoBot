@@ -10,8 +10,7 @@ from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.enums.system_actions import SystemActions
-from bot.lib.helpers import EntityHelper, RoleHelper, TacoHelper
-from bot.lib.messaging import Messaging
+from bot.lib.helpers import EntityHelper, MessageHelper, RoleHelper, TacoHelper
 from bot.lib.mongodb.live import LiveDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.mongodb.twitch import TwitchDatabase
@@ -27,7 +26,7 @@ class LiveNow(TacobotCog):
         tracking_db: TrackingDatabase,
         twitch_db: TwitchDatabase,
         live_db: LiveDatabase,
-        messaging: Messaging,
+        messaging: MessageHelper,
         entity_helper: EntityHelper,
         role_helper: RoleHelper,
         taco_helper: TacoHelper,
@@ -457,7 +456,7 @@ async def setup(bot):
     tracking_db = TrackingDatabase()
     twitch_db = TwitchDatabase()
     live_db = LiveDatabase()
-    messaging = Messaging(bot)
+    messaging = MessageHelper(bot, settings)
     entity_helper = EntityHelper(bot)
     role_helper = RoleHelper(bot)
     taco_helper = TacoHelper(bot, entity_helper=entity_helper)

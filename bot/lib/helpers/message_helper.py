@@ -11,15 +11,17 @@ import traceback
 import typing
 
 import discord
-from bot.lib import logger, settings, utils
+from bot.lib import logger, utils
 from bot.lib.enums import loglevel
-from bot.lib.messaging import Messaging
+from bot.lib.settings import Settings
+from bot.tacobot import TacoBot
+
 
 
 class MessageHelper:
     """Helper class for message manipulation and bot notification messages."""
 
-    def __init__(self, bot) -> None:
+    def __init__(self, bot: TacoBot, settings: Settings) -> None:
         """Initialize MessageHelper with bot instance.
 
         Args:
@@ -30,13 +32,166 @@ class MessageHelper:
         self._module = os.path.basename(__file__)[:-3]
 
         self.bot = bot
-        self.settings = settings.Settings()
-        self.messaging = Messaging(bot=self.bot)
+        self.settings = settings
 
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:
             log_level = loglevel.LogLevel.DEBUG
         self.log = logger.Log(minimumLogLevel=log_level)
+
+    async def send_embed(
+        self,
+        channel: typing.Union[
+            discord.abc.GuildChannel,
+            discord.TextChannel,
+            discord.DMChannel,
+            discord.GroupChannel,
+            discord.Thread,
+            # discord.User,
+            discord.Member,
+            discord.ClientUser,
+            discord.abc.Messageable,
+        ],
+        title: typing.Optional[str] = None,
+        message: typing.Optional[str] = None,
+        fields: typing.Optional[list[dict[str, typing.Any]]] = None,
+        delete_after: typing.Optional[float] = None,
+        footer: typing.Optional[typing.Any] = None,
+        view: typing.Optional[discord.ui.View] = None,
+        color: typing.Optional[int] = 0x7289DA,
+        author: typing.Optional[typing.Union[discord.User, discord.Member, discord.ClientUser]] = None,
+        thumbnail: typing.Optional[str] = None,
+        image: typing.Optional[str] = None,
+        url: typing.Optional[str] = "",
+        content: typing.Optional[str] = None,
+        files: typing.Optional[list] = None,
+    ) -> discord.Message:
+        if color is None:
+            color = 0x7289DA
+
+        guild_id = 0
+        if (
+            not isinstance(channel, discord.ClientUser)
+            and not isinstance(channel, discord.User)
+            and not isinstance(channel, discord.abc.Messageable)
+        ):
+            guild_id = channel.guild.id
+
+        embed = discord.Embed(title=title, description=message, color=color, url=url)
+        if author:
+            embed.set_author(
+                name=f"{utils.get_user_display_name(author)}", icon_url=author.avatar.url if author.avatar else None
+            )
+        if embed.fields is not None:
+            for f in embed.fields:
+                embed.add_field(name=f.name, value=f.value, inline=f.inline)
+        if fields is not None:
+            for f in fields:
+                embed.add_field(name=f["name"], value=f["value"], inline=f["inline"] if "inline" in f else False)
+        if footer is None:
+            embed.set_footer(
+                text=self.settings.get_string(
+                    guild_id,
+                    "developed_by",
+                    user=self.settings.get("author", "Unknown"),
+                    bot_name=self.settings.get("name", "Unknown"),
+                    version=self.settings.get("version", "Unknown"),
+                )
+            )
+        else:
+            embed.set_footer(text=footer)
+
+        if thumbnail is not None:
+            embed.set_thumbnail(url=thumbnail)
+        if image is not None:
+            embed.set_image(url=image)
+        return await channel.send(  # type: ignore
+            content=content, embed=embed, delete_after=delete_after, view=view, files=files  # type: ignore
+        )
+
+    async def update_embed(
+        self,
+        message: typing.Optional[discord.Message] = None,
+        title: typing.Optional[str] = None,
+        description: typing.Optional[str] = None,
+        description_append: typing.Optional[bool] = True,
+        fields: typing.Optional[list[dict[str, typing.Any]]] = None,
+        content: typing.Optional[str] = None,
+        footer: typing.Optional[typing.Any] = None,
+        view: typing.Optional[discord.ui.View] = None,
+        color: typing.Optional[int] = 0x7289DA,
+        author: typing.Optional[typing.Union[discord.User, discord.Member]] = None,
+    ):
+        if not message or len(message.embeds) == 0:
+            return
+        if color is None:
+            color = 0x7289DA
+        guild_id = 0
+        if message.guild:
+            guild_id = message.guild.id
+        embed = message.embeds[0]
+        if title is None:
+            title = embed.title if embed.title is not None else ""
+        if description is not None:
+            if description_append:
+                edescription = ""
+                if embed.description is not None and embed.description != "":
+                    edescription = embed.description
+
+                description = edescription + "\n\n" + description
+            else:
+                description = description
+        else:
+            if embed.description is not None and embed.description != "":
+                description = embed.description
+            else:
+                description = ""
+        updated_embed = discord.Embed(color=color, title=embed.title, description=f"{description}")
+        for f in embed.fields:
+            updated_embed.add_field(name=f.name, value=f.value, inline=f.inline)
+        if fields is not None:
+            for f in fields:
+                updated_embed.add_field(
+                    name=f["name"], value=f["value"], inline=f["inline"] if "inline" in f else False
+                )
+        if footer is None:
+            updated_embed.set_footer(
+                text=self.settings.get_string(
+                    guild_id,
+                    "developed_by",
+                    user=self.settings.get("author", "Unknown"),
+                    bot_name=self.settings.get("name", "Unknown"),
+                    version=self.settings.get("version", "Unknown"),
+                )
+            )
+        else:
+            updated_embed.set_footer(text=footer)
+
+        target_content = message.content
+        if content:
+            target_content = content
+
+        if author:
+            updated_embed.set_author(
+                name=f"{utils.get_user_display_name(author)}", icon_url=author.avatar.url if author.avatar else None
+            )
+
+        await message.edit(content=target_content, embed=updated_embed, view=view)
+
+    async def notify_of_error(self, ctx):
+        guild_id = 0
+        if ctx.guild:
+            guild_id = ctx.guild.id
+        await self.send_embed(
+            channel=ctx.channel,
+            title=self.settings.get_string(guild_id, "error"),
+            message=self.settings.get_string(
+                guild_id,
+                "error_occurred",
+                user=ctx.author.mention if hasattr(ctx, "author") else ctx.user.mention if hasattr(ctx, "user") else "",
+            ),
+            delete_after=30,
+        )
 
     async def move_message(
         self,
@@ -75,7 +230,7 @@ class MessageHelper:
             self.log.debug(0, f"{self._module}.{self._class}.{_method}", "No target channel to move message to")
             return
 
-        target_author: typing.Optional[typing.Union[discord.User, discord.Member]] = author
+        target_author: typing.Optional[typing.Union[discord.User, discord.Member, discord.ClientUser]] = author
         if not target_author:
             target_author = message.author
 
@@ -180,7 +335,7 @@ class MessageHelper:
             guild_id = ctx.guild.id
 
         if not ctx.author.guild_permissions.administrator:
-            await self.messaging.send_embed(
+            await self.send_embed(
                 ctx.channel,
                 self.settings.get_string(guild_id, "error"),
                 self.settings.get_string(guild_id, "not_initialized_user", user=ctx.author.mention),
@@ -189,7 +344,7 @@ class MessageHelper:
         else:
             # get the bot's prefix
             prefix = (await self.bot.get_prefix(ctx.message))[0]
-            await self.messaging.send_embed(
+            await self.send_embed(
                 ctx.channel,
                 self.settings.get_string(guild_id, "error"),
                 self.settings.get_string(

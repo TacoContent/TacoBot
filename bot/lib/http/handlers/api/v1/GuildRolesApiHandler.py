@@ -7,25 +7,24 @@ from http import HTTPMethod
 
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
+from bot.lib.models.openapi import openapi
 from bot.lib.models.DiscordRole import DiscordRole
 from bot.lib.models.DiscordUser import DiscordUser
+from bot.lib.models.DiscordMentionable import DiscordMentionable
+from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from bot.lib.models.GuildItemIdBatchRequestBody import GuildItemIdBatchRequestBody
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from httpserver.EndpointDecorators import uri_variable_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException
-from lib import discordhelper
-from lib.models.DiscordMentionable import DiscordMentionable
-from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
-from lib.models.GuildItemIdBatchRequestBody import GuildItemIdBatchRequestBody
-from lib.models.openapi import openapi
+from httpserver.server import HttpResponseException, HttpServer
 
 
 class GuildRolesApiHandler(BaseHttpHandler):
-    def __init__(self, bot: TacoBot, discord_helper: typing.Optional[discordhelper.DiscordHelper] = None):
-        super().__init__(bot, discord_helper)
+    def __init__(self, bot: TacoBot, settings: Settings):
+        super().__init__(bot, settings=settings)
         self._class = self.__class__.__name__
         self._module = os.path.basename(__file__)[:-3]
-        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/roles", method=HTTPMethod.GET)
     @openapi.summary("List guild roles")
@@ -424,3 +423,9 @@ class GuildRolesApiHandler(BaseHttpHandler):
         except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
             return self._create_error_response(500, f"Internal server error: {str(e)}", headers)
+
+
+def setup(bot: TacoBot, http_server: HttpServer):
+    settings = Settings()
+    handler = GuildRolesApiHandler(bot, settings)
+    http_server.add_handler(handler)

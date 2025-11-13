@@ -7,16 +7,16 @@ from http import HTTPMethod
 import discord
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
+from bot.lib.models import openapi
 from bot.lib.models.DiscordMessage import DiscordMessage
 from bot.lib.models.DiscordMessageReaction import DiscordMessageReaction
+from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from bot.lib.models.GuildItemIdBatchRequestBody import GuildItemIdBatchRequestBody
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from httpserver.EndpointDecorators import uri_variable_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException
-from lib import discordhelper
-from lib.models import openapi
-from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
-from lib.models.GuildItemIdBatchRequestBody import GuildItemIdBatchRequestBody
+from httpserver.server import HttpResponseException, HttpServer
 
 
 class GuildMessagesApiHandler(BaseHttpHandler):
@@ -28,11 +28,10 @@ class GuildMessagesApiHandler(BaseHttpHandler):
         POST /api/v1/guild/{guild_id}/channel/{channel_id}/messages/batch/ids   (batch by IDs)
     """
 
-    def __init__(self, bot: TacoBot, discord_helper: typing.Optional[discordhelper.DiscordHelper] = None):
-        super().__init__(bot, discord_helper)
+    def __init__(self, bot: TacoBot, settings: Settings):
+        super().__init__(bot, settings=settings)
         self._class = self.__class__.__name__
         self._module = os.path.basename(__file__)[:-3]
-        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
 
     @uri_variable_mapping(
         f"/api/{API_VERSION}/guild/{{guild_id}}/channel/{{channel_id}}/messages", method=HTTPMethod.GET
@@ -643,3 +642,10 @@ class GuildMessagesApiHandler(BaseHttpHandler):
         except Exception as e:  # noqa: BLE001
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e))
             return self._create_error_response(500, 'Internal server error', headers)
+
+
+def setup(bot: TacoBot, http_server: HttpServer):
+    """Setup the GuildMessagesApiHandler routes."""
+    settings = Settings()
+    handler = GuildMessagesApiHandler(bot, settings)
+    http_server.add_handler(handler)

@@ -46,14 +46,11 @@ import os
 import random
 import string
 import traceback
-import typing
 
-from bot.lib import discordhelper, logger, settings
+from bot.lib import logger
 from bot.lib.enums import loglevel
-from bot.lib.messaging import Messaging
-from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.settings import Settings
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException
 from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
 from tacobot import TacoBot
 
@@ -68,18 +65,14 @@ class BaseWebhookHandler:
         runtime context.
     """
 
-    def __init__(self, bot: TacoBot, discord_helper: typing.Optional[discordhelper.DiscordHelper] = None):
+    def __init__(self, bot: TacoBot, settings: Settings):
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.bot = bot
         self.SETTINGS_SECTION = "webhook"
         self.WEBHOOK_SETTINGS_SECTION = "webhook"
-        self.settings = settings.Settings()
-
-        self.discord_helper = discordhelper.DiscordHelper(bot)
-        self.messaging = Messaging(bot)
-        self.tracking_db = TrackingDatabase()
+        self.settings = settings
 
         log_level = loglevel.LogLevel[self.settings.log_level.upper()]
         if not log_level:

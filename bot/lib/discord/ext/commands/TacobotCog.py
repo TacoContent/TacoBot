@@ -15,9 +15,12 @@ class TacobotCog(commands.Cog):
         self.SETTINGS_SECTION = settingsSection
         self.settings = settings or Settings()
 
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
-        if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
+        log_level = loglevel.LogLevel.DEBUG  # Default fallback
+        try:
+            log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        except KeyError:
+            # Invalid log level string, keep default DEBUG
+            pass
 
         self.log = logger.Log(minimumLogLevel=log_level)
 

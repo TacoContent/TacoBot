@@ -4,31 +4,14 @@ This module contains comprehensive unit tests for GuildResolver,
 which handles guild and channel resolution for webhook broadcasting.
 """
 
-from unittest.mock import AsyncMock, MagicMock, Mock
+from unittest.mock import MagicMock, Mock
 
 import pytest
 from bot.lib.http.handlers.webhook.helpers.GuildResolver import GuildResolver, ResolvedGuild
-from bot.lib.mongodb.free_game_keys import FreeGameKeysDatabase
 
 # =======================
 # Fixtures
 # =======================
-
-
-@pytest.fixture
-def mock_freegame_db():
-    """Create a mock FreeGameKeysDatabase instance."""
-    db = Mock(spec=FreeGameKeysDatabase)
-    db.is_game_tracked = Mock(return_value=False)
-    return db
-
-
-@pytest.fixture
-def mock_discord_helper():
-    """Create a mock discord helper."""
-    helper = AsyncMock()
-    helper.get_or_fetch_channel = AsyncMock(return_value=None)
-    return helper
 
 
 @pytest.fixture
@@ -38,10 +21,10 @@ def mock_get_settings():
 
 
 @pytest.fixture
-def resolver(mock_get_settings, mock_freegame_db, mock_discord_helper):
+def resolver(mock_get_settings, freegame_db, entity_helper):
     """Create GuildResolver with mocked dependencies."""
     return GuildResolver(
-        get_settings_func=mock_get_settings, freegame_db=mock_freegame_db, discord_helper=mock_discord_helper
+        get_settings_func=mock_get_settings, freegame_db=freegame_db, entity_helper=entity_helper
     )
 
 
@@ -107,15 +90,15 @@ class TestResolvedGuild:
 class TestGuildResolverInit:
     """Test GuildResolver initialization."""
 
-    def test_init_stores_dependencies(self, mock_get_settings, mock_freegame_db, mock_discord_helper):
+    def test_init_stores_dependencies(self, mock_get_settings, freegame_db, entity_helper):
         """Test that __init__ stores all dependencies."""
         resolver = GuildResolver(
-            get_settings_func=mock_get_settings, freegame_db=mock_freegame_db, discord_helper=mock_discord_helper
+            get_settings_func=mock_get_settings, freegame_db=freegame_db, entity_helper=entity_helper
         )
 
         assert resolver.get_settings == mock_get_settings
-        assert resolver.freegame_db == mock_freegame_db
-        assert resolver.discord_helper == mock_discord_helper
+        assert resolver.freegame_db == freegame_db
+        assert resolver.entity_helper == entity_helper
 
 
 # =======================
@@ -135,15 +118,15 @@ class TestGetGuildConfig:
         assert result is None
         mock_get_settings.assert_called_once_with(111, "free_games")
 
-    def test_returns_none_when_game_already_tracked(self, resolver, mock_get_settings, mock_freegame_db):
+    def test_returns_none_when_game_already_tracked(self, resolver, mock_get_settings, freegame_db):
         """Test returns None when game is already tracked for guild."""
         mock_get_settings.return_value = {"enabled": True, "channel_ids": [123]}
-        mock_freegame_db.is_game_tracked.return_value = True
+        freegame_db.is_game_tracked.return_value = True
 
         result = resolver._get_guild_config(guild_id=111, game_id=222, settings_section="free_games")
 
         assert result is None
-        mock_freegame_db.is_game_tracked.assert_called_once_with(111, 222)
+        freegame_db.is_game_tracked.assert_called_once_with(111, 222)
 
     def test_returns_none_when_no_channel_ids(self, resolver, mock_get_settings):
         """Test returns None when no channel IDs configured."""
@@ -191,19 +174,19 @@ class TestResolveChannels:
     """Test _resolve_channels method."""
 
     @pytest.mark.asyncio
-    async def test_resolves_single_channel(self, resolver, mock_discord_helper, mock_text_channel):
+    async def test_resolves_single_channel(self, entity_helper, resolver, mock_text_channel):
         """Test resolves a single channel ID."""
         channel = mock_text_channel(123, "test-channel")
-        mock_discord_helper.get_or_fetch_channel.return_value = channel
+        entity_helper.get_or_fetch_channel.return_value = channel
 
         result = await resolver._resolve_channels([123])
 
         assert len(result) == 1
         assert result[0] == channel
-        mock_discord_helper.get_or_fetch_channel.assert_called_once_with(123)
+        entity_helper.get_or_fetch_channel.assert_called_once_with(123)
 
     @pytest.mark.asyncio
-    async def test_resolves_multiple_channels(self, resolver, mock_discord_helper, mock_text_channel):
+    async def test_resolves_multiple_channels(self, resolver, entity_helper, mock_text_channel):
         """Test resolves multiple channel IDs."""
         channel1 = mock_text_channel(123, "channel-1")
         channel2 = mock_text_channel(456, "channel-2")
@@ -212,7 +195,7 @@ class TestResolveChannels:
         async def mock_get_channel(channel_id):
             return {123: channel1, 456: channel2, 789: channel3}.get(channel_id)
 
-        mock_discord_helper.get_or_fetch_channel.side_effect = mock_get_channel
+        entity_helper.get_or_fetch_channel.side_effect = mock_get_channel
 
         result = await resolver._resolve_channels([123, 456, 789])
 
@@ -220,17 +203,17 @@ class TestResolveChannels:
         assert result[0] == channel1
         assert result[1] == channel2
         assert result[2] == channel3
-        assert mock_discord_helper.get_or_fetch_channel.call_count == 3
+        assert entity_helper.get_or_fetch_channel.call_count == 3
 
     @pytest.mark.asyncio
-    async def test_filters_out_none_channels(self, resolver, mock_discord_helper, mock_text_channel):
+    async def test_filters_out_none_channels(self, resolver, entity_helper, mock_text_channel):
         """Test filters out channels that return None."""
         channel1 = mock_text_channel(123, "channel-1")
 
         async def mock_get_channel(channel_id):
             return channel1 if channel_id == 123 else None
 
-        mock_discord_helper.get_or_fetch_channel.side_effect = mock_get_channel
+        entity_helper.get_or_fetch_channel.side_effect = mock_get_channel
 
         result = await resolver._resolve_channels([123, 456, 789])
 
@@ -238,22 +221,22 @@ class TestResolveChannels:
         assert result[0] == channel1
 
     @pytest.mark.asyncio
-    async def test_empty_channel_ids(self, resolver, mock_discord_helper):
+    async def test_empty_channel_ids(self, resolver, entity_helper):
         """Test handles empty channel ID list."""
         result = await resolver._resolve_channels([])
 
         assert result == []
-        mock_discord_helper.get_or_fetch_channel.assert_not_called()
+        entity_helper.get_or_fetch_channel.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_all_channels_invalid(self, resolver, mock_discord_helper):
+    async def test_all_channels_invalid(self, resolver, entity_helper):
         """Test handles all channels being invalid/None."""
-        mock_discord_helper.get_or_fetch_channel.return_value = None
+        entity_helper.get_or_fetch_channel.return_value = None
 
         result = await resolver._resolve_channels([123, 456])
 
         assert result == []
-        assert mock_discord_helper.get_or_fetch_channel.call_count == 2
+        assert entity_helper.get_or_fetch_channel.call_count == 2
 
 
 # =======================
@@ -280,14 +263,14 @@ class TestResolveEligibleGuilds:
 
     @pytest.mark.asyncio
     async def test_resolves_single_eligible_guild(
-        self, resolver, mock_guild, mock_text_channel, mock_get_settings, mock_discord_helper
+        self, resolver, mock_guild, mock_text_channel, mock_get_settings, entity_helper
     ):
         """Test resolves a single eligible guild with channels."""
         guild = mock_guild(111, "Guild 1")
         channel = mock_text_channel(123, "announcements")
 
         mock_get_settings.return_value = {"enabled": True, "channel_ids": [123], "notify_role_ids": [456]}
-        mock_discord_helper.get_or_fetch_channel.return_value = channel
+        entity_helper.get_or_fetch_channel.return_value = channel
 
         result = await resolver.resolve_eligible_guilds(guilds=[guild], game_id=999, settings_section="free_games")
 
@@ -299,7 +282,7 @@ class TestResolveEligibleGuilds:
 
     @pytest.mark.asyncio
     async def test_resolves_multiple_eligible_guilds(
-        self, resolver, mock_guild, mock_text_channel, mock_get_settings, mock_discord_helper
+        self, resolver, mock_guild, mock_text_channel, mock_get_settings, entity_helper
     ):
         """Test resolves multiple eligible guilds."""
         guild1 = mock_guild(111, "Guild 1")
@@ -318,7 +301,7 @@ class TestResolveEligibleGuilds:
         async def mock_get_channel(channel_id):
             return {123: channel1, 456: channel2}.get(channel_id)
 
-        mock_discord_helper.get_or_fetch_channel.side_effect = mock_get_channel
+        entity_helper.get_or_fetch_channel.side_effect = mock_get_channel
 
         result = await resolver.resolve_eligible_guilds(
             guilds=[guild1, guild2], game_id=999, settings_section="free_games"
@@ -333,7 +316,7 @@ class TestResolveEligibleGuilds:
         assert result[1].notify_role_ids == [1011]
 
     @pytest.mark.asyncio
-    async def test_filters_out_disabled_guilds(self, resolver, mock_guild, mock_get_settings):
+    async def test_filters_out_disabled_guilds(self, entity_helper,resolver, mock_guild, mock_get_settings):
         """Test filters out guilds with disabled notifications."""
         guild1 = mock_guild(111, "Enabled Guild")
         guild2 = mock_guild(222, "Disabled Guild")
@@ -346,7 +329,7 @@ class TestResolveEligibleGuilds:
         mock_get_settings.side_effect = mock_settings
 
         # Guild 111 will have valid channel
-        resolver.discord_helper.get_or_fetch_channel.return_value = mock_guild(123)
+        entity_helper.get_or_fetch_channel.return_value = mock_guild(123)
 
         result = await resolver.resolve_eligible_guilds(
             guilds=[guild1, guild2], game_id=999, settings_section="free_games"
@@ -357,7 +340,7 @@ class TestResolveEligibleGuilds:
         assert result[0].guild_id == 111
 
     @pytest.mark.asyncio
-    async def test_filters_out_already_tracked_guilds(self, resolver, mock_guild, mock_get_settings, mock_freegame_db):
+    async def test_filters_out_already_tracked_guilds(self, entity_helper, resolver, mock_guild, mock_get_settings, freegame_db):
         """Test filters out guilds where game is already tracked."""
         guild1 = mock_guild(111, "New Guild")
         guild2 = mock_guild(222, "Tracked Guild")
@@ -367,10 +350,10 @@ class TestResolveEligibleGuilds:
         def mock_tracked(guild_id, game_id):
             return guild_id == 222
 
-        mock_freegame_db.is_game_tracked.side_effect = mock_tracked
+        freegame_db.is_game_tracked.side_effect = mock_tracked
 
         # Guild 111 will have valid channel
-        resolver.discord_helper.get_or_fetch_channel.return_value = mock_guild(123)
+        entity_helper.get_or_fetch_channel.return_value = mock_guild(123)
 
         result = await resolver.resolve_eligible_guilds(
             guilds=[guild1, guild2], game_id=999, settings_section="free_games"
@@ -382,14 +365,14 @@ class TestResolveEligibleGuilds:
 
     @pytest.mark.asyncio
     async def test_filters_out_guilds_with_no_channels(
-        self, resolver, mock_guild, mock_get_settings, mock_discord_helper
+        self, resolver, mock_guild, mock_get_settings, entity_helper
     ):
         """Test filters out guilds where channels cannot be resolved."""
         guild = mock_guild(111, "Guild")
 
         mock_get_settings.return_value = {"enabled": True, "channel_ids": [123, 456]}
 
-        mock_discord_helper.get_or_fetch_channel.return_value = None
+        entity_helper.get_or_fetch_channel.return_value = None
 
         result = await resolver.resolve_eligible_guilds(guilds=[guild], game_id=999, settings_section="free_games")
 
@@ -404,7 +387,7 @@ class TestResolveEligibleGuilds:
 
     @pytest.mark.asyncio
     async def test_handles_guild_with_multiple_channels(
-        self, resolver, mock_guild, mock_text_channel, mock_get_settings, mock_discord_helper
+        self, resolver, mock_guild, mock_text_channel, mock_get_settings, entity_helper
     ):
         """Test guild with multiple notification channels."""
         guild = mock_guild(111, "Multi-Channel Guild")
@@ -416,7 +399,7 @@ class TestResolveEligibleGuilds:
         async def mock_get_channel(channel_id):
             return {123: channel1, 456: channel2}.get(channel_id)
 
-        mock_discord_helper.get_or_fetch_channel.side_effect = mock_get_channel
+        entity_helper.get_or_fetch_channel.side_effect = mock_get_channel
 
         result = await resolver.resolve_eligible_guilds(guilds=[guild], game_id=999, settings_section="free_games")
 
@@ -429,7 +412,7 @@ class TestResolveEligibleGuilds:
 
     @pytest.mark.asyncio
     async def test_handles_guild_with_some_invalid_channels(
-        self, resolver, mock_guild, mock_text_channel, mock_get_settings, mock_discord_helper
+        self, resolver, mock_guild, mock_text_channel, mock_get_settings, entity_helper
     ):
         """Test guild where some channels are invalid but at least one is valid."""
         guild = mock_guild(111, "Partial Guild")
@@ -440,7 +423,7 @@ class TestResolveEligibleGuilds:
         async def mock_get_channel(channel_id):
             return valid_channel if channel_id == 123 else None
 
-        mock_discord_helper.get_or_fetch_channel.side_effect = mock_get_channel
+        entity_helper.get_or_fetch_channel.side_effect = mock_get_channel
 
         result = await resolver.resolve_eligible_guilds(guilds=[guild], game_id=999, settings_section="free_games")
 
@@ -450,14 +433,14 @@ class TestResolveEligibleGuilds:
 
     @pytest.mark.asyncio
     async def test_different_settings_sections(
-        self, resolver, mock_guild, mock_text_channel, mock_get_settings, mock_discord_helper
+        self, resolver, mock_guild, mock_text_channel, mock_get_settings, entity_helper
     ):
         """Test works with different settings sections."""
         guild = mock_guild(111, "Guild")
         channel = mock_text_channel(123, "channel")
 
         mock_get_settings.return_value = {"enabled": True, "channel_ids": [123]}
-        mock_discord_helper.get_or_fetch_channel.return_value = channel
+        entity_helper.get_or_fetch_channel.return_value = channel
 
         # Test with different section names
         for section in ["free_games", "shift_codes", "other_section"]:
@@ -468,13 +451,13 @@ class TestResolveEligibleGuilds:
 
     @pytest.mark.asyncio
     async def test_preserves_guild_order(
-        self, resolver, mock_guild, mock_text_channel, mock_get_settings, mock_discord_helper
+        self, resolver, mock_guild, mock_text_channel, mock_get_settings, entity_helper
     ):
         """Test preserves input guild order in output."""
         guilds = [mock_guild(333, "Guild C"), mock_guild(111, "Guild A"), mock_guild(222, "Guild B")]
 
         mock_get_settings.return_value = {"enabled": True, "channel_ids": [123]}
-        mock_discord_helper.get_or_fetch_channel.return_value = mock_text_channel(123)
+        entity_helper.get_or_fetch_channel.return_value = mock_text_channel(123)
 
         result = await resolver.resolve_eligible_guilds(guilds=guilds, game_id=999, settings_section="free_games")
 

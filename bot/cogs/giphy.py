@@ -8,7 +8,7 @@ from random import random
 from urllib import parse, request
 
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
-from bot.lib.messaging import Messaging
+from bot.lib.helpers import MessageHelper
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
@@ -16,7 +16,7 @@ from discord.ext import commands
 
 
 class Giphy(TacobotCog):
-    def __init__(self, bot: TacoBot, messaging: Messaging, tracking_db: TrackingDatabase, settings: Settings):
+    def __init__(self, bot: TacoBot, messaging: MessageHelper, tracking_db: TrackingDatabase, settings: Settings):
         super().__init__(bot, "giphy", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
@@ -84,6 +84,6 @@ class Giphy(TacobotCog):
 
 async def setup(bot):
     settings = Settings()
-    messaging = Messaging(bot)
+    messaging = MessageHelper(bot, settings)
     tracking_db = TrackingDatabase()
     await bot.add_cog(Giphy(bot=bot, messaging=messaging, tracking_db=tracking_db, settings=settings))

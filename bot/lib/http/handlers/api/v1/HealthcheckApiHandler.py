@@ -30,21 +30,18 @@ Design Notes:
 import inspect
 import os
 import traceback
-import typing
 from http import HTTPMethod
 
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
+from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from bot.lib.models.openapi import openapi
 from bot.lib.mongodb.minecraft import MinecraftDatabase
-from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from httpserver.EndpointDecorators import uri_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException
-from lib import discordhelper
-from lib.models import ErrorStatusCodePayload
-from lib.models.openapi import openapi
+from httpserver.server import HttpResponseException, HttpServer
 
 
 class HealthcheckApiHandler(BaseHttpHandler):
@@ -56,18 +53,14 @@ class HealthcheckApiHandler(BaseHttpHandler):
     critical liveness probes.
     """
 
-    def __init__(self, bot: TacoBot, discord_helper: typing.Optional[discordhelper.DiscordHelper] = None):
-        super().__init__(bot, discord_helper)
+    def __init__(self, bot: TacoBot, settings: Settings, minecraft_db: MinecraftDatabase):
+        super().__init__(bot, settings=settings)
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.SETTINGS_SECTION = f"settings/api/{API_VERSION}"
 
-        self.settings = Settings()
-
-        self.minecraft_db = MinecraftDatabase()
-        self.tracking_db = TrackingDatabase()
-        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
+        self.minecraft_db = minecraft_db
 
     @uri_mapping(f"/api/{API_VERSION}/health", method=HTTPMethod.GET)
     @uri_mapping("/healthz", method=HTTPMethod.GET)
@@ -130,3 +123,11 @@ class HealthcheckApiHandler(BaseHttpHandler):
             headers.add("Content-Type", "application/json")
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
             return self._create_error_response(500, f"Internal server error: {str(e)}", headers)
+
+
+def setup(bot: TacoBot, http_server: HttpServer):
+    """Setup the HealthcheckApiHandler routes."""
+    settings = Settings()
+    minecraft_db = MinecraftDatabase()
+    handler = HealthcheckApiHandler(bot=bot, settings=settings, minecraft_db=minecraft_db)
+    http_server.add_handler(handler)

@@ -6,8 +6,7 @@ import traceback
 
 import discord
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
-from bot.lib.helpers import EntityHelper
-from bot.lib.messaging import Messaging
+from bot.lib.helpers import EntityHelper, MessageHelper
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
@@ -19,7 +18,7 @@ class MessagePreview(TacobotCog):
         self,
         bot: TacoBot,
         entity_helper: EntityHelper,
-        messaging: Messaging,
+        messaging: MessageHelper,
         tracking_db: TrackingDatabase,
         settings: Settings,
     ) -> None:
@@ -156,7 +155,7 @@ class MessagePreview(TacobotCog):
 async def setup(bot):
     settings = Settings()
     entity_helper = EntityHelper(bot)
-    messaging = Messaging(bot)
+    messaging = MessageHelper(bot, settings)
     tracking_db = TrackingDatabase()
     await bot.add_cog(
         MessagePreview(

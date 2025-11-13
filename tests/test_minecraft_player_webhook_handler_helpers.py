@@ -16,29 +16,24 @@ from httpserver.http_util import HttpHeaders, HttpRequest
 from httpserver.server import HttpResponseException
 
 
+@pytest.fixture
+def handler(bot, settings, entity_helper):
+    """Create a handler instance with mocked dependencies."""
+    handler_instance = MinecraftPlayerWebhookHandler(bot, settings, entity_helper)
+    handler_instance.log = MagicMock()
+    return handler_instance
+
+
+@pytest.fixture
+def http_headers():
+    """Create HttpHeaders."""
+    headers = HttpHeaders()
+    headers.add("Content-Type", "application/json")
+    return headers
+
+
 class TestMinecraftPlayerWebhookHandlerCreateErrorResponse:
     """Test suite for _create_error_response method."""
-
-    @pytest.fixture
-    def mock_bot(self):
-        """Create a mock bot instance."""
-        return MagicMock()
-
-    @pytest.fixture
-    def handler(self, mock_bot):
-        """Create a handler instance with mocked bot and logger."""
-        handler_instance = MinecraftPlayerWebhookHandler(mock_bot)
-        handler_instance.log = MagicMock()
-        return handler_instance
-
-    @pytest.fixture
-    def http_headers(self):
-        """Create HttpHeaders with standard fields."""
-        headers = HttpHeaders()
-        headers.add("Content-Type", "application/json")
-        headers.add("X-TACOBOT-EVENT", "MinecraftPlayerEvent")
-        headers.add("X-Request-ID", "test-123")
-        return headers
 
     def test_create_error_response_basic(self, handler, http_headers):
         """Test creating basic error response without stacktrace.
@@ -119,23 +114,6 @@ class TestMinecraftPlayerWebhookHandlerCreateErrorResponse:
 
 class TestMinecraftPlayerWebhookHandlerValidateRequestBody:
     """Test suite for _validate_request_body method."""
-
-    @pytest.fixture
-    def mock_bot(self):
-        """Create a mock bot instance."""
-        return MagicMock()
-
-    @pytest.fixture
-    def handler(self, mock_bot):
-        """Create a handler instance."""
-        return MinecraftPlayerWebhookHandler(mock_bot)
-
-    @pytest.fixture
-    def http_headers(self):
-        """Create HttpHeaders."""
-        headers = HttpHeaders()
-        headers.add("Content-Type", "application/json")
-        return headers
 
     @pytest.fixture
     def mock_request(self):
@@ -233,23 +211,6 @@ class TestMinecraftPlayerWebhookHandlerValidateRequestBody:
 
 class TestMinecraftPlayerWebhookHandlerValidatePayloadFields:
     """Test suite for _validate_payload_fields method."""
-
-    @pytest.fixture
-    def mock_bot(self):
-        """Create a mock bot instance."""
-        return MagicMock()
-
-    @pytest.fixture
-    def handler(self, mock_bot):
-        """Create a handler instance."""
-        return MinecraftPlayerWebhookHandler(mock_bot)
-
-    @pytest.fixture
-    def http_headers(self):
-        """Create HttpHeaders."""
-        headers = HttpHeaders()
-        headers.add("Content-Type", "application/json")
-        return headers
 
     def test_validate_payload_fields_success(self, handler, http_headers):
         """Test successful payload field validation.
@@ -372,23 +333,6 @@ class TestMinecraftPlayerWebhookHandlerValidatePayloadFields:
 class TestMinecraftPlayerWebhookHandlerValidateEventType:
     """Test suite for _validate_event_type method."""
 
-    @pytest.fixture
-    def mock_bot(self):
-        """Create a mock bot instance."""
-        return MagicMock()
-
-    @pytest.fixture
-    def handler(self, mock_bot):
-        """Create a handler instance."""
-        return MinecraftPlayerWebhookHandler(mock_bot)
-
-    @pytest.fixture
-    def http_headers(self):
-        """Create HttpHeaders."""
-        headers = HttpHeaders()
-        headers.add("Content-Type", "application/json")
-        return headers
-
     @pytest.mark.parametrize(
         "event_str,expected_enum",
         [
@@ -459,32 +403,6 @@ class TestMinecraftPlayerWebhookHandlerResolveDiscordObjects:
     """Test suite for _resolve_discord_objects method."""
 
     @pytest.fixture
-    def mock_bot(self):
-        """Create a mock bot instance with fetch methods."""
-        bot = MagicMock()
-        bot.fetch_guild = AsyncMock()
-        return bot
-
-    @pytest.fixture
-    def mock_discord_helper(self):
-        """Create a mock discord helper."""
-        helper = MagicMock()
-        helper.get_or_fetch_user = AsyncMock()
-        return helper
-
-    @pytest.fixture
-    def handler(self, mock_bot, mock_discord_helper):
-        """Create a handler instance with mocked dependencies."""
-        return MinecraftPlayerWebhookHandler(mock_bot, mock_discord_helper)
-
-    @pytest.fixture
-    def http_headers(self):
-        """Create HttpHeaders."""
-        headers = HttpHeaders()
-        headers.add("Content-Type", "application/json")
-        return headers
-
-    @pytest.fixture
     def mock_user(self):
         """Create a mock Discord user."""
         user = MagicMock()
@@ -518,7 +436,7 @@ class TestMinecraftPlayerWebhookHandlerResolveDiscordObjects:
         - Returns tuple of (user, guild, member)
         - Correct methods called on dependencies
         """
-        handler.discord_helper.get_or_fetch_user.return_value = mock_user
+        handler.entity_helper.get_or_fetch_user.return_value = mock_user
         handler.bot.fetch_guild.return_value = mock_guild
         mock_guild.fetch_member.return_value = mock_member
 
@@ -530,7 +448,7 @@ class TestMinecraftPlayerWebhookHandlerResolveDiscordObjects:
         assert guild == mock_guild
         assert member == mock_member
 
-        handler.discord_helper.get_or_fetch_user.assert_called_once_with(112233445566778899)
+        handler.entity_helper.get_or_fetch_user.assert_called_once_with(112233445566778899)
         handler.bot.fetch_guild.assert_called_once_with(123456789012345678)
         mock_guild.fetch_member.assert_called_once_with(112233445566778899)
 
@@ -543,7 +461,7 @@ class TestMinecraftPlayerWebhookHandlerResolveDiscordObjects:
         - 404 status code
         - Error message includes user ID
         """
-        handler.discord_helper.get_or_fetch_user.return_value = None
+        handler.entity_helper.get_or_fetch_user.return_value = None
 
         with pytest.raises(HttpResponseException) as exc_info:
             await handler._resolve_discord_objects(123456789012345678, 112233445566778899, http_headers)
@@ -562,7 +480,7 @@ class TestMinecraftPlayerWebhookHandlerResolveDiscordObjects:
         - 404 status code
         - Error message includes guild ID
         """
-        handler.discord_helper.get_or_fetch_user.return_value = mock_user
+        handler.entity_helper.get_or_fetch_user.return_value = mock_user
         handler.bot.fetch_guild.return_value = None
 
         with pytest.raises(HttpResponseException) as exc_info:
@@ -582,7 +500,7 @@ class TestMinecraftPlayerWebhookHandlerResolveDiscordObjects:
         - 404 status code
         - Error message includes both user ID and guild ID
         """
-        handler.discord_helper.get_or_fetch_user.return_value = mock_user
+        handler.entity_helper.get_or_fetch_user.return_value = mock_user
         handler.bot.fetch_guild.return_value = mock_guild
         mock_guild.fetch_member.return_value = None
 
@@ -602,7 +520,7 @@ class TestMinecraftPlayerWebhookHandlerResolveDiscordObjects:
         - Non-HttpResponseException errors not caught
         - Original exception type preserved
         """
-        handler.discord_helper.get_or_fetch_user.side_effect = RuntimeError("API error")
+        handler.entity_helper.get_or_fetch_user.side_effect = RuntimeError("API error")
 
         with pytest.raises(RuntimeError, match="API error"):
             await handler._resolve_discord_objects(123456789012345678, 112233445566778899, http_headers)

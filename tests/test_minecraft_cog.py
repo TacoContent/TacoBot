@@ -71,7 +71,7 @@ def context(guild, channel, user):
 
 
 @pytest.fixture
-def cog(bot, minecraft_db, tracking_db, messaging, entity_helper, context_helper, prompt_helper, settings):
+def cog(bot, minecraft_db, tracking_db, message_helper, entity_helper, context_helper, prompt_helper, settings):
     """Minecraft cog fixture using shared fixtures from conftest.py."""
     # Override settings to return mock strings for minecraft keys
     settings.get_string = MagicMock(side_effect=lambda guild_id, key, **kwargs: f"mock_{key}")
@@ -80,7 +80,7 @@ def cog(bot, minecraft_db, tracking_db, messaging, entity_helper, context_helper
         bot=bot,
         minecraft_db=minecraft_db,
         tracking_db=tracking_db,
-        messaging=messaging,
+        messaging=message_helper,
         entity_helper=entity_helper,
         context_helper=context_helper,
         prompt_helper=prompt_helper,
@@ -95,12 +95,12 @@ class TestMinecraftCogInit:
     """Tests for MinecraftCog initialization."""
 
     def test_init(
-        self, cog, bot, minecraft_db, tracking_db, messaging, entity_helper, context_helper, prompt_helper, settings
+        self, cog, bot, minecraft_db, tracking_db, message_helper, entity_helper, context_helper, prompt_helper, settings
     ):
         assert cog.bot == bot
         assert cog.minecraft_db == minecraft_db
         assert cog.tracking_db == tracking_db
-        assert cog.messaging == messaging
+        assert cog.messaging == message_helper
         assert cog.entity_helper == entity_helper
         assert cog.context_helper == context_helper
         assert cog.prompt_helper == prompt_helper
@@ -110,14 +110,14 @@ class TestMinecraftCogInit:
         assert cog.SELF_DESTRUCT_TIMEOUT == 30
 
     def test_init_default_api_endpoints(
-        self, bot, minecraft_db, tracking_db, messaging, entity_helper, context_helper, prompt_helper, settings
+        self, bot, minecraft_db, tracking_db, message_helper, entity_helper, context_helper, prompt_helper, settings
     ):
         """Test that default API endpoints are set correctly."""
         c = MinecraftCog(
             bot=bot,
             minecraft_db=minecraft_db,
             tracking_db=tracking_db,
-            messaging=messaging,
+            messaging=message_helper,
             entity_helper=entity_helper,
             context_helper=context_helper,
             prompt_helper=prompt_helper,
@@ -131,7 +131,7 @@ class TestMinecraftCogInit:
         assert c.avatar_api == MinecraftCog.DEFAULT_AVATAR_API
 
     def test_init_custom_api_endpoints(
-        self, bot, minecraft_db, tracking_db, messaging, entity_helper, context_helper, prompt_helper, settings
+        self, bot, minecraft_db, tracking_db, message_helper, entity_helper, context_helper, prompt_helper, settings
     ):
         """Test that custom API endpoints can be injected for testing."""
         custom_api = "http://test-api.local:8080"
@@ -142,7 +142,7 @@ class TestMinecraftCogInit:
             bot=bot,
             minecraft_db=minecraft_db,
             tracking_db=tracking_db,
-            messaging=messaging,
+            messaging=message_helper,
             entity_helper=entity_helper,
             context_helper=context_helper,
             prompt_helper=prompt_helper,
@@ -174,7 +174,7 @@ class TestMinecraftCogHelperMethods:
         bot,
         minecraft_db,
         tracking_db,
-        messaging,
+        message_helper,
         entity_helper,
         context_helper,
         prompt_helper,
@@ -188,7 +188,7 @@ class TestMinecraftCogHelperMethods:
             bot=bot,
             minecraft_db=minecraft_db,
             tracking_db=tracking_db,
-            messaging=messaging,
+            messaging=message_helper,
             entity_helper=entity_helper,
             context_helper=context_helper,
             prompt_helper=prompt_helper,
@@ -647,13 +647,13 @@ class TestMinecraftCogStatusCommand:
         assert any("offline" in str(field).lower() for field in fields)
 
     @pytest.mark.asyncio
-    async def test_status_exception(self, cog, context, messaging):
+    async def test_status_exception(self, cog, context, message_helper):
         cog.get_cog_settings.side_effect = Exception("Settings error")
 
         await cog.status(context)
 
         cog.log.error.assert_called_once()
-        messaging.notify_of_error.assert_called_once_with(context)
+        message_helper.notify_of_error.assert_called_once_with(context)
 
 
 class TestMinecraftCogStartCommand:
@@ -962,14 +962,14 @@ class TestMinecraftCogMainCommand:
         cog.log.debug.assert_called()
 
     @pytest.mark.asyncio
-    async def test_minecraft_command_exception(self, cog, context, messaging):
+    async def test_minecraft_command_exception(self, cog, context, message_helper):
         context.invoked_subcommand = None
         cog.get_cog_settings.side_effect = Exception("Settings error")
 
         await cog.minecraft.callback(cog, context)
 
         cog.log.error.assert_called_once()
-        messaging.notify_of_error.assert_called_once_with(context)
+        message_helper.notify_of_error.assert_called_once_with(context)
 
 
 class TestMinecraftCogWhitelistCallback:
@@ -1127,54 +1127,54 @@ class TestMinecraftCogStopCommandErrors:
         assert "minecraft_control_failure" in str(call_args)
 
     @pytest.mark.asyncio
-    async def test_stop_server_exception(self, cog, context, messaging):
+    async def test_stop_server_exception(self, cog, context, message_helper):
         """Test stop server handles exceptions gracefully."""
         cog.get_cog_settings.side_effect = Exception("Settings error")
 
         await cog.stop_server.callback(cog, context)
 
         cog.log.error.assert_called_once()
-        messaging.notify_of_error.assert_called_once_with(context)
+        message_helper.notify_of_error.assert_called_once_with(context)
 
 
 class TestMinecraftCogStartCommandExceptions:
     """Additional tests for start command exception handling."""
 
     @pytest.mark.asyncio
-    async def test_start_server_exception(self, cog, context, messaging):
+    async def test_start_server_exception(self, cog, context, message_helper):
         """Test start server handles exceptions gracefully."""
         cog.get_cog_settings.side_effect = Exception("Settings error")
 
         await cog.start_server.callback(cog, context)
 
         cog.log.error.assert_called_once()
-        messaging.notify_of_error.assert_called_once_with(context)
+        message_helper.notify_of_error.assert_called_once_with(context)
 
 
 class TestMinecraftCogWhitelistExceptions:
     """Additional tests for whitelist command exception handling."""
 
     @pytest.mark.asyncio
-    async def test_whitelist_exception(self, cog, context, messaging):
+    async def test_whitelist_exception(self, cog, context, message_helper):
         """Test whitelist handles exceptions gracefully."""
         cog._is_user_whitelisted = MagicMock(side_effect=Exception("Database error"))
 
         await cog.whitelist.callback(cog, context)
 
         cog.log.error.assert_called_once()
-        messaging.notify_of_error.assert_called_once_with(context)
+        message_helper.notify_of_error.assert_called_once_with(context)
 
 
 class TestMinecraftCogSetup:
     """Tests for the setup function."""
 
     @pytest.mark.asyncio
-    async def test_setup(self, bot, settings, minecraft_db, tracking_db, messaging, entity_helper):
+    async def test_setup(self, bot, settings, minecraft_db, tracking_db, message_helper, entity_helper):
         """Test cog setup function."""
         with patch("bot.cogs.minecraft.Settings", return_value=settings):
             with patch("bot.cogs.minecraft.MinecraftDatabase", return_value=minecraft_db):
                 with patch("bot.cogs.minecraft.TrackingDatabase", return_value=tracking_db):
-                    with patch("bot.cogs.minecraft.Messaging", return_value=messaging):
+                    with patch("bot.cogs.minecraft.MessageHelper", return_value=message_helper):
                         with patch("bot.cogs.minecraft.EntityHelper", return_value=entity_helper):
                             with patch("bot.cogs.minecraft.ContextHelper"):
                                 with patch("bot.cogs.minecraft.PromptHelper"):

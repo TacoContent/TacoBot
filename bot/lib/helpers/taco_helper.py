@@ -13,10 +13,11 @@ import traceback
 import typing
 
 import discord
-from bot.lib import logger, settings, utils
+from bot.lib import logger, utils
 from bot.lib.enums import loglevel, tacotypes
-from bot.lib.messaging import Messaging
+from bot.lib.helpers import MessageHelper
 from bot.lib.mongodb.tacos import TacosDatabase
+from bot.lib.settings import Settings
 
 
 class TacoHelper:
@@ -34,9 +35,9 @@ class TacoHelper:
         self._module = os.path.basename(__file__)[:-3]
 
         self.bot = bot
-        self.settings = settings.Settings()
+        self.settings = Settings()
         self.tacos_db = TacosDatabase()
-        self.messaging = Messaging(bot=self.bot)
+        self.messaging = MessageHelper(bot=self.bot, settings=self.settings)
 
         # EntityHelper for fetching channels
         # Import here to avoid circular dependency

@@ -219,9 +219,7 @@ class TestLoadWebhookHandlers:
         """Test successful loading of webhook handlers."""
         cog.http_server = MagicMock()
 
-        mock_handler_class = MagicMock()
-        mock_handler_instance = MagicMock()
-        mock_handler_class.return_value = mock_handler_instance
+        mock_setup_function = MagicMock()
 
         with (
             patch("os.path.exists", return_value=True),
@@ -237,14 +235,18 @@ class TestLoadWebhookHandlers:
                 ],
             ),
             patch("bot.cogs.httphandler.import_module") as mock_import,
-            patch("bot.cogs.httphandler.getattr", return_value=mock_handler_class),
+            patch("bot.cogs.httphandler.getattr", return_value=mock_setup_function),
         ):
             cog.load_webhook_handlers()
 
             # Should load TestHandler, AnotherHandler, and BaseHandler (3 total)
             # Should skip: _private (starts with _), BaseWebhookHandler, BaseHttpHandler (specific filters)
             assert mock_import.call_count == 3
-            assert cog.http_server.add_handler.call_count == 3
+            # Verify setup was called 3 times with bot and http_server
+            assert mock_setup_function.call_count == 3
+            for call in mock_setup_function.call_args_list:
+                assert call[1]["bot"] == cog.bot
+                assert call[1]["http_server"] == cog.http_server
 
     def test_load_webhook_handlers_exception_during_load(self, cog):
         """Test exception handling when loading a handler fails."""
@@ -258,6 +260,56 @@ class TestLoadWebhookHandlers:
             cog.load_webhook_handlers()
 
             cog.log.error.assert_called()
+
+    def test_load_webhook_handlers_no_setup_function(self, cog):
+        """Test handling when a handler module has no setup function."""
+        cog.http_server = MagicMock()
+
+        with (
+            patch("os.path.exists", return_value=True),
+            patch("os.listdir", return_value=["NoSetupHandler.py"]),
+            patch("bot.cogs.httphandler.import_module") as mock_import,
+            patch("bot.cogs.httphandler.getattr", return_value=None),
+        ):
+            cog.load_webhook_handlers()
+
+            mock_import.assert_called_once()
+            cog.log.error.assert_called()
+            error_msg = cog.log.error.call_args[0][2]
+            assert "No setup function found" in error_msg
+
+    def test_load_webhook_handlers_setup_not_callable(self, cog):
+        """Test handling when setup attribute exists but is not callable."""
+        cog.http_server = MagicMock()
+
+        not_callable_setup = "not a function"
+
+        with (
+            patch("os.path.exists", return_value=True),
+            patch("os.listdir", return_value=["BadSetupHandler.py"]),
+            patch("bot.cogs.httphandler.import_module") as mock_import,
+            patch("bot.cogs.httphandler.getattr", return_value=not_callable_setup),
+        ):
+            cog.load_webhook_handlers()
+
+            mock_import.assert_called_once()
+            cog.log.error.assert_called()
+            error_msg = cog.log.error.call_args[0][2]
+            assert "No setup function found" in error_msg
+
+    def test_load_webhook_handlers_outer_exception(self, cog):
+        """Test outer exception handler when os.listdir fails."""
+        cog.http_server = MagicMock()
+
+        with (
+            patch("os.path.exists", return_value=True),
+            patch("os.listdir", side_effect=Exception("Directory access failed")),
+        ):
+            cog.load_webhook_handlers()
+
+            cog.log.error.assert_called()
+            error_msg = cog.log.error.call_args[0][2]
+            assert "Failed to load handlers" in error_msg
 
 
 class TestRecursiveLoadHandlers:
@@ -277,21 +329,20 @@ class TestRecursiveLoadHandlers:
         """Test loading a single handler file."""
         cog.http_server = MagicMock()
 
-        mock_handler_class = MagicMock()
-        mock_handler_instance = MagicMock()
-        mock_handler_class.return_value = mock_handler_instance
+        mock_setup_function = MagicMock()
 
         mock_walk_data = [("bot/lib/http/handlers", [], ["TestHandler.py"])]
 
         with (
             patch("os.walk", return_value=mock_walk_data),
             patch("bot.cogs.httphandler.import_module") as mock_import,
-            patch("bot.cogs.httphandler.getattr", return_value=mock_handler_class),
+            patch("bot.cogs.httphandler.getattr", return_value=mock_setup_function),
         ):
             cog.recursive_load_handlers("bot/lib/http/handlers")
 
             mock_import.assert_called_once()
-            cog.http_server.add_handler.assert_called_once_with(mock_handler_instance)
+            # Verify setup was called with bot and http_server
+            mock_setup_function.assert_called_once_with(bot=cog.bot, http_server=cog.http_server)
             cog.log.debug.assert_called()
 
     def test_recursive_load_handlers_multiple_files(self, cog):
@@ -306,9 +357,7 @@ class TestRecursiveLoadHandlers:
         """
         cog.http_server = MagicMock()
 
-        mock_handler_class = MagicMock()
-        mock_handler_instance = MagicMock()
-        mock_handler_class.return_value = mock_handler_instance
+        mock_setup_function = MagicMock()
 
         # os.walk already returns subdirectories recursively
         mock_walk_data = [
@@ -319,7 +368,7 @@ class TestRecursiveLoadHandlers:
         with (
             patch("os.walk") as mock_walk,
             patch("bot.cogs.httphandler.import_module") as mock_import,
-            patch("bot.cogs.httphandler.getattr", return_value=mock_handler_class),
+            patch("bot.cogs.httphandler.getattr", return_value=mock_setup_function),
         ):
             # Return walk data only once to prevent infinite recursion from the bug
             mock_walk.return_value = iter(mock_walk_data)
@@ -328,7 +377,11 @@ class TestRecursiveLoadHandlers:
 
             # Should load 3 handler files
             assert mock_import.call_count == 3
-            assert cog.http_server.add_handler.call_count == 3
+            # Verify setup was called 3 times with bot and http_server
+            assert mock_setup_function.call_count == 3
+            for call in mock_setup_function.call_args_list:
+                assert call[1]["bot"] == cog.bot
+                assert call[1]["http_server"] == cog.http_server
 
     def test_recursive_load_handlers_filters_files(self, cog):
         """Test that non-handler files are filtered out."""
@@ -374,6 +427,43 @@ class TestRecursiveLoadHandlers:
             # Error should be logged but not raised
             error_msg = cog.log.error.call_args[0][2]
             assert "Import error" in error_msg
+
+    def test_recursive_load_handlers_no_setup_function(self, cog):
+        """Test handling when a handler module has no setup function."""
+        cog.http_server = MagicMock()
+
+        mock_walk_data = [("bot/lib/http/handlers", [], ["NoSetupHandler.py"])]
+
+        with (
+            patch("os.walk", return_value=mock_walk_data),
+            patch("bot.cogs.httphandler.import_module") as mock_import,
+            patch("bot.cogs.httphandler.getattr", return_value=None),
+        ):
+            cog.recursive_load_handlers("bot/lib/http/handlers")
+
+            mock_import.assert_called_once()
+            cog.log.error.assert_called()
+            error_msg = cog.log.error.call_args[0][2]
+            assert "No setup function found" in error_msg
+
+    def test_recursive_load_handlers_setup_not_callable(self, cog):
+        """Test handling when setup attribute exists but is not callable."""
+        cog.http_server = MagicMock()
+
+        not_callable_setup = "not a function"
+        mock_walk_data = [("bot/lib/http/handlers", [], ["BadSetupHandler.py"])]
+
+        with (
+            patch("os.walk", return_value=mock_walk_data),
+            patch("bot.cogs.httphandler.import_module") as mock_import,
+            patch("bot.cogs.httphandler.getattr", return_value=not_callable_setup),
+        ):
+            cog.recursive_load_handlers("bot/lib/http/handlers")
+
+            mock_import.assert_called_once()
+            cog.log.error.assert_called()
+            error_msg = cog.log.error.call_args[0][2]
+            assert "No setup function found" in error_msg
 
     def test_recursive_load_handlers_path_normalization(self, cog):
         """Test that file paths are normalized correctly."""

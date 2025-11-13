@@ -10,8 +10,7 @@ import discord
 import pytz
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
-from bot.lib.helpers import ContextHelper, EntityHelper, PromptHelper, RoleHelper, TacoHelper
-from bot.lib.messaging import Messaging
+from bot.lib.helpers import ContextHelper, EntityHelper, MessageHelper, PromptHelper, RoleHelper, TacoHelper
 from bot.lib.mongodb.birthdays import BirthdaysDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
@@ -27,7 +26,7 @@ class Birthday(TacobotCog):
     def __init__(
         self,
         bot: TacoBot,
-        messaging: Messaging,
+        messaging: MessageHelper,
         birthdays_db: BirthdaysDatabase,
         tracking_db: TrackingDatabase,
         taco_helper: TacoHelper,
@@ -520,11 +519,11 @@ async def setup(bot):
     settings = Settings()
     birthday_db = BirthdaysDatabase()
     tracking_db = TrackingDatabase()
-    messaging = Messaging(bot)
+    messaging = MessageHelper(bot, settings)
     entity_helper = EntityHelper(bot)
     taco_helper = TacoHelper(bot, entity_helper=entity_helper)
     context_helper = ContextHelper()
-    prompt_helper = PromptHelper(bot)
+    prompt_helper = PromptHelper(bot, settings, messaging)
     role_helper = RoleHelper(bot)
     await bot.add_cog(
         Birthday(

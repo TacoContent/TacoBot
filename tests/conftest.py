@@ -7,6 +7,7 @@ test initialization overhead and improve overall test suite performance.
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from bot.tacobot import TacoBot
 
 # ==============================================================================
 # Autouse fixtures (automatically applied to all tests)
@@ -65,7 +66,11 @@ def module_settings():
 @pytest.fixture
 def bot():
     """Function-scoped mock bot instance."""
-    return MagicMock()
+    bot = MagicMock(spec=TacoBot)
+    bot.user = MagicMock()
+    bot.user.id = 999888777666555444
+    bot.fetch_guild = AsyncMock()
+    return bot
 
 
 @pytest.fixture
@@ -91,13 +96,11 @@ def settings():
 
 
 @pytest.fixture
-def messaging():
-    """Function-scoped mock messaging instance with async methods."""
-    m = MagicMock()
-    m.send_embed = AsyncMock()
-    m.notify_of_error = AsyncMock()
-    return m
-
+def permissions_db():
+    """Function-scoped mock permissions database."""
+    db = MagicMock()
+    db.remove_user_permission = MagicMock()
+    return db
 
 @pytest.fixture
 def tacos_db():
@@ -140,6 +143,16 @@ def twitch_db():
 
 
 @pytest.fixture
+def freegame_db():
+    """Function-scoped mock FreeGameKeys database."""
+    db = MagicMock()
+    db.is_game_tracked = MagicMock(return_value=False)
+    db.track_game = MagicMock()
+    db.get_tracked_games = MagicMock(return_value=[])
+    return db
+
+
+@pytest.fixture
 def live_db():
     """Function-scoped mock live database."""
     db = MagicMock()
@@ -173,8 +186,15 @@ def entity_helper():
     h = MagicMock()
     h.get_or_fetch_channel = AsyncMock()
     h.get_or_fetch_member = AsyncMock()
+    h.get_or_fetch_user = AsyncMock()
     return h
 
+@pytest.fixture
+def users_utils():
+    """Function-scoped mock user utilities with async methods."""
+    u = MagicMock()
+    u.fetch_user_by_discord_id = AsyncMock()
+    return u
 
 @pytest.fixture
 def taco_helper():
@@ -189,6 +209,8 @@ def message_helper():
     """Function-scoped mock message helper with async methods."""
     h = MagicMock()
     h.notify_bot_not_initialized = AsyncMock()
+    h.send_embed = AsyncMock()
+    h.notify_of_error = AsyncMock()
     return h
 
 
@@ -222,6 +244,12 @@ def birthdays_db():
     db.untrack_birthday_check = MagicMock()
     return db
 
+
+@pytest.fixture
+def shift_codes_db():
+    """Function-scoped mock shift codes database."""
+    db = MagicMock()
+    return db
 
 @pytest.fixture
 def introductions_db():

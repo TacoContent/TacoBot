@@ -1,17 +1,21 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 from bot.lib.http.handlers.api.v1.TacoPermissionsApiHandler import TacoPermissionsApiHandler
 
 
+@pytest.fixture
+def handler(bot, settings, permissions_db):
+    """Create handler with mocked dependencies."""
+    handler = TacoPermissionsApiHandler(bot=bot, settings=settings, permissions_db=permissions_db)
+    handler.log = Mock()
+    handler.settings = settings
+    handler._module = "test_module"
+    handler._class = "TacoPermissionsApiHandler"
+    return handler
+
 @pytest.mark.asyncio
 class TestAddPermission:
-    @pytest.fixture
-    def handler(self):
-        handler = TacoPermissionsApiHandler(bot=MagicMock())
-        handler.permissions_db = MagicMock()
-        handler.log = MagicMock()
-        return handler
 
     @pytest.mark.parametrize(
         "guildId,userId,permission,expected",

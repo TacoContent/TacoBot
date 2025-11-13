@@ -2,30 +2,35 @@
 Ensures 100% coverage, including edge cases and error handling.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 from bot.lib.http.handlers.api.v1.TacoPermissionsApiHandler import TacoPermissionsApiHandler
 
+# =======================
+# Fixtures
+# =======================
 
-class DummyBot:
-    pass
+
+@pytest.fixture
+def handler(bot, settings, permissions_db):
+    """Create handler with mocked dependencies."""
+    handler = TacoPermissionsApiHandler(bot=bot, settings=settings, permissions_db=permissions_db)
+    handler.log = Mock()
+    handler.settings = settings
+    handler._module = "test_module"
+    handler._class = "TacoPermissionsApiHandler"
+    return handler
+
+
+# =======================
+# Test Class: _remove_permission
+# =======================
 
 
 @pytest.mark.asyncio
 class TestRemovePermission:
-    @pytest.fixture(autouse=True)
-    def setup_handler(self):
-        from tacobot import TacoBot
-
-        self.bot = MagicMock(spec=TacoBot)
-        self.mock_permissions_db = MagicMock()
-        self.mock_log = MagicMock()
-        self.handler = TacoPermissionsApiHandler(self.bot)
-        self.handler.permissions_db = self.mock_permissions_db
-        self.handler.log = self.mock_log
-        self.handler._module = "test_module"
-        self.handler._class = "TacoPermissionsApiHandler"
+    """Test _remove_permission helper method."""
 
     @pytest.mark.parametrize(
         "guildId,userId,permission,expected,should_log_error",
@@ -42,60 +47,62 @@ class TestRemovePermission:
         ],
     )
     async def test_remove_permission_valid_and_invalid_inputs(
-        self, guildId, userId, permission, expected, should_log_error
+        self, handler, permissions_db, guildId, userId, permission, expected, should_log_error
     ):
+        """Test various valid and invalid input combinations."""
         # Patch TacoPermissions.from_str to return a dummy value for valid permission
         with patch("bot.lib.enums.permissions.TacoPermissions.from_str", return_value="PERM") as mock_from_str:
-            result = await self.handler._remove_permission(guildId, userId, permission)
+            result = await handler._remove_permission(guildId, userId, permission)
             if expected:
                 mock_from_str.assert_called_once_with(permission)
-                self.mock_permissions_db.remove_user_permission.assert_called_once_with(
-                    int(guildId), int(userId), "PERM"
-                )
+                permissions_db.remove_user_permission.assert_called_once_with(int(guildId), int(userId), "PERM")
                 assert result is True
             else:
                 mock_from_str.assert_not_called()
-                self.mock_permissions_db.remove_user_permission.assert_not_called()
+                permissions_db.remove_user_permission.assert_not_called()
                 assert result is False
             if should_log_error:
-                self.mock_log.error.assert_called_once()
+                handler.log.error.assert_called_once()
             else:
-                self.mock_log.error.assert_not_called()
+                handler.log.error.assert_not_called()
             # Reset mocks for next param
-            self.mock_permissions_db.reset_mock()
+            permissions_db.reset_mock()
             mock_from_str.reset_mock()
-            self.mock_log.error.reset_mock()
+            handler.log.error.reset_mock()
 
-    async def test_remove_permission_exception_in_db(self):
+    async def test_remove_permission_exception_in_db(self, handler, permissions_db):
+        """Test exception handling when database operation fails."""
         # Simulate exception in remove_user_permission
-        self.mock_permissions_db.remove_user_permission.side_effect = Exception("DB error")
+        permissions_db.remove_user_permission.side_effect = Exception("DB error")
         with patch("bot.lib.enums.permissions.TacoPermissions.from_str", return_value="PERM") as mock_from_str:
-            result = await self.handler._remove_permission("123", "456", "ADMIN")
+            result = await handler._remove_permission("123", "456", "ADMIN")
             mock_from_str.assert_called_once_with("ADMIN")
-            self.mock_permissions_db.remove_user_permission.assert_called_once_with(123, 456, "PERM")
-            self.mock_log.error.assert_called_once()
+            permissions_db.remove_user_permission.assert_called_once_with(123, 456, "PERM")
+            handler.log.error.assert_called_once()
             assert result is False
 
-    async def test_remove_permission_exception_in_from_str(self):
+    async def test_remove_permission_exception_in_from_str(self, handler, permissions_db):
+        """Test exception handling when permission enum conversion fails."""
         # Simulate exception in TacoPermissions.from_str
         with patch(
             "bot.lib.enums.permissions.TacoPermissions.from_str", side_effect=Exception("Enum error")
         ) as mock_from_str:
-            result = await self.handler._remove_permission("123", "456", "ADMIN")
+            result = await handler._remove_permission("123", "456", "ADMIN")
             mock_from_str.assert_called_once_with("ADMIN")
-            self.mock_permissions_db.remove_user_permission.assert_not_called()
-            self.mock_log.error.assert_called_once()
+            permissions_db.remove_user_permission.assert_not_called()
+            handler.log.error.assert_called_once()
             assert result is False
 
-    async def test_remove_permission_exception_in_int_conversion(self):
+    async def test_remove_permission_exception_in_int_conversion(self, handler, permissions_db):
+        """Test exception handling when int conversion fails."""
         # Simulate exception in int conversion (guildId)
-        result = await self.handler._remove_permission("not_an_int", "456", "ADMIN")
-        self.mock_permissions_db.remove_user_permission.assert_not_called()
-        self.mock_log.error.assert_called_once()
+        result = await handler._remove_permission("not_an_int", "456", "ADMIN")
+        permissions_db.remove_user_permission.assert_not_called()
+        handler.log.error.assert_called_once()
         assert result is False
 
         # Simulate exception in int conversion (userId)
-        result = await self.handler._remove_permission("123", "not_an_int", "ADMIN")
-        self.mock_permissions_db.remove_user_permission.assert_not_called()
-        self.mock_log.error.assert_called()
+        result = await handler._remove_permission("123", "not_an_int", "ADMIN")
+        permissions_db.remove_user_permission.assert_not_called()
+        handler.log.error.assert_called()
         assert result is False

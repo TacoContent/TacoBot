@@ -36,18 +36,19 @@ from typing import Any, Dict, List, Optional, Union
 
 import discord
 from bot.lib import utils
+from bot.lib.helpers import EntityHelper, MessageHelper
 from bot.lib.http.handlers.BaseWebhookHandler import BaseWebhookHandler
 from bot.lib.models import openapi
+from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from bot.lib.models.ShiftCodePayload import ShiftCodePayload
 from bot.lib.mongodb.shift_codes import ShiftCodesDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
+from bot.lib.settings import Settings
+from bot.tacobot import TacoBot
 from bot.ui.MultipleExternalUrlButtonView import ButtonData, MultipleExternalUrlButtonView
 from httpserver.EndpointDecorators import uri_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException
-from lib import discordhelper
-from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
-from lib.models.ShiftCodePayload import ShiftCodePayload
-from tacobot import TacoBot
+from httpserver.server import HttpResponseException, HttpServer
 
 
 class ShiftCodeWebhookHandler(BaseWebhookHandler):
@@ -60,18 +61,26 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
         * Persistence for duplicate suppression.
     """
 
-    def __init__(self, bot: TacoBot, discord_helper: Optional[discordhelper.DiscordHelper] = None):
-        super().__init__(bot, discord_helper)
+    def __init__(
+        self,
+        bot: TacoBot,
+        settings: Settings,
+        entity_helper: EntityHelper,
+        messaging: MessageHelper,
+        tracking_db: TrackingDatabase,
+        shift_codes_db: ShiftCodesDatabase,
+    ):
+        super().__init__(bot, settings=settings)
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.SETTINGS_SECTION = "shift_codes"
         self.REDEEM_URL = "https://shift.gearbox.com/rewards"
 
-        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
-
-        self.tracking_db = TrackingDatabase()
-        self.shift_codes_db = ShiftCodesDatabase()
+        self.tracking_db = tracking_db
+        self.shift_codes_db = shift_codes_db
+        self.entity_helper = entity_helper
+        self.messaging = messaging
 
     @uri_mapping("/webhook/shift", method=HTTPMethod.POST)
     @openapi.summary("Ingest SHiFT code webhook payloads")
@@ -350,7 +359,7 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
 
         channels = []
         for channel_id in channel_ids:
-            channel = await self.discord_helper.get_or_fetch_channel(int(channel_id))
+            channel = await self.entity_helper.get_or_fetch_channel(int(channel_id))
             if channel:
                 channels.append(channel)
 
@@ -439,3 +448,14 @@ class ShiftCodeWebhookHandler(BaseWebhookHandler):
         """
         await message.add_reaction("✅")
         await message.add_reaction("❌")
+
+
+def setup(bot: TacoBot, http_server: HttpServer):
+    """Setup the ShiftCodeWebhookHandler routes."""
+    settings = Settings()
+    entity_helper = EntityHelper(bot)
+    tracking_db = TrackingDatabase()
+    shift_codes_db = ShiftCodesDatabase()
+    messaging = MessageHelper(bot=bot, settings=settings)
+    handler = ShiftCodeWebhookHandler(bot, settings, entity_helper, messaging, tracking_db, shift_codes_db)
+    http_server.add_handler(handler)

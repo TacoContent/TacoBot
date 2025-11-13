@@ -8,20 +8,15 @@ import pytest
 from bot.lib.http.handlers.api.v1.TacoPermissionsApiHandler import TacoPermissionsApiHandler
 
 
+@pytest.fixture
+def handler(bot, settings, permissions_db):
+    handler = TacoPermissionsApiHandler(bot=bot, settings=settings, permissions_db=permissions_db)
+    handler.log = MagicMock()
+    return handler
+
+
 @pytest.mark.asyncio
 class TestListPermissions:
-    @pytest.fixture(autouse=True)
-    def setup_handler(self):
-        from tacobot import TacoBot
-
-        self.bot = MagicMock(spec=TacoBot)
-        self.mock_permissions_db = MagicMock()
-        self.mock_log = MagicMock()
-        self.handler = TacoPermissionsApiHandler(self.bot)
-        self.handler.permissions_db = self.mock_permissions_db
-        self.handler.log = self.mock_log
-        self.handler._module = "test_module"
-        self.handler._class = "TacoPermissionsApiHandler"
 
     @pytest.mark.parametrize(
         "guildId,userId,db_return,expected,should_log_error",
@@ -36,39 +31,44 @@ class TestListPermissions:
             ("123", "def", ["ADMIN"], [], True),  # non-int userId
         ],
     )
-    async def test_list_permissions_various_inputs(self, guildId, userId, db_return, expected, should_log_error):
-        self.mock_permissions_db.get_user_permissions.return_value = db_return
-        result = await self.handler._list_permissions(guildId, userId)
+    async def test_list_permissions_various_inputs(
+        self, guildId, userId, db_return, expected, should_log_error, handler, permissions_db
+    ):
+        permissions_db.get_user_permissions.return_value = db_return
+        result = await handler._list_permissions(guildId, userId)
         if expected:
-            self.mock_permissions_db.get_user_permissions.assert_called_once_with(int(guildId), int(userId))
+            permissions_db.get_user_permissions.assert_called_once_with(int(guildId), int(userId))
         else:
             # Only called if both IDs are valid and > 0
             if guildId.isdigit() and userId.isdigit() and int(guildId) > 0 and int(userId) > 0:
-                self.mock_permissions_db.get_user_permissions.assert_called_once_with(int(guildId), int(userId))
+                permissions_db.get_user_permissions.assert_called_once_with(int(guildId), int(userId))
             else:
-                self.mock_permissions_db.get_user_permissions.assert_not_called()
+                permissions_db.get_user_permissions.assert_not_called()
         assert result == expected
         if should_log_error:
-            self.mock_log.error.assert_called_once()
+            handler.log.error.assert_called_once()
         else:
-            self.mock_log.error.assert_not_called()
-        self.mock_permissions_db.reset_mock()
-        self.mock_log.error.reset_mock()
+            handler.log.error.assert_not_called()
+        permissions_db.reset_mock()
+        handler.log.error.reset_mock()
 
-    async def test_list_permissions_exception_in_db(self):
-        self.mock_permissions_db.get_user_permissions.side_effect = Exception("DB error")
-        result = await self.handler._list_permissions("123", "456")
-        self.mock_permissions_db.get_user_permissions.assert_called_once_with(123, 456)
-        self.mock_log.error.assert_called_once()
+    async def test_list_permissions_exception_in_db(self, handler, permissions_db):
+        permissions_db.get_user_permissions.side_effect = Exception("DB error")
+        result = await handler._list_permissions("123", "456")
+        permissions_db.get_user_permissions.assert_called_once_with(123, 456)
+        handler.log.error.assert_called_once()
         assert result == []
 
-    async def test_list_permissions_exception_in_int_conversion(self):
-        result = await self.handler._list_permissions("not_an_int", "456")
-        self.mock_permissions_db.get_user_permissions.assert_not_called()
-        self.mock_log.error.assert_called_once()
+    async def test_list_permissions_exception_in_int_conversion_guild_id(self, handler, permissions_db):
+        """Test exception handling when guild ID int conversion fails."""
+        result = await handler._list_permissions("not_an_int", "456")
+        permissions_db.get_user_permissions.assert_not_called()
+        handler.log.error.assert_called_once()
         assert result == []
 
-        result = await self.handler._list_permissions("123", "not_an_int")
-        self.mock_permissions_db.get_user_permissions.assert_not_called()
-        self.mock_log.error.assert_called()
+    async def test_list_permissions_exception_in_int_conversion_user_id(self, handler, permissions_db):
+        """Test exception handling when user ID int conversion fails."""
+        result = await handler._list_permissions("123", "not_an_int")
+        permissions_db.get_user_permissions.assert_not_called()
+        handler.log.error.assert_called_once()
         assert result == []

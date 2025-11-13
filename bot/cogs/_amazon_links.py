@@ -6,14 +6,14 @@ import re
 import traceback
 
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
-from bot.lib.messaging import Messaging
+from bot.lib.helpers import MessageHelper
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
 
 
 class AmazonLinkCog(TacobotCog):
-    def __init__(self, bot: TacoBot, messaging: Messaging, settings: Settings):
+    def __init__(self, bot: TacoBot, messaging: MessageHelper, settings: Settings):
         super().__init__(bot, "amazon_links", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
@@ -77,6 +77,6 @@ class AmazonLinkCog(TacobotCog):
 
 def setup(bot):
     settings = Settings()
-    messaging = Messaging(bot)
+    messaging = MessageHelper(bot, settings)
 
     bot.add_cog(AmazonLinkCog(bot=bot, messaging=messaging, settings=settings))

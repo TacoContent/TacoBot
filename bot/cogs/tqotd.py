@@ -12,11 +12,9 @@ from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.helpers import ContextHelper, EntityHelper, MessageHelper, PromptHelper, TacoHelper
-from bot.lib.messaging import Messaging
 from bot.lib.mongodb.toqtd import TQOTDDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
-from bot.lib.settings import Settings
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord import app_commands
@@ -31,7 +29,6 @@ class TacoQuestionOfTheDayCog(TacobotCog):
     def __init__(
         self,
         bot: TacoBot,
-        messaging: Messaging,
         permissions: Permissions,
         context_helper: ContextHelper,
         entity_helper: EntityHelper,
@@ -48,10 +45,9 @@ class TacoQuestionOfTheDayCog(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = messaging
+        self.messaging = message_helper
         self.permissions = permissions
         self.entity_helper = entity_helper
-        self.message_helper = message_helper
         self.taco_helper = taco_helper
         self.context_helper = context_helper
         self.prompt_helper = prompt_helper
@@ -89,10 +85,7 @@ class TacoQuestionOfTheDayCog(TacobotCog):
             try:
                 _ctx = self.context_helper.create_context(
                     bot=self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
-                _ctx = self.context_helper.create_context(
-                    bot=self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
                 )
-                qotd = await self.prompt_helper.ask_for_image_or_text(
                 qotd = await self.prompt_helper.ask_for_image_or_text(
                     _ctx,
                     ctx.author,
@@ -102,7 +95,6 @@ class TacoQuestionOfTheDayCog(TacobotCog):
                 )
             except discord.Forbidden:
                 _ctx = ctx
-                qotd = await self.prompt_helper.ask_for_image_or_text(
                 qotd = await self.prompt_helper.ask_for_image_or_text(
                     _ctx,
                     ctx.author,
@@ -169,7 +161,6 @@ class TacoQuestionOfTheDayCog(TacobotCog):
                             files.append(discord.File(data, filename=attachment.filename))
 
             await self.messaging.send_embed(
-                channel=out_channel,  # type: ignore
                 channel=out_channel,  # type: ignore
                 title=self.settings.get_string(guild_id, "tqotd_out_title"),
                 message=save_message,
@@ -263,9 +254,7 @@ class TacoQuestionOfTheDayCog(TacobotCog):
             return
         user: typing.Optional[typing.Union[discord.Member, discord.User]] = None
         if ctx and isinstance(ctx, Context):
-        if ctx and isinstance(ctx, Context):
             user = ctx.author
-        elif ctx and isinstance(ctx, discord.Interaction):
         elif ctx and isinstance(ctx, discord.Interaction):
             user = ctx.user
         else:
@@ -423,7 +412,6 @@ class TacoQuestionOfTheDayCog(TacobotCog):
                 return
             message = await channel.fetch_message(payload.message_id)
             message_author = message.author
-            # react_user = await self.discord_helper.get_or_fetch_user(payload.user_id)
 
             # check if this reaction is the first one of this type on the message
             reactions = discord.utils.get(message.reactions, emoji=payload.emoji.name)
@@ -513,7 +501,6 @@ class TacoQuestionOfTheDayCog(TacobotCog):
             # get bot
             bot = self.bot
             ctx = self.context_helper.create_context(
-            ctx = self.context_helper.create_context(
                 bot=bot, guild=guild, author=member, channel=channel, message=message
             )
             # track that the user answered the question.
@@ -547,7 +534,6 @@ class TacoQuestionOfTheDayCog(TacobotCog):
             )
 
             await self.taco_helper.give_tacos(
-            await self.taco_helper.give_tacos(
                 guild_id, self.bot.user, member, reason_msg, tacotypes.TacoTypes.TQOTD, taco_amount=amount
             )
 
@@ -561,12 +547,11 @@ async def setup(bot):
     tracking_db = TrackingDatabase()
     tqotd_db = TQOTDDatabase()
     permissions = Permissions(bot)
-    messaging = Messaging(bot)
     context_helper = ContextHelper()
     entity_helper = EntityHelper(bot)
-    message_helper = MessageHelper(bot)
-    prompt_helper = PromptHelper(bot)
-    taco_helper = TacoHelper(bot)
+    message_helper = MessageHelper(bot, settings=settings)
+    prompt_helper = PromptHelper(bot, settings, message_helper)
+    taco_helper = TacoHelper(bot, entity_helper=entity_helper)
     await bot.add_cog(
         TacoQuestionOfTheDayCog(
             bot=bot,
@@ -574,7 +559,6 @@ async def setup(bot):
             tracking_db=tracking_db,
             tqotd_db=tqotd_db,
             permissions=permissions,
-            messaging=messaging,
             context_helper=context_helper,
             entity_helper=entity_helper,
             message_helper=message_helper,

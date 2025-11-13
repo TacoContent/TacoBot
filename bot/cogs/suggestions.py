@@ -9,7 +9,6 @@ import discord
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.helpers import ContextHelper, EntityHelper, MessageHelper, PromptHelper, TacoHelper
-from bot.lib.messaging import Messaging
 from bot.lib.models.suggestionstates import SuggestionStates
 from bot.lib.mongodb.suggestions import SuggestionsDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
@@ -25,7 +24,6 @@ class SuggestionsCog(TacobotCog):
         bot: TacoBot,
         suggestions_db: SuggestionsDatabase,
         tracking_db: TrackingDatabase,
-        messaging: Messaging,
         permissions: Permissions,
         entity_helper: EntityHelper,
         prompt_helper: PromptHelper,
@@ -40,14 +38,13 @@ class SuggestionsCog(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = messaging
+        self.messaging = message_helper
         self.permissions = permissions
 
         self.entity_helper = entity_helper
         self.prompt_helper = prompt_helper
         self.taco_helper = taco_helper
         self.context_helper = context_helper
-        self.message_helper = message_helper
 
         self.suggestions_db = suggestions_db
         self.tracking_db = tracking_db
@@ -603,7 +600,7 @@ class SuggestionsCog(TacobotCog):
 {channel_settings['vote_down_emoji']} {len(down_votes)} Down {down_word}""",
                         }
                     ]
-                    await self.message_helper.move_message(
+                    await self.messaging.move_message(
                         message,
                         log_channel,
                         author=author,
@@ -1023,9 +1020,8 @@ class SuggestionsCog(TacobotCog):
 async def setup(bot):
     settings = Settings()
     context_helper = ContextHelper()
-    prompt_helper = PromptHelper(bot)
-    message_helper = MessageHelper(bot)
-    messaging = Messaging(bot)
+    message_helper = MessageHelper(bot, settings)
+    prompt_helper = PromptHelper(bot, settings, message_helper)
     permissions = Permissions(bot, settings)
     suggestions_db = SuggestionsDatabase()
     tracking_db = TrackingDatabase()
@@ -1037,7 +1033,6 @@ async def setup(bot):
             context_helper=context_helper,
             prompt_helper=prompt_helper,
             message_helper=message_helper,
-            messaging=messaging,
             permissions=permissions,
             suggestions_db=suggestions_db,
             tracking_db=tracking_db,

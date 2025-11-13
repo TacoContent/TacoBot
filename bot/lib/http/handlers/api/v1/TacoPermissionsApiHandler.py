@@ -35,16 +35,15 @@ from http import HTTPMethod
 from bot.lib.enums.permissions import TacoPermissions
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
+from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from bot.lib.models.openapi import openapi
+from bot.lib.models.SimpleStatusResponse import SimpleStatusResponse
 from bot.lib.mongodb.permissions import PermissionsDatabase
-from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
+from bot.tacobot import TacoBot
 from httpserver.EndpointDecorators import uri_variable_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from lib import discordhelper
-from lib.models import ErrorStatusCodePayload
-from lib.models.openapi import openapi
-from lib.models.SimpleStatusResponse import SimpleStatusResponse
-from tacobot import TacoBot
+from httpserver.server import HttpServer
 
 
 class TacoPermissionsApiHandler(BaseHttpHandler):
@@ -57,18 +56,14 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
         * Permissions are represented using ``TacoPermissions`` enum and converted to/from strings.
     """
 
-    def __init__(self, bot: TacoBot, discord_helper: typing.Optional[discordhelper.DiscordHelper] = None):
-        super().__init__(bot, discord_helper)
+    def __init__(self, bot: TacoBot, settings: Settings, permissions_db: PermissionsDatabase):
+        super().__init__(bot, settings=settings)
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.SETTINGS_SECTION = f"permissions/api/{API_VERSION}"
 
-        self.settings = Settings()
-
-        self.permissions_db = PermissionsDatabase()
-        self.tracking_db = TrackingDatabase()
-        self.discord_helper = discord_helper or discordhelper.DiscordHelper(bot)
+        self.permissions_db = permissions_db
 
     async def _list_permissions(self, guildId: str, userId: str) -> typing.List[str]:
         """Return list of permission strings for a user.
@@ -463,3 +458,11 @@ class TacoPermissionsApiHandler(BaseHttpHandler):
         except Exception as ex:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{ex}")
             return self._create_error_response(500, f"Internal server error: {str(ex)}", headers)
+
+
+def setup(bot: TacoBot, http_server: HttpServer):
+    """Setup the TacoPermissionsApiHandler routes."""
+    settings = Settings()
+    permissions_db = PermissionsDatabase()
+    handler = TacoPermissionsApiHandler(bot=bot, settings=settings, permissions_db=permissions_db)
+    http_server.add_handler(handler)

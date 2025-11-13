@@ -11,8 +11,7 @@ from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
 from bot.lib.enums.permissions import TacoPermissions
 from bot.lib.enums.system_actions import SystemActions
-from bot.lib.helpers import ContextHelper, EntityHelper, TacoHelper
-from bot.lib.messaging import Messaging
+from bot.lib.helpers import ContextHelper, EntityHelper, MessageHelper, TacoHelper
 from bot.lib.mongodb.gamekeys import GameKeysDatabase
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
@@ -29,7 +28,7 @@ class GameKeysCog(TacobotCog):
     def __init__(
         self,
         bot: TacoBot,
-        messaging: Messaging,
+        messaging: MessageHelper,
         tacos_db: TacosDatabase,
         gamekeys_db: GameKeysDatabase,
         tracking_db: TrackingDatabase,
@@ -93,19 +92,6 @@ class GameKeysCog(TacobotCog):
                     )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-
-    @commands.Cog.listener()
-    async def on_guild_available(self, guild):
-        _method = inspect.stack()[0][3]
-        try:
-            # context = self.discord_helper.create_context(
-            #     bot=self.bot, author=self.bot.user, channel=guild.system_channel, guild=guild
-            # )
-            # await self._create_offer(ctx=context)
-            # await self._init_exiting_offer(ctx=context)
-            pass
-        except Exception as e:
-            self.log.error(guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     @commands.group(name="game-keys", aliases=["gk", "gamekeys", "game-key", "gamekey", "games"])
     @commands.guild_only()
@@ -765,10 +751,6 @@ class GameKeysCog(TacobotCog):
                     self.settings.get_string(guild_id, "game_key_unable_to_claim_message", user=ctx.author.mention),
                     delete_after=10,
                 )
-                # need to create a new ctx for this
-                # bot=None, author=None, guild=None, channel=None, message=None, invoked_subcommand=None, **kwargs
-                # new_ctx = self.discord_helper.create_context(self.bot, author=ctx.bot.user, guild=ctx.guild, channel=reward_channel, message=None, invoked_subcommand=None)
-                # await self._create_offer(new_ctx)
                 raise Exception(f"No game key found for game '{game_data['title']}' ({str(game_data['id'])})")
             try:
                 download_link = game_data.get("download_link", None)
@@ -995,16 +977,16 @@ class GameKeysCog(TacobotCog):
 
 
 async def setup(bot):
-    messaging = Messaging(bot)
+    settings = Settings()
+    messaging = MessageHelper(bot, settings)
     tacos_db = TacosDatabase()
     gamekeys_db = GameKeysDatabase()
     tracking_db = TrackingDatabase()
     permissions = Permissions(bot)
-    steam_api = SteamApiClient(settings=bot.settings)
+    steam_api = SteamApiClient(settings=settings)
     entity_helper = EntityHelper(bot)
     context_helper = ContextHelper()
     taco_helper = TacoHelper(bot, entity_helper=entity_helper)
-    settings = Settings()
     await bot.add_cog(
         GameKeysCog(
             bot=bot,

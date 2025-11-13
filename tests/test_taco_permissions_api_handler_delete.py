@@ -4,14 +4,11 @@ from unittest.mock import ANY, AsyncMock, MagicMock, patch
 import pytest
 from bot.lib.http.handlers.api.v1.TacoPermissionsApiHandler import TacoPermissionsApiHandler
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from lib.models.SimpleStatusResponse import SimpleStatusResponse
 
 
 @pytest.fixture
-def handler():
-    bot = MagicMock()
-    discord_helper = MagicMock()
-    handler = TacoPermissionsApiHandler(bot, discord_helper)
+def handler(bot, settings, permissions_db):
+    handler = TacoPermissionsApiHandler(bot=bot, settings=settings, permissions_db=permissions_db)
     handler.log = MagicMock()
     handler.validate_auth_token = MagicMock()
     handler._remove_permission = AsyncMock()

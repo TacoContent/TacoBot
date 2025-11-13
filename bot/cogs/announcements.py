@@ -47,7 +47,7 @@ import discord
 import pytz
 from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
-from bot.lib.messaging import Messaging
+from bot.lib.helpers import MessageHelper
 from bot.lib.models.AnnouncementEntry import AnnouncementEntry
 from bot.lib.mongodb.announcements import AnnouncementsDatabase
 from bot.tacobot import TacoBot
@@ -71,7 +71,7 @@ class AnnouncementsCog(TacobotCog):
     """
 
     def __init__(
-        self, bot: TacoBot, announcements_db: AnnouncementsDatabase, messaging: Messaging, settings: Settings
+        self, bot: TacoBot, announcements_db: AnnouncementsDatabase, messaging: MessageHelper, settings: Settings
     ) -> None:
         """Initialize the announcements cog.
 
@@ -260,7 +260,7 @@ async def setup(bot):
         The bot instance to which this cog will be added.
     """
     settings = Settings()
-    messaging = Messaging(bot)
+    messaging = MessageHelper(bot, settings)
     announcements_db = AnnouncementsDatabase()
     await bot.add_cog(
         AnnouncementsCog(bot=bot, messaging=messaging, announcements_db=announcements_db, settings=settings)

@@ -8,8 +8,7 @@ import traceback
 import discord
 from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
-from bot.lib.helpers import ContextHelper, PromptHelper
-from bot.lib.messaging import Messaging
+from bot.lib.helpers import ContextHelper, PromptHelper, MessageHelper
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
@@ -19,7 +18,7 @@ class LeaveSurveyCog(TacobotCog):
     def __init__(
         self,
         bot: TacoBot,
-        messaging: Messaging,
+        messaging: MessageHelper,
         context_helper: ContextHelper,
         prompt_helper: PromptHelper,
         settings: Settings,
@@ -168,9 +167,9 @@ Would you be willing to let us know why you are leaving?""",
 
 async def setup(bot):
     settings = Settings()
-    messaging = Messaging(bot)
+    messaging = MessageHelper(bot, settings)
     context_helper = ContextHelper()
-    prompt_helper = PromptHelper(bot)
+    prompt_helper = PromptHelper(bot, settings, messaging)
     await bot.add_cog(
         LeaveSurveyCog(
             bot=bot, messaging=messaging, context_helper=context_helper, prompt_helper=prompt_helper, settings=settings

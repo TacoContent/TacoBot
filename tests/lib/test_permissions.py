@@ -392,7 +392,7 @@ class TestHasRole:
     async def test_with_invalid_user_type_raises_error(self, setup):
         """Test with invalid user type raises ValueError."""
         with pytest.raises(ValueError, match="user must be an int or a discord.Member"):
-            await self.perms.has_role(user="invalid_type", role=777)
+            await self.perms.has_role(user="invalid_type", role=777)  # type: ignore
 
     async def test_with_none_role_raises_error(self, setup):
         """Test with None role raises ValueError."""
@@ -408,7 +408,7 @@ class TestHasRole:
         mock_member = MagicMock(spec=discord.Member)
 
         with pytest.raises(ValueError, match="role must be an int or a discord.Role"):
-            await self.perms.has_role(user=mock_member, role="invalid_role")
+            await self.perms.has_role(user=mock_member, role="invalid_role")  # type: ignore
 
     async def test_with_empty_roles_list(self, setup):
         """Test with member having no roles."""
@@ -484,7 +484,7 @@ class TestIsAdmin:
     async def test_with_invalid_user_type_raises_error(self, setup):
         """Test with invalid user type raises ValueError."""
         with pytest.raises(ValueError, match="user must be an int or a discord.Member"):
-            await self.perms.is_admin(user="invalid_type")
+            await self.perms.is_admin(user="invalid_type")  # type: ignore
 
     async def test_delegates_to_has_permission(self, setup):
         """Test is_admin delegates to has_permission with admin permissions."""
@@ -531,8 +531,9 @@ class TestPermissionsEdgeCases:
             TacoPermissions.CLAIM_GAME_DISABLED,
         ]
 
-        result = self.perms.has_taco_permission(guild_id=999, user=mock_member, permission=perms_to_check)
-
+        result = self.perms.has_taco_permission(
+            guild_id=999, user=mock_member, permission=perms_to_check  # type: ignore
+        )
         assert result is False
         # any() short-circuits, but if all are False, all will be checked
         assert self.mock_db.has_user_permission.call_count == 3
@@ -551,7 +552,9 @@ class TestPermissionsEdgeCases:
             TacoPermissions.CLAIM_GAME_DISABLED,
         ]
 
-        result = self.perms.has_taco_permission(guild_id=999, user=mock_member, permission=perms_to_check)
+        result = self.perms.has_taco_permission(
+            guild_id=999, user=mock_member, permission=perms_to_check  # type: ignore
+        )
 
         assert result is True
         # Should only check until first True (any() short-circuits)

@@ -25,7 +25,7 @@ class LogLevel(Enum):
 
     def __le__(self, other) -> bool:
         if self.__class__ is other.__class__:
-            return self.value < other.value
+            return self.value <= other.value
         return NotImplemented
 
     def __lt__(self, other) -> bool:

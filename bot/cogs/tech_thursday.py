@@ -8,8 +8,7 @@ import discord
 from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums import tacotypes
-from bot.lib.helpers import ContextHelper, EntityHelper, PromptHelper, TacoHelper
-from bot.lib.messaging import Messaging
+from bot.lib.helpers import ContextHelper, EntityHelper, MessageHelper, PromptHelper, TacoHelper
 from bot.lib.mongodb.techthurs import TechThursDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.openai.openai_helper import OpenAIHelper
@@ -29,7 +28,7 @@ class TechThursdaysCog(TacobotCog):
         bot: TacoBot,
         techthurs_db: TechThursDatabase,
         tracking_db: TrackingDatabase,
-        messaging: Messaging,
+        messaging: MessageHelper,
         permissions: Permissions,
         context_helper: ContextHelper,
         entity_helper: EntityHelper,
@@ -719,11 +718,11 @@ async def setup(bot):
     settings = Settings()
     techthurs_db = TechThursDatabase()
     tracking_db = TrackingDatabase()
-    messaging = Messaging(bot)
+    messaging = MessageHelper(bot, settings=settings)
     permissions = Permissions(bot, settings)
     context_helper = ContextHelper()
     entity_helper = EntityHelper(bot)
-    prompt_helper = PromptHelper(bot)
+    prompt_helper = PromptHelper(bot, settings, messaging)
     taco_helper = TacoHelper(bot, entity_helper=entity_helper)
     await bot.add_cog(
         TechThursdaysCog(

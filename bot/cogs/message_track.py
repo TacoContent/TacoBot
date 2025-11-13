@@ -74,15 +74,6 @@ class MessageTracker(TacobotCog):
                     f"Could not fetch member {user_id} in guild {guild_id} to give first message tacos.",
                 )
                 return
-
-            # get channel
-            # channel = None
-            # message = None
-
-            # ctx = self.discord_helper.create_context(
-            #     bot=bot, guild=guild, author=member, channel=channel, message=message
-            # )
-
             # track that the user answered the question.
             self.tracking_db.track_first_message(guild_id, member.id, channel_id, message_id)
 

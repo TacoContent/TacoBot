@@ -10,7 +10,6 @@ import traceback
 import discord
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.helpers import ContextHelper, EntityHelper, MessageHelper, PromptHelper
-from bot.lib.messaging import Messaging
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
 from bot.lib.settings import Settings
@@ -23,7 +22,6 @@ class MoveMessageCog(TacobotCog):
         self,
         bot: TacoBot,
         tracking_db: TrackingDatabase,
-        messaging: Messaging,
         permissions: Permissions,
         context_helper: ContextHelper,
         entity_helper: EntityHelper,
@@ -37,12 +35,11 @@ class MoveMessageCog(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.permissions = permissions
-        self.messaging = messaging
+        self.messaging = message_helper
         self.tracking_db = tracking_db
 
         self.context_helper = context_helper
         self.entity_helper = entity_helper
-        self.message_helper = message_helper
         self.prompt_helper = prompt_helper
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
@@ -80,7 +77,7 @@ class MoveMessageCog(TacobotCog):
                     )
 
                     async def callback(target_channel):
-                        await self.message_helper.move_message(
+                        await self.messaging.move_message(
                             message,
                             targetChannel=target_channel,
                             author=message.author,
@@ -167,7 +164,7 @@ class MoveMessageCog(TacobotCog):
             if target_channel is None:
                 return
 
-            await self.message_helper.move_message(
+            await self.messaging.move_message(
                 message=message,
                 targetChannel=target_channel,
                 author=message.author,
@@ -193,16 +190,14 @@ async def setup(bot):
     settings = Settings()
     tracking_db = TrackingDatabase()
     permissions = Permissions(bot)
-    messaging = Messaging(bot)
     context_helper = ContextHelper()
     entity_helper = EntityHelper(bot)
-    message_helper = MessageHelper(bot)
-    prompt_helper = PromptHelper(bot)
+    message_helper = MessageHelper(bot, settings)
+    prompt_helper = PromptHelper(bot, settings, message_helper)
     await bot.add_cog(
         MoveMessageCog(
             bot=bot,
             tracking_db=tracking_db,
-            messaging=messaging,
             permissions=permissions,
             settings=settings,
             context_helper=context_helper,

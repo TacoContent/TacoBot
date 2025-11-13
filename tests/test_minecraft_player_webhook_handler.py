@@ -13,19 +13,16 @@ from bot.lib.http.handlers.webhook.MinecraftPlayerWebhookHandler import Minecraf
 from httpserver.http_util import HttpHeaders, HttpResponse
 
 
+# Note: entity_helper fixture is now provided by conftest.py with all required async methods
+
+
 class TestMinecraftPlayerWebhookHandlerLoginEvent:
     """Test suite for _handle_login_event method."""
 
     @pytest.fixture
-    def mock_bot(self):
-        """Create a mock bot instance with logging."""
-        bot = MagicMock()
-        return bot
-
-    @pytest.fixture
-    def handler(self, mock_bot):
+    def handler(self, bot, settings, entity_helper):
         """Create a handler instance with mocked bot and logger."""
-        handler_instance = MinecraftPlayerWebhookHandler(mock_bot)
+        handler_instance = MinecraftPlayerWebhookHandler(bot, settings, entity_helper)
         # Replace the real logger with a mock after initialization
         handler_instance.log = MagicMock()
         handler_instance.log.debug = MagicMock()
@@ -415,15 +412,9 @@ class TestMinecraftPlayerWebhookHandlerLogoutEvent:
     """Test suite for _handle_logout_event method."""
 
     @pytest.fixture
-    def mock_bot(self):
-        """Create a mock bot instance with logging."""
-        bot = MagicMock()
-        return bot
-
-    @pytest.fixture
-    def handler(self, mock_bot):
+    def handler(self, bot, settings, entity_helper):
         """Create a handler instance with mocked bot and logger."""
-        handler_instance = MinecraftPlayerWebhookHandler(mock_bot)
+        handler_instance = MinecraftPlayerWebhookHandler(bot, settings, entity_helper)
         # Replace the real logger with a mock after initialization
         handler_instance.log = MagicMock()
         handler_instance.log.debug = MagicMock()
@@ -821,15 +812,9 @@ class TestMinecraftPlayerWebhookHandlerDeathEvent:
     """Test suite for _handle_death_event method."""
 
     @pytest.fixture
-    def mock_bot(self):
-        """Create a mock bot instance with logging."""
-        bot = MagicMock()
-        return bot
-
-    @pytest.fixture
-    def handler(self, mock_bot):
+    def handler(self, bot, settings, entity_helper):
         """Create a handler instance with mocked bot and logger."""
-        handler_instance = MinecraftPlayerWebhookHandler(mock_bot)
+        handler_instance = MinecraftPlayerWebhookHandler(bot, settings, entity_helper)
         # Replace the real logger with a mock after initialization
         handler_instance.log = MagicMock()
         handler_instance.log.debug = MagicMock()
@@ -1197,25 +1182,15 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
     """
 
     @pytest.fixture
-    def mock_bot(self):
-        """Create a mock bot instance."""
-        bot = MagicMock()
-        bot.fetch_guild = AsyncMock()
-        return bot
-
-    @pytest.fixture
-    def handler(self, mock_bot):
+    def handler(self, bot, settings, entity_helper):
         """Create a handler instance with mocked dependencies."""
-        handler_instance = MinecraftPlayerWebhookHandler(mock_bot)
+        handler_instance = MinecraftPlayerWebhookHandler(bot, settings, entity_helper)
         # Replace logger
         handler_instance.log = MagicMock()
         handler_instance.log.debug = MagicMock()
         handler_instance.log.error = MagicMock()
         # Mock validate_webhook_token to return True by default
         handler_instance.validate_webhook_token = MagicMock(return_value=True)
-        # Mock discord_helper
-        handler_instance.discord_helper = MagicMock()
-        handler_instance.discord_helper.get_or_fetch_user = AsyncMock()
         return handler_instance
 
     @pytest.fixture
@@ -1372,10 +1347,9 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
         Verifies:
         - 404 status code returned
         - Error message indicates user not found
-        - discord_helper.get_or_fetch_user was called
         """
         mock_request.body = json.dumps(valid_login_payload).encode()
-        handler.discord_helper.get_or_fetch_user.return_value = None
+        handler.entity_helper.get_or_fetch_user.return_value = None
 
         response = await handler.event(mock_request)
 
@@ -1383,7 +1357,7 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
         response_data = json.loads(response.body.decode("utf-8"))
         assert "error" in response_data
         assert "User 112233445566778899 not found" == response_data["error"]
-        handler.discord_helper.get_or_fetch_user.assert_called_once_with(112233445566778899)
+        handler.entity_helper.get_or_fetch_user.assert_called_once_with(112233445566778899)
 
     @pytest.mark.asyncio
     async def test_event_guild_not_found(self, handler, mock_request, valid_login_payload, mock_discord_objects):
@@ -1395,7 +1369,7 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
         - bot.fetch_guild was called
         """
         mock_request.body = json.dumps(valid_login_payload).encode()
-        handler.discord_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
+        handler.entity_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
         handler.bot.fetch_guild.return_value = None
 
         response = await handler.event(mock_request)
@@ -1416,7 +1390,7 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
         - guild.fetch_member was called
         """
         mock_request.body = json.dumps(valid_login_payload).encode()
-        handler.discord_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
+        handler.entity_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
         handler.bot.fetch_guild.return_value = mock_discord_objects["guild"]
         mock_discord_objects["guild"].fetch_member.return_value = None
 
@@ -1440,7 +1414,7 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
         - Event is routed to LOGIN handler
         """
         mock_request.body = json.dumps(valid_login_payload).encode()
-        handler.discord_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
+        handler.entity_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
         handler.bot.fetch_guild.return_value = mock_discord_objects["guild"]
 
         response = await handler.event(mock_request)
@@ -1464,7 +1438,7 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
             "payload": {"user_id": 112233445566778899, "timestamp": "2025-10-17T12:00:00Z"},
         }
         mock_request.body = json.dumps(logout_payload).encode()
-        handler.discord_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
+        handler.entity_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
         handler.bot.fetch_guild.return_value = mock_discord_objects["guild"]
 
         response = await handler.event(mock_request)
@@ -1488,7 +1462,7 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
             "payload": {"user_id": 112233445566778899, "death_message": "TestUser was slain by a zombie"},
         }
         mock_request.body = json.dumps(death_payload).encode()
-        handler.discord_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
+        handler.entity_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
         handler.bot.fetch_guild.return_value = mock_discord_objects["guild"]
 
         response = await handler.event(mock_request)
@@ -1507,7 +1481,7 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
         - X-TACOBOT-EVENT header is set
         """
         mock_request.body = json.dumps(valid_login_payload).encode()
-        handler.discord_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
+        handler.entity_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
         handler.bot.fetch_guild.return_value = mock_discord_objects["guild"]
 
         response = await handler.event(mock_request)
@@ -1524,7 +1498,7 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
         - Logging includes payload and event information
         """
         mock_request.body = json.dumps(valid_login_payload).encode()
-        handler.discord_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
+        handler.entity_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
         handler.bot.fetch_guild.return_value = mock_discord_objects["guild"]
 
         await handler.event(mock_request)
@@ -1582,7 +1556,7 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
             "payload": {"user_id": 112233445566778899, "message": "こんにちは 🎮", "server": "サーバー"},
         }
         mock_request.body = json.dumps(unicode_payload, ensure_ascii=False).encode("utf-8")
-        handler.discord_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
+        handler.entity_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
         handler.bot.fetch_guild.return_value = mock_discord_objects["guild"]
 
         response = await handler.event(mock_request)
@@ -1612,7 +1586,7 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
             },
         }
         mock_request.body = json.dumps(large_payload).encode()
-        handler.discord_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
+        handler.entity_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
         handler.bot.fetch_guild.return_value = mock_discord_objects["guild"]
 
         response = await handler.event(mock_request)
@@ -1631,7 +1605,7 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
         - Error log is called with traceback
         """
         mock_request.body = json.dumps(valid_login_payload).encode()
-        handler.discord_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
+        handler.entity_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
         handler.bot.fetch_guild.side_effect = Exception("Discord API timeout")
 
         response = await handler.event(mock_request)
@@ -1655,7 +1629,7 @@ class TestMinecraftPlayerWebhookHandlerEventMethod:
             "payload": {"user_id": 112233445566778899},
         }
         mock_request.body = json.dumps(lowercase_payload).encode()
-        handler.discord_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
+        handler.entity_helper.get_or_fetch_user.return_value = mock_discord_objects["user"]
         handler.bot.fetch_guild.return_value = mock_discord_objects["guild"]
 
         response = await handler.event(mock_request)
