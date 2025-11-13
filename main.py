@@ -4,7 +4,6 @@ import os
 import signal
 from concurrent.futures import ProcessPoolExecutor
 
-
 if os.name == 'nt':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
