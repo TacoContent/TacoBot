@@ -86,7 +86,16 @@ class TestMinecraftCogInit:
     """Tests for MinecraftCog initialization."""
 
     def test_init(
-        self, cog, bot, minecraft_db, tracking_db, message_helper, entity_helper, context_helper, prompt_helper, settings
+        self,
+        cog,
+        bot,
+        minecraft_db,
+        tracking_db,
+        message_helper,
+        entity_helper,
+        context_helper,
+        prompt_helper,
+        settings,
     ):
         assert cog.bot == bot
         assert cog.minecraft_db == minecraft_db

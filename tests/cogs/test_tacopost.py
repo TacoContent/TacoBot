@@ -8,11 +8,7 @@ from bot.cogs.tacopost import TacoPostCog
 def cog(bot, tacos_db, settings, message_helper, prompt_helper):
     """Create TacoPostCog with injected dependencies from conftest.py."""
     c = TacoPostCog(
-        bot=bot,
-        tacos_db=tacos_db,
-        message_helper=message_helper,
-        prompt_helper=prompt_helper,
-        settings=settings,
+        bot=bot, tacos_db=tacos_db, message_helper=message_helper, prompt_helper=prompt_helper, settings=settings
     )
     c.log = MagicMock()
     return c

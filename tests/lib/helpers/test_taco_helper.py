@@ -129,9 +129,7 @@ class TestTacoHelper:
         assert total == 0
 
     @pytest.mark.asyncio
-    async def test_log_taco_transaction_positive_count(
-        self, taco_helper, mock_from_user, mock_to_user, entity_helper
-    ):
+    async def test_log_taco_transaction_positive_count(self, taco_helper, mock_from_user, mock_to_user, entity_helper):
         mock_channel = MagicMock()
         entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
         await taco_helper.log_taco_transaction(
@@ -148,9 +146,7 @@ class TestTacoHelper:
         assert call_kwargs['channel'] == mock_channel
 
     @pytest.mark.asyncio
-    async def test_log_taco_transaction_negative_count(
-        self, taco_helper, mock_from_user, mock_to_user, entity_helper
-    ):
+    async def test_log_taco_transaction_negative_count(self, taco_helper, mock_from_user, mock_to_user, entity_helper):
         mock_channel = MagicMock()
         entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
         await taco_helper.log_taco_transaction(
@@ -165,9 +161,7 @@ class TestTacoHelper:
         taco_helper.message_helper.send_embed.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_log_taco_transaction_singular_taco(
-        self, taco_helper, mock_from_user, mock_to_user, entity_helper
-    ):
+    async def test_log_taco_transaction_singular_taco(self, taco_helper, mock_from_user, mock_to_user, entity_helper):
         mock_channel = MagicMock()
         entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
         taco_helper.settings.get_string = MagicMock(
@@ -189,9 +183,7 @@ class TestTacoHelper:
         taco_helper.settings.get_string.assert_any_call(999, "taco_singular")
 
     @pytest.mark.asyncio
-    async def test_log_taco_transaction_no_log_channel(
-        self, taco_helper, mock_from_user, mock_to_user, entity_helper
-    ):
+    async def test_log_taco_transaction_no_log_channel(self, taco_helper, mock_from_user, mock_to_user, entity_helper):
         entity_helper.get_or_fetch_channel = AsyncMock(return_value=None)
         await taco_helper.log_taco_transaction(
             guild_id=999,
@@ -242,8 +234,6 @@ class TestTacoHelper:
         taco_helper.tacos_db.track_tacos_log.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_log_taco_purge_exception_handling(
-        self, taco_helper, mock_from_user, mock_to_user, entity_helper
-    ):
+    async def test_log_taco_purge_exception_handling(self, taco_helper, mock_from_user, mock_to_user, entity_helper):
         entity_helper.get_or_fetch_channel = AsyncMock(side_effect=Exception("Channel error"))
         await taco_helper.log_taco_purge(guild_id=999, toMember=mock_to_user, fromMember=mock_from_user, reason="Test")

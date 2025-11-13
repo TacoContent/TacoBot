@@ -109,7 +109,9 @@ class TestIntroductionCogInitialization:
         assert cog.tracking_db is not None
 
     @pytest.mark.asyncio
-    async def test_setup(self, bot, settings, message_helper, entity_helper, taco_helper, introductions_db, tracking_db):
+    async def test_setup(
+        self, bot, settings, message_helper, entity_helper, taco_helper, introductions_db, tracking_db
+    ):
         """Test cog setup function."""
         with patch("bot.cogs.introduction.Settings", return_value=settings):
             with patch("bot.cogs.introduction.MessageHelper", return_value=message_helper):
