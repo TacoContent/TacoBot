@@ -15,7 +15,9 @@ from httpserver.server import HttpServer
 class HttpHandlerCog(TacobotCog):
     # group = app_commands.Group(name="webhook", description="Webhook Handler")
 
-    def __init__(self, bot: TacoBot, tracking_db: TrackingDatabase, messaging: MessageHelper, settings: Settings) -> None:
+    def __init__(
+        self, bot: TacoBot, tracking_db: TrackingDatabase, message_helper: MessageHelper, settings: Settings
+    ) -> None:
         super().__init__(bot, "webhook", settings=settings)
 
         _method = inspect.stack()[0][3]
@@ -25,7 +27,7 @@ class HttpHandlerCog(TacobotCog):
 
         self.http_server = None
 
-        self.messaging = messaging
+        self.message_helper = message_helper
         self.tracking_db = tracking_db
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
@@ -173,6 +175,6 @@ class HttpHandlerCog(TacobotCog):
 async def setup(bot):
     settings = Settings()
     tracking_db = TrackingDatabase()
-    messaging = MessageHelper(bot, settings)
-    handler = HttpHandlerCog(bot, settings=settings, tracking_db=tracking_db, messaging=messaging)
+    message_helper = MessageHelper(bot, settings)
+    handler = HttpHandlerCog(bot, settings=settings, tracking_db=tracking_db, message_helper=message_helper)
     await bot.add_cog(handler)

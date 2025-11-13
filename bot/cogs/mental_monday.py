@@ -31,7 +31,7 @@ class MentalMondays(TacobotCog):
         prompt_helper: PromptHelper,
         entity_helper: EntityHelper,
         taco_helper: TacoHelper,
-        messaging: MessageHelper,
+        message_helper: MessageHelper,
         permissions: Permissions,
         tracking_db: TrackingDatabase,
         mentalmondays_db: MentalMondaysDatabase,
@@ -42,7 +42,7 @@ class MentalMondays(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = messaging
+        self.message_helper = message_helper
         self.permissions = permissions
 
         self.context_helper = context_helper
@@ -136,7 +136,7 @@ class MentalMondays(TacobotCog):
             out_message = self.settings.get_string(
                 guild_id, "mentalmondays_out_message", taco_count=amount, taco_word=taco_word
             )
-            mentalmondays_message = await self.messaging.send_embed(
+            mentalmondays_message = await self.message_helper.send_embed(
                 channel=out_channel,
                 title=self.settings.get_string(guild_id, "mentalmondays_out_title"),
                 message=out_message,
@@ -171,7 +171,7 @@ class MentalMondays(TacobotCog):
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     @group.command(name="ai", description="Generate a question using AI")
     @app_commands.default_permissions(administrator=True)
@@ -206,7 +206,7 @@ class MentalMondays(TacobotCog):
             )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     @mentalmondays.command(name="openai", aliases=["ai"])
     @commands.has_permissions(administrator=True)
@@ -230,7 +230,7 @@ class MentalMondays(TacobotCog):
             )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     @mentalmondays.command(name="import")
     @commands.has_permissions(administrator=True)
@@ -278,7 +278,7 @@ class MentalMondays(TacobotCog):
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     @mentalmondays.command(name="give")
     @commands.has_permissions(administrator=True)
@@ -304,7 +304,7 @@ class MentalMondays(TacobotCog):
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     async def _on_raw_reaction_add_give(self, payload):
         _method = inspect.stack()[0][3]
@@ -478,7 +478,7 @@ class MentalMondays(TacobotCog):
 
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
-            # await self.messaging.notify_of_error(ctx)
+            # await self.message_helper.notify_of_error(ctx)
 
     def _import_mentalmondays(self, message: discord.Message):
         if message is None or message.guild is None:
@@ -570,7 +570,7 @@ class MentalMondays(TacobotCog):
 
             reason_msg = self.settings.get_string(guild_id, "mentalmondays_reason_default")
 
-            await self.messaging.send_embed(
+            await self.message_helper.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_give_title"),
                 # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",
@@ -594,7 +594,7 @@ class MentalMondays(TacobotCog):
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             if ctx:
-                await self.messaging.notify_of_error(ctx)
+                await self.message_helper.notify_of_error(ctx)
 
     async def _openai_generate(self, ctx: typing.Union[Context, discord.Interaction]) -> None:
         _method = inspect.stack()[0][3]
@@ -702,7 +702,7 @@ class MentalMondays(TacobotCog):
 
         allow_publish = ai_settings.get("allow_publish", False)
         if allow_publish:
-            message = await self.messaging.send_embed(
+            message = await self.message_helper.send_embed(
                 channel=out_channel,
                 title=self.settings.get_string(guild_id, "mentalmondays_out_title"),
                 message=out_message,
@@ -738,8 +738,8 @@ async def setup(bot):
     entity_helper = EntityHelper(bot)
     taco_helper = TacoHelper(bot, entity_helper=entity_helper)
     settings = Settings()
-    messaging = MessageHelper(bot, settings)
-    prompt_helper = PromptHelper(bot, settings, messaging)
+    message_helper = MessageHelper(bot, settings)
+    prompt_helper = PromptHelper(bot, settings, message_helper)
     permissions = Permissions(bot, settings)
     tracking_db = TrackingDatabase()
     mentalmondays_db = MentalMondaysDatabase()
@@ -751,7 +751,7 @@ async def setup(bot):
             prompt_helper=prompt_helper,
             entity_helper=entity_helper,
             taco_helper=taco_helper,
-            messaging=messaging,
+            message_helper=message_helper,
             permissions=permissions,
             tracking_db=tracking_db,
             mentalmondays_db=mentalmondays_db,

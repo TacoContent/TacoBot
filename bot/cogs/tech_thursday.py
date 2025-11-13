@@ -28,7 +28,7 @@ class TechThursdaysCog(TacobotCog):
         bot: TacoBot,
         techthurs_db: TechThursDatabase,
         tracking_db: TrackingDatabase,
-        messaging: MessageHelper,
+        message_helper: MessageHelper,
         permissions: Permissions,
         context_helper: ContextHelper,
         entity_helper: EntityHelper,
@@ -42,7 +42,7 @@ class TechThursdaysCog(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = messaging
+        self.message_helper = message_helper
         self.permissions = permissions
         self.context_helper = context_helper
         self.entity_helper = entity_helper
@@ -138,7 +138,7 @@ class TechThursdaysCog(TacobotCog):
             out_message = self.settings.get_string(
                 guildId=guild_id, key="techthurs_out_message", taco_count=amount, taco_word=taco_word, message=twa.text
             )
-            techthurs_message = await self.messaging.send_embed(
+            techthurs_message = await self.message_helper.send_embed(
                 channel=out_channel,
                 title=self.settings.get_string(guild_id, "techthurs_out_title"),
                 message=out_message,
@@ -173,7 +173,7 @@ class TechThursdaysCog(TacobotCog):
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     @group.command(name="ai", description="Generate a question using AI")
     @app_commands.default_permissions(administrator=True)
@@ -208,7 +208,7 @@ class TechThursdaysCog(TacobotCog):
             )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     @techthurs.command(name="openai", aliases=["ai"])
     @commands.has_permissions(administrator=True)
@@ -232,7 +232,7 @@ class TechThursdaysCog(TacobotCog):
             )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     @techthurs.command(name="import")
     @commands.has_permissions(administrator=True)
@@ -285,7 +285,7 @@ class TechThursdaysCog(TacobotCog):
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     @techthurs.command(name="give")
     @commands.has_permissions(administrator=True)
@@ -308,7 +308,7 @@ class TechThursdaysCog(TacobotCog):
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     async def _on_raw_reaction_add_give(self, payload):
         _method = inspect.stack()[0][3]
@@ -574,7 +574,7 @@ class TechThursdaysCog(TacobotCog):
 
             reason_msg = self.settings.get_string(guild_id, "techthurs_reason_default")
 
-            await self.messaging.send_embed(
+            await self.message_helper.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_give_title"),
                 # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",
@@ -597,7 +597,7 @@ class TechThursdaysCog(TacobotCog):
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     async def _openai_generate(self, ctx: typing.Union[Context, discord.Interaction]) -> None:
         _method = inspect.stack()[0][3]
@@ -683,7 +683,7 @@ class TechThursdaysCog(TacobotCog):
 
         allow_publish = ai_settings.get("allow_publish", False)
         if allow_publish:
-            message = await self.messaging.send_embed(
+            message = await self.message_helper.send_embed(
                 channel=out_channel,
                 title=self.settings.get_string(guild_id, "techthurs_out_title"),
                 message=out_message,
@@ -718,11 +718,11 @@ async def setup(bot):
     settings = Settings()
     techthurs_db = TechThursDatabase()
     tracking_db = TrackingDatabase()
-    messaging = MessageHelper(bot, settings=settings)
+    message_helper = MessageHelper(bot, settings=settings)
     permissions = Permissions(bot, settings)
     context_helper = ContextHelper()
     entity_helper = EntityHelper(bot)
-    prompt_helper = PromptHelper(bot, settings, messaging)
+    prompt_helper = PromptHelper(bot, settings, message_helper)
     taco_helper = TacoHelper(bot, entity_helper=entity_helper)
     await bot.add_cog(
         TechThursdaysCog(
@@ -730,7 +730,7 @@ async def setup(bot):
             settings=settings,
             techthurs_db=techthurs_db,
             tracking_db=tracking_db,
-            messaging=messaging,
+            message_helper=message_helper,
             permissions=permissions,
             context_helper=context_helper,
             entity_helper=entity_helper,

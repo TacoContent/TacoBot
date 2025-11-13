@@ -9,18 +9,13 @@ from bot.cogs.httphandler import HttpHandlerCog
 
 
 @pytest.fixture
-def cog():
+def cog(bot, settings, message_helper, tracking_db):
     """Create HttpHandlerCog with mocked dependencies."""
-    mock_bot = MagicMock()
-    mock_tracking_db = MagicMock()
-    mock_messaging = MagicMock()
-    mock_settings = MagicMock()
-    mock_settings.log_level = "DEBUG"
 
     # Patch logger at TacobotCog level
     with patch("bot.lib.discord.ext.commands.TacobotCog.logger.Log"):
         cog_instance = HttpHandlerCog(
-            bot=mock_bot, tracking_db=mock_tracking_db, messaging=mock_messaging, settings=mock_settings
+            bot=bot, tracking_db=tracking_db, message_helper=message_helper, settings=settings
         )
         return cog_instance
 
@@ -32,28 +27,22 @@ class TestHttpHandlerCogInit:
         """Test cog initializes with all dependencies."""
         assert cog.bot is not None
         assert cog.tracking_db is not None
-        assert cog.messaging is not None
+        assert cog.message_helper is not None
         assert cog.settings is not None
         assert cog.http_server is None  # Server not created until initialized
         assert cog.SETTINGS_SECTION == "webhook"
 
-    def test_init_with_all_parameters(self):
+    def test_init_with_all_parameters(self, bot, settings, tracking_db, message_helper):
         """Test initialization with all parameters provided."""
-        mock_bot = MagicMock()
-        mock_tracking_db = MagicMock()
-        mock_messaging = MagicMock()
-        mock_settings = MagicMock()
-        mock_settings.log_level = "DEBUG"
-
         with patch("bot.lib.discord.ext.commands.TacobotCog.logger.Log"):
             cog = HttpHandlerCog(
-                bot=mock_bot, tracking_db=mock_tracking_db, messaging=mock_messaging, settings=mock_settings
+                bot=bot, tracking_db=tracking_db, message_helper=message_helper, settings=settings
             )
 
-            assert cog.bot is mock_bot
-            assert cog.tracking_db is mock_tracking_db
-            assert cog.messaging is mock_messaging
-            assert cog.settings is mock_settings
+            assert cog.bot is bot
+            assert cog.tracking_db is tracking_db
+            assert cog.message_helper is message_helper
+            assert cog.settings is settings
 
 
 @pytest.mark.asyncio
@@ -504,7 +493,7 @@ class TestSetupFunction:
         with (
             patch("bot.cogs.httphandler.Settings") as mock_settings_class,
             patch("bot.cogs.httphandler.TrackingDatabase") as mock_tracking_class,
-            patch("bot.cogs.httphandler.Messaging") as mock_messaging_class,
+            patch("bot.cogs.httphandler.MessageHelper") as mock_message_helper_class,
             patch("bot.lib.discord.ext.commands.TacobotCog.logger.Log"),
         ):
             # Configure mock settings
@@ -519,38 +508,32 @@ class TestSetupFunction:
             # Verify all dependencies were instantiated
             mock_settings_class.assert_called_once()
             mock_tracking_class.assert_called_once()
-            mock_messaging_class.assert_called_once_with(mock_bot)
+            mock_message_helper_class.assert_called_once_with(mock_bot, mock_settings_instance)
 
             # Verify cog was added to bot
             mock_bot.add_cog.assert_awaited_once()
             added_cog = mock_bot.add_cog.call_args[0][0]
             assert isinstance(added_cog, HttpHandlerCog)
 
-    async def test_setup_passes_correct_parameters(self):
+    async def test_setup_passes_correct_parameters(self, bot, tracking_db, message_helper, settings):
         """Test that setup passes correct parameters to HttpHandlerCog."""
-        mock_bot = MagicMock()
-        mock_bot.add_cog = AsyncMock()
 
-        mock_settings = MagicMock()
-        mock_settings.log_level = "DEBUG"
-        mock_tracking = MagicMock()
-        mock_messaging = MagicMock()
 
         with (
-            patch("bot.cogs.httphandler.Settings", return_value=mock_settings),
-            patch("bot.cogs.httphandler.TrackingDatabase", return_value=mock_tracking),
-            patch("bot.cogs.httphandler.Messaging", return_value=mock_messaging),
+            patch("bot.cogs.httphandler.Settings", return_value=settings),
+            patch("bot.cogs.httphandler.TrackingDatabase", return_value=tracking_db),
+            patch("bot.cogs.httphandler.MessageHelper", return_value=message_helper),
             patch("bot.lib.discord.ext.commands.TacobotCog.logger.Log"),
         ):
             from bot.cogs.httphandler import setup
 
-            await setup(mock_bot)
+            await setup(bot)
 
-            added_cog = mock_bot.add_cog.call_args[0][0]
-            assert added_cog.bot is mock_bot
-            assert added_cog.settings is mock_settings
-            assert added_cog.tracking_db is mock_tracking
-            assert added_cog.messaging is mock_messaging
+            added_cog = bot.add_cog.call_args[0][0]
+            assert added_cog.bot is bot
+            assert added_cog.settings is settings
+            assert added_cog.tracking_db is tracking_db
+            assert added_cog.message_helper is message_helper
 
 
 class TestHttpHandlerCogIntegration:

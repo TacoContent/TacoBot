@@ -35,7 +35,7 @@ class MoveMessageCog(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.permissions = permissions
-        self.messaging = message_helper
+        self.message_helper = message_helper
         self.tracking_db = tracking_db
 
         self.context_helper = context_helper
@@ -77,7 +77,7 @@ class MoveMessageCog(TacobotCog):
                     )
 
                     async def callback(target_channel):
-                        await self.messaging.move_message(
+                        await self.message_helper.move_message(
                             message,
                             targetChannel=target_channel,
                             author=message.author,
@@ -139,7 +139,7 @@ class MoveMessageCog(TacobotCog):
 
             message = await ctx.channel.fetch_message(messageId)
             if message is None:
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=channel,
                     title="Move Message",
                     message=self.settings.get_string(
@@ -164,7 +164,7 @@ class MoveMessageCog(TacobotCog):
             if target_channel is None:
                 return
 
-            await self.messaging.move_message(
+            await self.message_helper.move_message(
                 message=message,
                 targetChannel=target_channel,
                 author=message.author,

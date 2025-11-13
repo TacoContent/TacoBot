@@ -26,7 +26,7 @@ class LiveNow(TacobotCog):
         tracking_db: TrackingDatabase,
         twitch_db: TwitchDatabase,
         live_db: LiveDatabase,
-        messaging: MessageHelper,
+        message_helper: MessageHelper,
         entity_helper: EntityHelper,
         role_helper: RoleHelper,
         taco_helper: TacoHelper,
@@ -38,7 +38,7 @@ class LiveNow(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = messaging
+        self.message_helper = message_helper
 
         self.entity_helper = entity_helper
         self.role_helper = role_helper
@@ -354,7 +354,7 @@ class LiveNow(TacobotCog):
                         profile_icon = self.get_user_profile_image(twitch_name)
 
             user_display_name = utils.get_user_display_name(user)
-            message = await self.messaging.send_embed(
+            message = await self.message_helper.send_embed(
                 logging_channel,
                 f"🔴 {user_display_name}",
                 description,
@@ -456,7 +456,7 @@ async def setup(bot):
     tracking_db = TrackingDatabase()
     twitch_db = TwitchDatabase()
     live_db = LiveDatabase()
-    messaging = MessageHelper(bot, settings)
+    message_helper = MessageHelper(bot, settings)
     entity_helper = EntityHelper(bot)
     role_helper = RoleHelper(bot)
     taco_helper = TacoHelper(bot, entity_helper=entity_helper)
@@ -467,7 +467,7 @@ async def setup(bot):
             tracking_db=tracking_db,
             twitch_db=twitch_db,
             live_db=live_db,
-            messaging=messaging,
+            message_helper=message_helper,
             entity_helper=entity_helper,
             role_helper=role_helper,
             taco_helper=taco_helper,

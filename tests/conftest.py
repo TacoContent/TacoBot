@@ -69,7 +69,10 @@ def bot():
     bot = MagicMock(spec=TacoBot)
     bot.user = MagicMock()
     bot.user.id = 999888777666555444
+    bot.user.name = "TacoBot"
+    bot.user.mention = "<@999888777666555444>"
     bot.fetch_guild = AsyncMock()
+    bot.settings = MagicMock()
     return bot
 
 
@@ -92,6 +95,31 @@ def settings():
     s.log_level = "INFO"  # Ensure this is a real string, not a mock
     s.settings_db = MagicMock()
     s.settings_db.set_setting = MagicMock()
+    s.commands = {
+        "foo": {
+            "title": "Foo Command",
+            "description": "Does foo things",
+            "usage": "foo",
+            "examples": ["foo bar"],
+            "admin": False,
+            "subcommands": {},
+        }
+    }
+    s.changelog = "changelog.txt"
+    s.prefixes = [".taco "]
+
+    
+    def settings_get(key, default=None):
+        if key == "commands":
+            return s.commands
+        elif key == "prefixes":
+            return s.prefixes
+        elif key == "name":
+            return s.name
+        else:
+            return default
+
+    s.get = MagicMock(side_effect=settings_get)
     return s
 
 

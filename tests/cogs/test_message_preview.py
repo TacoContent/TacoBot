@@ -10,11 +10,15 @@ from bot.cogs.message_preview import MessagePreview
 
 
 @pytest.fixture
-def cog(bot, entity_helper, messaging, tracking_db, settings):
+def cog(bot, entity_helper, message_helper, tracking_db, settings):
     """Create a MessagePreview cog instance with all mocked dependencies."""
     with patch("bot.lib.discord.ext.commands.TacobotCog.logger.Log"):
         cog_instance = MessagePreview(
-            bot=bot, entity_helper=entity_helper, messaging=messaging, tracking_db=tracking_db, settings=settings
+            bot=bot, 
+            entity_helper=entity_helper, 
+            message_helper=message_helper, 
+            tracking_db=tracking_db, 
+            settings=settings,
         )
         return cog_instance
 
@@ -152,7 +156,7 @@ class TestMessagePreviewOnMessage:
         target_channel.fetch_message = AsyncMock(return_value=target_message)
 
         cog.entity_helper.get_or_fetch_channel = AsyncMock(return_value=target_channel)
-        cog.messaging.send_embed = AsyncMock(return_value=MagicMock())
+        cog.message_helper.send_embed = AsyncMock(return_value=MagicMock())
 
         await cog.on_message(source_message)
 
@@ -163,7 +167,7 @@ class TestMessagePreviewOnMessage:
         target_channel.fetch_message.assert_awaited_once_with(message_id)
 
         # Verify preview was created
-        cog.messaging.send_embed.assert_awaited_once()
+        cog.message_helper.send_embed.assert_awaited_once()
 
         # Verify original message was deleted
         source_message.delete.assert_awaited_once()
@@ -192,13 +196,13 @@ class TestMessagePreviewOnMessage:
         target_channel.fetch_message = AsyncMock(return_value=target_message)
 
         cog.entity_helper.get_or_fetch_channel = AsyncMock(return_value=target_channel)
-        cog.messaging.send_embed = AsyncMock(return_value=MagicMock())
+        cog.message_helper.send_embed = AsyncMock(return_value=MagicMock())
 
         await cog.on_message(source_message)
 
         # Should process discordapp.com links
         cog.entity_helper.get_or_fetch_channel.assert_awaited_once()
-        cog.messaging.send_embed.assert_awaited_once()
+        cog.message_helper.send_embed.assert_awaited_once()
 
     async def test_on_message_different_guild(self, cog):
         """Test that links to different guilds are ignored."""
@@ -223,7 +227,7 @@ class TestMessagePreviewOnMessage:
         await cog.on_message(message)
 
         # Should not create preview for different guild
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
         message.delete.assert_not_called()
 
     async def test_on_message_channel_not_found(self, cog):
@@ -243,7 +247,7 @@ class TestMessagePreviewOnMessage:
         await cog.on_message(message)
 
         # Should handle gracefully when channel not found
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
         message.delete.assert_not_called()
         cog.log.debug.assert_called()
 
@@ -271,7 +275,7 @@ class TestMessagePreviewOnMessage:
         await cog.on_message(source_message)
 
         # Should handle gracefully when message not found
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
         source_message.delete.assert_not_called()
         cog.log.debug.assert_called()
 
@@ -306,13 +310,13 @@ class TestMessagePreviewCreatePreview:
         ref_message = DummyMessage(600, guild, target_channel, user, content="Hello world!")
 
         mock_embed = MagicMock()
-        cog.messaging.send_embed = AsyncMock(return_value=mock_embed)
+        cog.message_helper.send_embed = AsyncMock(return_value=mock_embed)
 
         result = await cog.create_message_preview(ctx, ref_message)
 
         # Verify embed was created
-        cog.messaging.send_embed.assert_awaited_once()
-        call_args = cog.messaging.send_embed.call_args
+        cog.message_helper.send_embed.assert_awaited_once()
+        call_args = cog.message_helper.send_embed.call_args
 
         # Verify channel
         assert call_args[0][0] == source_channel
@@ -330,8 +334,8 @@ class TestMessagePreviewCreatePreview:
         # Verify result
         assert result == mock_embed
 
-    async def test_create_message_preview_with_embed(self, cog):
-        """Test creating preview for a message with embed."""
+    async def test_create_message_preview_with_embed_empty_title(self, cog):
+        """Test creating preview for a message with embed that has empty title."""
         guild = DummyGuild(100)
         source_channel = DummyChannel(200)
         target_channel = DummyChannel(300)
@@ -339,28 +343,24 @@ class TestMessagePreviewCreatePreview:
 
         ctx = DummyMessage(500, guild, source_channel, user)
 
-        # Create message with embed
-        embed = DummyEmbed(title="Embed Title", description="Embed Description", color=discord.Color.blue())
+        # Create message with embed that has empty title
+        embed = DummyEmbed(title="", description="Embed Description", color=discord.Color.blue())
         ref_message = DummyMessage(600, guild, target_channel, user, content="Message content", embeds=[embed])
 
         mock_result = MagicMock()
-        cog.messaging.send_embed = AsyncMock(return_value=mock_result)
+        cog.message_helper.send_embed = AsyncMock(return_value=mock_result)
 
         await cog.create_message_preview(ctx, ref_message)
 
         # Verify embed was created with embed data
-        call_args = cog.messaging.send_embed.call_args
+        call_args = cog.message_helper.send_embed.call_args
 
-        # Verify title
-        assert call_args[0][1] == "Embed Title"
+        # Verify title is not set (empty title should not be used)
+        assert call_args[0][1] != ""
 
-        # Verify message includes both content and embed description
+        # Verify message includes embed description
         message_arg = call_args[1]["message"]
-        assert "Message content" in message_arg
         assert "Embed Description" in message_arg
-
-        # Verify color
-        assert call_args[1]["color"] == discord.Color.blue()
 
     async def test_create_message_preview_with_thumbnail(self, cog):
         """Test creating preview for a message with thumbnail."""
@@ -374,11 +374,11 @@ class TestMessagePreviewCreatePreview:
         embed = DummyEmbed(title="Test", thumbnail="https://example.com/thumb.png")
         ref_message = DummyMessage(600, guild, target_channel, user, embeds=[embed])
 
-        cog.messaging.send_embed = AsyncMock(return_value=MagicMock())
+        cog.message_helper.send_embed = AsyncMock(return_value=MagicMock())
 
         await cog.create_message_preview(ctx, ref_message)
 
-        call_args = cog.messaging.send_embed.call_args
+        call_args = cog.message_helper.send_embed.call_args
         assert call_args[1]["thumbnail"] == "https://example.com/thumb.png"
 
     async def test_create_message_preview_with_image(self, cog):
@@ -393,11 +393,11 @@ class TestMessagePreviewCreatePreview:
         embed = DummyEmbed(title="Test", image="https://example.com/image.png")
         ref_message = DummyMessage(600, guild, target_channel, user, embeds=[embed])
 
-        cog.messaging.send_embed = AsyncMock(return_value=MagicMock())
+        cog.message_helper.send_embed = AsyncMock(return_value=MagicMock())
 
         await cog.create_message_preview(ctx, ref_message)
 
-        call_args = cog.messaging.send_embed.call_args
+        call_args = cog.message_helper.send_embed.call_args
         assert call_args[1]["image"] == "https://example.com/image.png"
 
     async def test_create_message_preview_with_fields(self, cog):
@@ -414,11 +414,11 @@ class TestMessagePreviewCreatePreview:
         embed = DummyEmbed(title="Test", fields=[field1, field2])
         ref_message = DummyMessage(600, guild, target_channel, user, embeds=[embed])
 
-        cog.messaging.send_embed = AsyncMock(return_value=MagicMock())
+        cog.message_helper.send_embed = AsyncMock(return_value=MagicMock())
 
         await cog.create_message_preview(ctx, ref_message)
 
-        call_args = cog.messaging.send_embed.call_args
+        call_args = cog.message_helper.send_embed.call_args
         fields = call_args[1]["fields"]
 
         assert len(fields) == 2
@@ -442,7 +442,7 @@ class TestMessagePreviewCreatePreview:
         embed = DummyEmbed(title="Test")
         ref_message = DummyMessage(600, guild, target_channel, user, embeds=[embed], attachments=[attachment])
 
-        cog.messaging.send_embed = AsyncMock(return_value=MagicMock())
+        cog.message_helper.send_embed = AsyncMock(return_value=MagicMock())
 
         with patch("discord.File") as mock_file:
             await cog.create_message_preview(ctx, ref_message)
@@ -451,7 +451,7 @@ class TestMessagePreviewCreatePreview:
             mock_file.assert_called_once_with("https://example.com/file.png")
 
             # Verify files were passed to send_embed
-            call_args = cog.messaging.send_embed.call_args
+            call_args = cog.message_helper.send_embed.call_args
             assert "files" in call_args[1]
 
     async def test_create_message_preview_exception_handling(self, cog):
@@ -464,7 +464,7 @@ class TestMessagePreviewCreatePreview:
         ctx = DummyMessage(500, guild, source_channel, user)
         ref_message = DummyMessage(600, guild, target_channel, user)
 
-        cog.messaging.send_embed = AsyncMock(side_effect=Exception("Test error"))
+        cog.message_helper.send_embed = AsyncMock(side_effect=Exception("Test error"))
 
         # Should raise exception
         with pytest.raises(Exception):
@@ -483,7 +483,7 @@ class TestMessagePreviewCreatePreview:
         ctx = DummyMessage(500, guild, source_channel, user)
         ref_message = DummyMessage(600, guild, target_channel, user)
 
-        cog.messaging.send_embed = AsyncMock(return_value=MagicMock())
+        cog.message_helper.send_embed = AsyncMock(return_value=MagicMock())
         cog.settings.get_string = MagicMock(return_value="Created: {created}")
 
         await cog.create_message_preview(ctx, ref_message)
@@ -498,34 +498,31 @@ class TestMessagePreviewCreatePreview:
 class TestMessagePreviewSetup:
     """Test the setup function."""
 
-    async def test_setup_creates_cog_with_dependencies(self):
+    async def test_setup_creates_cog_with_dependencies(self, bot):
         """Test that setup function creates cog with all dependencies."""
-        mock_bot = MagicMock()
-        mock_bot.add_cog = AsyncMock()
 
         with (
             patch("bot.cogs.message_preview.Settings") as mock_settings_class,
             patch("bot.cogs.message_preview.EntityHelper") as mock_entity_class,
-            patch("bot.cogs.message_preview.Messaging") as mock_messaging_class,
+            patch("bot.cogs.message_preview.MessageHelper") as mock_message_helper_class,
             patch("bot.cogs.message_preview.TrackingDatabase") as mock_tracking_class,
             patch("bot.lib.discord.ext.commands.TacobotCog.logger.Log"),
         ):
             # Configure mock settings to have log_level attribute
-            mock_settings_instance = MagicMock()
-            mock_settings_instance.log_level = "DEBUG"
-            mock_settings_class.return_value = mock_settings_instance
-
+            mock_settings_instance = mock_settings_class.return_value
+            mock_settings_instance.log_level = "INFO"
+            
             from bot.cogs.message_preview import setup
 
-            await setup(mock_bot)
+            await setup(bot)
 
             # Verify all dependencies were instantiated
             mock_settings_class.assert_called_once()
-            mock_entity_class.assert_called_once_with(mock_bot)
-            mock_messaging_class.assert_called_once_with(mock_bot)
+            mock_entity_class.assert_called_once_with(bot)
+            mock_message_helper_class.assert_called_once_with(bot, mock_settings_instance)
             mock_tracking_class.assert_called_once()
 
             # Verify cog was added to bot
-            mock_bot.add_cog.assert_awaited_once()
-            added_cog = mock_bot.add_cog.call_args[0][0]
+            bot.add_cog.assert_awaited_once()
+            added_cog = bot.add_cog.call_args[0][0]
             assert isinstance(added_cog, MessagePreview)

@@ -16,7 +16,7 @@ from discord.ext import commands
 
 class HelpCog(TacobotCog):
     def __init__(
-        self, bot: TacoBot, tracking_db: TrackingDatabase, messaging: MessageHelper, settings: Settings
+        self, bot: TacoBot, tracking_db: TrackingDatabase, message_helper: MessageHelper, settings: Settings
     ):  # noqa: F821
         super().__init__(bot, "tacobot", settings=settings)
         _method = inspect.stack()[0][3]
@@ -24,7 +24,7 @@ class HelpCog(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = messaging
+        self.message_helper = message_helper
         self.tracking_db = tracking_db
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
@@ -72,7 +72,7 @@ class HelpCog(TacobotCog):
                                 s = section[:1023] + '…'
                             fields.append({"name": v, "value": s, "inline": False})
                 if len(fields) > 0:
-                    await self.messaging.send_embed(
+                    await self.message_helper.send_embed(
                         ctx.channel,
                         self.settings.get_string(
                             guild_id, "help_changelog_title", bot_name=self.settings.name, page=page, total_pages=pages
@@ -92,8 +92,8 @@ class HelpCog(TacobotCog):
                 args=None,
             )
         except Exception as ex:
-            self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            await self.message_helper.notify_of_error(ctx)
 
     @commands.group(name="help", aliases=["h"], invoke_without_command=True)
     async def help(self, ctx, command: str = "", subcommand: str = ""):
@@ -137,7 +137,7 @@ class HelpCog(TacobotCog):
 
             command_list: dict = self.settings.get('commands', {})
             if command not in command_list.keys():
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     ctx.channel,
                     self.settings.get_string(guild_id, "help_title", bot_name=self.settings.get("name", "TacoBot")),
                     self.settings.get_string(guild_id, "help_no_command", command=command),
@@ -161,7 +161,7 @@ class HelpCog(TacobotCog):
                 if example_list and len(example_list) > 0:
                     examples = '\n'.join(example_list)
                     fields.append({"name": 'examples', "value": examples})
-            await self.messaging.send_embed(
+            await self.message_helper.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(
                     guild_id, "help_command_title", bot_name=self.settings.name, command=command
@@ -199,7 +199,7 @@ class HelpCog(TacobotCog):
                             examples = '\n'.join(example_list)
                             fields.append({"name": 'examples', "value": examples})
 
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=ctx.channel,
                     title=self.settings.get_string(
                         guild_id, "help_group_title", bot_name=self.settings.name, page=page, total_pages=pages
@@ -212,7 +212,7 @@ class HelpCog(TacobotCog):
 
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     async def root_help(self, ctx):
         _method = inspect.stack()[1][3]
@@ -245,7 +245,7 @@ class HelpCog(TacobotCog):
                         if example_list and len(example_list) > 0:
                             examples = '\n'.join(example_list)
                             fields.append({"name": 'examples', "value": examples})
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=ctx.channel,
                     title=f"{self.settings.name} Help ({page}/{pages})",
                     message="",
@@ -255,7 +255,7 @@ class HelpCog(TacobotCog):
                 page += 1
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     def clean_command_name(self, command):
         return command.replace("_", " ").lower()
@@ -271,5 +271,5 @@ class HelpCog(TacobotCog):
 async def setup(bot):
     settings = Settings()
     tracking_db = TrackingDatabase()
-    messaging = MessageHelper(bot, settings)
-    await bot.add_cog(HelpCog(bot=bot, tracking_db=tracking_db, messaging=messaging, settings=settings))
+    message_helper = MessageHelper(bot, settings)
+    await bot.add_cog(HelpCog(bot=bot, tracking_db=tracking_db, message_helper=message_helper, settings=settings))

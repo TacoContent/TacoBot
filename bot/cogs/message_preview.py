@@ -18,7 +18,7 @@ class MessagePreview(TacobotCog):
         self,
         bot: TacoBot,
         entity_helper: EntityHelper,
-        messaging: MessageHelper,
+        message_helper: MessageHelper,
         tracking_db: TrackingDatabase,
         settings: Settings,
     ) -> None:
@@ -29,7 +29,7 @@ class MessagePreview(TacobotCog):
         self._module = os.path.basename(__file__)[:-3]
 
         self.entity_helper = entity_helper
-        self.messaging = messaging
+        self.message_helper = message_helper
         self.tracking_db = tracking_db
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
@@ -131,7 +131,7 @@ class MessagePreview(TacobotCog):
                     embed_image = e.image.url
 
             # create the message preview
-            embed = await self.messaging.send_embed(
+            embed = await self.message_helper.send_embed(
                 target_channel,
                 embed_title,
                 message=f"{message_content}\n\n{embed_content}",
@@ -155,10 +155,14 @@ class MessagePreview(TacobotCog):
 async def setup(bot):
     settings = Settings()
     entity_helper = EntityHelper(bot)
-    messaging = MessageHelper(bot, settings)
+    message_helper = MessageHelper(bot, settings)
     tracking_db = TrackingDatabase()
     await bot.add_cog(
         MessagePreview(
-            bot=bot, entity_helper=entity_helper, messaging=messaging, tracking_db=tracking_db, settings=settings
+            bot=bot,
+            entity_helper=entity_helper,
+            message_helper=message_helper,
+            tracking_db=tracking_db,
+            settings=settings,
         )
     )

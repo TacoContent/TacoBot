@@ -49,6 +49,18 @@ def mock_user():
 
 
 @pytest.fixture
+def mock_tacos_db():
+    tacos_db = MagicMock()
+    return tacos_db
+
+
+@pytest.fixture
+def mock_entity_helper():
+    entity_helper = MagicMock()
+    return entity_helper
+
+
+@pytest.fixture
 def mock_message(mock_guild, mock_channel, mock_user, bot):
     message = MagicMock()
     message.guild = mock_guild
@@ -291,17 +303,17 @@ class TestAssistantCog:
                 }
             )
 
-    def test_get_user_json_success(self, cog, mock_user, mock_tacos_db):
-        mock_tacos_db.get_tacos_count.return_value = 42
+    def test_get_user_json_success(self, cog, mock_user):
+        cog.tacos_db.get_tacos_count.return_value = 42
 
         result = cog._get_user_json(12345, mock_user)
 
         expected = json.dumps({"name": "<@33333>", "id": 33333, "mention": "<@33333>", "taco_count": 42})
         assert result == expected
-        mock_tacos_db.get_tacos_count.assert_called_once_with(guildId=12345, userId=33333)
+        cog.tacos_db.get_tacos_count.assert_called_once_with(guildId=12345, userId=33333)
 
-    def test_get_user_json_exception(self, cog, mock_user, mock_tacos_db):
-        mock_tacos_db.get_tacos_count.side_effect = Exception("DB Error")
+    def test_get_user_json_exception(self, cog, mock_user):
+        cog.tacos_db.get_tacos_count.side_effect = Exception("DB Error")
 
         result = cog._get_user_json(12345, mock_user)
 
@@ -309,30 +321,30 @@ class TestAssistantCog:
         cog.log.error.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_get_message_content_for_prompt_success(self, cog, mock_channel, mock_entity_helper):
+    async def test_get_message_content_for_prompt_success(self, cog, mock_channel):
         mock_faq_message = MagicMock()
         mock_faq_message.content = "Frequently Asked Questions content"
+        cog.entity_helper.get_or_fetch_channel.return_value = mock_channel
         mock_channel.fetch_message.return_value = mock_faq_message
-        mock_entity_helper.get_or_fetch_channel.return_value = mock_channel
 
         result = await cog._get_message_content_for_prompt(22222, 44444)
 
         assert result == "Frequently Asked Questions content"
-        mock_entity_helper.get_or_fetch_channel.assert_called_once_with(22222)
+        cog.entity_helper.get_or_fetch_channel.assert_called_once_with(22222)
         mock_channel.fetch_message.assert_called_once_with(44444)
 
     @pytest.mark.asyncio
-    async def test_get_message_content_for_prompt_no_channel(self, cog, mock_entity_helper):
-        mock_entity_helper.get_or_fetch_channel.return_value = None
+    async def test_get_message_content_for_prompt_no_channel(self, cog):
+        cog.entity_helper.get_or_fetch_channel.return_value = None
 
         result = await cog._get_message_content_for_prompt(22222, 44444)
 
         assert result == ""
-        mock_entity_helper.get_or_fetch_channel.assert_called_once_with(22222)
+        cog.entity_helper.get_or_fetch_channel.assert_called_once_with(22222)
 
     @pytest.mark.asyncio
-    async def test_get_message_content_for_prompt_exception(self, cog, mock_channel, mock_entity_helper):
-        mock_entity_helper.get_or_fetch_channel.side_effect = Exception("Channel Error")
+    async def test_get_message_content_for_prompt_exception(self, cog, mock_channel):
+        cog.entity_helper.get_or_fetch_channel.side_effect = Exception("Channel Error")
 
         result = await cog._get_message_content_for_prompt(22222, 44444)
 

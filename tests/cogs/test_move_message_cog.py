@@ -6,12 +6,11 @@ from bot.cogs.move_message import MoveMessageCog, setup
 
 @pytest.fixture
 def cog(
-    bot, tracking_db, messaging, permissions, context_helper, entity_helper, message_helper, prompt_helper, settings
+    bot, tracking_db, permissions, context_helper, entity_helper, message_helper, prompt_helper, settings
 ):
     return MoveMessageCog(
         bot=bot,
         tracking_db=tracking_db,
-        messaging=messaging,
         permissions=permissions,
         context_helper=context_helper,
         entity_helper=entity_helper,
@@ -278,7 +277,7 @@ async def test_on_raw_reaction_add_exception(cog, entity_helper):
 
 @pytest.mark.asyncio
 async def test_move_command_success(
-    cog, context_helper, prompt_helper, message_helper, messaging, tracking_db, settings
+    cog, context_helper, prompt_helper, message_helper, tracking_db, settings
 ):
     ctx = MagicMock()
     ctx.invoked_subcommand = None
@@ -297,7 +296,6 @@ async def test_move_command_success(
     prompt_helper.ask_channel = AsyncMock(return_value=MagicMock())
     message_helper.move_message = AsyncMock()
     message.delete = AsyncMock()
-    messaging.send_embed = AsyncMock()
     tracking_db.track_command_usage = MagicMock()
     settings.get_string = MagicMock(return_value="Move Message")
     await cog.move.callback(cog, ctx, 789)
@@ -309,7 +307,7 @@ async def test_move_command_success(
 
 
 @pytest.mark.asyncio
-async def test_move_command_message_not_found(cog, context_helper, prompt_helper, messaging, settings):
+async def test_move_command_message_not_found(cog, context_helper, prompt_helper, message_helper, settings):
     ctx = MagicMock()
     ctx.invoked_subcommand = None
     ctx.guild = MagicMock()
@@ -320,10 +318,9 @@ async def test_move_command_message_not_found(cog, context_helper, prompt_helper
     ctx.message = MagicMock()
     ctx.message.delete = AsyncMock()
     ctx.channel.fetch_message = AsyncMock(return_value=None)
-    messaging.send_embed = AsyncMock()
     settings.get_string = MagicMock(return_value="Move Message")
     await cog.move.callback(cog, ctx, 789)
-    messaging.send_embed.assert_awaited()
+    message_helper.send_embed.assert_awaited()
     ctx.message.delete.assert_awaited()
 
 
@@ -343,7 +340,7 @@ async def test_move_command_subcommand_present(cog):
 
 
 @pytest.mark.asyncio
-async def test_move_command_target_channel_none(cog, context_helper, prompt_helper, messaging, settings):
+async def test_move_command_target_channel_none(cog, context_helper, prompt_helper, message_helper, settings):
     ctx = MagicMock()
     ctx.invoked_subcommand = None
     ctx.guild = MagicMock()
@@ -380,14 +377,12 @@ async def test_move_command_exception(cog):
 
 
 @pytest.mark.asyncio
-async def test_setup():
-    bot = MagicMock()
-    bot.add_cog = AsyncMock()
+async def test_setup(bot, message_helper, context_helper, entity_helper, prompt_helper):
     with (
         patch("bot.cogs.move_message.Settings") as MockSettings,
         patch("bot.cogs.move_message.TrackingDatabase") as MockTrackingDB,
         patch("bot.cogs.move_message.Permissions") as MockPermissions,
-        patch("bot.cogs.move_message.Messaging") as MockMessaging,
+        patch("bot.cogs.move_message.MessageHelper") as MockMessageHelper,
         patch("bot.cogs.move_message.ContextHelper") as MockContextHelper,
         patch("bot.cogs.move_message.EntityHelper") as MockEntityHelper,
         patch("bot.cogs.move_message.MessageHelper") as MockMessageHelper,
@@ -397,7 +392,7 @@ async def test_setup():
         settings.log_level = "INFO"  # Ensure log_level is a real string
         tracking_db = MockTrackingDB.return_value
         permissions = MockPermissions.return_value
-        messaging = MockMessaging.return_value
+        message_helper = message_helper.return_value
         context_helper = MockContextHelper.return_value
         entity_helper = MockEntityHelper.return_value
         message_helper = MockMessageHelper.return_value
@@ -412,7 +407,7 @@ async def test_setup():
         assert args[0].settings == settings
         assert args[0].tracking_db == tracking_db
         assert args[0].permissions == permissions
-        assert args[0].messaging == messaging
+        assert args[0].message_helper == message_helper
         assert args[0].context_helper == context_helper
         assert args[0].entity_helper == entity_helper
         assert args[0].message_helper == message_helper

@@ -33,7 +33,7 @@ def cog(
         bot=bot,
         techthurs_db=techthurs_db,
         tracking_db=tracking_db,
-        messaging=message_helper,
+        message_helper=message_helper,
         permissions=permissions,
         context_helper=context_helper,
         entity_helper=entity_helper,
@@ -172,7 +172,7 @@ class TestTechThursCommand:
         await cog.techthurs.callback(cog, mock_context)
 
         mock_context.message.delete.assert_called_once()
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_techthurs_command_user_cancels(self, cog, mock_context):
@@ -184,7 +184,7 @@ class TestTechThursCommand:
         await cog.techthurs.callback(cog, mock_context)
 
         mock_context.message.delete.assert_called_once()
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_techthurs_command_user_says_cancel(self, cog, mock_context):
@@ -196,7 +196,7 @@ class TestTechThursCommand:
         await cog.techthurs.callback(cog, mock_context)
 
         mock_context.message.delete.assert_called_once()
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_techthurs_command_success_with_image(self, cog, mock_context, mock_channel):
@@ -229,12 +229,12 @@ class TestTechThursCommand:
 
         mock_sent_message = MagicMock()
         mock_sent_message.id = 55555
-        cog.messaging.send_embed = AsyncMock(return_value=mock_sent_message)
+        cog.message_helper.send_embed = AsyncMock(return_value=mock_sent_message)
 
         await cog.techthurs.callback(cog, mock_context)
 
         mock_context.message.delete.assert_called_once()
-        cog.messaging.send_embed.assert_called_once()
+        cog.message_helper.send_embed.assert_called_once()
         cog.techthurs_db.save_techthurs.assert_called_once_with(
             guildId=12345,
             message="My tech tip",
@@ -287,7 +287,7 @@ class TestOpenAICommands:
         ctx.response.send_message.assert_called_once_with(
             content="You must be a bot admin to use this command", ephemeral=True
         )
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_openai_app_command_no_guild(self, cog):
@@ -301,7 +301,7 @@ class TestOpenAICommands:
         with patch("bot.lib.utils.isAdmin", return_value=True):
             await cog.openai_app_command.callback(cog, ctx)
 
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_openai_app_command_success(self, cog, mock_guild):
@@ -411,7 +411,7 @@ class TestGiveCommand:
         await cog.give_user_techthurs_tacos(12345, 33333, 22222, 44444)
 
         cog.techthurs_db.track_techthurs_answer.assert_called_once_with(12345, 33333, 44444)
-        cog.messaging.send_embed.assert_called_once()
+        cog.message_helper.send_embed.assert_called_once()
         cog.taco_helper.give_tacos.assert_called_once()
 
     @pytest.mark.asyncio
@@ -495,7 +495,7 @@ class TestReactionHandlers:
 
         await cog.on_raw_reaction_add(payload)
 
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_on_raw_reaction_add_wrong_emoji(self, cog):
@@ -516,7 +516,7 @@ class TestReactionHandlers:
 
         await cog.on_raw_reaction_add(payload)
 
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_on_raw_reaction_add_give_emoji(self, cog, mock_channel, mock_message):
@@ -876,7 +876,7 @@ class TestOpenAIGenerate:
             await cog._openai_generate(mock_context)
             mock_warn.assert_called()
 
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_openai_generate_no_user(self, cog, mock_guild):
@@ -953,7 +953,7 @@ class TestOpenAIGenerate:
         mock_message = MagicMock()
         mock_message.id = 55555
         mock_message.channel = mock_channel
-        cog.messaging.send_embed = AsyncMock(return_value=mock_message)
+        cog.message_helper.send_embed = AsyncMock(return_value=mock_message)
 
         mock_openai_response = MagicMock()
 
@@ -969,7 +969,7 @@ class TestOpenAIGenerate:
             await cog._openai_generate(mock_context)
 
             mock_openai.chat_completion.assert_called_once()
-            cog.messaging.send_embed.assert_called_once()
+            cog.message_helper.send_embed.assert_called_once()
             cog.techthurs_db.save_techthurs.assert_called_once()
 
     @pytest.mark.asyncio
@@ -1056,15 +1056,12 @@ class TestOpenAIGenerate:
                 await cog._openai_generate(mock_context)
                 mock_warn.assert_called()
 
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
 
 @pytest.mark.asyncio
-async def test_setup():
+async def test_setup(bot, settings):
     """Test cog setup function."""
-    mock_bot = MagicMock()
-    mock_bot.add_cog = AsyncMock()
-
     with (
         patch("bot.cogs.tech_thursday.Settings") as mock_settings_class,
         patch("bot.cogs.tech_thursday.TechThursDatabase"),
@@ -1079,10 +1076,10 @@ async def test_setup():
         # Configure settings mock to have proper log_level
         mock_settings = MagicMock()
         mock_settings.log_level = "INFO"
-        mock_settings_class.return_value = mock_settings
+        mock_settings_class.return_value = settings
 
         from bot.cogs.tech_thursday import setup
 
-        await setup(mock_bot)
+        await setup(bot)
 
-        mock_bot.add_cog.assert_called_once()
+        bot.add_cog.assert_called_once()

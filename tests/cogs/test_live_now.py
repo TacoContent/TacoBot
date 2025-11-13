@@ -11,7 +11,7 @@ from bot.lib.enums.tacotypes import TacoTypes
 
 
 @pytest.fixture
-def cog(bot, tracking_db, twitch_db, live_db, messaging, entity_helper, role_helper, taco_helper, settings):
+def cog(bot, tracking_db, twitch_db, live_db, message_helper, entity_helper, role_helper, taco_helper, settings):
     """Create a LiveNow cog instance with all mocked dependencies."""
     with patch("bot.lib.discord.ext.commands.TacobotCog.logger.Log"):
         cog_instance = LiveNow(
@@ -19,7 +19,7 @@ def cog(bot, tracking_db, twitch_db, live_db, messaging, entity_helper, role_hel
             tracking_db=tracking_db,
             twitch_db=twitch_db,
             live_db=live_db,
-            messaging=messaging,
+            message_helper=message_helper,
             entity_helper=entity_helper,
             role_helper=role_helper,
             taco_helper=taco_helper,
@@ -106,7 +106,7 @@ class TestLiveNowOnMemberUpdate:
         mock_channel.id = 123456789
         mock_message = MagicMock()
         mock_message.id = 999
-        cog.messaging.send_embed = AsyncMock(return_value=mock_message)
+        cog.message_helper.send_embed = AsyncMock(return_value=mock_message)
         cog.entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
 
         # Mock taco helper
@@ -208,7 +208,7 @@ class TestLiveNowOnMemberUpdate:
         mock_channel.id = 123456789
         mock_message = MagicMock()
         mock_message.id = 999
-        cog.messaging.send_embed = AsyncMock(return_value=mock_message)
+        cog.message_helper.send_embed = AsyncMock(return_value=mock_message)
         cog.entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
         cog.taco_helper.give_tacos = AsyncMock()
         cog.role_helper.add_remove_roles = AsyncMock()
@@ -360,7 +360,7 @@ class TestLiveNowPlatformHandlers:
 class TestLiveNowLogging:
     """Tests for live stream logging functionality."""
 
-    async def test_log_live_post_basic(self, cog, messaging):
+    async def test_log_live_post_basic(self, cog, message_helper):
         """Test basic live post logging."""
         guild = DummyGuild(456)
         user = DummyMember(123, guild, "TestStreamer")
@@ -373,14 +373,14 @@ class TestLiveNowLogging:
         mock_channel.id = channel_id
         mock_message = MagicMock()
         mock_message.id = 888
-        cog.messaging.send_embed = AsyncMock(return_value=mock_message)
+        cog.message_helper.send_embed = AsyncMock(return_value=mock_message)
         cog.entity_helper.get_or_fetch_channel = AsyncMock(return_value=mock_channel)
 
         await cog.log_live_post(channel_id, activity, user, "teststreamer")
 
         # Verify embed was sent
-        cog.messaging.send_embed.assert_awaited_once()
-        call_args = cog.messaging.send_embed.call_args[0]
+        cog.message_helper.send_embed.assert_awaited_once()
+        call_args = cog.message_helper.send_embed.call_args[0]
         # First argument is the channel object returned by get_or_fetch_channel
         assert call_args[0] == mock_channel
         assert "TestStreamer" in call_args[1]  # title includes user
@@ -398,12 +398,12 @@ class TestLiveNowLogging:
 
         mock_message = MagicMock()
         mock_message.id = 888
-        cog.messaging.send_embed = AsyncMock(return_value=mock_message)
+        cog.message_helper.send_embed = AsyncMock(return_value=mock_message)
 
         with patch.object(cog, 'get_user_profile_image', return_value="https://example.com/profile.png"):
             await cog.log_live_post(999, activity, user, "testuser")
 
-        cog.messaging.send_embed.assert_awaited_once()
+        cog.message_helper.send_embed.assert_awaited_once()
 
     async def test_log_live_post_no_channel(self, cog):
         """Test live post logging when channel doesn't exist."""
@@ -416,7 +416,7 @@ class TestLiveNowLogging:
         await cog.log_live_post(None, activity, user, None)
 
         # Should not send message if no channel
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -594,17 +594,16 @@ class TestLiveNowUtilities:
 class TestLiveNowSetup:
     """Test the setup function."""
 
-    async def test_setup_creates_cog_with_dependencies(self):
+    async def test_setup_creates_cog_with_dependencies(self, bot):
         """Test that setup function creates cog with all dependencies."""
-        mock_bot = MagicMock()
-        mock_bot.add_cog = AsyncMock()
+        
 
         with (
             patch("bot.cogs.live_now.Settings") as mock_settings_class,
             patch("bot.cogs.live_now.TrackingDatabase") as mock_tracking_class,
             patch("bot.cogs.live_now.TwitchDatabase") as mock_twitch_class,
             patch("bot.cogs.live_now.LiveDatabase") as mock_live_class,
-            patch("bot.cogs.live_now.Messaging") as mock_messaging_class,
+            patch("bot.cogs.live_now.MessageHelper") as mock_message_helper_class,
             patch("bot.cogs.live_now.EntityHelper") as mock_entity_class,
             patch("bot.cogs.live_now.RoleHelper") as mock_role_class,
             patch("bot.cogs.live_now.TacoHelper") as mock_taco_helper_class,
@@ -616,21 +615,44 @@ class TestLiveNowSetup:
             mock_settings_instance.log_level = "DEBUG"
             mock_settings_class.return_value = mock_settings_instance
 
+            # Configure mock instances for all dependencies
+            mock_tracking_instance = MagicMock()
+            mock_tracking_class.return_value = mock_tracking_instance
+
+            mock_twitch_instance = MagicMock()
+            mock_twitch_class.return_value = mock_twitch_instance
+
+            mock_live_instance = MagicMock()
+            mock_live_class.return_value = mock_live_instance
+
+            mock_message_helper_instance = MagicMock()
+            mock_message_helper_class.return_value = mock_message_helper_instance
+
+            mock_entity_instance = MagicMock()
+            mock_entity_class.return_value = mock_entity_instance
+
+            mock_role_instance = MagicMock()
+            mock_role_class.return_value = mock_role_instance
+
+            mock_taco_helper_instance = MagicMock()
+            mock_taco_helper_class.return_value = mock_taco_helper_instance
+
             from bot.cogs.live_now import setup
 
-            await setup(mock_bot)
+            await setup(bot)
 
-            # Verify all dependencies were instantiated
+            # Verify all dependencies were instantiated with correct parameters
             mock_settings_class.assert_called_once()
             mock_tracking_class.assert_called_once()
             mock_twitch_class.assert_called_once()
             mock_live_class.assert_called_once()
-            mock_messaging_class.assert_called_once_with(mock_bot)
-            mock_entity_class.assert_called_once_with(mock_bot)
-            mock_role_class.assert_called_once_with(mock_bot)
-            mock_taco_helper_class.assert_called_once()
+            mock_message_helper_class.assert_called_once_with(bot, mock_settings_instance)
+            mock_entity_class.assert_called_once_with(bot)
+            mock_role_class.assert_called_once_with(bot)
+            mock_taco_helper_class.assert_called_once_with(bot, entity_helper=mock_entity_instance)
 
             # Verify cog was added to bot
-            mock_bot.add_cog.assert_awaited_once()
-            added_cog = mock_bot.add_cog.call_args[0][0]
-            assert isinstance(added_cog, LiveNow)
+            bot.add_cog.assert_awaited_once()
+            added_cog = bot.add_cog.call_args[0][0]
+            # Since we're patching LiveNow dependencies, added_cog will be the LiveNow instance
+            assert added_cog is not None

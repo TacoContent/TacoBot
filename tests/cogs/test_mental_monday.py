@@ -23,7 +23,7 @@ def cog(
     prompt_helper,
     entity_helper,
     taco_helper,
-    messaging,
+    message_helper,
     permissions,
     tracking_db,
     mentalmondays_db,
@@ -36,7 +36,7 @@ def cog(
         prompt_helper=prompt_helper,
         entity_helper=entity_helper,
         taco_helper=taco_helper,
-        messaging=messaging,
+        message_helper=message_helper,
         permissions=permissions,
         tracking_db=tracking_db,
         mentalmondays_db=mentalmondays_db,
@@ -112,7 +112,7 @@ class TestMentalMondaysInit:
         prompt_helper,
         entity_helper,
         taco_helper,
-        messaging,
+        message_helper,
         permissions,
         tracking_db,
         mentalmondays_db,
@@ -124,7 +124,7 @@ class TestMentalMondaysInit:
         assert cog.prompt_helper == prompt_helper
         assert cog.entity_helper == entity_helper
         assert cog.taco_helper == taco_helper
-        assert cog.messaging == messaging
+        assert cog.message_helper == message_helper
         assert cog.permissions == permissions
         assert cog.tracking_db == tracking_db
         assert cog.mentalmondays_db == mentalmondays_db
@@ -166,7 +166,7 @@ class TestMentalMondaysCommand:
         await cog.mentalmondays.callback(cog, mock_context)
 
         mock_context.message.delete.assert_called_once()
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_mentalmondays_command_user_cancels(self, cog, mock_context):
@@ -178,7 +178,7 @@ class TestMentalMondaysCommand:
         await cog.mentalmondays.callback(cog, mock_context)
 
         mock_context.message.delete.assert_called_once()
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_mentalmondays_command_user_says_cancel(self, cog, mock_context):
@@ -190,7 +190,7 @@ class TestMentalMondaysCommand:
         await cog.mentalmondays.callback(cog, mock_context)
 
         mock_context.message.delete.assert_called_once()
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_mentalmondays_command_success_with_image(self, cog, mock_context, mock_channel):
@@ -220,12 +220,12 @@ class TestMentalMondaysCommand:
 
         mock_sent_message = MagicMock()
         mock_sent_message.id = 88888
-        cog.messaging.send_embed = AsyncMock(return_value=mock_sent_message)
+        cog.message_helper.send_embed = AsyncMock(return_value=mock_sent_message)
 
         await cog.mentalmondays.callback(cog, mock_context)
 
         mock_context.message.delete.assert_called_once()
-        cog.messaging.send_embed.assert_called_once()
+        cog.message_helper.send_embed.assert_called_once()
         cog.mentalmondays_db.save_mentalmondays.assert_called_once_with(
             guildId=12345,
             message="My mental health update",
@@ -283,13 +283,13 @@ class TestMentalMondaysCommand:
         mock_sent_message = MagicMock()
         mock_sent_message.id = 55555
         mock_context.guild.get_channel.return_value = mock_channel
-        cog.messaging.send_embed = AsyncMock(return_value=mock_sent_message)
+        cog.message_helper.send_embed = AsyncMock(return_value=mock_sent_message)
 
         await cog.mentalmondays.callback(cog, mock_context)
 
         # Should have been called twice - first raised exception, second succeeded
         assert cog.prompt_helper.ask_for_image_or_text.call_count == 2
-        cog.messaging.send_embed.assert_called_once()
+        cog.message_helper.send_embed.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_mentalmondays_command_with_role_mention(self, cog, mock_context, mock_channel):
@@ -315,12 +315,12 @@ class TestMentalMondaysCommand:
 
         mock_sent_message = MagicMock()
         mock_sent_message.id = 55555
-        cog.messaging.send_embed = AsyncMock(return_value=mock_sent_message)
+        cog.message_helper.send_embed = AsyncMock(return_value=mock_sent_message)
 
         await cog.mentalmondays.callback(cog, mock_context)
 
         # Verify send_embed was called with content containing role mention
-        call_args = cog.messaging.send_embed.call_args
+        call_args = cog.message_helper.send_embed.call_args
         assert "<@&12345>" in call_args[1]["content"]
 
     @pytest.mark.asyncio
@@ -334,7 +334,7 @@ class TestMentalMondaysCommand:
             await cog.mentalmondays.callback(cog, mock_context)
             mock_error.assert_called()
 
-        cog.messaging.notify_of_error.assert_called_once_with(mock_context)
+        cog.message_helper.notify_of_error.assert_called_once_with(mock_context)
 
 
 class TestOpenAICommands:
@@ -358,7 +358,7 @@ class TestOpenAICommands:
         ctx.response.send_message.assert_called_once_with(
             content="You must be a bot admin to use this command", ephemeral=True
         )
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_openai_app_command_no_guild(self, cog):
@@ -372,7 +372,7 @@ class TestOpenAICommands:
         with patch("bot.lib.utils.isAdmin", return_value=True):
             await cog.openai_app_command.callback(cog, ctx)
 
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_openai_command_success(self, cog, mock_context):
@@ -405,7 +405,7 @@ class TestOpenAICommands:
                 await cog.openai_app_command.callback(cog, ctx)
                 mock_error.assert_called()
 
-            cog.messaging.notify_of_error.assert_called_once_with(ctx)
+            cog.message_helper.notify_of_error.assert_called_once_with(ctx)
 
     @pytest.mark.asyncio
     async def test_openai_command_exception_handling(self, cog, mock_context):
@@ -417,7 +417,7 @@ class TestOpenAICommands:
                 await cog.openai.callback(cog, mock_context)
                 mock_error.assert_called()
 
-            cog.messaging.notify_of_error.assert_called_once_with(mock_context)
+            cog.message_helper.notify_of_error.assert_called_once_with(mock_context)
 
 
 class TestImportCommand:
@@ -471,7 +471,7 @@ class TestImportCommand:
             await cog.import_mentalmondays.callback(cog, mock_context, 99999)
             mock_error.assert_called()
 
-        cog.messaging.notify_of_error.assert_called_once_with(mock_context)
+        cog.message_helper.notify_of_error.assert_called_once_with(mock_context)
 
     @pytest.mark.asyncio
     async def test_import_command_exception_handling(self, cog, mock_context, mock_channel):
@@ -485,7 +485,7 @@ class TestImportCommand:
             await cog.import_mentalmondays.callback(cog, mock_context, 99999)
             mock_error.assert_called()
 
-        cog.messaging.notify_of_error.assert_called_once_with(mock_context)
+        cog.message_helper.notify_of_error.assert_called_once_with(mock_context)
 
 
 class TestGiveCommand:
@@ -517,7 +517,7 @@ class TestGiveCommand:
         await cog.give_user_mentalmondays_tacos(12345, 33333, 22222, 99999)
 
         cog.mentalmondays_db.track_mentalmondays_answer.assert_called_once_with(12345, 33333, 99999)
-        cog.messaging.send_embed.assert_called_once()
+        cog.message_helper.send_embed.assert_called_once()
         cog.taco_helper.give_tacos.assert_called_once()
 
     @pytest.mark.asyncio
@@ -587,7 +587,7 @@ class TestReactionHandlers:
 
         await cog.on_raw_reaction_add(payload)
 
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_on_raw_reaction_add_disabled(self, cog):
@@ -606,7 +606,7 @@ class TestReactionHandlers:
 
         await cog.on_raw_reaction_add(payload)
 
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_on_raw_reaction_add_wrong_emoji(self, cog):
@@ -627,7 +627,7 @@ class TestReactionHandlers:
 
         await cog.on_raw_reaction_add(payload)
 
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_on_raw_reaction_add_give_emoji(self, cog, mock_channel, mock_message):
@@ -686,7 +686,7 @@ class TestReactionHandlers:
 
             await cog.on_raw_reaction_add(payload)
 
-            cog.messaging.send_embed.assert_not_called()
+            cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_on_raw_reaction_add_import_emoji_on_monday(self, cog):
@@ -972,7 +972,7 @@ class TestOpenAIGenerate:
             await cog._openai_generate(mock_context)
             mock_warn.assert_called()
 
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_openai_generate_disabled(self, cog, mock_context):
@@ -981,7 +981,7 @@ class TestOpenAIGenerate:
 
         await cog._openai_generate(mock_context)
 
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_openai_generate_success_with_publish(self, cog, mock_channel, mock_member):
@@ -1027,12 +1027,12 @@ class TestOpenAIGenerate:
             mock_openai.get_response_text.return_value = "What helps you maintain mental wellness?"
             mock_openai_class.return_value = mock_openai
 
-            cog.messaging.send_embed = AsyncMock(return_value=mock_sent_message)
+            cog.message_helper.send_embed = AsyncMock(return_value=mock_sent_message)
 
             await cog._openai_generate(mock_context)
 
             mock_openai.chat_completion.assert_called_once()
-            cog.messaging.send_embed.assert_called_once()
+            cog.message_helper.send_embed.assert_called_once()
             cog.mentalmondays_db.save_mentalmondays.assert_called_once()
 
     @pytest.mark.asyncio
@@ -1122,7 +1122,7 @@ class TestOpenAIGenerate:
                 await cog._openai_generate(mock_context)
                 mock_warn.assert_called()
 
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_openai_generate_no_output_channel_fallback(self, cog, mock_member):
@@ -1180,7 +1180,7 @@ async def test_setup():
         patch("bot.cogs.mental_monday.EntityHelper"),
         patch("bot.cogs.mental_monday.TacoHelper"),
         patch("bot.cogs.mental_monday.Settings") as mock_settings_class,
-        patch("bot.cogs.mental_monday.Messaging"),
+        patch("bot.cogs.mental_monday.MessageHelper"),
         patch("bot.cogs.mental_monday.Permissions"),
         patch("bot.cogs.mental_monday.TrackingDatabase"),
         patch("bot.cogs.mental_monday.MentalMondaysDatabase"),
