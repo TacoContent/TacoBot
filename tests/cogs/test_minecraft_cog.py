@@ -8,15 +8,6 @@ from bot.cogs.minecraft import MinecraftCog
 
 
 @pytest.fixture
-def minecraft_db():
-    """Mock Minecraft database."""
-    db = MagicMock()
-    db.get_minecraft_user = MagicMock()
-    db.whitelist_minecraft_user = MagicMock()
-    return db
-
-
-@pytest.fixture
 def guild():
     """Mock Discord guild."""
     guild = MagicMock()
@@ -71,7 +62,7 @@ def context(guild, channel, user):
 
 
 @pytest.fixture
-def cog(bot, minecraft_db, tracking_db, messaging, entity_helper, context_helper, prompt_helper, settings):
+def cog(bot, minecraft_db, tracking_db, message_helper, entity_helper, context_helper, prompt_helper, settings):
     """Minecraft cog fixture using shared fixtures from conftest.py."""
     # Override settings to return mock strings for minecraft keys
     settings.get_string = MagicMock(side_effect=lambda guild_id, key, **kwargs: f"mock_{key}")
@@ -80,7 +71,7 @@ def cog(bot, minecraft_db, tracking_db, messaging, entity_helper, context_helper
         bot=bot,
         minecraft_db=minecraft_db,
         tracking_db=tracking_db,
-        messaging=messaging,
+        message_helper=message_helper,
         entity_helper=entity_helper,
         context_helper=context_helper,
         prompt_helper=prompt_helper,
@@ -95,12 +86,12 @@ class TestMinecraftCogInit:
     """Tests for MinecraftCog initialization."""
 
     def test_init(
-        self, cog, bot, minecraft_db, tracking_db, messaging, entity_helper, context_helper, prompt_helper, settings
+        self, cog, bot, minecraft_db, tracking_db, message_helper, entity_helper, context_helper, prompt_helper, settings
     ):
         assert cog.bot == bot
         assert cog.minecraft_db == minecraft_db
         assert cog.tracking_db == tracking_db
-        assert cog.messaging == messaging
+        assert cog.message_helper == message_helper
         assert cog.entity_helper == entity_helper
         assert cog.context_helper == context_helper
         assert cog.prompt_helper == prompt_helper
@@ -110,14 +101,14 @@ class TestMinecraftCogInit:
         assert cog.SELF_DESTRUCT_TIMEOUT == 30
 
     def test_init_default_api_endpoints(
-        self, bot, minecraft_db, tracking_db, messaging, entity_helper, context_helper, prompt_helper, settings
+        self, bot, minecraft_db, tracking_db, message_helper, entity_helper, context_helper, prompt_helper, settings
     ):
         """Test that default API endpoints are set correctly."""
         c = MinecraftCog(
             bot=bot,
             minecraft_db=minecraft_db,
             tracking_db=tracking_db,
-            messaging=messaging,
+            message_helper=message_helper,
             entity_helper=entity_helper,
             context_helper=context_helper,
             prompt_helper=prompt_helper,
@@ -131,7 +122,7 @@ class TestMinecraftCogInit:
         assert c.avatar_api == MinecraftCog.DEFAULT_AVATAR_API
 
     def test_init_custom_api_endpoints(
-        self, bot, minecraft_db, tracking_db, messaging, entity_helper, context_helper, prompt_helper, settings
+        self, bot, minecraft_db, tracking_db, message_helper, entity_helper, context_helper, prompt_helper, settings
     ):
         """Test that custom API endpoints can be injected for testing."""
         custom_api = "http://test-api.local:8080"
@@ -142,7 +133,7 @@ class TestMinecraftCogInit:
             bot=bot,
             minecraft_db=minecraft_db,
             tracking_db=tracking_db,
-            messaging=messaging,
+            message_helper=message_helper,
             entity_helper=entity_helper,
             context_helper=context_helper,
             prompt_helper=prompt_helper,
@@ -174,7 +165,7 @@ class TestMinecraftCogHelperMethods:
         bot,
         minecraft_db,
         tracking_db,
-        messaging,
+        message_helper,
         entity_helper,
         context_helper,
         prompt_helper,
@@ -188,7 +179,7 @@ class TestMinecraftCogHelperMethods:
             bot=bot,
             minecraft_db=minecraft_db,
             tracking_db=tracking_db,
-            messaging=messaging,
+            message_helper=message_helper,
             entity_helper=entity_helper,
             context_helper=context_helper,
             prompt_helper=prompt_helper,
@@ -566,7 +557,7 @@ class TestMinecraftCogStatusCommand:
         await cog.status(context)
 
         cog.log.debug.assert_called()
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_status_user_not_whitelisted(self, cog, context, entity_helper, minecraft_db):
@@ -576,8 +567,8 @@ class TestMinecraftCogStatusCommand:
 
         await cog.status(context)
 
-        cog.messaging.send_embed.assert_called_once()
-        call_args = cog.messaging.send_embed.call_args
+        cog.message_helper.send_embed.assert_called_once()
+        call_args = cog.message_helper.send_embed.call_args
         # Channel should be the same mock from get_or_fetch_channel since output_channel matches ctx.channel
         assert "title" in call_args[1]
 
@@ -608,8 +599,8 @@ class TestMinecraftCogStatusCommand:
 
         await cog.status(context)
 
-        cog.messaging.send_embed.assert_called_once()
-        call_args = cog.messaging.send_embed.call_args
+        cog.message_helper.send_embed.assert_called_once()
+        call_args = cog.message_helper.send_embed.call_args
         assert "fields" in call_args[1]
         tracking_db.track_command_usage.assert_called_once()
 
@@ -640,20 +631,20 @@ class TestMinecraftCogStatusCommand:
 
         await cog.status(context)
 
-        cog.messaging.send_embed.assert_called_once()
-        call_args = cog.messaging.send_embed.call_args
+        cog.message_helper.send_embed.assert_called_once()
+        call_args = cog.message_helper.send_embed.call_args
         fields = call_args[1]["fields"]
         # Check that offline message field was added
         assert any("offline" in str(field).lower() for field in fields)
 
     @pytest.mark.asyncio
-    async def test_status_exception(self, cog, context, messaging):
+    async def test_status_exception(self, cog, context, message_helper):
         cog.get_cog_settings.side_effect = Exception("Settings error")
 
         await cog.status(context)
 
         cog.log.error.assert_called_once()
-        messaging.notify_of_error.assert_called_once_with(context)
+        message_helper.notify_of_error.assert_called_once_with(context)
 
 
 class TestMinecraftCogStartCommand:
@@ -668,8 +659,8 @@ class TestMinecraftCogStartCommand:
         # Call the callback directly to bypass the decorator
         await cog.start_server.callback(cog, context)
 
-        cog.messaging.send_embed.assert_called_once()
-        call_args = cog.messaging.send_embed.call_args
+        cog.message_helper.send_embed.assert_called_once()
+        call_args = cog.message_helper.send_embed.call_args
         assert "minecraft_control_no_start" in str(call_args)
 
     @pytest.mark.asyncio
@@ -686,8 +677,8 @@ class TestMinecraftCogStartCommand:
 
         await cog.start_server.callback(cog, context)
 
-        cog.messaging.send_embed.assert_called_once()
-        call_args = cog.messaging.send_embed.call_args
+        cog.message_helper.send_embed.assert_called_once()
+        call_args = cog.message_helper.send_embed.call_args
         assert "minecraft_control_running" in str(call_args)
 
     @pytest.mark.asyncio
@@ -713,8 +704,8 @@ class TestMinecraftCogStartCommand:
         await cog.start_server.callback(cog, context)
 
         mock_post.assert_called_once_with("http://andeddu.bit13.local:10070/taco/minecraft/server/start")
-        cog.messaging.send_embed.assert_called()
-        call_args = cog.messaging.send_embed.call_args
+        cog.message_helper.send_embed.assert_called()
+        call_args = cog.message_helper.send_embed.call_args
         assert "minecraft_control_start_success" in str(call_args)
         tracking_db.track_command_usage.assert_called_once()
 
@@ -737,8 +728,8 @@ class TestMinecraftCogStartCommand:
 
         await cog.start_server.callback(cog, context)
 
-        cog.messaging.send_embed.assert_called()
-        call_args = cog.messaging.send_embed.call_args
+        cog.message_helper.send_embed.assert_called()
+        call_args = cog.message_helper.send_embed.call_args
         assert "minecraft_control_start_failure_code" in str(call_args)
 
     @pytest.mark.asyncio
@@ -761,8 +752,8 @@ class TestMinecraftCogStartCommand:
 
         await cog.start_server.callback(cog, context)
 
-        cog.messaging.send_embed.assert_called()
-        call_args = cog.messaging.send_embed.call_args
+        cog.message_helper.send_embed.assert_called()
+        call_args = cog.message_helper.send_embed.call_args
         assert "minecraft_control_failure" in str(call_args)
 
 
@@ -782,8 +773,8 @@ class TestMinecraftCogStopCommand:
 
         await cog.stop_server.callback(cog, context)
 
-        cog.messaging.send_embed.assert_called_once()
-        call_args = cog.messaging.send_embed.call_args
+        cog.message_helper.send_embed.assert_called_once()
+        call_args = cog.message_helper.send_embed.call_args
         assert "minecraft_control_stopped" in str(call_args)
 
     @pytest.mark.asyncio
@@ -806,8 +797,8 @@ class TestMinecraftCogStopCommand:
         await cog.stop_server.callback(cog, context)
 
         mock_post.assert_called_once_with("http://andeddu.bit13.local:10070/taco/minecraft/server/stop")
-        cog.messaging.send_embed.assert_called()
-        call_args = cog.messaging.send_embed.call_args
+        cog.message_helper.send_embed.assert_called()
+        call_args = cog.message_helper.send_embed.call_args
         assert "minecraft_control_stop_success" in str(call_args)
         tracking_db.track_command_usage.assert_called_once()
 
@@ -821,8 +812,8 @@ class TestMinecraftCogWhitelistCommand:
 
         await cog.whitelist.callback(cog, context)
 
-        cog.messaging.send_embed.assert_called_once()
-        call_args = cog.messaging.send_embed.call_args
+        cog.message_helper.send_embed.assert_called_once()
+        call_args = cog.message_helper.send_embed.call_args
         assert "minecraft_whitelist_already_whitelisted_message" in str(call_args)
 
     @pytest.mark.asyncio
@@ -895,8 +886,8 @@ class TestMinecraftCogWhitelistCommand:
 
         await cog.whitelist.callback(cog, context)
 
-        cog.messaging.send_embed.assert_called()
-        call_args = cog.messaging.send_embed.call_args
+        cog.message_helper.send_embed.assert_called()
+        call_args = cog.message_helper.send_embed.call_args
         assert "minecraft_whitelist_unable_to_verify" in str(call_args)
         minecraft_db.whitelist_minecraft_user.assert_not_called()
 
@@ -918,8 +909,8 @@ class TestMinecraftCogWhitelistCommand:
         await cog.whitelist.callback(cog, context)
 
         cog.log.warn.assert_called()
-        cog.messaging.send_embed.assert_called()
-        call_args = cog.messaging.send_embed.call_args
+        cog.message_helper.send_embed.assert_called()
+        call_args = cog.message_helper.send_embed.call_args
         assert "minecraft_whitelist_unable_to_verify" in str(call_args)
 
     @pytest.mark.asyncio
@@ -949,7 +940,7 @@ class TestMinecraftCogMainCommand:
         await cog.minecraft.callback(cog, context)
 
         # Should return early without calling status
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_minecraft_command_without_subcommand(self, cog, context, entity_helper, minecraft_db):
@@ -962,14 +953,14 @@ class TestMinecraftCogMainCommand:
         cog.log.debug.assert_called()
 
     @pytest.mark.asyncio
-    async def test_minecraft_command_exception(self, cog, context, messaging):
+    async def test_minecraft_command_exception(self, cog, context, message_helper):
         context.invoked_subcommand = None
         cog.get_cog_settings.side_effect = Exception("Settings error")
 
         await cog.minecraft.callback(cog, context)
 
         cog.log.error.assert_called_once()
-        messaging.notify_of_error.assert_called_once_with(context)
+        message_helper.notify_of_error.assert_called_once_with(context)
 
 
 class TestMinecraftCogWhitelistCallback:
@@ -1022,7 +1013,7 @@ class TestMinecraftCogWhitelistCallback:
         await captured_callback(True)  # type: ignore
 
         # Verify whitelist was updated (the callback should call it)
-        cog.messaging.send_embed.assert_called()
+        cog.message_helper.send_embed.assert_called()
 
     @pytest.mark.asyncio
     @patch('bot.cogs.minecraft.requests.get')
@@ -1071,7 +1062,7 @@ class TestMinecraftCogWhitelistCallback:
         await captured_callback(False)  # type: ignore
 
         # Verify run again message was sent
-        call_args = cog.messaging.send_embed.call_args
+        call_args = cog.message_helper.send_embed.call_args
         assert "minecraft_whitelist_run_again" in str(call_args)
 
 
@@ -1097,8 +1088,8 @@ class TestMinecraftCogStopCommandErrors:
 
         await cog.stop_server.callback(cog, context)
 
-        cog.messaging.send_embed.assert_called()
-        call_args = cog.messaging.send_embed.call_args
+        cog.message_helper.send_embed.assert_called()
+        call_args = cog.message_helper.send_embed.call_args
         assert "minecraft_control_start_failure_code" in str(call_args)
 
     @pytest.mark.asyncio
@@ -1122,59 +1113,59 @@ class TestMinecraftCogStopCommandErrors:
         await cog.stop_server.callback(cog, context)
 
         cog.log.error.assert_called()
-        cog.messaging.send_embed.assert_called()
-        call_args = cog.messaging.send_embed.call_args
+        cog.message_helper.send_embed.assert_called()
+        call_args = cog.message_helper.send_embed.call_args
         assert "minecraft_control_failure" in str(call_args)
 
     @pytest.mark.asyncio
-    async def test_stop_server_exception(self, cog, context, messaging):
+    async def test_stop_server_exception(self, cog, context, message_helper):
         """Test stop server handles exceptions gracefully."""
         cog.get_cog_settings.side_effect = Exception("Settings error")
 
         await cog.stop_server.callback(cog, context)
 
         cog.log.error.assert_called_once()
-        messaging.notify_of_error.assert_called_once_with(context)
+        message_helper.notify_of_error.assert_called_once_with(context)
 
 
 class TestMinecraftCogStartCommandExceptions:
     """Additional tests for start command exception handling."""
 
     @pytest.mark.asyncio
-    async def test_start_server_exception(self, cog, context, messaging):
+    async def test_start_server_exception(self, cog, context, message_helper):
         """Test start server handles exceptions gracefully."""
         cog.get_cog_settings.side_effect = Exception("Settings error")
 
         await cog.start_server.callback(cog, context)
 
         cog.log.error.assert_called_once()
-        messaging.notify_of_error.assert_called_once_with(context)
+        message_helper.notify_of_error.assert_called_once_with(context)
 
 
 class TestMinecraftCogWhitelistExceptions:
     """Additional tests for whitelist command exception handling."""
 
     @pytest.mark.asyncio
-    async def test_whitelist_exception(self, cog, context, messaging):
+    async def test_whitelist_exception(self, cog, context, message_helper):
         """Test whitelist handles exceptions gracefully."""
         cog._is_user_whitelisted = MagicMock(side_effect=Exception("Database error"))
 
         await cog.whitelist.callback(cog, context)
 
         cog.log.error.assert_called_once()
-        messaging.notify_of_error.assert_called_once_with(context)
+        message_helper.notify_of_error.assert_called_once_with(context)
 
 
 class TestMinecraftCogSetup:
     """Tests for the setup function."""
 
     @pytest.mark.asyncio
-    async def test_setup(self, bot, settings, minecraft_db, tracking_db, messaging, entity_helper):
+    async def test_setup(self, bot, settings, minecraft_db, tracking_db, message_helper, entity_helper):
         """Test cog setup function."""
         with patch("bot.cogs.minecraft.Settings", return_value=settings):
             with patch("bot.cogs.minecraft.MinecraftDatabase", return_value=minecraft_db):
                 with patch("bot.cogs.minecraft.TrackingDatabase", return_value=tracking_db):
-                    with patch("bot.cogs.minecraft.Messaging", return_value=messaging):
+                    with patch("bot.cogs.minecraft.MessageHelper", return_value=message_helper):
                         with patch("bot.cogs.minecraft.EntityHelper", return_value=entity_helper):
                             with patch("bot.cogs.minecraft.ContextHelper"):
                                 with patch("bot.cogs.minecraft.PromptHelper"):

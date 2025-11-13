@@ -12,13 +12,13 @@ from discord.ext.commands import Context, Greedy
 
 
 class CommandSyncCog(TacobotCog):
-    def __init__(self, bot: tacobot.TacoBot, messaging: MessageHelper, settings: Settings) -> None:
+    def __init__(self, bot: tacobot.TacoBot, message_helper: MessageHelper, settings: Settings) -> None:
         super().__init__(bot, "command_sync", settings=settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
-        self.messaging = messaging
+        self.message_helper = message_helper
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -43,7 +43,7 @@ class CommandSyncCog(TacobotCog):
                     synced = await self.bot.tree.sync(guild=ctx.guild)
                 elif spec == "*":
                     if guild_id == 0:
-                        await self.messaging.send_embed(
+                        await self.message_helper.send_embed(
                             channel=ctx.channel,
                             title="Command Sync",
                             message="No guild id identified, cannot sync globally.",
@@ -59,7 +59,7 @@ class CommandSyncCog(TacobotCog):
                 else:
                     synced = await self.bot.tree.sync()
 
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=ctx.channel,
                     title="Command Sync",
                     message=f"Synced {len(synced)} commands {'globally' if spec is None else 'to the current guild.'}",
@@ -78,7 +78,7 @@ class CommandSyncCog(TacobotCog):
                     pass
                 else:
                     ret += 1
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=ctx.channel,
                     title="Command Sync",
                     message=f"Synced the tree to {ret}/{len(guilds)}",
@@ -86,10 +86,10 @@ class CommandSyncCog(TacobotCog):
                 )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"Exception: {e}")
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
 
 async def setup(bot):
     settings = Settings()
-    messaging = MessageHelper(bot, settings)
-    await bot.add_cog(CommandSyncCog(bot=bot, messaging=messaging, settings=settings))
+    message_helper = MessageHelper(bot, settings)
+    await bot.add_cog(CommandSyncCog(bot=bot, message_helper=message_helper, settings=settings))

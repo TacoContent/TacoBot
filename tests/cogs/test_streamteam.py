@@ -8,7 +8,7 @@ from bot.cogs.streamteam import StreamTeamCog
 
 
 @pytest.fixture
-def cog(bot, messaging, entity_helper, message_helper, twitch_db, tracking_db, settings):
+def cog(bot, entity_helper, message_helper, twitch_db, tracking_db, settings):
     """Create StreamTeamCog instance with all dependencies injected."""
     # Configure settings for streamteam cog
     settings.log_level = "DEBUG"  # Set valid log level for TacobotCog initialization
@@ -17,7 +17,7 @@ def cog(bot, messaging, entity_helper, message_helper, twitch_db, tracking_db, s
     )
     settings.get_string = MagicMock(return_value="msg")
 
-    return StreamTeamCog(bot, messaging, entity_helper, message_helper, twitch_db, tracking_db, settings)
+    return StreamTeamCog(bot, entity_helper, message_helper, twitch_db, tracking_db, settings)
 
 
 @pytest.mark.asyncio
@@ -60,7 +60,7 @@ async def test_on_raw_reaction_remove_user_bot_or_system(cog):
 
 
 @pytest.mark.asyncio
-async def test_on_raw_reaction_remove_success(cog, entity_helper, twitch_db, messaging, tracking_db, settings):
+async def test_on_raw_reaction_remove_success(cog, entity_helper, twitch_db, message_helper, tracking_db, settings):
     payload = MagicMock()
     payload.guild_id = 123
     payload.event_type = "REACTION_REMOVE"
@@ -87,7 +87,6 @@ async def test_on_raw_reaction_remove_success(cog, entity_helper, twitch_db, mes
     entity_helper.get_or_fetch_user = AsyncMock(return_value=user)
     twitch_db.get_user_twitch_info = MagicMock(return_value={"twitch_name": "testuser"})
     twitch_db.remove_stream_team_request = MagicMock()
-    messaging.send_embed = AsyncMock()
     tracking_db.track_command_usage = MagicMock()
 
     # Configure settings to return proper streamteam configuration
@@ -99,7 +98,7 @@ async def test_on_raw_reaction_remove_success(cog, entity_helper, twitch_db, mes
     await cog.on_raw_reaction_remove(payload)
 
     twitch_db.remove_stream_team_request.assert_called_once_with(123, 42)
-    messaging.send_embed.assert_called_once()
+    message_helper.send_embed.assert_called_once()
     tracking_db.track_command_usage.assert_called_once()
 
 
@@ -142,7 +141,7 @@ async def test_on_raw_reaction_add_user_bot_or_system(cog):
 
 
 @pytest.mark.asyncio
-async def test_on_raw_reaction_add_success(cog, entity_helper, twitch_db, messaging, tracking_db, settings):
+async def test_on_raw_reaction_add_success(cog, entity_helper, twitch_db, message_helper, tracking_db, settings):
     payload = MagicMock()
     payload.guild_id = 123
     payload.event_type = "REACTION_ADD"
@@ -169,7 +168,7 @@ async def test_on_raw_reaction_add_success(cog, entity_helper, twitch_db, messag
     entity_helper.get_or_fetch_user = AsyncMock(return_value=user)
     twitch_db.get_user_twitch_info = MagicMock(return_value={"twitch_name": "testuser"})
     twitch_db.add_stream_team_request = MagicMock()
-    messaging.send_embed = AsyncMock()
+
     tracking_db.track_command_usage = MagicMock()
 
     # Configure cog settings
@@ -181,7 +180,7 @@ async def test_on_raw_reaction_add_success(cog, entity_helper, twitch_db, messag
     await cog.on_raw_reaction_add(payload)
 
     twitch_db.add_stream_team_request.assert_called_once()
-    messaging.send_embed.assert_called_once()
+    message_helper.send_embed.assert_called_once()
     tracking_db.track_command_usage.assert_called_once()
 
 
@@ -320,7 +319,6 @@ async def test_setup():
 
     bot = MagicMock()
     bot.add_cog = AsyncMock()
-    bot.messaging = MagicMock()
     bot.entity_helper = MagicMock()
     bot.message_helper = MagicMock()
     bot.tracking_db = MagicMock()

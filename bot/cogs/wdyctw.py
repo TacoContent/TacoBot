@@ -20,7 +20,7 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
     def __init__(
         self,
         bot: TacoBot,
-        messaging: MessageHelper,
+        message_helper: MessageHelper,
         permissions: Permissions,
         prompt_helper: PromptHelper,
         context_helper: ContextHelper,
@@ -36,7 +36,7 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = messaging
+        self.message_helper = message_helper
         self.permissions = permissions
         self.SELF_DESTRUCT_TIMEOUT = 30
 
@@ -127,7 +127,7 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
             out_message = self.settings.get_string(
                 guild_id, "wdyctw_out_message", taco_count=amount, taco_word=taco_word
             )
-            wdyctw_message = await self.messaging.send_embed(
+            wdyctw_message = await self.message_helper.send_embed(
                 channel=out_channel,
                 title=self.settings.get_string(guild_id, "wdyctw_out_title"),
                 message=out_message,
@@ -160,7 +160,7 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
             )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     @wdyctw.command(name="import")
     @commands.has_permissions(administrator=True)
@@ -201,7 +201,7 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     @wdyctw.command(name="give")
     @commands.has_permissions(administrator=True)
@@ -225,7 +225,7 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     async def _on_raw_reaction_add_give(self, payload) -> None:
         _method = inspect.stack()[0][3]
@@ -494,7 +494,7 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
 
             reason_msg = self.settings.get_string(guild_id, "wdyctw_reason_default")
 
-            await self.messaging.send_embed(
+            await self.message_helper.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_give_title"),
                 # 	"taco_gift_success": "{{user}}, You gave {touser} {amount} {taco_word} 🌮.\n\n{{reason}}",
@@ -517,14 +517,14 @@ class WhatDoYouCallThisWednesdayCog(TacobotCog):
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
 
 async def setup(bot):
     settings = Settings()
-    messaging = MessageHelper(bot, settings=settings)
+    message_helper = MessageHelper(bot, settings=settings)
     permissions = Permissions(bot)
-    prompt_helper = PromptHelper(bot, settings, messaging)
+    prompt_helper = PromptHelper(bot, settings, message_helper)
     context_helper = ContextHelper()
     entity_helper = EntityHelper(bot)
     taco_helper = TacoHelper(bot, entity_helper=entity_helper)
@@ -533,7 +533,7 @@ async def setup(bot):
     await bot.add_cog(
         WhatDoYouCallThisWednesdayCog(
             bot=bot,
-            messaging=messaging,
+            message_helper=message_helper,
             permissions=permissions,
             prompt_helper=prompt_helper,
             context_helper=context_helper,

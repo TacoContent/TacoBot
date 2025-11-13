@@ -13,7 +13,7 @@ def wdyctw_db():
 @pytest.fixture
 def cog(
     bot,
-    messaging,
+    message_helper,
     permissions,
     prompt_helper,
     context_helper,
@@ -26,7 +26,7 @@ def cog(
     """Create a WhatDoYouCallThisWednesdayCog instance with all required fixtures."""
     return WhatDoYouCallThisWednesdayCog(
         bot=bot,
-        messaging=messaging,
+        message_helper=message_helper,
         permissions=permissions,
         prompt_helper=prompt_helper,
         context_helper=context_helper,

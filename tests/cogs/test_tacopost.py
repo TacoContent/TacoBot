@@ -5,13 +5,12 @@ from bot.cogs.tacopost import TacoPostCog
 
 
 @pytest.fixture
-def cog(bot, tacos_db, settings, messaging, message_helper, prompt_helper):
+def cog(bot, tacos_db, settings, message_helper, prompt_helper):
     """Create TacoPostCog with injected dependencies from conftest.py."""
     c = TacoPostCog(
         bot=bot,
         tacos_db=tacos_db,
-        messaging=messaging,
-        messaging_helper=message_helper,
+        message_helper=message_helper,
         prompt_helper=prompt_helper,
         settings=settings,
     )
@@ -25,7 +24,7 @@ async def test_on_message_dm_ignored(cog):
     message.guild = None
     await cog.on_message(message)
     # Should do nothing
-    cog.messaging.send_embed.assert_not_called()
+    cog.message_helper.send_embed.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -34,7 +33,7 @@ async def test_on_message_bot_ignored(cog):
     message.guild = MagicMock(id=1)
     message.author.bot = True
     await cog.on_message(message)
-    cog.messaging.send_embed.assert_not_called()
+    cog.message_helper.send_embed.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -55,7 +54,7 @@ async def test_on_message_channel_not_in_channels_ignored(cog):
     message.channel.id = 999
     cog.settings.get_settings.return_value = {'channels': [{'id': '123', 'cost': 3, 'exempt': []}]}
     await cog.on_message(message)
-    cog.messaging.send_embed.assert_not_called()
+    cog.message_helper.send_embed.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -68,7 +67,7 @@ async def test_on_message_user_exempt_ignored(cog):
     message.author.roles = []
     cog.settings.get_settings.return_value = {'channels': [{'id': '123', 'cost': 3, 'exempt': ['42']}]}  # user exempt
     await cog.on_message(message)
-    cog.messaging.send_embed.assert_not_called()
+    cog.message_helper.send_embed.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -83,7 +82,7 @@ async def test_on_message_role_exempt_ignored(cog):
     message.author.roles = [role]
     cog.settings.get_settings.return_value = {'channels': [{'id': '123', 'cost': 3, 'exempt': ['77']}]}  # role exempt
     await cog.on_message(message)
-    cog.messaging.send_embed.assert_not_called()
+    cog.message_helper.send_embed.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -95,7 +94,7 @@ async def test_on_message_command_prefix_ignored(cog):
     message.content = ".taco help"
     cog.bot.get_prefix = AsyncMock(return_value=[".taco "])
     await cog.on_message(message)
-    cog.messaging.send_embed.assert_not_called()
+    cog.message_helper.send_embed.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -113,7 +112,7 @@ async def test_on_message_not_enough_tacos_sends_embed_and_deletes(cog, tacos_db
     cog.settings.get_settings.return_value = {'channels': [{'id': '123', 'cost': 10, 'exempt': []}]}
     tacos_db.get_tacos_count.return_value = 5  # not enough
     await cog.on_message(message)
-    cog.messaging.send_embed.assert_awaited_once()
+    cog.message_helper.send_embed.assert_awaited_once()
     message.delete.assert_awaited_once()
 
 

@@ -18,15 +18,6 @@ from bot.lib.enums import tacotypes
 
 
 @pytest.fixture
-def introductions_db():
-    """Function-scoped mock introductions database."""
-    db = MagicMock()
-    db.get_user_introduction = MagicMock(return_value=None)
-    db.get_user_introductions = MagicMock(return_value=[])
-    return db
-
-
-@pytest.fixture
 def mock_guild():
     """Create a mock Discord guild."""
     guild = MagicMock(spec=discord.Guild)
@@ -92,11 +83,11 @@ def mock_context(mock_guild, mock_member, mock_channel):
 
 
 @pytest.fixture
-def cog(bot, settings, messaging, introductions_db, tracking_db, taco_helper, entity_helper):
+def cog(bot, settings, message_helper, introductions_db, tracking_db, taco_helper, entity_helper):
     """Create IntroductionCog with injected dependencies."""
     c = IntroductionCog(
         bot=bot,
-        messaging=messaging,
+        message_helper=message_helper,
         entity_helper=entity_helper,
         taco_helper=taco_helper,
         introductions_db=introductions_db,
@@ -111,17 +102,17 @@ class TestIntroductionCogInitialization:
 
     def test_cog_initializes(self, cog):
         """Test that cog initializes with correct attributes."""
-        assert cog.messaging is not None
+        assert cog.message_helper is not None
         assert cog.entity_helper is not None
         assert cog.taco_helper is not None
         assert cog.introductions_db is not None
         assert cog.tracking_db is not None
 
     @pytest.mark.asyncio
-    async def test_setup(self, bot, settings, messaging, entity_helper, taco_helper, introductions_db, tracking_db):
+    async def test_setup(self, bot, settings, message_helper, entity_helper, taco_helper, introductions_db, tracking_db):
         """Test cog setup function."""
         with patch("bot.cogs.introduction.Settings", return_value=settings):
-            with patch("bot.cogs.introduction.Messaging", return_value=messaging):
+            with patch("bot.cogs.introduction.MessageHelper", return_value=message_helper):
                 with patch("bot.cogs.introduction.EntityHelper", return_value=entity_helper):
                     with patch("bot.cogs.introduction.TacoHelper", return_value=taco_helper):
                         with patch("bot.cogs.introduction.IntroductionsDatabase", return_value=introductions_db):
@@ -164,7 +155,7 @@ class TestIntroductionImportCommand:
         await cog.introduction_import.callback(cog, mock_context)
 
         mock_context.message.delete.assert_called_once()
-        cog.messaging.notify_of_error.assert_called_once_with(mock_context)
+        cog.message_helper.notify_of_error.assert_called_once_with(mock_context)
 
     @pytest.mark.asyncio
     async def test_introduction_import_no_channels(self, cog, mock_context, settings):
@@ -174,8 +165,8 @@ class TestIntroductionImportCommand:
         await cog.introduction_import.callback(cog, mock_context)
 
         mock_context.message.delete.assert_called_once()
-        cog.messaging.send_embed.assert_called_once()
-        call_kwargs = cog.messaging.send_embed.call_args[1]
+        cog.message_helper.send_embed.assert_called_once()
+        call_kwargs = cog.message_helper.send_embed.call_args[1]
         assert call_kwargs["title"] == "Import Complete"
         assert "0 introductions" in call_kwargs["message"]
 
@@ -188,7 +179,7 @@ class TestIntroductionImportCommand:
         await cog.introduction_import.callback(cog, mock_context)
 
         mock_context.message.delete.assert_called_once()
-        cog.messaging.notify_of_error.assert_called_once_with(mock_context)
+        cog.message_helper.notify_of_error.assert_called_once_with(mock_context)
 
     @pytest.mark.asyncio
     async def test_introduction_import_invalid_channel_type(self, cog, mock_context, settings, entity_helper):
@@ -200,7 +191,7 @@ class TestIntroductionImportCommand:
         await cog.introduction_import.callback(cog, mock_context)
 
         mock_context.message.delete.assert_called_once()
-        cog.messaging.notify_of_error.assert_called_once_with(mock_context)
+        cog.message_helper.notify_of_error.assert_called_once_with(mock_context)
 
     @pytest.mark.asyncio
     async def test_introduction_import_success_no_messages(
@@ -221,8 +212,8 @@ class TestIntroductionImportCommand:
         await cog.introduction_import.callback(cog, mock_context)
 
         mock_context.message.delete.assert_called_once()
-        cog.messaging.send_embed.assert_called_once()
-        call_kwargs = cog.messaging.send_embed.call_args[1]
+        cog.message_helper.send_embed.assert_called_once()
+        call_kwargs = cog.message_helper.send_embed.call_args[1]
         assert call_kwargs["title"] == "Import Complete"
         assert "0 introductions" in call_kwargs["message"]
 
@@ -249,8 +240,8 @@ class TestIntroductionImportCommand:
         await cog.introduction_import.callback(cog, mock_context)
 
         mock_context.message.delete.assert_called_once()
-        cog.messaging.send_embed.assert_called_once()
-        call_kwargs = cog.messaging.send_embed.call_args[1]
+        cog.message_helper.send_embed.assert_called_once()
+        call_kwargs = cog.message_helper.send_embed.call_args[1]
         assert "0 introductions" in call_kwargs["message"]
 
     @pytest.mark.asyncio
@@ -275,7 +266,7 @@ class TestIntroductionImportCommand:
 
         await cog.introduction_import.callback(cog, mock_context)
 
-        call_kwargs = cog.messaging.send_embed.call_args[1]
+        call_kwargs = cog.message_helper.send_embed.call_args[1]
         assert "0 introductions" in call_kwargs["message"]
 
     @pytest.mark.asyncio
@@ -298,7 +289,7 @@ class TestIntroductionImportCommand:
 
         await cog.introduction_import.callback(cog, mock_context)
 
-        call_kwargs = cog.messaging.send_embed.call_args[1]
+        call_kwargs = cog.message_helper.send_embed.call_args[1]
         assert "0 introductions" in call_kwargs["message"]
 
     @pytest.mark.asyncio
@@ -323,7 +314,7 @@ class TestIntroductionImportCommand:
 
         await cog.introduction_import.callback(cog, mock_context)
 
-        call_kwargs = cog.messaging.send_embed.call_args[1]
+        call_kwargs = cog.message_helper.send_embed.call_args[1]
         assert "0 introductions" in call_kwargs["message"]
 
     @pytest.mark.asyncio
@@ -344,7 +335,7 @@ class TestIntroductionImportCommand:
 
         await cog.introduction_import.callback(cog, mock_context)
 
-        call_kwargs = cog.messaging.send_embed.call_args[1]
+        call_kwargs = cog.message_helper.send_embed.call_args[1]
         assert "0 introductions" in call_kwargs["message"]
 
     @pytest.mark.asyncio
@@ -372,8 +363,8 @@ class TestIntroductionImportCommand:
         assert call_kwargs["give_type"] == tacotypes.TacoTypes.POST_INTRODUCTION
 
         cog.tracking_db.track_user_introduction.assert_called_once()
-        cog.messaging.send_embed.assert_called_once()
-        call_kwargs = cog.messaging.send_embed.call_args[1]
+        cog.message_helper.send_embed.assert_called_once()
+        call_kwargs = cog.message_helper.send_embed.call_args[1]
         assert "1 introduction" in call_kwargs["message"]
 
     @pytest.mark.asyncio
@@ -764,7 +755,7 @@ class TestErrorHandling:
 
         await cog.introduction_import.callback(cog, mock_context)
 
-        cog.messaging.notify_of_error.assert_called_once_with(mock_context)
+        cog.message_helper.notify_of_error.assert_called_once_with(mock_context)
 
     @pytest.mark.asyncio
     async def test_on_message_exception_handling(self, cog, mock_message):

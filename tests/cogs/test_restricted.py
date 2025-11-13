@@ -8,11 +8,11 @@ from bot.cogs.restricted import RestrictedCog
 class TestRestrictedCogInitialization:
     """Tests for RestrictedCog initialization."""
 
-    def test_cog_initialization(self, bot, messaging, settings):
+    def test_cog_initialization(self, bot, message_helper, settings):
         """Test that the cog initializes correctly with all dependencies."""
-        cog = RestrictedCog(bot, messaging, settings)
+        cog = RestrictedCog(bot, message_helper, settings)
         assert cog.bot == bot
-        assert cog.messaging == messaging
+        assert cog.message_helper == message_helper
         assert cog.settings == settings
 
 
@@ -20,9 +20,9 @@ class TestRestrictedCogOnMessage:
     """Tests for RestrictedCog on_message listener."""
 
     @pytest.fixture
-    def cog(self, bot, messaging, settings):
+    def cog(self, bot, message_helper, settings):
         """Create a RestrictedCog instance for testing."""
-        return RestrictedCog(bot, messaging, settings)
+        return RestrictedCog(bot, message_helper, settings)
 
     @pytest.mark.asyncio
     async def test_on_message_no_guild(self, cog):
@@ -138,13 +138,12 @@ class TestRestrictedCogOnMessage:
             return_value={"channels": [{"id": "chan1", "allowed": [r"!allowed"], "denied": [], "silent": True}]}
         )
         cog.settings.get_string = MagicMock(return_value="Default deny message")
-        cog.messaging.send_embed = AsyncMock()
 
         await cog.on_message(message)
 
         # Should delete but not send embed
         message.delete.assert_called_once()
-        cog.messaging.send_embed.assert_not_called()
+        cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_on_message_not_silent_mode_sends_embed(self, cog):
@@ -177,14 +176,13 @@ class TestRestrictedCogOnMessage:
                 "restricted_deny_message": f"User {kwargs.get('user', '')} - {kwargs.get('reason', '')}",
             }[key]
         )
-        cog.messaging.send_embed = AsyncMock()
 
         await cog.on_message(message)
 
         # Should delete and send embed
         message.delete.assert_called_once()
-        cog.messaging.send_embed.assert_called_once()
-        call_args = cog.messaging.send_embed.call_args
+        cog.message_helper.send_embed.assert_called_once()
+        call_args = cog.message_helper.send_embed.call_args
         assert call_args[1]['channel'] == message.channel
         assert call_args[1]['title'] == "Restricted Channel"
         assert call_args[1]['delete_after'] == 20
@@ -222,12 +220,11 @@ class TestRestrictedCogOnMessage:
                 "restricted_deny_message": f"User {kwargs.get('user', '')} - {kwargs.get('reason', '')}",
             }[key]
         )
-        cog.messaging.send_embed = AsyncMock()
 
         await cog.on_message(message)
 
         # Verify custom message is passed through settings.get_string
-        call_args = cog.messaging.send_embed.call_args
+        call_args = cog.message_helper.send_embed.call_args
         # The custom_deny message should appear in the formatted message
         assert call_args is not None
 

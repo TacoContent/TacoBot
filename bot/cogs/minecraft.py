@@ -29,7 +29,7 @@ class MinecraftCog(TacobotCog):
         bot: TacoBot,
         minecraft_db: MinecraftDatabase,
         tracking_db: TrackingDatabase,
-        messaging: MessageHelper,
+        message_helper: MessageHelper,
         entity_helper: EntityHelper,
         context_helper: ContextHelper,
         prompt_helper: PromptHelper,
@@ -48,7 +48,7 @@ class MinecraftCog(TacobotCog):
         self.context_helper = context_helper
         self.prompt_helper = prompt_helper
 
-        self.messaging = messaging
+        self.message_helper = message_helper
         self.SELF_DESTRUCT_TIMEOUT = 30
         self.minecraft_db = minecraft_db
         self.tracking_db = tracking_db
@@ -93,7 +93,7 @@ class MinecraftCog(TacobotCog):
             await self.status(ctx)
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     async def status(self, ctx):
         _method = inspect.stack()[0][3]
@@ -116,7 +116,7 @@ class MinecraftCog(TacobotCog):
             self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"output_channel: {output_channel}")
 
             if not self._is_user_whitelisted(guild_id, ctx.author.id):
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
                     message=self.settings.get_string(guild_id, "minecraft_not_whitelisted"),
@@ -128,7 +128,7 @@ class MinecraftCog(TacobotCog):
 
             fields = self._build_status_fields(guild_id, status, cog_settings)
 
-            await self.messaging.send_embed(
+            await self.message_helper.send_embed(
                 channel=output_channel,
                 title=self.settings.get_string(guild_id, "minecraft_status_server_status"),
                 message=self.settings.get_string(
@@ -149,7 +149,7 @@ class MinecraftCog(TacobotCog):
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     @minecraft.command(name="start")
     @commands.guild_only()
@@ -167,7 +167,7 @@ class MinecraftCog(TacobotCog):
             output_channel, AUTO_DELETE_TIMEOUT = await self._determine_output_channel(ctx, cog_settings)
 
             if not self._is_user_whitelisted(guild_id=guild_id, user_id=ctx.author.id):
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
                     message=self.settings.get_string(guild_id, "minecraft_control_no_start"),
@@ -178,7 +178,7 @@ class MinecraftCog(TacobotCog):
             status = self._get_minecraft_status(guild_id)
 
             if status['online']:
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
                     message=self.settings.get_string(guild_id, "minecraft_control_running"),
@@ -193,7 +193,7 @@ class MinecraftCog(TacobotCog):
             # send message to start the server
             resp = self._call_minecraft_start_api()
             if resp.status_code != 200:
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
                     message=self.settings.get_string(
@@ -209,7 +209,7 @@ class MinecraftCog(TacobotCog):
                     f"{self._module}.{self._class}.{_method}",
                     f"Failed to start the server: {data['message']}",
                 )
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
                     message=self.settings.get_string(
@@ -220,7 +220,7 @@ class MinecraftCog(TacobotCog):
                 return
 
             # notify the user that the server was started, and it will take a few minutes for it to be ready
-            await self.messaging.send_embed(
+            await self.message_helper.send_embed(
                 channel=output_channel,
                 title=self.settings.get_string(guild_id, "minecraft_control_title"),
                 message=self.settings.get_string(guild_id, "minecraft_control_start_success"),
@@ -238,7 +238,7 @@ class MinecraftCog(TacobotCog):
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     @minecraft.command(name="stop")
     @commands.has_permissions(administrator=True)
@@ -259,7 +259,7 @@ class MinecraftCog(TacobotCog):
             status = self._get_minecraft_status(guild_id)
 
             if not status['online']:
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
                     message=self.settings.get_string(guild_id, "minecraft_control_stopped"),
@@ -274,7 +274,7 @@ class MinecraftCog(TacobotCog):
             # send message to stop the server
             resp = self._call_minecraft_stop_api()
             if resp.status_code != 200:
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
                     message=self.settings.get_string(
@@ -288,7 +288,7 @@ class MinecraftCog(TacobotCog):
                 self.log.error(
                     guild_id, f"{self._module}.{self._class}.{_method}", f"Failed to stop the server: {data['message']}"
                 )
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
                     message=self.settings.get_string(
@@ -299,7 +299,7 @@ class MinecraftCog(TacobotCog):
                 return
 
             # notify the user that the server was started, and it will take a few minutes for it to be ready
-            await self.messaging.send_embed(
+            await self.message_helper.send_embed(
                 channel=output_channel,
                 title=self.settings.get_string(guild_id, "minecraft_control_title"),
                 message=self.settings.get_string(guild_id, "minecraft_control_stop_success"),
@@ -317,7 +317,7 @@ class MinecraftCog(TacobotCog):
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     @minecraft.command()
     @commands.guild_only()
@@ -330,7 +330,7 @@ class MinecraftCog(TacobotCog):
                 guild_id = ctx.guild.id
 
             if self._is_user_whitelisted(guild_id=guild_id, user_id=ctx.author.id):
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=ctx.channel,
                     title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
                     message=self.settings.get_string(guild_id, "minecraft_whitelist_already_whitelisted_message"),
@@ -398,7 +398,7 @@ class MinecraftCog(TacobotCog):
                     f"{self._module}.{self._class}.{_method}",
                     f"Failed to find player {mc_username}. (status_code: {result.status_code}) {result.text})",
                 )
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=_ctx.channel,
                     title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
                     message=self.settings.get_string(
@@ -418,7 +418,7 @@ class MinecraftCog(TacobotCog):
                 self.log.warn(
                     guild_id, f"{self._module}.{self._class}.{_method}", f"Failed to find player {mc_username}"
                 )
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=_ctx.channel,
                     title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
                     message=self.settings.get_string(
@@ -439,7 +439,7 @@ class MinecraftCog(TacobotCog):
 
             async def yes_no_callback(response: bool):
                 if not response:
-                    await self.messaging.send_embed(
+                    await self.message_helper.send_embed(
                         channel=_ctx.channel,
                         title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
                         message=self.settings.get_string(guild_id, "minecraft_whitelist_run_again"),
@@ -453,7 +453,7 @@ class MinecraftCog(TacobotCog):
                     self.minecraft_db.whitelist_minecraft_user(
                         guildId=guild_id, userId=ctx.author.id, username=mc_username, uuid=mc_uuid, whitelist=True
                     )
-                    await self.messaging.send_embed(
+                    await self.message_helper.send_embed(
                         channel=_ctx.channel,
                         title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
                         message=self.settings.get_string(
@@ -486,7 +486,7 @@ class MinecraftCog(TacobotCog):
             self.minecraft_db.whitelist_minecraft_user(
                 guildId=guild_id, userId=ctx.author.id, username=mc_username, uuid=mc_uuid, whitelist=True
             )
-            await self.messaging.send_embed(
+            await self.message_helper.send_embed(
                 channel=_ctx.channel,
                 title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
                 message=self.settings.get_string(
@@ -507,7 +507,7 @@ class MinecraftCog(TacobotCog):
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     def _clean_username(self, username: str) -> str:
         return username.strip().lower()
@@ -713,17 +713,17 @@ async def setup(bot):
     settings = Settings()
     minecraft_db = MinecraftDatabase()
     tracking_db = TrackingDatabase()
-    messaging = MessageHelper(bot, settings)
+    message_helper = MessageHelper(bot, settings)
     entity_helper = EntityHelper(bot)
     context_helper = ContextHelper()
-    prompt_helper = PromptHelper(bot, settings, messaging)
+    prompt_helper = PromptHelper(bot, settings, message_helper)
     await bot.add_cog(
         MinecraftCog(
             bot=bot,
             settings=settings,
             minecraft_db=minecraft_db,
             tracking_db=tracking_db,
-            messaging=messaging,
+            message_helper=message_helper,
             entity_helper=entity_helper,
             context_helper=context_helper,
             prompt_helper=prompt_helper,

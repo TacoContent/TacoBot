@@ -17,7 +17,7 @@ class IntroductionCog(TacobotCog):
     def __init__(
         self,
         bot: TacoBot,
-        messaging: MessageHelper,
+        message_helper: MessageHelper,
         entity_helper: EntityHelper,
         taco_helper: TacoHelper,
         introductions_db: IntroductionsDatabase,
@@ -30,7 +30,7 @@ class IntroductionCog(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = messaging
+        self.message_helper = message_helper
         self.entity_helper = entity_helper
         self.taco_helper = taco_helper
 
@@ -139,7 +139,7 @@ class IntroductionCog(TacobotCog):
                 guildId=guild_id, name=self.SETTINGS_SECTION, key="was_imported", value=True
             )
 
-            await self.messaging.send_embed(
+            await self.message_helper.send_embed(
                 channel=ctx.channel,
                 title="Import Complete",
                 message=f"Successfully imported {len(tracked_users)} introductions from {len(channels)} channels",
@@ -149,7 +149,7 @@ class IntroductionCog(TacobotCog):
 
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     @commands.Cog.listener()
     @commands.guild_only()
@@ -290,7 +290,7 @@ class IntroductionCog(TacobotCog):
 
 async def setup(bot):
     settings = Settings()
-    messaging = MessageHelper(bot, settings)
+    message_helper = MessageHelper(bot, settings)
     entity_helper = EntityHelper(bot)
     taco_helper = TacoHelper(bot, entity_helper=entity_helper)
     introductions_db = IntroductionsDatabase()
@@ -298,7 +298,7 @@ async def setup(bot):
     await bot.add_cog(
         IntroductionCog(
             bot=bot,
-            messaging=messaging,
+            message_helper=message_helper,
             entity_helper=entity_helper,
             taco_helper=taco_helper,
             introductions_db=introductions_db,

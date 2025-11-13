@@ -80,7 +80,7 @@ def mock_context(mock_guild, mock_user, mock_channel):
 def cog(
     bot,
     settings,
-    messaging,
+    message_helper,
     birthdays_db,
     tracking_db,
     taco_helper,
@@ -92,7 +92,7 @@ def cog(
     """Create Birthday cog with injected dependencies."""
     c = Birthday(
         bot=bot,
-        messaging=messaging,
+        message_helper=message_helper,
         birthdays_db=birthdays_db,
         tracking_db=tracking_db,
         taco_helper=taco_helper,
@@ -181,7 +181,7 @@ async def test_birthday_add_app_error_handling(cog, mock_interaction, birthdays_
 
 @pytest.mark.asyncio
 async def test_birthday_command_success(
-    cog, mock_context, birthdays_db, taco_helper, messaging, prompt_helper, settings, tracking_db, context_helper
+    cog, mock_context, birthdays_db, taco_helper, message_helper, prompt_helper, settings, tracking_db, context_helper
 ):
     """Test successful birthday setting via prefix command."""
     # Arrange
@@ -199,7 +199,7 @@ async def test_birthday_command_success(
     assert prompt_helper.ask_number.await_count == 2
     birthdays_db.add_user_birthday.assert_called_once_with(mock_context.guild.id, mock_context.author.id, 12, 25)
     taco_helper.give_tacos.assert_awaited_once()
-    messaging.send_embed.assert_awaited_once()
+    message_helper.send_embed.assert_awaited_once()
     tracking_db.track_command_usage.assert_called_once()
 
 
@@ -242,7 +242,7 @@ async def test_birthday_command_no_guild(cog, mock_context, birthdays_db, prompt
 
 
 @pytest.mark.asyncio
-async def test_birthday_command_error_notification(cog, mock_context, messaging, prompt_helper, context_helper):
+async def test_birthday_command_error_notification(cog, mock_context, message_helper, prompt_helper, context_helper):
     """Test error notification in birthday command."""
     # Arrange
     mock_context.invoked_subcommand = None
@@ -253,7 +253,7 @@ async def test_birthday_command_error_notification(cog, mock_context, messaging,
     await cog.birthday.callback(cog, mock_context)
 
     # Assert
-    messaging.notify_of_error.assert_awaited_once_with(mock_context)
+    message_helper.notify_of_error.assert_awaited_once_with(mock_context)
 
 
 # ==============================================================================
@@ -489,7 +489,7 @@ async def test_clear_birthday_role_already_checked(cog, mock_context, birthdays_
 
 
 @pytest.mark.asyncio
-async def test_send_birthday_message_success(cog, mock_context, entity_helper, messaging, settings):
+async def test_send_birthday_message_success(cog, mock_context, entity_helper, message_helper, settings):
     """Test sending birthday message successfully."""
     # Arrange
     birthdays = [{"user_id": "111"}, {"user_id": "222"}]
@@ -514,12 +514,12 @@ async def test_send_birthday_message_success(cog, mock_context, entity_helper, m
     await cog.send_birthday_message(mock_context, birthdays)
 
     # Assert
-    messaging.send_embed.assert_awaited_once()
+    message_helper.send_embed.assert_awaited_once()
     assert entity_helper.get_or_fetch_member.await_count == 2
 
 
 @pytest.mark.asyncio
-async def test_send_birthday_message_no_birthdays(cog, mock_context, messaging):
+async def test_send_birthday_message_no_birthdays(cog, mock_context, message_helper):
     """Test no message sent when no birthdays."""
     # Arrange
     birthdays = []
@@ -529,11 +529,11 @@ async def test_send_birthday_message_no_birthdays(cog, mock_context, messaging):
     await cog.send_birthday_message(mock_context, birthdays)
 
     # Assert
-    messaging.send_embed.assert_not_awaited()
+    message_helper.send_embed.assert_not_awaited()
 
 
 @pytest.mark.asyncio
-async def test_send_birthday_message_disabled(cog, mock_context, messaging):
+async def test_send_birthday_message_disabled(cog, mock_context, message_helper):
     """Test no message when feature is disabled."""
     # Arrange
     birthdays = [{"user_id": "111"}]
@@ -543,11 +543,11 @@ async def test_send_birthday_message_disabled(cog, mock_context, messaging):
     await cog.send_birthday_message(mock_context, birthdays)
 
     # Assert
-    messaging.send_embed.assert_not_awaited()
+    message_helper.send_embed.assert_not_awaited()
 
 
 @pytest.mark.asyncio
-async def test_send_birthday_message_already_checked(cog, mock_context, birthdays_db, messaging):
+async def test_send_birthday_message_already_checked(cog, mock_context, birthdays_db, message_helper):
     """Test no message when already checked today."""
     # Arrange
     birthdays = [{"user_id": "111"}]
@@ -557,11 +557,11 @@ async def test_send_birthday_message_already_checked(cog, mock_context, birthday
     await cog.send_birthday_message(mock_context, birthdays)
 
     # Assert
-    messaging.send_embed.assert_not_awaited()
+    message_helper.send_embed.assert_not_awaited()
 
 
 @pytest.mark.asyncio
-async def test_send_birthday_message_channel_not_found(cog, mock_context, entity_helper, messaging):
+async def test_send_birthday_message_channel_not_found(cog, mock_context, entity_helper, message_helper):
     """Test warning when output channel not found."""
     # Arrange
     birthdays = [{"user_id": "111"}]
@@ -583,7 +583,7 @@ async def test_send_birthday_message_channel_not_found(cog, mock_context, entity
     await cog.send_birthday_message(mock_context, birthdays)
 
     # Assert
-    messaging.send_embed.assert_not_awaited()
+    message_helper.send_embed.assert_not_awaited()
     cog.log.debug.assert_called()
 
 
@@ -756,7 +756,7 @@ async def test_birthday_event_process_race_condition(cog, mock_context, birthday
 
 
 @pytest.mark.asyncio
-async def test_full_birthday_flow(cog, mock_interaction, birthdays_db, taco_helper, messaging, entity_helper):
+async def test_full_birthday_flow(cog, mock_interaction, birthdays_db, taco_helper, message_helper, entity_helper):
     """Test complete birthday flow from setting to announcement."""
     # Arrange - User sets birthday for first time
     month, day = 3, 15

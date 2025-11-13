@@ -15,14 +15,14 @@ from discord.ext import commands
 
 
 class RestrictedCog(TacobotCog):
-    def __init__(self, bot: TacoBot, messaging: MessageHelper, settings: Settings) -> None:
+    def __init__(self, bot: TacoBot, message_helper: MessageHelper, settings: Settings) -> None:
         super().__init__(bot, "restricted", settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = messaging
+        self.message_helper = message_helper
 
         self.log.debug(0, f"{self._module}.{self._class}.{_method}", "Initialized")
 
@@ -83,7 +83,7 @@ class RestrictedCog(TacobotCog):
                 await message.delete()
 
                 if not silent:
-                    await self.messaging.send_embed(
+                    await self.message_helper.send_embed(
                         channel=message.channel,
                         title=self.settings.get_string(guild_id, "restricted"),
                         message=self.settings.get_string(
@@ -100,5 +100,5 @@ class RestrictedCog(TacobotCog):
 
 async def setup(bot):
     settings = Settings()
-    messaging = MessageHelper(bot, settings)
-    await bot.add_cog(RestrictedCog(bot=bot, messaging=messaging, settings=settings))
+    message_helper = MessageHelper(bot, settings)
+    await bot.add_cog(RestrictedCog(bot=bot, message_helper=message_helper, settings=settings))

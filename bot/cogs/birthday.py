@@ -26,7 +26,7 @@ class Birthday(TacobotCog):
     def __init__(
         self,
         bot: TacoBot,
-        messaging: MessageHelper,
+        message_helper: MessageHelper,
         birthdays_db: BirthdaysDatabase,
         tracking_db: TrackingDatabase,
         taco_helper: TacoHelper,
@@ -42,7 +42,7 @@ class Birthday(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = messaging
+        self.message_helper = message_helper
         self.birthdays_db = birthdays_db
         self.tracking_db = tracking_db
         self.tacos_helper = taco_helper
@@ -160,6 +160,8 @@ class Birthday(TacobotCog):
                 )
 
             user_bday_set = self.birthdays_db.get_user_birthday(guild_id, ctx.author.id)
+            if month is None or day is None:
+                return
             self.birthdays_db.add_user_birthday(guild_id, ctx.author.id, month, day)
 
             if not user_bday_set:
@@ -179,7 +181,7 @@ class Birthday(TacobotCog):
                 {"name": self.settings.get_string(guild_id, "month"), "value": str(month), "inline": True},
                 {"name": self.settings.get_string(guild_id, "day"), "value": str(day), "inline": True},
             ]
-            await self.messaging.send_embed(
+            await self.message_helper.send_embed(
                 out_channel,
                 self.settings.get_string(guild_id, "birthday_set_title"),
                 self.settings.get_string(guild_id, "birthday_set_confirm", user=ctx.author.mention),
@@ -197,7 +199,7 @@ class Birthday(TacobotCog):
             )
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     @birthday.command(name="check")
     @commands.guild_only()
@@ -222,7 +224,7 @@ class Birthday(TacobotCog):
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             self.birthdays_db.untrack_birthday_check(guild_id)
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     def was_checked_today(self, guildId: int):
         _method = inspect.stack()[0][3]
@@ -419,7 +421,7 @@ class Birthday(TacobotCog):
                     {"name": self.settings.get_string(guild_id, "month"), "value": month_name, "inline": True},
                     {"name": self.settings.get_string(guild_id, "day"), "value": month_day, "inline": True},
                 ]
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=output_channel,
                     title=self.settings.get_string(guild_id, "birthday_wishes_title"),
                     message=self.settings.get_string(guild_id, "birthday_wishes_message", message=message, users=""),
@@ -519,16 +521,16 @@ async def setup(bot):
     settings = Settings()
     birthday_db = BirthdaysDatabase()
     tracking_db = TrackingDatabase()
-    messaging = MessageHelper(bot, settings)
+    message_helper = MessageHelper(bot, settings)
     entity_helper = EntityHelper(bot)
     taco_helper = TacoHelper(bot, entity_helper=entity_helper)
     context_helper = ContextHelper()
-    prompt_helper = PromptHelper(bot, settings, messaging)
+    prompt_helper = PromptHelper(bot, settings, message_helper)
     role_helper = RoleHelper(bot)
     await bot.add_cog(
         Birthday(
             bot=bot,
-            messaging=messaging,
+            message_helper=message_helper,
             birthdays_db=birthday_db,
             tracking_db=tracking_db,
             taco_helper=taco_helper,

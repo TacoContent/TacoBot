@@ -31,7 +31,7 @@ class StreamTeamCog(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = message_helper
+        self.message_helper = message_helper
         self.entity_helper = entity_helper
 
         self.twitch_db = twitch_db
@@ -68,7 +68,7 @@ class StreamTeamCog(TacobotCog):
                     f"{self._module}.{self._class}.{_method}",
                     f"No streamteam settings found for guild {guild_id}",
                 )
-                await self.messaging.notify_bot_not_initialized(message, "streamteam")
+                await self.message_helper.notify_bot_not_initialized(message, "streamteam")
                 return
 
             # get the reaction emoji
@@ -92,7 +92,7 @@ class StreamTeamCog(TacobotCog):
                     twitch_name = twitch_user['twitch_name']
 
                 if log_channel:
-                    await self.messaging.send_embed(
+                    await self.message_helper.send_embed(
                         channel=log_channel,
                         title=self.settings.get_string(guild_id, "streamteam_removal_tile"),
                         message=self.settings.get_string(
@@ -185,7 +185,7 @@ class StreamTeamCog(TacobotCog):
 
                 if log_channel:
                     twitch_name = unknown if twitch_name is None else twitch_name
-                    await self.messaging.send_embed(
+                    await self.message_helper.send_embed(
                         channel=log_channel,
                         title=self.settings.get_string(guild_id, "streamteam_join_title"),
                         message=self.settings.get_string(
@@ -248,7 +248,7 @@ class StreamTeamCog(TacobotCog):
                     twitchName = twitchInfo['twitch_name']
             if twitchName is None:
                 try:
-                    await self.messaging.send_embed(
+                    await self.message_helper.send_embed(
                         channel=ctx.author,
                         title=self.settings.get_string(guild_id, "error"),
                         message=self.settings.get_string(guild_id, "streamteam_invite_no_twitch_name_message"),
@@ -257,7 +257,7 @@ class StreamTeamCog(TacobotCog):
                     return
                 except discord.Forbidden:
                     # if we cant send to user, then we send to channel
-                    await self.messaging.send_embed(
+                    await self.message_helper.send_embed(
                         channel=ctx.channel,
                         title=self.settings.get_string(guild_id, "error"),
                         message=self.settings.get_string(guild_id, "streamteam_invite_no_twitch_name_message"),
@@ -280,7 +280,7 @@ class StreamTeamCog(TacobotCog):
 
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     @team.command(aliases=["invite-user"])
     @commands.guild_only()
@@ -301,7 +301,7 @@ class StreamTeamCog(TacobotCog):
             )
         except Exception as ex:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     async def _invite_user(self, ctx, user: discord.User, twitchName: typing.Optional[str] = None) -> None:
         _method = inspect.stack()[0][3]
@@ -316,7 +316,7 @@ class StreamTeamCog(TacobotCog):
                     f"{self._module}.{self._class}.{_method}",
                     f"No streamteam settings found for guild {guild_id}",
                 )
-                await self.messaging.notify_bot_not_initialized(ctx, "streamteam")
+                await self.message_helper.notify_bot_not_initialized(ctx, "streamteam")
                 return
             unknown = self.settings.get_string(guild_id, "unknown")
             if twitchName is not None:
@@ -338,7 +338,7 @@ class StreamTeamCog(TacobotCog):
             )
             self.twitch_db.add_stream_team_request(guildId=ctx.guild.id, twitchName=twitchName, userId=user.id)
 
-            await self.messaging.send_embed(
+            await self.message_helper.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "success"),
                 message=self.settings.get_string(
@@ -355,7 +355,7 @@ class StreamTeamCog(TacobotCog):
 
             if log_channel:
                 twitch_name = unknown if twitch_name is None else twitch_name
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=log_channel,
                     title=self.settings.get_string(guild_id, "streamteam_join_title"),
                     message=self.settings.get_string(
@@ -370,7 +370,7 @@ class StreamTeamCog(TacobotCog):
 
         except Exception as ex:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
 
 async def setup(bot):

@@ -5,14 +5,14 @@ from bot.cogs.command_sync import CommandSyncCog
 
 
 @pytest.fixture
-def cog(bot, messaging, settings):
+def cog(bot, message_helper, settings):
     # Setup bot mock
     bot.tree = MagicMock()
     bot.tree.sync = AsyncMock(return_value=[MagicMock()])
     bot.tree.copy_global_to = MagicMock()
     bot.tree.clear_commands = MagicMock()
     # Create CommandSyncCog with injected dependencies
-    c = CommandSyncCog(bot=bot, messaging=messaging, settings=settings)
+    c = CommandSyncCog(bot=bot, message_helper=message_helper, settings=settings)
     c.log = MagicMock()
     return c
 
@@ -40,7 +40,7 @@ async def test_app_command_noop(cog, ctx):
     "spec,expected_global,expected_guild",
     [(None, True, False), ("~", False, True), ("*", False, True), ("^", False, True)],
 )
-async def test_sync_no_guilds_variants(cog, ctx, messaging, spec, expected_global, expected_guild):
+async def test_sync_no_guilds_variants(cog, ctx, message_helper, spec, expected_global, expected_guild):
     # No guilds provided
     ctx.guild.id = 123
     ctx.channel = MagicMock()
@@ -50,7 +50,7 @@ async def test_sync_no_guilds_variants(cog, ctx, messaging, spec, expected_globa
     # Spec ^: clear commands then sync
     await cog.sync.callback(cog, ctx, [], spec)
     ctx.message.delete.assert_awaited_once()
-    messaging.send_embed.assert_awaited()
+    message_helper.send_embed.assert_awaited()
     if spec == "*":
         # The code calls copy_global_to with discord.Object(guild_id)
         call_args = cog.bot.tree.copy_global_to.call_args
@@ -62,25 +62,25 @@ async def test_sync_no_guilds_variants(cog, ctx, messaging, spec, expected_globa
 
 
 @pytest.mark.asyncio
-async def test_sync_no_guild_id_for_star(cog, ctx, messaging):
+async def test_sync_no_guild_id_for_star(cog, ctx, message_helper):
     ctx.guild.id = 0
     await cog.sync.callback(cog, ctx, [], "*")
-    messaging.send_embed.assert_awaited()
+    message_helper.send_embed.assert_awaited()
     cog.bot.tree.copy_global_to.assert_not_called()
 
 
 @pytest.mark.asyncio
-async def test_sync_with_guilds_success(cog, ctx, messaging):
+async def test_sync_with_guilds_success(cog, ctx, message_helper):
     # Provide multiple guilds
     guild1 = MagicMock(id=1)
     guild2 = MagicMock(id=2)
     cog.bot.tree.sync = AsyncMock(return_value=[MagicMock(), MagicMock()])
     await cog.sync.callback(cog, ctx, [guild1, guild2], None)
-    messaging.send_embed.assert_awaited()
+    message_helper.send_embed.assert_awaited()
 
 
 @pytest.mark.asyncio
-async def test_sync_with_guilds_http_exception(cog, ctx, messaging):
+async def test_sync_with_guilds_http_exception(cog, ctx, message_helper):
     # One guild sync fails
     guild1 = MagicMock(id=1)
     guild2 = MagicMock(id=2)
@@ -92,77 +92,76 @@ async def test_sync_with_guilds_http_exception(cog, ctx, messaging):
     cog.bot.tree.sync = AsyncMock(side_effect=sync_side_effect)
     await cog.sync.callback(cog, ctx, [guild1, guild2], None)
     # Both guild syncs fail, but embed is sent for each
-    assert messaging.send_embed.await_count == 2
+    assert message_helper.send_embed.await_count == 2
     cog.log.debug.assert_called()
 
 
 @pytest.mark.asyncio
-async def test_sync_exception_handling(cog, ctx, messaging):
+async def test_sync_exception_handling(cog, ctx, message_helper):
     cog.bot.tree.sync = AsyncMock(side_effect=Exception("fail"))
-    messaging.notify_of_error = AsyncMock()
     await cog.sync.callback(cog, ctx, [], None)
-    messaging.notify_of_error.assert_awaited_once_with(ctx)
+    message_helper.notify_of_error.assert_awaited_once_with(ctx)
     cog.log.error.assert_called()
 
 
 @pytest.mark.asyncio
-async def test_sync_star_spec_with_guild_id(cog, ctx, messaging):
+async def test_sync_star_spec_with_guild_id(cog, ctx, message_helper):
     ctx.guild.id = 123
     cog.bot.tree.copy_global_to = MagicMock()
     cog.bot.tree.sync = AsyncMock(return_value=[MagicMock()])
     await cog.sync.callback(cog, ctx, [], "*")
     cog.bot.tree.copy_global_to.assert_called_once()
-    messaging.send_embed.assert_awaited()
+    message_helper.send_embed.assert_awaited()
 
 
 @pytest.mark.asyncio
-async def test_sync_clears_commands_with_caret(cog, ctx, messaging):
+async def test_sync_clears_commands_with_caret(cog, ctx, message_helper):
     ctx.guild.id = 123
     cog.bot.tree.clear_commands = MagicMock()
     cog.bot.tree.sync = AsyncMock(return_value=[])
     await cog.sync.callback(cog, ctx, [], "^")
     cog.bot.tree.clear_commands.assert_called_once_with(guild=ctx.guild)
-    messaging.send_embed.assert_awaited()
+    message_helper.send_embed.assert_awaited()
 
 
 @pytest.mark.asyncio
-async def test_sync_sends_embed_for_each_guild(cog, ctx, messaging):
+async def test_sync_sends_embed_for_each_guild(cog, ctx, message_helper):
     guild1 = MagicMock(id=1)
     guild2 = MagicMock(id=2)
     cog.bot.tree.sync = AsyncMock(return_value=[MagicMock()])
     await cog.sync.callback(cog, ctx, [guild1, guild2], None)
-    assert messaging.send_embed.await_count == 2
+    assert message_helper.send_embed.await_count == 2
 
 
 @pytest.mark.asyncio
-async def test_sync_handles_no_guilds_and_no_spec(cog, ctx, messaging):
+async def test_sync_handles_no_guilds_and_no_spec(cog, ctx, message_helper):
     cog.bot.tree.sync = AsyncMock(return_value=[MagicMock()])
     await cog.sync.callback(cog, ctx, [], None)
-    messaging.send_embed.assert_awaited()
+    message_helper.send_embed.assert_awaited()
 
 
 @pytest.mark.asyncio
-async def test_sync_handles_spec_tilde(cog, ctx, messaging):
+async def test_sync_handles_spec_tilde(cog, ctx, message_helper):
     cog.bot.tree.sync = AsyncMock(return_value=[MagicMock()])
     await cog.sync.callback(cog, ctx, [], "~")
-    messaging.send_embed.assert_awaited()
+    message_helper.send_embed.assert_awaited()
 
 
 @pytest.mark.asyncio
-async def test_sync_handles_spec_star(cog, ctx, messaging):
+async def test_sync_handles_spec_star(cog, ctx, message_helper):
     ctx.guild.id = 123
     cog.bot.tree.copy_global_to = MagicMock()
     cog.bot.tree.sync = AsyncMock(return_value=[MagicMock()])
     await cog.sync.callback(cog, ctx, [], "*")
     cog.bot.tree.copy_global_to.assert_called_once()
-    messaging.send_embed.assert_awaited()
+    message_helper.send_embed.assert_awaited()
 
 
 @pytest.mark.asyncio
-async def test_sync_handles_spec_caret(cog, ctx, messaging):
+async def test_sync_handles_spec_caret(cog, ctx, message_helper):
     ctx.guild.id = 123
     cog.bot.tree.clear_commands = MagicMock()
     cog.bot.tree.sync = AsyncMock(return_value=[])
     await cog.sync.callback(cog, ctx, [], "^")
     cog.bot.tree.clear_commands.assert_called_once_with(guild=ctx.guild)
-    messaging.send_embed.assert_awaited()
+    message_helper.send_embed.assert_awaited()

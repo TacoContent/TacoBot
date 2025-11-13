@@ -6,15 +6,10 @@ from bot.cogs.giphy import Giphy
 
 
 @pytest.fixture
-def cog(bot, messaging, tracking_db, settings):
-    # Patch messaging to ensure send_embed and notify_of_error are async
-    messaging.send_embed = AsyncMock()
-    messaging.notify_of_error = AsyncMock()
-    # Patch tracking_db to ensure track_command_usage is a MagicMock
-    tracking_db.track_command_usage = MagicMock()
+def cog(bot, message_helper, tracking_db, settings):
     # Patch settings to provide a dummy giphy_api_key
     settings.giphy_api_key = "dummy-key"
-    return Giphy(bot=bot, messaging=messaging, tracking_db=tracking_db, settings=settings)
+    return Giphy(bot=bot, message_helper=message_helper, tracking_db=tracking_db, settings=settings)
 
 
 class DummyAuthor:
@@ -73,7 +68,7 @@ async def test_giphy_success(monkeypatch, cog):
         guild=DummyGuild(id=42), channel=DummyChannel(id=99), author=DummyAuthor(id=7), message=DummyMessage()
     )
     await cog.giphy.callback(cog, ctx, query="tacos")
-    cog.messaging.send_embed.assert_awaited_once()
+    cog.message_helper.send_embed.assert_awaited_once()
     cog.tracking_db.track_command_usage.assert_called_once()
     assert hasattr(ctx.message, "deleted")
     if ctx.message is not None:
@@ -99,7 +94,7 @@ async def test_giphy_no_data(monkeypatch, cog):
         guild=DummyGuild(id=42), channel=DummyChannel(id=99), author=DummyAuthor(id=7), message=DummyMessage()
     )
     await cog.giphy.callback(cog, ctx, query="tacos")
-    cog.messaging.send_embed.assert_not_awaited()
+    cog.message_helper.send_embed.assert_not_awaited()
     cog.tracking_db.track_command_usage.assert_called_once()
     assert hasattr(ctx.message, "deleted")
     if ctx.message is not None:
@@ -136,13 +131,13 @@ async def test_giphy_exception(monkeypatch, cog):
         guild=DummyGuild(id=42), channel=DummyChannel(id=99), author=DummyAuthor(id=7), message=DummyMessage()
     )
     await cog.giphy.callback(cog, ctx, query="tacos")
-    cog.messaging.notify_of_error.assert_awaited_once()
+    cog.message_helper.notify_of_error.assert_awaited_once()
 
 
 @pytest.mark.asyncio
-async def test_setup(monkeypatch, bot, messaging, tracking_db, settings):
+async def test_setup(monkeypatch, bot, message_helper, tracking_db, settings):
     monkeypatch.setattr("bot.cogs.giphy.Settings", lambda: settings)
-    monkeypatch.setattr("bot.cogs.giphy.Messaging", lambda b: messaging)
+    monkeypatch.setattr("bot.cogs.giphy.MessageHelper", lambda b, s: message_helper)
     monkeypatch.setattr("bot.cogs.giphy.TrackingDatabase", lambda: tracking_db)
     add_cog_called = {}
 

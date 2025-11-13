@@ -26,7 +26,7 @@ class TacosCog(TacobotCog):
         settings: Settings,
         tacos_db: TacosDatabase,
         tracking_db: TrackingDatabase,
-        messaging: MessageHelper,
+        message_helper: MessageHelper,
         permissions: Permissions,
         entity_helper: EntityHelper,
         taco_helper: TacoHelper,
@@ -37,7 +37,7 @@ class TacosCog(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = messaging
+        self.message_helper = message_helper
         self.entity_helper = entity_helper
         self.taco_helper = taco_helper
         self.permissions = permissions
@@ -63,7 +63,7 @@ class TacosCog(TacobotCog):
             await ctx.message.delete()
             self.tacos_db.remove_all_tacos(guild_id, user.id)
             reason_msg = reason if reason else "No reason given."
-            await self.messaging.send_embed(
+            await self.message_helper.send_embed(
                 channel=ctx.channel,
                 title="Removed All Tacos",
                 message=f"{user.mention} has lost all their tacos.",
@@ -82,7 +82,7 @@ class TacosCog(TacobotCog):
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
             await ctx.message.delete()
 
     async def _remove_all_tacos_interaction(
@@ -186,7 +186,7 @@ class TacosCog(TacobotCog):
                 guild_id=guild_id, giver_id=ctx.author.id, recipient_id=member.id
             )
             if not eligible:
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=ctx.channel,
                     title=self.settings.get_string(guild_id, "error"),
                     message=err,
@@ -213,7 +213,7 @@ class TacosCog(TacobotCog):
                 reason=reason_msg,
             )
 
-            await self.messaging.send_embed(
+            await self.message_helper.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_give_title"),
                 message=success_message,
@@ -235,7 +235,7 @@ class TacosCog(TacobotCog):
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     @group.command(name="count", description="Get the number of tacos you have")
     async def count_interaction(self, interaction: discord.Interaction) -> None:
@@ -287,7 +287,7 @@ class TacosCog(TacobotCog):
                 taco_count = 0
             if taco_count == 0 or taco_count > 1:
                 tacos_word = self.settings.get_string(guild_id, "taco_plural")
-            await self.messaging.send_embed(
+            await self.message_helper.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_count_title"),
                 message=self.settings.get_string(
@@ -308,7 +308,7 @@ class TacosCog(TacobotCog):
         except Exception as e:
             await ctx.message.delete()
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     @group.command(name="gift", description="Gift tacos to a user")
     @app_commands.guild_only()
@@ -442,7 +442,7 @@ class TacosCog(TacobotCog):
             )
 
             if not eligible:
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=ctx.channel,
                     title=self.settings.get_string(guild_id, "taco_gift_title"),
                     message=err,
@@ -456,7 +456,7 @@ class TacosCog(TacobotCog):
             ### DEPRECATED CODE FOR _VALIDATE_GIFT_ELIGIBILITY FUNCTION ###
             # if the user that ran the command is the same as member, then exit the function
             # if ctx.author.id == member.id:
-            #     await self.messaging.send_embed(
+            #     await self.message_helper.send_embed(
             #         channel=ctx.channel,
             #         title=self.settings.get_string(guild_id, "error"),
             #         message=self.settings.get_string(guild_id, "taco_self_gift_message", user=ctx.author.mention),
@@ -478,7 +478,7 @@ class TacosCog(TacobotCog):
 
             ### DEPRECATED CODE FOR _VALIDATE_GIFT_ELIGIBILITY FUNCTION ###
             # if remaining_gifts <= 0:
-            #     await self.messaging.send_embed(
+            #     await self.message_helper.send_embed(
             #         channel=ctx.channel,
             #         title=self.settings.get_string(guild_id, "taco_gift_title"),
             #         message=self.settings.get_string(
@@ -488,7 +488,7 @@ class TacosCog(TacobotCog):
             #     )
             #     return
             # if amount <= 0 or amount > remaining_gifts:
-            #     await self.messaging.send_embed(
+            #     await self.message_helper.send_embed(
             #         channel=ctx.channel,
             #         title=self.settings.get_string(guild_id, "taco_gift_title"),
             #         message=self.settings.get_string(
@@ -518,7 +518,7 @@ class TacosCog(TacobotCog):
             )
 
             # self.tacos_db.add_taco_gift(ctx.guild.id, ctx.author.id, amount)
-            await self.messaging.send_embed(
+            await self.message_helper.send_embed(
                 channel=ctx.channel,
                 title=self.settings.get_string(guild_id, "taco_gift_title"),
                 message=success_message,
@@ -548,7 +548,7 @@ class TacosCog(TacobotCog):
 
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            await self.message_helper.notify_of_error(ctx)
 
     @commands.Cog.listener()
     async def on_message(self, message) -> None:
@@ -805,7 +805,7 @@ class TacosCog(TacobotCog):
 
 async def setup(bot):
     settings: Settings = Settings()
-    messaging: MessageHelper = MessageHelper(bot, settings=settings)
+    message_helper: MessageHelper = MessageHelper(bot, settings=settings)
     entity_helper: EntityHelper = EntityHelper(bot)
     taco_helper: TacoHelper = TacoHelper(bot, entity_helper=entity_helper)
     tacos_db: TacosDatabase = TacosDatabase()
@@ -815,7 +815,7 @@ async def setup(bot):
         TacosCog(
             bot=bot,
             settings=settings,
-            messaging=messaging,
+            message_helper=message_helper,
             entity_helper=entity_helper,
             taco_helper=taco_helper,
             permissions=permissions,

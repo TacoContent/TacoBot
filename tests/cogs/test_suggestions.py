@@ -12,7 +12,6 @@ def cog():
     bot = MagicMock()
     suggestions_db = MagicMock()
     tracking_db = MagicMock()
-    messaging = MagicMock()
     permissions = MagicMock()
     entity_helper = MagicMock()
     prompt_helper = MagicMock()
@@ -28,7 +27,6 @@ def cog():
         bot=bot,
         suggestions_db=suggestions_db,
         tracking_db=tracking_db,
-        messaging=messaging,
         permissions=permissions,
         entity_helper=entity_helper,
         prompt_helper=prompt_helper,

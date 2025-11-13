@@ -26,7 +26,6 @@ class TacoPostCog(TacobotCog):
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.messaging = message_helper
         self.message_helper = message_helper
         self.prompt_helper = prompt_helper
 
@@ -99,7 +98,7 @@ class TacoPostCog(TacobotCog):
             taco_count = self.tacos_db.get_tacos_count(guild_id, user.id)
             # if user has doesnt have enough tacos, send a message, and delete their message
             if taco_count is None or taco_count < taco_cost:
-                await self.messaging.send_embed(
+                await self.message_helper.send_embed(
                     channel=channel,
                     title="Not Enough Tacos",
                     message=f"{user.mention}, You need {taco_cost} tacos to post in this channel.",
@@ -113,14 +112,14 @@ class TacoPostCog(TacobotCog):
                         # remove the tacos from the user
                         self.tacos_db.remove_tacos(guild_id, user.id, taco_cost)
                         # send the message that tacos have been removed
-                        await self.messaging.send_embed(
+                        await self.message_helper.send_embed(
                             channel=channel,
                             title="Tacos Removed",
                             message=f"{user.mention}, You have been charged {taco_cost} tacos from your account.",
                             delete_after=10,
                         )
                     else:
-                        await self.messaging.send_embed(
+                        await self.message_helper.send_embed(
                             channel=channel,
                             title="Message Removed",
                             message=f"{user.mention}, You chose to not use your tacos, your message has been removed.",

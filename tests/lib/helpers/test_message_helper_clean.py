@@ -8,23 +8,12 @@ from bot.lib.helpers.message_helper import MessageHelper
 
 class TestMessageHelperClean:
     @pytest.fixture
-    def mock_bot(self):
-        bot = MagicMock()
-        bot.user = MagicMock()
-        bot.user.id = 12345
-        bot.user.name = "TestBot"
-        bot.get_prefix = AsyncMock(return_value=["."])
-        return bot
-
-    @pytest.fixture
-    def message_helper(self, mock_bot):
-        with patch('bot.lib.helpers.message_helper.settings.Settings') as mock_settings_class:
-            mock_settings = MagicMock()
+    def message_helper(self, bot, settings):
+        with patch('bot.lib.helpers.message_helper.Settings') as mock_settings_class:
+            mock_settings = settings
             mock_settings.log_level = "DEBUG"
-            mock_settings.get_string = MagicMock(return_value="test string")
-            mock_settings.get = MagicMock(return_value="test value")
             mock_settings_class.return_value = mock_settings
-            return MessageHelper(mock_bot)
+            return MessageHelper(bot, mock_settings)
 
     @pytest.fixture
     def mock_message(self):
@@ -53,6 +42,7 @@ class TestMessageHelperClean:
         ctx.guild = MagicMock()
         ctx.guild.id = 999
         ctx.channel = MagicMock()
+        ctx.channel.send = AsyncMock()
         ctx.author = MagicMock()
         ctx.author.mention = "@TestUser"
         ctx.author.guild_permissions = MagicMock()
@@ -70,6 +60,5 @@ class TestMessageHelperClean:
     @pytest.mark.asyncio
     async def test_notify_bot_not_initialized_admin(self, message_helper, mock_ctx):
         mock_ctx.author.guild_permissions.administrator = True
-        with patch.object(message_helper.messaging, 'send_embed', new=AsyncMock()) as mock_send:
-            await message_helper.notify_bot_not_initialized(mock_ctx, subcommand="setup")
-            mock_send.assert_called_once()
+        await message_helper.notify_bot_not_initialized(mock_ctx, subcommand="setup")
+        mock_ctx.channel.send.assert_called_once()

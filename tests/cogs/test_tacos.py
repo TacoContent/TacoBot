@@ -6,14 +6,14 @@ from bot.cogs.tacos import TacosCog
 
 
 @pytest.fixture
-def cog(bot, settings, tacos_db, tracking_db, messaging, permissions, entity_helper, taco_helper):
+def cog(bot, settings, tacos_db, tracking_db, message_helper, permissions, entity_helper, taco_helper):
     """Create TacosCog with injected dependencies from conftest.py."""
     c = TacosCog(
         bot=bot,
         settings=settings,
         tacos_db=tacos_db,
         tracking_db=tracking_db,
-        messaging=messaging,
+        message_helper=message_helper,
         permissions=permissions,
         entity_helper=entity_helper,
         taco_helper=taco_helper,
