@@ -76,7 +76,7 @@ def test_collect_model_components_join_whitelist_user_property_descriptions():
 
 
 def test_collect_model_components_metadata_merge_precedence():
-    models_root = pathlib.Path('tests/tmp_model_components')
+    models_root = pathlib.Path('tests/model_components')
     comps, _ = collect_model_components(models_root)
     assert 'MergeMetadataExample' in comps, 'MergeMetadataExample component missing'
     schema = comps['MergeMetadataExample']
@@ -105,7 +105,7 @@ def test_collect_model_components_openapi_attributes():
 
 
 def test_collect_model_components_attribute_prefix_normalization():
-    models_root = pathlib.Path('tests/tmp_model_components')
+    models_root = pathlib.Path('tests/model_components')
     comps, _ = collect_model_components(models_root)
     assert 'DecoratorAttributeExample' in comps, 'DecoratorAttributeExample component missing'
     schema = comps['DecoratorAttributeExample']

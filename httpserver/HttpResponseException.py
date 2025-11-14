@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from httpserver.http_util import HttpHeaders, HttpResponse
+from httpserver import HttpHeaders, HttpResponse
 
 
 class HttpResponseException(Exception):
