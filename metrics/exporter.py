@@ -2,8 +2,10 @@ import inspect
 import os
 import traceback
 
+
 from bot.lib.enums.loglevel import LogLevel
 from bot.lib.logger import Log
+from bot.lib.mongodb.metrics import MetricsDatabase
 from bot.lib.settings import Settings
 from bot.lib.utils import dict_get
 from metrics.config import TacoBotMetricsConfig
@@ -31,9 +33,10 @@ class MetricsExporter:
     def run(self):
         _method = inspect.stack()[1][3]
         try:
+            metrics_db = MetricsDatabase()
             config_file = dict_get(os.environ, "TBE_CONFIG_FILE", default_value="./config/.configuration.yaml")
             config = TacoBotMetricsConfig(config_file)
-            app_metrics = TacoBotMetrics(config)
+            app_metrics = TacoBotMetrics(config, metrics_db, self.settings)
             self.log.info(
                 0,
                 f"{self._module}.{self._class}.{_method}",

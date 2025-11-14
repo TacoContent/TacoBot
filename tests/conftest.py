@@ -79,6 +79,14 @@ def bot():
 
 
 @pytest.fixture
+def metrics_db():
+    """Function-scoped mock metrics database."""
+    db = MagicMock()
+    db.get_known_guilds = MagicMock(return_value=[])
+    db.get_permission_counts = MagicMock(return_value=[])
+    return db
+
+@pytest.fixture
 def invites_db():
     """Function-scoped mock invites database."""
     db = MagicMock()

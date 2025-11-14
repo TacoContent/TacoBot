@@ -122,9 +122,10 @@ class TestMetricsExporterRun:
     @patch('metrics.exporter.TacoBotMetrics')
     @patch('metrics.exporter.TacoBotMetricsConfig')
     @patch('metrics.exporter.Log')
+    @patch('metrics.exporter.MetricsDatabase')
     @patch.dict(os.environ, {'TBE_CONFIG_FILE': './test-config.yaml'})
     def test_run_successful_execution(
-        self, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
+        self, mock_metrics_db, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings, metrics_db
     ):
         """Test successful run execution with all components."""
         # Setup mocks
@@ -139,6 +140,9 @@ class TestMetricsExporterRun:
         mock_metrics_instance.run_metrics_loop = MagicMock()
         mock_metrics_class.return_value = mock_metrics_instance
 
+        # Mock MetricsDatabase to return the fixture
+        mock_metrics_db.return_value = metrics_db
+
         exporter = MetricsExporter(module_settings)
         exporter.run()
 
@@ -146,7 +150,7 @@ class TestMetricsExporterRun:
         mock_config_class.assert_called_once_with('./test-config.yaml')
 
         # Verify metrics instance was created with config
-        mock_metrics_class.assert_called_once_with(mock_config_instance)
+        mock_metrics_class.assert_called_once_with(mock_config_instance, metrics_db, module_settings)
 
         # Verify HTTP server was started on correct port
         mock_http_server.assert_called_once_with(8932)
