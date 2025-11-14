@@ -39,9 +39,8 @@ from bot.lib.models.openapi import openapi
 from bot.lib.mongodb.minecraft import MinecraftDatabase
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
+from httpserver import HttpHeaders, HttpRequest, HttpResponse, HttpResponseException, HttpServer
 from httpserver.EndpointDecorators import uri_mapping
-from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException, HttpServer
 
 
 class HealthcheckApiHandler(BaseHttpHandler):

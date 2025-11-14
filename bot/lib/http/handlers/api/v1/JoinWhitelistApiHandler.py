@@ -50,9 +50,8 @@ from bot.lib.models.PagedResults import PagedResultsJoinWhitelistUser
 from bot.lib.mongodb.whitelist import WhitelistDatabase
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
+from httpserver import HttpHeaders, HttpRequest, HttpResponse, HttpResponseException, HttpServer
 from httpserver.EndpointDecorators import uri_variable_mapping
-from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException, HttpServer
 
 
 class JoinWhitelistApiHandler(BaseHttpHandler):

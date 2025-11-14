@@ -52,7 +52,7 @@ from bot.lib.enums import loglevel
 from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
-from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
+from httpserver import HttpHeaders, HttpRequest, HttpResponse
 
 
 class BaseWebhookHandler:

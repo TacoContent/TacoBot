@@ -9,7 +9,7 @@ from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
-from httpserver.server import HttpServer
+from httpserver import HttpServer
 
 
 class HttpHandlerCog(TacobotCog):

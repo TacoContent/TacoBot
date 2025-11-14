@@ -41,9 +41,8 @@ from bot.lib.models.SimpleStatusResponse import SimpleStatusResponse
 from bot.lib.mongodb.permissions import PermissionsDatabase
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
+from httpserver import HttpHeaders, HttpRequest, HttpResponse, HttpServer
 from httpserver.EndpointDecorators import uri_variable_mapping
-from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpServer
 
 
 class TacoPermissionsApiHandler(BaseHttpHandler):

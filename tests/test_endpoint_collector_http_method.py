@@ -22,7 +22,7 @@ def test_http_method_string_literal():
     """Test parsing method="POST" as string literal."""
     code = '''
 from httpserver.EndpointDecorators import uri_mapping
-from httpserver.http_util import HttpRequest, HttpResponse
+from httpserver import HttpRequest, HttpResponse
 
 class TestHandler:
     @uri_mapping("/test/string", method="POST")
@@ -53,7 +53,7 @@ def test_http_method_enum_value():
     code = '''
 from http import HTTPMethod
 from httpserver.EndpointDecorators import uri_mapping
-from httpserver.http_util import HttpRequest, HttpResponse
+from httpserver import HttpRequest, HttpResponse
 
 class TestHandler:
     @uri_mapping("/test/enum", method=HTTPMethod.POST)
@@ -83,7 +83,7 @@ def test_http_method_list_strings():
     """Test parsing method=["POST", "GET"] as list of strings."""
     code = '''
 from httpserver.EndpointDecorators import uri_mapping
-from httpserver.http_util import HttpRequest, HttpResponse
+from httpserver import HttpRequest, HttpResponse
 
 class TestHandler:
     @uri_mapping("/test/list-strings", method=["POST", "GET"])
@@ -114,7 +114,7 @@ def test_http_method_list_enums():
     code = '''
 from http import HTTPMethod
 from httpserver.EndpointDecorators import uri_mapping
-from httpserver.http_util import HttpRequest, HttpResponse
+from httpserver import HttpRequest, HttpResponse
 
 class TestHandler:
     @uri_mapping("/test/list-enums", method=[HTTPMethod.POST, HTTPMethod.PUT])
@@ -170,7 +170,7 @@ def test_default_method_is_get():
     """Test that omitting method parameter defaults to GET."""
     code = '''
 from httpserver.EndpointDecorators import uri_mapping
-from httpserver.http_util import HttpRequest, HttpResponse
+from httpserver import HttpRequest, HttpResponse
 
 class TestHandler:
     @uri_mapping("/test/default")

@@ -13,6 +13,8 @@ COMMIT_MESSAGE.txt
 .coverage
 .coverage.*
 
+tests/tmp_*
+
 reports/*
 !reports/.gitkeep
 !reports/README.md

@@ -105,9 +105,8 @@ from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.settings import Settings
 from bot.lib.users_utils import UsersUtils
 from bot.tacobot import TacoBot
+from httpserver import HttpHeaders, HttpRequest, HttpResponse, HttpResponseException, HttpServer
 from httpserver.EndpointDecorators import uri_mapping
-from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException, HttpServer
 
 
 class TacosWebhookHandler(BaseWebhookHandler):

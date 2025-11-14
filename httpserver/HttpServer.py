@@ -1,19 +1,3 @@
-#
-# Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
-# this work for additional information regarding copyright ownership.
-# The ASF licenses this file to You under the Apache License, Version 2.0
-# (the "License"); you may not use this file except in compliance with
-# the License.  You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
 from __future__ import annotations
 
 import asyncio
@@ -28,8 +12,16 @@ from collections.abc import Generator
 
 from bot.lib import logger, settings
 from bot.lib.enums import loglevel
-from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse, http_parser, http_send_response
+from httpserver import HttpHeaders, HttpRequest, HttpResponse, http_parser, http_send_response
+from httpserver.HttpResponseException import HttpResponseException
 from httpserver.UriRoute import UriRoute
+
+
+def _scan_handler_for_uri_routes(handler: object) -> Generator[tuple[object, UriRoute]]:
+    for attr in dir(handler):
+        method = getattr(handler, attr)
+        for route in getattr(method, '_http_routes', []):
+            yield method, route
 
 
 def _convert_params(request: HttpRequest, route: UriRoute, method):
@@ -64,24 +56,6 @@ def _convert_params(request: HttpRequest, route: UriRoute, method):
         else:
             args.append(None)
     return args
-
-
-def _scan_handler_for_uri_routes(handler: object) -> Generator[tuple[object, UriRoute]]:
-    for attr in dir(handler):
-        method = getattr(handler, attr)
-        for route in getattr(method, '_http_routes', []):
-            yield method, route
-
-
-class HttpResponseException(Exception):
-    response: HttpResponse
-
-    def __init__(self, status_code: int, headers: HttpHeaders | None = None, body: bytes | None = None) -> None:
-        super().__init__()
-        self.status_code = status_code
-        self.headers = headers
-        self.body = body
-        self.response = HttpResponse(status_code, headers, body)
 
 
 class HttpServer:

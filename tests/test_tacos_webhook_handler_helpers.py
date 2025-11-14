@@ -11,8 +11,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock
 import pytest
 from bot.lib.enums.tacotypes import TacoTypes
 from bot.lib.http.handlers.webhook.TacosWebhookHandler import TacosWebhookHandler
-from httpserver.http_util import HttpHeaders, HttpRequest
-from httpserver.server import HttpResponseException
+from httpserver import HttpHeaders, HttpRequest, HttpResponseException
 
 # =======================
 # Fixtures

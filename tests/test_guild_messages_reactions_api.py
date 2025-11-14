@@ -26,7 +26,7 @@ except Exception:  # pragma: no cover
     pytest.skip("discord.py not installed; skipping reactions tests", allow_module_level=True)
 
 from bot.lib.http.handlers.api.v1.GuildMessagesApiHandler import GuildMessagesApiHandler
-from httpserver.http_util import HttpHeaders, HttpRequest
+from httpserver import HttpHeaders, HttpRequest
 
 # =======================
 # Fixtures

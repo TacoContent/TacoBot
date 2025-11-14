@@ -57,8 +57,7 @@ from bot.lib import logger
 from bot.lib.enums import loglevel
 from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
 from bot.lib.settings import Settings
-from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
-from httpserver.server import HttpResponseException
+from httpserver import HttpHeaders, HttpRequest, HttpResponse, HttpResponseException
 
 
 class BaseHttpHandler:

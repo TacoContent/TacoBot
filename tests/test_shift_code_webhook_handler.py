@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 from bot.lib.http.handlers.webhook.ShiftCodeWebhookHandler import ShiftCodeWebhookHandler
-from httpserver.http_util import HttpRequest
+from httpserver import HttpRequest
 
 # =======================
 # Fixtures

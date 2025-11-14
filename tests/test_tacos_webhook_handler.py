@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 from bot.lib.http.handlers.webhook.TacosWebhookHandler import TacosWebhookHandler
-from httpserver.http_util import HttpRequest
+from httpserver import HttpRequest
 
 # =======================
 # Fixtures

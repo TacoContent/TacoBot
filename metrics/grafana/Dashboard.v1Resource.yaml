@@ -1,0 +1,6010 @@
+apiVersion: dashboard.grafana.app/v1beta1
+kind: Dashboard
+metadata:
+  name: GnSFRx0Vz
+  generation: 134
+  creationTimestamp: '2023-02-04T22:17:26Z'
+  labels: {}
+  annotations: {}
+spec:
+  annotations:
+    list:
+      - builtIn: 1
+        datasource:
+          type: grafana
+          uid: '-- Grafana --'
+        enable: true
+        hide: true
+        iconColor: rgba(0, 211, 255, 1)
+        name: Annotations & Alerts
+        target:
+          limit: 100
+          matchAny: false
+          tags: []
+          type: dashboard
+        type: dashboard
+  editable: true
+  fiscalYearStartMonth: 0
+  graphTooltip: 0
+  id: 22
+  links: []
+  panels:
+    - collapsed: false
+      gridPos:
+        h: 1
+        w: 24
+        x: 0
+        'y': 0
+      id: 125
+      panels: []
+      title: BIRD'S EYE
+      type: row
+    - datasource:
+        type: prometheus
+        uid: PBFA97CFB590B2093
+      description: ''
+      fieldConfig:
+        defaults:
+          color:
+            mode: thresholds
+          mappings:
+            - options:
+                '0':
+                  color: dark-red
+                  index: 0
+                  text: ☠️
+                '1':
+                  color: dark-orange
+                  index: 3
+                  text: ⚠️
+                '2':
+                  color: dark-green
+                  index: 1
+                  text: 🌮
+              type: value
+            - options:
+                match: null+nan
+                result:
+                  color: dark-purple
+                  index: 2
+                  text: '?'
+              type: special
+            - options:
+                from: 3
+                result:
+                  color: red
+                  index: 4
+                  text: ⛔
+                to: 999999
+              type: range
+          noValue: '?'
+          thresholds:
+            mode: absolute
+            steps:
+              - color: dark-green
+                value: 0
+        overrides: []
+      gridPos:
+        h: 6
+        w: 4
+        x: 0
+        'y': 1
+      id: 121
+      options:
+        colorMode: background_solid
+        graphMode: none
+        justifyMode: auto
+        orientation: auto
+        percentChangeColorMode: standard
+        reduceOptions:
+          calcs:
+            - lastNotNull
+          fields: ''
+          values: false
+        showPercentChange: false
+        textMode: value
+        wideLayout: true
+      pluginVersion: 12.2.1
+      targets:
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          editorMode: code
+          expr: up{job="tacobot_stats_exporter"}
+          hide: true
+          instant: false
+          legendFormat: Exporter Status
+          range: true
+          refId: A
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          editorMode: code
+          expr: sum(tacobot_healthy)
+          hide: true
+          instant: false
+          legendFormat: TacoBot Healthy
+          range: true
+          refId: B
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          editorMode: code
+          expr: sum(tacobot_exporter_errors)
+          hide: true
+          instant: false
+          legendFormat: Exporter Errors
+          range: true
+          refId: C
+        - datasource:
+            name: Expression
+            type: __expr__
+            uid: __expr__
+          expression: $A + $B + $C
+          hide: false
+          refId: Calculated Status
+          type: math
+      title: TACOBOT
+      transparent: true
+      type: stat
+    - datasource:
+        type: prometheus
+        uid: PBFA97CFB590B2093
+      description: ''
+      fieldConfig:
+        defaults:
+          color:
+            mode: thresholds
+          mappings:
+            - options:
+                '0':
+                  color: red
+                  index: 1
+                  text: 💀
+                '1':
+                  color: dark-green
+                  index: 0
+                  text: 👍
+              type: value
+          thresholds:
+            mode: absolute
+            steps:
+              - color: green
+                value: 0
+              - color: red
+                value: 0
+              - color: green
+                value: 1
+        overrides: []
+      gridPos:
+        h: 6
+        w: 4
+        x: 4
+        'y': 1
+      id: 111
+      options:
+        colorMode: background_solid
+        graphMode: none
+        justifyMode: center
+        orientation: auto
+        percentChangeColorMode: standard
+        reduceOptions:
+          calcs:
+            - lastNotNull
+          fields: ''
+          values: false
+        showPercentChange: false
+        textMode: value
+        wideLayout: true
+      pluginVersion: 12.2.1
+      targets:
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          editorMode: code
+          expr: up{job="shortnr"}
+          instant: false
+          legendFormat: Status
+          range: true
+          refId: A
+      title: SHORTNR
+      transparent: true
+      type: stat
+    - datasource:
+        type: prometheus
+        uid: PBFA97CFB590B2093
+      description: ''
+      fieldConfig:
+        defaults:
+          color:
+            mode: thresholds
+          mappings:
+            - options:
+                '0':
+                  color: super-light-red
+                  index: 0
+                  text: ☠️
+                '1':
+                  color: dark-green
+                  index: 1
+                  text: 👍
+              type: value
+            - options:
+                match: null+nan
+                result:
+                  color: super-light-blue
+                  index: 2
+                  text: '?'
+              type: special
+          noValue: '?'
+          thresholds:
+            mode: absolute
+            steps:
+              - color: dark-green
+                value: 0
+        overrides: []
+      gridPos:
+        h: 6
+        w: 4
+        x: 8
+        'y': 1
+      id: 118
+      options:
+        colorMode: background_solid
+        graphMode: none
+        justifyMode: auto
+        orientation: auto
+        percentChangeColorMode: standard
+        reduceOptions:
+          calcs:
+            - lastNotNull
+          fields: ''
+          values: false
+        showPercentChange: false
+        textMode: value
+        wideLayout: true
+      pluginVersion: 12.2.1
+      targets:
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          editorMode: code
+          expr: up{job="mgob"}
+          instant: false
+          legendFormat: Status
+          range: true
+          refId: A
+      title: MONGODB BACKUP
+      transparent: true
+      type: stat
+    - collapsed: true
+      gridPos:
+        h: 1
+        w: 24
+        x: 0
+        'y': 7
+      id: 110
+      panels:
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    '0':
+                      color: red
+                      index: 1
+                      text: 💀
+                    '1':
+                      color: dark-green
+                      index: 0
+                      text: 👍
+                  type: value
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+                  - color: red
+                    value: 0
+                  - color: green
+                    value: 1
+            overrides: []
+          gridPos:
+            h: 6
+            w: 4
+            x: 0
+            'y': 8
+          id: 126
+          options:
+            colorMode: background_solid
+            graphMode: none
+            justifyMode: center
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: value
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: up{job="shortnr"}
+              instant: false
+              legendFormat: Status
+              range: true
+              refId: A
+          title: ''
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: text
+                    value: 0
+            overrides: []
+          gridPos:
+            h: 6
+            w: 4
+            x: 4
+            'y': 8
+          id: 115
+          options:
+            colorMode: value
+            graphMode: none
+            justifyMode: center
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: sum(nus_tokens or vector(0))
+              instant: false
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: TOKENS
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+            overrides: []
+          gridPos:
+            h: 6
+            w: 4
+            x: 8
+            'y': 8
+          id: 114
+          options:
+            colorMode: none
+            graphMode: none
+            justifyMode: center
+            orientation: auto
+            percentChangeColorMode: same_as_value
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: sum(nus_shorten or vector(0))
+              instant: false
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: SHORTENS
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: text
+                    value: 0
+            overrides: []
+          gridPos:
+            h: 6
+            w: 4
+            x: 12
+            'y': 8
+          id: 112
+          options:
+            colorMode: value
+            graphMode: none
+            justifyMode: center
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: sum(nus_redirect_click_thru or vector(0))
+              instant: false
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: CLICKS
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                barWidthFactor: 0.6
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 1
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              decimals: 0
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+                  - color: red
+                    value: 80
+            overrides: []
+          gridPos:
+            h: 8
+            w: 24
+            x: 0
+            'y': 14
+          id: 122
+          options:
+            legend:
+              calcs:
+                - lastNotNull
+              displayMode: table
+              placement: right
+              showLegend: true
+              sortBy: Last *
+              sortDesc: true
+            tooltip:
+              hideZeros: false
+              mode: single
+              sort: none
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: nus_redirect_click_thru
+              instant: false
+              legendFormat: '{{id}}'
+              range: true
+              refId: A
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: sum(nus_redirect_click_thru)
+              hide: false
+              instant: false
+              legendFormat: Total
+              range: true
+              refId: B
+          title: CLICK THRU
+          transparent: true
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings: []
+              noValue: '-'
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: transparent
+                    value: 0
+            overrides:
+              - matcher:
+                  id: byName
+                  options: token.create
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: dark-orange
+                      mode: fixed
+              - matcher:
+                  id: byName
+                  options: url.redirect
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: dark-blue
+                      mode: fixed
+              - matcher:
+                  id: byName
+                  options: url.shorten
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: dark-purple
+                      mode: fixed
+              - matcher:
+                  id: byValue
+                  options:
+                    op: eq
+                    reducer: lastNotNull
+                    value: 0
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: transparent
+                      mode: fixed
+          gridPos:
+            h: 7
+            w: 24
+            x: 0
+            'y': 22
+          id: 116
+          options:
+            colorMode: background_solid
+            graphMode: none
+            justifyMode: center
+            orientation: vertical
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: nus_action{job="shortnr"}
+              instant: false
+              legendFormat: '{{action}}'
+              range: true
+              refId: A
+          title: ''
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: transparent
+                    value: 0
+            overrides:
+              - matcher:
+                  id: byName
+                  options: FATAL
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: semi-dark-purple
+                      mode: fixed
+              - matcher:
+                  id: byName
+                  options: ERROR
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: dark-red
+                      mode: fixed
+              - matcher:
+                  id: byName
+                  options: INFO
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: dark-blue
+                      mode: fixed
+              - matcher:
+                  id: byName
+                  options: DEBUG
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: transparent
+                      mode: fixed
+              - matcher:
+                  id: byName
+                  options: WARN
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: dark-orange
+                      mode: fixed
+          gridPos:
+            h: 6
+            w: 24
+            x: 0
+            'y': 29
+          id: 113
+          options:
+            colorMode: background_solid
+            graphMode: none
+            justifyMode: center
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: nus_logs{job="shortnr"}
+              instant: false
+              legendFormat: '{{level}}'
+              range: true
+              refId: A
+          title: ''
+          type: stat
+      title: SHORTNR
+      type: row
+    - collapsed: true
+      gridPos:
+        h: 1
+        w: 24
+        x: 0
+        'y': 8
+      id: 117
+      panels:
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    '0':
+                      color: super-light-red
+                      index: 0
+                      text: ☠️
+                    '1':
+                      color: dark-green
+                      index: 1
+                      text: 👍
+                  type: value
+                - options:
+                    match: null+nan
+                    result:
+                      color: super-light-blue
+                      index: 2
+                      text: '?'
+                  type: special
+              noValue: '?'
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: dark-green
+                    value: 0
+            overrides: []
+          gridPos:
+            h: 5
+            w: 3
+            x: 0
+            'y': 9
+          id: 128
+          options:
+            colorMode: background_solid
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: value
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: up{job="mgob"}
+              instant: false
+              legendFormat: Status
+              range: true
+              refId: A
+          title: ''
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings: []
+              noValue: '?'
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+            overrides: []
+          gridPos:
+            h: 5
+            w: 3
+            x: 3
+            'y': 9
+          id: 119
+          options:
+            colorMode: none
+            graphMode: none
+            justifyMode: center
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: value
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: >-
+                sum(mgob_scheduler_backup_total{status="200",
+                plan=~"tacobot|shortnr"})
+              instant: false
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: SUCCESSFUL BACKUPS
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings: []
+              noValue: '0'
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+                  - color: red
+                    value: 0
+            overrides: []
+          gridPos:
+            h: 5
+            w: 3
+            x: 6
+            'y': 9
+          id: 120
+          options:
+            colorMode: none
+            graphMode: none
+            justifyMode: center
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: value
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: >-
+                sum(mgob_scheduler_backup_total{status!="200",
+                plan=~"tacobot|shortnr"})
+              instant: false
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: FAILED BACKUPS
+          transparent: true
+          type: stat
+      title: MONGODB
+      type: row
+    - collapsed: true
+      gridPos:
+        h: 1
+        w: 24
+        x: 0
+        'y': 9
+      id: 44
+      panels:
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    '0':
+                      color: dark-red
+                      index: 0
+                      text: ☠️
+                    '1':
+                      color: dark-orange
+                      index: 3
+                      text: ⚠️
+                    '2':
+                      color: dark-green
+                      index: 1
+                      text: 🌮
+                  type: value
+                - options:
+                    match: null+nan
+                    result:
+                      color: dark-purple
+                      index: 2
+                      text: '?'
+                  type: special
+                - options:
+                    from: 3
+                    result:
+                      color: red
+                      index: 4
+                      text: ⛔
+                    to: 999999
+                  type: range
+              noValue: '?'
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: dark-green
+                    value: 0
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 0
+            'y': 47
+          id: 127
+          options:
+            colorMode: background_solid
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: value
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: up{job="tacobot_stats_exporter"}
+              hide: true
+              instant: false
+              legendFormat: Exporter Status
+              range: true
+              refId: A
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: sum(tacobot_healthy)
+              hide: true
+              instant: false
+              legendFormat: TacoBot Healthy
+              range: true
+              refId: B
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: sum(tacobot_exporter_errors)
+              hide: true
+              instant: false
+              legendFormat: Exporter Errors
+              range: true
+              refId: C
+            - datasource:
+                name: Expression
+                type: __expr__
+                uid: __expr__
+              expression: $A + $B + $C
+              hide: false
+              refId: Calculated Status
+              type: math
+          title: ''
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: orange
+                    value: 0
+            overrides:
+              - matcher:
+                  id: byName
+                  options: JOIN
+                properties:
+                  - id: thresholds
+                    value:
+                      mode: absolute
+                      steps:
+                        - color: transparent
+                          value: 0
+                        - color: dark-green
+                          value: 1
+              - matcher:
+                  id: byName
+                  options: LEAVE
+                properties:
+                  - id: thresholds
+                    value:
+                      mode: absolute
+                      steps:
+                        - color: transparent
+                          value: 0
+                        - color: dark-orange
+                          value: 1
+          gridPos:
+            h: 6
+            w: 6
+            x: 3
+            'y': 47
+          id: 84
+          options:
+            colorMode: background_solid
+            graphMode: none
+            justifyMode: center
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_user_join_leave{guild_id=~"$guild_id"}
+              legendFormat: '{{action}}'
+              range: true
+              refId: A
+          title: ''
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: orange
+                    value: 0
+              unit: locale
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 9
+            'y': 47
+          id: 98
+          options:
+            colorMode: background_solid
+            graphMode: none
+            justifyMode: center
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - last
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_system_actions{action="NEW_ACCOUNT_KICK"}
+              instant: false
+              legendFormat: NEW ACCOUNT KICK
+              range: true
+              refId: A
+          title: ''
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: transparent
+                    value: 0
+                  - color: orange
+                    value: 1
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 12
+            'y': 47
+          id: 40
+          options:
+            colorMode: background
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: 'tacobot_team_requests{instance="$collector"} '
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: Stream Team Requests
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: transparent
+                    value: 0
+                  - color: green
+                    value: 1
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 15
+            'y': 47
+          id: 8
+          options:
+            colorMode: background
+            graphMode: none
+            justifyMode: center
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_live_now{guild_id=~"$guild_id"}
+              legendFormat: 🔴 LIVE NOW
+              range: true
+              refId: A
+          title: ''
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              noValue: '0'
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: dark-blue
+                    value: 0
+              unit: locale
+            overrides:
+              - matcher:
+                  id: byName
+                  options: TWITCH
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: dark-purple
+                      mode: fixed
+              - matcher:
+                  id: byName
+                  options: YOUTUBE
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: dark-red
+                      mode: fixed
+          gridPos:
+            h: 6
+            w: 6
+            x: 18
+            'y': 47
+          id: 24
+          options:
+            colorMode: background_solid
+            graphMode: none
+            justifyMode: center
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: >-
+                tacobot_live_platform {guild_id=~"$guild_id", platform!="GRAND
+                THEFT AUTO VI"}
+              legendFormat: '{{platform}}'
+              range: true
+              refId: A
+          title: Gone Live 🔴
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: semi-dark-blue
+                    value: 0
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 0
+            'y': 53
+          id: 20
+          options:
+            colorMode: background
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: sum(tacobot_invites {guild_id=~"$guild_id"})
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: Invited Users
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: dark-purple
+                    value: 0
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 3
+            'y': 53
+          id: 14
+          options:
+            colorMode: background_solid
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_twitch_linked_accounts
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: Twitch Linked Accounts
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: dark-red
+                    value: 0
+                  - color: dark-orange
+                    value: 30
+                  - color: dark-green
+                    value: 50
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 6
+            'y': 53
+          id: 32
+          options:
+            colorMode: background_solid
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_game_keys_available{guild_id=~"$guild_id"}
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: Giveaway Games Available
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: dark-blue
+                    value: 0
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 9
+            'y': 53
+          id: 34
+          options:
+            colorMode: background_solid
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_game_keys_redeemed{guild_id=~"$guild_id"}
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: Giveaway Games Redeemed
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+            overrides:
+              - matcher:
+                  id: byName
+                  options: ACTIVE
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: dark-green
+                      mode: fixed
+              - matcher:
+                  id: byName
+                  options: EXPIRED
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: transparent
+                      mode: fixed
+          gridPos:
+            h: 6
+            w: 6
+            x: 12
+            'y': 53
+          id: 109
+          options:
+            colorMode: background_solid
+            graphMode: none
+            justifyMode: center
+            orientation: vertical
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: value_and_name
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_free_game_keys
+              instant: false
+              legendFormat: '{{state}}'
+              range: true
+              refId: A
+          title: FREE GAMES
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: dark-red
+                    value: 0
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 18
+            'y': 53
+          id: 10
+          options:
+            colorMode: background_solid
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_twitch_channels{guild_id=~"$guild_id"}
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: Twitch Bot Joined Channels
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: '#4830d3'
+                    value: 0
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 21
+            'y': 53
+          id: 30
+          options:
+            colorMode: background_solid
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_minecraft_whitelist{guild_id=~"$guild_id"}
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: Minecraft Whitelisted
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+            overrides:
+              - matcher:
+                  id: byName
+                  options: ACTIVE
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: dark-green
+                      mode: fixed
+              - matcher:
+                  id: byName
+                  options: EXPIRED
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: transparent
+                      mode: fixed
+          gridPos:
+            h: 6
+            w: 6
+            x: 0
+            'y': 59
+          id: 123
+          options:
+            colorMode: background_solid
+            graphMode: none
+            justifyMode: center
+            orientation: vertical
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: value_and_name
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_shift_codes
+              instant: false
+              legendFormat: '{{state}}'
+              range: true
+              refId: A
+          title: SHiFT CODES
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+            overrides:
+              - matcher:
+                  id: byName
+                  options: ACTIVE
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: dark-green
+                      mode: fixed
+              - matcher:
+                  id: byName
+                  options: EXPIRED
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: transparent
+                      mode: fixed
+          gridPos:
+            h: 6
+            w: 6
+            x: 6
+            'y': 59
+          id: 124
+          options:
+            colorMode: background_solid
+            graphMode: none
+            justifyMode: center
+            orientation: vertical
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: value_and_name
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_shift_codes_tracked{guild_id=~"$guild_id"}
+              instant: false
+              legendFormat: '{{state}}'
+              range: true
+              refId: A
+          title: SHiFT CODES TRACKED
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: transparent
+                    value: 0
+                  - color: yellow
+                    value: 1
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 12
+            'y': 59
+          id: 42
+          options:
+            colorMode: background_solid
+            graphMode: none
+            justifyMode: center
+            orientation: horizontal
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_birthdays{guild_id=~"$guild_id"}
+              legendFormat: BIRTHDAYS
+              range: true
+              refId: A
+          title: ''
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: transparent
+                    value: 0
+            overrides:
+              - matcher:
+                  id: byName
+                  options: DEBUG
+                properties:
+                  - id: thresholds
+                    value:
+                      mode: absolute
+                      steps:
+                        - color: transparent
+                          value: 0
+                        - color: dark-blue
+                          value: 1
+              - matcher:
+                  id: byName
+                  options: ERROR
+                properties:
+                  - id: thresholds
+                    value:
+                      mode: absolute
+                      steps:
+                        - color: transparent
+                          value: 0
+                        - color: dark-red
+                          value: 1
+              - matcher:
+                  id: byName
+                  options: INFO
+                properties:
+                  - id: thresholds
+                    value:
+                      mode: absolute
+                      steps:
+                        - color: transparent
+                          value: 0
+                        - color: dark-blue
+                          value: 1
+              - matcher:
+                  id: byName
+                  options: WARNING
+                properties:
+                  - id: thresholds
+                    value:
+                      mode: absolute
+                      steps:
+                        - color: transparent
+                          value: 0
+                        - color: dark-orange
+                          value: 1
+              - matcher:
+                  id: byName
+                  options: FATAL
+                properties:
+                  - id: thresholds
+                    value:
+                      mode: absolute
+                      steps:
+                        - color: transparent
+                          value: 0
+                        - color: dark-purple
+                          value: 1
+          gridPos:
+            h: 6
+            w: 9
+            x: 15
+            'y': 59
+          id: 36
+          options:
+            colorMode: background_solid
+            graphMode: none
+            justifyMode: center
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: >-
+                tacobot_logs{guild_id=~"$guild_id",
+                level=~"WARNING|ERROR|FATAL"}
+              legendFormat: '{{level}}'
+              range: true
+              refId: A
+          title: ''
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings: []
+              noValue: '0'
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: red
+                    value: 0
+                  - color: green
+                    value: 1
+              unit: locale
+            overrides: []
+          gridPos:
+            h: 6
+            w: 6
+            x: 0
+            'y': 65
+          id: 12
+          options:
+            colorMode: none
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_twitch_tacos {guild_id=~"$guild_id"}
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: Twitch Tacos🌮
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+              unit: locale
+            overrides: []
+          gridPos:
+            h: 6
+            w: 6
+            x: 6
+            'y': 65
+          id: 2
+          options:
+            colorMode: none
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            text:
+              titleSize: 1
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_tacos {guild_id=~"$guild_id"}
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: Total Tacos Earned
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+              unit: locale
+            overrides: []
+          gridPos:
+            h: 6
+            w: 6
+            x: 12
+            'y': 65
+          id: 4
+          options:
+            colorMode: none
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_taco_gifts {guild_id=~"$guild_id"}
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: Tacos Gifted
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+              unit: locale
+            overrides: []
+          gridPos:
+            h: 6
+            w: 6
+            x: 18
+            'y': 65
+          id: 6
+          options:
+            colorMode: none
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_taco_reactions {guild_id=~"$guild_id"}
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: 🌮 Reactions
+          transparent: true
+          type: stat
+      title: Counters
+      type: row
+    - collapsed: true
+      gridPos:
+        h: 1
+        w: 24
+        x: 0
+        'y': 10
+      id: 100
+      panels:
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                  - color: red
+                    value: 80
+            overrides:
+              - matcher:
+                  id: byName
+                  options: DND
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: super-light-red
+                      mode: fixed
+              - matcher:
+                  id: byName
+                  options: IDLE
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: semi-dark-yellow
+                      mode: fixed
+              - matcher:
+                  id: byName
+                  options: OFFLINE
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: '#e6e6e9'
+                      mode: fixed
+              - matcher:
+                  id: byName
+                  options: ONLINE
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: super-light-green
+                      mode: fixed
+          gridPos:
+            h: 5
+            w: 24
+            x: 0
+            'y': 90
+          id: 99
+          options:
+            colorMode: background
+            graphMode: none
+            justifyMode: center
+            orientation: vertical
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: value_and_name
+            wideLayout: true
+          pluginVersion: 11.1.3
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_user_status{guild_id=~"$guild_id", status!="UNKNOWN"}
+              instant: false
+              legendFormat: '{{status}}'
+              range: true
+              refId: A
+          title: ''
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+            overrides: []
+          gridPos:
+            h: 7
+            w: 24
+            x: 0
+            'y': 156
+          id: 101
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: right
+              showLegend: true
+            tooltip:
+              mode: single
+              sort: none
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_user_status{guild_id=~"$guild_id", status!="UNKNOWN"}
+              instant: false
+              legendFormat: '{{status}}'
+              range: true
+              refId: A
+          title: User Status
+          type: timeseries
+      title: User Status
+      type: row
+    - collapsed: true
+      gridPos:
+        h: 1
+        w: 24
+        x: 0
+        'y': 11
+      id: 68
+      panels:
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: red
+                  - color: '#2e5a1b'
+                    value: 1
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 0
+            'y': 91
+          id: 16
+          options:
+            colorMode: background
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 11.1.3
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_tqotd {guild_id=~"$guild_id"}
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: TQOTD Questions
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: orange
+                  - color: '#4a295a'
+                    value: 1
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 3
+            'y': 91
+          id: 26
+          options:
+            colorMode: background
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 11.1.3
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_mentalmondays{guild_id=~"$guild_id"}
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: Mental Mondays Topics
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: super-light-red
+                  - color: '#b46d04'
+                    value: 1
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 6
+            'y': 91
+          id: 64
+          options:
+            colorMode: background
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 11.1.3
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_tacotuesday {guild_id=~"$guild_id"}
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: Taco Tuesday
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: red
+                  - color: '#2b3451'
+                    value: 1
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 9
+            'y': 91
+          id: 57
+          options:
+            colorMode: background
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 11.1.3
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_wdyctw_questions{guild_id=~"$guild_id"}
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: WDYCTW Questions
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: red
+                  - color: '#670d0d'
+                    value: 1
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 12
+            'y': 91
+          id: 59
+          options:
+            colorMode: background
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 11.1.3
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_techthurs{guild_id=~"$guild_id"}
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: Tech Thursdays Topics
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: super-light-orange
+                  - color: super-light-green
+                    value: 1
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 15
+            'y': 91
+          id: 69
+          options:
+            colorMode: background
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 11.1.3
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: sum(tacobot_first_messages_today{guild_id=~"$guild_id"})
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: First Messages Today
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: super-light-purple
+            overrides:
+              - matcher:
+                  id: byName
+                  options: BOT
+                properties:
+                  - id: thresholds
+                    value:
+                      mode: absolute
+                      steps:
+                        - color: transparent
+                        - color: blue
+                          value: 1
+              - matcher:
+                  id: byName
+                  options: SYSTEM
+                properties:
+                  - id: thresholds
+                    value:
+                      mode: absolute
+                      steps:
+                        - color: transparent
+                        - color: orange
+                          value: 1
+              - matcher:
+                  id: byName
+                  options: USER
+                properties:
+                  - id: thresholds
+                    value:
+                      mode: absolute
+                      steps:
+                        - color: transparent
+                        - color: purple
+                          value: 1
+          gridPos:
+            h: 6
+            w: 6
+            x: 18
+            'y': 91
+          id: 73
+          options:
+            colorMode: background
+            graphMode: none
+            justifyMode: center
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: value_and_name
+            wideLayout: true
+          pluginVersion: 11.1.3
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: sum(tacobot_known_users{guild_id=~"$guild_id"}) by (type)
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: Known Users
+          transformations:
+            - id: renameByRegex
+              options:
+                regex: bot
+                renamePattern: BOT
+            - id: renameByRegex
+              options:
+                regex: system
+                renamePattern: SYSTEM
+            - id: renameByRegex
+              options:
+                regex: user
+                renamePattern: USER
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: red
+                  - color: '#2e5a1b'
+                    value: 1
+              unit: locale
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 0
+            'y': 158
+          id: 18
+          options:
+            colorMode: background
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 11.1.3
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_tqotd_answers{guild_id=~"$guild_id"}
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: TQOTD Answers
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: super-light-red
+                  - color: '#4a295a'
+                    value: 1
+              unit: locale
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 3
+            'y': 158
+          id: 28
+          options:
+            colorMode: background
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 11.1.3
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_mentalmondays_answers{guild_id=~"$guild_id"}
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: Mental Mondays Interactions
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: super-light-red
+                  - color: '#b46d04'
+                    value: 1
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 6
+            'y': 158
+          id: 65
+          options:
+            colorMode: background
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 11.1.3
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_tacotuesday_answers{guild_id=~"$guild_id"}
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: Taco Tuesday Interactions
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: red
+                  - color: '#2b3451'
+                    value: 1
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 9
+            'y': 158
+          id: 58
+          options:
+            colorMode: background
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 11.1.3
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_wdyctw_answers{guild_id=~"$guild_id"}
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: WDYCTW Answers
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: red
+                  - color: '#670d0d'
+                    value: 1
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 12
+            'y': 158
+          id: 60
+          options:
+            colorMode: background
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 11.1.3
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_techthurs_answers{guild_id=~"$guild_id"}
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: Tech Thursdays Replies
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: red
+                  - color: '#6985bf'
+                    value: 1
+            overrides: []
+          gridPos:
+            h: 6
+            w: 3
+            x: 15
+            'y': 158
+          id: 70
+          options:
+            colorMode: background
+            graphMode: none
+            justifyMode: auto
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 11.1.3
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: sum(tacobot_messages{guild_id=~"$guild_id"})
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: Messages Tracked Count
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    'false':
+                      index: 1
+                      text: ❌
+                    'true':
+                      index: 0
+                      text: ✅
+                  type: value
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+            overrides:
+              - matcher:
+                  id: byName
+                  options: 'APPROVED: ❌'
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: dark-orange
+                      mode: fixed
+              - matcher:
+                  id: byName
+                  options: 'APPROVED: ✅'
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: dark-green
+                      mode: fixed
+          gridPos:
+            h: 6
+            w: 6
+            x: 18
+            'y': 158
+          id: 104
+          options:
+            colorMode: background
+            graphMode: none
+            justifyMode: center
+            orientation: vertical
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 11.1.3
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: sum(tacobot_introductions{guild_id=~"$guild_id"}) by (approved)
+              instant: false
+              legendFormat: '{{approved}}'
+              range: true
+              refId: A
+          title: Introduction Posts
+          transformations:
+            - id: renameByRegex
+              options:
+                regex: 'false'
+                renamePattern: 'APPROVED: ❌'
+            - id: renameByRegex
+              options:
+                regex: 'true'
+                renamePattern: 'APPROVED: ✅'
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: super-light-orange
+            overrides: []
+          gridPos:
+            h: 6
+            w: 9
+            x: 0
+            'y': 164
+          id: 87
+          options:
+            colorMode: background
+            graphMode: none
+            justifyMode: center
+            orientation: vertical
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - last
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: value_and_name
+            wideLayout: true
+          pluginVersion: 11.1.3
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: sum(tacobot_photo_posts{guild_id=~"$guild_id"}) by (channel)
+              legendFormat: '{{channel}}'
+              range: true
+              refId: A
+          title: Photo Posts
+          transparent: true
+          type: stat
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: thresholds
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: light-blue
+            overrides:
+              - matcher:
+                  id: byName
+                  options: REJECTED
+                properties:
+                  - id: thresholds
+                    value:
+                      mode: absolute
+                      steps:
+                        - color: transparent
+                        - color: orange
+                          value: 1
+              - matcher:
+                  id: byName
+                  options: ACTIVE
+                properties:
+                  - id: thresholds
+                    value:
+                      mode: absolute
+                      steps:
+                        - color: transparent
+                        - color: green
+                          value: 1
+              - matcher:
+                  id: byName
+                  options: APPROVED
+                properties:
+                  - id: thresholds
+                    value:
+                      mode: absolute
+                      steps:
+                        - color: transparent
+                        - color: blue
+                          value: 1
+              - matcher:
+                  id: byName
+                  options: CLOSED
+                properties:
+                  - id: thresholds
+                    value:
+                      mode: absolute
+                      steps:
+                        - color: transparent
+                        - color: orange
+                          value: 1
+              - matcher:
+                  id: byName
+                  options: CONSIDERED
+                properties:
+                  - id: thresholds
+                    value:
+                      mode: absolute
+                      steps:
+                        - color: transparent
+                        - color: purple
+                          value: 1
+              - matcher:
+                  id: byName
+                  options: DELETED
+                properties:
+                  - id: thresholds
+                    value:
+                      mode: absolute
+                      steps:
+                        - color: transparent
+                        - color: red
+                          value: 1
+              - matcher:
+                  id: byName
+                  options: IMPLEMENTED
+                properties:
+                  - id: thresholds
+                    value:
+                      mode: absolute
+                      steps:
+                        - color: transparent
+                        - color: super-light-green
+                          value: 1
+          gridPos:
+            h: 6
+            w: 24
+            x: 0
+            'y': 170
+          id: 83
+          options:
+            colorMode: background
+            graphMode: none
+            justifyMode: center
+            orientation: auto
+            percentChangeColorMode: standard
+            reduceOptions:
+              calcs:
+                - lastNotNull
+              fields: ''
+              values: false
+            showPercentChange: false
+            textMode: auto
+            wideLayout: true
+          pluginVersion: 11.1.0
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_suggestions{guild_id=~"$guild_id"}
+              legendFormat: '{{status}}'
+              range: true
+              refId: A
+          title: Suggestions
+          transparent: true
+          type: stat
+      title: Interactions
+      type: row
+    - collapsed: true
+      gridPos:
+        h: 1
+        w: 24
+        x: 0
+        'y': 12
+      id: 96
+      panels:
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+            overrides: []
+          gridPos:
+            h: 8
+            w: 12
+            x: 0
+            'y': 92
+          id: 103
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: right
+              showLegend: false
+            tooltip:
+              mode: single
+              sort: none
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: round(delta(tacobot_photo_posts{guild_id=~"$guild_id"}[1d]))
+              legendFormat: '{{username}}'
+              range: true
+              refId: A
+          title: Photo Post Rate By User
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              decimals: 0
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+            overrides: []
+          gridPos:
+            h: 8
+            w: 12
+            x: 12
+            'y': 92
+          id: 89
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: right
+              showLegend: true
+            tooltip:
+              mode: single
+              sort: none
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: sum(tacobot_photo_posts{guild_id=~"$guild_id"}) by (username)
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: Photo Post By User
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+            overrides: []
+          gridPos:
+            h: 8
+            w: 12
+            x: 0
+            'y': 161
+          id: 88
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: right
+              showLegend: true
+            tooltip:
+              mode: single
+              sort: none
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: >-
+                sum(round(delta(tacobot_photo_posts{guild_id=~"$guild_id"}[1d])))
+                by (channel)
+              legendFormat: '{{username}}'
+              range: true
+              refId: A
+          title: Photo Post Rate By Channel
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              decimals: 0
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+            overrides: []
+          gridPos:
+            h: 8
+            w: 12
+            x: 12
+            'y': 161
+          id: 102
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: right
+              showLegend: true
+            tooltip:
+              mode: single
+              sort: none
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: sum(tacobot_photo_posts{guild_id=~"$guild_id"}) by (channel)
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: Photo Post By Channel
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: false
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              decimals: 0
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                  - color: red
+                    value: 80
+            overrides: []
+          gridPos:
+            h: 8
+            w: 12
+            x: 0
+            'y': 169
+          id: 74
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: right
+              showLegend: false
+            tooltip:
+              mode: single
+              sort: none
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: round(delta(tacobot_messages{guild_id=~"$guild_id"}[30m]))
+              legendFormat: '{{username}}'
+              range: true
+              refId: A
+          title: Message Rate By User
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                  - color: red
+                    value: 80
+            overrides: []
+          gridPos:
+            h: 8
+            w: 12
+            x: 12
+            'y': 169
+          id: 75
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: right
+              showLegend: false
+            tooltip:
+              mode: single
+              sort: none
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_messages{guild_id=~"$guild_id"}
+              legendFormat: '{{username}}'
+              range: true
+              refId: A
+          title: Messages By User
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                  - color: red
+                    value: 80
+            overrides: []
+          gridPos:
+            h: 8
+            w: 9
+            x: 0
+            'y': 177
+          id: 66
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: right
+              showLegend: true
+            tooltip:
+              mode: single
+              sort: none
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: round(delta(tacobot_mentalmondays{guild_id=~"$guild_id"}[24h]))
+              hide: false
+              legendFormat: Mental Monday
+              range: true
+              refId: C
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: round(delta(tacobot_tacotuesday{guild_id=~"$guild_id"}[24h]))
+              hide: false
+              legendFormat: Taco Tuesday
+              range: true
+              refId: D
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: >-
+                round(delta(tacobot_wdyctw_questions{guild_id=~"$guild_id"}[24h]))
+              legendFormat: WDYCTW
+              range: true
+              refId: A
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: round(delta(tacobot_techthurs{guild_id=~"$guild_id"}[24h]))
+              hide: false
+              legendFormat: Tech Thursday
+              range: true
+              refId: B
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: round(delta(tacobot_tqotd{guild_id=~"$guild_id"}[24h]))
+              hide: false
+              legendFormat: TQOTD
+              range: true
+              refId: E
+          title: Interaction Topics
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                  - color: red
+                    value: 80
+            overrides: []
+          gridPos:
+            h: 8
+            w: 9
+            x: 9
+            'y': 177
+          id: 67
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: right
+              showLegend: true
+            tooltip:
+              mode: single
+              sort: none
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: round(delta(tacobot_tqotd_answers{guild_id=~"$guild_id"}[24h]))
+              legendFormat: TQOTD
+              range: true
+              refId: A
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: >-
+                round(delta(tacobot_mentalmondays_answers{guild_id=~"$guild_id"}[24h]))
+              hide: false
+              legendFormat: Mental Monday
+              range: true
+              refId: B
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: >-
+                round(delta(tacobot_tacotuesday_answers{guild_id=~"$guild_id"}[24h]))
+              hide: false
+              legendFormat: Taco Tuesday
+              range: true
+              refId: C
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: round(delta(tacobot_wdyctw_answers{guild_id=~"$guild_id"}[24h]))
+              hide: false
+              legendFormat: WDYCTW
+              range: true
+              refId: D
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: >-
+                round(delta(tacobot_techthurs_answers{guild_id=~"$guild_id"}[24h]))
+              hide: false
+              legendFormat: Tech Thursday
+              range: true
+              refId: E
+          title: Interactions
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              decimals: 0
+              mappings: []
+              min: 0
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+            overrides: []
+          gridPos:
+            h: 8
+            w: 6
+            x: 18
+            'y': 177
+          id: 71
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: right
+              showLegend: true
+            tooltip:
+              mode: single
+              sort: none
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: sum(round(delta(tacobot_messages{guild_id=~"$guild_id"}[30m])))
+              legendFormat: Messages
+              range: true
+              refId: A
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: >-
+                round(delta(tacobot_first_messages_today{guild_id=~"$guild_id"}[60m]))
+              hide: false
+              legendFormat: First Message
+              range: true
+              refId: B
+          title: Message Rate
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              decimals: 0
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+            overrides:
+              - matcher:
+                  id: byFrameRefID
+                  options: B
+                properties:
+                  - id: custom.axisPlacement
+                    value: right
+                  - id: custom.lineStyle
+                    value:
+                      dash:
+                        - 10
+                        - 10
+                      fill: dash
+          gridPos:
+            h: 8
+            w: 12
+            x: 0
+            'y': 257
+          id: 94
+          options:
+            legend:
+              calcs:
+                - last
+              displayMode: table
+              placement: right
+              showLegend: true
+              sortBy: Last
+              sortDesc: true
+            tooltip:
+              mode: single
+              sort: none
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: >-
+                sum(tacobot_trivia_questions{guild_id=~"$guild_id"}) by
+                (starter_name)
+              legendFormat: '{{starter_name}}'
+              range: true
+              refId: A
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: >-
+                sum(tacobot_trivia_questions{guild_id=~"$guild_id"}) by
+                (difficulty)
+              hide: false
+              legendFormat: '{{difficulty}}'
+              range: true
+              refId: B
+          title: Trivia Starter and Difficulty
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              decimals: 0
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+            overrides: []
+          gridPos:
+            h: 8
+            w: 12
+            x: 12
+            'y': 257
+          id: 92
+          options:
+            legend:
+              calcs:
+                - last
+              displayMode: table
+              placement: right
+              showLegend: true
+              sortBy: Last
+              sortDesc: true
+            tooltip:
+              mode: single
+              sort: none
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: >-
+                sum(tacobot_trivia_questions{guild_id=~"$guild_id"}) by
+                (category)
+              legendFormat: __auto
+              range: true
+              refId: A
+          title: Trivia By Category
+          type: timeseries
+      title: Messages
+      type: row
+    - collapsed: true
+      gridPos:
+        h: 1
+        w: 24
+        x: 0
+        'y': 13
+      id: 46
+      panels:
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                barWidthFactor: 0.6
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 1
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: false
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+                  - color: red
+                    value: 80
+            overrides: []
+          gridPos:
+            h: 8
+            w: 12
+            x: 0
+            'y': 95
+          id: 105
+          options:
+            legend:
+              calcs:
+                - lastNotNull
+              displayMode: table
+              placement: right
+              showLegend: true
+              sortBy: Last *
+              sortDesc: true
+            tooltip:
+              hideZeros: false
+              mode: single
+              sort: none
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_user_game_keys_redeemed{guild_id=~"$guild_id"}
+              instant: false
+              legendFormat: '{{username}}'
+              range: true
+              refId: A
+          title: User Games Redeemed
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                barWidthFactor: 0.6
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 1
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: false
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+                  - color: red
+                    value: 80
+            overrides: []
+          gridPos:
+            h: 8
+            w: 12
+            x: 12
+            'y': 95
+          id: 106
+          options:
+            legend:
+              calcs:
+                - lastNotNull
+              displayMode: table
+              placement: right
+              showLegend: true
+              sortBy: Last *
+              sortDesc: true
+            tooltip:
+              hideZeros: false
+              mode: single
+              sort: none
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_user_game_keys_submitted{guild_id=~"$guild_id"}
+              instant: false
+              legendFormat: '{{username}}'
+              range: true
+              refId: A
+          title: User Games Submitted
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                barWidthFactor: 0.6
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 1
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: false
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+                  - color: red
+                    value: 80
+            overrides: []
+          gridPos:
+            h: 8
+            w: 12
+            x: 0
+            'y': 103
+          id: 108
+          options:
+            legend:
+              calcs:
+                - lastNotNull
+              displayMode: table
+              placement: right
+              showLegend: true
+              sortBy: Last *
+              sortDesc: true
+            tooltip:
+              hideZeros: false
+              mode: single
+              sort: none
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_twitch_stream_avatar_duel_winners{guild_id=~"$guild_id"}
+              instant: false
+              legendFormat: '{{username}}'
+              range: true
+              refId: A
+          title: Stream Avatar Wins
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                barWidthFactor: 0.6
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineStyle:
+                  fill: solid
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+              unit: locale
+            overrides:
+              - matcher:
+                  id: byName
+                  options: TWITCH_CUSTOM
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: purple
+                      mode: fixed
+          gridPos:
+            h: 8
+            w: 12
+            x: 12
+            'y': 103
+          id: 91
+          options:
+            legend:
+              calcs:
+                - last
+              displayMode: table
+              placement: right
+              showLegend: true
+              sortBy: Last
+              sortDesc: true
+            tooltip:
+              hideZeros: false
+              mode: single
+              sort: none
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_taco_logs{guild_id=~"$guild_id"}
+              legendFormat: '{{type}}'
+              range: true
+              refId: A
+          title: Tacos By Type
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                barWidthFactor: 0.6
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+            overrides:
+              - matcher:
+                  id: byName
+                  options: TWITCH_CUSTOM
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: purple
+                      mode: fixed
+          gridPos:
+            h: 8
+            w: 12
+            x: 0
+            'y': 111
+          id: 90
+          options:
+            legend:
+              calcs:
+                - last
+              displayMode: table
+              placement: right
+              showLegend: true
+              sortBy: Last
+              sortDesc: true
+            tooltip:
+              hideZeros: false
+              mode: single
+              sort: none
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: delta(tacobot_taco_logs{guild_id=~"$guild_id"}[60m])
+              legendFormat: '{{type}}'
+              range: true
+              refId: A
+          title: Tacos Rate By Type
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                barWidthFactor: 0.6
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+                  - color: red
+                    value: 80
+              unit: locale
+            overrides: []
+          gridPos:
+            h: 8
+            w: 6
+            x: 12
+            'y': 111
+          id: 79
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: right
+              showLegend: false
+            tooltip:
+              hideZeros: false
+              mode: single
+              sort: none
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_reactors {guild_id=~"$guild_id"}
+              legendFormat: '{{username}}'
+              range: true
+              refId: A
+          title: Reacts By User
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                barWidthFactor: 0.6
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: false
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+                  - color: red
+                    value: 80
+            overrides: []
+          gridPos:
+            h: 8
+            w: 6
+            x: 18
+            'y': 111
+          id: 78
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: right
+              showLegend: false
+            tooltip:
+              hideZeros: false
+              mode: single
+              sort: none
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: round(delta(tacobot_reactors {guild_id=~"$guild_id"}[30m]))
+              legendFormat: '{{username}}'
+              range: true
+              refId: A
+          title: React Rate By User
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                barWidthFactor: 0.6
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: false
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              decimals: 0
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+                  - color: red
+                    value: 80
+            overrides: []
+          gridPos:
+            h: 8
+            w: 6
+            x: 0
+            'y': 119
+          id: 76
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: right
+              showLegend: false
+            tooltip:
+              hideZeros: false
+              mode: single
+              sort: none
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: round(delta(tacobot_gifters{guild_id=~"$guild_id"}[30m]))
+              legendFormat: '{{username}}'
+              range: true
+              refId: A
+          title: Gift Rate By User
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                barWidthFactor: 0.6
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+                  - color: red
+                    value: 80
+              unit: locale
+            overrides: []
+          gridPos:
+            h: 8
+            w: 6
+            x: 6
+            'y': 119
+          id: 77
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: right
+              showLegend: false
+            tooltip:
+              hideZeros: false
+              mode: single
+              sort: none
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_gifters{guild_id=~"$guild_id"}
+              legendFormat: '{{username}}'
+              range: true
+              refId: A
+          title: Gift By User
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                barWidthFactor: 0.6
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+                  - color: red
+                    value: 80
+              unit: locale
+            overrides: []
+          gridPos:
+            h: 8
+            w: 6
+            x: 12
+            'y': 119
+          id: 81
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: right
+              showLegend: false
+            tooltip:
+              hideZeros: false
+              mode: single
+              sort: none
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_top_tacos{guild_id=~"$guild_id"}
+              legendFormat: '{{username}}'
+              range: true
+              refId: A
+          title: Total Tacos By User
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                barWidthFactor: 0.6
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              decimals: 0
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+                  - color: red
+                    value: 80
+            overrides: []
+          gridPos:
+            h: 8
+            w: 6
+            x: 18
+            'y': 119
+          id: 80
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: right
+              showLegend: false
+            tooltip:
+              hideZeros: false
+              mode: single
+              sort: none
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: round(delta(tacobot_top_tacos{guild_id=~"$guild_id"}[30m]))
+              legendFormat: '{{username}}'
+              range: true
+              refId: A
+          title: Tacos Rate By User
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                barWidthFactor: 0.6
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: smooth
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              decimals: 0
+              mappings: []
+              min: 1
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+              unit: none
+            overrides: []
+          gridPos:
+            h: 8
+            w: 12
+            x: 0
+            'y': 127
+          id: 95
+          options:
+            legend:
+              calcs:
+                - last
+              displayMode: table
+              placement: right
+              showLegend: true
+              sortBy: Last
+              sortDesc: true
+            tooltip:
+              hideZeros: false
+              mode: single
+              sort: none
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_invites{guild_id=~"$guild_id"}
+              legendFormat: '{{username}}'
+              range: true
+              refId: A
+          title: User Invites
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                barWidthFactor: 0.6
+                drawStyle: line
+                fillOpacity: 13
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  log: 2
+                  type: log
+                showPoints: never
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+                  - color: red
+                    value: 80
+            overrides:
+              - matcher:
+                  id: byName
+                  options: Twitch
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: purple
+                      mode: fixed
+          gridPos:
+            h: 8
+            w: 6
+            x: 12
+            'y': 127
+          id: 50
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: right
+              showLegend: true
+            tooltip:
+              hideZeros: false
+              mode: single
+              sort: none
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_taco_gifts {guild_id=~"$guild_id"}
+              legendFormat: Gifts
+              range: true
+              refId: A
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_taco_reactions {guild_id=~"$guild_id"}
+              hide: false
+              legendFormat: Reactions
+              range: true
+              refId: B
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_twitch_tacos {guild_id=~"$guild_id"}
+              hide: false
+              legendFormat: Twitch
+              range: true
+              refId: C
+          title: TACOs 🌮
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                barWidthFactor: 0.6
+                drawStyle: line
+                fillOpacity: 61
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 1
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: never
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+                  - color: red
+                    value: 80
+            overrides: []
+          gridPos:
+            h: 8
+            w: 6
+            x: 18
+            'y': 127
+          id: 48
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: bottom
+              showLegend: false
+            tooltip:
+              hideZeros: false
+              mode: single
+              sort: none
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_tacos{guild_id=~"$guild_id"}
+              legendFormat: TACOS 🌮
+              range: true
+              refId: A
+          title: Tacos 🌮 Earned
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          description: ''
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                barWidthFactor: 0.6
+                drawStyle: line
+                fillOpacity: 10
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: smooth
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+            overrides:
+              - matcher:
+                  id: byName
+                  options: Twitch
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: purple
+                      mode: fixed
+          gridPos:
+            h: 8
+            w: 12
+            x: 0
+            'y': 135
+          id: 61
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: right
+              showLegend: true
+            tooltip:
+              hideZeros: false
+              mode: single
+              sort: none
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: round(delta(tacobot_tacos{guild_id=~"$guild_id"}[30m]))
+              legendFormat: Earned
+              range: true
+              refId: A
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: round(delta(tacobot_taco_gifts{guild_id=~"$guild_id"}[60m]))
+              hide: false
+              legendFormat: Gift
+              range: true
+              refId: B
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: round(delta(tacobot_taco_reactions{guild_id=~"$guild_id"}[60m]))
+              hide: false
+              legendFormat: Reactions
+              range: true
+              refId: C
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: round(delta(tacobot_twitch_tacos{guild_id=~"$guild_id"}[60m]))
+              hide: false
+              legendFormat: Twitch
+              range: true
+              refId: D
+          title: Taco Receive Rate
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                barWidthFactor: 0.6
+                drawStyle: line
+                fillOpacity: 0
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 1
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              decimals: 0
+              mappings: []
+              max: 1
+              min: 0
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+            overrides: []
+          gridPos:
+            h: 8
+            w: 12
+            x: 12
+            'y': 135
+          id: 107
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: right
+              showLegend: true
+            tooltip:
+              hideZeros: false
+              mode: single
+              sort: none
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_exporter_errors
+              instant: false
+              legendFormat: '{{source}}'
+              range: true
+              refId: A
+          title: Exporter Errors
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                barWidthFactor: 0.6
+                drawStyle: line
+                fillOpacity: 12
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              mappings: []
+              min: 0
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+            overrides:
+              - matcher:
+                  id: byName
+                  options: ERROR
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: red
+                      mode: fixed
+              - matcher:
+                  id: byName
+                  options: WARNING
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: orange
+                      mode: fixed
+              - matcher:
+                  id: byName
+                  options: DEBUG
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: blue
+                      mode: fixed
+              - matcher:
+                  id: byName
+                  options: INFO
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: green
+                      mode: fixed
+          gridPos:
+            h: 8
+            w: 6
+            x: 0
+            'y': 143
+          id: 62
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: right
+              showLegend: true
+            tooltip:
+              hideZeros: false
+              mode: single
+              sort: none
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: "round(delta(tacobot_logs{guild_id=~\"$guild_id\"}[60m]))\r\n"
+              legendFormat: '{{level}}'
+              range: true
+              refId: A
+          title: Logs Delta
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                barWidthFactor: 0.6
+                drawStyle: line
+                fillOpacity: 13
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              mappings:
+                - options:
+                    match: null+nan
+                    result:
+                      index: 1
+                      text: '0'
+                  type: special
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+                  - color: red
+                    value: 1
+            overrides:
+              - matcher:
+                  id: byName
+                  options: ERROR
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: red
+                      mode: fixed
+              - matcher:
+                  id: byName
+                  options: WARNING
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: orange
+                      mode: fixed
+              - matcher:
+                  id: byName
+                  options: DEBUG
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: blue
+                      mode: fixed
+              - matcher:
+                  id: byName
+                  options: INFO
+                properties:
+                  - id: color
+                    value:
+                      fixedColor: green
+                      mode: fixed
+          gridPos:
+            h: 8
+            w: 6
+            x: 6
+            'y': 143
+          id: 56
+          options:
+            legend:
+              calcs: []
+              displayMode: table
+              placement: right
+              showLegend: true
+            tooltip:
+              hideZeros: false
+              mode: single
+              sort: none
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_logs{guild_id=~"$guild_id"}
+              legendFormat: '{{level}}'
+              range: true
+              refId: A
+          title: Logs
+          type: timeseries
+      title: Visuals
+      type: row
+    - collapsed: true
+      gridPos:
+        h: 1
+        w: 24
+        x: 0
+        'y': 14
+      id: 97
+      panels:
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                barWidthFactor: 0.6
+                drawStyle: line
+                fillOpacity: 12
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              mappings: []
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+                  - color: red
+                    value: 80
+            overrides: []
+          gridPos:
+            h: 8
+            w: 12
+            x: 0
+            'y': 96
+          id: 82
+          options:
+            legend:
+              calcs:
+                - last
+              displayMode: table
+              placement: right
+              showLegend: true
+              sortBy: Last
+              sortDesc: true
+            tooltip:
+              hideZeros: false
+              mode: single
+              sort: none
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_live_activity {guild_id=~"$guild_id", platform!=""}
+              legendFormat: '{{username}} ({{platform}})'
+              range: true
+              refId: A
+          title: 🔴 Live By User
+          type: timeseries
+        - datasource:
+            type: prometheus
+            uid: PBFA97CFB590B2093
+          fieldConfig:
+            defaults:
+              color:
+                mode: palette-classic
+              custom:
+                axisBorderShow: false
+                axisCenteredZero: false
+                axisColorMode: text
+                axisLabel: ''
+                axisPlacement: auto
+                barAlignment: 0
+                barWidthFactor: 0.6
+                drawStyle: line
+                fillOpacity: 55
+                gradientMode: none
+                hideFrom:
+                  legend: false
+                  tooltip: false
+                  viz: false
+                insertNulls: false
+                lineInterpolation: linear
+                lineWidth: 2
+                pointSize: 5
+                scaleDistribution:
+                  type: linear
+                showPoints: auto
+                spanNulls: true
+                stacking:
+                  group: A
+                  mode: none
+                thresholdsStyle:
+                  mode: 'off'
+              decimals: 0
+              mappings: []
+              min: 0
+              thresholds:
+                mode: absolute
+                steps:
+                  - color: green
+                    value: 0
+                  - color: red
+                    value: 80
+            overrides: []
+          gridPos:
+            h: 8
+            w: 12
+            x: 12
+            'y': 96
+          id: 54
+          options:
+            legend:
+              calcs: []
+              displayMode: list
+              placement: bottom
+              showLegend: true
+            tooltip:
+              hideZeros: false
+              mode: single
+              sort: none
+          pluginVersion: 12.1.1
+          targets:
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: tacobot_live_now{guild_id=~"$guild_id"}
+              legendFormat: Live
+              range: true
+              refId: A
+            - datasource:
+                type: prometheus
+                uid: PBFA97CFB590B2093
+              editorMode: code
+              expr: sum(avg_over_time(tacobot_live_now{guild_id=~"$guild_id"}[24h]))
+              hide: false
+              instant: false
+              legendFormat: Average
+              range: true
+              refId: B
+          title: 🔴 LIVE NOW
+          type: timeseries
+      title: 🔴LIVE
+      type: row
+  preload: false
+  refresh: 1m
+  schemaVersion: 42
+  tags: []
+  templating:
+    list:
+      - current:
+          text: TACO
+          value: '935294040386183228'
+        datasource:
+          type: prometheus
+          uid: PBFA97CFB590B2093
+        definition: tacobot_guilds
+        includeAll: false
+        label: Guild
+        name: guild_id
+        options: []
+        query:
+          qryType: 4
+          query: tacobot_guilds
+          refId: PrometheusVariableQueryEditor-VariableQuery
+        refresh: 1
+        regex: /guild_id="(?<value>.*?)".*?name="(?<text>.*?)"/g
+        sort: 5
+        type: query
+  time:
+    from: now-6h
+    to: now
+  timepicker: {}
+  timezone: ''
+  title: Tacobot
+  uid: GnSFRx0Vz
+  version: 134
+status: {}
