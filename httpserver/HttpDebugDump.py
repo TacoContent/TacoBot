@@ -21,8 +21,9 @@ import os
 import typing
 from time import monotonic
 
-from bot.lib import logger, settings
+from bot.lib import logger
 from bot.lib.enums import loglevel
+from bot.lib.settings import Settings
 from httpserver.HttpHeaders import HttpHeaders
 from httpserver.HttpRequest import HttpRequest
 from httpserver.HttpResponse import HttpResponse
@@ -34,7 +35,7 @@ class HttpDebugDump:
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
 
-        self.settings = settings.Settings()
+        self.settings = Settings()
         log_level = loglevel.LogLevel.DEBUG
         try:
             log_level = loglevel.LogLevel[self.settings.log_level.upper()]

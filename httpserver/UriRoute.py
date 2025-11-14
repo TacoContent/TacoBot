@@ -3,7 +3,7 @@ import types
 import typing
 from dataclasses import dataclass
 from http import HTTPMethod
-from typing import Generator
+from typing import Generator, cast
 
 HTTP_METHODS = typing.Literal[
     "GET",
@@ -41,7 +41,7 @@ class UriRoute:
             for m in self.http_method:
                 yield m
 
-    def match(self, http_method: str, path: str) -> bool:
+    def match(self, http_method: str, path: str) -> bool:  # type: ignore
         for m in self.http_methods():
             if m == http_method:
                 break
@@ -50,7 +50,5 @@ class UriRoute:
 
         if self.is_static():
             return path == self.path
-        if isinstance(self.path, re.Pattern):
-            return self.path.match(path) is not None
-
-        return False
+        else:
+            return cast(re.Pattern, self.path).match(path) is not None
