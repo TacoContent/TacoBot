@@ -8,7 +8,7 @@ from scripts.swagger_sync import collect_model_components
 def test_tmp_test_models_in_tests_directory():
     """Verify that tmp_test_models.py can be scanned and processed correctly."""
     # Use tests directory as models root
-    models_root = pathlib.Path('tests')
+    models_root = pathlib.Path('tests/model_components')
 
     comps, _ = collect_model_components(models_root)
 

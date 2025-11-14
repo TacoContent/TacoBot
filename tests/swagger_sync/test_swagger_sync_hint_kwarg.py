@@ -18,7 +18,7 @@ sys.path.insert(0, str(scripts_path))
 
 from typing import Any, Dict, List
 
-from swagger_sync.model_components import _resolve_hint_to_schema, collect_model_components
+from scripts.swagger_sync.model_components import _resolve_hint_to_schema, collect_model_components
 
 
 class TestResolveHintToSchema:
@@ -37,14 +37,14 @@ class TestResolveHintToSchema:
     def test_hint_string_annotation_list(self):
         """Test that string annotation 'List[Any]' resolves correctly."""
         result = _resolve_hint_to_schema("List[Any]")
-        assert result['type'] == 'array'
-        assert 'items' in result
+        assert result['type'] == 'array'  # type: ignore
+        assert 'items' in result  # type: ignore
 
     def test_hint_string_annotation_nested(self):
         """Test that nested annotation 'List[Dict[str, Any]]' resolves correctly."""
         result = _resolve_hint_to_schema("List[Dict[str, Any]]")
-        assert result['type'] == 'array'
-        assert result['items'] == {'type': 'object'}
+        assert result['type'] == 'array'  # type: ignore
+        assert result['items'] == {'type': 'object'}  # type: ignore
 
     def test_hint_type_object_list(self):
         """Test that type object 'list' resolves correctly."""
@@ -84,8 +84,8 @@ class TestResolveHintToSchema:
     def test_hint_typing_module_list(self):
         """Test that typing.List[Any] resolves correctly."""
         result = _resolve_hint_to_schema(List[Any])
-        assert result['type'] == 'array'
-        assert 'items' in result
+        assert result['type'] == 'array'  # type: ignore
+        assert 'items' in result  # type: ignore
 
     def test_hint_string_model_reference(self):
         """Test that string model reference resolves to $ref."""
@@ -99,11 +99,11 @@ class TestHintKwargInModelComponents:
     @pytest.fixture
     def test_models_path(self):
         """Path to test models directory."""
-        return pathlib.Path(__file__).parent / 'tmp_hint_test_models.py'
+        return pathlib.Path(__file__).parent.parent / 'model_components'
 
     def test_hint_extracted_from_decorator(self, test_models_path):
         """Test that hint kwarg is extracted from property decorators."""
-        models_dir = test_models_path.parent
+        models_dir = test_models_path
         components, _ = collect_model_components(models_dir)
 
         # HintTestModel should be in components
@@ -119,7 +119,7 @@ class TestHintKwargInModelComponents:
 
     def test_hint_applied_to_typevar_list(self, test_models_path):
         """Test that hint is applied to List[TypeVar] properties."""
-        models_dir = test_models_path.parent
+        models_dir = test_models_path
         components, _ = collect_model_components(models_dir)
 
         hint_model = components['HintTestModel']
@@ -133,7 +133,7 @@ class TestHintKwargInModelComponents:
 
     def test_hint_model_reference(self, test_models_path):
         """Test that hint with model reference creates $ref."""
-        models_dir = test_models_path.parent
+        models_dir = test_models_path
         components, _ = collect_model_components(models_dir)
 
         hint_model = components['HintTestModel']
@@ -146,7 +146,7 @@ class TestHintKwargInModelComponents:
 
     def test_typevar_without_hint_defaults_to_object(self, test_models_path):
         """Test that TypeVar properties without hint default to object type."""
-        models_dir = test_models_path.parent
+        models_dir = test_models_path
         components, _ = collect_model_components(models_dir)
 
         hint_model = components['HintTestModel']
@@ -158,7 +158,7 @@ class TestHintKwargInModelComponents:
 
     def test_simple_type_hints(self, test_models_path):
         """Test simple type object hints (list, dict)."""
-        models_dir = test_models_path.parent
+        models_dir = test_models_path
         components, _ = collect_model_components(models_dir)
 
         assert 'SimpleHintModel' in components

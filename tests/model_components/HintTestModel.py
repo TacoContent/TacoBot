@@ -21,16 +21,16 @@ class HintTestModel(Generic[T]):
 
     def __init__(self):
         # TypeVar property with dict hint using typing module type
-        self.settings: T = None
+        self.settings: T = None  # type: ignore
 
         # TypeVar property with list hint using string annotation
-        self.items: T = None
+        self.items: T = None  # type: ignore
 
         # TypeVar property with specific model hint (string)
-        self.data: T = None
+        self.data: T = None  # type: ignore
 
         # TypeVar property with no hint (should default to object)
-        self.raw: T = None
+        self.raw: T = None  # type: ignore
 
 
 @openapi.component("SimpleHintModel")

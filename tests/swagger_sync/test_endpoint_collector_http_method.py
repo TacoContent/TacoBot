@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 # Add scripts directory to path
-scripts_dir = Path(__file__).parent.parent / "scripts"
+scripts_dir = Path(__file__).parent.parent.parent / "scripts"
 sys.path.insert(0, str(scripts_dir))
 
 from swagger_sync.endpoint_collector import collect_endpoints  # type: ignore # noqa: E402
@@ -146,7 +146,7 @@ def test_real_tacos_webhook_handler():
     This test ensures that the /webhook/minecraft/tacos endpoint is correctly
     parsed as POST only (not GET).
     """
-    handlers_root = Path(__file__).parent.parent / "bot" / "lib" / "http" / "handlers"
+    handlers_root = Path(__file__).parent.parent.parent / "bot" / "lib" / "http" / "handlers"
 
     endpoints, _ = collect_endpoints(handlers_root=handlers_root, strict=False)
 
