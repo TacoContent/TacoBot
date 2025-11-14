@@ -86,6 +86,7 @@ def metrics_db():
     db.get_permission_counts = MagicMock(return_value=[])
     return db
 
+
 @pytest.fixture
 def invites_db():
     """Function-scoped mock invites database."""
@@ -309,3 +310,11 @@ def minecraft_db():
     db.get_minecraft_user = MagicMock()
     db.whitelist_minecraft_user = MagicMock()
     return db
+
+
+@pytest.fixture
+def metrics_config():
+    """Create mock configuration object."""
+    config = MagicMock()
+    config.metrics = {"pollingInterval": 60}
+    return config

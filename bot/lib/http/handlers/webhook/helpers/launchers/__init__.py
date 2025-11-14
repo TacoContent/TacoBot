@@ -7,7 +7,7 @@ and exports them for convenient importing.
 import inspect
 import typing
 
-from lib.http.handlers.webhook.helpers.launchers.LauncherStrategies import LauncherStrategy
+from bot.lib.http.handlers.webhook.helpers.launchers.LauncherStrategies import LauncherStrategy
 
 
 # Automatically discover all LauncherStrategy subclasses

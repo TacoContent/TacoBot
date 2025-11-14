@@ -22,7 +22,7 @@ import os
 import typing
 from collections.abc import Generator, KeysView
 from dataclasses import dataclass
-from http import HTTPMethod, HTTPStatus
+from http import HTTPStatus
 from time import monotonic
 from urllib.parse import parse_qs
 
@@ -205,9 +205,11 @@ class HttpDebugDump:
         self._module = os.path.basename(__file__)[:-3]
 
         self.settings = settings.Settings()
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
-        if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
+        log_level = loglevel.LogLevel.DEBUG
+        try:
+            log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        except KeyError:
+            pass
 
         self.log = logger.Log(minimumLogLevel=log_level)
 

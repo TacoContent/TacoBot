@@ -2,7 +2,6 @@ import inspect
 import os
 import traceback
 
-
 from bot.lib.enums.loglevel import LogLevel
 from bot.lib.logger import Log
 from bot.lib.mongodb.metrics import MetricsDatabase

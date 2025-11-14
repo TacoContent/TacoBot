@@ -57,7 +57,10 @@ class TacoBotMetrics:
             live_labels = ["guild_id", "user_id", "username", "platform"]
 
             self.sum_tacos = Gauge(
-                namespace=self.namespace, name="tacos", documentation="The number of tacos give to users", labelnames=labels
+                namespace=self.namespace,
+                name="tacos",
+                documentation="The number of tacos give to users",
+                labelnames=labels,
             )
 
             self.sum_taco_gifts = Gauge(
@@ -222,7 +225,10 @@ class TacoBotMetrics:
             )
 
             self.sum_logs = Gauge(
-                namespace=self.namespace, name="logs", documentation="The number of logs", labelnames=["guild_id", "level"]
+                namespace=self.namespace,
+                name="logs",
+                documentation="The number of logs",
+                labelnames=["guild_id", "level"],
             )
 
             self.sum_stream_team_requests = Gauge(
@@ -258,7 +264,10 @@ class TacoBotMetrics:
             )
 
             self.top_gifters = Gauge(
-                namespace=self.namespace, name="gifters", documentation="The number of top gifters", labelnames=user_labels
+                namespace=self.namespace,
+                name="gifters",
+                documentation="The number of top gifters",
+                labelnames=user_labels,
             )
 
             self.top_reactors = Gauge(
@@ -269,7 +278,10 @@ class TacoBotMetrics:
             )
 
             self.top_tacos = Gauge(
-                namespace=self.namespace, name="top_tacos", documentation="The number of top tacos", labelnames=user_labels
+                namespace=self.namespace,
+                name="top_tacos",
+                documentation="The number of top tacos",
+                labelnames=user_labels,
             )
 
             self.taco_logs = Gauge(
@@ -895,7 +907,9 @@ class TacoBotMetrics:
                     self._set_gauge_labels(self.sum_logs, t_labels, 0)
             for row in logs:
                 # self.sum_logs.labels(guild_id=row['_id']['guild_id'], level=row['_id']['level']).set(row["total"])
-                self._set_gauge_labels(self.sum_logs, {"guild_id": row['_id']['guild_id'], "level": row['_id']['level']}, row["total"])
+                self._set_gauge_labels(
+                    self.sum_logs, {"guild_id": row['_id']['guild_id'], "level": row['_id']['level']}, row["total"]
+                )
             # self.errors.labels("logs").set(0)
             self._set_gauge_labels(self.errors, {"source": "logs"}, 0)
         except Exception as ex:
@@ -1392,10 +1406,7 @@ class TacoBotMetrics:
             for row in q_permission_counts:
                 self._set_gauge_labels(
                     self.permission_count,
-                    {
-                        "guild_id": row['_id']["guild_id"],
-                        "permission": row['_id']["permission"],
-                    },
+                    {"guild_id": row['_id']["guild_id"], "permission": row['_id']["permission"]},
                     row["total"],
                 )
                 # self.permission_count.labels(

@@ -10,9 +10,9 @@ The swagger_sync script now supports TypeAlias definitions with Union types, aut
 
 ```python
 import typing
-from lib.models.openapi import openapi
-from lib.models.DiscordRole import DiscordRole
-from lib.models.DiscordUser import DiscordUser
+from bot.lib.models.openapi import openapi
+from bot.lib.models.DiscordRole import DiscordRole
+from bot.lib.models.DiscordUser import DiscordUser
 
 DiscordMentionable: typing.TypeAlias = typing.Union[DiscordRole, DiscordUser]
 
@@ -364,7 +364,7 @@ In addition to `oneOf` for exclusive alternatives, the script now supports `anyO
 
 ```python
 import typing
-from lib.models.openapi import openapi
+from bot.lib.models.openapi import openapi
 
 @openapi.component()
 class SearchDateFilter:
@@ -433,9 +433,9 @@ The script now fully supports nullable unions with automatic `nullable: true` ge
 
 ```python
 import typing
-from lib.models.openapi import openapi
-from lib.models.DiscordRole import DiscordRole
-from lib.models.DiscordUser import DiscordUser
+from bot.lib.models.openapi import openapi
+from bot.lib.models.DiscordRole import DiscordRole
+from bot.lib.models.DiscordUser import DiscordUser
 
 # Nullable discriminated union
 OptionalMentionable: typing.TypeAlias = typing.Optional[typing.Union[DiscordRole, DiscordUser]]

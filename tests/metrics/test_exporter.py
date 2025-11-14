@@ -125,7 +125,14 @@ class TestMetricsExporterRun:
     @patch('metrics.exporter.MetricsDatabase')
     @patch.dict(os.environ, {'TBE_CONFIG_FILE': './test-config.yaml'})
     def test_run_successful_execution(
-        self, mock_metrics_db, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings, metrics_db
+        self,
+        mock_metrics_db,
+        mock_log_class,
+        mock_config_class,
+        mock_metrics_class,
+        mock_http_server,
+        module_settings,
+        metrics_db,
     ):
         """Test successful run execution with all components."""
         # Setup mocks

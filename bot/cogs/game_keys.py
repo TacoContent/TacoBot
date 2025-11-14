@@ -12,6 +12,7 @@ from bot.lib.enums import tacotypes
 from bot.lib.enums.permissions import TacoPermissions
 from bot.lib.enums.system_actions import SystemActions
 from bot.lib.helpers import ContextHelper, EntityHelper, MessageHelper, TacoHelper
+from bot.lib.models.InteractionContext import InteractionContext
 from bot.lib.mongodb.gamekeys import GameKeysDatabase
 from bot.lib.mongodb.tacos import TacosDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
@@ -21,7 +22,6 @@ from bot.lib.steam.steamapi import SteamApiClient
 from bot.tacobot import TacoBot
 from bot.ui.GameRewardView import GameRewardView
 from discord.ext import commands
-from lib.models.InteractionContext import InteractionContext
 
 
 class GameKeysCog(TacobotCog):

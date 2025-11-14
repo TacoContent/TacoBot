@@ -41,7 +41,10 @@ def _convert_params(request: HttpRequest, route: UriRoute, method):
         elif param_name == 'raw_body':
             args.append(request.body)
         elif param_name == 'body':
-            args.append(json.loads(request.body))
+            if request.body:
+                args.append(json.loads(request.body))
+            else:
+                args.append(None)
         elif param_name == 'query_params':
             args.append(request.query_params)
         elif param_name == 'headers':
@@ -49,11 +52,15 @@ def _convert_params(request: HttpRequest, route: UriRoute, method):
         elif param_name == 'auth_callback':
             args.append(route.auth_callback)
         elif param_name == 'uri_variables':
-            if len(route.uri_variables) == 1:
-                uri_variables = dict(zip(route.uri_variables, re.findall(route.path, request.path)))
+            if route.uri_variables is not None:
+                if len(route.uri_variables) == 1:
+                    uri_variables = dict(zip(route.uri_variables, re.findall(route.path, request.path)))
+                else:
+                    uri_variables = dict(zip(route.uri_variables, re.findall(route.path, request.path)[0]))
+                args.append(uri_variables)
             else:
-                uri_variables = dict(zip(route.uri_variables, re.findall(route.path, request.path)[0]))
-            args.append(uri_variables)
+                args.append(None)
+        # Should this actually append None if not found?
         else:
             args.append(None)
     return args

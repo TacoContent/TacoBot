@@ -50,9 +50,9 @@ from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.helpers import MessageHelper
 from bot.lib.models.AnnouncementEntry import AnnouncementEntry
 from bot.lib.mongodb.announcements import AnnouncementsDatabase
+from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext import commands
-from lib.settings import Settings
 
 
 class AnnouncementsCog(TacobotCog):

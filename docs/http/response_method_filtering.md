@@ -83,7 +83,7 @@ This creates 4 response combinations:
 
 ```python
 from http import HTTPMethod
-from lib.models import openapi
+from bot.lib.models import openapi
 
 @uri_mapping("/webhook/minecraft/tacos", method=HTTPMethod.POST)
 @openapi.response(

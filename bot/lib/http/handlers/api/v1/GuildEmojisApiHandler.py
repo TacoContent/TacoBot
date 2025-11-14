@@ -7,14 +7,14 @@ from http import HTTPMethod
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.models.DiscordEmoji import DiscordEmoji
+from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from bot.lib.models.GuildItemIdBatchRequestBody import GuildItemIdBatchRequestBody, GuildItemNameBatchRequestBody
+from bot.lib.models.openapi import openapi
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from httpserver.EndpointDecorators import uri_variable_mapping
 from httpserver.http_util import HttpHeaders, HttpRequest, HttpResponse
 from httpserver.server import HttpResponseException, HttpServer
-from lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
-from lib.models.GuildItemIdBatchRequestBody import GuildItemIdBatchRequestBody, GuildItemNameBatchRequestBody
-from lib.models.openapi import openapi
 
 
 class GuildEmojisApiHandler(BaseHttpHandler):
