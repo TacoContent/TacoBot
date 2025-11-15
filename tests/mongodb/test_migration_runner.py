@@ -3,7 +3,6 @@ import types
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from bot.lib.enums import loglevel
 from bot.lib.mongodb.migration_runner import MigrationRunner
 
@@ -53,11 +52,7 @@ def test_init_collects_and_sorts_migrations(monkeypatch):
 
     # Runner should collect only _migration.py entries and sort by numeric prefix
     assert [m["id"] for m in runner._migrations] == [1, 2, 10]
-    assert [m["name"] for m in runner._migrations] == [
-        "1_first_migration",
-        "2_second_migration",
-        "10_third_migration",
-    ]
+    assert [m["name"] for m in runner._migrations] == ["1_first_migration", "2_second_migration", "10_third_migration"]
 
     # Logger must be constructed with the right minimumLogLevel
     MockLog.assert_called_once()

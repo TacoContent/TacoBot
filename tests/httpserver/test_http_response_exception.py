@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock
 
 from httpserver.HttpHeaders import HttpHeaders
-from httpserver.HttpResponseException import HttpResponseException
 from httpserver.HttpResponse import HttpResponse
+from httpserver.HttpResponseException import HttpResponseException
 
 
 class TestHttpResponseException:

@@ -4,16 +4,11 @@ import re
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
-from httpserver.HttpServer import (
-    _scan_handler_for_uri_routes,
-    _convert_params,
-    HttpServer,
-)
-from httpserver.UriRoute import UriRoute
-from httpserver.HttpResponse import HttpResponse
 from httpserver.HttpHeaders import HttpHeaders
+from httpserver.HttpResponse import HttpResponse
 from httpserver.HttpResponseException import HttpResponseException
+from httpserver.HttpServer import HttpServer, _convert_params, _scan_handler_for_uri_routes
+from httpserver.UriRoute import UriRoute
 
 
 class FakeHandler:
@@ -45,8 +40,8 @@ def test_convert_params_for_function_and_method():
 
     route = UriRoute(re.compile(r"/users/(\d+)"), "GET", ["id"], ["request", "raw_body", "body", "query_params", "headers", "auth_callback", "uri_variables"])  # type: ignore[arg-type]
     # create a request object
-    from httpserver.HttpRequest import HttpRequest
     from httpserver.HttpHeaders import HttpHeaders
+    from httpserver.HttpRequest import HttpRequest
 
     headers = HttpHeaders().set("content-type", "application/json")
     req = HttpRequest(0.0, "GET", "/users/42", {}, "HTTP/1.1", headers, body=b"{\"a\":1}")
@@ -308,6 +303,7 @@ async def test_handle_client_routes_not_found_and_found():
         await server._handle_client(reader, writer)
         # since there were no routes registered, it should call send (404)
         assert server._send_response.await_count >= 1
+
     # parser raising timeout should be handled
     async def fake_timeout(reader, timeout, http_trace=False):
         raise asyncio.TimeoutError()
@@ -359,6 +355,7 @@ async def test_handle_client_routes_not_found_and_found():
         assert server._send_response.await_count == 1
     # ping _find_route regex when registered directly
     server._static_routes = {}
+
     # create local regex route/method to test
     def get_bar_local(request):
         return HttpResponse(200)
@@ -379,8 +376,10 @@ async def test_handle_client_routes_not_found_and_found():
 
     # unknown param at function end should hit else branch
     route_unknown2 = UriRoute("/p", "GET", None, ["request", "unknownit"])  # type: ignore[arg-type]
+
     def dummy_for_unknown(request):
         return None
+
     args_u = _convert_params(req3, route_unknown2, dummy_for_unknown)
     assert args_u[-1] is None
 
@@ -434,9 +433,11 @@ def test_log_level_fallback_uses_debug():
             def __getitem__(cls, key):
                 return False
 
-    with patch("httpserver.HttpServer.settings.Settings") as mock_settings, patch(
-        "httpserver.HttpServer.loglevel", FakeMod
-    ), patch("httpserver.HttpServer.logger.Log") as mock_logger:
+    with (
+        patch("httpserver.HttpServer.settings.Settings") as mock_settings,
+        patch("httpserver.HttpServer.loglevel", FakeMod),
+        patch("httpserver.HttpServer.logger.Log") as mock_logger,
+    ):
         mock_settings.return_value.log_level = "BROKEN"
         server = HttpServer()
         # Ensure a logger was created
@@ -465,8 +466,9 @@ def test_log_level_fallback_via_enum_getitem_patch():
             def __getitem__(cls, key):
                 return False
 
-    with patch("httpserver.HttpServer.settings.Settings") as mock_settings, patch(
-        "httpserver.HttpServer.loglevel", FakeMod
+    with (
+        patch("httpserver.HttpServer.settings.Settings") as mock_settings,
+        patch("httpserver.HttpServer.loglevel", FakeMod),
     ):
         mock_settings.return_value.log_level = "BROKEN"
         with patch("httpserver.HttpServer.logger.Log") as mock_logger:
@@ -597,6 +599,7 @@ async def test_process_request_auth_callback_true():
         server = HttpServer()
 
     server._send_response = AsyncMock()
+
     def method_ok(request):
         return HttpResponse(200)
 

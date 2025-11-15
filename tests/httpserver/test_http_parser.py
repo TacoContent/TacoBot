@@ -2,9 +2,8 @@ import asyncio
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-from httpserver.HttpParser import _clean_path, _parse_path, http_parser
 from httpserver.HttpHeaders import HttpHeaders
+from httpserver.HttpParser import _clean_path, _parse_path, http_parser
 
 
 def test_clean_path_reduces_double_slash():
@@ -30,12 +29,7 @@ async def test_http_parser_get_without_body():
     """A simple GET request with headers and no body should be parsed correctly."""
     reader = asyncio.StreamReader()
 
-    data = (
-        b"GET /hello?x=1 HTTP/1.1\r\n"
-        b"Host: example.com\r\n"
-        b"User-Agent: test\r\n"
-        b"\r\n"
-    )
+    data = b"GET /hello?x=1 HTTP/1.1\r\n" b"Host: example.com\r\n" b"User-Agent: test\r\n" b"\r\n"
 
     reader.feed_data(data)
     reader.feed_eof()
@@ -106,12 +100,7 @@ async def test_http_parser_handles_multiple_headers_same_key():
     """Ensure multiple headers with same key are preserved and get_list works."""
     reader = asyncio.StreamReader()
 
-    data = (
-        b"GET /multi HTTP/1.1\r\n"
-        b"X-Test: one\r\n"
-        b"X-Test: two\r\n"
-        b"\r\n"
-    )
+    data = b"GET /multi HTTP/1.1\r\n" b"X-Test: one\r\n" b"X-Test: two\r\n" b"\r\n"
 
     reader.feed_data(data)
     reader.feed_eof()

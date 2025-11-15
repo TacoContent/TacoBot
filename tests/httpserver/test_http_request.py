@@ -7,12 +7,7 @@ from httpserver.HttpRequest import HttpRequest
 def test_http_request_fields_and_default_body():
     headers = HttpHeaders().set("content-type", "text/plain")
     req = HttpRequest(
-        stamp=1.234,
-        method="POST",
-        path="/api/test",
-        query_params={"id": ["123"]},
-        version="HTTP/1.1",
-        headers=headers,
+        stamp=1.234, method="POST", path="/api/test", query_params={"id": ["123"]}, version="HTTP/1.1", headers=headers
     )
 
     assert isinstance(req.stamp, float)

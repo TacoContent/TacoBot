@@ -1,9 +1,8 @@
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import ANY, MagicMock, patch
 
 import pytest
-
-from httpserver.HttpHeaders import HttpHeaders
 from httpserver.HttpDebugDump import HttpDebugDump
+from httpserver.HttpHeaders import HttpHeaders
 from httpserver.HttpRequest import HttpRequest
 from httpserver.HttpResponse import HttpResponse
 
@@ -24,9 +23,7 @@ class TestHttpDebugDump:
             stamp=123.0,
             method="GET",
             path="/hello",
-            query_params={
-                "q": ["1"],
-            },
+            query_params={"q": ["1"]},
             version="HTTP/1.1",
             headers=headers if headers is not None else HttpHeaders(),
         )
@@ -81,9 +78,11 @@ class TestHttpDebugDump:
 
     def test_init_with_unknown_log_level_uses_default(self):
         # If the settings' log_level isn't in the enum, default DEBUG is used
-        with patch("httpserver.HttpDebugDump.Settings") as mock_settings_class, patch(
-            "httpserver.HttpDebugDump.logger.Log"
-        ) as mock_log_class:
+        with (
+            patch("httpserver.HttpDebugDump.Settings") as mock_settings_class,
+            patch("httpserver.HttpDebugDump.logger.Log") as mock_log_class,
+        ):
+
             class BrokenSettings:
                 log_level = "BROKEN"
 

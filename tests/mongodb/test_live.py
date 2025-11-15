@@ -1,6 +1,5 @@
 from unittest.mock import MagicMock, patch
 
-
 from bot.lib.mongodb.live import LiveDatabase
 
 
@@ -27,6 +26,7 @@ def test_track_live_activity_inserts_payload(mock_to_ts):
 
 def test_track_live_raises_on_missing_required():
     db = LiveDatabase()
+
     # track_live logs and returns on validation errors (method catches exceptions)
     def fake_open():
         db.client = MagicMock()

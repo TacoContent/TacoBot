@@ -1,7 +1,6 @@
 from unittest.mock import AsyncMock, MagicMock, mock_open, patch
 
 import pytest
-
 from httpserver.HttpHeaders import HttpHeaders
 from httpserver.HttpRequest import HttpRequest
 from httpserver.HttpResponse import HttpResponse
@@ -17,18 +16,9 @@ class TestHttpSendResponse:
         writer = MagicMock()
         writer.drain = AsyncMock()
         request = HttpRequest(
-            stamp=123.0,
-            method="GET",
-            path="/test",
-            query_params={},
-            version="HTTP/1.1",
-            headers=HttpHeaders()
+            stamp=123.0, method="GET", path="/test", query_params={}, version="HTTP/1.1", headers=HttpHeaders()
         )
-        response = HttpResponse(
-            status_code=200,
-            headers={"content-type": "application/json"},
-            body=b'{"test": "data"}'
-        )
+        response = HttpResponse(status_code=200, headers={"content-type": "application/json"}, body=b'{"test": "data"}')
 
         with patch('httpserver.HttpSendResponse.HttpDebugDump') as mock_dump_class:
             mock_dump = MagicMock()
@@ -53,19 +43,10 @@ class TestHttpSendResponse:
         writer = MagicMock()
         writer.drain = AsyncMock()
         request = HttpRequest(
-            stamp=123.0,
-            method="GET",
-            path="/test",
-            query_params={},
-            version="HTTP/1.1",
-            headers=HttpHeaders()
+            stamp=123.0, method="GET", path="/test", query_params={}, version="HTTP/1.1", headers=HttpHeaders()
         )
         headers = HttpHeaders().set("content-type", "text/plain")
-        response = HttpResponse(
-            status_code=404,
-            headers=headers,
-            body=b'Not Found'
-        )
+        response = HttpResponse(status_code=404, headers=headers, body=b'Not Found')
 
         with patch('httpserver.HttpSendResponse.HttpDebugDump') as mock_dump_class:
             mock_dump = MagicMock()
@@ -86,18 +67,9 @@ class TestHttpSendResponse:
         writer = MagicMock()
         writer.drain = AsyncMock()
         request = HttpRequest(
-            stamp=123.0,
-            method="GET",
-            path="/test",
-            query_params={},
-            version="HTTP/1.1",
-            headers=HttpHeaders()
+            stamp=123.0, method="GET", path="/test", query_params={}, version="HTTP/1.1", headers=HttpHeaders()
         )
-        response = HttpResponse(
-            status_code=500,
-            headers=None,
-            body=b'Internal Server Error'
-        )
+        response = HttpResponse(status_code=500, headers=None, body=b'Internal Server Error')
 
         with patch('httpserver.HttpSendResponse.HttpDebugDump') as mock_dump_class:
             mock_dump = MagicMock()
@@ -117,23 +89,16 @@ class TestHttpSendResponse:
         writer = MagicMock()
         writer.drain = AsyncMock()
         request = HttpRequest(
-            stamp=123.0,
-            method="GET",
-            path="/test",
-            query_params={},
-            version="HTTP/1.1",
-            headers=HttpHeaders()
+            stamp=123.0, method="GET", path="/test", query_params={}, version="HTTP/1.1", headers=HttpHeaders()
         )
-        response = HttpResponse(
-            status_code=200,
-            headers={"content-type": "text/html"},
-            file_path="/path/to/file.html"
-        )
+        response = HttpResponse(status_code=200, headers={"content-type": "text/html"}, file_path="/path/to/file.html")
 
-        with patch('httpserver.HttpSendResponse.HttpDebugDump') as mock_dump_class, \
-             patch('os.stat') as mock_stat, \
-             patch('builtins.open', mock_open(read_data=b'file content')), \
-             patch('asyncio.get_event_loop') as mock_loop:
+        with (
+            patch('httpserver.HttpSendResponse.HttpDebugDump') as mock_dump_class,
+            patch('os.stat') as mock_stat,
+            patch('builtins.open', mock_open(read_data=b'file content')),
+            patch('asyncio.get_event_loop') as mock_loop,
+        ):
             mock_dump = MagicMock()
             mock_dump_class.return_value = mock_dump
             mock_stat.return_value.st_size = 12
@@ -155,17 +120,9 @@ class TestHttpSendResponse:
         writer = MagicMock()
         writer.drain = AsyncMock()
         request = HttpRequest(
-            stamp=123.0,
-            method="GET",
-            path="/test",
-            query_params={},
-            version="HTTP/1.1",
-            headers=HttpHeaders()
+            stamp=123.0, method="GET", path="/test", query_params={}, version="HTTP/1.1", headers=HttpHeaders()
         )
-        response = HttpResponse(
-            status_code=200,
-            body=b'OK'
-        )
+        response = HttpResponse(status_code=200, body=b'OK')
 
         with patch('httpserver.HttpSendResponse.HttpDebugDump') as mock_dump_class:
             mock_dump = MagicMock()
@@ -181,17 +138,9 @@ class TestHttpSendResponse:
         writer = MagicMock()
         writer.drain = AsyncMock()
         request = HttpRequest(
-            stamp=123.0,
-            method="GET",
-            path="/test",
-            query_params={},
-            version="HTTP/1.1",
-            headers=HttpHeaders()
+            stamp=123.0, method="GET", path="/test", query_params={}, version="HTTP/1.1", headers=HttpHeaders()
         )
-        response = HttpResponse(
-            status_code=200,
-            body=b'OK'
-        )
+        response = HttpResponse(status_code=200, body=b'OK')
 
         with patch('httpserver.HttpSendResponse.HttpDebugDump') as mock_dump_class:
             mock_dump = MagicMock()
@@ -207,12 +156,7 @@ class TestHttpSendResponse:
         writer = MagicMock()
         writer.drain = AsyncMock()
         request = HttpRequest(
-            stamp=123.0,
-            method="GET",
-            path="/test",
-            query_params={},
-            version="HTTP/1.1",
-            headers=HttpHeaders()
+            stamp=123.0, method="GET", path="/test", query_params={}, version="HTTP/1.1", headers=HttpHeaders()
         )
         response = HttpResponse(status_code=204)
 
@@ -232,22 +176,16 @@ class TestHttpSendResponse:
         writer = MagicMock()
         writer.drain = AsyncMock()
         request = HttpRequest(
-            stamp=123.0,
-            method="GET",
-            path="/test",
-            query_params={},
-            version="HTTP/1.1",
-            headers=HttpHeaders()
+            stamp=123.0, method="GET", path="/test", query_params={}, version="HTTP/1.1", headers=HttpHeaders()
         )
         response = HttpResponse(
-            status_code=200,
-            headers={"content-type": "text/plain"},
-            body=b'Hello',
-            file_path="/ignored/path"
+            status_code=200, headers={"content-type": "text/plain"}, body=b'Hello', file_path="/ignored/path"
         )
 
-        with patch('httpserver.HttpSendResponse.HttpDebugDump') as mock_dump_class, \
-             patch('asyncio.get_event_loop') as mock_loop:
+        with (
+            patch('httpserver.HttpSendResponse.HttpDebugDump') as mock_dump_class,
+            patch('asyncio.get_event_loop') as mock_loop,
+        ):
             mock_dump = MagicMock()
             mock_dump_class.return_value = mock_dump
             mock_loop.return_value.sendfile = AsyncMock()
