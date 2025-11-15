@@ -2,17 +2,21 @@ import inspect
 import os
 import traceback
 
-from bot.lib import logger, settings
+from bot.lib import logger
 from bot.lib.enums import loglevel
+from bot.lib.settings import Settings
 
 
 class MigrationRunner:
-    def __init__(self) -> None:
+    def __init__(self, settings: Settings) -> None:
         self._module = os.path.basename(__file__)[:-3]
         self._class = self.__class__.__name__
-        self.settings = settings.Settings()
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
-        self.log = logger.Log(minimumLogLevel=log_level)
+        self.settings = settings
+        log_level = loglevel.LogLevel.DEBUG  # default
+        try:
+            log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        finally:
+            self.log = logger.Log(minimumLogLevel=log_level)
 
         # get migrations from migrations folder
         self._migrations = []

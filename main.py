@@ -39,8 +39,8 @@ def init_tacobot() -> bot.TacoBot:
 def start_tacobot():
     try:
         DISCORD_TOKEN = os.environ["DISCORD_TOKEN"]
-
-        migrations = MigrationRunner()
+        settings = Settings()
+        migrations = MigrationRunner(settings)
         migrations.start_migrations()
 
         tacobot = init_tacobot()
