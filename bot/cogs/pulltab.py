@@ -117,9 +117,7 @@ class PullTabCog(TacobotCog):
             elif isinstance(ctx, Interaction):
                 guild_id = ctx.guild.id if ctx.guild else 0
 
-            if self.cog_settings is None:
-                self.cog_settings = self.get_cog_settings(guild_id)
-            cog_settings = self.cog_settings
+            cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings:
                 self.log.warn(
                     guild_id, f"{self._module}.{self._class}.{_method}", "No pulltab settings found for guild"
