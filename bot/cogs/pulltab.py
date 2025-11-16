@@ -7,7 +7,7 @@ from collections import Counter
 
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums.permissions import TacoPermissions
-from bot.lib.helpers import MessageHelper
+from bot.lib.helpers import IdentityHelper, MessageHelper
 from bot.lib.permissions import Permissions
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
@@ -18,15 +18,23 @@ from discord.ext import commands
 class PullTabCog(TacobotCog):
     group = app_commands.Group(name="pulltab", description="Pulltab commands")
 
-    def __init__(self, bot: TacoBot, settings: Settings, message_helper: MessageHelper, permissions: Permissions):
+    def __init__(
+        self,
+        bot: TacoBot,
+        settings: Settings,
+        message_helper: MessageHelper,
+        permissions: Permissions,
+        identity_helper: IdentityHelper
+    ):
         super().__init__(bot, "pulltab", settings)
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
         self._module = os.path.basename(__file__)[:-3]
         self.message_helper = message_helper
+        self.identity_helper = identity_helper
         self.permissions = permissions
-        self.ticket_codes = set()
+        self.ticket_codes_cache = set()
         self.cog_settings = None
 
     @commands.guild_only()
@@ -160,6 +168,11 @@ class PullTabCog(TacobotCog):
                 return
 
             cog_settings = self.get_cog_settings(guild_id)
+            if not cog_settings:
+                self.log.warn(
+                    guild_id, f"{self._module}.{self._class}.{_method}", "No pulltab settings found for guild"
+                )
+                return
             cost = cog_settings.get("cost", 10)
 
             tickets_total_cost = cost * count
@@ -182,11 +195,6 @@ class PullTabCog(TacobotCog):
                 )
                 return
 
-            symbols = [p['symbol'] for p in probabilities]
-            weights = [p['weight'] for p in probabilities]
-            rows = 5
-            cols = 3
-
             # generate a random code for the pulltab sequence
             # the code should be alphanumeric
             # the code should be 8 - 16 characters long
@@ -194,37 +202,8 @@ class PullTabCog(TacobotCog):
             # store the code in self.ticket_codes
             tickets_output = []
             for _ in range(count):
-                code = ""
-                while not code or code in self.ticket_codes:
-                    code = ''.join(
-                        random.choices(
-                            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", k=random.randint(8, 16)
-                        )
-                    )
-
-                # the code is unique, store it
-                self.ticket_codes.add(code)
-                # the code is used to identify the pulltab sequence
-                # to redeem the pulltab sequence, the user must provide the code
-
-                ticket = []
-                sheet = random.choices(symbols, weights=weights, k=rows * cols)
-                for r in range(rows):
-                    row = [sheet[r * cols : (r + 1) * cols]]
-                    ticket.append(row)
-
-                sheet_display = ""
-                for row in ticket:
-                    sheet_display += "||" + "  ".join(row[0]) + "||\n"
-
-                is_winner, reward, lines = self._process_ticket(ticket, cog_settings)
-                win_lines = "\n".join(lines)
-                self.log.debug(
-                    guild_id,
-                    f"{self._module}.{self._class}.{_method}",
-                    f"Ticket results {code}:\nWinner: {is_winner}\nReward: {reward}\nWinning Lines: {win_lines}",
-                )
-                tickets_output.append(f"ticket: ||`{code}`||\n\n{sheet_display}\n")
+                _, ticket_output = self._generate_ticket(guild_id, user_id, cog_settings)
+                tickets_output.append(ticket_output)
 
             sheets_display = "\n".join(tickets_output)
             redeem_message = "redeem with `/pulltab redeem <code>` or `.taco pulltab redeem <code>`"
@@ -239,6 +218,50 @@ class PullTabCog(TacobotCog):
                 traceback.format_exc(),
             )
 
+    def _generate_ticket(self, guild_id: int, user_id: int, cog_settings: typing.Dict[str, typing.Any]) -> typing.Tuple[str, str]:
+        """Generate a pulltab ticket.
+        Returns a tuple of (code: str, ticket_output: str)
+        """
+        _method = inspect.stack()[0][3]
+        code = ""
+        ticket_output = ""
+        while not code or code in self.ticket_codes_cache:
+            code = self.identity_helper.id(min=8, max=16)
+
+        probabilities: typing.List[typing.Dict[str, typing.Any]] = cog_settings.get("probabilities", [])
+        symbols = [p['symbol'] for p in probabilities]
+        weights = [p['weight'] for p in probabilities]
+
+        ticket_settings = cog_settings.get("ticket", {})
+        rows = ticket_settings.get("rows", 5)
+        cols = ticket_settings.get("columns", 3)
+
+        ticket = []
+        sheet = random.choices(symbols, weights=weights, k=rows * cols)
+        for r in range(rows):
+            row = [sheet[r * cols : (r + 1) * cols]]
+            ticket.append(row)
+
+        self._save_ticket(guild_id, user_id, code, ticket, cog_settings)
+
+        sheet_display = ""
+        for row in ticket:
+            sheet_display += "||" + "  ".join(row[0]) + "||\n"
+
+        # this is just for logging purposes
+        is_winner, reward, lines = self._process_ticket(ticket, cog_settings)
+        win_lines = "\n".join(lines)
+        self.log.debug(
+            guild_id,
+            f"{self._module}.{self._class}.{_method}",
+            f"Ticket results {code}:\nWinner: {is_winner}\nReward: {reward}\nWinning Lines:\n{win_lines}",
+        )
+
+        # get the ticket output
+        ticket_output = f"ticket: ||`{code}`||\n\n{sheet_display}\n"
+
+        return code, ticket_output
+
     def _save_ticket(
         self,
         guild_id: int,
@@ -247,6 +270,12 @@ class PullTabCog(TacobotCog):
         ticket: typing.List[typing.List[str]],
         cog_settings: typing.Dict[str, typing.Any],
     ):
+        """Save a pulltab ticket to storage."""
+        # the code is unique, and the ticket has been generated, store the code in the cache
+        # the code is used to identify the pulltab sequence
+        # to redeem the pulltab sequence, the user must provide the code
+        self.ticket_codes_cache.add(code)
+
         pass
 
     def _process_ticket(
@@ -381,5 +410,6 @@ class PullTabCog(TacobotCog):
 async def setup(bot: TacoBot):
     settings = Settings()
     message_helper = MessageHelper(bot, settings)
+    identity_helper = IdentityHelper()
     permissions = Permissions(bot, settings)
-    await bot.add_cog(PullTabCog(bot, settings, message_helper, permissions))
+    await bot.add_cog(PullTabCog(bot, settings, message_helper, permissions, identity_helper))

@@ -1,10 +1,17 @@
 import pytest
 from bot.cogs.pulltab import PullTabCog
+from unittest.mock import MagicMock
 
 
 @pytest.fixture
-def cog(bot, settings, message_helper, permissions):
-    return PullTabCog(bot=bot, settings=settings, message_helper=message_helper, permissions=permissions)
+def cog(bot, settings, message_helper, permissions, identity_helper):
+    return PullTabCog(
+        bot=bot, 
+        settings=settings, 
+        message_helper=message_helper, 
+        permissions=permissions, 
+        identity_helper=identity_helper,
+    )
 
 
 def make_probabilities():
@@ -29,7 +36,7 @@ def test_exact_full_line_match(cog):
     is_winner, reward, lines = cog._process_ticket(ticket, {"probabilities": probs})
     assert is_winner
     assert reward == 10000
-    assert any("🌮🌮🌮" in l for l in lines)
+    assert any("🌮🌮🌮" in x for x in lines)
 
 
 def test_two_tacos_any_order_match(cog):
@@ -38,7 +45,7 @@ def test_two_tacos_any_order_match(cog):
     is_winner, reward, lines = cog._process_ticket(ticket, {"probabilities": probs})
     assert is_winner
     assert reward == 1000
-    assert any("🌮🌮" in l for l in lines)
+    assert any("🌮🌮" in x for x in lines)
 
 
 def test_no_two_tacos(cog):
@@ -48,7 +55,7 @@ def test_no_two_tacos(cog):
     # single taco should award the single-symbol reward
     assert is_winner
     assert reward == 100
-    assert any("🌮" in l for l in lines)
+    assert any("🌮" in x for x in lines)
 
 
 def test_multiple_rule_matches(cog):
@@ -59,9 +66,10 @@ def test_multiple_rule_matches(cog):
     is_winner, reward, lines = cog._process_ticket(ticket, {"probabilities": probs})
     # should win for the double-taco rule only (avoid double-counting)
     assert is_winner
-    assert any("🌮🌮" in l for l in lines)
+    assert any("🌮🌮" in x for x in lines)
     assert reward == 1000
-    assert not any("Matched 🌮 for 100" in l for l in lines)
+    # Ensure a single-taco line was not separately awarded; avoid substring matches
+    assert not any(x.strip() == "🌮 -> 100" for x in lines)
 
 
 def test_multiline_ticket_with_skull_blocks(cog):
@@ -138,3 +146,59 @@ def test_real_probabilities_triple_matches_and_skull_block(cog):
     is_winner, reward, lines = cog._process_ticket(ticket, {"probabilities": probs})
     assert is_winner
     assert reward == 10000
+
+
+def test_generate_ticket_adds_code_and_returns_output(cog, monkeypatch):
+    # Build simple probabilities and a small ticket grid for deterministic output
+    probs = [{"symbol": "🌮", "weight": 1, "rules": []}, {"symbol": "🍎", "weight": 1, "rules": []}]
+    cog_settings = {"probabilities": probs, "ticket": {"rows": 2, "columns": 3}}
+
+    # deterministic sheet we'll return from random.choices
+    sheet = ["🌮", "🍎", "🌮", "🍎", "🌮", "🍎"]
+    monkeypatch.setattr("bot.cogs.pulltab.random.choices", lambda symbols, weights, k: sheet)
+
+    # identity helper id is mocked by conftest fixture; set a deterministic return
+    cog.identity_helper.id.return_value = "ID-TEST-1"
+
+    code, ticket_output = cog._generate_ticket(1, 10, cog_settings)
+
+    assert code == "ID-TEST-1"
+    assert code in ticket_output
+    # should have 2 rows (we configured rows=2) represented with separator lines
+    assert ticket_output.count("||") >= 4  # each row emits two pipe boundaries
+    assert code in cog.ticket_codes_cache
+
+
+def test_generate_ticket_will_retry_on_duplicate_code(cog, monkeypatch):
+    probs = [{"symbol": "🌮", "weight": 1, "rules": []}]
+    cog_settings = {"probabilities": probs, "ticket": {"rows": 1, "columns": 3}}
+
+    # deterministic sheet
+    monkeypatch.setattr("bot.cogs.pulltab.random.choices", lambda symbols, weights, k: ["🌮", "🌮", "🌮"])
+
+    # Force first ID to already exist => next call returns a unique id
+    cog.ticket_codes_cache.add("ID-DUP")
+    cog.identity_helper.id.side_effect = ["ID-DUP", "ID-UNIQUE"]
+
+    code, ticket_output = cog._generate_ticket(1, 10, cog_settings)
+
+    assert code == "ID-UNIQUE"
+    assert code in ticket_output
+    assert "ID-DUP" in cog.ticket_codes_cache
+    assert "ID-UNIQUE" in cog.ticket_codes_cache
+
+
+def test_generate_ticket_calls_identity_helper_with_min_max(cog):
+    probs = [{"symbol": "🌮", "weight": 1, "rules": []}]
+    cog_settings = {"probabilities": probs, "ticket": {"rows": 1, "columns": 3}}
+
+    cog.identity_helper.id = MagicMock(return_value="ID-ARGS")
+
+    code, _ = cog._generate_ticket(1, 10, cog_settings)
+
+    assert code == "ID-ARGS"
+    # ensure min and max are passed to the identity helper
+    cog.identity_helper.id.assert_called()
+    # inspect call args for min and max keyword args if available
+    found = any((call.kwargs.get("min") == 8 and call.kwargs.get("max") == 16) for call in cog.identity_helper.id.call_args_list)
+    assert found, "identity_helper.id was not called with min=8 and max=16"

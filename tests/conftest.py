@@ -228,6 +228,14 @@ def entity_helper():
     h.get_or_fetch_user = AsyncMock()
     return h
 
+@pytest.fixture
+def identity_helper():
+    """Function-scoped mock identity helper."""
+    h = MagicMock()
+    h.id = MagicMock(return_value="MockedID123")
+    h.uuid = MagicMock(return_value="123e4567-e89b-12d3-a456-426614174000")
+    return h
+
 
 @pytest.fixture
 def users_utils():

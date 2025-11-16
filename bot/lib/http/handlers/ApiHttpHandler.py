@@ -38,7 +38,7 @@ import typing
 import requests
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.settings import Settings
-from tacobot import TacoBot
+from bot.tacobot import TacoBot
 
 
 class ApiHttpHandler(BaseHttpHandler):

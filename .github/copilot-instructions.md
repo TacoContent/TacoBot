@@ -209,6 +209,11 @@ All new or modified code MUST have tests in `tests/`:
 - When creating testing models, place them in `tests/model_components/` or similar test-only files to avoid polluting production code.
 - When possible use `pytest` fixtures for shared setup (e.g., mock bot, guilds).
 - Run tests with `pytest -n auto --dist loadgroup` to parallelize and speed up execution.
+- do not run tests with unittest; use pytest only for python.
+- do not use `python - <<'PY' ... PY` for helper scripts; instead either create a proper script file in `scripts/tmp`
+or use the `python -c 'code'` form.
+- clean up any temporary scripts after use to avoid confusion.
+- use shared fixtures for common test data to avoid duplication.
 
 Conventions:
 - Test file per module or feature: `test_<module>.py`.
