@@ -8,6 +8,9 @@ class TacoPermissions(Enum):
     TACOS_NO_GIVE = 2
     TACOS_NO_RECEIVE = 3
 
+    PULLTAB_NO_PURCHASE = 4
+    PULLTAB_NO_REDEEM = 5
+
     def __str__(self) -> str:
         return self.name.lower()
 
@@ -19,6 +22,10 @@ class TacoPermissions(Enum):
             return TacoPermissions.TACOS_NO_GIVE
         elif event.lower() == "tacos_no_receive":
             return TacoPermissions.TACOS_NO_RECEIVE
+        elif event.lower() == "pulltab_no_purchase":
+            return TacoPermissions.PULLTAB_NO_PURCHASE
+        elif event.lower() == "pulltab_no_redeem":
+            return TacoPermissions.PULLTAB_NO_REDEEM
         else:
             return TacoPermissions.UNKNOWN
 

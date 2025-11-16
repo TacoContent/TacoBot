@@ -165,5 +165,10 @@
   "minecraft_whitelist_unable_to_verify": "Unable to Verify Account. Failed to find player {{mc_username}} from playerdb.co api call",
   "minecraft_whitelist_account_verify": "Is this your avatar associated with the Minecraft account {{mc_username}}?",
   "minecraft_whitelist_run_again": "Please run the command again to verify your account.",
-  "minecraft_whitelist_success_message": "You have been whitelisted for Minecraft account {{mc_username}}({{mc_uuid}}). It may take up to 15 minutes for the whitelist to reload.\n\nSee the #minecraft channel for required version and server address.\n\nIf you need help, message DarthMinos."
+  "minecraft_whitelist_success_message": "You have been whitelisted for Minecraft account {{mc_username}}({{mc_uuid}}). It may take up to 15 minutes for the whitelist to reload.\n\nSee the #minecraft channel for required version and server address.\n\nIf you need help, message DarthMinos.",
+  "pulltab_redeem_invalid_code": "Invalid ticket code. Please check the code and try again.",
+  "pulltab_redeem_success_no_reward": "Ticket code `{{code}}` redeemed. No reward this time. Better luck next time!",
+  "pulltab_redeem_success_with_reward": "Ticket code `{{code}}` redeemed! You won {{reward}} {{taco_word}} 🌮! Congratulations!",
+  "pulltab_redeem_already_redeemed": "Ticket code `{{code}}` has already been redeemed. Please check the code and try again.",
+  "pulltab_purchase_not_enough_tacos": "{{user}}, You need {{total_cost}} {{taco_word}} 🌮 to purchase {{count}} {{pulltab_word}}. You only have {{user_tacos}} {{user_taco_word}} 🌮."
 }

@@ -15,6 +15,8 @@ class TestTacoPermissionsEnum:
         assert TacoPermissions.CLAIM_GAME_DISABLED is not None
         assert TacoPermissions.TACOS_NO_GIVE is not None
         assert TacoPermissions.TACOS_NO_RECEIVE is not None
+        assert TacoPermissions.PULLTAB_NO_PURCHASE is not None
+        assert TacoPermissions.PULLTAB_NO_REDEEM is not None
 
     def test_enum_numeric_values(self):
         """Verify enum numeric values are correct."""
@@ -22,6 +24,8 @@ class TestTacoPermissionsEnum:
         assert TacoPermissions.CLAIM_GAME_DISABLED.value == 1
         assert TacoPermissions.TACOS_NO_GIVE.value == 2
         assert TacoPermissions.TACOS_NO_RECEIVE.value == 3
+        assert TacoPermissions.PULLTAB_NO_PURCHASE.value == 4
+        assert TacoPermissions.PULLTAB_NO_REDEEM.value == 5
 
     def test_enum_uniqueness(self):
         """Verify all enum values are unique."""
@@ -35,6 +39,8 @@ class TestTacoPermissionsEnum:
             (TacoPermissions.CLAIM_GAME_DISABLED, "claim_game_disabled"),
             (TacoPermissions.TACOS_NO_GIVE, "tacos_no_give"),
             (TacoPermissions.TACOS_NO_RECEIVE, "tacos_no_receive"),
+            (TacoPermissions.PULLTAB_NO_PURCHASE, "pulltab_no_purchase"),
+            (TacoPermissions.PULLTAB_NO_REDEEM, "pulltab_no_redeem"),
         ],
     )
     def test_str_conversion(self, permission, expected_str):
@@ -56,6 +62,12 @@ class TestTacoPermissionsEnum:
             ("Claim_Game_Disabled", TacoPermissions.CLAIM_GAME_DISABLED),
             ("TaCos_No_GiVe", TacoPermissions.TACOS_NO_GIVE),
             ("TaCoS_nO_rEcEiVe", TacoPermissions.TACOS_NO_RECEIVE),
+            ("pulltab_no_purchase", TacoPermissions.PULLTAB_NO_PURCHASE),
+            ("PULLTAB_NO_PURCHASE", TacoPermissions.PULLTAB_NO_PURCHASE),
+            ("PullTab_No_Purchase", TacoPermissions.PULLTAB_NO_PURCHASE),
+            ("pulltab_no_redeem", TacoPermissions.PULLTAB_NO_REDEEM),
+            ("PULLTAB_NO_REDEEM", TacoPermissions.PULLTAB_NO_REDEEM),
+            ("PullTab_No_Redeem", TacoPermissions.PULLTAB_NO_REDEEM),
         ],
     )
     def test_from_str_valid_inputs(self, input_str, expected_permission):
@@ -107,11 +119,13 @@ class TestTacoPermissionsEnum:
     def test_all_permissions_contains_all_enums(self):
         """Test all_permissions returns all enum members."""
         all_perms = TacoPermissions.all_permissions()
-        assert len(all_perms) == 4
+        assert len(all_perms) == 6
         assert TacoPermissions.UNKNOWN in all_perms
         assert TacoPermissions.CLAIM_GAME_DISABLED in all_perms
         assert TacoPermissions.TACOS_NO_GIVE in all_perms
         assert TacoPermissions.TACOS_NO_RECEIVE in all_perms
+        assert TacoPermissions.PULLTAB_NO_PURCHASE in all_perms
+        assert TacoPermissions.PULLTAB_NO_REDEEM in all_perms
 
     def test_all_permissions_returns_new_list(self):
         """Test all_permissions returns a new list each time."""
@@ -138,7 +152,7 @@ class TestTacoPermissionsEnum:
     def test_enum_iteration(self):
         """Test enum can be iterated."""
         perms_list = list(TacoPermissions)
-        assert len(perms_list) == 4
+        assert len(perms_list) == 6
         assert all(isinstance(p, TacoPermissions) for p in perms_list)
 
     def test_from_str_to_str_roundtrip(self):
@@ -218,6 +232,8 @@ class TestTacoPermissionsEdgeCases:
             TacoPermissions.CLAIM_GAME_DISABLED,
             TacoPermissions.TACOS_NO_GIVE,
             TacoPermissions.TACOS_NO_RECEIVE,
+            TacoPermissions.PULLTAB_NO_PURCHASE,
+            TacoPermissions.PULLTAB_NO_REDEEM,
         ]
         auto_list = TacoPermissions.all_permissions()
         assert set(manual_list) == set(auto_list)
