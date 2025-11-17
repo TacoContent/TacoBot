@@ -50,8 +50,7 @@ class PullTabTicketsDatabase(Database):
                 return
 
             self.connection.pulltab_tickets.update_one(  # type: ignore
-                {"code": code, "user_id": str(user_id), "guild_id": str(guild_id)},
-                {"$set": updates},
+                {"code": code, "user_id": str(user_id), "guild_id": str(guild_id)}, {"$set": updates}
             )
         except Exception as e:
             self.log(0, LogLevel.ERROR, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
@@ -69,9 +68,9 @@ class PullTabTicketsDatabase(Database):
                 {"code": code, "user_id": str(user_id), "guild_id": str(guild_id)}
             )
             if result:
-                    # Use the model's `from_dict` helper to build a validated model
-                    # This ensures only supported fields are used and types are validated.
-                    return PullTabTicketEntry.from_dict(result)
+                # Use the model's `from_dict` helper to build a validated model
+                # This ensures only supported fields are used and types are validated.
+                return PullTabTicketEntry.from_dict(result)
 
             return None
         except Exception as e:

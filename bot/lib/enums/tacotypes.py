@@ -37,8 +37,8 @@ class TacoTypes(Enum):
     APPROVE_INTRODUCTION = 29
     GAME_DONATE_REDEEM = 30
     GAME_KEY_RESET = 31
-    GAMBLE_PULLTAB_REDEEM = 33
-    GAMBLE_PULLTAB_PURCHASE = 34
+    PULLTAB_REDEEM = 33
+    PULLTAB_PURCHASE = 34
 
     TWITCH_BOT_INVITE = 1000  # Invite @OurTacoBot to your Twitch channel
     TWITCH_RAID = 1001
@@ -136,10 +136,10 @@ class TacoTypes(Enum):
             return TacoTypes.POST_INTRODUCTION
         elif taco_type_string == "approve_introduction_count":
             return TacoTypes.APPROVE_INTRODUCTION
-        elif taco_type_string == "gamble_pulltab_purchase":
-            return TacoTypes.GAMBLE_PULLTAB_PURCHASE
-        elif taco_type_string == "gamble_pulltab_redeem":
-            return TacoTypes.GAMBLE_PULLTAB_REDEEM
+        elif taco_type_string == "pulltab_purchase":
+            return TacoTypes.PULLTAB_PURCHASE
+        elif taco_type_string == "pulltab_redeem":
+            return TacoTypes.PULLTAB_REDEEM
         elif taco_type_string == "twitch_bot_invite":
             return TacoTypes.TWITCH_BOT_INVITE
         elif taco_type_string == "twitch_raid_count":
@@ -239,10 +239,10 @@ class TacoTypes(Enum):
             return "post_introduction_count"
         elif taco_type == TacoTypes.APPROVE_INTRODUCTION:
             return "approve_introduction_count"
-        elif taco_type == TacoTypes.GAMBLE_PULLTAB_PURCHASE:
-            return "gamble_pulltab_purchase"
-        elif taco_type == TacoTypes.GAMBLE_PULLTAB_REDEEM:
-            return "gamble_pulltab_redeem"
+        elif taco_type == TacoTypes.PULLTAB_PURCHASE:
+            return "pulltab_purchase"
+        elif taco_type == TacoTypes.PULLTAB_REDEEM:
+            return "pulltab_redeem"
         elif taco_type == TacoTypes.TWITCH_BOT_INVITE:
             return "twitch_bot_invite_count"
         elif taco_type == TacoTypes.TWITCH_RAID:

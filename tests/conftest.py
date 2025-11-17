@@ -86,6 +86,7 @@ def metrics_db():
     db.get_permission_counts = MagicMock(return_value=[])
     return db
 
+
 @pytest.fixture
 def pulltabs_db():
     """Function-scoped mock pulltabs database."""
@@ -94,6 +95,7 @@ def pulltabs_db():
     db.get_ticket = MagicMock(return_value={})
     db.is_ticket_redeemed = MagicMock(return_value=False)
     return db
+
 
 @pytest.fixture
 def invites_db():
@@ -235,6 +237,7 @@ def entity_helper():
     h.get_or_fetch_member = AsyncMock()
     h.get_or_fetch_user = AsyncMock()
     return h
+
 
 @pytest.fixture
 def identity_helper():

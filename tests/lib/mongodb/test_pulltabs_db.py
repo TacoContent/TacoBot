@@ -1,8 +1,8 @@
-import pytest
 from unittest.mock import MagicMock
 
-from bot.lib.mongodb.pulltabs import PullTabTicketsDatabase
+import pytest
 from bot.lib.models.PullTabTicketEntry import PullTabTicketEntry
+from bot.lib.mongodb.pulltabs import PullTabTicketsDatabase
 
 
 @pytest.fixture
@@ -16,13 +16,7 @@ def db():
 
 
 def test_save_ticket_calls_update_one(db):
-    payload = {
-        "code": "CODE123",
-        "user_id": 123,
-        "guild_id": 456,
-        "ticket": ["🌮"],
-        "reward": 100,
-    }
+    payload = {"code": "CODE123", "user_id": 123, "guild_id": 456, "ticket": ["🌮"], "reward": 100}
 
     db.save_ticket(payload)
 
@@ -55,6 +49,7 @@ def test_save_ticket_calls_open_if_needed(db):
     # ensure open() is invoked when connection and client are None
     db.client = None
     db.connection = None
+
     def fake_open():
         db.client = MagicMock()
         # emulate collection object
@@ -124,14 +119,7 @@ def test_update_ticket_with_empty_updates_logs_and_skips(db):
 
 
 def test_get_ticket_returns_entry(db):
-    payload = {
-        "guild_id": str(50),
-        "user_id": str(60),
-        "code": "ABC",
-        "ticket": ["A"],
-        "created_at": 999,
-        "reward": 0,
-    }
+    payload = {"guild_id": str(50), "user_id": str(60), "code": "ABC", "ticket": ["A"], "created_at": 999, "reward": 0}
     db.connection.pulltab_tickets.find_one.return_value = payload
 
     entry = db.get_ticket(50, 60, "ABC")
@@ -194,7 +182,12 @@ def test_get_ticket_calls_open_if_needed(db):
         db.client = MagicMock()
         db.connection = MagicMock()
         db.connection.pulltab_tickets = MagicMock()
-        db.connection.pulltab_tickets.find_one.return_value = {"code": "ABC", "guild_id": "50", "user_id": "60", "ticket": ["A"]}
+        db.connection.pulltab_tickets.find_one.return_value = {
+            "code": "ABC",
+            "guild_id": "50",
+            "user_id": "60",
+            "ticket": ["A"],
+        }
 
     db.open = fake_open
 

@@ -19,6 +19,7 @@ from bot.lib import utils
 #   "reward": "number"
 # }
 
+
 class PullTabTicketEntry:
     def __init__(
         self,
@@ -78,7 +79,6 @@ class PullTabTicketEntry:
         ticket: typing.Optional[typing.List[str]] = data.get("ticket", None)
         if ticket is None:
             raise ValueError("ticket is required")
-
 
         return PullTabTicketEntry(
             guild_id=int(guild_id),

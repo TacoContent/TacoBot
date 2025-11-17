@@ -43,8 +43,8 @@ class TestTacoTypesEnum:
         assert TacoTypes.APPROVE_INTRODUCTION is not None
         assert TacoTypes.GAME_DONATE_REDEEM is not None
         assert TacoTypes.GAME_KEY_RESET is not None
-        assert TacoTypes.GAMBLE_PULLTAB_PURCHASE is not None
-        assert TacoTypes.GAMBLE_PULLTAB_REDEEM is not None
+        assert TacoTypes.PULLTAB_PURCHASE is not None
+        assert TacoTypes.PULLTAB_REDEEM is not None
 
         # Twitch actions
         assert TacoTypes.TWITCH_BOT_INVITE is not None
@@ -125,8 +125,8 @@ class TestTacoTypesEnum:
             (TacoTypes.APPROVE_INTRODUCTION, "approve_introduction_count"),
             (TacoTypes.GAME_DONATE_REDEEM, "game_donate_count"),
             (TacoTypes.GAME_KEY_RESET, "custom"),  # GAME_KEY_RESET not explicitly mapped, falls back to custom
-            (TacoTypes.GAMBLE_PULLTAB_PURCHASE, "gamble_pulltab_purchase"),
-            (TacoTypes.GAMBLE_PULLTAB_REDEEM, "gamble_pulltab_redeem"),
+            (TacoTypes.PULLTAB_PURCHASE, "pulltab_purchase"),
+            (TacoTypes.PULLTAB_REDEEM, "pulltab_redeem"),
             (TacoTypes.TWITCH_BOT_INVITE, "twitch_bot_invite_count"),
             (TacoTypes.TWITCH_RAID, "twitch_raid_count"),
             (TacoTypes.TWITCH_SUB, "twitch_sub_count"),
@@ -182,8 +182,8 @@ class TestTacoTypesEnum:
             ("create_voice_channel_count", TacoTypes.CREATE_VOICE_CHANNEL),
             ("post_introduction_count", TacoTypes.POST_INTRODUCTION),
             ("approve_introduction_count", TacoTypes.APPROVE_INTRODUCTION),
-            ("gamble_pulltab_purchase", TacoTypes.GAMBLE_PULLTAB_PURCHASE),
-            ("gamble_pulltab_redeem", TacoTypes.GAMBLE_PULLTAB_REDEEM),
+            ("pulltab_purchase", TacoTypes.PULLTAB_PURCHASE),
+            ("pulltab_redeem", TacoTypes.PULLTAB_REDEEM),
             ("twitch_bot_invite", TacoTypes.TWITCH_BOT_INVITE),
             ("twitch_raid_count", TacoTypes.TWITCH_RAID),
             ("twitch_sub_count", TacoTypes.TWITCH_SUB),

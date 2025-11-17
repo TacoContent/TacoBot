@@ -7,12 +7,12 @@ from collections import Counter
 
 from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
-from bot.lib.enums.tacotypes import TacoTypes
 from bot.lib.enums.permissions import TacoPermissions
+from bot.lib.enums.tacotypes import TacoTypes
 from bot.lib.helpers import EntityHelper, IdentityHelper, MessageHelper, TacoHelper
-from bot.lib.permissions import Permissions
 from bot.lib.models.PullTabTicketEntry import PullTabTicketEntry
 from bot.lib.mongodb.pulltabs import PullTabTicketsDatabase
+from bot.lib.permissions import Permissions
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord import Interaction, app_commands
@@ -31,7 +31,7 @@ class PullTabCog(TacobotCog):
         identity_helper: IdentityHelper,
         taco_helper: TacoHelper,
         entity_helper: EntityHelper,
-        pulltabs_db: PullTabTicketsDatabase
+        pulltabs_db: PullTabTicketsDatabase,
     ):
         super().__init__(bot, "pulltab", settings)
         _method = inspect.stack()[0][3]
@@ -64,11 +64,8 @@ class PullTabCog(TacobotCog):
             return
         cog_settings = self.get_cog_settings(guild_id)
         if not cog_settings:
-            self.log.warn(
-                guild_id, f"{self._module}.{self._class}.{_method}", "No pulltab settings found for guild"
-            )
+            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No pulltab settings found for guild")
             return
-
 
         if not (
             self.permissions.has_taco_permission(
@@ -81,11 +78,8 @@ class PullTabCog(TacobotCog):
         pass
 
     @pulltab.command(
-        name="purchase",
-        description="Purchase a pulltab ticket for a chance to win tacos! Cost: 100 tacos",
-        aliases=["buy"],
+        name="purchase", description="Purchase a pulltab ticket for a chance to win tacos!", aliases=["buy", "p", "b"]
     )
-    @app_commands.default_permissions()
     async def purchase_command(self, ctx: commands.Context, count: int = 1, multiplier: int = 1):
         await self._process_pulltab_purchase(ctx, count, multiplier)
 
@@ -93,33 +87,45 @@ class PullTabCog(TacobotCog):
     async def purchase_interaction(self, interaction: Interaction, count: int = 1, multiplier: int = 1):
         await self._process_pulltab_purchase(interaction, count, multiplier)
 
-    @pulltab.command(name="info", description="Get information about pulltab payouts and probabilities")
-    async def info_command(self, ctx: commands.Context):
-        await self._process_pulltab_info(ctx)
+    @pulltab.command(name="info", aliases=["i"], description="Get information about pulltab payouts and probabilities")
+    async def info_command(self, ctx: commands.Context, *, multiplier: int = 1):
+        await self._process_pulltab_info(ctx, multiplier=multiplier)
 
     @group.command(name="info", description="Get information about pulltab payouts and probabilities")
-    async def info_interaction(self, interaction: Interaction):
-        await self._process_pulltab_info(interaction)
+    async def info_interaction(self, interaction: Interaction, multiplier: int = 1):
+        await self._process_pulltab_info(interaction, multiplier=multiplier)
 
-    # @pulltab.command(name="redeem", aliases=["r"], description="Redeem pulltab ticket")
-    # async def redeem_command(self, ctx: commands.Context, *, code: str) -> None:
-    #     await self._process_pulltab_redeem(ctx, code=code)
+    @pulltab.command(name="redeem", aliases=["r"], description="Redeem pulltab ticket")
+    async def redeem_command(self, ctx: commands.Context, *, code: str) -> None:
+        await self._process_pulltab_redeem(ctx, code=code)
 
     @group.command(name="redeem", description="Redeem pulltab ticket")
     async def redeem_interaction(self, interaction: Interaction, *, code: str) -> None:
         await self._process_pulltab_redeem(interaction, code=code)
 
-    def _build_payout_message(self, probabilities: typing.List[typing.Dict[str, typing.Any]]) -> str:
-        message = "Payouts:\n"
+    def _build_payout_message(self, cog_settings: typing.Dict[str, typing.Any], multiplier: int = 1) -> str:
+        probabilities: typing.List[typing.Dict[str, typing.Any]] = cog_settings.get("probabilities", [])
+        multiplier_settings = cog_settings.get("multiplier", {})
+
+        base_increase = multiplier_settings.get("base_increase", 0.5)
+        max_multiplier = multiplier_settings.get("max", 100)
+
+        multiplier = self._clamp(multiplier, 1, max_multiplier)
+
+        effective_multiplier = self._calculate_multiplier(multiplier, base_increase=base_increase)
+
+        message = f"Payouts (based on multiplier x{multiplier}):\n"
         for p in probabilities:
             rules = p.get("rules", [])
             for rule in rules:
                 match = rule["match"]
-                reward = rule["reward"]
-                multiplier = rule.get("multiplier", 1)
-                if multiplier != 1:
-                    reward = f"line multiplier x{multiplier}"
-                message += f"{match} -> {reward}\n"
+                reward = int(rule.get("reward", 0))
+                rule_multiplier = rule.get("multiplier", 1)
+                if rule_multiplier != 1:
+                    reward = f"line multiplier x{rule_multiplier}"
+
+                effective_reward = int(reward * effective_multiplier) if isinstance(reward, int) else reward
+                message += f"{match} -> {effective_reward}\n"
         return message
 
     def _build_probability_message(self, probabilities: typing.List[typing.Dict[str, typing.Any]]) -> str:
@@ -132,7 +138,60 @@ class PullTabCog(TacobotCog):
             message += f"{symbol}: {probability:.2f}%\n"
         return message
 
-    async def _process_pulltab_info(self, ctx: typing.Union[commands.Context, Interaction]):
+    def _build_cost_multiplier_message(self, cog_settings: typing.Dict[str, typing.Any], multiplier: int = 1) -> str:
+        purchase_settings = cog_settings.get("purchase", {})
+        base_cost = int(purchase_settings.get("cost", 10))
+        cost = base_cost * multiplier
+        max_purchase = int(purchase_settings.get("max", 5))
+        multiplier_settings = cog_settings.get("multiplier", {})
+        base_increase = float(multiplier_settings.get("base_increase", 0.05))
+        max_multiplier = int(multiplier_settings.get("max", 100))
+        # Build a friendly explanatory message for users
+        # Show base cost, how many can be purchased at once, and how multipliers affect cost and reward
+        pct = base_increase * 100
+        message_lines = []
+        message_lines.append(f"Cost per ticket: {cost} tacos (with multiplier x{multiplier})")
+        message_lines.append(f"Max tickets per purchase: {max_purchase}")
+        message_lines.append(f"Multiplier: {multiplier} (max {max_multiplier})")
+        message_lines.append("")
+        message_lines.append("How multiplier works:")
+        message_lines.append(
+            "- Buying with a multiplier increases the TOTAL COST linearly: total_cost = cost * count * multiplier\n"
+        )
+        message_lines.append(
+            f"  (Example: buying 3 tickets with multiplier {multiplier} costs {base_cost} * 3 * {multiplier} = {base_cost * 3 * multiplier} tacos)"
+        )
+        message_lines.append("")
+        message_lines.append(
+            f"- The multiplier also increases the EFFECTIVE REWARD you can win. Each multiplier point increases rewards by {pct:.1f}% of base value."
+        )
+        message_lines.append(
+            f"  Effective reward multiplier is calculated as: effective = 1 + (multiplier * {pct:.1f}% / 100).\n"
+        )
+        # show a couple of clear examples using the configured base_increase
+        effective_example = self._calculate_multiplier(multiplier, base_increase=base_increase)
+        message_lines.append(
+            f"  (Example: with multiplier {multiplier} and base increase {pct:.1f}%, effective = {effective_example:.2f} → a 100-taco line becomes ~{round(100 * effective_example)} tacos)\n"
+        )
+        example_mul2 = min(10, max(2, int(max_multiplier if max_multiplier < 10 else 10)))
+        effective_example2 = self._calculate_multiplier(example_mul2, base_increase=base_increase)
+        message_lines.append(f"  (Example: with multiplier {example_mul2}, effective = {effective_example2:.2f})")
+        message_lines.append("")
+        message_lines.append(f"- Max multiplier allowed: {max_multiplier}")
+        message_lines.append("")
+        message_lines.append("Notes:")
+        message_lines.append("- Multiplier increases COST immediately (you pay more up-front).")
+        message_lines.append(
+            "- Multiplier increases REWARD potential (line rewards are multiplied by the effective multiplier and rounded)."
+        )
+        message_lines.append(
+            "- If you choose multiplier=1 you pay the base price and receive no extra reward multiplier."
+        )
+        message_lines.append("")
+
+        return "\n".join(message_lines)
+
+    async def _process_pulltab_info(self, ctx: typing.Union[commands.Context, Interaction], *, multiplier: int = 1):
         _method = inspect.stack()[0][3]
         try:
             guild_id = 0
@@ -149,12 +208,12 @@ class PullTabCog(TacobotCog):
                     guild_id, f"{self._module}.{self._class}.{_method}", "No pulltab settings found for guild"
                 )
                 return
-            purchase_settings = cog_settings.get("purchase", {})
-            cost: int = purchase_settings.get("cost", 10)
+
             probabilities: typing.List[typing.Dict[str, typing.Any]] = cog_settings.get("probabilities", [])
-            payout_message = self._build_payout_message(probabilities)
+            payout_message = self._build_payout_message(cog_settings, multiplier=multiplier)
             probability_message = self._build_probability_message(probabilities)
-            message = f"Cost Per Pulltab: {cost} tacos\n\n{payout_message}\n{probability_message}\n"
+            cost_multiplier_message = self._build_cost_multiplier_message(cog_settings, multiplier=multiplier)
+            message = f"{cost_multiplier_message}\n" f"{payout_message}\n" f"{probability_message}"
 
             await self._send_message(ctx, message, ephemeral=True)
         except Exception as e:
@@ -165,7 +224,9 @@ class PullTabCog(TacobotCog):
                 traceback.format_exc(),
             )
 
-    async def _process_pulltab_purchase(self, ctx: typing.Union[commands.Context, Interaction], count: int = 1, multiplier: int = 1):
+    async def _process_pulltab_purchase(
+        self, ctx: typing.Union[commands.Context, Interaction], count: int = 1, multiplier: int = 1
+    ):
         _method = inspect.stack()[0][3]
         guild_id = 0
         try:
@@ -203,14 +264,14 @@ class PullTabCog(TacobotCog):
             purchase_settings = cog_settings.get("purchase", {})
             cost = purchase_settings.get("cost", 10)
             max_purchase = purchase_settings.get("max", 5)
-            count = self._normalize_number(count, 1, max_purchase)
+            count = self._clamp(count, 1, max_purchase)
 
             multiplier_settings = cog_settings.get("multiplier", {})
             max_multiplier = multiplier_settings.get("max", 100)
             # Clamp the multiplier to the max allowed
             # multiplier will increase the cost of the ticket linearly
             # e.g. if base cost is 100 tacos, and multiplier is 2, cost is 200 tacos
-            multiplier = self._normalize_number(multiplier, 1, max_multiplier)
+            multiplier = self._clamp(multiplier, 1, max_multiplier)
 
             tickets_total_cost = cost * count * multiplier
 
@@ -257,9 +318,34 @@ class PullTabCog(TacobotCog):
                 tickets_output.append(ticket_output)
 
             sheets_display = "\n".join(tickets_output)
-            redeem_message = "redeem with `/pulltab redeem <code>` or `.taco pulltab redeem <code>`"
+            redeem_message = "redeem with `/pulltab redeem <code>`"
 
-            await self._send_message(ctx, f"{sheets_display}\n{redeem_message}", ephemeral=True)
+            await self.taco_helper.give_tacos(
+                guildId=guild_id,
+                fromUser=user,
+                toUser=self.bot.user,
+                taco_amount=(tickets_total_cost * -1),
+                reason=self.settings.get_string(
+                    guildId=guild_id,
+                    key="pulltab_purchase_tacos_message",
+                    ticket_word=ticket_word,
+                    ticket_count=count,
+                    multiplier=multiplier,
+                ),
+                give_type=TacoTypes.PULLTAB_PURCHASE,
+            )
+
+            purchase_message = self.settings.get_string(
+                guildId=guild_id,
+                key="pulltab_purchase_message",
+                ticket_word=ticket_word,
+                ticket_count=count,
+                multiplier=multiplier,
+                total_cost=tickets_total_cost,
+                taco_word=taco_word,
+            )
+
+            await self._send_message(ctx, f"{purchase_message}\n\n{sheets_display}\n{redeem_message}", ephemeral=True)
         except Exception as e:
             await self.message_helper.notify_of_error(ctx)
             self.log.error(
@@ -300,7 +386,7 @@ class PullTabCog(TacobotCog):
                     fromUser=from_user,
                     toUser=to_user,
                     taco_amount=reward,
-                    give_type=TacoTypes.GAMBLE_PULLTAB_REDEEM,
+                    give_type=TacoTypes.PULLTAB_REDEEM,
                     reason=self.settings.get_string(guild_id, "pulltab_give_tacos_message"),
                 )
                 await self._send_message(ctx, message=message, ephemeral=True)
@@ -315,7 +401,9 @@ class PullTabCog(TacobotCog):
                 traceback.format_exc(),
             )
 
-    def _generate_ticket(self, guild_id: int, user_id: int, cog_settings: typing.Dict[str, typing.Any], multiplier: int) -> typing.Tuple[str, str]:
+    def _generate_ticket(
+        self, guild_id: int, user_id: int, cog_settings: typing.Dict[str, typing.Any], multiplier: int
+    ) -> typing.Tuple[str, str]:
         """Generate a pulltab ticket.
         Returns a tuple of (code: str, ticket_output: str)
         """
@@ -342,7 +430,7 @@ class PullTabCog(TacobotCog):
         # Clamp the multiplier to the max allowed
         # multiplier will increase the cost of the ticket linearly
         # e.g. if base cost is 100 tacos, and multiplier is 2, cost is 200 tacos
-        multiplier = self._normalize_number(multiplier, 1, max_multiplier)
+        multiplier = self._clamp(multiplier, 1, max_multiplier)
 
         # calculate the effective multiplier for the ticket
         # This is the multiplier that will be used to calculate the reward
@@ -535,16 +623,13 @@ class PullTabCog(TacobotCog):
 
             # Otherwise award all matched rules for the row (one per symbol)
             for _sym, line_reward, match_str, _mult in row_matches:
-                line_message = f"{match_str} -> {line_reward}"
+                actual_line_reward = round(line_reward * effective_multiplier)
+                line_message = f"{match_str} -> {actual_line_reward}"
                 # each line is its own winner; allow the same match message to appear multiple times
-                total_reward += line_reward
-                is_winner = True if line_reward > 0 else is_winner
+                total_reward += actual_line_reward
+                is_winner = True if actual_line_reward > 0 else is_winner
                 winning_lines_desc.append(line_message)
 
-        # apply the overall ticket multiplier to the total reward
-        if total_reward > 0 and effective_multiplier > 1.0:
-            # instead of just casting to int, we should round to nearest integer
-            total_reward = round(total_reward * effective_multiplier)
         return is_winner, total_reward, winning_lines_desc, winning_lines_indexes, effective_multiplier
 
     def _redeem_ticket(self, guild_id: int, user_id: int, code: str) -> typing.Tuple[bool, int, str]:
@@ -561,17 +646,20 @@ class PullTabCog(TacobotCog):
             return False, 0, self.settings.get_string(guild_id, "pulltab_redeem_already_redeemed", code=code)
 
         # Mark the ticket as redeemed even if there is no reward
-        self.pulltabs_db.update_ticket(
-            guild_id, user_id, code, {"redeemed_at": int(utils.get_timestamp())}
-        )
+        self.pulltabs_db.update_ticket(guild_id, user_id, code, {"redeemed_at": int(utils.get_timestamp())})
 
         if ticket.reward is None or ticket.reward <= 0:
             return True, 0, self.settings.get_string(guild_id, "pulltab_redeem_success_no_reward", code=code)
 
-
         taco_word = "taco" if ticket.reward == 1 else "tacos"
 
-        return True, ticket.reward, self.settings.get_string(guild_id, "pulltab_redeem_success_with_reward", code=code, reward=ticket.reward, taco_word=taco_word)
+        return (
+            True,
+            ticket.reward,
+            self.settings.get_string(
+                guild_id, "pulltab_redeem_success_with_reward", code=code, reward=ticket.reward, taco_word=taco_word
+            ),
+        )
 
     def _validate_user_can_purchase(self, guild_id: int, user_id: int, total_cost: int) -> bool:
         """Validate that a user has enough tacos to purchase pulltab tickets."""
@@ -586,7 +674,7 @@ class PullTabCog(TacobotCog):
             return False
         return taco_count >= total_cost
 
-    def _normalize_number(self, count: int, min_value: int, max_value: int) -> int:
+    def _clamp(self, count: int, min_value: int, max_value: int) -> int:
         if count < min_value:
             return min_value
         if count > max_value:
@@ -595,7 +683,7 @@ class PullTabCog(TacobotCog):
 
     def _calculate_multiplier(self, requested_multiplier: int = 1, base_increase: float = 0.05) -> float:
         """Calculate the effective multiplier based on requested multiplier points."""
-        requested_multiplier = self._normalize_number(requested_multiplier, 1, 100)
+        requested_multiplier = self._clamp(requested_multiplier, 1, 100)
         if requested_multiplier == 1:
             return 1.0
         if base_increase <= 0:

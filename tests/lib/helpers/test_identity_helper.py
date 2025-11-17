@@ -1,8 +1,7 @@
-import uuid
 import string
+import uuid
 
 import pytest
-
 from bot.lib.helpers.identity_helper import IdentityHelper
 
 
@@ -29,9 +28,7 @@ def test_id_default_length_range(monkeypatch):
     helper = IdentityHelper()
 
     # Force randint to return a known length so the test is deterministic
-    monkeypatch.setattr(
-        'bot.lib.helpers.identity_helper.random.randint', lambda a, b: 10
-    )
+    monkeypatch.setattr('bot.lib.helpers.identity_helper.random.randint', lambda a, b: 10)
 
     value = helper.id()
     assert isinstance(value, str)
@@ -45,23 +42,15 @@ def test_id_respects_min_max(monkeypatch):
     helper = IdentityHelper()
 
     # Test with min==max
-    monkeypatch.setattr(
-        'bot.lib.helpers.identity_helper.random.randint', lambda a, b: 2
-    )
-    monkeypatch.setattr(
-        'bot.lib.helpers.identity_helper.random.choices', lambda characters, k: ['A'] * k
-    )
+    monkeypatch.setattr('bot.lib.helpers.identity_helper.random.randint', lambda a, b: 2)
+    monkeypatch.setattr('bot.lib.helpers.identity_helper.random.choices', lambda characters, k: ['A'] * k)
 
     value = helper.id(min=2, max=2)
     assert value == 'AA'
 
     # Test with a different fixed length
-    monkeypatch.setattr(
-        'bot.lib.helpers.identity_helper.random.randint', lambda a, b: 6
-    )
-    monkeypatch.setattr(
-        'bot.lib.helpers.identity_helper.random.choices', lambda characters, k: list('abc123')
-    )
+    monkeypatch.setattr('bot.lib.helpers.identity_helper.random.randint', lambda a, b: 6)
+    monkeypatch.setattr('bot.lib.helpers.identity_helper.random.choices', lambda characters, k: list('abc123'))
 
     value2 = helper.id(min=6, max=6)
     # The monkeypatched choices returns a list, which the method joins
@@ -79,9 +68,7 @@ def test_id_only_allowed_characters(monkeypatch):
     helper = IdentityHelper()
 
     # Use a deterministic length
-    monkeypatch.setattr(
-        'bot.lib.helpers.identity_helper.random.randint', lambda a, b: 15
-    )
+    monkeypatch.setattr('bot.lib.helpers.identity_helper.random.randint', lambda a, b: 15)
 
     # Do not alter choices; use the real implementation so we can test allowed charset
     value = helper.id(min=15, max=15)

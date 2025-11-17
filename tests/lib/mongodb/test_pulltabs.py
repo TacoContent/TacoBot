@@ -1,12 +1,12 @@
 from unittest.mock import MagicMock
 
 import pytest
-
 from bot.lib.mongodb.pulltabs import PullTabTicketsDatabase
 
 
 def make_db_with_connection():
     db = PullTabTicketsDatabase()
+
     # create a fake connection object, with a pulltab_tickets collection
     class FakeCollection:
         def __init__(self):
@@ -49,13 +49,7 @@ def test_get_ticket_returns_result_when_found():
         "user_id": str(2),
         "created_at": 1763309829,
         "reward": 0,
-        "ticket": [
-            "🍉🍒🍉",
-            "🍇🍉🍒",
-            "🍉🍇🍇",
-            "🍊🍎🍇",
-            "🍒🍒🍊"
-        ],
+        "ticket": ["🍉🍒🍉", "🍇🍉🍒", "🍉🍇🍇", "🍊🍎🍇", "🍒🍒🍊"],
         "winning_line_indexes": [],
         "winning_lines": [],
         "multiplier": 1,
@@ -67,7 +61,7 @@ def test_get_ticket_returns_result_when_found():
     assert result.to_dict() == expected
     db.connection.pulltab_tickets.find_one.assert_called_once_with(  # type: ignore
         {"code": "CODE123", "user_id": str(2), "guild_id": str(1)}
-      )
+    )
 
 
 def test_get_ticket_returns_empty_when_not_found():
@@ -98,6 +92,7 @@ def test_save_ticket_opens_if_connection_none(monkeypatch):
 
     fake_conn = MagicMock()
     fake_conn.pulltab_tickets = MagicMock()
+
     # make open set the connection on the db instance
     def fake_open():
         db.connection = fake_conn  # type: ignore
