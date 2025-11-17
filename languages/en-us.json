@@ -170,5 +170,6 @@
   "pulltab_redeem_success_no_reward": "Ticket code `{{code}}` redeemed. No reward this time. Better luck next time!",
   "pulltab_redeem_success_with_reward": "Ticket code `{{code}}` redeemed! You won {{reward}} {{taco_word}} 🌮! Congratulations!",
   "pulltab_redeem_already_redeemed": "Ticket code `{{code}}` has already been redeemed. Please check the code and try again.",
-  "pulltab_purchase_not_enough_tacos": "{{user}}, You need {{total_cost}} {{taco_word}} 🌮 to purchase {{count}} {{pulltab_word}}. You only have {{user_tacos}} {{user_taco_word}} 🌮."
+  "pulltab_purchase_not_enough_tacos": "{{user}}, You need {{total_cost}} {{taco_word}} 🌮 to purchase {{ticket_count}} {{ticket_word}}. You only have {{user_taco_count}} {{user_taco_word}} 🌮.",
+  "pulltab_give_tacos_message": "a winning pulltab ticket"
 }

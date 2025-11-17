@@ -71,6 +71,11 @@ def teardown_module(module):  # noqa: D401 - keep artifacts
 
 def test_new_default_markers_parse():
     # Uses current global regex which includes new defaults + legacy.
+    # Ensure we're using the default regex for this test in case other tests modified it.
+    from scripts.swagger_sync import endpoint_collector
+
+    endpoint_collector.OPENAPI_BLOCK_RE = build_openapi_block_re(">>>openapi", "<<<openapi")
+
     eps, _ = collect_endpoints(BASE)
     metas = {(e.path, e.method): e.meta.get('summary') for e in eps}
     assert ('/new-markers', 'get') in metas

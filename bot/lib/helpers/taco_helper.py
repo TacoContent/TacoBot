@@ -48,10 +48,29 @@ class TacoHelper:
         else:
             self.entity_helper = entity_helper
 
-        log_level = loglevel.LogLevel[self.settings.log_level.upper()]
-        if not log_level:
-            log_level = loglevel.LogLevel.DEBUG
-        self.log = logger.Log(minimumLogLevel=log_level)
+        log_level = loglevel.LogLevel.DEBUG
+        try:
+            log_level = loglevel.LogLevel[self.settings.log_level.upper()]
+        finally:
+            self.log = logger.Log(minimumLogLevel=log_level)
+
+    def get_taco_count(self, guildId: int, userId: int) -> typing.Optional[int]:
+        """Get the current taco count for a user in a guild.
+
+        Args:
+            guildId: The guild ID
+            userId: The user ID
+
+        Returns:
+            Current taco count for the user
+        """
+        _method = inspect.stack()[0][3]
+        try:
+            taco_count = self.tacos_db.get_tacos_count(guildId, userId)
+            return taco_count
+        except Exception as e:
+            self.log.error(guildId, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return None
 
     async def give_tacos(
         self,

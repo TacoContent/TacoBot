@@ -86,6 +86,14 @@ def metrics_db():
     db.get_permission_counts = MagicMock(return_value=[])
     return db
 
+@pytest.fixture
+def pulltabs_db():
+    """Function-scoped mock pulltabs database."""
+    db = MagicMock()
+    db.save_ticket = MagicMock()
+    db.get_ticket = MagicMock(return_value={})
+    db.is_ticket_redeemed = MagicMock(return_value=False)
+    return db
 
 @pytest.fixture
 def invites_db():

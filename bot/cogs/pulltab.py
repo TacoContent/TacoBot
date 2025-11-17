@@ -5,10 +5,14 @@ import traceback
 import typing
 from collections import Counter
 
+from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
+from bot.lib.enums.tacotypes import TacoTypes
 from bot.lib.enums.permissions import TacoPermissions
-from bot.lib.helpers import IdentityHelper, MessageHelper
+from bot.lib.helpers import EntityHelper, IdentityHelper, MessageHelper, TacoHelper
 from bot.lib.permissions import Permissions
+from bot.lib.models.PullTabTicketEntry import PullTabTicketEntry
+from bot.lib.mongodb.pulltabs import PullTabTicketsDatabase
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord import Interaction, app_commands
@@ -24,7 +28,10 @@ class PullTabCog(TacobotCog):
         settings: Settings,
         message_helper: MessageHelper,
         permissions: Permissions,
-        identity_helper: IdentityHelper
+        identity_helper: IdentityHelper,
+        taco_helper: TacoHelper,
+        entity_helper: EntityHelper,
+        pulltabs_db: PullTabTicketsDatabase
     ):
         super().__init__(bot, "pulltab", settings)
         _method = inspect.stack()[0][3]
@@ -33,7 +40,10 @@ class PullTabCog(TacobotCog):
         self._module = os.path.basename(__file__)[:-3]
         self.message_helper = message_helper
         self.identity_helper = identity_helper
+        self.entity_helper = entity_helper
+        self.taco_helper = taco_helper
         self.permissions = permissions
+        self.pulltabs_db = pulltabs_db
         self.ticket_codes_cache = set()
         self.cog_settings = None
 
@@ -76,12 +86,12 @@ class PullTabCog(TacobotCog):
         aliases=["buy"],
     )
     @app_commands.default_permissions()
-    async def purchase_command(self, ctx: commands.Context, count: int = 1):
-        await self._process_pulltab_purchase(ctx, count)
+    async def purchase_command(self, ctx: commands.Context, count: int = 1, multiplier: int = 1):
+        await self._process_pulltab_purchase(ctx, count, multiplier)
 
-    @group.command(name="purchase", description="Purchase a pulltab ticket for a chance to win tacos! Cost: 100 tacos")
-    async def purchase_interaction(self, interaction: Interaction, count: int = 1):
-        await self._process_pulltab_purchase(interaction, count)
+    @group.command(name="purchase", description="Purchase a pulltab ticket for a chance to win tacos!")
+    async def purchase_interaction(self, interaction: Interaction, count: int = 1, multiplier: int = 1):
+        await self._process_pulltab_purchase(interaction, count, multiplier)
 
     @pulltab.command(name="info", description="Get information about pulltab payouts and probabilities")
     async def info_command(self, ctx: commands.Context):
@@ -90,6 +100,14 @@ class PullTabCog(TacobotCog):
     @group.command(name="info", description="Get information about pulltab payouts and probabilities")
     async def info_interaction(self, interaction: Interaction):
         await self._process_pulltab_info(interaction)
+
+    # @pulltab.command(name="redeem", aliases=["r"], description="Redeem pulltab ticket")
+    # async def redeem_command(self, ctx: commands.Context, *, code: str) -> None:
+    #     await self._process_pulltab_redeem(ctx, code=code)
+
+    @group.command(name="redeem", description="Redeem pulltab ticket")
+    async def redeem_interaction(self, interaction: Interaction, *, code: str) -> None:
+        await self._process_pulltab_redeem(interaction, code=code)
 
     def _build_payout_message(self, probabilities: typing.List[typing.Dict[str, typing.Any]]) -> str:
         message = "Payouts:\n"
@@ -131,13 +149,14 @@ class PullTabCog(TacobotCog):
                     guild_id, f"{self._module}.{self._class}.{_method}", "No pulltab settings found for guild"
                 )
                 return
-            cost: int = cog_settings.get("cost", 10)
+            purchase_settings = cog_settings.get("purchase", {})
+            cost: int = purchase_settings.get("cost", 10)
             probabilities: typing.List[typing.Dict[str, typing.Any]] = cog_settings.get("probabilities", [])
             payout_message = self._build_payout_message(probabilities)
             probability_message = self._build_probability_message(probabilities)
             message = f"Cost Per Pulltab: {cost} tacos\n\n{payout_message}\n{probability_message}\n"
 
-            await self._send_message(ctx, message)
+            await self._send_message(ctx, message, ephemeral=True)
         except Exception as e:
             self.log.error(
                 guild_id,
@@ -146,13 +165,12 @@ class PullTabCog(TacobotCog):
                 traceback.format_exc(),
             )
 
-    async def _process_pulltab_purchase(self, ctx: typing.Union[commands.Context, Interaction], count: int = 1):
+    async def _process_pulltab_purchase(self, ctx: typing.Union[commands.Context, Interaction], count: int = 1, multiplier: int = 1):
         _method = inspect.stack()[0][3]
         guild_id = 0
         try:
             if self.bot.user is None:
                 return
-            count = self._normalize_count(count, 1, 5)
 
             if isinstance(ctx, commands.Context):
                 guild_id = ctx.guild.id if ctx.guild else 0
@@ -167,23 +185,54 @@ class PullTabCog(TacobotCog):
             if user_id == self.bot.user.id:
                 return
 
+            user = await self.entity_helper.get_or_fetch_user(user_id)
+            if user is None:
+                self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", "Could not fetch user")
+                return
+            user_taco_count = self.taco_helper.get_taco_count(guildId=guild_id, userId=user_id)
+            if user_taco_count is None:
+                user_taco_count = 0
+
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings:
                 self.log.warn(
                     guild_id, f"{self._module}.{self._class}.{_method}", "No pulltab settings found for guild"
                 )
                 return
-            cost = cog_settings.get("cost", 10)
 
-            tickets_total_cost = cost * count
+            purchase_settings = cog_settings.get("purchase", {})
+            cost = purchase_settings.get("cost", 10)
+            max_purchase = purchase_settings.get("max", 5)
+            count = self._normalize_number(count, 1, max_purchase)
 
-            tickets = "ticket" if count == 1 else "tickets"
-            tacos = "taco" if tickets_total_cost == 1 else "tacos"
+            multiplier_settings = cog_settings.get("multiplier", {})
+            max_multiplier = multiplier_settings.get("max", 100)
+            # Clamp the multiplier to the max allowed
+            # multiplier will increase the cost of the ticket linearly
+            # e.g. if base cost is 100 tacos, and multiplier is 2, cost is 200 tacos
+            multiplier = self._normalize_number(multiplier, 1, max_multiplier)
+
+            tickets_total_cost = cost * count * multiplier
+
+            ticket_word = "ticket" if count == 1 else "tickets"
+            taco_word = "taco" if tickets_total_cost == 1 else "tacos"
+            user_taco_word = "taco" if user_taco_count == 1 else "tacos"
 
             if not self._validate_user_can_purchase(guild_id, user_id, tickets_total_cost):
                 await self._send_message(
                     ctx,
-                    f"You do not have enough tacos to purchase {count} pulltab {tickets} (cost: {tickets_total_cost} 🌮 {tacos}).",
+                    self.settings.get_string(
+                        guild_id,
+                        "pulltab_purchase_not_enough_tacos",
+                        total_cost=tickets_total_cost,
+                        user=user.mention,
+                        taco_word=taco_word,
+                        ticket_count=count,
+                        ticket_word=ticket_word,
+                        user_taco_count=user_taco_count,
+                        user_taco_word=user_taco_word,
+                    ),
+                    ephemeral=True,
                 )
                 return
 
@@ -202,13 +251,15 @@ class PullTabCog(TacobotCog):
             # store the code in self.ticket_codes
             tickets_output = []
             for _ in range(count):
-                _, ticket_output = self._generate_ticket(guild_id, user_id, cog_settings)
+                _, ticket_output = self._generate_ticket(
+                    guild_id=guild_id, user_id=user_id, cog_settings=cog_settings, multiplier=multiplier
+                )
                 tickets_output.append(ticket_output)
 
             sheets_display = "\n".join(tickets_output)
             redeem_message = "redeem with `/pulltab redeem <code>` or `.taco pulltab redeem <code>`"
 
-            await self._send_message(ctx, f"{sheets_display}\n{redeem_message}")
+            await self._send_message(ctx, f"{sheets_display}\n{redeem_message}", ephemeral=True)
         except Exception as e:
             await self.message_helper.notify_of_error(ctx)
             self.log.error(
@@ -218,7 +269,53 @@ class PullTabCog(TacobotCog):
                 traceback.format_exc(),
             )
 
-    def _generate_ticket(self, guild_id: int, user_id: int, cog_settings: typing.Dict[str, typing.Any]) -> typing.Tuple[str, str]:
+    async def _process_pulltab_redeem(self, ctx: typing.Union[commands.Context, Interaction], *, code: str) -> None:
+        _method = inspect.stack()[0][3]
+        guild_id: int = 0
+        user_id: int = 0
+        try:
+            if not code:
+                # code not provided, just exit
+                return
+            from_user = self.bot.user
+            if from_user is None:
+                self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "Bot user not found")
+                return
+            if isinstance(ctx, commands.Context):
+                guild_id = ctx.guild.id if ctx.guild else 0
+                user_id = ctx.author.id
+            elif isinstance(ctx, Interaction):
+                guild_id = ctx.guild.id if ctx.guild else 0
+                user_id = ctx.user.id
+
+            to_user = await self.entity_helper.get_or_fetch_user(user_id)
+            if to_user is None:
+                self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", "Could not fetch user")
+                return
+
+            success, reward, message = self._redeem_ticket(guild_id=guild_id, user_id=user_id, code=code)
+            if success:
+                await self.taco_helper.give_tacos(
+                    guildId=guild_id,
+                    fromUser=from_user,
+                    toUser=to_user,
+                    taco_amount=reward,
+                    give_type=TacoTypes.GAMBLE_PULLTAB_REDEEM,
+                    reason=self.settings.get_string(guild_id, "pulltab_give_tacos_message"),
+                )
+                await self._send_message(ctx, message=message, ephemeral=True)
+            else:
+                await self._send_message(ctx, message=message, ephemeral=True)
+        except Exception as e:
+            await self.message_helper.notify_of_error(ctx)
+            self.log.error(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"Error processing pulltab purchase: {e}",
+                traceback.format_exc(),
+            )
+
+    def _generate_ticket(self, guild_id: int, user_id: int, cog_settings: typing.Dict[str, typing.Any], multiplier: int) -> typing.Tuple[str, str]:
         """Generate a pulltab ticket.
         Returns a tuple of (code: str, ticket_output: str)
         """
@@ -236,25 +333,56 @@ class PullTabCog(TacobotCog):
         rows = ticket_settings.get("rows", 5)
         cols = ticket_settings.get("columns", 3)
 
+        # multiplier settings may be present at the top level (cog_settings["multiplier"])
+        # or nested under purchase (cog_settings["purchase"]["multiplier"]) depending
+        # on how the guild config is authored. Try both to be resilient to either style.
+        multiplier_settings = cog_settings.get("multiplier") or cog_settings.get("purchase", {}).get("multiplier", {})
+        base_increase = multiplier_settings.get("base_increase", 0.5)
+        max_multiplier = multiplier_settings.get("max", 100)
+        # Clamp the multiplier to the max allowed
+        # multiplier will increase the cost of the ticket linearly
+        # e.g. if base cost is 100 tacos, and multiplier is 2, cost is 200 tacos
+        multiplier = self._normalize_number(multiplier, 1, max_multiplier)
+
+        # calculate the effective multiplier for the ticket
+        # This is the multiplier that will be used to calculate the reward
+        # if the base_increase is 0.5, and the multiplier is 2, the calculated multiplier is 1 + (0.5 * (2 - 1)) = 1.5
+        # if the base_increase is 0.5, and the multiplier is 5, the calculated multiplier is 1 + (0.5 * (5 - 1)) = 3.0
+        # if the base_increase is 0, the calculated multiplier is always 1
+        # if the multiplier is 1, the calculated multiplier is always 1
+        effective_multiplier = self._calculate_multiplier(multiplier, base_increase=base_increase)
+
         ticket = []
         sheet = random.choices(symbols, weights=weights, k=rows * cols)
         for r in range(rows):
-            row = [sheet[r * cols : (r + 1) * cols]]
-            ticket.append(row)
+            row_list = sheet[r * cols : (r + 1) * cols]
+            # store ticket rows as strings (e.g. '🍎🍊🍎') to match DB expectations
+            row_str = "".join(row_list)
+            ticket.append(row_str)
 
-        self._save_ticket(guild_id, user_id, code, ticket, cog_settings)
+        self._save_ticket(
+            guild_id=guild_id,
+            user_id=user_id,
+            code=code,
+            ticket=ticket,
+            cog_settings=cog_settings,
+            effective_multiplier=effective_multiplier,
+        )
 
         sheet_display = ""
-        for row in ticket:
-            sheet_display += "||" + "  ".join(row[0]) + "||\n"
+        for row_index, row in enumerate(ticket):
+            # row may be a string or a list; ensure we join individual symbols for display
+            sheet_display += "||" + "  ".join(list(row)) + "||\n"
 
         # this is just for logging purposes
-        is_winner, reward, lines = self._process_ticket(ticket, cog_settings)
+        is_winner, reward, lines, line_indexes, reward_multiplier = self._process_ticket(
+            ticket, cog_settings, effective_multiplier=effective_multiplier
+        )
         win_lines = "\n".join(lines)
         self.log.debug(
             guild_id,
             f"{self._module}.{self._class}.{_method}",
-            f"Ticket results {code}:\nWinner: {is_winner}\nReward: {reward}\nWinning Lines:\n{win_lines}",
+            f"Ticket results {code}:\nWinner: {is_winner}\nReward: {reward}\nWinning Lines:\n{win_lines}\nWinning Indexes: {line_indexes}",
         )
 
         # get the ticket output
@@ -267,34 +395,63 @@ class PullTabCog(TacobotCog):
         guild_id: int,
         user_id: int,
         code: str,
-        ticket: typing.List[typing.List[str]],
+        ticket: typing.List[str],
         cog_settings: typing.Dict[str, typing.Any],
+        redeemed_at: typing.Optional[int] = None,
+        effective_multiplier: float = 1.0,
     ):
         """Save a pulltab ticket to storage."""
+        _method = inspect.stack()[0][3]
+
+        # store also winning line indexes from the ticket processing
+        is_winner, reward, lines, line_indexes, calculated_multiplier = self._process_ticket(
+            ticket, cog_settings, effective_multiplier=effective_multiplier
+        )
+
+        ticket_entry = PullTabTicketEntry(
+            guild_id=guild_id,
+            user_id=user_id,
+            code=code,
+            ticket=ticket,
+            redeemed_at=redeemed_at,
+            reward=reward,
+            winning_lines=lines if lines else None,
+            winning_line_indexes=line_indexes if line_indexes else None,
+            multiplier=calculated_multiplier,
+        )
+
+        self.pulltabs_db.save_ticket(ticket_entry.to_dict())
+
         # the code is unique, and the ticket has been generated, store the code in the cache
         # the code is used to identify the pulltab sequence
         # to redeem the pulltab sequence, the user must provide the code
         self.ticket_codes_cache.add(code)
 
-        pass
-
     def _process_ticket(
-        self, ticket: typing.List[str], cog_settings: typing.Dict[str, typing.Any]
-    ) -> typing.Tuple[bool, int, typing.List[str]]:
+        self, ticket: typing.List[str], cog_settings: typing.Dict[str, typing.Any], effective_multiplier: float = 1.0
+    ) -> typing.Tuple[bool, int, typing.List[str], typing.List[int], float]:
         """Process a pulltab ticket.
-        Returns a tuple of (is_winner: bool, reward: int, winning_lines: list[str]).
+        Returns a tuple of (
+            is_winner: bool,
+            reward: int,
+            winning_lines_desc: list[str],
+            winning_lines_indexes: list[int],
+            calculated_multiplier: float
+        )
         Matching rules are tested by exact sequence or by token counts (so '🌮🌮' matches if
         there are two tacos anywhere in the row). When multiple rules for the same symbol
         match the row, only the highest reward for that symbol is awarded to avoid
         double-counting (e.g., a triple taco will not also claim a single- and double-
         taco payout).
+        The multiplier parameter is applied to line rewards after the line's base reward is calculated.
         """
 
         probabilities: typing.List[typing.Dict[str, typing.Any]] = cog_settings.get("probabilities", [])
 
         total_reward = 0
         is_winner = False
-        winning_lines = []
+        winning_lines_desc = []
+        winning_lines_indexes: list[int] = []
 
         # rules: [
         #     {
@@ -312,13 +469,17 @@ class PullTabCog(TacobotCog):
         #     }
         # ]
 
-        for row in ticket:
-            # ticket rows may be stored as [[sym1, sym2, sym3]] or [sym1, sym2, sym3]
-            # Normalize to a list of symbol strings
-            if len(row) == 1 and isinstance(row[0], list):
-                row_symbols = row[0]
+        for row_index, row in enumerate(ticket):
+            # ticket rows are stored as strings (e.g. '🍎🍊🍎'); convert to list of symbols
+            # Note: legacy nested lists are no longer expected; if found, attempt to flatten
+            if isinstance(row, str):
+                row_symbols = list(row)
+            elif isinstance(row, list):
+                # legacy fallback - convert list of symbols to chars
+                row_symbols = list("".join(row))
             else:
-                row_symbols = row
+                # unexpected row type - coerce to string then to symbol list
+                row_symbols = list(str(row))
             # configured symbols are those that have probability entries; rows may include other symbols
             configured_symbols = [p['symbol'] for p in probabilities]
             # For this row, collect the best matched rule for each symbol
@@ -329,6 +490,7 @@ class PullTabCog(TacobotCog):
                 for rule in rules:
                     match = rule['match']
                     reward = rule['reward']
+                    # this should always be 1, unless a deny rule is configured; if multiplier is 0 the whole row is a losing line
                     multiplier = rule.get('multiplier', 1)
 
                     # Build counters for the row and for the match string using the configured symbols
@@ -365,39 +527,92 @@ class PullTabCog(TacobotCog):
             if any(mult == 0 for (_sym, _r, _m, mult) in row_matches):
                 # row contains a deny rule (e.g., skull) so no payout for this row
                 continue
+            # Otherwise award all matched rules for the row (one per symbol)
+            if row_matches:
+                # add the row index as a winning line index (avoid duplicates for same row)
+                if row_index not in winning_lines_indexes:
+                    winning_lines_indexes.append(row_index)
 
             # Otherwise award all matched rules for the row (one per symbol)
-            for _sym, r, m, _mult in row_matches:
-                line_message = f"{m} -> {r}"
+            for _sym, line_reward, match_str, _mult in row_matches:
+                line_message = f"{match_str} -> {line_reward}"
                 # each line is its own winner; allow the same match message to appear multiple times
-                total_reward += r
-                is_winner = True if r > 0 else is_winner
-                winning_lines.append(line_message)
+                total_reward += line_reward
+                is_winner = True if line_reward > 0 else is_winner
+                winning_lines_desc.append(line_message)
 
-        return is_winner, total_reward, winning_lines
+        # apply the overall ticket multiplier to the total reward
+        if total_reward > 0 and effective_multiplier > 1.0:
+            # instead of just casting to int, we should round to nearest integer
+            total_reward = round(total_reward * effective_multiplier)
+        return is_winner, total_reward, winning_lines_desc, winning_lines_indexes, effective_multiplier
 
     def _redeem_ticket(self, guild_id: int, user_id: int, code: str) -> typing.Tuple[bool, int, str]:
         """Redeem a pulltab ticket.
         Returns a tuple of (success: bool, reward: int, message: str)
         """
-        return False, 0, self.settings.get_string(guild_id, "pulltab_redeem_invalid_code")
+        _method = inspect.stack()[0][3]
+
+        ticket = self.pulltabs_db.get_ticket(guild_id, user_id, code)
+        if not ticket:
+            return False, 0, self.settings.get_string(guild_id, "pulltab_redeem_invalid_code")
+
+        if ticket.redeemed_at is not None:
+            return False, 0, self.settings.get_string(guild_id, "pulltab_redeem_already_redeemed", code=code)
+
+        # Mark the ticket as redeemed even if there is no reward
+        self.pulltabs_db.update_ticket(
+            guild_id, user_id, code, {"redeemed_at": int(utils.get_timestamp())}
+        )
+
+        if ticket.reward is None or ticket.reward <= 0:
+            return True, 0, self.settings.get_string(guild_id, "pulltab_redeem_success_no_reward", code=code)
+
+
+        taco_word = "taco" if ticket.reward == 1 else "tacos"
+
+        return True, ticket.reward, self.settings.get_string(guild_id, "pulltab_redeem_success_with_reward", code=code, reward=ticket.reward, taco_word=taco_word)
 
     def _validate_user_can_purchase(self, guild_id: int, user_id: int, total_cost: int) -> bool:
-        return True
+        """Validate that a user has enough tacos to purchase pulltab tickets."""
+        _method = inspect.stack()[0][3]
+        taco_count = self.taco_helper.get_taco_count(guild_id, user_id)
+        if taco_count is None:
+            self.log.error(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"Could not retrieve taco count for user {user_id} in guild {guild_id}",
+            )
+            return False
+        return taco_count >= total_cost
 
-    def _normalize_count(self, count: int, min_value: int, max_value: int) -> int:
+    def _normalize_number(self, count: int, min_value: int, max_value: int) -> int:
         if count < min_value:
             return min_value
         if count > max_value:
             return max_value
         return count
 
-    async def _send_message(self, ctx: typing.Union[commands.Context, Interaction], message: str):
+    def _calculate_multiplier(self, requested_multiplier: int = 1, base_increase: float = 0.05) -> float:
+        """Calculate the effective multiplier based on requested multiplier points."""
+        requested_multiplier = self._normalize_number(requested_multiplier, 1, 100)
+        if requested_multiplier == 1:
+            return 1.0
+        if base_increase <= 0:
+            return 1.0
+        # Example calculation: each multiplier point increases the effective multiplier by <base_increase>
+        # Historically this calculated increase used (requested_multiplier - 1) which meant
+        # buying multiplier=10 with base_increase=0.1 resulted in 1.9. Users expect the
+        # base_increase to apply per point, so multiplier=10 should result in 2.0.
+        calculated_multiplier = 1 + (requested_multiplier * base_increase)
+        return calculated_multiplier
+
+    async def _send_message(self, ctx: typing.Union[commands.Context, Interaction], message: str, **kwargs):
         _method = inspect.stack()[0][3]
         if isinstance(ctx, commands.Context):
-            await ctx.send(message)
+            await ctx.send(message, **kwargs)
         elif isinstance(ctx, Interaction):
-            await ctx.response.send_message(message)
+            await ctx.response.send_message(message, **kwargs)
         else:
             guild_id = ctx.guild.id if ctx.guild else 0
             self.log.error(
@@ -411,5 +626,19 @@ async def setup(bot: TacoBot):
     settings = Settings()
     message_helper = MessageHelper(bot, settings)
     identity_helper = IdentityHelper()
+    entity_helper = EntityHelper(bot)
     permissions = Permissions(bot, settings)
-    await bot.add_cog(PullTabCog(bot, settings, message_helper, permissions, identity_helper))
+    pulltabs_db = PullTabTicketsDatabase()
+    taco_helper = TacoHelper(bot, entity_helper=entity_helper)
+    await bot.add_cog(
+        PullTabCog(
+            bot=bot,
+            settings=settings,
+            message_helper=message_helper,
+            permissions=permissions,
+            identity_helper=identity_helper,
+            entity_helper=entity_helper,
+            taco_helper=taco_helper,
+            pulltabs_db=pulltabs_db,
+        )
+    )

@@ -548,6 +548,11 @@ class TestMetricsExporterLogging:
         test_exception = Exception("Test error message")
         mock_config_class.side_effect = test_exception
 
+        # Ensure the module-scoped settings has a valid log level so the exporter
+        # doesn't log an initialization error from a previous test that mutated
+        # the module-scoped fixture (tests may change this value).
+        module_settings.log_level = "INFO"
+
         exporter = MetricsExporter(module_settings)
         exporter.run()
 

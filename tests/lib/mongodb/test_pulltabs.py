@@ -43,12 +43,28 @@ def test_save_ticket_ignore_missing_code():
 
 def test_get_ticket_returns_result_when_found():
     db = make_db_with_connection()
-    expected = {"code": "CODE123", "value": "x"}
+    expected = {
+        "code": 'CODE123',
+        "guild_id": str(1),
+        "user_id": str(2),
+        "created_at": 1763309829,
+        "reward": 0,
+        "ticket": [
+            "🍉🍒🍉",
+            "🍇🍉🍒",
+            "🍉🍇🍇",
+            "🍊🍎🍇",
+            "🍒🍒🍊"
+        ],
+        "winning_line_indexes": [],
+        "winning_lines": [],
+        "multiplier": 1,
+    }
     db.connection.pulltab_tickets.find_one.return_value = expected  # type: ignore
 
     result = db.get_ticket(1, 2, "CODE123")
-
-    assert result == expected
+    assert result is not None
+    assert result.to_dict() == expected
     db.connection.pulltab_tickets.find_one.assert_called_once_with(  # type: ignore
         {"code": "CODE123", "user_id": str(2), "guild_id": str(1)}
       )
@@ -60,7 +76,7 @@ def test_get_ticket_returns_empty_when_not_found():
 
     result = db.get_ticket(1, 2, "CODE123")
 
-    assert result == {}
+    assert result is None
 
 
 def test_is_ticket_redeemed_returns_true_when_redeemed():
