@@ -1,3 +1,4 @@
+import asyncio
 import inspect
 import os
 import random
@@ -321,8 +322,9 @@ class PullTabCog(TacobotCog):
                 taco_word=taco_word,
             )
 
-            await self._send_message(ctx, purchase_message, ephemeral=True, followup=True)
+            await self._send_message(ctx, purchase_message, ephemeral=True, followup=False)
 
+            await asyncio.sleep(1)  # brief pause to ensure message order
             # generate a random code for the pulltab sequence
             # the code should be alphanumeric
             # the code should be 8 - 16 characters long
@@ -335,10 +337,8 @@ class PullTabCog(TacobotCog):
                 )
                 view = self._create_ticket_view(ctx, code=ticket_code, multiplier=multiplier)
                 await self._send_message(ctx, message=ticket_output, followup=True, view=view, ephemeral=True)
-                # tickets_output.append(ticket_output)
-
-            # sheets_display = "\n".join(tickets_output)
-            # redeem_message = "redeem with `/pulltab redeem <code>`"
+                # pause briefly to avoid rate limits
+                await asyncio.sleep(1)
 
             await self.taco_helper.give_tacos(
                 guildId=guild_id,
@@ -458,6 +458,7 @@ class PullTabCog(TacobotCog):
         effective_multiplier = self._calculate_multiplier(multiplier, base_increase=base_increase)
 
         ticket = []
+        random.seed(code)
         sheet = random.choices(symbols, weights=weights, k=rows * cols)
         for r in range(rows):
             row_list = sheet[r * cols : (r + 1) * cols]

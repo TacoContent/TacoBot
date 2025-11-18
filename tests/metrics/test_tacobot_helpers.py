@@ -370,7 +370,7 @@ class TestFetchGameKeys(TestTacoBotMetricsHelpers):
 
                 metrics.pulltab_db.metric_pulltab_spendings_by_user_and_status.assert_called_once()
 
-                # Should set gauge for data plus error gauge (1 + 1 = 2)
+                # Should set gauge for data plus error gauge 1
                 assert mock_set_gauge.call_count == 2
 
                 # Filter data calls (have guild_id, user_id, username labels)
