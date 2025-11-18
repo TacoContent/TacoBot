@@ -766,7 +766,7 @@ class TacoBotMetrics:
                     "guild_id": row["_id"]["guild_id"],
                     "user_id": user["user_id"],
                     "username": user["username"],
-                    "status": "total",
+                    "status": row["_id"]["status"],
                 }
                 self._set_gauge_labels(self.pulltabs_winnings, user_labels, row["total"])
             self._set_gauge_labels(self.errors, {"source": "pulltab_winnings"}, 0)
