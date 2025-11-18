@@ -232,6 +232,10 @@ class PullTabCog(TacobotCog):
         _method = inspect.stack()[0][3]
         guild_id = 0
         try:
+            # Defer interaction immediately to avoid 3-second timeout
+            if isinstance(ctx, Interaction) and not ctx.response.is_done():
+                await ctx.response.defer(ephemeral=True)
+
             if self.bot.user is None:
                 return
 
@@ -317,7 +321,7 @@ class PullTabCog(TacobotCog):
                 taco_word=taco_word,
             )
 
-            await self._send_message(ctx, purchase_message, ephemeral=True)
+            await self._send_message(ctx, purchase_message, ephemeral=True, followup=True)
 
             # generate a random code for the pulltab sequence
             # the code should be alphanumeric
@@ -365,6 +369,10 @@ class PullTabCog(TacobotCog):
         guild_id: int = 0
         user_id: int = 0
         try:
+            # Defer interaction immediately to avoid 3-second timeout
+            if isinstance(ctx, Interaction) and not ctx.response.is_done():
+                await ctx.response.defer(ephemeral=True)
+
             if not code:
                 # code not provided, just exit
                 return
@@ -394,9 +402,9 @@ class PullTabCog(TacobotCog):
                     give_type=TacoTypes.PULLTAB_REDEEM,
                     reason=self.settings.get_string(guild_id, "pulltab_give_tacos_message"),
                 )
-                await self._send_message(ctx, message=message, ephemeral=True)
+                await self._send_message(ctx, message=message, ephemeral=True, followup=True)
             else:
-                await self._send_message(ctx, message=message, ephemeral=True)
+                await self._send_message(ctx, message=message, ephemeral=True, followup=True)
         except Exception as e:
             await self.message_helper.notify_of_error(ctx)
             self.log.error(
@@ -702,8 +710,10 @@ class PullTabCog(TacobotCog):
                 kwargs.pop('followup')
             await ctx.send(message, **kwargs)
         elif isinstance(ctx, Interaction):
-            if 'followup' in kwargs and kwargs['followup']:
-                kwargs.pop('followup')
+            # Check if we should use followup (either explicitly requested or response already sent)
+            use_followup = kwargs.pop('followup', False) or ctx.response.is_done()
+
+            if use_followup:
                 await ctx.followup.send(message, **kwargs)
             else:
                 await ctx.response.send_message(message, **kwargs)

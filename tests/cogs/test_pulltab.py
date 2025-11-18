@@ -305,7 +305,11 @@ async def test_process_pulltab_purchase_forwards_multiplier(cog, monkeypatch):
     ctx.user = MagicMock()
     ctx.user.id = 4444
     ctx.response = MagicMock()
+    ctx.response.is_done = MagicMock(return_value=False)
+    ctx.response.defer = AsyncMock()
     ctx.response.send_message = AsyncMock()
+    ctx.followup = MagicMock()
+    ctx.followup.send = AsyncMock()
 
     # entity helper should return a user for purchase
     cog.entity_helper.get_or_fetch_user.return_value = MagicMock()
@@ -347,7 +351,11 @@ async def test_process_pulltab_purchase_with_multiplier_10_yields_2(cog, monkeyp
     ctx.user = MagicMock()
     ctx.user.id = 4444
     ctx.response = MagicMock()
+    ctx.response.is_done = MagicMock(return_value=False)
+    ctx.response.defer = AsyncMock()
     ctx.response.send_message = AsyncMock()
+    ctx.followup = MagicMock()
+    ctx.followup.send = AsyncMock()
 
     cog.entity_helper.get_or_fetch_user.return_value = MagicMock()
 
@@ -591,6 +599,7 @@ async def test_process_pulltab_info_with_interaction(cog):
     ctx.guild = MagicMock()
     ctx.guild.id = 2222
     ctx.response = MagicMock()
+    ctx.response.is_done = MagicMock(return_value=False)
     ctx.response.send_message = AsyncMock()
 
     await cog._process_pulltab_info(ctx, multiplier=2)
@@ -764,12 +773,17 @@ async def test_process_pulltab_redeem_with_interaction(cog):
     ctx.user = MagicMock()
     ctx.user.id = 111
     ctx.response = MagicMock()
+    ctx.response.is_done = MagicMock(return_value=False)
+    ctx.response.defer = AsyncMock()
     ctx.response.send_message = AsyncMock()
+    ctx.followup = MagicMock()
+    ctx.followup.send = AsyncMock()
 
     await cog._process_pulltab_redeem(ctx, code="INT-CODE")
 
     cog.taco_helper.give_tacos.assert_called_once()
-    ctx.response.send_message.assert_called_once()
+    # After defer, we use followup.send instead of response.send_message
+    ctx.followup.send.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -917,7 +931,10 @@ async def test_send_message_with_context(cog):
 async def test_send_message_with_interaction(cog):
     ctx = MagicMock(spec=Interaction)
     ctx.response = MagicMock()
+    ctx.response.is_done = MagicMock(return_value=False)
     ctx.response.send_message = AsyncMock()
+    ctx.followup = MagicMock()
+    ctx.followup.send = AsyncMock()
 
     await cog._send_message(ctx, "Test message", ephemeral=True)
 
