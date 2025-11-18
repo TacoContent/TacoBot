@@ -215,7 +215,7 @@ class PullTabTicketsDatabase(Database):
             self.log(0, LogLevel.ERROR, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
             return None
 
-    def metric_pulltab_spendings_by_user_and_status(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+    def metric_pulltab_spendings_by_user(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:

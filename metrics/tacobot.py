@@ -734,7 +734,7 @@ class TacoBotMetrics:
     def _fetch_pulltab_spendings(self) -> None:
         _method = inspect.stack()[0][3]
         try:
-            q_pulltab_spendings = self.pulltab_db.metric_pulltab_spendings_by_user_and_status() or []
+            q_pulltab_spendings = self.pulltab_db.metric_pulltab_spendings_by_user() or []
             for row in q_pulltab_spendings:
                 # Row contains _id: {guild_id, user_id}, total
                 # For username we store internal user hash; set to user_id for now
