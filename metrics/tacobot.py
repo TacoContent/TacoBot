@@ -734,7 +734,6 @@ class TacoBotMetrics:
     def _fetch_pulltab_spendings(self) -> None:
         _method = inspect.stack()[0][3]
         try:
-            self.pulltabs_spendings.clear()
             q_pulltab_spendings = self.pulltab_db.metric_pulltab_spendings_by_user_and_status() or []
             for row in q_pulltab_spendings:
                 # Row contains _id: {guild_id, user_id}, total
@@ -756,7 +755,6 @@ class TacoBotMetrics:
     def _fetch_pulltab_winnings(self) -> None:
         _method = inspect.stack()[0][3]
         try:
-            self.pulltabs_winnings.clear()
             q_pulltab_winnings = self.pulltab_db.metric_pulltab_winnings_by_user_and_status() or []
             for row in q_pulltab_winnings:
                 # Row contains _id: {guild_id, user_id}, total
@@ -779,7 +777,6 @@ class TacoBotMetrics:
     def _fetch_pulltab_winning_lines(self) -> None:
         _method = inspect.stack()[0][3]
         try:
-            self.pulltabs_winning_lines.clear()
             q_pulltab_lines = self.pulltab_db.metric_pulltab_winning_lines() or []
             for row in q_pulltab_lines:
                 labels = {"guild_id": row["_id"]["guild_id"], "line": row["_id"]["line"]}
