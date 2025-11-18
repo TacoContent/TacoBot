@@ -5,7 +5,6 @@ import time
 import traceback
 import typing
 
-
 from bot.lib import logger
 from bot.lib.enums.loglevel import LogLevel
 from bot.lib.enums.permissions import TacoPermissions
@@ -18,11 +17,7 @@ from prometheus_client import Gauge
 
 class TacoBotMetrics:
     def __init__(
-        self,
-        config,
-        metrics_db: MetricsDatabase,
-        pulltab_db: PullTabTicketsDatabase,
-        settings: Settings,
+        self, config, metrics_db: MetricsDatabase, pulltab_db: PullTabTicketsDatabase, settings: Settings
     ) -> None:
         # get the class name
         _method = inspect.stack()[0][3]
@@ -432,7 +427,7 @@ class TacoBotMetrics:
                 namespace=self.namespace,
                 name="pulltabs_spendings",
                 documentation="The amount of tacos spent on pulltabs by users",
-                labelnames=["guild_id", "user_id", "username"]
+                labelnames=["guild_id", "user_id", "username"],
             )
 
             self.pulltabs_purchase_multiplier = Gauge(
@@ -651,27 +646,43 @@ class TacoBotMetrics:
         self._fetch_permission_counts(known_guilds=known_guilds)
 
     def _fetch_pulltab_config(self, known_guilds: list[str]) -> None:
-        for guild_id in known_guilds:
-            if not guild_id.isdigit():
-                continue
-            config = self.pulltab_db.get_config(guild_id=int(guild_id))
-            if config:
-                purchase_config = config.get("purchase", {})
-                purchase_max = purchase_config.get("max", 0)
-                purchase_cost = purchase_config.get("cost", 0)
+        _method = inspect.stack()[0][3]
+        try:
+            for guild_id in known_guilds:
+                if not guild_id.isdigit():
+                    continue
+                config = self.pulltab_db.get_config(guild_id=int(guild_id))
+                if config:
+                    purchase_config = config.get("purchase", {})
+                    purchase_max = purchase_config.get("max", 0)
+                    purchase_cost = purchase_config.get("cost", 0)
 
-                multiplier_config = config.get("multiplier", {})
-                multiplier_max = multiplier_config.get("max", 0)
-                multiplier_increase = multiplier_config.get("base_increase", 0)
+                    multiplier_config = config.get("multiplier", {})
+                    multiplier_max = multiplier_config.get("max", 0)
+                    multiplier_increase = multiplier_config.get("base_increase", 0)
 
-                self._set_gauge_labels(self.pulltabs_config_purchase_cost, {"guild_id": guild_id}, purchase_cost)
-                self._set_gauge_labels(self.pulltabs_config_purchase_max, {"guild_id": guild_id}, purchase_max)
-                self._set_gauge_labels(self.pulltabs_config_multiplier_max, {"guild_id": guild_id}, multiplier_max)
-                self._set_gauge_labels(self.pulltabs_config_multiplier_increase, {"guild_id": guild_id}, multiplier_increase)
+                    self._set_gauge_labels(self.pulltabs_config_purchase_cost, {"guild_id": guild_id}, purchase_cost)
+                    self._set_gauge_labels(self.pulltabs_config_purchase_max, {"guild_id": guild_id}, purchase_max)
+                    self._set_gauge_labels(self.pulltabs_config_multiplier_max, {"guild_id": guild_id}, multiplier_max)
+                    self._set_gauge_labels(
+                        self.pulltabs_config_multiplier_increase, {"guild_id": guild_id}, multiplier_increase
+                    )
+
+            self._set_gauge_labels(self.errors, {"source": "pulltabs_config_purchase_cost"}, 0)
+            self._set_gauge_labels(self.errors, {"source": "pulltabs_config_purchase_max"}, 0)
+            self._set_gauge_labels(self.errors, {"source": "pulltabs_config_multiplier_max"}, 0)
+            self._set_gauge_labels(self.errors, {"source": "pulltabs_config_multiplier_increase"}, 0)
+
+        except Exception as ex:
+            _method = inspect.stack()[0][3]
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            self._set_gauge_labels(self.errors, {"source": "pulltabs_config_purchase_cost"}, 1)
+            self._set_gauge_labels(self.errors, {"source": "pulltabs_config_purchase_max"}, 1)
+            self._set_gauge_labels(self.errors, {"source": "pulltabs_config_multiplier_max"}, 1)
+            self._set_gauge_labels(self.errors, {"source": "pulltabs_config_multiplier_increase"}, 1)
 
     def _fetch_pulltab_tickets(self) -> None:
         """Fetch pulltab tickets helper method."""
-        pass
         _method = inspect.stack()[0][3]
         try:
             self.pulltabs_tickets.clear()
@@ -688,9 +699,9 @@ class TacoBotMetrics:
                         "user_id": user['user_id'],
                         "username": user['username'],
                         "state": row['_id']['state'],
-                        "status": row['_id']['status']
+                        "status": row['_id']['status'],
                     },
-                    row['total']
+                    row['total'],
                 )
             self._set_gauge_labels(self.errors, {"source": "pulltab_tickets"}, 0)
         except Exception as ex:

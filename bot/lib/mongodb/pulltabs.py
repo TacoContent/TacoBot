@@ -153,16 +153,8 @@ class PullTabTicketsDatabase(Database):
                         "_id": {
                             "guild_id": "$guild_id",
                             "user_id": "$user_id",
-                            "state": {
-                                "$cond": [{"$gt": ["$reward", 0]}, "WINNER", "LOSER"]
-                            },
-                            "status": {
-                                "$cond": [
-                                    {"$ifNull": ["$redeemed_at", False]},
-                                    "REDEEMED",
-                                    "PENDING",
-                                ]
-                            },
+                            "state": {"$cond": [{"$gt": ["$reward", 0]}, "WINNER", "LOSER"]},
+                            "status": {"$cond": [{"$ifNull": ["$redeemed_at", False]}, "REDEEMED", "PENDING"]},
                         },
                         "total": {"$sum": 1},
                     }
@@ -229,15 +221,7 @@ class PullTabTicketsDatabase(Database):
             if self.connection is None or self.client is None:
                 self.open()
             pipeline = [
-                {
-                    "$group": {
-                        "_id": {
-                            "guild_id": "$guild_id",
-                            "user_id": "$user_id",
-                        },
-                        "total": {"$sum": "$cost"},
-                    }
-                },
+                {"$group": {"_id": {"guild_id": "$guild_id", "user_id": "$user_id"}, "total": {"$sum": "$cost"}}},
                 {
                     "$lookup": {
                         "from": "users",
@@ -269,13 +253,7 @@ class PullTabTicketsDatabase(Database):
                         "_id": {
                             "guild_id": "$guild_id",
                             "user_id": "$user_id",
-                            "status": {
-                                "$cond": [
-                                    {"$ifNull": ["$redeemed_at", False]},
-                                    "REDEEMED",
-                                    "PENDING",
-                                ]
-                            },
+                            "status": {"$cond": [{"$ifNull": ["$redeemed_at", False]}, "REDEEMED", "PENDING"]},
                         },
                         "total": {"$sum": "$reward"},
                     }
@@ -318,15 +296,9 @@ class PullTabTicketsDatabase(Database):
                 # unwind the object to get the key/value pair
                 {"$unwind": "$winning_kv"},
                 # group by ticket code + guild + line to deduplicate multiple entries in the same ticket
-                {
-                    "$group": {
-                        "_id": {"guild_id": "$guild_id", "code": "$code", "line": "$winning_kv.k"}
-                    }
-                },
+                {"$group": {"_id": {"guild_id": "$guild_id", "code": "$code", "line": "$winning_kv.k"}}},
                 # now group by guild and line and count distinct tickets
-                {
-                    "$group": {"_id": {"guild_id": "$_id.guild_id", "line": "$_id.line"}, "total": {"$sum": 1}}
-                },
+                {"$group": {"_id": {"guild_id": "$_id.guild_id", "line": "$_id.line"}, "total": {"$sum": 1}}},
             ]
 
             cursor = self.connection.pulltab_tickets.aggregate(pipeline)  # type: ignore

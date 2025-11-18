@@ -14,7 +14,9 @@ class TestTacoBotMetricsHelpers:
     def metrics(self, metrics_config, metrics_db, pulltabs_db, settings):
         """Create TacoBotMetrics instance for testing."""
         with patch("metrics.tacobot.Gauge"), patch.object(TacoBotMetrics, "_fetch_build_info"):
-            return TacoBotMetrics(config=metrics_config, metrics_db=metrics_db, pulltab_db=pulltabs_db, settings=settings)
+            return TacoBotMetrics(
+                config=metrics_config, metrics_db=metrics_db, pulltab_db=pulltabs_db, settings=settings
+            )
 
 
 class TestSetGaugeLabels(TestTacoBotMetricsHelpers):
@@ -255,17 +257,13 @@ class TestFetchGameKeys(TestTacoBotMetricsHelpers):
 
             metrics.db.get_user_game_keys_submitted_count.assert_called_once()
 
-
     class TestFetchPulltabs(TestTacoBotMetricsHelpers):
         """Tests for pulltab-related fetch methods."""
 
         def test_fetch_pulltab_config_success(self, metrics):
             """Test fetching pulltab configuration per guild."""
             # Return sample config for a guild
-            config = {
-                "purchase": {"max": 5, "cost": 10},
-                "multiplier": {"max": 3, "base_increase": 2},
-            }
+            config = {"purchase": {"max": 5, "cost": 10}, "multiplier": {"max": 3, "base_increase": 2}}
 
             metrics.pulltab_db.get_config = MagicMock(side_effect=lambda guild_id: config if guild_id == 123 else None)
 
@@ -276,21 +274,31 @@ class TestFetchGameKeys(TestTacoBotMetricsHelpers):
                 metrics.pulltab_db.get_config.assert_called()
 
                 # Confirm the configuration gauges were set for the guild that exists
-                # Should set 4 gauges: purchase_cost, purchase_max, multiplier_max, multiplier_increase
-                assert mock_set_gauge.call_count == 4
-                
-                # All calls should have guild_id label
-                for call in mock_set_gauge.call_args_list:
+                # Should set 4 gauges for guild 123 + 4 error gauges reset to 0 at end = 8 total
+                assert mock_set_gauge.call_count == 8
+
+                # Filter calls with guild_id label (config values)
+                config_calls = [call for call in mock_set_gauge.call_args_list if "guild_id" in call[0][1]]
+                assert len(config_calls) == 4
+                for call in config_calls:
                     labels = call[0][1]
-                    assert "guild_id" in labels
                     assert labels["guild_id"] == "123"
+
+                # Filter calls with source label (error gauges)
+                error_calls = [call for call in mock_set_gauge.call_args_list if "source" in call[0][1]]
+                # 4 error gauges reset to 0 at end = 4
+                assert len(error_calls) == 4
 
         def test_fetch_pulltab_tickets_success(self, metrics):
             """Test fetching pulltab tickets metrics."""
             # Setup sample DB result with and without user details
             sample = [
-                {"_id": {"guild_id": "1", "user_id": "u1", "state": "ACTIVE", "status": "total"}, "total": 10, "user": [{"user_id": "u1", "username": "Alice"}]},
-                {"_id": {"guild_id": "2", "user_id": "u2", "state": "EXPIRED", "status": "total"}, "total": 1},
+                {
+                    "_id": {"guild_id": "1", "user_id": "12", "state": "ACTIVE", "status": "total"},
+                    "total": 10,
+                    "user": [{"user_id": "12", "username": "Alice"}],
+                },
+                {"_id": {"guild_id": "2", "user_id": "22", "state": "EXPIRED", "status": "total"}, "total": 1},
             ]
 
             metrics.pulltab_db.metric_pulltab_tickets_counts = MagicMock(return_value=sample)
@@ -302,7 +310,7 @@ class TestFetchGameKeys(TestTacoBotMetricsHelpers):
 
                 # Should set gauge for each row plus error gauge (2 + 1 = 3)
                 assert mock_set_gauge.call_count == 3
-                
+
                 # Filter data calls (have guild_id, user_id, username, state, status labels)
                 ticket_calls = [c for c in mock_set_gauge.call_args_list if "guild_id" in c[0][1]]
                 assert len(ticket_calls) == 2
@@ -315,7 +323,13 @@ class TestFetchGameKeys(TestTacoBotMetricsHelpers):
 
         def test_fetch_pulltab_purchase_multiplier_success(self, metrics):
             """Test fetching pulltab purchase multiplier by user."""
-            sample = [{"_id": {"guild_id": "1", "user_id": "u1", "purchase_multiplier": 2}, "total": 5, "user": [{"user_id": "u1", "username": "Alice"}] }]
+            sample = [
+                {
+                    "_id": {"guild_id": "1", "user_id": "u1", "purchase_multiplier": 2},
+                    "total": 5,
+                    "user": [{"user_id": "u1", "username": "Alice"}],
+                }
+            ]
 
             metrics.pulltab_db.metric_pulltab_purchase_multiplier_by_user = MagicMock(return_value=sample)
 
@@ -326,14 +340,14 @@ class TestFetchGameKeys(TestTacoBotMetricsHelpers):
 
                 # Should update the purchase multiplier gauge plus error gauge (1 + 1 = 2)
                 assert mock_set_gauge.call_count == 2
-                
+
                 # Filter data calls (have guild_id, purchase_multiplier labels)
                 calls = [c for c in mock_set_gauge.call_args_list if "purchase_multiplier" in c[0][1]]
                 assert len(calls) == 1
                 labels = calls[0][0][1]
                 assert labels["guild_id"] == "1"
                 assert labels["purchase_multiplier"] == "2"
-                
+
                 # Verify error gauge set to 0
                 error_calls = [c for c in mock_set_gauge.call_args_list if "source" in c[0][1]]
                 assert len(error_calls) == 1
@@ -341,7 +355,13 @@ class TestFetchGameKeys(TestTacoBotMetricsHelpers):
 
         def test_fetch_pulltab_spendings_success(self, metrics):
             """Test fetching pulltab spendings by user and status."""
-            sample = [{"_id": {"guild_id": "1", "user_id": "u1"}, "total": 25, "user": [{"user_id": "u1", "username": "Alice"}] }]
+            sample = [
+                {
+                    "_id": {"guild_id": "1", "user_id": "u1"},
+                    "total": 25,
+                    "user": [{"user_id": "u1", "username": "Alice"}],
+                }
+            ]
 
             metrics.pulltab_db.metric_pulltab_spendings_by_user_and_status = MagicMock(return_value=sample)
 
@@ -352,11 +372,11 @@ class TestFetchGameKeys(TestTacoBotMetricsHelpers):
 
                 # Should set gauge for data plus error gauge (1 + 1 = 2)
                 assert mock_set_gauge.call_count == 2
-                
+
                 # Filter data calls (have guild_id, user_id, username labels)
                 calls = [c for c in mock_set_gauge.call_args_list if "user_id" in c[0][1]]
                 assert len(calls) == 1
-                
+
                 # Verify error gauge set to 0
                 error_calls = [c for c in mock_set_gauge.call_args_list if "source" in c[0][1]]
                 assert len(error_calls) == 1
@@ -364,7 +384,13 @@ class TestFetchGameKeys(TestTacoBotMetricsHelpers):
 
         def test_fetch_pulltab_winnings_success(self, metrics):
             """Test fetching pulltab winnings by user and status."""
-            sample = [{"_id": {"guild_id": "1", "user_id": "u1"}, "total": 100, "user": [{"user_id": "u1", "username": "Alice"}] }]
+            sample = [
+                {
+                    "_id": {"guild_id": "1", "user_id": "u1"},
+                    "total": 100,
+                    "user": [{"user_id": "u1", "username": "Alice"}],
+                }
+            ]
 
             metrics.pulltab_db.metric_pulltab_winnings_by_user_and_status = MagicMock(return_value=sample)
 
@@ -375,11 +401,11 @@ class TestFetchGameKeys(TestTacoBotMetricsHelpers):
 
                 # Should set gauge for data plus error gauge (1 + 1 = 2)
                 assert mock_set_gauge.call_count == 2
-                
+
                 # Filter data calls (have guild_id, user_id, username, status labels)
                 calls = [c for c in mock_set_gauge.call_args_list if "status" in c[0][1]]
                 assert len(calls) == 1
-                
+
                 # Verify error gauge set to 0
                 error_calls = [c for c in mock_set_gauge.call_args_list if "source" in c[0][1]]
                 assert len(error_calls) == 1
@@ -398,11 +424,11 @@ class TestFetchGameKeys(TestTacoBotMetricsHelpers):
 
                 # Should set gauge for data plus error gauge (1 + 1 = 2)
                 assert mock_set_gauge.call_count == 2
-                
+
                 # Filter data calls (have guild_id, line labels)
                 calls = [c for c in mock_set_gauge.call_args_list if "line" in c[0][1]]
                 assert len(calls) == 1
-                
+
                 # Verify error gauge set to 0
                 error_calls = [c for c in mock_set_gauge.call_args_list if "source" in c[0][1]]
                 assert len(error_calls) == 1

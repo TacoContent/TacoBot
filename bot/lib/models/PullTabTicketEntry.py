@@ -100,5 +100,4 @@ class PullTabTicketEntry:
             effective_multiplier=data.get("effective_multiplier", 1),
             purchase_multiplier=data.get("purchase_multiplier", 1),
             cost=data.get("cost", 10),
-
         )

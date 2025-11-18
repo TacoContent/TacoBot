@@ -122,7 +122,6 @@ class TestMetricsExporterRun:
     @patch('metrics.exporter.TacoBotMetrics')
     @patch('metrics.exporter.TacoBotMetricsConfig')
     @patch('metrics.exporter.Log')
-    
     @patch('metrics.exporter.PullTabTicketsDatabase')
     @patch('metrics.exporter.MetricsDatabase')
     @patch.dict(os.environ, {'TBE_CONFIG_FILE': './test-config.yaml'})
@@ -185,7 +184,14 @@ class TestMetricsExporterRun:
     @patch('metrics.exporter.MetricsDatabase')
     @patch.dict(os.environ, {}, clear=True)
     def test_run_uses_default_config_path(
-        self, mock_metrics_db, mock_pulltabs_db, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
+        self,
+        mock_metrics_db,
+        mock_pulltabs_db,
+        mock_log_class,
+        mock_config_class,
+        mock_metrics_class,
+        mock_http_server,
+        module_settings,
     ):
         """Test that default config path is used when env var not set."""
         # Setup mocks
@@ -216,7 +222,14 @@ class TestMetricsExporterRun:
     @patch('metrics.exporter.PullTabTicketsDatabase')
     @patch('metrics.exporter.MetricsDatabase')
     def test_run_with_custom_config_path(
-        self, mock_metrics_db, mock_pulltabs_db, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
+        self,
+        mock_metrics_db,
+        mock_pulltabs_db,
+        mock_log_class,
+        mock_config_class,
+        mock_metrics_class,
+        mock_http_server,
+        module_settings,
     ):
         """Test run with custom config file path from environment."""
         # Setup mocks
@@ -401,7 +414,14 @@ class TestMetricsExporterRun:
     @patch('metrics.exporter.PullTabTicketsDatabase')
     @patch('metrics.exporter.MetricsDatabase')
     def test_run_logs_correct_port_from_config(
-        self, mock_metrics_db, mock_pulltabs_db, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
+        self,
+        mock_metrics_db,
+        mock_pulltabs_db,
+        mock_log_class,
+        mock_config_class,
+        mock_metrics_class,
+        mock_http_server,
+        module_settings,
     ):
         """Test that run logs the correct port from config."""
         # Setup mocks
@@ -459,7 +479,14 @@ class TestMetricsExporterEdgeCases:
     @patch('metrics.exporter.PullTabTicketsDatabase')
     @patch('metrics.exporter.MetricsDatabase')
     def test_run_with_zero_port_number(
-        self, mock_metrics_db, mock_pulltabs_db, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
+        self,
+        mock_metrics_db,
+        mock_pulltabs_db,
+        mock_log_class,
+        mock_config_class,
+        mock_metrics_class,
+        mock_http_server,
+        module_settings,
     ):
         """Test run with port number 0 (system-assigned port)."""
         # Setup mocks
@@ -490,7 +517,15 @@ class TestMetricsExporterEdgeCases:
     @patch('metrics.exporter.PullTabTicketsDatabase')
     @patch('metrics.exporter.MetricsDatabase')
     def test_run_with_empty_env_var(
-        self, mock_metrics_db, mock_pulltabs_db, mock_dict_get, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
+        self,
+        mock_metrics_db,
+        mock_pulltabs_db,
+        mock_dict_get,
+        mock_log_class,
+        mock_config_class,
+        mock_metrics_class,
+        mock_http_server,
+        module_settings,
     ):
         """Test run when env var returns empty string."""
         # Setup mocks
@@ -556,7 +591,14 @@ class TestMetricsExporterLogging:
     @patch('metrics.exporter.PullTabTicketsDatabase')
     @patch('metrics.exporter.MetricsDatabase')
     def test_info_logging_during_run(
-        self, mock_metrics_db, mock_pulltabs_db, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
+        self,
+        mock_metrics_db,
+        mock_pulltabs_db,
+        mock_log_class,
+        mock_config_class,
+        mock_metrics_class,
+        mock_http_server,
+        module_settings,
     ):
         """Test that info messages are logged during run."""
         # Setup mocks
@@ -586,7 +628,14 @@ class TestMetricsExporterLogging:
     @patch('metrics.exporter.PullTabTicketsDatabase')
     @patch('metrics.exporter.MetricsDatabase')
     def test_error_logging_includes_traceback(
-        self, mock_metrics_db, mock_pulltabs_db, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
+        self,
+        mock_metrics_db,
+        mock_pulltabs_db,
+        mock_log_class,
+        mock_config_class,
+        mock_metrics_class,
+        mock_http_server,
+        module_settings,
     ):
         """Test that error logging includes traceback information."""
         # Setup mocks

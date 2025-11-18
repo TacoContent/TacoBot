@@ -922,12 +922,23 @@ class GameKeysCog(TacobotCog):
         if not interaction.guild:
             return
         try:
-            if interaction.response.is_done():
+            # lets check if this interaction is for us
+            cog_settings = self.get_cog_settings(interaction.guild.id)
+            if not cog_settings.get("enabled", False):
                 self.log.debug(
                     interaction.guild.id,
                     f"{self._module}.{self._class}.{_method}",
-                    f"Interaction already responded to: {interaction}",
+                    f"game_keys is disabled for guild {interaction.guild.id}",
                 )
+                return
+
+            reward_channel_id = cog_settings.get("reward_channel_id", "0")
+            if interaction.channel is None:
+                return
+            if str(interaction.channel.id) != str(reward_channel_id):
+                return
+
+            if interaction.response.is_done():
                 return
 
             self.log.debug(

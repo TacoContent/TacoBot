@@ -13,7 +13,9 @@ class TestTacoBotMetricsFetchUserMetrics:
     def metrics(self, metrics_config, metrics_db, pulltabs_db, settings):
         """Create TacoBotMetrics instance for testing."""
         with patch("metrics.tacobot.Gauge"), patch.object(TacoBotMetrics, "_fetch_build_info"):
-            return TacoBotMetrics(config=metrics_config, metrics_db=metrics_db, pulltab_db=pulltabs_db, settings=settings)
+            return TacoBotMetrics(
+                config=metrics_config, metrics_db=metrics_db, pulltab_db=pulltabs_db, settings=settings
+            )
 
 
 class TestFetchKnownUsers(TestTacoBotMetricsFetchUserMetrics):

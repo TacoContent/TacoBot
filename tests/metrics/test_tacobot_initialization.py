@@ -5,12 +5,15 @@ from unittest.mock import MagicMock, patch
 import pytest
 from metrics.tacobot import TacoBotMetrics
 
+
 class TestTacoBotMetricsInitialization:
     """Tests for TacoBotMetrics initialization."""
 
     def test_initialization_success(self, metrics_config, metrics_db, pulltabs_db, settings):
         """Test that TacoBotMetrics initializes correctly with all dependencies."""
-        metrics = TacoBotMetrics(config=metrics_config, metrics_db=metrics_db, pulltab_db=pulltabs_db, settings=settings)
+        metrics = TacoBotMetrics(
+            config=metrics_config, metrics_db=metrics_db, pulltab_db=pulltabs_db, settings=settings
+        )
         assert metrics.settings == settings
         assert metrics.db == metrics_db
         assert metrics.namespace == "tacobot"

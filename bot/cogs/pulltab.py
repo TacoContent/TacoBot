@@ -5,6 +5,7 @@ import traceback
 import typing
 from collections import Counter
 
+import discord
 from bot.lib import utils
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.enums.permissions import TacoPermissions
@@ -15,6 +16,7 @@ from bot.lib.mongodb.pulltabs import PullTabTicketsDatabase
 from bot.lib.permissions import Permissions
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
+from bot.ui.PullTabTIcketRedeemView import PullTabTicketRedeemView
 from discord import Interaction, app_commands
 from discord.ext import commands
 
@@ -305,25 +307,39 @@ class PullTabCog(TacobotCog):
                 )
                 return
 
+            purchase_message = self.settings.get_string(
+                guildId=guild_id,
+                key="pulltab_purchase_message",
+                ticket_word=ticket_word,
+                ticket_count=count,
+                multiplier=multiplier,
+                total_cost=tickets_total_cost,
+                taco_word=taco_word,
+            )
+
+            await self._send_message(ctx, purchase_message, ephemeral=True)
+
             # generate a random code for the pulltab sequence
             # the code should be alphanumeric
             # the code should be 8 - 16 characters long
             # the code should be unique
             # store the code in self.ticket_codes
-            tickets_output = []
+            # tickets_output = []
             for _ in range(count):
-                _, ticket_output = self._generate_ticket(
+                ticket_code, ticket_output = self._generate_ticket(
                     guild_id=guild_id, user_id=user_id, cog_settings=cog_settings, multiplier=multiplier
                 )
-                tickets_output.append(ticket_output)
+                view = self._create_ticket_view(ctx, code=ticket_code, multiplier=multiplier)
+                await self._send_message(ctx, message=ticket_output, followup=True, view=view, ephemeral=True)
+                # tickets_output.append(ticket_output)
 
-            sheets_display = "\n".join(tickets_output)
-            redeem_message = "redeem with `/pulltab redeem <code>`"
+            # sheets_display = "\n".join(tickets_output)
+            # redeem_message = "redeem with `/pulltab redeem <code>`"
 
             await self.taco_helper.give_tacos(
                 guildId=guild_id,
-                fromUser=user,
-                toUser=self.bot.user,
+                fromUser=self.bot.user,
+                toUser=user,
                 taco_amount=(tickets_total_cost * -1),
                 reason=self.settings.get_string(
                     guildId=guild_id,
@@ -335,17 +351,6 @@ class PullTabCog(TacobotCog):
                 give_type=TacoTypes.PULLTAB_PURCHASE,
             )
 
-            purchase_message = self.settings.get_string(
-                guildId=guild_id,
-                key="pulltab_purchase_message",
-                ticket_word=ticket_word,
-                ticket_count=count,
-                multiplier=multiplier,
-                total_cost=tickets_total_cost,
-                taco_word=taco_word,
-            )
-
-            await self._send_message(ctx, f"{purchase_message}\n\n{sheets_display}\n{redeem_message}", ephemeral=True)
         except Exception as e:
             await self.message_helper.notify_of_error(ctx)
             self.log.error(
@@ -380,7 +385,7 @@ class PullTabCog(TacobotCog):
                 return
 
             success, reward, message = self._redeem_ticket(guild_id=guild_id, user_id=user_id, code=code)
-            if success:
+            if success and reward > 0:
                 await self.taco_helper.give_tacos(
                     guildId=guild_id,
                     fromUser=from_user,
@@ -515,11 +520,7 @@ class PullTabCog(TacobotCog):
         self.ticket_codes_cache.add(code)
 
     def _process_ticket(
-        self,
-        *,
-        ticket: typing.List[str],
-        cog_settings: typing.Dict[str, typing.Any],
-        effective_multiplier: float = 1.0,
+        self, *, ticket: typing.List[str], cog_settings: typing.Dict[str, typing.Any], effective_multiplier: float = 1.0
     ) -> typing.Tuple[bool, int, typing.List[typing.Dict[str, int]]]:
         """Process a pulltab ticket.
         Returns a tuple of (
@@ -691,12 +692,21 @@ class PullTabCog(TacobotCog):
         calculated_multiplier = 1 + (requested_multiplier * base_increase)
         return calculated_multiplier
 
-    async def _send_message(self, ctx: typing.Union[commands.Context, Interaction], message: str, **kwargs):
+    async def _send_message(self, ctx: typing.Union[commands.Context, discord.Interaction], message: str, **kwargs):
         _method = inspect.stack()[0][3]
         if isinstance(ctx, commands.Context):
+            # remove ephemeral from kwargs if present, as Context.send does not support it
+            if 'ephemeral' in kwargs:
+                kwargs.pop('ephemeral')
+            if 'followup' in kwargs:
+                kwargs.pop('followup')
             await ctx.send(message, **kwargs)
         elif isinstance(ctx, Interaction):
-            await ctx.response.send_message(message, **kwargs)
+            if 'followup' in kwargs and kwargs['followup']:
+                kwargs.pop('followup')
+                await ctx.followup.send(message, **kwargs)
+            else:
+                await ctx.response.send_message(message, **kwargs)
         else:
             guild_id = ctx.guild.id if ctx.guild else 0
             self.log.error(
@@ -704,6 +714,12 @@ class PullTabCog(TacobotCog):
                 f"{self._module}.{self._class}.{_method}",
                 f"Invalid context type for sending message: cannot send message: {message}",
             )
+
+    def _create_ticket_view(
+        self, ctx: typing.Union[commands.Context, Interaction], *, code: str, multiplier: int = 1
+    ) -> discord.ui.View:
+        """Create a Discord button for redeeming a pulltab ticket."""
+        return PullTabTicketRedeemView(ctx=ctx, code=code, multiplier=multiplier, settings=self.settings, cog=self)
 
 
 async def setup(bot: TacoBot):
