@@ -5,6 +5,7 @@ import traceback
 from bot.lib.enums.loglevel import LogLevel
 from bot.lib.logger import Log
 from bot.lib.mongodb.metrics import MetricsDatabase
+from bot.lib.mongodb.pulltabs import PullTabTicketsDatabase
 from bot.lib.settings import Settings
 from bot.lib.utils import dict_get
 from metrics.config import TacoBotMetricsConfig
@@ -33,9 +34,13 @@ class MetricsExporter:
         _method = inspect.stack()[1][3]
         try:
             metrics_db = MetricsDatabase()
+            pulltabs_db = PullTabTicketsDatabase()
             config_file = dict_get(os.environ, "TBE_CONFIG_FILE", default_value="./config/.configuration.yaml")
             config = TacoBotMetricsConfig(config_file)
-            app_metrics = TacoBotMetrics(config, metrics_db, self.settings)
+            # Construct TacoBotMetrics using positional args — this keeps tests and
+            # other call sites consistent with existing usage throughout the
+            # test-suite and other modules.
+            app_metrics = TacoBotMetrics(config, metrics_db, pulltabs_db, self.settings)
             self.log.info(
                 0,
                 f"{self._module}.{self._class}.{_method}",

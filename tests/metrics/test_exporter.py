@@ -122,17 +122,21 @@ class TestMetricsExporterRun:
     @patch('metrics.exporter.TacoBotMetrics')
     @patch('metrics.exporter.TacoBotMetricsConfig')
     @patch('metrics.exporter.Log')
+    
+    @patch('metrics.exporter.PullTabTicketsDatabase')
     @patch('metrics.exporter.MetricsDatabase')
     @patch.dict(os.environ, {'TBE_CONFIG_FILE': './test-config.yaml'})
     def test_run_successful_execution(
         self,
         mock_metrics_db,
+        mock_pulltabs_db,
         mock_log_class,
         mock_config_class,
         mock_metrics_class,
         mock_http_server,
         module_settings,
         metrics_db,
+        pulltabs_db,
     ):
         """Test successful run execution with all components."""
         # Setup mocks
@@ -149,6 +153,8 @@ class TestMetricsExporterRun:
 
         # Mock MetricsDatabase to return the fixture
         mock_metrics_db.return_value = metrics_db
+        # Ensure exporter uses our fixture for pulltab DB
+        mock_pulltabs_db.return_value = pulltabs_db
 
         exporter = MetricsExporter(module_settings)
         exporter.run()
@@ -157,7 +163,7 @@ class TestMetricsExporterRun:
         mock_config_class.assert_called_once_with('./test-config.yaml')
 
         # Verify metrics instance was created with config
-        mock_metrics_class.assert_called_once_with(mock_config_instance, metrics_db, module_settings)
+        mock_metrics_class.assert_called_once_with(mock_config_instance, metrics_db, pulltabs_db, module_settings)
 
         # Verify HTTP server was started on correct port
         mock_http_server.assert_called_once_with(8932)
@@ -175,9 +181,11 @@ class TestMetricsExporterRun:
     @patch('metrics.exporter.TacoBotMetrics')
     @patch('metrics.exporter.TacoBotMetricsConfig')
     @patch('metrics.exporter.Log')
+    @patch('metrics.exporter.PullTabTicketsDatabase')
+    @patch('metrics.exporter.MetricsDatabase')
     @patch.dict(os.environ, {}, clear=True)
     def test_run_uses_default_config_path(
-        self, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
+        self, mock_metrics_db, mock_pulltabs_db, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
     ):
         """Test that default config path is used when env var not set."""
         # Setup mocks
@@ -192,6 +200,8 @@ class TestMetricsExporterRun:
         mock_metrics_instance.run_metrics_loop = MagicMock()
         mock_metrics_class.return_value = mock_metrics_instance
 
+        mock_metrics_db.return_value = MagicMock()
+        mock_pulltabs_db.return_value = MagicMock()
         exporter = MetricsExporter(module_settings)
         exporter.run()
 
@@ -203,8 +213,10 @@ class TestMetricsExporterRun:
     @patch('metrics.exporter.TacoBotMetricsConfig')
     @patch('metrics.exporter.Log')
     @patch.dict(os.environ, {'TBE_CONFIG_FILE': '/custom/path/config.yaml'})
+    @patch('metrics.exporter.PullTabTicketsDatabase')
+    @patch('metrics.exporter.MetricsDatabase')
     def test_run_with_custom_config_path(
-        self, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
+        self, mock_metrics_db, mock_pulltabs_db, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
     ):
         """Test run with custom config file path from environment."""
         # Setup mocks
@@ -219,6 +231,8 @@ class TestMetricsExporterRun:
         mock_metrics_instance.run_metrics_loop = MagicMock()
         mock_metrics_class.return_value = mock_metrics_instance
 
+        mock_metrics_db.return_value = MagicMock()
+        mock_pulltabs_db.return_value = MagicMock()
         exporter = MetricsExporter(module_settings)
         exporter.run()
 
@@ -229,8 +243,10 @@ class TestMetricsExporterRun:
     @patch('metrics.exporter.TacoBotMetrics')
     @patch('metrics.exporter.TacoBotMetricsConfig')
     @patch('metrics.exporter.Log')
+    @patch('metrics.exporter.PullTabTicketsDatabase')
+    @patch('metrics.exporter.MetricsDatabase')
     def test_run_with_config_exception_logs_error(
-        self, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server
+        self, mock_metrics_db, mock_pulltabs_db, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server
     ):
         """Test that exceptions during config loading are caught and logged."""
         # Setup mocks
@@ -244,6 +260,8 @@ class TestMetricsExporterRun:
         # Config initialization raises exception
         mock_config_class.side_effect = Exception("Config file not found")
 
+        mock_metrics_db.return_value = MagicMock()
+        mock_pulltabs_db.return_value = MagicMock()
         exporter = MetricsExporter(settings)
         exporter.run()
 
@@ -265,8 +283,10 @@ class TestMetricsExporterRun:
     @patch('metrics.exporter.TacoBotMetrics')
     @patch('metrics.exporter.TacoBotMetricsConfig')
     @patch('metrics.exporter.Log')
+    @patch('metrics.exporter.PullTabTicketsDatabase')
+    @patch('metrics.exporter.MetricsDatabase')
     def test_run_with_metrics_exception_logs_error(
-        self, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server
+        self, mock_metrics_db, mock_pulltabs_db, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server
     ):
         """Test that exceptions during metrics initialization are caught and logged."""
         # Setup mocks
@@ -284,6 +304,8 @@ class TestMetricsExporterRun:
         # Metrics initialization raises exception
         mock_metrics_class.side_effect = Exception("Failed to initialize metrics")
 
+        mock_metrics_db.return_value = MagicMock()
+        mock_pulltabs_db.return_value = MagicMock()
         exporter = MetricsExporter(settings)
         exporter.run()
 
@@ -299,8 +321,10 @@ class TestMetricsExporterRun:
     @patch('metrics.exporter.TacoBotMetrics')
     @patch('metrics.exporter.TacoBotMetricsConfig')
     @patch('metrics.exporter.Log')
+    @patch('metrics.exporter.PullTabTicketsDatabase')
+    @patch('metrics.exporter.MetricsDatabase')
     def test_run_with_http_server_exception_logs_error(
-        self, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server
+        self, mock_metrics_db, mock_pulltabs_db, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server
     ):
         """Test that exceptions during HTTP server startup are caught and logged."""
         # Setup mocks
@@ -321,6 +345,8 @@ class TestMetricsExporterRun:
         # HTTP server startup raises exception
         mock_http_server.side_effect = Exception("Port already in use")
 
+        mock_metrics_db.return_value = MagicMock()
+        mock_pulltabs_db.return_value = MagicMock()
         exporter = MetricsExporter(settings)
         exporter.run()
 
@@ -336,8 +362,10 @@ class TestMetricsExporterRun:
     @patch('metrics.exporter.TacoBotMetrics')
     @patch('metrics.exporter.TacoBotMetricsConfig')
     @patch('metrics.exporter.Log')
+    @patch('metrics.exporter.PullTabTicketsDatabase')
+    @patch('metrics.exporter.MetricsDatabase')
     def test_run_with_metrics_loop_exception_logs_error(
-        self, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server
+        self, mock_metrics_db, mock_pulltabs_db, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server
     ):
         """Test that exceptions during metrics loop are caught and logged."""
         # Setup mocks
@@ -356,6 +384,8 @@ class TestMetricsExporterRun:
         mock_metrics_instance.run_metrics_loop.side_effect = Exception("Database connection failed")
         mock_metrics_class.return_value = mock_metrics_instance
 
+        mock_metrics_db.return_value = MagicMock()
+        mock_pulltabs_db.return_value = MagicMock()
         exporter = MetricsExporter(settings)
         exporter.run()
 
@@ -368,8 +398,10 @@ class TestMetricsExporterRun:
     @patch('metrics.exporter.TacoBotMetrics')
     @patch('metrics.exporter.TacoBotMetricsConfig')
     @patch('metrics.exporter.Log')
+    @patch('metrics.exporter.PullTabTicketsDatabase')
+    @patch('metrics.exporter.MetricsDatabase')
     def test_run_logs_correct_port_from_config(
-        self, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
+        self, mock_metrics_db, mock_pulltabs_db, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
     ):
         """Test that run logs the correct port from config."""
         # Setup mocks
@@ -384,6 +416,8 @@ class TestMetricsExporterRun:
         mock_metrics_instance.run_metrics_loop = MagicMock()
         mock_metrics_class.return_value = mock_metrics_instance
 
+        mock_metrics_db.return_value = MagicMock()
+        mock_pulltabs_db.return_value = MagicMock()
         exporter = MetricsExporter(module_settings)
         exporter.run()
 
@@ -422,8 +456,10 @@ class TestMetricsExporterEdgeCases:
     @patch('metrics.exporter.TacoBotMetrics')
     @patch('metrics.exporter.TacoBotMetricsConfig')
     @patch('metrics.exporter.Log')
+    @patch('metrics.exporter.PullTabTicketsDatabase')
+    @patch('metrics.exporter.MetricsDatabase')
     def test_run_with_zero_port_number(
-        self, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
+        self, mock_metrics_db, mock_pulltabs_db, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
     ):
         """Test run with port number 0 (system-assigned port)."""
         # Setup mocks
@@ -433,6 +469,8 @@ class TestMetricsExporterEdgeCases:
         mock_config_instance = MagicMock(spec=TacoBotMetricsConfig)
         mock_config_instance.metrics = {'port': 0, 'pollingInterval': 30}
         mock_config_class.return_value = mock_config_instance
+        mock_metrics_db.return_value = MagicMock()
+        mock_pulltabs_db.return_value = MagicMock()
 
         mock_metrics_instance = MagicMock(spec=TacoBotMetrics)
         mock_metrics_instance.run_metrics_loop = MagicMock()
@@ -449,8 +487,10 @@ class TestMetricsExporterEdgeCases:
     @patch('metrics.exporter.TacoBotMetricsConfig')
     @patch('metrics.exporter.Log')
     @patch('metrics.exporter.dict_get')
+    @patch('metrics.exporter.PullTabTicketsDatabase')
+    @patch('metrics.exporter.MetricsDatabase')
     def test_run_with_empty_env_var(
-        self, mock_dict_get, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
+        self, mock_metrics_db, mock_pulltabs_db, mock_dict_get, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
     ):
         """Test run when env var returns empty string."""
         # Setup mocks
@@ -463,6 +503,8 @@ class TestMetricsExporterEdgeCases:
         mock_config_instance = MagicMock(spec=TacoBotMetricsConfig)
         mock_config_instance.metrics = {'port': 8932, 'pollingInterval': 30}
         mock_config_class.return_value = mock_config_instance
+        mock_metrics_db.return_value = MagicMock()
+        mock_pulltabs_db.return_value = MagicMock()
 
         mock_metrics_instance = MagicMock(spec=TacoBotMetrics)
         mock_metrics_instance.run_metrics_loop = MagicMock()
@@ -511,8 +553,10 @@ class TestMetricsExporterLogging:
     @patch('metrics.exporter.TacoBotMetrics')
     @patch('metrics.exporter.TacoBotMetricsConfig')
     @patch('metrics.exporter.Log')
+    @patch('metrics.exporter.PullTabTicketsDatabase')
+    @patch('metrics.exporter.MetricsDatabase')
     def test_info_logging_during_run(
-        self, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
+        self, mock_metrics_db, mock_pulltabs_db, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
     ):
         """Test that info messages are logged during run."""
         # Setup mocks
@@ -527,6 +571,8 @@ class TestMetricsExporterLogging:
         mock_metrics_instance.run_metrics_loop = MagicMock()
         mock_metrics_class.return_value = mock_metrics_instance
 
+        mock_metrics_db.return_value = MagicMock()
+        mock_pulltabs_db.return_value = MagicMock()
         exporter = MetricsExporter(module_settings)
         exporter.run()
 
@@ -537,8 +583,10 @@ class TestMetricsExporterLogging:
     @patch('metrics.exporter.TacoBotMetrics')
     @patch('metrics.exporter.TacoBotMetricsConfig')
     @patch('metrics.exporter.Log')
+    @patch('metrics.exporter.PullTabTicketsDatabase')
+    @patch('metrics.exporter.MetricsDatabase')
     def test_error_logging_includes_traceback(
-        self, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
+        self, mock_metrics_db, mock_pulltabs_db, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server, module_settings
     ):
         """Test that error logging includes traceback information."""
         # Setup mocks
@@ -553,6 +601,8 @@ class TestMetricsExporterLogging:
         # the module-scoped fixture (tests may change this value).
         module_settings.log_level = "INFO"
 
+        mock_metrics_db.return_value = MagicMock()
+        mock_pulltabs_db.return_value = MagicMock()
         exporter = MetricsExporter(module_settings)
         exporter.run()
 
@@ -570,8 +620,10 @@ class TestMetricsExporterLogging:
     @patch('metrics.exporter.TacoBotMetrics')
     @patch('metrics.exporter.TacoBotMetricsConfig')
     @patch('metrics.exporter.Log')
+    @patch('metrics.exporter.PullTabTicketsDatabase')
+    @patch('metrics.exporter.MetricsDatabase')
     def test_log_context_includes_method_name(
-        self, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server
+        self, mock_metrics_db, mock_pulltabs_db, mock_log_class, mock_config_class, mock_metrics_class, mock_http_server
     ):
         """Test that log messages include proper context (module.class.method)."""
         # Setup mocks
@@ -590,6 +642,8 @@ class TestMetricsExporterLogging:
         mock_metrics_instance.run_metrics_loop = MagicMock()
         mock_metrics_class.return_value = mock_metrics_instance
 
+        mock_metrics_db.return_value = MagicMock()
+        mock_pulltabs_db.return_value = MagicMock()
         exporter = MetricsExporter(settings)
         exporter.run()
 

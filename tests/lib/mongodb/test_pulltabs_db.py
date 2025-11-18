@@ -61,7 +61,7 @@ def test_save_ticket_calls_open_if_needed(db):
     payload = {"code": "ABC", "user_id": 1, "guild_id": 2, "ticket": ["A"]}
     db.save_ticket(payload)
 
-    assert db.connection.pulltab_tickets.update_one.call_count == 1
+    assert db.connection.pulltab_tickets.update_one.call_count == 1  # type: ignore
 
 
 def test_save_ticket_exception_logs_error(db):
@@ -215,3 +215,33 @@ def test_is_ticket_redeemed_open_and_exception(db):
     db.log = MagicMock()
     assert db.is_ticket_redeemed(1, 2, "CODE") is False
     assert db.log.called
+
+
+def test_metric_pulltab_winning_lines_counts(db):
+    db.connection.pulltab_tickets.aggregate.return_value = [
+        {"_id": {"guild_id": "1", "line": "🌮"}, "total": 134},
+        {"_id": {"guild_id": "1", "line": "🍎"}, "total": 10},
+    ]
+
+    result = list(db.metric_pulltab_winning_lines())
+
+    assert len(result) == 2
+    # ensure the key and totals are present and unchanged
+    assert result[0]["_id"]["line"] == "🌮"
+    assert result[0]["total"] == 134
+
+
+def test_metric_pulltab_winning_lines_calls_open_if_needed(db):
+    db.client = None
+    db.connection = None
+
+    def fake_open():
+        db.client = MagicMock()
+        db.connection = MagicMock()
+        db.connection.pulltab_tickets = MagicMock()
+        db.connection.pulltab_tickets.aggregate.return_value = [{"_id": {"guild_id": "1", "line": "🌮"}, "total": 1}]
+
+    db.open = fake_open
+
+    result = list(db.metric_pulltab_winning_lines())
+    assert len(result) == 1

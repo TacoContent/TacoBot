@@ -8,7 +8,7 @@ def test_from_dict_requires_ticket():
         PullTabTicketEntry.from_dict(data)
 
 
-def test_from_dict_accepts_winning_indexes():
-    data = {"guild_id": "1", "user_id": "2", "code": "X", "ticket": ["A"], "winning_line_indexes": [0, 1]}
+def test_from_dict_accepts_winning_lines():
+    data = {"guild_id": "1", "user_id": "2", "code": "X", "ticket": ["A"], "winning_lines": [{"A": 10}]}
     entry = PullTabTicketEntry.from_dict(data)
-    assert entry.winning_line_indexes == [0, 1]
+    assert entry.winning_lines == [{"A": 10}]

@@ -10,10 +10,10 @@ class TestTacoBotMetricsFetchQuestions:
     """Tests for question/answer fetch methods."""
 
     @pytest.fixture
-    def metrics(self, metrics_config, metrics_db, settings):
+    def metrics(self, metrics_config, metrics_db, pulltabs_db, settings):
         """Create TacoBotMetrics instance for testing."""
         with patch("metrics.tacobot.Gauge"), patch.object(TacoBotMetrics, "_fetch_build_info"):
-            return TacoBotMetrics(metrics_config, metrics_db, settings)
+            return TacoBotMetrics(config=metrics_config, metrics_db=metrics_db, pulltab_db=pulltabs_db, settings=settings)
 
 
 class TestFetchTQOTDQuestions(TestTacoBotMetricsFetchQuestions):
@@ -21,7 +21,7 @@ class TestFetchTQOTDQuestions(TestTacoBotMetricsFetchQuestions):
 
     def test_fetch_tqotd_questions_success(self, metrics):
         """Test fetching TQOTD questions successfully."""
-        metrics.db.get_tqotd_questions_count = MagicMock(return_value=[{"_id": "guild123", "total": 50}])
+        metrics.db.get_tqotd_questions_count = MagicMock(return_value=[{"_id": "123456", "total": 50}])
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
             metrics._fetch_tqotd_questions()
@@ -55,7 +55,7 @@ class TestFetchTQOTDAnswers(TestTacoBotMetricsFetchQuestions):
 
     def test_fetch_tqotd_answers_success(self, metrics):
         """Test fetching TQOTD answers successfully."""
-        metrics.db.get_tqotd_answers_count = MagicMock(return_value=[{"_id": "guild123", "total": 150}])
+        metrics.db.get_tqotd_answers_count = MagicMock(return_value=[{"_id": "123456", "total": 150}])
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
             metrics._fetch_tqotd_answers()
@@ -82,7 +82,7 @@ class TestFetchWDYCTWQuestions(TestTacoBotMetricsFetchQuestions):
 
     def test_fetch_wdyctw_questions_success(self, metrics):
         """Test fetching WDYCTW questions successfully."""
-        metrics.db.get_wdyctw_questions_count = MagicMock(return_value=[{"_id": "guild123", "total": 30}])
+        metrics.db.get_wdyctw_questions_count = MagicMock(return_value=[{"_id": "123456", "total": 30}])
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
             metrics._fetch_wdyctw_questions()
@@ -109,7 +109,7 @@ class TestFetchWDYCTWAnswers(TestTacoBotMetricsFetchQuestions):
 
     def test_fetch_wdyctw_answers_success(self, metrics):
         """Test fetching WDYCTW answers successfully."""
-        metrics.db.get_wdyctw_answers_count = MagicMock(return_value=[{"_id": "guild123", "total": 90}])
+        metrics.db.get_wdyctw_answers_count = MagicMock(return_value=[{"_id": "123456", "total": 90}])
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
             metrics._fetch_wdyctw_answers()
@@ -136,7 +136,7 @@ class TestFetchTechThursQuestions(TestTacoBotMetricsFetchQuestions):
 
     def test_fetch_tech_thurs_questions_success(self, metrics):
         """Test fetching TechThurs questions successfully."""
-        metrics.db.get_techthurs_questions_count = MagicMock(return_value=[{"_id": "guild123", "total": 20}])
+        metrics.db.get_techthurs_questions_count = MagicMock(return_value=[{"_id": "123456", "total": 20}])
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
             metrics._fetch_tech_thurs_questions()
@@ -163,7 +163,7 @@ class TestFetchTechThursAnswers(TestTacoBotMetricsFetchQuestions):
 
     def test_fetch_tech_thurs_answers_success(self, metrics):
         """Test fetching TechThurs answers successfully."""
-        metrics.db.get_techthurs_answers_count = MagicMock(return_value=[{"_id": "guild123", "total": 60}])
+        metrics.db.get_techthurs_answers_count = MagicMock(return_value=[{"_id": "123456", "total": 60}])
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
             metrics._fetch_tech_thurs_answers()
@@ -190,7 +190,7 @@ class TestFetchMentalMondayQuestions(TestTacoBotMetricsFetchQuestions):
 
     def test_fetch_mental_monday_questions_success(self, metrics):
         """Test fetching MentalMonday questions successfully."""
-        metrics.db.get_mentalmondays_questions_count = MagicMock(return_value=[{"_id": "guild123", "total": 25}])
+        metrics.db.get_mentalmondays_questions_count = MagicMock(return_value=[{"_id": "123456", "total": 25}])
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
             metrics._fetch_mental_monday_questions()
@@ -217,7 +217,7 @@ class TestFetchMentalMondayAnswers(TestTacoBotMetricsFetchQuestions):
 
     def test_fetch_mental_monday_answers_success(self, metrics):
         """Test fetching MentalMonday answers successfully."""
-        metrics.db.get_mentalmondays_answers_count = MagicMock(return_value=[{"_id": "guild123", "total": 75}])
+        metrics.db.get_mentalmondays_answers_count = MagicMock(return_value=[{"_id": "123456", "total": 75}])
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
             metrics._fetch_mental_monday_answers()
@@ -244,7 +244,7 @@ class TestFetchTacoTuesdayQuestions(TestTacoBotMetricsFetchQuestions):
 
     def test_fetch_taco_tuesday_questions_success(self, metrics):
         """Test fetching TacoTuesday questions successfully."""
-        metrics.db.get_tacotuesday_questions_count = MagicMock(return_value=[{"_id": "guild123", "total": 15}])
+        metrics.db.get_tacotuesday_questions_count = MagicMock(return_value=[{"_id": "123456", "total": 15}])
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
             metrics._fetch_taco_tuesday_questions()
@@ -271,7 +271,7 @@ class TestFetchTacoTuesdayAnswers(TestTacoBotMetricsFetchQuestions):
 
     def test_fetch_taco_tuesday_answers_success(self, metrics):
         """Test fetching TacoTuesday answers successfully."""
-        metrics.db.get_tacotuesday_answers_count = MagicMock(return_value=[{"_id": "guild123", "total": 45}])
+        metrics.db.get_tacotuesday_answers_count = MagicMock(return_value=[{"_id": "123456", "total": 45}])
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
             metrics._fetch_taco_tuesday_answers()

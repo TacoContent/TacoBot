@@ -11,10 +11,10 @@ class TestTacoBotMetricsCheckHealth:
     """Tests for check_health method."""
 
     @pytest.fixture
-    def metrics(self, metrics_config, metrics_db, settings):
+    def metrics(self, metrics_config, metrics_db, pulltabs_db, settings):
         """Create TacoBotMetrics instance for testing."""
         with patch("metrics.tacobot.Gauge"):
-            return TacoBotMetrics(metrics_config, metrics_db, settings)
+            return TacoBotMetrics(config=metrics_config, metrics_db=metrics_db, pulltab_db=pulltabs_db, settings=settings)
 
     def test_check_health_when_bot_is_healthy(self, metrics):
         """Test check_health when bot responds with 'healthy'."""

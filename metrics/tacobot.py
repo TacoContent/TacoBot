@@ -5,17 +5,25 @@ import time
 import traceback
 import typing
 
+
 from bot.lib import logger
 from bot.lib.enums.loglevel import LogLevel
 from bot.lib.enums.permissions import TacoPermissions
 from bot.lib.mongodb.metrics import MetricsDatabase
+from bot.lib.mongodb.pulltabs import PullTabTicketsDatabase
 from bot.lib.settings import Settings
 from bot.lib.utils import dict_get
 from prometheus_client import Gauge
 
 
 class TacoBotMetrics:
-    def __init__(self, config, metrics_db: MetricsDatabase, settings: Settings) -> None:
+    def __init__(
+        self,
+        config,
+        metrics_db: MetricsDatabase,
+        pulltab_db: PullTabTicketsDatabase,
+        settings: Settings,
+    ) -> None:
         # get the class name
         _method = inspect.stack()[0][3]
         self._class = self.__class__.__name__
@@ -40,6 +48,7 @@ class TacoBotMetrics:
         # merge labels and config labels
         # labels = labels + [x['name'] for x in self.config.labels]
         self.db = metrics_db
+        self.pulltab_db = pulltab_db
 
         self._initialize_gauges()
 
@@ -405,6 +414,69 @@ class TacoBotMetrics:
                 labelnames=["state"],
             )
 
+            self.pulltabs_tickets = Gauge(
+                namespace=self.namespace,
+                name="pulltabs_tickets",
+                documentation="The number of pulltabs tickets",
+                labelnames=["guild_id", "user_id", "username", "state", "status"],
+            )
+
+            self.pulltabs_winnings = Gauge(
+                namespace=self.namespace,
+                name="pulltabs_winnings",
+                documentation="The amount of pulltabs winnings",
+                labelnames=["guild_id", "user_id", "username", "status"],
+            )
+
+            self.pulltabs_spendings = Gauge(
+                namespace=self.namespace,
+                name="pulltabs_spendings",
+                documentation="The amount of tacos spent on pulltabs by users",
+                labelnames=["guild_id", "user_id", "username"]
+            )
+
+            self.pulltabs_purchase_multiplier = Gauge(
+                namespace=self.namespace,
+                name="pulltabs_purchase_multiplier",
+                documentation="The purchase multiplier of pulltabs tickets",
+                labelnames=["guild_id", "user_id", "username", "purchase_multiplier"],
+            )
+
+            self.pulltabs_winning_lines = Gauge(
+                namespace=self.namespace,
+                name="pulltabs_winning_lines",
+                documentation="The number of pulltabs winning lines",
+                labelnames=["guild_id", "line"],
+            )
+
+            self.pulltabs_config_purchase_cost = Gauge(
+                namespace=self.namespace,
+                name="pulltabs_config_purchase_cost",
+                documentation="The cost of pulltabs tickets",
+                labelnames=["guild_id"],
+            )
+
+            self.pulltabs_config_purchase_max = Gauge(
+                namespace=self.namespace,
+                name="pulltabs_config_purchase_max",
+                documentation="The maximum purchase count for pulltabs tickets",
+                labelnames=["guild_id"],
+            )
+
+            self.pulltabs_config_multiplier_max = Gauge(
+                namespace=self.namespace,
+                name="pulltabs_config_multiplier_max",
+                documentation="The maximum purchase multiplier for pulltabs tickets",
+                labelnames=["guild_id"],
+            )
+
+            self.pulltabs_config_multiplier_increase = Gauge(
+                namespace=self.namespace,
+                name="pulltabs_config_multiplier_increase",
+                documentation="The multiplier increase for pulltabs tickets",
+                labelnames=["guild_id"],
+            )
+
             self.healthy = Gauge(
                 namespace=self.namespace, name="healthy", documentation="The health of the bot", labelnames=[]
             )
@@ -524,7 +596,7 @@ class TacoBotMetrics:
 
         self._fetch_first_messages()
 
-        self._fetch_logs(known_guilds)
+        self._fetch_logs(known_guilds=known_guilds)
 
         self._fetch_known_users()
 
@@ -538,9 +610,9 @@ class TacoBotMetrics:
 
         self._fetch_top_live()
 
-        self._fetch_suggestions(known_guilds)
+        self._fetch_suggestions(known_guilds=known_guilds)
 
-        self._fetch_user_join_leave(known_guilds)
+        self._fetch_user_join_leave(known_guilds=known_guilds)
 
         self._fetch_photo_posts()
 
@@ -552,9 +624,9 @@ class TacoBotMetrics:
 
         self._fetch_system_action_counts()
 
-        self._fetch_user_status(known_guilds)
+        self._fetch_user_status(known_guilds=known_guilds)
 
-        self._fetch_introductions(known_guilds)
+        self._fetch_introductions(known_guilds=known_guilds)
 
         self._fetch_twitch_stream_avatar_duel_winners()
 
@@ -562,9 +634,149 @@ class TacoBotMetrics:
 
         self._fetch_shift_codes()
 
-        self._fetch_tracked_shift_codes(known_guilds)
+        self._fetch_tracked_shift_codes(known_guilds=known_guilds)
 
-        self._fetch_permission_counts(known_guilds)
+        self._fetch_pulltab_tickets()
+
+        self._fetch_pulltab_winnings()
+
+        self._fetch_pulltab_spendings()
+
+        self._fetch_pulltab_purchase_multiplier()
+
+        self._fetch_pulltab_winning_lines()
+
+        self._fetch_pulltab_config(known_guilds=known_guilds)
+
+        self._fetch_permission_counts(known_guilds=known_guilds)
+
+    def _fetch_pulltab_config(self, known_guilds: list[str]) -> None:
+        for guild_id in known_guilds:
+            if not guild_id.isdigit():
+                continue
+            config = self.pulltab_db.get_config(guild_id=int(guild_id))
+            if config:
+                purchase_config = config.get("purchase", {})
+                purchase_max = purchase_config.get("max", 0)
+                purchase_cost = purchase_config.get("cost", 0)
+
+                multiplier_config = config.get("multiplier", {})
+                multiplier_max = multiplier_config.get("max", 0)
+                multiplier_increase = multiplier_config.get("base_increase", 0)
+
+                self._set_gauge_labels(self.pulltabs_config_purchase_cost, {"guild_id": guild_id}, purchase_cost)
+                self._set_gauge_labels(self.pulltabs_config_purchase_max, {"guild_id": guild_id}, purchase_max)
+                self._set_gauge_labels(self.pulltabs_config_multiplier_max, {"guild_id": guild_id}, multiplier_max)
+                self._set_gauge_labels(self.pulltabs_config_multiplier_increase, {"guild_id": guild_id}, multiplier_increase)
+
+    def _fetch_pulltab_tickets(self) -> None:
+        """Fetch pulltab tickets helper method."""
+        pass
+        _method = inspect.stack()[0][3]
+        try:
+            self.pulltabs_tickets.clear()
+
+            q_pulltab_tickets = self.pulltab_db.metric_pulltab_tickets_counts() or []
+            for row in q_pulltab_tickets:
+                user = {"user_id": row["_id"]['user_id'], "username": row["_id"]['user_id']}
+                if "user" in row and len(row["user"]) > 0:
+                    user = row["user"][0]
+                self._set_gauge_labels(
+                    self.pulltabs_tickets,
+                    {
+                        "guild_id": row['_id']['guild_id'],
+                        "user_id": user['user_id'],
+                        "username": user['username'],
+                        "state": row['_id']['state'],
+                        "status": row['_id']['status']
+                    },
+                    row['total']
+                )
+            self._set_gauge_labels(self.errors, {"source": "pulltab_tickets"}, 0)
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            self._set_gauge_labels(self.errors, {"source": "pulltab_tickets"}, 1)
+
+    def _fetch_pulltab_purchase_multiplier(self) -> None:
+        _method = inspect.stack()[0][3]
+        try:
+            self.pulltabs_purchase_multiplier.clear()
+            q_pulltab_multipliers = self.pulltab_db.metric_pulltab_purchase_multiplier_by_user() or []
+            for row in q_pulltab_multipliers:
+                # Row contains _id: {guild_id, user_id, purchase_multiplier}, total
+                # For username we store internal user hash; set to user_id for now
+                user = {"user_id": row["_id"]["user_id"], "username": row["_id"]["user_id"]}
+                if "user" in row and len(row["user"]) > 0:
+                    user = row["user"][0]
+                user_labels = {
+                    "guild_id": row["_id"]["guild_id"],
+                    "user_id": user["user_id"],
+                    "username": user["username"],
+                    "purchase_multiplier": str(row["_id"]["purchase_multiplier"]),
+                }
+                self._set_gauge_labels(self.pulltabs_purchase_multiplier, user_labels, row["total"])
+            self._set_gauge_labels(self.errors, {"source": "pulltab_purchase_multiplier"}, 0)
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            self._set_gauge_labels(self.errors, {"source": "pulltab_purchase_multiplier"}, 1)
+
+    def _fetch_pulltab_spendings(self) -> None:
+        _method = inspect.stack()[0][3]
+        try:
+            self.pulltabs_spendings.clear()
+            q_pulltab_spendings = self.pulltab_db.metric_pulltab_spendings_by_user_and_status() or []
+            for row in q_pulltab_spendings:
+                # Row contains _id: {guild_id, user_id}, total
+                # For username we store internal user hash; set to user_id for now
+                user = {"user_id": row["_id"]["user_id"], "username": row["_id"]["user_id"]}
+                if "user" in row and len(row["user"]) > 0:
+                    user = row["user"][0]
+                user_labels = {
+                    "guild_id": row["_id"]["guild_id"],
+                    "user_id": user["user_id"],
+                    "username": user["username"],
+                }
+                self._set_gauge_labels(self.pulltabs_spendings, user_labels, row["total"])
+            self._set_gauge_labels(self.errors, {"source": "pulltab_spendings"}, 0)
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            self._set_gauge_labels(self.errors, {"source": "pulltab_spendings"}, 1)
+
+    def _fetch_pulltab_winnings(self) -> None:
+        _method = inspect.stack()[0][3]
+        try:
+            self.pulltabs_winnings.clear()
+            q_pulltab_winnings = self.pulltab_db.metric_pulltab_winnings_by_user_and_status() or []
+            for row in q_pulltab_winnings:
+                # Row contains _id: {guild_id, user_id}, total
+                # For username we store internal user hash; set to user_id for now
+                user = {"user_id": row["_id"]["user_id"], "username": row["_id"]["user_id"]}
+                if "user" in row and len(row["user"]) > 0:
+                    user = row["user"][0]
+                user_labels = {
+                    "guild_id": row["_id"]["guild_id"],
+                    "user_id": user["user_id"],
+                    "username": user["username"],
+                    "status": "total",
+                }
+                self._set_gauge_labels(self.pulltabs_winnings, user_labels, row["total"])
+            self._set_gauge_labels(self.errors, {"source": "pulltab_winnings"}, 0)
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            self._set_gauge_labels(self.errors, {"source": "pulltab_winnings"}, 1)
+
+    def _fetch_pulltab_winning_lines(self) -> None:
+        _method = inspect.stack()[0][3]
+        try:
+            self.pulltabs_winning_lines.clear()
+            q_pulltab_lines = self.pulltab_db.metric_pulltab_winning_lines() or []
+            for row in q_pulltab_lines:
+                labels = {"guild_id": row["_id"]["guild_id"], "line": row["_id"]["line"]}
+                self._set_gauge_labels(self.pulltabs_winning_lines, labels, row["total"])
+            self._set_gauge_labels(self.errors, {"source": "pulltab_winning_lines"}, 0)
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            self._set_gauge_labels(self.errors, {"source": "pulltab_winning_lines"}, 1)
 
     def _fetch_live_now(self) -> None:
         """Fetch live now helper method."""

@@ -94,3 +94,255 @@ class PullTabTicketsDatabase(Database):
         except Exception as e:
             self.log(0, LogLevel.ERROR, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
             return False
+
+    def metric_pulltab_tickets_counts(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        # Defined Prometheus Metric
+        # self.pulltabs_tickets = Gauge(
+        #     namespace=self.namespace,
+        #     name="pulltabs_tickets",
+        #     documentation="The number of pulltabs tickets",
+        #     labelnames=["guild_id", "user_id", "username", "state", "status"],
+        # )
+
+        # Sample Document
+        # {
+        #     _id: ObjectId('691b6c16a7e261b468dbed87'),
+        #     code: 'eOOcQzLUvCGgD',
+        #     guild_id: '942532970613473293',
+        #     user_id: '262031734260891648',
+        #     cost: 100,
+        #     created_at: 1763404822,
+        #     effective_multiplier: 4,
+        #     purchase_multiplier: 10,
+        #     reward: 40,
+        #     ticket: [
+        #         '🍇🍎🍊',
+        #         '🍒🍎🍉',
+        #         '🍒🍉🌮',
+        #         '🍇🍇🍒',
+        #         '🍒🍉🍇'
+        #     ],
+        #     winning_lines: [
+        #         {
+        #             '🌮': 40
+        #         }
+        #     ]
+        # }
+
+        # status: 'REDEEMED' | 'PENDING' - based on whether redeemed_at is set
+        # state: 'WINNING' | 'LOSING' - based on whether reward > 0
+        # username: user.username from the users collection
+        # {
+        #     "$lookup": {
+        #         "from": "users",
+        #         "let": {"user_id": "$_id.user_id", "guild_id": "$_id.guild_id"},
+        #         "pipeline": [
+        #             {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
+        #             {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
+        #         ],
+        #         "as": "user",
+        #     }
+        # },
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            pipeline = [
+                {
+                    "$group": {
+                        "_id": {
+                            "guild_id": "$guild_id",
+                            "user_id": "$user_id",
+                            "state": {
+                                "$cond": [{"$gt": ["$reward", 0]}, "WINNER", "LOSER"]
+                            },
+                            "status": {
+                                "$cond": [
+                                    {"$ifNull": ["$redeemed_at", False]},
+                                    "REDEEMED",
+                                    "PENDING",
+                                ]
+                            },
+                        },
+                        "total": {"$sum": 1},
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "users",
+                        "let": {"user_id": "$_id.user_id", "guild_id": "$_id.guild_id"},
+                        "pipeline": [
+                            {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
+                            {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
+                        ],
+                        "as": "user",
+                    }
+                },
+            ]
+
+            cursor = self.connection.pulltab_tickets.aggregate(pipeline)  # type: ignore
+            for document in cursor:
+                yield document
+        except Exception as e:
+            self.log(0, LogLevel.ERROR, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
+            return None
+
+    def metric_pulltab_purchase_multiplier_by_user(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            pipeline = [
+                {
+                    "$group": {
+                        "_id": {
+                            "guild_id": "$guild_id",
+                            "user_id": "$user_id",
+                            "purchase_multiplier": "$purchase_multiplier",
+                        },
+                        "total": {"$sum": 1},
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "users",
+                        "let": {"user_id": "$_id.user_id", "guild_id": "$_id.guild_id"},
+                        "pipeline": [
+                            {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
+                            {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
+                        ],
+                        "as": "user",
+                    }
+                },
+            ]
+
+            cursor = self.connection.pulltab_tickets.aggregate(pipeline)  # type: ignore
+            for document in cursor:
+                yield document
+        except Exception as e:
+            self.log(0, LogLevel.ERROR, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
+            return None
+
+    def metric_pulltab_spendings_by_user_and_status(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            pipeline = [
+                {
+                    "$group": {
+                        "_id": {
+                            "guild_id": "$guild_id",
+                            "user_id": "$user_id",
+                        },
+                        "total": {"$sum": "$cost"},
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "users",
+                        "let": {"user_id": "$_id.user_id", "guild_id": "$_id.guild_id"},
+                        "pipeline": [
+                            {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
+                            {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
+                        ],
+                        "as": "user",
+                    }
+                },
+            ]
+
+            cursor = self.connection.pulltab_tickets.aggregate(pipeline)  # type: ignore
+            for document in cursor:
+                yield document
+        except Exception as e:
+            self.log(0, LogLevel.ERROR, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
+            return None
+
+    def metric_pulltab_winnings_by_user_and_status(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            pipeline = [
+                {
+                    "$group": {
+                        "_id": {
+                            "guild_id": "$guild_id",
+                            "user_id": "$user_id",
+                            "status": {
+                                "$cond": [
+                                    {"$ifNull": ["$redeemed_at", False]},
+                                    "REDEEMED",
+                                    "PENDING",
+                                ]
+                            },
+                        },
+                        "total": {"$sum": "$reward"},
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "users",
+                        "let": {"user_id": "$_id.user_id", "guild_id": "$_id.guild_id"},
+                        "pipeline": [
+                            {"$match": {"$expr": {"$eq": ["$user_id", "$$user_id"]}}},
+                            {"$match": {"$expr": {"$eq": ["$guild_id", "$$guild_id"]}}},
+                        ],
+                        "as": "user",
+                    }
+                },
+            ]
+
+            cursor = self.connection.pulltab_tickets.aggregate(pipeline)  # type: ignore
+            for document in cursor:
+                yield document
+        except Exception as e:
+            self.log(0, LogLevel.ERROR, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
+            return None
+
+    def metric_pulltab_winning_lines(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            # winning_lines is stored as a list of objects like: [{"🌮": 10}, {"🍎🍎🍎": 500}]
+            # We need to count unique occurrences of the winning line keys per ticket
+            # and return a total count grouped by guild and winning line.
+            pipeline = [
+                # Only consider documents that contain winning_lines
+                {"$match": {"winning_lines": {"$exists": True, "$ne": []}}},
+                # unwind the array so each element can be processed
+                {"$unwind": "$winning_lines"},
+                # convert the single-key object into a {k: ..., v: ...} form
+                {"$project": {"guild_id": 1, "code": 1, "winning_kv": {"$objectToArray": "$winning_lines"}}},
+                # unwind the object to get the key/value pair
+                {"$unwind": "$winning_kv"},
+                # group by ticket code + guild + line to deduplicate multiple entries in the same ticket
+                {
+                    "$group": {
+                        "_id": {"guild_id": "$guild_id", "code": "$code", "line": "$winning_kv.k"}
+                    }
+                },
+                # now group by guild and line and count distinct tickets
+                {
+                    "$group": {"_id": {"guild_id": "$_id.guild_id", "line": "$_id.line"}, "total": {"$sum": 1}}
+                },
+            ]
+
+            cursor = self.connection.pulltab_tickets.aggregate(pipeline)  # type: ignore
+            for document in cursor:
+                yield document
+        except Exception as e:
+            self.log(0, LogLevel.ERROR, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
+            return None
+
+    def get_config(self, guild_id: int) -> typing.Optional[dict[str, typing.Any]]:
+        _method = inspect.stack()[0][3]
+        try:
+            config = self.settings.get_settings(guildId=guild_id, name="pulltab")
+            if config:
+                return config
+            return None
+        except Exception as e:
+            self.log(0, LogLevel.ERROR, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
+            return None

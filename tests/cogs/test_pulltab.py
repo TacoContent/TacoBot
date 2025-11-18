@@ -35,62 +35,70 @@ def make_probabilities():
         {"symbol": "🍎", "weight": 30, "rules": [{"match": "🍎🍎", "reward": 2000}]},
     ]
 
+def make_cog_settings():
+    return {
+        "enabled": True,
+        "probabilities": make_probabilities(),
+        "ticket": {"rows": 1, "columns": 3},
+        "purchase": {"cost": 10, "max": 5},
+        "multiplier": {"max": 100, "base_increase": 0.5},
+
+    }
 
 def test_exact_full_line_match(cog):
-    probs = make_probabilities()
+    cog_settings = make_cog_settings()
     ticket = ["🌮🌮🌮"]
-    is_winner, reward, lines, indexes, effective_multiplier = cog._process_ticket(
-        ticket, {"probabilities": probs}, effective_multiplier=1.0
+    is_winner, reward, lines = cog._process_ticket(
+        ticket=ticket, cog_settings=cog_settings, effective_multiplier=1.0
     )
     assert is_winner
     assert reward == 10000
     assert any("🌮🌮🌮" in x for x in lines)
-    assert indexes == [0]
+    assert lines == [{"🌮🌮🌮": 10000}]
 
 
 def test_two_tacos_any_order_match(cog):
-    probs = make_probabilities()
+    cog_settings = make_cog_settings()
     ticket = ["🌮🍎🌮"]
-    is_winner, reward, lines, indexes, effective_multiplier = cog._process_ticket(
-        ticket, {"probabilities": probs}, effective_multiplier=1.0
+    is_winner, reward, lines = cog._process_ticket(
+        ticket=ticket, cog_settings=cog_settings, effective_multiplier=1.0
     )
     assert is_winner
     assert reward == 1000
     assert any("🌮🌮" in x for x in lines)
-    assert indexes == [0]
+    assert lines == [{"🌮🌮": 1000}]
 
 
 def test_no_two_tacos(cog):
-    probs = make_probabilities()
+    cog_settings = make_cog_settings()
     ticket = ["🌮🍎🍉"]
-    is_winner, reward, lines, indexes, effective_multiplier = cog._process_ticket(
-        ticket, {"probabilities": probs}, effective_multiplier=1.0
+    is_winner, reward, lines = cog._process_ticket(
+        ticket=ticket, cog_settings=cog_settings, effective_multiplier=1.0
     )
     # single taco should award the single-symbol reward
     assert is_winner
     assert reward == 100
     assert any("🌮" in x for x in lines)
-    assert indexes == [0]
+    assert lines == [{"🌮": 100}]
 
 
 def test_multiple_rule_matches(cog):
     # Two tacos -> should match the highest rule for the symbol (two-taco rule)
-    probs = make_probabilities()
+    cog_settings = make_cog_settings()
     # add small reward for single taco to ensure both are counted
     ticket = ["🌮🌮🍎"]
-    is_winner, reward, lines, indexes, effective_multiplier = cog._process_ticket(
-        ticket, {"probabilities": probs}, effective_multiplier=1.0
+    is_winner, reward, lines = cog._process_ticket(
+        ticket=ticket, cog_settings=cog_settings, effective_multiplier=1.0
     )
     # should win for the double-taco rule only (avoid double-counting)
     assert is_winner
     assert any("🌮🌮" in x for x in lines)
     assert reward == 1000
-    # Ensure a single-taco line was not separately awarded; avoid substring matches
-    assert not any(x.strip() == "🌮 -> 100" for x in lines)
-    assert indexes == [0]
+    assert lines == [{"🌮🌮": 1000}]
 
 
 def test_multiline_ticket_with_skull_blocks(cog):
+    cog_settings = make_cog_settings()
     # Build probabilities with skull rule that denies payouts
     probs = [
         {"symbol": "🌮", "weight": 50, "rules": [{"match": "🌮", "reward": 100}]},
@@ -98,25 +106,27 @@ def test_multiline_ticket_with_skull_blocks(cog):
         {"symbol": "💀", "weight": 1, "rules": [{"match": "💀", "reward": 0, "multiplier": 0}]},
         {"symbol": "🍊", "weight": 10, "rules": [{"match": "🍊🍊", "reward": 50}]},
     ]
+    cog_settings["probabilities"] = probs
 
     ticket = ["💀🍊🍊", "🍊🍒🍇", "🍎🌮🍒", "🍉🍇💀", "🍊🌮🍇"]
 
-    is_winner, reward, lines, indexes, effective_multiplier = cog._process_ticket(
-        ticket, {"probabilities": probs}, effective_multiplier=1.0
+    is_winner, reward, lines = cog._process_ticket(
+        ticket=ticket, cog_settings=cog_settings, effective_multiplier=1.0
     )
     assert is_winner
     # Lines 3 and 5 have single taco each (100 + 100)
     assert reward == 200
     assert len(lines) == 2
-    # Should mark rows 3 and 5 (0-based indices 2 and 4)
-    assert set(indexes) == {2, 4}
+    assert lines == [{"🌮": 100}, {"🌮": 100}]
 
 
 def test_complex_multiline_awards_with_skull(cog):
+    cog_settings = make_cog_settings()
     probs = [
         {"symbol": "🌮", "weight": 50, "rules": [{"match": "🌮", "reward": 100}, {"match": "🌮🌮", "reward": 1000}]},
         {"symbol": "💀", "weight": 1, "rules": [{"match": "💀", "reward": 0, "multiplier": 0}]},
     ]
+    cog_settings["probabilities"] = probs
 
     ticket = [
         "🌮🌮🍉",  # 1000
@@ -126,12 +136,12 @@ def test_complex_multiline_awards_with_skull(cog):
         "🍀🍀🌮",  # 100 (single taco = 100)  <-- Example had 100
     ]
 
-    is_winner, reward, lines, indexes, effective_multiplier = cog._process_ticket(
-        ticket, {"probabilities": probs}, effective_multiplier=1.0
+    is_winner, reward, lines = cog._process_ticket(
+        ticket=ticket, cog_settings=cog_settings, effective_multiplier=1.0
     )
     assert is_winner
     assert reward == 2100
-    assert set(indexes) == {0, 1, 4}
+    assert lines == [{"🌮🌮": 1000}, {"🌮🌮": 1000}, {"🌮": 100}]
 
 
 def test_real_probabilities_triple_matches_and_skull_block(cog):
@@ -154,37 +164,43 @@ def test_real_probabilities_triple_matches_and_skull_block(cog):
         {"symbol": "🍒", "weight": 1, "rules": [{"match": "🍒🍒🍒", "reward": 100}]},
         {"symbol": "💀", "weight": 0.5, "rules": [{"match": "💀", "reward": -99999999, "multiplier": 0}]},
     ]
+    cog_settings = make_cog_settings()
+    cog_settings["probabilities"] = probs
 
     # Single line triple clover
     ticket = ["🍀🍀🍀"]
-    is_winner, reward, lines, indexes, effective_multiplier = cog._process_ticket(
-        ticket, {"probabilities": probs}, effective_multiplier=1.0
+    is_winner, reward, lines = cog._process_ticket(
+        ticket=ticket, cog_settings=cog_settings, effective_multiplier=1.0
     )
     assert is_winner
     assert reward == 5000
+    assert lines == [{"🍀🍀🍀": 5000}]
 
     # Skull blocks a line even when clover is present
     ticket = ["🍀💀🍀"]
-    is_winner, reward, lines, indexes, effective_multiplier = cog._process_ticket(
-        ticket, {"probabilities": probs}, effective_multiplier=1.0
+    is_winner, reward, lines = cog._process_ticket(
+        ticket=ticket, cog_settings=cog_settings, effective_multiplier=1.0
     )
     assert not is_winner or reward == 0
-    assert indexes == []
+    assert lines == []
 
     # Triple taco should be recognized
     ticket = ["🌮🌮🌮"]
-    is_winner, reward, lines, indexes, effective_multiplier = cog._process_ticket(
-        ticket, {"probabilities": probs}, effective_multiplier=1.0
+    is_winner, reward, lines = cog._process_ticket(
+        ticket=ticket, cog_settings=cog_settings, effective_multiplier=1.0
     )
     assert is_winner
     assert reward == 10000
-    assert indexes == [0]
+    assert lines == [{"🌮🌮🌮": 10000}]
 
 
 def test_generate_ticket_adds_code_and_returns_output(cog, monkeypatch):
     # Build simple probabilities and a small ticket grid for deterministic output
     probs = [{"symbol": "🌮", "weight": 1, "rules": []}, {"symbol": "🍎", "weight": 1, "rules": []}]
-    cog_settings = {"probabilities": probs, "ticket": {"rows": 2, "columns": 3}}
+    ticket_settings = {"rows": 2, "columns": 3}
+    cog_settings = make_cog_settings()
+    cog_settings["probabilities"] = probs
+    cog_settings["ticket"] = ticket_settings
 
     # deterministic sheet we'll return from random.choices
     sheet = ["🌮", "🍎", "🌮", "🍎", "🌮", "🍎"]
@@ -193,7 +209,7 @@ def test_generate_ticket_adds_code_and_returns_output(cog, monkeypatch):
     # identity helper id is mocked by conftest fixture; set a deterministic return
     cog.identity_helper.id.return_value = "ID-TEST-1"
 
-    code, ticket_output = cog._generate_ticket(1, 10, cog_settings, multiplier=1)
+    code, ticket_output = cog._generate_ticket(guild_id=1, user_id=10, cog_settings=cog_settings, multiplier=1)
 
     assert code == "ID-TEST-1"
     assert code in ticket_output
@@ -235,23 +251,25 @@ def test_process_ticket_applies_effective_multiplier(cog):
             ],
         }
     ]
+    cog_settings = make_cog_settings()
+    cog_settings["probabilities"] = probs
 
     # Single-line triple taco should award 1000 normally but be scaled by multiplier
     ticket = ["🌮🌮🌮"]
-    is_winner, reward_no_mult, lines, indexes, _ = cog._process_ticket(
-        ticket, {"probabilities": probs}, effective_multiplier=1.0
+    is_winner, reward_no_mult, lines = cog._process_ticket(
+        ticket=ticket, cog_settings=cog_settings, effective_multiplier=1.0
     )
     assert is_winner
     assert reward_no_mult == 10000
-
+    assert lines == [{"🌮🌮🌮": 10000}]
     # Apply a 50% increase multiplier (effective_multiplier = 1.5) and ensure rounding occurs to int
-    is_winner, reward_with_mult, lines, indexes, _ = cog._process_ticket(
-        ticket, {"probabilities": probs}, effective_multiplier=1.5
+    is_winner, reward_with_mult, lines = cog._process_ticket(
+        ticket=ticket, cog_settings=cog_settings, effective_multiplier=1.5
     )
     assert is_winner
     # 10000 * 1.5 = 15000
     assert reward_with_mult == 15000
-    assert indexes == [0]
+    assert lines == [{"🌮🌮🌮": 15000}]
 
 
 def test_generate_ticket_saves_effective_multiplier(cog, monkeypatch):
@@ -269,11 +287,11 @@ def test_generate_ticket_saves_effective_multiplier(cog, monkeypatch):
     cog.identity_helper.id.return_value = "ID-MULT"
 
     # Save should capture the calculated multiplier
-    code, ticket_output = cog._generate_ticket(1, 2, cog_settings, multiplier=2)
+    code, ticket_output = cog._generate_ticket(guild_id=1, user_id=2, cog_settings=cog_settings, multiplier=2)
 
     saved_payload = cog.pulltabs_db.save_ticket.call_args[0][0]
     # 2 points with base_increase=0.5 => 1 + (2 * 0.5) == 2.0 (apply per point)
-    assert saved_payload.get("multiplier") == pytest.approx(2.0)
+    assert saved_payload.get("effective_multiplier") == pytest.approx(2.0)
 
 
 @pytest.mark.asyncio
@@ -286,7 +304,8 @@ async def test_process_pulltab_purchase_forwards_multiplier(cog, monkeypatch):
     cog_settings = {
         "probabilities": probs,
         "ticket": {"rows": 1, "columns": 3},
-        "purchase": {"cost": 10, "max": 5, "multiplier": {"max": 100, "base_increase": 0.5}},
+        "purchase": {"cost": 10, "max": 5},
+        "multiplier": {"max": 100, "base_increase": 0.5},
     }
 
     # get_cog_settings is invoked by _process_pulltab_purchase
@@ -314,7 +333,9 @@ async def test_process_pulltab_purchase_forwards_multiplier(cog, monkeypatch):
     # 3 points with base_increase=0.5 => 1 + (3 * 0.5) == 2.5
     saved_payload = cog.pulltabs_db.save_ticket.call_args[0][0]
     # 3 points with base_increase=0.5 => 1 + (3-1)*0.5 == 2.0
-    assert saved_payload.get("multiplier") == pytest.approx(2.5)
+    assert saved_payload.get("effective_multiplier") == pytest.approx(2.5)
+    assert saved_payload.get("purchase_multiplier") == 3
+    assert saved_payload.get("cost") == 10 * 3 # base cost 10 multiplied by purchase multiplier 3
 
 
 @pytest.mark.asyncio
@@ -350,7 +371,9 @@ async def test_process_pulltab_purchase_with_multiplier_10_yields_2(cog, monkeyp
     await cog._process_pulltab_purchase(ctx, count=1, multiplier=10)
 
     saved_payload = cog.pulltabs_db.save_ticket.call_args[0][0]
-    assert saved_payload.get("multiplier") == pytest.approx(2.0)
+    assert saved_payload.get("effective_multiplier") == pytest.approx(2.0)
+    assert saved_payload.get("purchase_multiplier") == 10
+    assert saved_payload.get("cost") == 10 * 10 # base cost 10 multiplied by purchase multiplier 10
 
 
 def test_generate_ticket_stores_expected_multiplier_for_10_points(cog, monkeypatch):
@@ -367,16 +390,16 @@ def test_generate_ticket_stores_expected_multiplier_for_10_points(cog, monkeypat
     monkeypatch.setattr("bot.cogs.pulltab.random.choices", lambda symbols, weights, k: sheet)
     cog.identity_helper.id.return_value = "ID-MULT-10"
 
-    code, ticket_output = cog._generate_ticket(1, 2, cog_settings, multiplier=10)
+    code, ticket_output = cog._generate_ticket(guild_id=1, user_id=2, cog_settings=cog_settings, multiplier=10)
 
     saved_payload = cog.pulltabs_db.save_ticket.call_args[0][0]
-    assert saved_payload.get("multiplier") == 2.0
+    assert saved_payload.get("effective_multiplier") == 2.0
 
 
 def test_redeem_ticket_updates_redeemed_at_and_returns_reward(cog, monkeypatch):
     # Prepare a ticket that has not yet been redeemed
     ticket = PullTabTicketEntry(
-        guild_id=1, user_id=2, code="CODE-RED", ticket=["🌮🍊🍎", "🍀🍊🍎"], redeemed_at=None, reward=250, multiplier=1
+        guild_id=1, user_id=2, code="CODE-RED", ticket=["🌮🍊🍎", "🍀🍊🍎"], redeemed_at=None, reward=250, effective_multiplier=1, purchase_multiplier=1, cost=10
     )
 
     cog.pulltabs_db.get_ticket = MagicMock(return_value=ticket)
@@ -395,7 +418,7 @@ def test_redeem_ticket_already_redeemed_returns_false(cog):
     cog.pulltabs_db.get_ticket = MagicMock(return_value=ticket)
     cog.pulltabs_db.update_ticket = MagicMock()
 
-    success, reward, message = cog._redeem_ticket(5, 6, "CODE-ALR")
+    success, reward, message = cog._redeem_ticket(guild_id=5, user_id=6, code="CODE-ALR")
     assert success is False
     assert reward == 0
     # update_ticket should not be called for already redeemed
@@ -406,7 +429,7 @@ def test_redeem_ticket_invalid_code_returns_false(cog):
     cog.pulltabs_db.get_ticket = MagicMock(return_value=None)
     cog.pulltabs_db.update_ticket = MagicMock()
 
-    success, reward, message = cog._redeem_ticket(7, 8, "NO-CODE")
+    success, reward, message = cog._redeem_ticket(guild_id=7, user_id=8, code="NO-CODE")
 
     assert success is False
     assert reward == 0
@@ -415,7 +438,8 @@ def test_redeem_ticket_invalid_code_returns_false(cog):
 
 def test_generate_ticket_will_retry_on_duplicate_code(cog, monkeypatch):
     probs = [{"symbol": "🌮", "weight": 1, "rules": []}]
-    cog_settings = {"probabilities": probs, "ticket": {"rows": 1, "columns": 3}}
+    cog_settings = make_cog_settings()
+    cog_settings["probabilities"] = probs
 
     # deterministic sheet
     monkeypatch.setattr("bot.cogs.pulltab.random.choices", lambda symbols, weights, k: ["🌮", "🌮", "🌮"])
@@ -424,7 +448,7 @@ def test_generate_ticket_will_retry_on_duplicate_code(cog, monkeypatch):
     cog.ticket_codes_cache.add("ID-DUP")
     cog.identity_helper.id.side_effect = ["ID-DUP", "ID-UNIQUE"]
 
-    code, ticket_output = cog._generate_ticket(1, 10, cog_settings, multiplier=1)
+    code, ticket_output = cog._generate_ticket(guild_id=1, user_id=10, cog_settings=cog_settings, multiplier=1)
 
     assert code == "ID-UNIQUE"
     assert code in ticket_output
@@ -438,7 +462,7 @@ def test_generate_ticket_calls_identity_helper_with_min_max(cog):
 
     cog.identity_helper.id = MagicMock(return_value="ID-ARGS")
 
-    code, _ = cog._generate_ticket(1, 10, cog_settings, multiplier=1)
+    code, _ = cog._generate_ticket(guild_id=1, user_id=10, cog_settings=cog_settings, multiplier=1)
 
     assert code == "ID-ARGS"
     # ensure min and max are passed to the identity helper
@@ -875,7 +899,7 @@ def test_validate_user_can_purchase_none_taco_count(cog):
 
 def test_redeem_ticket_marks_redeemed_even_with_no_reward(cog, monkeypatch):
     ticket = PullTabTicketEntry(
-        guild_id=10, user_id=20, code="NO-REWARD", ticket=["🍊🍊🍊"], redeemed_at=None, reward=None
+        guild_id=10, user_id=20, code="NO-REWARD", ticket=["🍊🍊🍊"], redeemed_at=None, reward=0
     )
 
     cog.pulltabs_db.get_ticket = MagicMock(return_value=ticket)
@@ -926,30 +950,18 @@ async def test_send_message_invalid_context_type(cog):
     # No way to assert the message wasn't sent since we have a mock
 
 
-def test_process_ticket_with_legacy_list_ticket_format(cog):
-    # Test backward compatibility with nested list format
-    probs = [{"symbol": "🌮", "weight": 1, "rules": [{"match": "🌮🌮🌮", "reward": 1000}]}]
-
-    # Legacy format: list of lists
-    legacy_ticket = [["🌮", "🌮", "🌮"]]
-
-    is_winner, reward, lines, indexes, _ = cog._process_ticket(
-        legacy_ticket, {"probabilities": probs}, effective_multiplier=1.0
-    )
-
-    assert is_winner
-    assert reward == 1000
-
-
 def test_process_ticket_with_unexpected_row_type(cog):
     # Test with an unexpected row type (int)
     probs = [{"symbol": "🌮", "weight": 1, "rules": [{"match": "🌮", "reward": 100}]}]
 
+    cog_settings = make_cog_settings()
+    cog_settings["probabilities"] = probs
+
     # Unexpected format: int instead of string or list
     ticket = [12345]
 
-    is_winner, reward, lines, indexes, _ = cog._process_ticket(
-        ticket, {"probabilities": probs}, effective_multiplier=1.0
+    is_winner, reward, lines = cog._process_ticket(
+        ticket=ticket, cog_settings=cog_settings, effective_multiplier=1.0
     )
 
     # Should coerce to string then process

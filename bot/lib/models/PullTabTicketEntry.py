@@ -31,9 +31,12 @@ class PullTabTicketEntry:
         created_at: typing.Optional[typing.Union[int, float]] = None,
         redeemed_at: typing.Optional[typing.Union[int, float]] = None,
         reward: int = 0,
-        winning_lines: typing.Optional[typing.List[str]] = None,
-        winning_line_indexes: typing.Optional[typing.List[int]] = None,
-        multiplier: typing.Optional[float] = 1,
+        # would be: [{"line1": amount}, {"line2": amount}, ...]
+        # example: [{"🌮": 10}, {"🍉🍉🍉": 500}]
+        winning_lines: typing.Optional[typing.List[typing.Dict[str, int]]] = None,
+        effective_multiplier: typing.Optional[float] = 1,
+        purchase_multiplier: typing.Optional[float] = 1,
+        cost: typing.Optional[int] = 10,
     ) -> None:
         self.guild_id = str(guild_id)
         self.user_id = str(user_id)
@@ -46,10 +49,15 @@ class PullTabTicketEntry:
         self.ticket = ticket
         self.reward = reward
         self.winning_lines = winning_lines
-        self.winning_line_indexes = winning_line_indexes
-        if multiplier is None or multiplier < 1:
-            self.multiplier = 1
-        self.multiplier = multiplier
+        if effective_multiplier is None or effective_multiplier < 1:
+            self.effective_multiplier = 1
+        self.effective_multiplier = effective_multiplier
+        if purchase_multiplier is None or purchase_multiplier < 1:
+            self.purchase_multiplier = 1
+        self.purchase_multiplier = purchase_multiplier
+        if cost is None or cost < 0:
+            self.cost = 10
+        self.cost = cost
 
     def to_dict(self) -> typing.Dict[str, typing.Any]:
         # this should return a dict suitable for dumping to YAML
@@ -89,6 +97,8 @@ class PullTabTicketEntry:
             redeemed_at=data.get("redeemed_at", None),
             reward=data.get("reward", 0),
             winning_lines=data.get("winning_lines", None),
-            winning_line_indexes=data.get("winning_line_indexes", None),
-            multiplier=data.get("multiplier", 1),
+            effective_multiplier=data.get("effective_multiplier", 1),
+            purchase_multiplier=data.get("purchase_multiplier", 1),
+            cost=data.get("cost", 10),
+
         )

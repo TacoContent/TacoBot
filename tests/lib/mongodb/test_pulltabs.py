@@ -50,9 +50,10 @@ def test_get_ticket_returns_result_when_found():
         "created_at": 1763309829,
         "reward": 0,
         "ticket": ["🍉🍒🍉", "🍇🍉🍒", "🍉🍇🍇", "🍊🍎🍇", "🍒🍒🍊"],
-        "winning_line_indexes": [],
+        "cost": 10,
+        "effective_multiplier": 1,
+        "purchase_multiplier": 1,
         "winning_lines": [],
-        "multiplier": 1,
     }
     db.connection.pulltab_tickets.find_one.return_value = expected  # type: ignore
 

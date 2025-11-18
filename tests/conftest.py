@@ -94,6 +94,9 @@ def pulltabs_db():
     db.save_ticket = MagicMock()
     db.get_ticket = MagicMock(return_value={})
     db.is_ticket_redeemed = MagicMock(return_value=False)
+    db.metric_pulltab_tickets_counts = MagicMock(return_value={})
+    db.metric_pulltab_winnings = MagicMock(return_value={})
+    db.metric_pulltab_winning_lines = MagicMock(return_value={})
     return db
 
 

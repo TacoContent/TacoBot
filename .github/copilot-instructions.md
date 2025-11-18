@@ -214,6 +214,7 @@ All new or modified code MUST have tests in `tests/`:
 or use the `python -c 'code'` form.
 - clean up any temporary scripts after use to avoid confusion.
 - use shared fixtures for common test data to avoid duplication.
+- DO NOT use 
 
 Conventions:
 - Test file per module or feature: `test_<module>.py`.

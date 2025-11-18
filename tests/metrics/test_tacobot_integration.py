@@ -10,10 +10,10 @@ class TestTacoBotMetricsIntegration:
     """Tests for integration methods."""
 
     @pytest.fixture
-    def metrics(self, metrics_config, metrics_db, settings):
+    def metrics(self, metrics_config, metrics_db, pulltabs_db, settings):
         """Create TacoBotMetrics instance for testing."""
         with patch("metrics.tacobot.Gauge"), patch.object(TacoBotMetrics, "_fetch_build_info"):
-            return TacoBotMetrics(metrics_config, metrics_db, settings)
+            return TacoBotMetrics(metrics_config, metrics_db, pulltabs_db, settings)
 
 
 class TestFetchOrchestration(TestTacoBotMetricsIntegration):
@@ -24,7 +24,7 @@ class TestFetchOrchestration(TestTacoBotMetricsIntegration):
         # Mock all fetch methods
         with (
             patch.object(metrics, "check_health") as mock_health,
-            patch.object(metrics, "_fetch_known_guilds", return_value=["guild123"]) as mock_known_guilds,
+            patch.object(metrics, "_fetch_known_guilds", return_value=["123456"]) as mock_known_guilds,
             patch.object(metrics, "_fetch_all_tacos") as mock_tacos,
             patch.object(metrics, "_fetch_all_gift_tacos") as mock_gift_tacos,
             patch.object(metrics, "_fetch_reaction_tacos") as mock_reactions,
@@ -71,7 +71,7 @@ class TestFetchOrchestration(TestTacoBotMetricsIntegration):
         # Make one method fail
         with (
             patch.object(metrics, "check_health"),
-            patch.object(metrics, "_fetch_known_guilds", return_value=["guild123"]),
+            patch.object(metrics, "_fetch_known_guilds", return_value=["123456"]),
             patch.object(metrics, "_fetch_all_tacos", side_effect=Exception("Tacos error")),
             patch.object(metrics, "_fetch_all_gift_tacos") as mock_gift_tacos,
             patch.object(metrics, "_fetch_reaction_tacos") as mock_reactions,
@@ -217,12 +217,12 @@ class TestFetchCallOrder(TestTacoBotMetricsIntegration):
 
         def track_known_guilds():
             call_order.append("known_guilds")
-            return ["guild123"]
+            return ["123456"]
 
-        def track_permissions(guilds):
+        def track_permissions(known_guilds):
             call_order.append("permissions")
 
-        def track_logs(guilds):
+        def track_logs(known_guilds):
             call_order.append("logs")
 
         with (
@@ -255,17 +255,17 @@ class TestMetricsPollingInterval(TestTacoBotMetricsIntegration):
         config.metrics = {"pollingInterval": 120}
 
         with patch.object(TacoBotMetrics, "_fetch_build_info"):
-            metrics = TacoBotMetrics(config, MagicMock(), MagicMock())
+            metrics = TacoBotMetrics(config, MagicMock(), MagicMock(), MagicMock())
 
         assert metrics.polling_interval_seconds == 120
 
-    def test_custom_polling_interval_is_used(self, metrics_db, settings):
+    def test_custom_polling_interval_is_used(self, metrics_db, pulltabs_db, settings):
         """Test that custom polling interval is used in sleep."""
         config = MagicMock()
         config.metrics = {"pollingInterval": 30}
 
         with patch.object(TacoBotMetrics, "_fetch_build_info"):
-            metrics = TacoBotMetrics(config, metrics_db, settings)
+            metrics = TacoBotMetrics(config, metrics_db, pulltabs_db, settings)
 
         with patch.object(metrics, "fetch"):
             with patch("time.sleep") as mock_sleep:

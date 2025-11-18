@@ -10,10 +10,10 @@ class TestTacoBotMetricsFetchSimple:
     """Tests for simple fetch methods."""
 
     @pytest.fixture
-    def metrics(self, metrics_config, metrics_db, settings):
+    def metrics(self, metrics_config, metrics_db, pulltabs_db, settings):
         """Create TacoBotMetrics instance for testing."""
         with patch("metrics.tacobot.Gauge"), patch.object(TacoBotMetrics, "_fetch_build_info"):
-            return TacoBotMetrics(metrics_config, metrics_db, settings)
+            return TacoBotMetrics(config=metrics_config, metrics_db=metrics_db, pulltab_db=pulltabs_db, settings=settings)
 
 
 class TestFetchAllTacos(TestTacoBotMetricsFetchSimple):
@@ -22,7 +22,7 @@ class TestFetchAllTacos(TestTacoBotMetricsFetchSimple):
     def test_fetch_all_tacos_success(self, metrics):
         """Test fetching all tacos successfully."""
         metrics.db.get_sum_all_tacos = MagicMock(
-            return_value=[{"_id": "guild123", "total": 100}, {"_id": "guild456", "total": 200}]
+            return_value=[{"_id": "123456", "total": 100}, {"_id": "guild456", "total": 200}]
         )
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
@@ -99,7 +99,7 @@ class TestFetchAllGiftTacos(TestTacoBotMetricsFetchSimple):
     def test_fetch_all_gift_tacos_success(self, metrics):
         """Test fetching gift tacos successfully."""
         metrics.db.get_sum_all_gift_tacos = MagicMock(
-            return_value=[{"_id": "guild123", "total": 50}, {"_id": "guild456", "total": 75}]
+            return_value=[{"_id": "123456", "total": 50}, {"_id": "guild456", "total": 75}]
         )
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
@@ -113,7 +113,7 @@ class TestFetchAllGiftTacos(TestTacoBotMetricsFetchSimple):
                 for call in mock_set_gauge.call_args_list
                 if 'guild_id' in call[0][1]
                 and 'source' not in call[0][1]
-                and call[0][1].get('guild_id') in ['guild123', 'guild456']
+                and call[0][1].get('guild_id') in ['123456', 'guild456']
             ]
             assert len(gift_calls) == 2
 
@@ -137,7 +137,7 @@ class TestFetchReactionTacos(TestTacoBotMetricsFetchSimple):
 
     def test_fetch_reaction_tacos_success(self, metrics):
         """Test fetching reaction tacos successfully."""
-        metrics.db.get_sum_all_taco_reactions = MagicMock(return_value=[{"_id": "guild123", "total": 30}])
+        metrics.db.get_sum_all_taco_reactions = MagicMock(return_value=[{"_id": "123456", "total": 30}])
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
             metrics._fetch_reaction_tacos()
@@ -147,7 +147,7 @@ class TestFetchReactionTacos(TestTacoBotMetricsFetchSimple):
             reaction_calls = [
                 call
                 for call in mock_set_gauge.call_args_list
-                if 'guild_id' in call[0][1] and 'source' not in call[0][1] and call[0][1].get('guild_id') == 'guild123'
+                if 'guild_id' in call[0][1] and 'source' not in call[0][1] and call[0][1].get('guild_id') == '123456'
             ]
             assert len(reaction_calls) == 1
 
@@ -171,7 +171,7 @@ class TestFetchLiveNow(TestTacoBotMetricsFetchSimple):
 
     def test_fetch_live_now_success(self, metrics):
         """Test fetching live now count successfully."""
-        metrics.db.get_live_now_count = MagicMock(return_value=[{"_id": "guild123", "total": 5}])
+        metrics.db.get_live_now_count = MagicMock(return_value=[{"_id": "123456", "total": 5}])
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
             metrics._fetch_live_now()
@@ -181,7 +181,7 @@ class TestFetchLiveNow(TestTacoBotMetricsFetchSimple):
             live_calls = [
                 call
                 for call in mock_set_gauge.call_args_list
-                if 'guild_id' in call[0][1] and 'source' not in call[0][1] and call[0][1].get('guild_id') == 'guild123'
+                if 'guild_id' in call[0][1] and 'source' not in call[0][1] and call[0][1].get('guild_id') == '123456'
             ]
             assert len(live_calls) == 1
 
@@ -205,7 +205,7 @@ class TestFetchTwitchChannels(TestTacoBotMetricsFetchSimple):
 
     def test_fetch_twitch_channels_success(self, metrics):
         """Test fetching twitch channels successfully."""
-        metrics.db.get_twitch_channel_bot_count = MagicMock(return_value=[{"_id": "guild123", "total": 10}])
+        metrics.db.get_twitch_channel_bot_count = MagicMock(return_value=[{"_id": "123456", "total": 10}])
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
             metrics._fetch_twitch_channels()
@@ -232,7 +232,7 @@ class TestFetchAllTwitchTacos(TestTacoBotMetricsFetchSimple):
 
     def test_fetch_all_twitch_tacos_success(self, metrics):
         """Test fetching twitch tacos successfully."""
-        metrics.db.get_sum_all_twitch_tacos = MagicMock(return_value=[{"_id": "guild123", "total": 25}])
+        metrics.db.get_sum_all_twitch_tacos = MagicMock(return_value=[{"_id": "123456", "total": 25}])
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
             metrics._fetch_all_twitch_tacos()
@@ -286,7 +286,7 @@ class TestFetchInvitedUsers(TestTacoBotMetricsFetchSimple):
 
     def test_fetch_invited_users_success(self, metrics):
         """Test fetching invited users successfully."""
-        metrics.db.get_invited_users_count = MagicMock(return_value=[{"_id": "guild123", "total": 15}])
+        metrics.db.get_invited_users_count = MagicMock(return_value=[{"_id": "123456", "total": 15}])
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
             metrics._fetch_invited_users()
@@ -315,8 +315,8 @@ class TestFetchLivePlatform(TestTacoBotMetricsFetchSimple):
         """Test fetching live platform counts successfully."""
         metrics.db.get_sum_live_by_platform = MagicMock(
             return_value=[
-                {"_id": {"guild_id": "guild123", "platform": "twitch"}, "total": 8},
-                {"_id": {"guild_id": "guild123", "platform": "youtube"}, "total": 3},
+                {"_id": {"guild_id": "123456", "platform": "twitch"}, "total": 8},
+                {"_id": {"guild_id": "123456", "platform": "youtube"}, "total": 3},
             ]
         )
 

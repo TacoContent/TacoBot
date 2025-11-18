@@ -10,10 +10,10 @@ class TestTacoBotMetricsFetchComplex:
     """Tests for complex fetch methods."""
 
     @pytest.fixture
-    def metrics(self, metrics_config, metrics_db, settings):
+    def metrics(self, metrics_config, metrics_db, pulltabs_db, settings):
         """Create TacoBotMetrics instance for testing."""
         with patch("metrics.tacobot.Gauge"), patch.object(TacoBotMetrics, "_fetch_build_info"):
-            return TacoBotMetrics(metrics_config, metrics_db, settings)
+            return TacoBotMetrics(config=metrics_config, metrics_db=metrics_db, pulltab_db=pulltabs_db, settings=settings)
 
 
 class TestFetchPermissionCounts(TestTacoBotMetricsFetchComplex):
@@ -21,11 +21,11 @@ class TestFetchPermissionCounts(TestTacoBotMetricsFetchComplex):
 
     def test_fetch_permission_counts_success(self, metrics):
         """Test fetching permission counts successfully."""
-        known_guilds = ["guild123"]
+        known_guilds = ["123456"]
         metrics.db.get_permission_counts = MagicMock(
             return_value=[
-                {"_id": {"guild_id": "guild123", "permission": "admin"}, "total": 5},
-                {"_id": {"guild_id": "guild123", "permission": "moderator"}, "total": 10},
+                {"_id": {"guild_id": "123456", "permission": "admin"}, "total": 5},
+                {"_id": {"guild_id": "123456", "permission": "moderator"}, "total": 10},
             ]
         )
 
@@ -40,7 +40,7 @@ class TestFetchPermissionCounts(TestTacoBotMetricsFetchComplex):
 
     def test_fetch_permission_counts_exception(self, metrics):
         """Test fetch_permission_counts handles exceptions."""
-        known_guilds = ["guild123"]
+        known_guilds = ["123456"]
         metrics.db.get_permission_counts = MagicMock(side_effect=Exception("Error"))
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
@@ -62,7 +62,7 @@ class TestFetchTriviaQuestionCounts(TestTacoBotMetricsFetchComplex):
         metrics.db.get_trivia_questions = MagicMock(
             return_value=[
                 {
-                    "_id": {"guild_id": "guild123", "difficulty": "easy", "category": "general", "starter_id": "user1"},
+                    "_id": {"guild_id": "123456", "difficulty": "easy", "category": "general", "starter_id": "12"},
                     "total": 10,
                     "starter": [{"username": "Alice"}],
                 }
@@ -97,9 +97,9 @@ class TestFetchInviteCounts(TestTacoBotMetricsFetchComplex):
         metrics.db.get_invites_by_user = MagicMock(
             return_value=[
                 {
-                    "_id": {"guild_id": "guild123", "user_id": "user1"},
+                    "_id": {"guild_id": "123456", "user_id": "1"},
                     "total": 5,
-                    "user": [{"user_id": "user1", "username": "Bob"}],
+                    "user": [{"user_id": "1", "username": "Bob"}],
                 }
             ]
         )
@@ -114,9 +114,9 @@ class TestFetchInviteCounts(TestTacoBotMetricsFetchComplex):
         metrics.db.get_invites_by_user = MagicMock(
             return_value=[
                 {
-                    "_id": {"guild_id": "guild123", "user_id": "user1"},
+                    "_id": {"guild_id": "123456", "user_id": "123"},
                     "total": 0,
-                    "user": [{"user_id": "user1", "username": "Bob"}],
+                    "user": [{"user_id": "123", "username": "Bob"}],
                 }
             ]
         )
@@ -179,9 +179,9 @@ class TestFetchTrackedShiftCodes(TestTacoBotMetricsFetchComplex):
 
     def test_fetch_tracked_shift_codes_success(self, metrics):
         """Test fetching tracked shift codes successfully."""
-        known_guilds = ["guild123"]
+        known_guilds = ["123456"]
         metrics.db.get_tracked_shift_codes_counts = MagicMock(
-            return_value=[{"_id": {"guild_id": "guild123", "state": "ACTIVE"}, "total": 5}]
+            return_value=[{"_id": {"guild_id": "123456", "state": "ACTIVE"}, "total": 5}]
         )
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
@@ -191,7 +191,7 @@ class TestFetchTrackedShiftCodes(TestTacoBotMetricsFetchComplex):
 
     def test_fetch_tracked_shift_codes_exception(self, metrics):
         """Test fetch_tracked_shift_codes handles exceptions."""
-        known_guilds = ["guild123"]
+        known_guilds = ["123456"]
         metrics.db.get_tracked_shift_codes_counts = MagicMock(side_effect=Exception("Error"))
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
@@ -238,7 +238,7 @@ class TestFetchSystemActionCounts(TestTacoBotMetricsFetchComplex):
     def test_fetch_system_action_counts_success(self, metrics):
         """Test fetching system action counts successfully."""
         metrics.db.get_system_action_counts = MagicMock(
-            return_value=[{"_id": {"guild_id": "guild123", "action": "ban"}, "total": 3}]
+            return_value=[{"_id": {"guild_id": "123456", "action": "ban"}, "total": 3}]
         )
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
@@ -249,7 +249,7 @@ class TestFetchSystemActionCounts(TestTacoBotMetricsFetchComplex):
     def test_fetch_system_action_counts_with_zero_total(self, metrics):
         """Test that system actions with zero count are not set."""
         metrics.db.get_system_action_counts = MagicMock(
-            return_value=[{"_id": {"guild_id": "guild123", "action": "ban"}, "total": 0}]
+            return_value=[{"_id": {"guild_id": "123456", "action": "ban"}, "total": 0}]
         )
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
@@ -283,9 +283,9 @@ class TestFetchIntroductions(TestTacoBotMetricsFetchComplex):
 
     def test_fetch_introductions_success(self, metrics):
         """Test fetching introductions successfully."""
-        known_guilds = ["guild123"]
+        known_guilds = ["123456"]
         metrics.db.get_introductions = MagicMock(
-            return_value=[{"_id": {"guild_id": "guild123", "approved": True}, "total": 50}]
+            return_value=[{"_id": {"guild_id": "123456", "approved": True}, "total": 50}]
         )
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
@@ -295,7 +295,7 @@ class TestFetchIntroductions(TestTacoBotMetricsFetchComplex):
 
     def test_fetch_introductions_exception(self, metrics):
         """Test fetch_introductions handles exceptions."""
-        known_guilds = ["guild123"]
+        known_guilds = ["123456"]
         metrics.db.get_introductions = MagicMock(side_effect=Exception("Error"))
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:

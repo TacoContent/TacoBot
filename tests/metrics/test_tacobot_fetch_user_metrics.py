@@ -10,10 +10,10 @@ class TestTacoBotMetricsFetchUserMetrics:
     """Tests for user-related metrics fetch methods."""
 
     @pytest.fixture
-    def metrics(self, metrics_config, metrics_db, settings):
+    def metrics(self, metrics_config, metrics_db, pulltabs_db, settings):
         """Create TacoBotMetrics instance for testing."""
         with patch("metrics.tacobot.Gauge"), patch.object(TacoBotMetrics, "_fetch_build_info"):
-            return TacoBotMetrics(metrics_config, metrics_db, settings)
+            return TacoBotMetrics(config=metrics_config, metrics_db=metrics_db, pulltab_db=pulltabs_db, settings=settings)
 
 
 class TestFetchKnownUsers(TestTacoBotMetricsFetchUserMetrics):
@@ -23,8 +23,8 @@ class TestFetchKnownUsers(TestTacoBotMetricsFetchUserMetrics):
         """Test fetching known users successfully."""
         metrics.db.get_known_users = MagicMock(
             return_value=[
-                {"_id": {"guild_id": "guild123", "type": "user"}, "total": 100},
-                {"_id": {"guild_id": "guild123", "type": "bot"}, "total": 5},
+                {"_id": {"guild_id": "123456", "type": "user"}, "total": 100},
+                {"_id": {"guild_id": "123456", "type": "bot"}, "total": 5},
             ]
         )
 
@@ -63,9 +63,9 @@ class TestFetchTopMessages(TestTacoBotMetricsFetchUserMetrics):
         metrics.db.get_user_messages_tracked = MagicMock(
             return_value=[
                 {
-                    "_id": {"guild_id": "guild123", "user_id": "user1"},
+                    "_id": {"guild_id": "123456", "user_id": "123"},
                     "total": 500,
-                    "user": [{"user_id": "user1", "username": "Alice"}],
+                    "user": [{"user_id": "123", "username": "Alice"}],
                 }
             ]
         )
@@ -85,7 +85,7 @@ class TestFetchTopMessages(TestTacoBotMetricsFetchUserMetrics):
     def test_fetch_top_messages_no_user_info(self, metrics):
         """Test fetching top messages when user lookup returns empty."""
         metrics.db.get_user_messages_tracked = MagicMock(
-            return_value=[{"_id": {"guild_id": "guild123", "user_id": "user1"}, "total": 500, "user": []}]
+            return_value=[{"_id": {"guild_id": "123456", "user_id": "123"}, "total": 500, "user": []}]
         )
 
         with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
@@ -122,7 +122,7 @@ class TestFetchTopGifters(TestTacoBotMetricsFetchUserMetrics):
         metrics.db.get_top_taco_gifters = MagicMock(
             return_value=[
                 {
-                    "_id": {"guild_id": "guild123", "user_id": "user2"},
+                    "_id": {"guild_id": "123456", "user_id": "user2"},
                     "total": 200,
                     "user": [{"user_id": "user2", "username": "Bob"}],
                 }
@@ -157,7 +157,7 @@ class TestFetchTopReactors(TestTacoBotMetricsFetchUserMetrics):
         metrics.db.get_top_taco_reactors = MagicMock(
             return_value=[
                 {
-                    "_id": {"guild_id": "guild123", "user_id": "user3"},
+                    "_id": {"guild_id": "123456", "user_id": "user3"},
                     "total": 150,
                     "user": [{"user_id": "user3", "username": "Charlie"}],
                 }
@@ -192,7 +192,7 @@ class TestFetchTopTacos(TestTacoBotMetricsFetchUserMetrics):
         metrics.db.get_top_taco_receivers = MagicMock(
             return_value=[
                 {
-                    "_id": {"guild_id": "guild123", "user_id": "user4"},
+                    "_id": {"guild_id": "123456", "user_id": "user4"},
                     "total": 300,
                     "user": [{"user_id": "user4", "username": "David"}],
                 }
@@ -227,7 +227,7 @@ class TestFetchTopLive(TestTacoBotMetricsFetchUserMetrics):
         metrics.db.get_live_activity = MagicMock(
             return_value=[
                 {
-                    "_id": {"guild_id": "guild123", "user_id": "user5", "platform": "twitch"},
+                    "_id": {"guild_id": "123456", "user_id": "user5", "platform": "twitch"},
                     "total": 50,
                     "user": [{"user_id": "user5", "username": "Eve"}],
                 }
@@ -262,7 +262,7 @@ class TestFetchPhotoPost(TestTacoBotMetricsFetchUserMetrics):
         metrics.db.get_photo_posts_count = MagicMock(
             return_value=[
                 {
-                    "_id": {"guild_id": "guild123", "user_id": "user6", "channel": "photos"},
+                    "_id": {"guild_id": "123456", "user_id": "user6", "channel": "photos"},
                     "total": 25,
                     "user": [{"user_id": "user6", "username": "Frank"}],
                 }

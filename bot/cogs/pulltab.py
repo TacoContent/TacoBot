@@ -80,12 +80,12 @@ class PullTabCog(TacobotCog):
     @pulltab.command(
         name="purchase", description="Purchase a pulltab ticket for a chance to win tacos!", aliases=["buy", "p", "b"]
     )
-    async def purchase_command(self, ctx: commands.Context, count: int = 1, multiplier: int = 1):
-        await self._process_pulltab_purchase(ctx, count, multiplier)
+    async def purchase_command(self, ctx: commands.Context, *, count: int = 1, multiplier: int = 1):
+        await self._process_pulltab_purchase(ctx, count=count, multiplier=multiplier)
 
     @group.command(name="purchase", description="Purchase a pulltab ticket for a chance to win tacos!")
-    async def purchase_interaction(self, interaction: Interaction, count: int = 1, multiplier: int = 1):
-        await self._process_pulltab_purchase(interaction, count, multiplier)
+    async def purchase_interaction(self, interaction: Interaction, *, count: int = 1, multiplier: int = 1):
+        await self._process_pulltab_purchase(interaction, count=count, multiplier=multiplier)
 
     @pulltab.command(name="info", aliases=["i"], description="Get information about pulltab payouts and probabilities")
     async def info_command(self, ctx: commands.Context, *, multiplier: int = 1):
@@ -225,7 +225,7 @@ class PullTabCog(TacobotCog):
             )
 
     async def _process_pulltab_purchase(
-        self, ctx: typing.Union[commands.Context, Interaction], count: int = 1, multiplier: int = 1
+        self, ctx: typing.Union[commands.Context, Interaction], *, count: int = 1, multiplier: int = 1
     ):
         _method = inspect.stack()[0][3]
         guild_id = 0
@@ -402,7 +402,7 @@ class PullTabCog(TacobotCog):
             )
 
     def _generate_ticket(
-        self, guild_id: int, user_id: int, cog_settings: typing.Dict[str, typing.Any], multiplier: int
+        self, *, guild_id: int, user_id: int, cog_settings: typing.Dict[str, typing.Any], multiplier: int
     ) -> typing.Tuple[str, str]:
         """Generate a pulltab ticket.
         Returns a tuple of (code: str, ticket_output: str)
@@ -417,6 +417,10 @@ class PullTabCog(TacobotCog):
         symbols = [p['symbol'] for p in probabilities]
         weights = [p['weight'] for p in probabilities]
 
+        purchase_settings = cog_settings.get("purchase", {})
+        cost = purchase_settings.get("cost", 10)
+        ticket_cost = cost * multiplier
+
         ticket_settings = cog_settings.get("ticket", {})
         rows = ticket_settings.get("rows", 5)
         cols = ticket_settings.get("columns", 3)
@@ -424,7 +428,7 @@ class PullTabCog(TacobotCog):
         # multiplier settings may be present at the top level (cog_settings["multiplier"])
         # or nested under purchase (cog_settings["purchase"]["multiplier"]) depending
         # on how the guild config is authored. Try both to be resilient to either style.
-        multiplier_settings = cog_settings.get("multiplier") or cog_settings.get("purchase", {}).get("multiplier", {})
+        multiplier_settings = cog_settings.get("multiplier", {})
         base_increase = multiplier_settings.get("base_increase", 0.5)
         max_multiplier = multiplier_settings.get("max", 100)
         # Clamp the multiplier to the max allowed
@@ -454,6 +458,8 @@ class PullTabCog(TacobotCog):
             code=code,
             ticket=ticket,
             cog_settings=cog_settings,
+            cost=ticket_cost,
+            purchase_multiplier=multiplier,
             effective_multiplier=effective_multiplier,
         )
 
@@ -462,17 +468,6 @@ class PullTabCog(TacobotCog):
             # row may be a string or a list; ensure we join individual symbols for display
             sheet_display += "||" + "  ".join(list(row)) + "||\n"
 
-        # this is just for logging purposes
-        is_winner, reward, lines, line_indexes, reward_multiplier = self._process_ticket(
-            ticket, cog_settings, effective_multiplier=effective_multiplier
-        )
-        win_lines = "\n".join(lines)
-        self.log.debug(
-            guild_id,
-            f"{self._module}.{self._class}.{_method}",
-            f"Ticket results {code}:\nWinner: {is_winner}\nReward: {reward}\nWinning Lines:\n{win_lines}\nWinning Indexes: {line_indexes}",
-        )
-
         # get the ticket output
         ticket_output = f"ticket: ||`{code}`||\n\n{sheet_display}\n"
 
@@ -480,20 +475,23 @@ class PullTabCog(TacobotCog):
 
     def _save_ticket(
         self,
+        *,
         guild_id: int,
         user_id: int,
         code: str,
         ticket: typing.List[str],
         cog_settings: typing.Dict[str, typing.Any],
         redeemed_at: typing.Optional[int] = None,
+        purchase_multiplier: float = 1.0,
+        cost: int = 10,
         effective_multiplier: float = 1.0,
     ):
         """Save a pulltab ticket to storage."""
         _method = inspect.stack()[0][3]
 
         # store also winning line indexes from the ticket processing
-        is_winner, reward, lines, line_indexes, calculated_multiplier = self._process_ticket(
-            ticket, cog_settings, effective_multiplier=effective_multiplier
+        is_winner, reward, lines = self._process_ticket(
+            ticket=ticket, cog_settings=cog_settings, effective_multiplier=effective_multiplier
         )
 
         ticket_entry = PullTabTicketEntry(
@@ -504,8 +502,9 @@ class PullTabCog(TacobotCog):
             redeemed_at=redeemed_at,
             reward=reward,
             winning_lines=lines if lines else None,
-            winning_line_indexes=line_indexes if line_indexes else None,
-            multiplier=calculated_multiplier,
+            cost=cost,
+            purchase_multiplier=purchase_multiplier,
+            effective_multiplier=effective_multiplier,
         )
 
         self.pulltabs_db.save_ticket(ticket_entry.to_dict())
@@ -516,14 +515,17 @@ class PullTabCog(TacobotCog):
         self.ticket_codes_cache.add(code)
 
     def _process_ticket(
-        self, ticket: typing.List[str], cog_settings: typing.Dict[str, typing.Any], effective_multiplier: float = 1.0
-    ) -> typing.Tuple[bool, int, typing.List[str], typing.List[int], float]:
+        self,
+        *,
+        ticket: typing.List[str],
+        cog_settings: typing.Dict[str, typing.Any],
+        effective_multiplier: float = 1.0,
+    ) -> typing.Tuple[bool, int, typing.List[typing.Dict[str, int]]]:
         """Process a pulltab ticket.
         Returns a tuple of (
             is_winner: bool,
             reward: int,
-            winning_lines_desc: list[str],
-            winning_lines_indexes: list[int],
+            winning_lines: list[dict[str, int]], # [{line: reward}]
             calculated_multiplier: float
         )
         Matching rules are tested by exact sequence or by token counts (so '🌮🌮' matches if
@@ -538,8 +540,7 @@ class PullTabCog(TacobotCog):
 
         total_reward = 0
         is_winner = False
-        winning_lines_desc = []
-        winning_lines_indexes: list[int] = []
+        winning_lines: typing.List[typing.Dict[str, int]] = []
 
         # rules: [
         #     {
@@ -615,22 +616,17 @@ class PullTabCog(TacobotCog):
             if any(mult == 0 for (_sym, _r, _m, mult) in row_matches):
                 # row contains a deny rule (e.g., skull) so no payout for this row
                 continue
-            # Otherwise award all matched rules for the row (one per symbol)
-            if row_matches:
-                # add the row index as a winning line index (avoid duplicates for same row)
-                if row_index not in winning_lines_indexes:
-                    winning_lines_indexes.append(row_index)
 
             # Otherwise award all matched rules for the row (one per symbol)
             for _sym, line_reward, match_str, _mult in row_matches:
                 actual_line_reward = round(line_reward * effective_multiplier)
-                line_message = f"{match_str} -> {actual_line_reward}"
                 # each line is its own winner; allow the same match message to appear multiple times
                 total_reward += actual_line_reward
                 is_winner = True if actual_line_reward > 0 else is_winner
-                winning_lines_desc.append(line_message)
 
-        return is_winner, total_reward, winning_lines_desc, winning_lines_indexes, effective_multiplier
+                winning_lines.append({match_str: actual_line_reward})
+
+        return is_winner, total_reward, winning_lines
 
     def _redeem_ticket(self, guild_id: int, user_id: int, code: str) -> typing.Tuple[bool, int, str]:
         """Redeem a pulltab ticket.

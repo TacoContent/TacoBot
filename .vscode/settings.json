@@ -118,6 +118,7 @@
 		"setuptools",
 		"sighandler",
 		"signum",
+		"spendings",
 		"splitlines",
 		"startswith",
 		"steampowered",
