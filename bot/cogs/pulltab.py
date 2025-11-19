@@ -196,6 +196,9 @@ class PullTabCog(TacobotCog):
     async def _process_pulltab_info(self, ctx: typing.Union[commands.Context, Interaction], *, multiplier: int = 1):
         _method = inspect.stack()[0][3]
         try:
+            if isinstance(ctx, Interaction) and not ctx.response.is_done():
+                await ctx.response.defer(ephemeral=True)
+
             guild_id = 0
             if self.bot.user is None:
                 return
