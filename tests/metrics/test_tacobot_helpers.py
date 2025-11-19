@@ -363,14 +363,14 @@ class TestFetchGameKeys(TestTacoBotMetricsHelpers):
                 }
             ]
 
-            metrics.pulltab_db.metric_pulltab_spendings_by_user_and_status = MagicMock(return_value=sample)
+            metrics.pulltab_db.metric_pulltab_spendings_by_user= MagicMock(return_value=sample)
 
             with patch.object(metrics, "_set_gauge_labels") as mock_set_gauge:
                 metrics._fetch_pulltab_spendings()
 
-                metrics.pulltab_db.metric_pulltab_spendings_by_user_and_status.assert_called_once()
+                metrics.pulltab_db.metric_pulltab_spendings_by_user.assert_called_once()
 
-                # Should set gauge for data plus error gauge (1 + 1 = 2)
+                # Should set gauge for data plus error gauge 1
                 assert mock_set_gauge.call_count == 2
 
                 # Filter data calls (have guild_id, user_id, username labels)
@@ -399,12 +399,11 @@ class TestFetchGameKeys(TestTacoBotMetricsHelpers):
 
                 metrics.pulltab_db.metric_pulltab_winnings_by_user_and_status.assert_called_once()
 
-                # Should set gauge for data plus error gauge (1 + 1 = 2)
-                assert mock_set_gauge.call_count == 2
+                assert mock_set_gauge.call_count == 1
 
                 # Filter data calls (have guild_id, user_id, username, status labels)
                 calls = [c for c in mock_set_gauge.call_args_list if "status" in c[0][1]]
-                assert len(calls) == 1
+                assert len(calls) == 0
 
                 # Verify error gauge set to 0
                 error_calls = [c for c in mock_set_gauge.call_args_list if "source" in c[0][1]]

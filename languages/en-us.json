@@ -173,5 +173,5 @@
   "pulltab_purchase_not_enough_tacos": "{{user}}, You need {{total_cost}} {{taco_word}} 🌮 to purchase {{ticket_count}} {{ticket_word}}. You only have {{user_taco_count}} {{user_taco_word}} 🌮.",
   "pulltab_give_tacos_message": "a winning pulltab ticket",
   "pulltab_purchase_tacos_message": "purchasing {{ticket_count}} {{ticket_word}} with multiplier {{multiplier}}",
-  "pulltab_purchase_message": "Purchased {{ticket_count}} {{ticket_word}} with multiplier {{multiplier}} for {{total_cost}} {{taco_word}} 🌮."
+  "pulltab_purchase_message": "Purchased {{ticket_count}} {{ticket_word}} with multiplier {{multiplier}} for {{total_cost}} {{taco_word}} 🌮. One moment while I process your tickets. Good Luck! 🍀"
 }
