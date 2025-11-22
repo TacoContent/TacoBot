@@ -3426,6 +3426,56 @@ paths:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
       description: (Placeholder) Get Minecraft player statistics.
       summary: Get Minecraft player statistics (Placeholder)
+  /api/v1/pulltab/{guild_id}/tickets/{username}:
+    get:
+      responses:
+        '200':
+          description: A list of pull tab tickets for the user.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PullTabTicketEntry'
+        '400':
+          description: Invalid guild ID or username.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: Discord guild (server) ID
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: username
+          description: Username of the user to get pull tab tickets for
+          schema:
+            type: string
+      tags:
+        - pulltabs
+        - tickets
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      description: Get pending pull tab tickets for a user in a guild.
+      summary: Get pending pull tab tickets for a user.
 components:
   schemas:
     ErrorStatusCodePayload:

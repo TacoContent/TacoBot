@@ -3,10 +3,14 @@ import inspect
 import json
 import os
 import traceback
+import typing
 
 from bot.lib.helpers import EntityHelper, IdentityHelper, PullTabHelper
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
+from bot.lib.models import openapi
+from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
+from bot.lib.models.PullTabTicketEntry import PullTabTicketEntry
 from bot.lib.mongodb.pulltabs import PullTabTicketsDatabase
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
@@ -34,6 +38,49 @@ class PullTabsApiHandler(BaseHttpHandler):
         self.pulltabs_db = pulltabs_db
 
     @uri_variable_mapping(f"/api/{API_VERSION}/pulltab/{{guild_id}}/tickets/{{username}}", method=HTTPMethod.GET)
+    @openapi.description("Get pending pull tab tickets for a user in a guild.")
+    @openapi.summary("Get pending pull tab tickets for a user.")
+    @openapi.managed()
+    @openapi.tags("pulltabs", "tickets")
+    @openapi.response(
+        200,
+        methods=[HTTPMethod.GET],
+        description="A list of pull tab tickets for the user.",
+        contentType="application/json",
+        summary="Pull tab tickets retrieved successfully.",
+        schema=typing.List[PullTabTicketEntry]
+    )
+    @openapi.response(
+        400,
+        methods=[HTTPMethod.GET],
+        description="Invalid guild ID or username.",
+        contentType="application/json",
+        summary="Invalid input parameters.",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        404,
+        methods=[HTTPMethod.GET],
+        description="User not found.",
+        contentType="application/json",
+        summary="The specified user does not exist.",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        '5XX',
+        methods=[HTTPMethod.GET],
+        description="Internal server error.",
+        contentType="application/json",
+        summary="An unexpected error occurred on the server.",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.pathParameter(
+        name="guild_id", description="Discord guild (server) ID", methods=[HTTPMethod.GET], schema=str
+    )
+    @openapi.pathParameter(
+        name="username", description="Username of the user to get pull tab tickets for", methods=[HTTPMethod.GET], schema=str
+    )
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     def get_pending_tickets_for_user(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Get pull tab tickets for a user in a guild.
 
