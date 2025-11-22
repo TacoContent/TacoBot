@@ -131,10 +131,13 @@ class HttpHandlerCog(TacobotCog):
                     if (
                         file.endswith(".py")
                         and not file.startswith("_")
+                        and not file.startswith("__")
+                        and not file.endswith(".pyc")
                         and not file.startswith("Base")
                         and not file.startswith("ApiHttpHandler")
                         and file.endswith("Handler.py")
                     ):
+                        self.log.info(0, f"{self._module}.{self._class}.{_method}", f"Found file: {full_path}")
                         # convert the file path to a module path by replacing the path separator with a dot
                         # and removing the file extension
                         mod_path, class_name = (

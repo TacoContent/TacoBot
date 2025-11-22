@@ -85,6 +85,69 @@ class TacoHelper:
             return False
         return taco_count >= total_cost
 
+    async def spend_tacos(
+        self,
+        guild_id: int,
+        user_id: int,
+        amount: int,
+        reason: typing.Optional[str],
+        type: tacotypes.TacoTypes = tacotypes.TacoTypes.CUSTOM
+    ) -> int:
+        """Spend tacos from a user's balance and log the transaction.
+
+        Args:
+            guild_id: The guild ID where tacos are being spent
+            user_id: The user ID spending tacos
+            amount: Number of tacos to spend
+            reason: Reason for spending tacos
+        """
+        _method = inspect.stack()[0][3]
+        try:
+            taco_settings = self.get_taco_settings(guildId=guild_id)
+            total_taco_count = self.tacos_db.remove_tacos(guild_id, user_id, amount)
+
+            if total_taco_count is None:
+                self.log.warn(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Could not remove tacos for user {user_id} in guild {guild_id}",
+                )
+                return 0
+
+            from_user = await self.entity_helper.get_or_fetch_user(user_id)
+            if from_user is None:
+                self.log.warn(
+                    guild_id,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Could not fetch user {user_id} for taco spend logging",
+                )
+                return total_taco_count
+
+            reason_msg = reason if reason else self.settings.get_string(guild_id, "no_reason")
+
+            await self.log_taco_transaction(
+                guild_id=guild_id,
+                toMember=from_user,
+                fromMember=from_user,
+                count=-amount,
+                total_tacos=total_taco_count,
+                reason=reason_msg,
+                type=type,
+            )
+
+            self.tacos_db.track_tacos_log(
+                guildId=guild_id,
+                toUserId=user_id,
+                fromUserId=user_id,
+                count=-amount,
+                reason=reason_msg,
+                type=tacotypes.TacoTypes.get_db_type_from_taco_type(type),
+            )
+            return total_taco_count
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return 0
+
     async def give_tacos(
         self,
         guildId: int,

@@ -96,13 +96,14 @@ class PullTabTicketsDatabase(Database):
             return False
 
     def get_pending_tickets_for_user(self, guild_id: int, user_id: int) -> typing.List[dict[str, typing.Any]]:
+        """Get pending winning pull tab tickets for a user in a guild."""
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
 
             cursor = self.connection.pulltab_tickets.find(  # type: ignore
-                {"guild_id": str(guild_id), "user_id": str(user_id), "redeemed_at": None}
+                {"guild_id": str(guild_id), "user_id": str(user_id), "redeemed_at": None, "reward": {"$gt": 0}}
             )
             tickets = []
             for document in cursor:

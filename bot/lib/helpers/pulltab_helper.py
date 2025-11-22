@@ -22,13 +22,12 @@ class PullTabHelper:
 
     def generate_ticket(
         self, *, guild_id: int, user_id: int, cog_settings: typing.Dict[str, typing.Any], multiplier: int
-    ) -> typing.Tuple[str, str]:
+    ) -> typing.Tuple[str, PullTabTicketEntry]:
         """Generate a pulltab ticket.
         Returns a tuple of (code: str, ticket_output: str)
         """
         _method = inspect.stack()[0][3]
         code = ""
-        ticket_output = ""
         while not code or code in self.ticket_codes_cache:
             code = self.identity_helper.id(min=8, max=16)
 
@@ -63,7 +62,7 @@ class PullTabHelper:
         # if the multiplier is 1, the calculated multiplier is always 1
         effective_multiplier = self.calculate_multiplier(multiplier, base_increase=base_increase)
 
-        ticket = []
+        ticket: typing.List[str] = []
         random.seed(code)
         sheet = random.choices(symbols, weights=weights, k=rows * cols)
         for r in range(rows):
@@ -72,7 +71,7 @@ class PullTabHelper:
             row_str = "".join(row_list)
             ticket.append(row_str)
 
-        self._save_ticket(
+        ticket_entry = self._save_ticket(
             guild_id=guild_id,
             user_id=user_id,
             code=code,
@@ -83,15 +82,10 @@ class PullTabHelper:
             effective_multiplier=effective_multiplier,
         )
 
-        sheet_display = ""
-        for row_index, row in enumerate(ticket):
-            # row may be a string or a list; ensure we join individual symbols for display
-            sheet_display += "||" + "  ".join(list(row)) + "||\n"
-
         # get the ticket output
-        ticket_output = f"ticket: ||`{code}`||\n\n{sheet_display}\n"
+        # ticket_output = f"ticket: ||`{code}`||\n\n{sheet_display}\n"
 
-        return code, ticket_output
+        return code, ticket_entry
 
     def process_ticket(
         self, *, ticket: typing.List[str], cog_settings: typing.Dict[str, typing.Any], effective_multiplier: float = 1.0
@@ -244,7 +238,7 @@ class PullTabHelper:
         purchase_multiplier: float = 1.0,
         cost: int = 10,
         effective_multiplier: float = 1.0,
-    ):
+    ) -> PullTabTicketEntry:
         """Save a pulltab ticket to storage."""
         _method = inspect.stack()[0][3]
 
@@ -272,6 +266,7 @@ class PullTabHelper:
         # the code is used to identify the pulltab sequence
         # to redeem the pulltab sequence, the user must provide the code
         self.ticket_codes_cache.add(code)
+        return ticket_entry
 
     def calculate_multiplier(self, requested_multiplier: int = 1, base_increase: float = 0.05) -> float:
         """Calculate the effective multiplier based on requested multiplier points."""

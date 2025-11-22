@@ -333,9 +333,14 @@ class PullTabCog(TacobotCog):
             # store the code in self.ticket_codes
             # tickets_output = []
             for _ in range(count):
-                ticket_code, ticket_output = self.pulltab_helper.generate_ticket(
+                ticket_code, ticket_entry = self.pulltab_helper.generate_ticket(
                     guild_id=guild_id, user_id=user_id, cog_settings=cog_settings, multiplier=multiplier
                 )
+                ticket_output = "ticket: ||`" + ticket_code + "`||\n\n"
+                for row_index, row in enumerate(ticket_entry.ticket):
+                    # row may be a string or a list; ensure we join individual symbols for display
+                    ticket_output += "||" + "  ".join(list(row)) + "||\n"
+
                 view = self._create_ticket_view(ctx, code=ticket_code, multiplier=multiplier)
                 await self._send_message(ctx, message=ticket_output, followup=True, view=view, ephemeral=True)
                 # pause briefly to avoid rate limits

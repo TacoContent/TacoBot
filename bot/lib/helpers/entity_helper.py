@@ -44,13 +44,19 @@ class EntityHelper:
             return None
 
     def get_member_id(self, username: str) -> typing.Union[int, None]:
+        """Get a member ID by username across all guilds the bot is in.
+        Args:
+            username (str): The username to search for. Can be in the format 'name#discriminator', name only, or ID as string.
+        Returns:
+            int | None: The member ID if found, else None.
+        """
         _method = inspect.stack()[0][3]
         try:
             guilds = self.bot.guilds
 
             for guild in guilds:
                 member = discord.utils.find(
-                    lambda m: str(m) == username or m.name == username, guild.members
+                    lambda m: str(m) == username or m.name == username or str(m.id) == username, guild.members
                 )
                 if member:
                     return member.id

@@ -3426,8 +3426,25 @@ paths:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
       description: (Placeholder) Get Minecraft player statistics.
       summary: Get Minecraft player statistics (Placeholder)
-  /api/v1/pulltab/{guild_id}/tickets/{username}:
+  /api/v1/pulltabs/{guild_id}/unclaimed/{username}:
     get:
+      tags:
+        - pulltabs
+        - tickets
+      description: Get pending winning pull tab tickets for a user in a guild.
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: Discord guild (server) ID
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: username
+          description: Username of the user to get pull tab tickets for
+          schema:
+            type: string
       responses:
         '200':
           description: A list of pull tab tickets for the user.
@@ -3455,27 +3472,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-      parameters:
-        - in: path
-          required: true
-          name: guild_id
-          description: Discord guild (server) ID
-          schema:
-            type: string
-        - in: path
-          required: true
-          name: username
-          description: Username of the user to get pull tab tickets for
-          schema:
-            type: string
-      tags:
-        - pulltabs
-        - tickets
+      summary: Get pending winning pull tab tickets for a user.
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
-      description: Get pending pull tab tickets for a user in a guild.
-      summary: Get pending pull tab tickets for a user.
 components:
   schemas:
     ErrorStatusCodePayload:

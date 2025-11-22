@@ -193,12 +193,12 @@ def test_generate_ticket_adds_code_and_returns_output(cog, pulltab_helper, ident
     # identity helper id is mocked by conftest fixture; set a deterministic return
     identity_helper.id.return_value = "ID-TEST-1"
 
-    code, ticket_output = pulltab_helper.generate_ticket(guild_id=1, user_id=10, cog_settings=cog_settings, multiplier=1)
+    code, ticket_entry = pulltab_helper.generate_ticket(guild_id=1, user_id=10, cog_settings=cog_settings, multiplier=1)
 
     assert code == "ID-TEST-1"
-    assert code in ticket_output
-    # should have 2 rows (we configured rows=2) represented with separator lines
-    assert ticket_output.count("||") >= 4  # each row emits two pipe boundaries
+    assert ticket_entry.code == code
+    # should have 2 rows (we configured rows=2)
+    assert len(ticket_entry.ticket) == 2
     assert code in pulltab_helper.ticket_codes_cache
     # Ensure the DB save call stored ticket rows as strings (not nested lists)
     pulltabs_db.save_ticket.assert_called_once()
@@ -271,7 +271,7 @@ def test_generate_ticket_saves_effective_multiplier(cog, pulltab_helper, identit
     identity_helper.id.return_value = "ID-MULT"
 
     # Save should capture the calculated multiplier
-    code, ticket_output = pulltab_helper.generate_ticket(guild_id=1, user_id=2, cog_settings=cog_settings, multiplier=2)
+    code, ticket_entry = pulltab_helper.generate_ticket(guild_id=1, user_id=2, cog_settings=cog_settings, multiplier=2)
 
     saved_payload = pulltabs_db.save_ticket.call_args[0][0]
     # 2 points with base_increase=0.5 => 1 + (2 * 0.5) == 2.0 (apply per point)
@@ -382,7 +382,7 @@ def test_generate_ticket_stores_expected_multiplier_for_10_points(cog, pulltab_h
     monkeypatch.setattr("bot.lib.helpers.pulltab_helper.random.choices", lambda symbols, weights, k: sheet)
     identity_helper.id.return_value = "ID-MULT-10"
 
-    code, ticket_output = pulltab_helper.generate_ticket(guild_id=1, user_id=2, cog_settings=cog_settings, multiplier=10)
+    code, ticket_entry = pulltab_helper.generate_ticket(guild_id=1, user_id=2, cog_settings=cog_settings, multiplier=10)
 
     saved_payload = pulltabs_db.save_ticket.call_args[0][0]
     assert saved_payload.get("effective_multiplier") == 2.0
@@ -448,10 +448,10 @@ def test_generate_ticket_will_retry_on_duplicate_code(cog, pulltab_helper, ident
     pulltab_helper.ticket_codes_cache.add("ID-DUP")
     identity_helper.id.side_effect = ["ID-DUP", "ID-UNIQUE"]
 
-    code, ticket_output = pulltab_helper.generate_ticket(guild_id=1, user_id=10, cog_settings=cog_settings, multiplier=1)
+    code, ticket_entry = pulltab_helper.generate_ticket(guild_id=1, user_id=10, cog_settings=cog_settings, multiplier=1)
 
     assert code == "ID-UNIQUE"
-    assert code in ticket_output
+    assert ticket_entry.code == code
     assert "ID-DUP" in pulltab_helper.ticket_codes_cache
     assert "ID-UNIQUE" in pulltab_helper.ticket_codes_cache
 
@@ -601,6 +601,7 @@ async def test_process_pulltab_info_with_interaction(cog):
     ctx.guild.id = 2222
     ctx.response = MagicMock()
     ctx.response.is_done = MagicMock(return_value=False)
+    ctx.response.defer = AsyncMock()
     ctx.response.send_message = AsyncMock()
 
     await cog._process_pulltab_info(ctx, multiplier=2)
