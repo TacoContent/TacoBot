@@ -3476,6 +3476,14 @@ paths:
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
+  /api/v1/pulltabs/{guild_id}/purchase/{username}:
+    post:
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      responses:
+        '200':
+          description: OK
 components:
   schemas:
     ErrorStatusCodePayload:
@@ -4746,7 +4754,11 @@ components:
           format: int32
       required:
         - code
+        - cost
+        - effective_multiplier
         - guild_id
+        - purchase_multiplier
+        - reward
         - ticket
         - user_id
       description: A pull-tab ticket entry.

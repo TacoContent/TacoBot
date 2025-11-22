@@ -399,7 +399,8 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
             # Otherwise, proceed with object property extraction from __init__
             annotations: Dict[str, str] = {}
             # Track which parameters have default values in __init__ signature
-            params_with_defaults: set[str] = set()
+            # Map param name -> default AST node so we can inspect the default value.
+            params_with_defaults: dict[str, ast.AST] = {}
             for node in cls.body:
                 if isinstance(node, ast.FunctionDef) and node.name == '__init__':
                     # Examine function signature to detect parameters with default values
@@ -410,16 +411,17 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                     # Match defaults to the last N positional args (skip 'self')
                     positional_args = args.args[1:]  # Skip 'self'
                     if num_defaults > 0:
-                        # The last N args have defaults
+                        # The last N args have defaults, pair them with the corresponding default nodes
                         args_with_defaults = positional_args[-num_defaults:]
-                        for arg_node in args_with_defaults:
-                            params_with_defaults.add(arg_node.arg)
+                        # defaults correspond to the last N positional args in order
+                        for arg_node, default_node in zip(args_with_defaults, args.defaults[-num_defaults:]):
+                            params_with_defaults[arg_node.arg] = default_node
 
                     # Also check kwonly args which have defaults in kw_defaults
                     if args.kw_defaults:
                         for i, kwarg in enumerate(args.kw_defaults):
                             if kwarg is not None:  # Has a default value
-                                params_with_defaults.add(args.kwonlyargs[i].arg)
+                                params_with_defaults[args.kwonlyargs[i].arg] = kwarg
 
                     for stmt in node.body:
                         if (
@@ -664,9 +666,19 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                 props[attr] = schema
                 # Only mark as required if:
                 # 1. Not nullable (no Optional or None in type hint), AND
-                # 2. No default value in __init__ signature
-                if not nullable and attr not in params_with_defaults:
-                    required.append(attr)
+                # 2. No default value in __init__ signature OR default is not None
+                if not nullable:
+                    default_node = params_with_defaults.get(attr)
+                    # If a default exists, only treat it as optional (not required) when the
+                    # default is explicitly None. Defaults like False, 0, or empty strings
+                    # still indicate the property should be considered required.
+                    default_is_none = False
+                    if default_node is not None:
+                        default_val = _extract_constant(default_node)
+                        default_is_none = default_val is None
+
+                    if not (default_node is not None and default_is_none):
+                        required.append(attr)
 
             # Check if class inherits from Dict[K, V] for additionalProperties schema
             dict_schema = _extract_dict_inheritance_schema(cls)
