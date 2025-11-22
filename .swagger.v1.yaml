@@ -4650,6 +4650,57 @@ components:
         type: integer
       description: TypedDict for individual Minecraft user statistics item.
       x-tacobot-managed: true
+    PullTabTicketEntry:
+      type: object
+      properties:
+        guild_id:
+          type: string
+          description: The ID of the guild where the ticket was purchased.
+          format: int64
+        user_id:
+          type: string
+          description: The ID of the user who purchased the ticket.
+          format: int64
+        code:
+          type: string
+          description: The unique code for the ticket.
+        redeemed_at:
+          type: string
+          description: The timestamp when the ticket was redeemed.
+          format: float
+          nullable: true
+        ticket:
+          type: string
+          description: The ticket lines.
+          items:
+            type: string
+        reward:
+          type: string
+          description: The reward amount for the ticket.
+          format: int32
+        winning_lines:
+          type: string
+          description: The winning lines and their amounts.
+          nullable: true
+        effective_multiplier:
+          type: string
+          description: The effective multiplier applied to the ticket.
+          format: float
+        purchase_multiplier:
+          type: string
+          description: The purchase multiplier applied to the ticket.
+          format: int32
+        cost:
+          type: string
+          description: The cost of the ticket.
+          format: int32
+      required:
+        - code
+        - guild_id
+        - ticket
+        - user_id
+      description: A pull-tab ticket entry.
+      x-tacobot-managed: true
   securitySchemes:
     X-AUTH-TOKEN:
       type: apiKey

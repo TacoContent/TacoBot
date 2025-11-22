@@ -95,6 +95,23 @@ class PullTabTicketsDatabase(Database):
             self.log(0, LogLevel.ERROR, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
             return False
 
+    def get_pending_tickets_for_user(self, guild_id: int, user_id: int) -> typing.List[dict[str, typing.Any]]:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+
+            cursor = self.connection.pulltab_tickets.find(  # type: ignore
+                {"guild_id": str(guild_id), "user_id": str(user_id), "redeemed_at": None}
+            )
+            tickets = []
+            for document in cursor:
+                tickets.append(document)
+            return tickets
+        except Exception as e:
+            self.log(0, LogLevel.ERROR, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
+            return []
+
     def metric_pulltab_tickets_counts(self) -> typing.Optional[typing.Iterator[dict[str, typing.Any]]]:
         # Defined Prometheus Metric
         # self.pulltabs_tickets = Gauge(
