@@ -264,7 +264,18 @@ def taco_helper():
     """Function-scoped mock taco helper with async methods."""
     h = MagicMock()
     h.give_tacos = AsyncMock()
+    h.get_taco_count = MagicMock(return_value=0)
+    h.validate_user_can_spend = MagicMock(return_value=True)
     h.settings = MagicMock()
+    return h
+
+
+@pytest.fixture
+def pulltab_helper(bot, identity_helper, pulltabs_db, settings):
+    """Function-scoped real pulltab helper with mocked dependencies."""
+    from bot.lib.helpers import PullTabHelper
+    
+    h = PullTabHelper(bot, identity_helper=identity_helper, pulltabs_db=pulltabs_db, settings=settings)
     return h
 
 

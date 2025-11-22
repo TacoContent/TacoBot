@@ -43,6 +43,22 @@ class EntityHelper:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
             return None
 
+    def get_member_id(self, username: str) -> typing.Union[int, None]:
+        _method = inspect.stack()[0][3]
+        try:
+            guilds = self.bot.guilds
+
+            for guild in guilds:
+                member = discord.utils.find(
+                    lambda m: str(m) == username or m.name == username, guild.members
+                )
+                if member:
+                    return member.id
+            return None
+        except Exception as ex:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(ex), traceback.format_exc())
+            return None
+
     async def get_or_fetch_member(self, guildId: int, userId: int) -> typing.Union[discord.Member, None]:
         _method = inspect.stack()[0][3]
         try:

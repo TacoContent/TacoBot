@@ -1,25 +1,22 @@
 import typing
 
 from bot.lib import utils
-
-# {
-#   "_id": "",
-#   "guild_id": "string",
-#   "user_id": "string",
-#   "code": "string",
-#   "created_at": "number",
-#   "redeemed_at": "number | null",
-#   "ticket": [
-#     ["string"],
-#     ["string"],
-#     ["string"],
-#     ["string"],
-#     ["string"]
-#   ],
-#   "reward": "number"
-# }
+from bot.lib.models.openapi import openapi
 
 
+@openapi.component("PullTabTicketEntry", description="A pull-tab ticket entry.")
+@openapi.property("guild_id", description="The ID of the guild where the ticket was purchased.", type="integer", format="int64")
+@openapi.property("user_id", description="The ID of the user who purchased the ticket.", type="integer", format="int64")
+@openapi.property("code", description="The unique code for the ticket.", type="string")
+@openapi.property("ticket", description="The ticket lines.", type="array", items={"type": "string"})
+@openapi.property("created_at", description="The timestamp when the ticket was created.", type="number", format="float", nullable=True)
+@openapi.property("redeemed_at", description="The timestamp when the ticket was redeemed.", type="number", format="float", nullable=True)
+@openapi.property("reward", description="The reward amount for the ticket.", type="integer", format="int32")
+@openapi.property("winning_lines", description="The winning lines and their amounts.", nullable=True)
+@openapi.property("effective_multiplier", description="The effective multiplier applied to the ticket.", type="number", format="float")
+@openapi.property("purchase_multiplier", description="The purchase multiplier applied to the ticket.", type="number", format="int32")
+@openapi.property("cost", description="The cost of the ticket.", type="integer", format="int32")
+@openapi.managed()
 class PullTabTicketEntry:
     def __init__(
         self,

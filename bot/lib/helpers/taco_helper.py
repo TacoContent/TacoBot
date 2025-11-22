@@ -72,6 +72,19 @@ class TacoHelper:
             self.log.error(guildId, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return None
 
+    def validate_user_can_spend(self, guild_id: int, user_id: int, total_cost: int) -> bool:
+        """Validate that a user has enough tacos to spend total_cost tacos."""
+        _method = inspect.stack()[0][3]
+        taco_count = self.get_taco_count(guild_id, user_id)
+        if taco_count is None:
+            self.log.error(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"Could not retrieve taco count for user {user_id} in guild {guild_id}",
+            )
+            return False
+        return taco_count >= total_cost
+
     async def give_tacos(
         self,
         guildId: int,

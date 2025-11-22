@@ -398,8 +398,29 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
 
             # Otherwise, proceed with object property extraction from __init__
             annotations: Dict[str, str] = {}
+            # Track which parameters have default values in __init__ signature
+            params_with_defaults: set[str] = set()
             for node in cls.body:
                 if isinstance(node, ast.FunctionDef) and node.name == '__init__':
+                    # Examine function signature to detect parameters with default values
+                    # These should not be marked as required, regardless of Optional hint
+                    args = node.args
+                    # Count how many args have defaults
+                    num_defaults = len(args.defaults)
+                    # Match defaults to the last N positional args (skip 'self')
+                    positional_args = args.args[1:]  # Skip 'self'
+                    if num_defaults > 0:
+                        # The last N args have defaults
+                        args_with_defaults = positional_args[-num_defaults:]
+                        for arg_node in args_with_defaults:
+                            params_with_defaults.add(arg_node.arg)
+
+                    # Also check kwonly args which have defaults in kw_defaults
+                    if args.kw_defaults:
+                        for i, kwarg in enumerate(args.kw_defaults):
+                            if kwarg is not None:  # Has a default value
+                                params_with_defaults.add(args.kwonlyargs[i].arg)
+
                     for stmt in node.body:
                         if (
                             isinstance(stmt, ast.AnnAssign)
@@ -641,7 +662,10 @@ def collect_model_components(models_root: pathlib.Path) -> tuple[Dict[str, Dict[
                     schema.update(new_schema)
 
                 props[attr] = schema
-                if not nullable:
+                # Only mark as required if:
+                # 1. Not nullable (no Optional or None in type hint), AND
+                # 2. No default value in __init__ signature
+                if not nullable and attr not in params_with_defaults:
                     required.append(attr)
 
             # Check if class inherits from Dict[K, V] for additionalProperties schema
