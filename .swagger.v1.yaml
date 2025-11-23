@@ -3478,12 +3478,59 @@ paths:
         - X-TACOBOT-TOKEN: []
   /api/v1/pulltabs/{guild_id}/purchase/{username}:
     post:
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: Discord guild (server) ID
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: username
+          description: Username of the user to purchase pull tab tickets for
+          schema:
+            type: string
+      requestBody:
+        description: Pull tab ticket purchase payload
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PullTabTicketPurchasePayload'
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
       responses:
         '200':
-          description: OK
+          description: Pull tab tickets purchased successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PullTabTicketPurchaseResult'
+        '400':
+          description: Invalid input parameters or insufficient funds.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Purchase pull tab tickets for a user in a guild.
+      tags:
+        - pulltabs
+        - tickets
+      summary: Purchase pull tab tickets for a user.
 components:
   schemas:
     ErrorStatusCodePayload:
@@ -4762,6 +4809,59 @@ components:
         - ticket
         - user_id
       description: A pull-tab ticket entry.
+      x-tacobot-managed: true
+    PullTabTicketPurchasePayload:
+      type: object
+      properties:
+        multiplier:
+          type: integer
+          nullable: true
+          description: The multiplier for the pull tab tickets.
+          default: 1
+        quantity:
+          type: integer
+          nullable: true
+          description: The quantity of pull tab tickets to purchase.
+          default: 1
+      description: Payload for purchasing pull tab tickets.
+      x-tacobot-managed: true
+    PullTabTicketPurchaseResult:
+      type: object
+      properties:
+        total_cost:
+          type: integer
+          description: The total cost of the purchased tickets.
+          default: 0
+        tickets:
+          type: array
+          items:
+            $ref: '#/components/schemas/PullTabTicketEntry'
+          description: List of purchased pull tab tickets.
+          default: []
+        remaining_balance:
+          type: integer
+          description: The remaining balance after purchase.
+          default: 0
+        success:
+          type: boolean
+          description: Indicates if the purchase was successful.
+          default: false
+        user_id:
+          type: integer
+          description: ID of the user who made the purchase.
+          default: 0
+        guild_id:
+          type: integer
+          description: ID of the guild where the purchase was made.
+          default: 0
+      required:
+        - guild_id
+        - remaining_balance
+        - success
+        - tickets
+        - total_cost
+        - user_id
+      description: Result of a pull-tab ticket purchase.
       x-tacobot-managed: true
   securitySchemes:
     X-AUTH-TOKEN:

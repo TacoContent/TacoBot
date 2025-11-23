@@ -123,6 +123,57 @@ class PullTabsApiHandler(ApiHttpHandler):
             return self._create_error_response(500, f"Internal server error: {str(e)}", headers)
 
 
+    @openapi.description("Purchase pull tab tickets for a user in a guild.")
+    @openapi.summary("Purchase pull tab tickets for a user.")
+    @openapi.tags("pulltabs", "tickets")
+    @openapi.requestBody(
+        description="Pull tab ticket purchase payload",
+        required=True,
+        contentType="application/json",
+        schema=PullTabTicketPurchasePayload,
+    )
+    @openapi.response(
+        200,
+        methods=[HTTPMethod.POST],
+        description="Pull tab tickets purchased successfully.",
+        contentType="application/json",
+        summary="Pull tab tickets purchased successfully.",
+        schema=PullTabTicketPurchaseResult,
+    )
+    @openapi.response(
+        400,
+        methods=[HTTPMethod.POST],
+        description="Invalid input parameters or insufficient funds.",
+        contentType="application/json",
+        summary="Invalid input parameters or insufficient funds.",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        404,
+        methods=[HTTPMethod.POST],
+        description="User not found.",
+        contentType="application/json",
+        summary="The specified user does not exist.",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        '5XX',
+        methods=[HTTPMethod.POST],
+        description="Internal server error.",
+        contentType="application/json",
+        summary="An unexpected error occurred on the server.",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.pathParameter(
+        name="guild_id", description="Discord guild (server) ID", methods=[HTTPMethod.POST], schema=str
+    )
+    @openapi.pathParameter(
+        name="username",
+        description="Username of the user to purchase pull tab tickets for",
+        methods=[HTTPMethod.POST],
+        schema=str,
+    )
+    @openapi.managed()
     @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
     @uri_variable_mapping(f"/api/{API_VERSION}/pulltabs/{{guild_id}}/purchase/{{username}}", method=HTTPMethod.POST)
     async def purchase_pulltab_tickets(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
