@@ -3428,10 +3428,7 @@ paths:
       summary: Get Minecraft player statistics (Placeholder)
   /api/v1/pulltabs/{guild_id}/unclaimed/{username}:
     get:
-      tags:
-        - pulltabs
-        - tickets
-      description: Get pending winning pull tab tickets for a user in a guild.
+      summary: Get pending winning pull tab tickets for a user.
       parameters:
         - in: path
           required: true
@@ -3445,6 +3442,9 @@ paths:
           description: Username of the user to get pull tab tickets for
           schema:
             type: string
+      tags:
+        - pulltabs
+        - tickets
       responses:
         '200':
           description: A list of pull tab tickets for the user.
@@ -3456,6 +3456,12 @@ paths:
                   $ref: '#/components/schemas/PullTabTicketEntry'
         '400':
           description: Invalid guild ID or username.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: 'Unauthorized: Invalid or missing authentication token.'
           content:
             application/json:
               schema:
@@ -3472,12 +3478,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
-      summary: Get pending winning pull tab tickets for a user.
+      description: Get pending winning pull tab tickets for a user in a guild.
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
   /api/v1/pulltabs/{guild_id}/purchase/{username}:
     post:
+      summary: Purchase pull tab tickets for a user.
+      requestBody:
+        description: Pull tab ticket purchase payload
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PullTabTicketPurchasePayload'
       parameters:
         - in: path
           required: true
@@ -3491,16 +3505,9 @@ paths:
           description: Username of the user to purchase pull tab tickets for
           schema:
             type: string
-      requestBody:
-        description: Pull tab ticket purchase payload
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PullTabTicketPurchasePayload'
-      security:
-        - X-AUTH-TOKEN: []
-        - X-TACOBOT-TOKEN: []
+      tags:
+        - pulltabs
+        - tickets
       responses:
         '200':
           description: Pull tab tickets purchased successfully.
@@ -3510,6 +3517,12 @@ paths:
                 $ref: '#/components/schemas/PullTabTicketPurchaseResult'
         '400':
           description: Invalid input parameters or insufficient funds.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: 'Unauthorized: Invalid or missing authentication token.'
           content:
             application/json:
               schema:
@@ -3527,10 +3540,129 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
       description: Purchase pull tab tickets for a user in a guild.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /api/v1/pulltabs/{guild_id}/redeem/{username}/{ticket_code}:
+    post:
+      summary: Redeem a pull tab ticket for a user.
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: Discord guild (server) ID
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: username
+          description: Username/User ID of the user to redeem the pull tab ticket for
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: ticket_code
+          description: The code of the pull tab ticket to redeem
+          schema:
+            type: string
       tags:
         - pulltabs
         - tickets
-      summary: Purchase pull tab tickets for a user.
+      responses:
+        '200':
+          description: Pull tab ticket redeemed successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PullTabRedeemedTicket'
+        '400':
+          description: Invalid input parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: 'Unauthorized: Invalid or missing authentication token.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User or ticket not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Redeem a pull tab ticket for a user in a guild.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /api/v1/pulltabs/{guild_id}/status/{username}/{ticket_code}:
+    get:
+      summary: Get the status of a pull tab ticket for a user.
+      parameters:
+        - in: path
+          required: true
+          name: guild_id
+          description: Discord guild (server) ID
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: username
+          description: Username/User ID of the user to get the pull tab ticket status for
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: ticket_code
+          description: The code of the pull tab ticket to get the status for
+          schema:
+            type: string
+      tags:
+        - pulltabs
+        - tickets
+      description: Get the status of a pull tab ticket for a user in a guild.
+      responses:
+        '200':
+          description: Pull tab ticket status retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PullTabTicketStatus'
+        '400':
+          description: Invalid input parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: 'Unauthorized: Invalid or missing authentication token.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User or ticket not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
 components:
   schemas:
     ErrorStatusCodePayload:
@@ -4862,6 +4994,48 @@ components:
         - total_cost
         - user_id
       description: Result of a pull-tab ticket purchase.
+      x-tacobot-managed: true
+    PullTabRedeemedTicket:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Indicates if the ticket redemption was successful.
+          default: false
+        reward:
+          type: integer
+          description: The reward amount from the redeemed ticket.
+          default: 0
+        message:
+          type: string
+          description: A message related to the ticket redemption.
+          default: ''
+        ticket:
+          $ref: '#/components/schemas/PullTabTicketEntry'
+          description: The details of the redeemed pull-tab ticket.
+      required:
+        - message
+        - reward
+        - success
+      description: Result of a redeemed pull-tab ticket.
+      x-tacobot-managed: true
+    PullTabTicketStatus:
+      type: object
+      properties:
+        is_redeemed:
+          type: boolean
+          description: Indicates if the ticket has been redeemed.
+        is_winner:
+          type: boolean
+          description: Indicates if the ticket is a winning ticket.
+        ticket:
+          $ref: '#/components/schemas/PullTabTicketEntry'
+          description: The pull tab ticket entry details.
+      required:
+        - is_redeemed
+        - is_winner
+        - ticket
+      description: Represents the status of a pull tab ticket.
       x-tacobot-managed: true
   securitySchemes:
     X-AUTH-TOKEN:

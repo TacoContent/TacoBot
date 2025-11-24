@@ -3,11 +3,12 @@ import random
 import typing
 from collections import Counter
 
-from lib.models.PullTabTicketEntry import PullTabTicketEntry
 
 
 from bot.lib import utils
 from bot.lib.helpers import Numbers, IdentityHelper
+from bot.lib.models.PullTabRedeemedTicket import PullTabRedeemedTicket
+from bot.lib.models.PullTabTicketEntry import PullTabTicketEntry
 from bot.lib.mongodb.pulltabs import PullTabTicketsDatabase
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
@@ -197,7 +198,7 @@ class PullTabHelper:
 
         return is_winner, total_reward, winning_lines
 
-    def redeem_ticket(self, guild_id: int, user_id: int, code: str) -> typing.Tuple[bool, int, str]:
+    def redeem_ticket(self, guild_id: int, user_id: int, code: str) -> PullTabRedeemedTicket:
         """Redeem a pulltab ticket.
         Returns a tuple of (success: bool, reward: int, message: str)
         """
@@ -205,25 +206,44 @@ class PullTabHelper:
 
         ticket = self.pulltabs_db.get_ticket(guild_id, user_id, code)
         if not ticket:
-            return False, 0, self.settings.get_string(guild_id, "pulltab_redeem_invalid_code")
+            return PullTabRedeemedTicket(
+                success=False,
+                reward=0,
+                message=self.settings.get_string(guild_id, "pulltab_redeem_invalid_code"),
+                ticket=None,
+            )
 
         if ticket.redeemed_at is not None:
-            return False, 0, self.settings.get_string(guild_id, "pulltab_redeem_already_redeemed", code=code)
+            return PullTabRedeemedTicket(
+                success=False,
+                reward=0,
+                message=self.settings.get_string(guild_id, "pulltab_redeem_already_redeemed", code=code),
+                ticket=ticket,
+            )
 
         # Mark the ticket as redeemed even if there is no reward
-        self.pulltabs_db.update_ticket(guild_id, user_id, code, {"redeemed_at": int(utils.get_timestamp())})
+        redeemed_at = int(utils.get_timestamp())
+        updated_ticket = self.pulltabs_db.update_ticket(guild_id, user_id, code, {"redeemed_at": redeemed_at})
+        if updated_ticket:
+            ticket = updated_ticket
 
         if ticket.reward is None or ticket.reward <= 0:
-            return True, 0, self.settings.get_string(guild_id, "pulltab_redeem_success_no_reward", code=code)
+            return PullTabRedeemedTicket(
+                success=True,
+                reward=0,
+                message=self.settings.get_string(guild_id, "pulltab_redeem_success_no_reward", code=code),
+                ticket=ticket,
+            )
 
         taco_word = "taco" if ticket.reward == 1 else "tacos"
 
-        return (
-            True,
-            ticket.reward,
-            self.settings.get_string(
+        return PullTabRedeemedTicket(
+            success=True,
+            reward=ticket.reward,
+            message=self.settings.get_string(
                 guild_id, "pulltab_redeem_success_with_reward", code=code, reward=ticket.reward, taco_word=taco_word
             ),
+            ticket=ticket,
         )
 
     def _save_ticket(

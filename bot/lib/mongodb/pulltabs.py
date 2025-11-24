@@ -38,7 +38,9 @@ class PullTabTicketsDatabase(Database):
             self.log(0, LogLevel.ERROR, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
             return
 
-    def update_ticket(self, guild_id: int, user_id: int, code: str, updates: dict) -> None:
+    def update_ticket(
+        self, guild_id: int, user_id: int, code: str, updates: dict
+    ) -> typing.Optional[PullTabTicketEntry]:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
@@ -47,14 +49,17 @@ class PullTabTicketsDatabase(Database):
             # guard: if updates is empty, don't call update_one
             if not updates:
                 self.log(0, LogLevel.WARNING, f"{self._module}.{self._class}.{_method}", "No updates provided")
-                return
+                return None
 
-            self.connection.pulltab_tickets.update_one(  # type: ignore
+            result = self.connection.pulltab_tickets.update_one(  # type: ignore
                 {"code": code, "user_id": str(user_id), "guild_id": str(guild_id)}, {"$set": updates}
             )
+            if result.modified_count > 0:
+                return self.get_ticket(guild_id, user_id, code)
+            return None
         except Exception as e:
             self.log(0, LogLevel.ERROR, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
-            return
+            return None
 
     def get_ticket(self, guild_id: int, user_id: int, code: str) -> typing.Optional[PullTabTicketEntry]:
         _method = inspect.stack()[0][3]

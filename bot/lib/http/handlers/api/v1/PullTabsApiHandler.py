@@ -5,12 +5,15 @@ import os
 import traceback
 import typing
 
-from bot.lib.helpers import Numbers
+from lib.models.PullTabTicketStatus import PullTabTicketStatus
 
+from bot.lib.enums.tacotypes import TacoTypes
+from bot.lib.helpers import Numbers
 from bot.lib.helpers import EntityHelper, IdentityHelper, PullTabHelper, TacoHelper
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.ApiHttpHandler import ApiHttpHandler
 from bot.lib.models import openapi
+from bot.lib.models import PullTabRedeemedTicket
 from bot.lib.models.PullTabTicketPurchasePayload import PullTabTicketPurchasePayload
 from bot.lib.models.PullTabTicketPurchaseResult import PullTabTicketPurchaseResult
 from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
@@ -64,6 +67,14 @@ class PullTabsApiHandler(ApiHttpHandler):
         schema=ErrorStatusCodePayload,
     )
     @openapi.response(
+        401,
+        methods=[HTTPMethod.GET],
+        description="Unauthorized: Invalid or missing authentication token.",
+        contentType="application/json",
+        summary="Authentication failed.",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
         404,
         methods=[HTTPMethod.GET],
         description="User not found.",
@@ -101,6 +112,12 @@ class PullTabsApiHandler(ApiHttpHandler):
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
         try:
+
+            if not self.validate_auth_token(request):
+                return self._create_error_response(
+                    401, "Unauthorized: Invalid or missing authentication token.", headers
+                )
+
             guild_id = int(uri_variables.get("guild_id", 0))
             if not guild_id or guild_id <= 0:
                 return self._create_error_response(400, "Invalid guild ID.", headers)
@@ -149,6 +166,14 @@ class PullTabsApiHandler(ApiHttpHandler):
         schema=ErrorStatusCodePayload,
     )
     @openapi.response(
+        401,
+        methods=[HTTPMethod.POST],
+        description="Unauthorized: Invalid or missing authentication token.",
+        contentType="application/json",
+        summary="Authentication failed.",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
         404,
         methods=[HTTPMethod.POST],
         description="User not found.",
@@ -182,6 +207,10 @@ class PullTabsApiHandler(ApiHttpHandler):
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
         try:
+            if not self.validate_auth_token(request):
+                return self._create_error_response(
+                    401, "Unauthorized: Invalid or missing authentication token.", headers
+                )
             guild_id = int(uri_variables.get("guild_id", 0))
             if not guild_id or guild_id <= 0:
                 return self._create_error_response(400, "Invalid guild ID.", headers)
@@ -236,24 +265,217 @@ class PullTabsApiHandler(ApiHttpHandler):
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return self._create_error_response(500, f"Internal server error: {str(e)}", headers)
 
-    def redeem_pulltab_ticket(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+    @openapi.description("Redeem a pull tab ticket for a user in a guild.")
+    @openapi.summary("Redeem a pull tab ticket for a user.")
+    @openapi.tags("pulltabs", "tickets")
+    @openapi.response(
+        200,
+        methods=[HTTPMethod.POST],
+        description="Pull tab ticket redeemed successfully.",
+        contentType="application/json",
+        summary="Pull tab ticket redeemed successfully.",
+        schema=PullTabRedeemedTicket,
+    )
+    @openapi.response(
+        400,
+        methods=[HTTPMethod.POST],
+        description="Invalid input parameters.",
+        contentType="application/json",
+        summary="Invalid input parameters.",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        401,
+        methods=[HTTPMethod.POST],
+        description="Unauthorized: Invalid or missing authentication token.",
+        contentType="application/json",
+        summary="Authentication failed.",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        404,
+        methods=[HTTPMethod.POST],
+        description="User or ticket not found.",
+        contentType="application/json",
+        summary="The specified user or ticket does not exist.",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        '5XX',
+        methods=[HTTPMethod.POST],
+        description="Internal server error.",
+        contentType="application/json",
+        summary="An unexpected error occurred on the server.",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.pathParameter(
+        name="guild_id", description="Discord guild (server) ID", methods=[HTTPMethod.POST], schema=str
+    )
+    @openapi.pathParameter(
+        name="username",
+        description="Username/User ID of the user to redeem the pull tab ticket for",
+        methods=[HTTPMethod.POST],
+        schema=str,
+    )
+    @openapi.pathParameter(
+        name="ticket_code",
+        description="The code of the pull tab ticket to redeem",
+        methods=[HTTPMethod.POST],
+        schema=str,
+    )
+    @openapi.managed()
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @uri_variable_mapping(f"/api/{API_VERSION}/pulltabs/{{guild_id}}/redeem/{{username}}/{{ticket_code}}", method=HTTPMethod.POST)
+    async def redeem_pulltab_ticket(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Redeem pull tab ticket endpoint (not implemented)."""
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
         try:
-            return self._create_error_response(501, "Not implemented.", headers)
+            if not self.validate_auth_token(request):
+                return self._create_error_response(
+                    401, "Unauthorized: Invalid or missing authentication token.", headers
+                )
+
+            if not self.bot or not self.bot.user:
+                return self._create_error_response(501, "Bot is not initialized.", headers)
+
+            guild_id = int(uri_variables.get("guild_id", 0))
+            if not guild_id or guild_id <= 0:
+                return self._create_error_response(400, "Invalid guild ID.", headers)
+
+            username = uri_variables.get("username")
+            if not username:
+                return self._create_error_response(400, "Username is required.", headers)
+
+            user_id = self.entity_helper.get_member_id(username=username)
+            if not user_id:
+                return self._create_error_response(404, "User not found.", headers)
+
+            user = await self.entity_helper.get_or_fetch_user(userId=user_id)
+            if not user:
+                return self._create_error_response(404, "User not found.", headers)
+
+            ticket_code = uri_variables.get("ticket_code")
+            if not ticket_code:
+                return self._create_error_response(400, "Ticket code is required.", headers)
+
+            redeemed_ticket = self.pulltab_helper.redeem_ticket(guild_id=guild_id, user_id=user_id, code=ticket_code)
+
+            if redeemed_ticket.success and redeemed_ticket.reward > 0:
+                await self.taco_helper.give_tacos(
+                    guildId=guild_id,
+                    fromUser=self.bot.user,
+                    toUser=user,
+                    taco_amount=redeemed_ticket.reward,
+                    give_type=TacoTypes.PULLTAB_REDEEM,
+                    reason=self.settings.get_string(guild_id, "pulltab_give_tacos_message"),
+                )
+            return HttpResponse(200, headers, json.dumps(redeemed_ticket.to_dict(), indent=4).encode("utf-8"))
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return self._create_error_response(500, f"Internal server error: {str(e)}", headers)
 
-    def get_ticket_status(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+    @openapi.description("Get the status of a pull tab ticket for a user in a guild.")
+    @openapi.summary("Get the status of a pull tab ticket for a user.")
+    @openapi.tags("pulltabs", "tickets")
+    @openapi.response(
+        200,
+        methods=[HTTPMethod.GET],
+        description="Pull tab ticket status retrieved successfully.",
+        contentType="application/json",
+        summary="Pull tab ticket status retrieved successfully.",
+        schema=PullTabTicketStatus,
+    )
+    @openapi.response(
+        400,
+        methods=[HTTPMethod.GET],
+        description="Invalid input parameters.",
+        contentType="application/json",
+        summary="Invalid input parameters.",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        401,
+        methods=[HTTPMethod.GET],
+        description="Unauthorized: Invalid or missing authentication token.",
+        contentType="application/json",
+        summary="Authentication failed.",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        404,
+        methods=[HTTPMethod.GET],
+        description="User or ticket not found.",
+        contentType="application/json",
+        summary="The specified user or ticket does not exist.",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        '5XX',
+        methods=[HTTPMethod.GET],
+        description="Internal server error.",
+        contentType="application/json",
+        summary="An unexpected error occurred on the server.",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.pathParameter(
+        name="guild_id", description="Discord guild (server) ID", methods=[HTTPMethod.GET], schema=str
+    )
+    @openapi.pathParameter(
+        name="username",
+        description="Username/User ID of the user to get the pull tab ticket status for",
+        methods=[HTTPMethod.GET],
+        schema=str,
+    )
+    @openapi.pathParameter(
+        name="ticket_code",
+        description="The code of the pull tab ticket to get the status for",
+        methods=[HTTPMethod.GET],
+        schema=str,
+    )
+    @openapi.managed()
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @uri_variable_mapping(
+        f"/api/{API_VERSION}/pulltabs/{{guild_id}}/status/{{username}}/{{ticket_code}}", method=HTTPMethod.GET
+    )
+    async def get_ticket_status(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Get pull tab ticket status endpoint (not implemented)."""
         _method = inspect.stack()[0][3]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
         try:
-            return self._create_error_response(501, "Not implemented.", headers)
+            if not self.validate_auth_token(request):
+                return self._create_error_response(
+                    401, "Unauthorized: Invalid or missing authentication token.", headers
+                )
+
+            if not self.bot or not self.bot.user:
+                return self._create_error_response(501, "Bot is not initialized.", headers)
+
+            guild_id = int(uri_variables.get("guild_id", 0))
+            if not guild_id or guild_id <= 0:
+                return self._create_error_response(400, "Invalid guild ID.", headers)
+
+            username = uri_variables.get("username")
+            if not username:
+                return self._create_error_response(400, "Username is required.", headers)
+
+            user_id = self.entity_helper.get_member_id(username=username)
+            if not user_id:
+                return self._create_error_response(404, "User not found.", headers)
+
+            ticket_code = uri_variables.get("ticket_code")
+            if not ticket_code:
+                return self._create_error_response(400, "Ticket code is required.", headers)
+
+            ticket = self.pulltabs_db.get_ticket(guild_id=guild_id, user_id=user_id, code=ticket_code)
+            if not ticket:
+                return self._create_error_response(404, "Ticket not found.", headers)
+
+            ticket_status = PullTabTicketStatus.from_ticket(ticket)
+
+            return HttpResponse(200, headers, json.dumps(ticket_status.to_dict(), indent=4).encode("utf-8"))
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return self._create_error_response(500, f"Internal server error: {str(e)}", headers)

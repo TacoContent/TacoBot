@@ -398,19 +398,19 @@ class PullTabCog(TacobotCog):
                 self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", "Could not fetch user")
                 return
 
-            success, reward, message = self.pulltab_helper.redeem_ticket(guild_id=guild_id, user_id=user_id, code=code)
-            if success and reward > 0:
+            redeemed_ticket = self.pulltab_helper.redeem_ticket(guild_id=guild_id, user_id=user_id, code=code)
+            if redeemed_ticket.success and redeemed_ticket.reward > 0:
                 await self.taco_helper.give_tacos(
                     guildId=guild_id,
                     fromUser=from_user,
                     toUser=to_user,
-                    taco_amount=reward,
+                    taco_amount=redeemed_ticket.reward,
                     give_type=TacoTypes.PULLTAB_REDEEM,
                     reason=self.settings.get_string(guild_id, "pulltab_give_tacos_message"),
                 )
-                await self._send_message(ctx, message=message, ephemeral=True, followup=True)
+                await self._send_message(ctx, message=redeemed_ticket.message, ephemeral=True, followup=True)
             else:
-                await self._send_message(ctx, message=message, ephemeral=True, followup=True)
+                await self._send_message(ctx, message=redeemed_ticket.message, ephemeral=True, followup=True)
         except Exception as e:
             await self.message_helper.notify_of_error(ctx)
             self.log.error(
