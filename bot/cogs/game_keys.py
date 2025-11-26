@@ -528,15 +528,6 @@ class GameKeysCog(TacobotCog):
         except Exception as e:
             self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
-    # async def _wait_or_new_offer(self, ctx):
-    #     try:
-    #         await asyncio.wait_for(self.eternity(), timeout=1.0)
-    #     except asyncio.TimeoutError:
-    #         await self._create_offer(ctx)
-    # async def eternity(self):
-    #     # Sleep for 2 days
-    #     await asyncio.sleep((60 * 60 * 24) * 2)
-
     async def _close_offer(self, ctx) -> None:
         _method = inspect.stack()[0][3]
         # get the current offer and close it

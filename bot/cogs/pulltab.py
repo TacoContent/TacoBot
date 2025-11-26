@@ -10,6 +10,7 @@ from bot.lib.enums.permissions import TacoPermissions
 from bot.lib.enums.tacotypes import TacoTypes
 from bot.lib.helpers import EntityHelper, IdentityHelper, MessageHelper, Numbers, PullTabHelper, TacoHelper
 from bot.lib.mongodb.pulltabs import PullTabTicketsDatabase
+from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.permissions import Permissions
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
@@ -32,6 +33,8 @@ class PullTabCog(TacobotCog):
         entity_helper: EntityHelper,
         pulltab_helper: PullTabHelper,
         pulltabs_db: PullTabTicketsDatabase,
+        tracking_db: TrackingDatabase,
+
     ):
         super().__init__(bot, "pulltab", settings)
         _method = inspect.stack()[0][3]
@@ -45,6 +48,7 @@ class PullTabCog(TacobotCog):
         self.taco_helper = taco_helper
         self.permissions = permissions
         self.pulltabs_db = pulltabs_db
+        self.tracking_db = tracking_db
         self.ticket_codes_cache = set()
         self.cog_settings = None
 
@@ -68,7 +72,7 @@ class PullTabCog(TacobotCog):
             self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "No pulltab settings found for guild")
             return
 
-        if not (
+        if (
             self.permissions.has_taco_permission(
                 guild_id, user, [TacoPermissions.PULLTAB_NO_PURCHASE, TacoPermissions.PULLTAB_NO_REDEEM]
             )
@@ -84,25 +88,79 @@ class PullTabCog(TacobotCog):
     async def purchase_command(self, ctx: commands.Context, *, count: int = 1, multiplier: int = 1):
         await self._process_pulltab_purchase(ctx, count=count, multiplier=multiplier)
 
+        self.tracking_db.track_command_usage(
+            guildId=ctx.guild.id if ctx.guild else 0,
+            channelId=ctx.channel.id if ctx.channel else None,
+            userId=ctx.author.id,
+            command="pulltab",
+            subcommand="purchase",
+            args=[{"type": "command"}, {"count": count, "multiplier": multiplier}],
+        )
+
     @group.command(name="purchase", description="Purchase a pulltab ticket for a chance to win tacos!")
     async def purchase_interaction(self, interaction: Interaction, *, count: int = 1, multiplier: int = 1):
         await self._process_pulltab_purchase(interaction, count=count, multiplier=multiplier)
+
+        self.tracking_db.track_command_usage(
+            guildId=interaction.guild.id if interaction.guild else 0,
+            channelId=interaction.channel_id if interaction.channel_id else None,
+            userId=interaction.user.id,
+            command="pulltab",
+            subcommand="purchase",
+            args=[{"type": "slash_command"}, {"count": count, "multiplier": multiplier}],
+        )
 
     @pulltab.command(name="info", aliases=["i"], description="Get information about pulltab payouts and probabilities")
     async def info_command(self, ctx: commands.Context, *, multiplier: int = 1):
         await self._process_pulltab_info(ctx, multiplier=multiplier)
 
+        self.tracking_db.track_command_usage(
+            guildId=ctx.guild.id if ctx.guild else 0,
+            channelId=ctx.channel.id if ctx.channel else None,
+            userId=ctx.author.id,
+            command="pulltab",
+            subcommand="info",
+            args=[{"type": "command"}, {"multiplier": multiplier}],
+        )
+
     @group.command(name="info", description="Get information about pulltab payouts and probabilities")
     async def info_interaction(self, interaction: Interaction, multiplier: int = 1):
         await self._process_pulltab_info(interaction, multiplier=multiplier)
+
+        self.tracking_db.track_command_usage(
+            guildId=interaction.guild.id if interaction.guild else 0,
+            channelId=interaction.channel_id if interaction.channel_id else None,
+            userId=interaction.user.id,
+            command="pulltab",
+            subcommand="info",
+            args=[{"type": "slash_command"}, {"multiplier": multiplier}],
+        )
 
     @pulltab.command(name="redeem", aliases=["r"], description="Redeem pulltab ticket")
     async def redeem_command(self, ctx: commands.Context, *, code: str) -> None:
         await self._process_pulltab_redeem(ctx, code=code)
 
+        self.tracking_db.track_command_usage(
+            guildId=ctx.guild.id if ctx.guild else 0,
+            channelId=ctx.channel.id if ctx.channel else None,
+            userId=ctx.author.id,
+            command="pulltab",
+            subcommand="redeem",
+            args=[{"type": "command"}, {"code": code}],
+        )
+
     @group.command(name="redeem", description="Redeem pulltab ticket")
     async def redeem_interaction(self, interaction: Interaction, *, code: str) -> None:
         await self._process_pulltab_redeem(interaction, code=code)
+
+        self.tracking_db.track_command_usage(
+            guildId=interaction.guild.id if interaction.guild else 0,
+            channelId=interaction.channel_id if interaction.channel_id else None,
+            userId=interaction.user.id,
+            command="pulltab",
+            subcommand="redeem",
+            args=[{"type": "slash_command"}, {"code": code}],
+        )
 
     def _build_payout_message(self, cog_settings: typing.Dict[str, typing.Any], multiplier: int = 1) -> str:
         probabilities: typing.List[typing.Dict[str, typing.Any]] = cog_settings.get("probabilities", [])
@@ -269,6 +327,19 @@ class PullTabCog(TacobotCog):
                 )
                 return
 
+            if (
+                self.permissions.has_taco_permission(
+                    guild_id, user, TacoPermissions.PULLTAB_NO_PURCHASE
+                )
+            ):
+                # stop processing if the user does not have permission
+                await self._send_message(
+                    ctx,
+                    self.settings.get_string(guild_id, "pulltab_purchase_no_permission", user=user.mention),
+                    ephemeral=True,
+                )
+                return
+
             purchase_settings = cog_settings.get("purchase", {})
             cost = purchase_settings.get("cost", 10)
             max_purchase = purchase_settings.get("max", 5)
@@ -398,6 +469,19 @@ class PullTabCog(TacobotCog):
                 self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", "Could not fetch user")
                 return
 
+            if (
+                self.permissions.has_taco_permission(
+                    guild_id, to_user, TacoPermissions.PULLTAB_NO_REDEEM
+                )
+            ):
+                # stop processing if the user does not have permission
+                await self._send_message(
+                    ctx,
+                    self.settings.get_string(guild_id, "pulltab_redeem_no_permission", user=to_user.mention),
+                    ephemeral=True,
+                )
+                return
+
             redeemed_ticket = self.pulltab_helper.redeem_ticket(guild_id=guild_id, user_id=user_id, code=code)
             if redeemed_ticket.success and redeemed_ticket.reward > 0:
                 await self.taco_helper.give_tacos(
@@ -457,6 +541,7 @@ async def setup(bot: TacoBot):
     message_helper = MessageHelper(bot, settings)
     identity_helper = IdentityHelper()
     pulltabs_db = PullTabTicketsDatabase()
+    tracking_db = TrackingDatabase()
     pulltab_helper = PullTabHelper(bot, identity_helper=identity_helper, pulltabs_db=pulltabs_db, settings=settings)
     entity_helper = EntityHelper(bot)
     permissions = Permissions(bot, settings)
@@ -472,5 +557,6 @@ async def setup(bot: TacoBot):
             pulltab_helper=pulltab_helper,
             taco_helper=taco_helper,
             pulltabs_db=pulltabs_db,
+            tracking_db=tracking_db,
         )
     )

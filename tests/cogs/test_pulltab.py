@@ -3,11 +3,12 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from bot.cogs.pulltab import PullTabCog
 from bot.lib.models.PullTabTicketEntry import PullTabTicketEntry
+from bot.lib.enums.permissions import TacoPermissions
 from discord import Interaction
 
 
 @pytest.fixture
-def cog(bot, settings, message_helper, permissions, identity_helper, pulltabs_db, taco_helper, entity_helper, pulltab_helper):
+def cog(bot, settings, message_helper, permissions, identity_helper, pulltabs_db, tracking_db, taco_helper, entity_helper, pulltab_helper):
     return PullTabCog(
         bot=bot,
         settings=settings,
@@ -17,6 +18,7 @@ def cog(bot, settings, message_helper, permissions, identity_helper, pulltabs_db
         taco_helper=taco_helper,
         entity_helper=entity_helper,
         pulltabs_db=pulltabs_db,
+        tracking_db=tracking_db,
         pulltab_helper=pulltab_helper,
     )
 
@@ -403,24 +405,24 @@ def test_redeem_ticket_updates_redeemed_at_and_returns_reward(cog, pulltab_helpe
     )
 
     pulltabs_db.get_ticket = MagicMock(return_value=ticket)
-    pulltabs_db.update_ticket = MagicMock()
+    pulltabs_db.update_ticket = MagicMock(return_value=ticket)
     monkeypatch.setattr("bot.lib.utils.get_timestamp", lambda: 123456)
 
-    success, reward, message = pulltab_helper.redeem_ticket(1, 2, "CODE-RED")
+    result = pulltab_helper.redeem_ticket(1, 2, "CODE-RED")
 
-    assert success is True
-    assert reward == 250
+    assert result.success is True
+    assert result.reward == 250
     pulltabs_db.update_ticket.assert_called_once_with(1, 2, "CODE-RED", {"redeemed_at": 123456})
 
 
 def test_redeem_ticket_already_redeemed_returns_false(cog, pulltab_helper, pulltabs_db):
     ticket = PullTabTicketEntry(guild_id=5, user_id=6, code="CODE-ALR", ticket=["🌮🍎🍎"], redeemed_at=555, reward=100)
     pulltabs_db.get_ticket = MagicMock(return_value=ticket)
-    pulltabs_db.update_ticket = MagicMock()
+    pulltabs_db.update_ticket = MagicMock(return_value=ticket)
 
-    success, reward, message = pulltab_helper.redeem_ticket(guild_id=5, user_id=6, code="CODE-ALR")
-    assert success is False
-    assert reward == 0
+    result = pulltab_helper.redeem_ticket(guild_id=5, user_id=6, code="CODE-ALR")
+    assert result.success is False
+    assert result.reward == 0
     # update_ticket should not be called for already redeemed
     assert pulltabs_db.update_ticket.call_count == 0
 
@@ -429,10 +431,10 @@ def test_redeem_ticket_invalid_code_returns_false(cog, pulltab_helper, pulltabs_
     pulltabs_db.get_ticket = MagicMock(return_value=None)
     pulltabs_db.update_ticket = MagicMock()
 
-    success, reward, message = pulltab_helper.redeem_ticket(guild_id=7, user_id=8, code="NO-CODE")
+    result = pulltab_helper.redeem_ticket(guild_id=7, user_id=8, code="NO-CODE")
 
-    assert success is False
-    assert reward == 0
+    assert result.success is False
+    assert result.reward == 0
     assert pulltabs_db.update_ticket.call_count == 0
 
 
@@ -659,7 +661,7 @@ async def test_process_pulltab_redeem_success_with_reward(cog):
     )
 
     cog.pulltabs_db.get_ticket = MagicMock(return_value=ticket)
-    cog.pulltabs_db.update_ticket = MagicMock()
+    cog.pulltabs_db.update_ticket = MagicMock(return_value=ticket)
     cog.taco_helper.give_tacos = AsyncMock()
 
     from discord.ext import commands
@@ -687,7 +689,7 @@ async def test_process_pulltab_redeem_success_no_reward(cog):
     )
 
     cog.pulltabs_db.get_ticket = MagicMock(return_value=ticket)
-    cog.pulltabs_db.update_ticket = MagicMock()
+    cog.pulltabs_db.update_ticket = MagicMock(return_value=ticket)
     cog.taco_helper.give_tacos = AsyncMock()
 
     from discord.ext import commands
@@ -766,7 +768,7 @@ async def test_process_pulltab_redeem_with_interaction(cog):
     )
 
     cog.pulltabs_db.get_ticket = MagicMock(return_value=ticket)
-    cog.pulltabs_db.update_ticket = MagicMock()
+    cog.pulltabs_db.update_ticket = MagicMock(return_value=ticket)
     cog.taco_helper.give_tacos = AsyncMock()
 
     ctx = MagicMock(spec=Interaction)
@@ -914,13 +916,13 @@ def test_redeem_ticket_marks_redeemed_even_with_no_reward(cog, pulltab_helper, p
     )
 
     pulltabs_db.get_ticket = MagicMock(return_value=ticket)
-    pulltabs_db.update_ticket = MagicMock()
+    pulltabs_db.update_ticket = MagicMock(return_value=ticket)
     monkeypatch.setattr("bot.lib.utils.get_timestamp", lambda: 99999)
 
-    success, reward, message = pulltab_helper.redeem_ticket(10, 20, "NO-REWARD")
+    result = pulltab_helper.redeem_ticket(10, 20, "NO-REWARD")
 
-    assert success is True
-    assert reward == 0
+    assert result.success is True
+    assert result.reward == 0
     pulltabs_db.update_ticket.assert_called_once_with(10, 20, "NO-REWARD", {"redeemed_at": 99999})
 
 
@@ -1143,6 +1145,219 @@ async def test_process_pulltab_purchase_exception_handling(cog):
     await cog._process_pulltab_purchase(ctx, count=1, multiplier=1)
 
     cog.message_helper.notify_of_error.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_process_pulltab_purchase_no_permission(cog):
+    cog.entity_helper.get_or_fetch_user = AsyncMock(return_value=MagicMock(id=123, mention="<@123>"))
+    cog.taco_helper.get_taco_count = MagicMock(return_value=1000)
+
+    # Mock permission check to return True (user has the "NO_PURCHASE" permission, so they are blocked)
+    cog.permissions.has_taco_permission = MagicMock(return_value=True)
+    cog.settings.get_string = MagicMock(return_value="No permission")
+
+    cog_settings = {
+        "probabilities": [{"symbol": "🌮", "weight": 1, "rules": [{"match": "🌮", "reward": 100}]}],
+        "purchase": {"cost": 10, "max": 5},
+        "multiplier": {"base_increase": 0.5, "max": 100},
+        "ticket": {"rows": 1, "columns": 3},
+    }
+    cog.get_cog_settings = MagicMock(return_value=cog_settings)
+
+    from discord.ext import commands
+
+    ctx = MagicMock(spec=commands.Context)
+    ctx.guild = MagicMock()
+    ctx.guild.id = 1
+    ctx.author = MagicMock()
+    ctx.author.id = 123
+    ctx.send = AsyncMock()
+
+    await cog._process_pulltab_purchase(ctx, count=1, multiplier=1)
+
+    # Should verify permission was checked
+    fetched_user = cog.entity_helper.get_or_fetch_user.return_value
+    cog.permissions.has_taco_permission.assert_called_with(1, fetched_user, TacoPermissions.PULLTAB_NO_PURCHASE)
+    # Should send error message
+    ctx.send.assert_called_once()
+    assert "No permission" in ctx.send.call_args[0][0]
+    # Should NOT give tacos (charge user)
+    cog.taco_helper.give_tacos.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_process_pulltab_redeem_no_permission(cog):
+    cog.entity_helper.get_or_fetch_user = AsyncMock(return_value=MagicMock(id=123, mention="<@123>"))
+
+    # Mock permission check to return True (user has the "NO_REDEEM" permission, so they are blocked)
+    cog.permissions.has_taco_permission = MagicMock(return_value=True)
+    cog.settings.get_string = MagicMock(return_value="No permission")
+
+    from discord.ext import commands
+
+    ctx = MagicMock(spec=commands.Context)
+    ctx.guild = MagicMock()
+    ctx.guild.id = 1
+    ctx.author = MagicMock()
+    ctx.author.id = 123
+    ctx.send = AsyncMock()
+
+    await cog._process_pulltab_redeem(ctx, code="TEST-CODE")
+
+    # Should verify permission was checked
+    # Note: _process_pulltab_redeem fetches the user again, so we check against the fetched user mock
+    fetched_user = cog.entity_helper.get_or_fetch_user.return_value
+    cog.permissions.has_taco_permission.assert_called_with(1, fetched_user, TacoPermissions.PULLTAB_NO_REDEEM)
+
+    # Should send error message
+    ctx.send.assert_called_once()
+    assert "No permission" in ctx.send.call_args[0][0]
+    # Should NOT redeem ticket
+    cog.pulltabs_db.get_ticket.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_purchase_command_tracks_usage(cog):
+    cog._process_pulltab_purchase = AsyncMock()
+    cog.tracking_db.track_command_usage = MagicMock()
+
+    from discord.ext import commands
+
+    ctx = MagicMock(spec=commands.Context)
+    ctx.guild.id = 123
+    ctx.channel.id = 456
+    ctx.author.id = 789
+
+    await cog.purchase_command.callback(cog, ctx, count=2, multiplier=3)
+
+    cog._process_pulltab_purchase.assert_called_once_with(ctx, count=2, multiplier=3)
+    cog.tracking_db.track_command_usage.assert_called_once_with(
+        guildId=123,
+        channelId=456,
+        userId=789,
+        command="pulltab",
+        subcommand="purchase",
+        args=[{"type": "command"}, {"count": 2, "multiplier": 3}],
+    )
+
+
+@pytest.mark.asyncio
+async def test_purchase_interaction_tracks_usage(cog):
+    cog._process_pulltab_purchase = AsyncMock()
+    cog.tracking_db.track_command_usage = MagicMock()
+
+    interaction = MagicMock(spec=Interaction)
+    interaction.guild.id = 123
+    interaction.channel_id = 456
+    interaction.user.id = 789
+
+    await cog.purchase_interaction.callback(cog, interaction, count=2, multiplier=3)
+
+    cog._process_pulltab_purchase.assert_called_once_with(interaction, count=2, multiplier=3)
+    cog.tracking_db.track_command_usage.assert_called_once_with(
+        guildId=123,
+        channelId=456,
+        userId=789,
+        command="pulltab",
+        subcommand="purchase",
+        args=[{"type": "slash_command"}, {"count": 2, "multiplier": 3}],
+    )
+
+
+@pytest.mark.asyncio
+async def test_info_command_tracks_usage(cog):
+    cog._process_pulltab_info = AsyncMock()
+    cog.tracking_db.track_command_usage = MagicMock()
+
+    from discord.ext import commands
+
+    ctx = MagicMock(spec=commands.Context)
+    ctx.guild.id = 123
+    ctx.channel.id = 456
+    ctx.author.id = 789
+
+    await cog.info_command.callback(cog, ctx, multiplier=5)
+
+    cog._process_pulltab_info.assert_called_once_with(ctx, multiplier=5)
+    cog.tracking_db.track_command_usage.assert_called_once_with(
+        guildId=123,
+        channelId=456,
+        userId=789,
+        command="pulltab",
+        subcommand="info",
+        args=[{"type": "command"}, {"multiplier": 5}],
+    )
+
+
+@pytest.mark.asyncio
+async def test_info_interaction_tracks_usage(cog):
+    cog._process_pulltab_info = AsyncMock()
+    cog.tracking_db.track_command_usage = MagicMock()
+
+    interaction = MagicMock(spec=Interaction)
+    interaction.guild.id = 123
+    interaction.channel_id = 456
+    interaction.user.id = 789
+
+    await cog.info_interaction.callback(cog, interaction, multiplier=5)
+
+    cog._process_pulltab_info.assert_called_once_with(interaction, multiplier=5)
+    cog.tracking_db.track_command_usage.assert_called_once_with(
+        guildId=123,
+        channelId=456,
+        userId=789,
+        command="pulltab",
+        subcommand="info",
+        args=[{"type": "slash_command"}, {"multiplier": 5}],
+    )
+
+
+@pytest.mark.asyncio
+async def test_redeem_command_tracks_usage(cog):
+    cog._process_pulltab_redeem = AsyncMock()
+    cog.tracking_db.track_command_usage = MagicMock()
+
+    from discord.ext import commands
+
+    ctx = MagicMock(spec=commands.Context)
+    ctx.guild.id = 123
+    ctx.channel.id = 456
+    ctx.author.id = 789
+
+    await cog.redeem_command.callback(cog, ctx, code="ABC")
+
+    cog._process_pulltab_redeem.assert_called_once_with(ctx, code="ABC")
+    cog.tracking_db.track_command_usage.assert_called_once_with(
+        guildId=123,
+        channelId=456,
+        userId=789,
+        command="pulltab",
+        subcommand="redeem",
+        args=[{"type": "command"}, {"code": "ABC"}],
+    )
+
+
+@pytest.mark.asyncio
+async def test_redeem_interaction_tracks_usage(cog):
+    cog._process_pulltab_redeem = AsyncMock()
+    cog.tracking_db.track_command_usage = MagicMock()
+
+    interaction = MagicMock(spec=Interaction)
+    interaction.guild.id = 123
+    interaction.channel_id = 456
+    interaction.user.id = 789
+
+    await cog.redeem_interaction.callback(cog, interaction, code="ABC")
+
+    cog._process_pulltab_redeem.assert_called_once_with(interaction, code="ABC")
+    cog.tracking_db.track_command_usage.assert_called_once_with(
+        guildId=123,
+        channelId=456,
+        userId=789,
+        command="pulltab",
+        subcommand="redeem",
+        args=[{"type": "slash_command"}, {"code": "ABC"}],
+    )
 
 
 # Test for setup function

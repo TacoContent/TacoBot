@@ -119,6 +119,10 @@
   "game_key_claim_log_message": "{{user}} claimed '{{game}}' game key for {{tacos}} {{tacos_word}} 🌮",
   "game_key_unclaimed_log_message": "{{game}} was unclaimed in the 24 hour period. A new offer will be made.",
   "game_key_no_keys_found_message": "I was unable to find any game keys to start a new offer. Please try again later.",
+  "game_key_existing_open_offer_found_message": "An existing open offer was found for guild {guild_id} in channel {channel_name}. Ignoring request to create a new offer.",
+  "game_key_no_compatible_channel_message": "No reward compatible channel found for guild {guild_id}. Must be a text channel.",
+  "game_key_no_compatible_log_channel_message": "No log compatible channel found for guild {guild_id}. Must be a text channel.",
+  "game_key_negative_cost_exception_message": "Configuration Error: Cost is set to 0 or less for guild {guild_id}. Please correct the configuration.",
   "game_key_no_game_data_message": "I was unable to locate the key based on the offer",
   "game_key_already_redeemed_message": "{{user}}, This offer has already been claimed, but there will be a new game available soon. No tacos have been removed.",
   "game_key_claim_message": "Your game key for **{{game}}** is `{{game_key}}`\n\nThis key is for {{platform}}.\n\nThank you for being an active part of the TACO Community. Please remember that this key is not to be used for a giveaway.{{help_link}}{{download_link}}",
@@ -173,5 +177,7 @@
   "pulltab_purchase_not_enough_tacos": "{{user}}, You need {{total_cost}} {{taco_word}} 🌮 to purchase {{ticket_count}} {{ticket_word}}. You only have {{user_taco_count}} {{user_taco_word}} 🌮.",
   "pulltab_give_tacos_message": "a winning pulltab ticket",
   "pulltab_purchase_tacos_message": "purchasing {{ticket_count}} {{ticket_word}} with multiplier {{multiplier}}",
-  "pulltab_purchase_message": "Purchased {{ticket_count}} {{ticket_word}} with multiplier {{multiplier}} for {{total_cost}} {{taco_word}} 🌮. One moment while I process your tickets. Good Luck! 🍀"
+  "pulltab_purchase_message": "Purchased {{ticket_count}} {{ticket_word}} with multiplier {{multiplier}} for {{total_cost}} {{taco_word}} 🌮. One moment while I process your tickets. Good Luck! 🍀",
+  "pulltab_purchase_no_permission": "{{user}}, You do not have permission to purchase pulltab tickets.",
+  "pulltab_redeem_no_permission": "{{user}}, You do not have permission to redeem pulltab tickets."
 }
