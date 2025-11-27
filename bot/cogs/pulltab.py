@@ -533,7 +533,9 @@ class PullTabCog(TacobotCog):
         self, ctx: typing.Union[commands.Context, Interaction], *, code: str, multiplier: int = 1
     ) -> discord.ui.View:
         """Create a Discord button for redeeming a pulltab ticket."""
-        return PullTabTicketRedeemView(ctx=ctx, code=code, multiplier=multiplier, settings=self.settings, cog=self)
+        return PullTabTicketRedeemView(
+            ctx=ctx, code=code, multiplier=multiplier, settings=self.settings, cog=self, timeout=300
+        )
 
 
 async def setup(bot: TacoBot):

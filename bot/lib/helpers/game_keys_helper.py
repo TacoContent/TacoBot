@@ -3,6 +3,7 @@
 import asyncio
 import datetime
 import inspect
+import typing
 
 from bot.lib.exceptions import (
     IncompatibleChannelException,
@@ -10,20 +11,97 @@ from bot.lib.exceptions import (
     NoGameKeysFoundException,
     ExistingOpenGameKeyOfferFoundException
 )
+from bot.lib.helpers import EntityHelper, MessageHelper
+from bot.lib.mongodb.gamekeys import GameKeysDatabase
 from bot.lib.settings import Settings
+from bot.lib.steam.steamapi import SteamApiClient
 from bot.tacobot import TacoBot
+from bot.ui.GameRewardView import GameRewardView
 import discord
 
 
 class GameKeysHelper:
-    def __init__(self, bot: TacoBot, settings: Settings):
+    def __init__(
+        self,
+        bot: TacoBot,
+        settings: Settings,
+        gamekeys_db: GameKeysDatabase,
+        entity_helper: EntityHelper,
+        message_helper: MessageHelper,
+        steam_api: SteamApiClient
+    ) -> None:
         self._module = self.__module__
         self._class = self.__class__.__name__
         self.bot = bot
         self.settings = settings
+        self.gamekeys_db = gamekeys_db
+        self.entity_helper = entity_helper
+        self.message_helper = message_helper
+        self.steam_api = steam_api
+        self.SETTINGS_SECTION = "game_keys"
 
     async def close_offer(self, ctx) -> None:
-        pass
+        _method = inspect.stack()[0][3]
+        # get the current offer and close it
+        try:
+            guild_id = 0
+            if ctx.guild:
+                guild_id = ctx.guild.id
+
+            cog_settings = self.get_cog_settings(guild_id)
+            if not cog_settings.get("enabled", False):
+                # self.log.debug(
+                #     guild_id, f"{self._module}.{self._class}.{_method}", f"game_keys is disabled for guild {guild_id}"
+                # )
+                return
+
+            reward_channel_id = cog_settings.get("reward_channel_id", "0")
+            reward_channel: typing.Optional[typing.Union[discord.TextChannel, discord.DMChannel, discord.Thread]] = (
+                await self.entity_helper.get_or_fetch_channel(int(reward_channel_id))
+            )
+
+            if not reward_channel or not isinstance(reward_channel, discord.TextChannel):
+                # self.log.warn(
+                #     guild_id, f"{self._module}.{self._class}.{_method}", f"No reward channel found for guild {guild_id}"
+                # )
+                raise IncompatibleChannelException(
+                    self.settings.get_string(
+                        guild_id,
+                        "game_key_no_compatible_channel_message",
+                        guild_id=guild_id,
+                    )
+                )
+
+            offer = self.gamekeys_db.find_open_game_key_offer(guild_id, reward_channel.id)
+            if offer:
+                try:
+                    offer_message = await reward_channel.fetch_message(int(offer["message_id"]))
+                    if offer_message:
+                        try:
+                            await offer_message.delete()
+                        except Exception:
+                            pass
+                except discord.NotFound:
+                    # self.log.debug(
+                    #     guild_id,
+                    #     f"{self._module}.{self._class}.{_method}",
+                    #     f"Offer message not found for guild {guild_id}",
+                    # )
+                    pass
+
+                self.gamekeys_db.close_game_key_offer_by_message(guild_id, int(offer["message_id"]))
+                await self.bot.change_presence(activity=None)
+            else:
+                pass
+                # self.log.debug(
+                #     guild_id,
+                #     f"{self._module}.{self._class}.{_method}",
+                #     f"No open offer found for guild {guild_id} in channel {reward_channel.name}",
+                # )
+        except Exception as e:
+            raise e
+            # self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            # await self.messaging.notify_of_error(ctx)
 
     async def create_offer(self, ctx) -> None:
         _method = inspect.stack()[0][3]
@@ -41,9 +119,9 @@ class GameKeysHelper:
 
             cog_settings = self.get_cog_settings(guild_id)
             if not cog_settings.get("enabled", False):
-                self.log.debug(
-                    guild_id, f"{self._module}.{self._class}.{_method}", f"game_keys is disabled for guild {guild_id}"
-                )
+                # self.log.debug(
+                #     guild_id, f"{self._module}.{self._class}.{_method}", f"game_keys is disabled for guild {guild_id}"
+                # )
                 return
 
             reward_channel_id = cog_settings.get("reward_channel_id", "0")
@@ -130,24 +208,24 @@ class GameKeysHelper:
                             steam_info = f"\n\n{description}"
                             image_url = data.get("header_image", "")
                             # thumbnail = data.get("capsule_imagev5", "")
-                        else:
-                            self.log.warn(
-                                guild_id,
-                                f"{self._module}.{self._class}.{_method}",
-                                f"Steam api call failed for App Id {app_id}",
-                            )
-                    else:
-                        self.log.warn(
-                            guild_id,
-                            f"{self._module}.{self._class}.{_method}",
-                            f"Steam App Details for App Id {app_id} not found",
-                        )
-                else:
-                    self.log.warn(
-                        guild_id,
-                        f"{self._module}.{self._class}.{_method}",
-                        f"Steam App Id not found in info_url: {info_url}",
-                    )
+                        # else:
+                        #     self.log.warn(
+                        #         guild_id,
+                        #         f"{self._module}.{self._class}.{_method}",
+                        #         f"Steam api call failed for App Id {app_id}",
+                        #     )
+                    # else:
+                    #     self.log.warn(
+                    #         guild_id,
+                    #         f"{self._module}.{self._class}.{_method}",
+                    #         f"Steam App Details for App Id {app_id} not found",
+                    #     )
+                # else:
+                #     self.log.warn(
+                #         guild_id,
+                #         f"{self._module}.{self._class}.{_method}",
+                #         f"Steam App Id not found in info_url: {info_url}",
+                #     )
 
             offered_by = await self.entity_helper.get_or_fetch_user(int(game_data["offered_by"]))
             expires = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(days=1)
@@ -161,6 +239,7 @@ class GameKeysHelper:
                 {"name": self.settings.get_string(guild_id, "expires"), "value": f"<t:{int(expires.timestamp())}:R>"},
                 {"name": self.settings.get_string(guild_id, "link"), "value": info_url},
             ]
+
             timeout = 60 * 60 * 24
 
             claim_view = self._create_claim_view(
@@ -173,7 +252,7 @@ class GameKeysHelper:
                 # combine the role ids into a mention string that looks like <@&1234567890>
                 notify_message = " ".join([f"<@&{role_id}>" for role_id in notify_role_ids])
 
-            offer_message = await self.messaging.send_embed(
+            offer_message = await self.message_helper.send_embed(
                 channel=reward_channel,
                 title=self.settings.get_string(guild_id, "game_key_offer_title"),
                 message=self.settings.get_string(
@@ -193,5 +272,43 @@ class GameKeysHelper:
             # record offer
             self.gamekeys_db.open_game_key_offer(game_data["id"], guild_id, offer_message.id, ctx.channel.id)
         except Exception as e:
-            self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.messaging.notify_of_error(ctx)
+            raise e
+            # self.log.error(ctx.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            # await self.messaging.notify_of_error(ctx)
+
+    def _create_claim_view(self, ctx, game_data, cost, reset_cost, timeout, info_url):
+        return GameRewardView(
+            ctx,
+            game_id=str(game_data["id"]),
+            claim_callback=self._claim_offer_callback,
+            timeout_callback=self._claim_timeout_callback,
+            reset_callback=self._reset_offer_callback,
+            cost=cost,
+            reset_cost=reset_cost,
+            timeout=timeout,
+            external_link=info_url,
+        )
+
+    async def _claim_offer_callback(self, interaction: discord.Interaction) -> None:
+        pass  # Implementation of claim offer logic goes here
+
+    async def _claim_timeout_callback(self, interaction: discord.Interaction) -> None:
+        pass  # Implementation of claim timeout logic goes here
+
+    async def _reset_offer_callback(self, interaction: discord.Interaction) -> None:
+        pass  # Implementation of reset offer logic goes here
+
+    def get_cog_settings(self, guildId: int = 0) -> dict:
+        return self.get_settings(guildId=guildId, section=self.SETTINGS_SECTION)
+
+    def get_settings(self, guildId: int, section: str) -> dict:
+        if not section or section == "":
+            raise Exception("No section provided")
+        cog_settings = self.settings.get_settings(guildId, section)
+        if not cog_settings:
+            # check for global settings
+            cog_settings = self.settings.get_settings(0, section)
+        # if we still dont have settings, raise an error
+        if not cog_settings:
+            raise Exception(f"No '{section}' settings found for guild {guildId} or globally.")
+        return cog_settings
