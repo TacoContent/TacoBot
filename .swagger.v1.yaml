@@ -1508,23 +1508,13 @@ paths:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
   /api/v1/minecraft/uuid/{username}:
     get:
-      parameters:
-        - in: path
-          required: true
-          name: username
-          description: Mojang account name
-          schema:
-            type: string
-      tags:
-        - minecraft
-      summary: Mojang username to UUID lookup
       responses:
         '200':
           description: Minecraft user with UUID and name
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MinecraftUser'
+                $ref: '#/components/schemas/MojangMinecraftUser'
         '404':
           description: Username missing or user not found
           content:
@@ -1538,6 +1528,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
       description: Translate a Mojang / Minecraft username into a UUID.
+      tags:
+        - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: username
+          description: Mojang account name
+          schema:
+            type: string
+      summary: Mojang username to UUID lookup
   /api/v1/minecraft/status:
     get:
       responses:
@@ -3109,23 +3109,13 @@ paths:
       description: This endpoint redirects to a Node-RED flow.
   /tacobot/minecraft/uuid/{username}:
     get:
-      parameters:
-        - in: path
-          required: true
-          name: username
-          description: Mojang account name
-          schema:
-            type: string
-      tags:
-        - minecraft
-      summary: Mojang username to UUID lookup
       responses:
         '200':
           description: Minecraft user with UUID and name
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MinecraftUser'
+                $ref: '#/components/schemas/MojangMinecraftUser'
         '404':
           description: Username missing or user not found
           content:
@@ -3139,25 +3129,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
       description: Translate a Mojang / Minecraft username into a UUID.
+      tags:
+        - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: username
+          description: Mojang account name
+          schema:
+            type: string
+      summary: Mojang username to UUID lookup
   /taco/minecraft/uuid/{username}:
     get:
-      parameters:
-        - in: path
-          required: true
-          name: username
-          description: Mojang account name
-          schema:
-            type: string
-      tags:
-        - minecraft
-      summary: Mojang username to UUID lookup
       responses:
         '200':
           description: Minecraft user with UUID and name
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MinecraftUser'
+                $ref: '#/components/schemas/MojangMinecraftUser'
         '404':
           description: Username missing or user not found
           content:
@@ -3171,6 +3161,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
       description: Translate a Mojang / Minecraft username into a UUID.
+      tags:
+        - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: username
+          description: Mojang account name
+          schema:
+            type: string
+      summary: Mojang username to UUID lookup
   /tacobot/minecraft/player/{identifier}/stats:
     get:
       tags:
@@ -3904,20 +3904,6 @@ components:
       required:
         - event
       description: Minecraft player event
-      x-tacobot-managed: true
-    MinecraftUser:
-      type: object
-      properties:
-        uuid:
-          type: string
-          description: The unique identifier for the Minecraft user.
-        name:
-          type: string
-          description: The username of the Minecraft user.
-      required:
-        - name
-        - uuid
-      description: Represents a Minecraft user with a unique ID.
       x-tacobot-managed: true
     MinecraftOpUser:
       type: object
@@ -5036,6 +5022,67 @@ components:
         - is_winner
         - ticket
       description: Represents the status of a pull tab ticket.
+      x-tacobot-managed: true
+    MinecraftUserEntry:
+      type: object
+      properties:
+        guild_id:
+          type: integer
+          description: The ID of the guild.
+        user_id:
+          type: integer
+          description: The ID of the user.
+        username:
+          type: string
+          description: The username of the Minecraft user.
+        whitelist:
+          type: boolean
+          description: Whether the user is whitelisted.
+        uuid:
+          type: string
+          description: The UUID of the Minecraft user.
+        op:
+          $ref: '#/components/schemas/MinecraftUserOpData'
+          description: Operator status data for the Minecraft user.
+      required:
+        - guild_id
+        - user_id
+        - username
+        - uuid
+        - whitelist
+      description: Represents a Minecraft user entry in a guild.
+      x-tacobot-managed: true
+    MinecraftUserOpData:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          description: Whether the operator status is enabled.
+        level:
+          type: integer
+          description: The operator level, e.g., 4 for admin, 2 for operator.
+        bypassesPlayerLimit:
+          type: boolean
+          description: Whether the operator bypasses the player limit.
+      required:
+        - bypassesPlayerLimit
+        - enabled
+        - level
+      description: Operator status data for a Minecraft user.
+      x-tacobot-managed: true
+    MojangMinecraftUser:
+      type: object
+      properties:
+        uuid:
+          type: string
+          description: The unique identifier for the Minecraft user.
+        name:
+          type: string
+          description: The username of the Minecraft user.
+      required:
+        - name
+        - uuid
+      description: Represents a Minecraft user with a unique ID.
       x-tacobot-managed: true
   securitySchemes:
     X-AUTH-TOKEN:

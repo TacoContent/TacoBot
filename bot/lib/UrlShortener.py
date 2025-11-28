@@ -33,14 +33,11 @@ class UrlShortener:
         for key, value in kwargs.items():
             payload[key] = value
 
-        print(json.dumps(payload, indent=4))
-
+        # build JSON payload and POST to API; keep this method quiet for tests
         response = requests.post(
             f"{self.api_url}/api/shorten",
             data=json.dumps(payload),
             headers={"X-ACCESS-TOKEN": f"{self.access_token}", "Content-Type": "application/json"},
         )
-        print(response.text)
         r = response.json()
-        print(r)
         return r

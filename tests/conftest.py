@@ -77,6 +77,16 @@ def bot():
 
     return bot
 
+@pytest.fixture
+def whitelist_manager():
+    """Function-scoped mock whitelist manager."""
+    wm = MagicMock()
+    wm.get_minecraft_user = MagicMock()
+    wm.get_whitelist_status = MagicMock()
+    wm.get_minecraft_status = MagicMock()
+    wm.is_user_whitelisted = MagicMock()
+    wm.set_user_whitelist_status = MagicMock()
+    return wm
 
 @pytest.fixture
 def metrics_db():
@@ -233,6 +243,32 @@ def permissions():
 
 
 @pytest.fixture
+def url_shortener():
+    """Function-scoped UrlShortener instance with sane defaults for tests.
+
+    Using this fixture avoids repeating the same constructor arguments in tests
+    and makes it easy to swap test-wide defaults later if needed.
+    """
+    from bot.lib.UrlShortener import UrlShortener
+
+    return UrlShortener(access_token="test-token", api_url="https://example.test")
+
+
+@pytest.fixture
+def mock_requests_post(monkeypatch):
+    """Monkeypatch requests.post used by UrlShortener.shorten and return a MagicMock.
+
+    Tests can modify the returned mock's .return_value to simulate various
+    responses (text and json or side_effect on json()).
+    """
+    from unittest.mock import MagicMock
+
+    m = MagicMock()
+    monkeypatch.setattr("bot.lib.UrlShortener.requests.post", m)
+    return m
+
+
+@pytest.fixture
 def entity_helper():
     """Function-scoped mock entity helper."""
     h = MagicMock()
@@ -286,6 +322,7 @@ def message_helper():
     h.notify_bot_not_initialized = AsyncMock()
     h.send_embed = AsyncMock()
     h.notify_of_error = AsyncMock()
+    h.safe_delete_context_message = AsyncMock()
     return h
 
 

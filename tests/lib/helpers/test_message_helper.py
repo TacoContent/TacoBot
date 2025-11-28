@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import discord
 from bot.lib.helpers.message_helper import MessageHelper
 
 
@@ -65,3 +66,52 @@ class TestMessageHelperClean:
         mock_ctx.author.guild_permissions.administrator = True
         await message_helper.notify_bot_not_initialized(mock_ctx, subcommand="setup")
         mock_ctx.channel.send.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_safe_delete_context_message_success(self, message_helper, mock_ctx):
+        """Test successful message deletion."""
+        mock_ctx.message.delete = AsyncMock()
+
+        result = await message_helper.safe_delete_context_message(mock_ctx)
+
+        assert result is True
+        mock_ctx.message.delete.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_safe_delete_context_message_no_message(self, message_helper, mock_ctx):
+        """Test message deletion when message is None."""
+        mock_ctx.message = None
+
+        result = await message_helper.safe_delete_context_message(mock_ctx)
+
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_safe_delete_context_message_not_found(self, message_helper, mock_ctx):
+        """Test message deletion when message is already deleted."""
+        mock_ctx.message.delete = AsyncMock(side_effect=discord.NotFound(MagicMock(), "Message not found"))
+
+        result = await message_helper.safe_delete_context_message(mock_ctx)
+
+        assert result is False
+        mock_ctx.message.delete.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_safe_delete_context_message_forbidden(self, message_helper, mock_ctx):
+        """Test message deletion when bot lacks permissions."""
+        mock_ctx.message.delete = AsyncMock(side_effect=discord.Forbidden(MagicMock(), "Missing permissions"))
+
+        result = await message_helper.safe_delete_context_message(mock_ctx)
+
+        assert result is False
+        mock_ctx.message.delete.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_safe_delete_context_message_http_exception(self, message_helper, mock_ctx):
+        """Test message deletion when a Discord HTTP error occurs."""
+        mock_ctx.message.delete = AsyncMock(side_effect=discord.HTTPException(MagicMock(), "Server error"))
+
+        result = await message_helper.safe_delete_context_message(mock_ctx)
+
+        assert result is False
+        mock_ctx.message.delete.assert_called_once()

@@ -3,9 +3,11 @@ import os
 import traceback
 import typing
 
+
 from bot.lib.enums import loglevel
 from bot.lib.enums.minecraft_op import MinecraftOpLevel
-from bot.lib.models.minecraft.whitelist_user import MinecraftWhitelistUser
+# from bot.lib.models.minecraft.whitelist_user import MinecraftWhitelistUser
+from bot.lib.models.MinecraftUserEntry import MinecraftUserEntry
 from bot.lib.models.minecraft.world import MinecraftWorld
 from bot.lib.mongodb.database import Database
 
@@ -19,7 +21,7 @@ class MinecraftDatabase(Database):
         self.SETTINGS_SECTION = "minecraft"
         pass
 
-    def get_minecraft_user(self, guildId: int, userId: int) -> typing.Union[dict, None]:
+    def get_minecraft_user(self, guildId: int, userId: int) -> typing.Optional[MinecraftUserEntry]:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
@@ -93,7 +95,7 @@ class MinecraftDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
 
-    def get_whitelist(self, guildId: int, status: bool = True) -> typing.List[MinecraftWhitelistUser]:
+    def get_whitelist(self, guildId: int, status: bool = True) -> typing.List[MinecraftUserEntry]:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
@@ -101,7 +103,7 @@ class MinecraftDatabase(Database):
             results = self.connection.minecraft_users.find({"guild_id": str(guildId), "whitelist": status})  # type: ignore
             whitelist = []
             for result in results:
-                whitelist.append(MinecraftWhitelistUser(**result))
+                whitelist.append(MinecraftUserEntry(**result))
             return whitelist
         except Exception as ex:
             self.log(
@@ -113,7 +115,7 @@ class MinecraftDatabase(Database):
             )
             return []
 
-    def get_oplist(self, guildId: int, status: bool = True) -> typing.List[MinecraftWhitelistUser]:
+    def get_oplist(self, guildId: int, status: bool = True) -> typing.List[MinecraftUserEntry]:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
@@ -123,7 +125,7 @@ class MinecraftDatabase(Database):
             )
             whitelist = []
             for result in results:
-                whitelist.append(MinecraftWhitelistUser(**result))
+                whitelist.append(MinecraftUserEntry(**result))
             return whitelist
         except Exception as ex:
             self.log(

@@ -15,7 +15,7 @@ from bot.lib import logger, utils
 from bot.lib.enums import loglevel
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
-
+from discord.ext.commands import Context
 
 class MessageHelper:
     """Helper class for message manipulation and bot notification messages."""
@@ -351,3 +351,23 @@ class MessageHelper:
                 ),
                 delete_after=30,
             )
+
+
+    async def safe_delete_context_message(self, ctx: Context) -> bool:
+        """Safely attempt to delete the context message.
+
+        Args:
+            ctx: Discord command context
+
+        Returns:
+            True if deletion succeeded or message doesn't exist, False if deletion failed
+        """
+        if not ctx.message:
+            return True
+
+        try:
+            await ctx.message.delete()
+            return True
+        except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+            # Message already deleted, no permissions, or other Discord error
+            return False

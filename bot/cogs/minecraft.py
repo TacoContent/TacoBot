@@ -10,6 +10,7 @@ import discord
 import requests
 from bot.lib.discord.ext.commands.TacobotCog import TacobotCog
 from bot.lib.helpers import ContextHelper, EntityHelper, MessageHelper, PromptHelper
+from bot.lib.minecraft.whitelist import WhitelistManager
 from bot.lib.mongodb.minecraft import MinecraftDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
@@ -27,7 +28,8 @@ class MinecraftCog(TacobotCog):
     def __init__(
         self,
         bot: TacoBot,
-        minecraft_db: MinecraftDatabase,
+        whitelist_manager: WhitelistManager,
+        # minecraft_db: MinecraftDatabase,
         tracking_db: TrackingDatabase,
         message_helper: MessageHelper,
         entity_helper: EntityHelper,
@@ -50,7 +52,8 @@ class MinecraftCog(TacobotCog):
 
         self.message_helper = message_helper
         self.SELF_DESTRUCT_TIMEOUT = 30
-        self.minecraft_db = minecraft_db
+        # self.minecraft_db = minecraft_db
+        self.whitelist_manager = whitelist_manager
         self.tracking_db = tracking_db
 
         # API endpoints - configurable for testing
@@ -67,17 +70,17 @@ class MinecraftCog(TacobotCog):
         try:
             guild_id = member.guild.id
 
-            if not self._is_user_whitelisted(guild_id=guild_id, user_id=member.id):
+            if not self.whitelist_manager.is_user_whitelisted(guild_id=guild_id, user_id=member.id):
                 return
-            mc_user = self.minecraft_db.get_minecraft_user(guildId=guild_id, userId=member.id)
+            mc_user = self.whitelist_manager.get_minecraft_user(guild_id=guild_id, user_id=member.id)
             if not mc_user:
                 return
 
             self.log.debug(
                 member.guild.id, f"{self._module}.{self._class}.{_method}", f"Member {member.name} has left the server"
             )
-            self.minecraft_db.whitelist_minecraft_user(
-                guildId=guild_id, userId=member.id, username=mc_user['username'], uuid=mc_user['uuid'], whitelist=False
+            self.whitelist_manager.set_user_whitelist_status(
+                guild_id=guild_id, user_id=member.id, username=mc_user.username, uuid=mc_user.uuid, status=False
             )
 
         except Exception as e:
@@ -100,7 +103,7 @@ class MinecraftCog(TacobotCog):
         guild_id = 0
         try:
             if ctx.guild:
-                await self._safe_delete_context_message(ctx)
+                await self.message_helper.safe_delete_context_message(ctx)
                 guild_id = ctx.guild.id
 
             cog_settings = self.get_cog_settings(guild_id)
@@ -115,7 +118,7 @@ class MinecraftCog(TacobotCog):
             output_channel, AUTO_DELETE_TIMEOUT = await self._determine_output_channel(ctx, cog_settings)
             self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"output_channel: {output_channel}")
 
-            if not self._is_user_whitelisted(guild_id, ctx.author.id):
+            if not self.whitelist_manager.is_user_whitelisted(guild_id, ctx.author.id):
                 await self.message_helper.send_embed(
                     channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
@@ -124,7 +127,7 @@ class MinecraftCog(TacobotCog):
                 )
                 return
 
-            status = self._get_minecraft_status(guild_id)
+            status = self.whitelist_manager.get_minecraft_status(guild_id=guild_id, minecraft_api_base=self.minecraft_api_base)
 
             fields = self._build_status_fields(guild_id, status, cog_settings)
 
@@ -158,7 +161,7 @@ class MinecraftCog(TacobotCog):
         guild_id = 0
         try:
             if ctx.guild:
-                await self._safe_delete_context_message(ctx)
+                await self.message_helper.safe_delete_context_message(ctx)
                 guild_id = ctx.guild.id
 
             cog_settings = self.get_cog_settings(guild_id)
@@ -166,7 +169,7 @@ class MinecraftCog(TacobotCog):
             # get the output channel from settings:
             output_channel, AUTO_DELETE_TIMEOUT = await self._determine_output_channel(ctx, cog_settings)
 
-            if not self._is_user_whitelisted(guild_id=guild_id, user_id=ctx.author.id):
+            if not self.whitelist_manager.is_user_whitelisted(guild_id=guild_id, user_id=ctx.author.id):
                 await self.message_helper.send_embed(
                     channel=output_channel,
                     title=self.settings.get_string(guild_id, "minecraft_control_title"),
@@ -175,7 +178,7 @@ class MinecraftCog(TacobotCog):
                 )
                 return
 
-            status = self._get_minecraft_status(guild_id)
+            status = self.whitelist_manager.get_minecraft_status(guild_id=guild_id, minecraft_api_base=self.minecraft_api_base)
 
             if status['online']:
                 await self.message_helper.send_embed(
@@ -248,7 +251,7 @@ class MinecraftCog(TacobotCog):
         guild_id = 0
         try:
             if ctx.guild:
-                await self._safe_delete_context_message(ctx)
+                await self.message_helper.safe_delete_context_message(ctx)
                 guild_id = ctx.guild.id
 
             cog_settings = self.get_cog_settings(guild_id)
@@ -256,7 +259,7 @@ class MinecraftCog(TacobotCog):
             # get the output channel from settings:
             output_channel, AUTO_DELETE_TIMEOUT = await self._determine_output_channel(ctx, cog_settings)
 
-            status = self._get_minecraft_status(guild_id)
+            status = self.whitelist_manager.get_minecraft_status(guild_id=guild_id, minecraft_api_base=self.minecraft_api_base)
 
             if not status['online']:
                 await self.message_helper.send_embed(
@@ -326,10 +329,10 @@ class MinecraftCog(TacobotCog):
         guild_id = 0
         try:
             if ctx.guild:
-                await self._safe_delete_context_message(ctx)
+                await self.message_helper.safe_delete_context_message(ctx)
                 guild_id = ctx.guild.id
 
-            if self._is_user_whitelisted(guild_id=guild_id, user_id=ctx.author.id):
+            if self.whitelist_manager.is_user_whitelisted(guild_id=guild_id, user_id=ctx.author.id):
                 await self.message_helper.send_embed(
                     channel=ctx.channel,
                     title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
@@ -450,8 +453,8 @@ class MinecraftCog(TacobotCog):
                     # if correct, add to whitelist
                     # check if user is in the whitelist
                     # minecraft_user = self.minecraft_db.get_minecraft_user(ctx.author.id)
-                    self.minecraft_db.whitelist_minecraft_user(
-                        guildId=guild_id, userId=ctx.author.id, username=mc_username, uuid=mc_uuid, whitelist=True
+                    self.whitelist_manager.set_user_whitelist_status(
+                        guild_id=guild_id, user_id=ctx.author.id, username=mc_username, uuid=mc_uuid, status=True
                     )
                     await self.message_helper.send_embed(
                         channel=_ctx.channel,
@@ -483,8 +486,8 @@ class MinecraftCog(TacobotCog):
             # if correct, add to whitelist
             # check if user is in the whitelist
             # minecraft_user = self.minecraft_db.get_minecraft_user(ctx.author.id)
-            self.minecraft_db.whitelist_minecraft_user(
-                guildId=guild_id, userId=ctx.author.id, username=mc_username, uuid=mc_uuid, whitelist=True
+            self.whitelist_manager.set_user_whitelist_status(
+                guild_id=guild_id, user_id=ctx.author.id, username=mc_username, uuid=mc_uuid, status=True
             )
             await self.message_helper.send_embed(
                 channel=_ctx.channel,
@@ -606,24 +609,6 @@ class MinecraftCog(TacobotCog):
 
         return output_channel, AUTO_DELETE_TIMEOUT
 
-    async def _safe_delete_context_message(self, ctx: Context) -> bool:
-        """Safely attempt to delete the context message.
-
-        Args:
-            ctx: Discord command context
-
-        Returns:
-            True if deletion succeeded or message doesn't exist, False if deletion failed
-        """
-        if not ctx.message:
-            return True
-
-        try:
-            await ctx.message.delete()
-            return True
-        except (discord.NotFound, discord.Forbidden, discord.HTTPException):
-            # Message already deleted, no permissions, or other Discord error
-            return False
 
     def _build_status_fields(self, guild_id: int, status: dict, cog_settings: dict) -> list[dict]:
         """Build the status embed fields for the Minecraft server status display.
@@ -678,40 +663,10 @@ class MinecraftCog(TacobotCog):
 
         return fields
 
-    def _is_user_whitelisted(self, guild_id: int, user_id: int):
-        # check if user is in the whitelist
-        minecraft_user = self.minecraft_db.get_minecraft_user(guildId=guild_id, userId=user_id)
-        if not minecraft_user:
-            return False
-
-        # check if user is whitelisted
-        if not minecraft_user["whitelist"]:
-            return False
-
-        return True
-
-    def _get_minecraft_status(self, guild_id: int = 0) -> dict:
-        _method = inspect.stack()[0][3]
-        result = self._call_minecraft_status_api()
-        if result.status_code != 200:
-            # Need to notify of an error
-            self.log.warn(
-                guild_id,
-                f"{self._module}.{self._class}.{_method}",
-                f"Failed to get minecraft status ({result.status_code} - {result.text})",
-            )
-            raise Exception(f"Failed to get minecraft status ({result.status_code} - {result.text})")
-
-        data = result.json()
-        # get users uuid for minecraft username
-        if not data["success"]:
-            self.log.warn(guild_id, f"{self._module}.{self._class}.{_method}", "Failed to get minecraft status")
-        return data
-
-
 async def setup(bot):
     settings = Settings()
     minecraft_db = MinecraftDatabase()
+    whitelist_manager = WhitelistManager(minecraft_db=minecraft_db)
     tracking_db = TrackingDatabase()
     message_helper = MessageHelper(bot, settings)
     entity_helper = EntityHelper(bot)
@@ -721,7 +676,7 @@ async def setup(bot):
         MinecraftCog(
             bot=bot,
             settings=settings,
-            minecraft_db=minecraft_db,
+            whitelist_manager=whitelist_manager,
             tracking_db=tracking_db,
             message_helper=message_helper,
             entity_helper=entity_helper,

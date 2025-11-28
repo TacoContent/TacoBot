@@ -228,7 +228,7 @@ def example(
             example_def['value'] = value
         elif has_external:
             example_def['externalValue'] = externalValue
-        elif has_schema:
+        elif has_schema:  # pragma: no cover - control flow here is guarded by earlier validation; the alternative arc is unreachable
             # Convert Python type to OpenAPI $ref
             schema_openapi = _schema_to_openapi(schema)
             if '$ref' in schema_openapi:

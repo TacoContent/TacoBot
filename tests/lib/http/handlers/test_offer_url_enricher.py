@@ -65,12 +65,12 @@ def test_enrich_basic_url_no_shortener():
     assert result.launcher_url == ""
 
 
-def test_enrich_with_shortener():
+def test_enrich_with_shortener(mock_url_shortener):
     """Test URL enrichment with URL shortener."""
-    mock_shortener = Mock(spec=UrlShortener)
-    mock_shortener.shorten.return_value = {"url": "https://short.url/abc"}
+    # use the module fixture and override the return value for this case
+    mock_url_shortener.shorten.return_value = {"url": "https://short.url/abc"}
 
-    enricher = OfferUrlEnricher(url_shortener=mock_shortener)
+    enricher = OfferUrlEnricher(url_shortener=mock_url_shortener)
     test_url = "https://example.com/long/url/path"
 
     with patch('requests.get') as mock_get:
@@ -81,7 +81,7 @@ def test_enrich_with_shortener():
         result = enricher.enrich(test_url)
 
     assert result.shortened == "https://short.url/abc"
-    mock_shortener.shorten.assert_called_once_with(url=test_url)
+    mock_url_shortener.shorten.assert_called_once_with(url=test_url)
 
 
 # =======================
@@ -155,12 +155,12 @@ def test_redirect_resolution_request_exception_fallback():
 # =======================
 
 
-def test_microsoft_store_launcher_deep_link_success():
+def test_microsoft_store_launcher_deep_link_success(mock_url_shortener):
     """Test Microsoft Store launcher deep link generation with successful shortening."""
     ms_url = "https://apps.microsoft.com/detail/9p83lmp6gdpk"
     launcher_deep_link = "ms-windows-store://pdp?productid=9p83lmp6gdpk&mode=mini&hl=en-us&gl=US&referrer=storeforweb"
     shortened_launcher = "https://short.url/msstore"
-    mock_shortener = Mock(spec=UrlShortener)
+    mock_shortener = mock_url_shortener
 
     # Shorten both resolved and launcher URLs
     def shorten_side_effect(url):
@@ -179,11 +179,11 @@ def test_microsoft_store_launcher_deep_link_success():
     assert result.launcher_url == shortened_launcher
 
 
-def test_microsoft_store_launcher_deep_link_failure():
+def test_microsoft_store_launcher_deep_link_failure(mock_url_shortener):
     """Test Microsoft Store launcher deep link generation with failed shortening (launcher omitted)."""
     ms_url = "https://apps.microsoft.com/detail/9p83lmp6gdpk"
     launcher_deep_link = "ms-windows-store://pdp?productid=9p83lmp6gdpk&mode=mini&hl=en-us&gl=US&referrer=storeforweb"
-    mock_shortener = Mock(spec=UrlShortener)
+    mock_shortener = mock_url_shortener
 
     # Shortener returns original launcher URL (failure)
     def shorten_side_effect(url):
@@ -200,12 +200,12 @@ def test_microsoft_store_launcher_deep_link_failure():
     assert result.launcher_url == ""
 
 
-def test_steam_launcher_deep_link_success():
+def test_steam_launcher_deep_link_success(mock_url_shortener):
     """Test Steam launcher deep link generation with successful shortening."""
     steam_url = "https://store.steampowered.com/app/12345/GameName"
     launcher_deep_link = f"steam://openurl/{steam_url}"
     shortened_launcher = "https://short.url/steam"
-    mock_shortener = Mock(spec=UrlShortener)
+    mock_shortener = mock_url_shortener
 
     def shorten_side_effect(url):
         if url == launcher_deep_link:
@@ -223,11 +223,11 @@ def test_steam_launcher_deep_link_success():
     assert result.launcher_url == shortened_launcher
 
 
-def test_steam_launcher_deep_link_failure():
+def test_steam_launcher_deep_link_failure(mock_url_shortener):
     """Test Steam launcher deep link generation with failed shortening (launcher omitted)."""
     steam_url = "https://store.steampowered.com/app/12345/GameName"
     launcher_deep_link = f"steam://openurl/{steam_url}"
-    mock_shortener = Mock(spec=UrlShortener)
+    mock_shortener = mock_url_shortener
 
     def shorten_side_effect(url):
         return {"url": url}
@@ -243,12 +243,12 @@ def test_steam_launcher_deep_link_failure():
     assert result.launcher_url == ""
 
 
-def test_epic_games_launcher_deep_link_success():
+def test_epic_games_launcher_deep_link_success(mock_url_shortener):
     """Test Epic Games Launcher deep link generation with successful shortening."""
     epic_url = "https://store.epicgames.com/en-US/p/game-slug-here"
     launcher_deep_link = "com.epicgames.launcher://store/p/game-slug-here"
     shortened_launcher = "https://short.url/epic"
-    mock_shortener = Mock(spec=UrlShortener)
+    mock_shortener = mock_url_shortener
 
     def shorten_side_effect(url):
         if url == launcher_deep_link:
@@ -266,11 +266,11 @@ def test_epic_games_launcher_deep_link_success():
     assert result.launcher_url == shortened_launcher
 
 
-def test_epic_games_launcher_deep_link_failure():
+def test_epic_games_launcher_deep_link_failure(mock_url_shortener):
     """Test Epic Games Launcher deep link generation with failed shortening (launcher omitted)."""
     epic_url = "https://store.epicgames.com/en-US/p/game-slug-here"
     launcher_deep_link = "com.epicgames.launcher://store/p/game-slug-here"
-    mock_shortener = Mock(spec=UrlShortener)
+    mock_shortener = mock_url_shortener
 
     def shorten_side_effect(url):
         return {"url": url}

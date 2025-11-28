@@ -62,14 +62,14 @@ def context(guild, channel, user):
 
 
 @pytest.fixture
-def cog(bot, minecraft_db, tracking_db, message_helper, entity_helper, context_helper, prompt_helper, settings):
+def cog(bot, whitelist_manager, tracking_db, message_helper, entity_helper, context_helper, prompt_helper, settings):
     """Minecraft cog fixture using shared fixtures from conftest.py."""
     # Override settings to return mock strings for minecraft keys
     settings.get_string = MagicMock(side_effect=lambda guild_id, key, **kwargs: f"mock_{key}")
 
     c = MinecraftCog(
         bot=bot,
-        minecraft_db=minecraft_db,
+        whitelist_manager=whitelist_manager,
         tracking_db=tracking_db,
         message_helper=message_helper,
         entity_helper=entity_helper,
@@ -89,7 +89,7 @@ class TestMinecraftCogInit:
         self,
         cog,
         bot,
-        minecraft_db,
+        whitelist_manager,
         tracking_db,
         message_helper,
         entity_helper,
@@ -98,7 +98,7 @@ class TestMinecraftCogInit:
         settings,
     ):
         assert cog.bot == bot
-        assert cog.minecraft_db == minecraft_db
+        assert cog.whitelist_manager == whitelist_manager
         assert cog.tracking_db == tracking_db
         assert cog.message_helper == message_helper
         assert cog.entity_helper == entity_helper
@@ -110,12 +110,12 @@ class TestMinecraftCogInit:
         assert cog.SELF_DESTRUCT_TIMEOUT == 30
 
     def test_init_default_api_endpoints(
-        self, bot, minecraft_db, tracking_db, message_helper, entity_helper, context_helper, prompt_helper, settings
+        self, bot, whitelist_manager, tracking_db, message_helper, entity_helper, context_helper, prompt_helper, settings
     ):
         """Test that default API endpoints are set correctly."""
         c = MinecraftCog(
             bot=bot,
-            minecraft_db=minecraft_db,
+            whitelist_manager=whitelist_manager,
             tracking_db=tracking_db,
             message_helper=message_helper,
             entity_helper=entity_helper,
@@ -131,7 +131,7 @@ class TestMinecraftCogInit:
         assert c.avatar_api == MinecraftCog.DEFAULT_AVATAR_API
 
     def test_init_custom_api_endpoints(
-        self, bot, minecraft_db, tracking_db, message_helper, entity_helper, context_helper, prompt_helper, settings
+        self, bot, whitelist_manager, tracking_db, message_helper, entity_helper, context_helper, prompt_helper, settings
     ):
         """Test that custom API endpoints can be injected for testing."""
         custom_api = "http://test-api.local:8080"
@@ -140,7 +140,7 @@ class TestMinecraftCogInit:
 
         c = MinecraftCog(
             bot=bot,
-            minecraft_db=minecraft_db,
+            whitelist_manager=whitelist_manager,
             tracking_db=tracking_db,
             message_helper=message_helper,
             entity_helper=entity_helper,
@@ -172,7 +172,7 @@ class TestMinecraftCogHelperMethods:
         self,
         mock_get,
         bot,
-        minecraft_db,
+        whitelist_manager,
         tracking_db,
         message_helper,
         entity_helper,
@@ -186,7 +186,7 @@ class TestMinecraftCogHelperMethods:
 
         test_cog = MinecraftCog(
             bot=bot,
-            minecraft_db=minecraft_db,
+            whitelist_manager=whitelist_manager,
             tracking_db=tracking_db,
             message_helper=message_helper,
             entity_helper=entity_helper,
@@ -296,55 +296,6 @@ class TestMinecraftCogHelperMethods:
 
         assert output_channel == context.author
         assert timeout is None
-
-    @pytest.mark.asyncio
-    async def test_safe_delete_context_message_success(self, cog, context):
-        """Test successful message deletion."""
-        context.message.delete = AsyncMock()
-
-        result = await cog._safe_delete_context_message(context)
-
-        assert result is True
-        context.message.delete.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_safe_delete_context_message_no_message(self, cog, context):
-        """Test message deletion when message is None."""
-        context.message = None
-
-        result = await cog._safe_delete_context_message(context)
-
-        assert result is True
-
-    @pytest.mark.asyncio
-    async def test_safe_delete_context_message_not_found(self, cog, context):
-        """Test message deletion when message is already deleted."""
-        context.message.delete = AsyncMock(side_effect=discord.NotFound(MagicMock(), "Message not found"))
-
-        result = await cog._safe_delete_context_message(context)
-
-        assert result is False
-        context.message.delete.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_safe_delete_context_message_forbidden(self, cog, context):
-        """Test message deletion when bot lacks permissions."""
-        context.message.delete = AsyncMock(side_effect=discord.Forbidden(MagicMock(), "Missing permissions"))
-
-        result = await cog._safe_delete_context_message(context)
-
-        assert result is False
-        context.message.delete.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_safe_delete_context_message_http_exception(self, cog, context):
-        """Test message deletion when a Discord HTTP error occurs."""
-        context.message.delete = AsyncMock(side_effect=discord.HTTPException(MagicMock(), "Server error"))
-
-        result = await cog._safe_delete_context_message(context)
-
-        assert result is False
-        context.message.delete.assert_called_once()
 
     def test_build_status_fields_online_server(self, cog, settings):
         """Test building status fields for an online server."""
@@ -460,96 +411,50 @@ class TestMinecraftCogHelperMethods:
 
         assert result is None
 
-    def test_is_user_whitelisted_true(self, cog, minecraft_db):
-        minecraft_db.get_minecraft_user.return_value = {"whitelist": True, "username": "TestUser", "uuid": "test-uuid"}
-
-        result = cog._is_user_whitelisted(guild_id=12345, user_id=33333)
-
-        assert result is True
-        minecraft_db.get_minecraft_user.assert_called_once_with(guildId=12345, userId=33333)
-
-    def test_is_user_whitelisted_false_not_whitelisted(self, cog, minecraft_db):
-        minecraft_db.get_minecraft_user.return_value = {"whitelist": False, "username": "TestUser", "uuid": "test-uuid"}
-
-        result = cog._is_user_whitelisted(guild_id=12345, user_id=33333)
-
-        assert result is False
-
-    def test_is_user_whitelisted_false_no_user(self, cog, minecraft_db):
-        minecraft_db.get_minecraft_user.return_value = None
-
-        result = cog._is_user_whitelisted(guild_id=12345, user_id=33333)
-
-        assert result is False
-
-    @patch('bot.cogs.minecraft.requests.get')
-    def test_get_minecraft_status_success(self, mock_get, cog):
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "success": True,
-            "online": True,
-            "players": {"online": 5, "max": 20},
-            "version": "1.19.2",
-            "title": "Test Server",
-        }
-        mock_get.return_value = mock_response
-
-        result = cog._get_minecraft_status(guild_id=12345)
-
-        assert result["success"] is True
-        assert result["online"] is True
-        assert result["players"]["online"] == 5
-        mock_get.assert_called_once_with("http://andeddu.bit13.local:10070/tacobot/minecraft/status")
-
-    @patch('bot.cogs.minecraft.requests.get')
-    def test_get_minecraft_status_failure(self, mock_get, cog):
-        mock_response = MagicMock()
-        mock_response.status_code = 500
-        mock_response.text = "Internal Server Error"
-        mock_get.return_value = mock_response
-
-        with pytest.raises(Exception, match="Failed to get minecraft status"):
-            cog._get_minecraft_status(guild_id=12345)
-
-        cog.log.warn.assert_called_once()
-
 
 class TestMinecraftCogOnMemberRemove:
     """Tests for on_member_remove event listener."""
 
     @pytest.mark.asyncio
-    async def test_on_member_remove_whitelisted_user(self, cog, member, minecraft_db):
-        minecraft_db.get_minecraft_user.return_value = {"whitelist": True, "username": "TestUser", "uuid": "test-uuid"}
+    async def test_on_member_remove_whitelisted_user(self, cog, member, whitelist_manager):
+        whitelist_manager.is_user_whitelisted.return_value = True
+        mock_user = MagicMock()
+        mock_user.username = "TestUser"
+        mock_user.uuid = "test-uuid"
+        whitelist_manager.get_minecraft_user.return_value = mock_user
 
         await cog.on_member_remove(member)
 
-        # Called twice: once in _is_user_whitelisted, once to get user details
-        assert minecraft_db.get_minecraft_user.call_count == 2
-        minecraft_db.whitelist_minecraft_user.assert_called_once_with(
-            guildId=12345, userId=33333, username="TestUser", uuid="test-uuid", whitelist=False
+        whitelist_manager.is_user_whitelisted.assert_called_once_with(guild_id=12345, user_id=33333)
+        whitelist_manager.get_minecraft_user.assert_called_once_with(guild_id=12345, user_id=33333)
+        whitelist_manager.set_user_whitelist_status.assert_called_once_with(
+            guild_id=12345, user_id=33333, username="TestUser", uuid="test-uuid", status=False
         )
         cog.log.debug.assert_called()
 
     @pytest.mark.asyncio
-    async def test_on_member_remove_not_whitelisted(self, cog, member, minecraft_db):
-        minecraft_db.get_minecraft_user.return_value = {"whitelist": False, "username": "TestUser", "uuid": "test-uuid"}
+    async def test_on_member_remove_not_whitelisted(self, cog, member, whitelist_manager):
+        whitelist_manager.is_user_whitelisted.return_value = False
 
         await cog.on_member_remove(member)
 
-        minecraft_db.whitelist_minecraft_user.assert_not_called()
+        whitelist_manager.is_user_whitelisted.assert_called_once_with(guild_id=12345, user_id=33333)
+        whitelist_manager.set_user_whitelist_status.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_on_member_remove_no_mc_user(self, cog, member, minecraft_db):
-        minecraft_db.get_minecraft_user.return_value = None
+    async def test_on_member_remove_no_mc_user(self, cog, member, whitelist_manager):
+        whitelist_manager.is_user_whitelisted.return_value = True
+        whitelist_manager.get_minecraft_user.return_value = None
 
         await cog.on_member_remove(member)
 
-        minecraft_db.whitelist_minecraft_user.assert_not_called()
+        whitelist_manager.is_user_whitelisted.assert_called_once_with(guild_id=12345, user_id=33333)
+        whitelist_manager.get_minecraft_user.assert_called_once_with(guild_id=12345, user_id=33333)
+        whitelist_manager.set_user_whitelist_status.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_on_member_remove_exception(self, cog, member, minecraft_db):
-        minecraft_db.get_minecraft_user.side_effect = Exception("Database error")
+    async def test_on_member_remove_exception(self, cog, member, whitelist_manager):
+        whitelist_manager.is_user_whitelisted.side_effect = Exception("Database error")
 
         await cog.on_member_remove(member)
 
@@ -569,10 +474,10 @@ class TestMinecraftCogStatusCommand:
         cog.message_helper.send_embed.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_status_user_not_whitelisted(self, cog, context, entity_helper, minecraft_db):
+    async def test_status_user_not_whitelisted(self, cog, context, entity_helper, whitelist_manager):
         cog.get_cog_settings.return_value = {"enabled": True, "output_channel": 22222}
         entity_helper.get_or_fetch_channel.return_value = context.channel
-        minecraft_db.get_minecraft_user.return_value = None
+        whitelist_manager.is_user_whitelisted.return_value = False
 
         await cog.status(context)
 
@@ -582,8 +487,7 @@ class TestMinecraftCogStatusCommand:
         assert "title" in call_args[1]
 
     @pytest.mark.asyncio
-    @patch('bot.cogs.minecraft.requests.get')
-    async def test_status_success_server_online(self, mock_get, cog, context, entity_helper, minecraft_db, tracking_db):
+    async def test_status_success_server_online(self, cog, context, entity_helper, whitelist_manager, tracking_db):
         cog.get_cog_settings.return_value = {
             "enabled": True,
             "output_channel": 22222,
@@ -593,18 +497,15 @@ class TestMinecraftCogStatusCommand:
             "help": "Help text",
         }
         entity_helper.get_or_fetch_channel.return_value = context.channel
-        minecraft_db.get_minecraft_user.return_value = {"whitelist": True, "username": "TestUser", "uuid": "test-uuid"}
+        whitelist_manager.is_user_whitelisted.return_value = True
 
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
+        whitelist_manager.get_minecraft_status.return_value = {
             "success": True,
             "online": True,
             "players": {"online": 5, "max": 20},
             "version": "1.19.2",
             "title": "Test Server",
         }
-        mock_get.return_value = mock_response
 
         await cog.status(context)
 
@@ -614,8 +515,7 @@ class TestMinecraftCogStatusCommand:
         tracking_db.track_command_usage.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch('bot.cogs.minecraft.requests.get')
-    async def test_status_success_server_offline(self, mock_get, cog, context, entity_helper, minecraft_db):
+    async def test_status_success_server_offline(self, cog, context, entity_helper, whitelist_manager):
         cog.get_cog_settings.return_value = {
             "enabled": True,
             "output_channel": 22222,
@@ -625,18 +525,15 @@ class TestMinecraftCogStatusCommand:
             "help": "Help text",
         }
         entity_helper.get_or_fetch_channel.return_value = context.channel
-        minecraft_db.get_minecraft_user.return_value = {"whitelist": True, "username": "TestUser", "uuid": "test-uuid"}
+        whitelist_manager.is_user_whitelisted.return_value = True
 
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
+        whitelist_manager.get_minecraft_status.return_value = {
             "success": True,
             "online": False,
             "players": {"online": 0, "max": 20},
             "version": "1.19.2",
             "title": "Test Server",
         }
-        mock_get.return_value = mock_response
 
         await cog.status(context)
 
@@ -660,10 +557,10 @@ class TestMinecraftCogStartCommand:
     """Tests for minecraft start command."""
 
     @pytest.mark.asyncio
-    async def test_start_user_not_whitelisted(self, cog, context, entity_helper, minecraft_db):
+    async def test_start_user_not_whitelisted(self, cog, context, entity_helper, whitelist_manager):
         cog.get_cog_settings.return_value = {"enabled": True, "output_channel": 22222}
         entity_helper.get_or_fetch_channel.return_value = context.channel
-        minecraft_db.get_minecraft_user.return_value = None
+        whitelist_manager.is_user_whitelisted.return_value = False
 
         # Call the callback directly to bypass the decorator
         await cog.start_server.callback(cog, context)
@@ -673,16 +570,12 @@ class TestMinecraftCogStartCommand:
         assert "minecraft_control_no_start" in str(call_args)
 
     @pytest.mark.asyncio
-    @patch('bot.cogs.minecraft.requests.get')
-    async def test_start_server_already_running(self, mock_get, cog, context, entity_helper, minecraft_db):
+    async def test_start_server_already_running(self, cog, context, entity_helper, whitelist_manager):
         cog.get_cog_settings.return_value = {"enabled": True, "output_channel": 22222}
         entity_helper.get_or_fetch_channel.return_value = context.channel
-        minecraft_db.get_minecraft_user.return_value = {"whitelist": True, "username": "TestUser", "uuid": "test-uuid"}
+        whitelist_manager.is_user_whitelisted.return_value = True
 
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {"success": True, "online": True}
-        mock_get.return_value = mock_response
+        whitelist_manager.get_minecraft_status.return_value = {"success": True, "online": True}
 
         await cog.start_server.callback(cog, context)
 
@@ -692,18 +585,14 @@ class TestMinecraftCogStartCommand:
 
     @pytest.mark.asyncio
     @patch('bot.cogs.minecraft.requests.post')
-    @patch('bot.cogs.minecraft.requests.get')
     async def test_start_server_success(
-        self, mock_get, mock_post, cog, context, entity_helper, minecraft_db, tracking_db
+        self, mock_post, cog, context, entity_helper, whitelist_manager, tracking_db
     ):
         cog.get_cog_settings.return_value = {"enabled": True, "output_channel": 22222}
         entity_helper.get_or_fetch_channel.return_value = context.channel
-        minecraft_db.get_minecraft_user.return_value = {"whitelist": True, "username": "TestUser", "uuid": "test-uuid"}
+        whitelist_manager.is_user_whitelisted.return_value = True
 
-        mock_status_response = MagicMock()
-        mock_status_response.status_code = 200
-        mock_status_response.json.return_value = {"success": True, "online": False}
-        mock_get.return_value = mock_status_response
+        whitelist_manager.get_minecraft_status.return_value = {"success": True, "online": False}
 
         mock_start_response = MagicMock()
         mock_start_response.status_code = 200
@@ -720,16 +609,12 @@ class TestMinecraftCogStartCommand:
 
     @pytest.mark.asyncio
     @patch('bot.cogs.minecraft.requests.post')
-    @patch('bot.cogs.minecraft.requests.get')
-    async def test_start_server_http_error(self, mock_get, mock_post, cog, context, entity_helper, minecraft_db):
+    async def test_start_server_http_error(self, mock_post, cog, context, entity_helper, whitelist_manager):
         cog.get_cog_settings.return_value = {"enabled": True, "output_channel": 22222}
         entity_helper.get_or_fetch_channel.return_value = context.channel
-        minecraft_db.get_minecraft_user.return_value = {"whitelist": True, "username": "TestUser", "uuid": "test-uuid"}
+        whitelist_manager.is_user_whitelisted.return_value = True
 
-        mock_status_response = MagicMock()
-        mock_status_response.status_code = 200
-        mock_status_response.json.return_value = {"success": True, "online": False}
-        mock_get.return_value = mock_status_response
+        whitelist_manager.get_minecraft_status.return_value = {"success": True, "online": False}
 
         mock_start_response = MagicMock()
         mock_start_response.status_code = 500
@@ -743,16 +628,12 @@ class TestMinecraftCogStartCommand:
 
     @pytest.mark.asyncio
     @patch('bot.cogs.minecraft.requests.post')
-    @patch('bot.cogs.minecraft.requests.get')
-    async def test_start_server_api_error(self, mock_get, mock_post, cog, context, entity_helper, minecraft_db):
+    async def test_start_server_api_error(self, mock_post, cog, context, entity_helper, whitelist_manager):
         cog.get_cog_settings.return_value = {"enabled": True, "output_channel": 22222}
         entity_helper.get_or_fetch_channel.return_value = context.channel
-        minecraft_db.get_minecraft_user.return_value = {"whitelist": True, "username": "TestUser", "uuid": "test-uuid"}
+        whitelist_manager.is_user_whitelisted.return_value = True
 
-        mock_status_response = MagicMock()
-        mock_status_response.status_code = 200
-        mock_status_response.json.return_value = {"success": True, "online": False}
-        mock_get.return_value = mock_status_response
+        whitelist_manager.get_minecraft_status.return_value = {"success": True, "online": False}
 
         mock_start_response = MagicMock()
         mock_start_response.status_code = 200
@@ -770,15 +651,11 @@ class TestMinecraftCogStopCommand:
     """Tests for minecraft stop command."""
 
     @pytest.mark.asyncio
-    @patch('bot.cogs.minecraft.requests.get')
-    async def test_stop_server_already_stopped(self, mock_get, cog, context, entity_helper):
+    async def test_stop_server_already_stopped(self, cog, context, entity_helper, whitelist_manager):
         cog.get_cog_settings.return_value = {"enabled": True, "output_channel": 22222}
         entity_helper.get_or_fetch_channel.return_value = context.channel
 
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {"success": True, "online": False}
-        mock_get.return_value = mock_response
+        whitelist_manager.get_minecraft_status.return_value = {"success": True, "online": False}
 
         await cog.stop_server.callback(cog, context)
 
@@ -816,8 +693,8 @@ class TestMinecraftCogWhitelistCommand:
     """Tests for minecraft whitelist command."""
 
     @pytest.mark.asyncio
-    async def test_whitelist_already_whitelisted(self, cog, context, minecraft_db):
-        minecraft_db.get_minecraft_user.return_value = {"whitelist": True, "username": "TestUser", "uuid": "test-uuid"}
+    async def test_whitelist_already_whitelisted(self, cog, context, whitelist_manager):
+        whitelist_manager.is_user_whitelisted.return_value = True
 
         await cog.whitelist.callback(cog, context)
 
@@ -828,9 +705,10 @@ class TestMinecraftCogWhitelistCommand:
     @pytest.mark.asyncio
     @patch('bot.cogs.minecraft.requests.get')
     async def test_whitelist_success_with_dm(
-        self, mock_get, cog, context, minecraft_db, prompt_helper, context_helper, tracking_db
+        self, mock_get, cog, context, whitelist_manager, prompt_helper, context_helper, tracking_db
     ):
-        minecraft_db.get_minecraft_user.return_value = None
+        whitelist_manager.is_user_whitelisted.return_value = False
+        whitelist_manager.get_minecraft_user.return_value = None
         prompt_helper.ask_text.return_value = "TestMCUser"
 
         mock_new_context = MagicMock()
@@ -859,12 +737,13 @@ class TestMinecraftCogWhitelistCommand:
         mock_get.assert_called_once_with("https://playerdb.co/api/player/minecraft/testmcuser")
         prompt_helper.ask_yes_no.assert_called_once()
         # Verify whitelist was added (called twice - once in callback, once at end)
-        assert minecraft_db.whitelist_minecraft_user.call_count >= 1
+        assert whitelist_manager.set_user_whitelist_status.call_count >= 1
         tracking_db.track_command_usage.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_whitelist_user_cancels(self, cog, context, minecraft_db, prompt_helper, context_helper):
-        minecraft_db.get_minecraft_user.return_value = None
+    async def test_whitelist_user_cancels(self, cog, context, whitelist_manager, prompt_helper, context_helper):
+        whitelist_manager.is_user_whitelisted.return_value = False
+        whitelist_manager.get_minecraft_user.return_value = None
         prompt_helper.ask_text.return_value = "cancel"
 
         mock_new_context = MagicMock()
@@ -874,14 +753,15 @@ class TestMinecraftCogWhitelistCommand:
         await cog.whitelist.callback(cog, context)
 
         prompt_helper.ask_text.assert_called_once()
-        minecraft_db.whitelist_minecraft_user.assert_not_called()
+        whitelist_manager.set_user_whitelist_status.assert_not_called()
 
     @pytest.mark.asyncio
     @patch('bot.cogs.minecraft.requests.get')
     async def test_whitelist_player_not_found(
-        self, mock_get, cog, context, minecraft_db, prompt_helper, context_helper
+        self, mock_get, cog, context, whitelist_manager, prompt_helper, context_helper
     ):
-        minecraft_db.get_minecraft_user.return_value = None
+        whitelist_manager.is_user_whitelisted.return_value = False
+        whitelist_manager.get_minecraft_user.return_value = None
         prompt_helper.ask_text.return_value = "InvalidUser"
 
         mock_new_context = MagicMock()
@@ -898,12 +778,13 @@ class TestMinecraftCogWhitelistCommand:
         cog.message_helper.send_embed.assert_called()
         call_args = cog.message_helper.send_embed.call_args
         assert "minecraft_whitelist_unable_to_verify" in str(call_args)
-        minecraft_db.whitelist_minecraft_user.assert_not_called()
+        whitelist_manager.set_user_whitelist_status.assert_not_called()
 
     @pytest.mark.asyncio
     @patch('bot.cogs.minecraft.requests.get')
-    async def test_whitelist_api_error(self, mock_get, cog, context, minecraft_db, prompt_helper, context_helper):
-        minecraft_db.get_minecraft_user.return_value = None
+    async def test_whitelist_api_error(self, mock_get, cog, context, whitelist_manager, prompt_helper, context_helper):
+        whitelist_manager.is_user_whitelisted.return_value = False
+        whitelist_manager.get_minecraft_user.return_value = None
         prompt_helper.ask_text.return_value = "TestUser"
 
         mock_new_context = MagicMock()
@@ -923,8 +804,9 @@ class TestMinecraftCogWhitelistCommand:
         assert "minecraft_whitelist_unable_to_verify" in str(call_args)
 
     @pytest.mark.asyncio
-    async def test_whitelist_dm_forbidden_fallback(self, cog, context, minecraft_db, prompt_helper, context_helper):
-        minecraft_db.get_minecraft_user.return_value = None
+    async def test_whitelist_dm_forbidden_fallback(self, cog, context, whitelist_manager, prompt_helper, context_helper):
+        whitelist_manager.is_user_whitelisted.return_value = False
+        whitelist_manager.get_minecraft_user.return_value = None
 
         # First call raises Forbidden, second call succeeds
         prompt_helper.ask_text.side_effect = [discord.Forbidden(MagicMock(), "Cannot send DM"), "cancel"]
@@ -978,10 +860,11 @@ class TestMinecraftCogWhitelistCallback:
     @pytest.mark.asyncio
     @patch('bot.cogs.minecraft.requests.get')
     async def test_whitelist_callback_yes_response(
-        self, mock_get, cog, context, minecraft_db, prompt_helper, context_helper, tracking_db
+        self, mock_get, cog, context, whitelist_manager, prompt_helper, context_helper, tracking_db
     ):
         """Test whitelist callback when user confirms identity."""
-        minecraft_db.get_minecraft_user.return_value = None
+        whitelist_manager.is_user_whitelisted.return_value = False
+        whitelist_manager.get_minecraft_user.return_value = None
         prompt_helper.ask_text.return_value = "TestMCUser"
 
         mock_new_context = MagicMock()
@@ -1027,10 +910,11 @@ class TestMinecraftCogWhitelistCallback:
     @pytest.mark.asyncio
     @patch('bot.cogs.minecraft.requests.get')
     async def test_whitelist_callback_no_response(
-        self, mock_get, cog, context, minecraft_db, prompt_helper, context_helper
+        self, mock_get, cog, context, whitelist_manager, prompt_helper, context_helper
     ):
         """Test whitelist callback when user rejects identity."""
-        minecraft_db.get_minecraft_user.return_value = None
+        whitelist_manager.is_user_whitelisted.return_value = False
+        whitelist_manager.get_minecraft_user.return_value = None
         prompt_helper.ask_text.return_value = "TestMCUser"
 
         mock_new_context = MagicMock()
@@ -1155,9 +1039,9 @@ class TestMinecraftCogWhitelistExceptions:
     """Additional tests for whitelist command exception handling."""
 
     @pytest.mark.asyncio
-    async def test_whitelist_exception(self, cog, context, message_helper):
+    async def test_whitelist_exception(self, cog, context, message_helper, whitelist_manager):
         """Test whitelist handles exceptions gracefully."""
-        cog._is_user_whitelisted = MagicMock(side_effect=Exception("Database error"))
+        whitelist_manager.is_user_whitelisted.side_effect = Exception("Database error")
 
         await cog.whitelist.callback(cog, context)
 

@@ -1,13 +1,11 @@
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from bot.lib.UrlShortener import UrlShortener
 
 
-@patch("bot.lib.UrlShortener.requests.post")
-@patch("builtins.print")
-def test_shorten_posts_payload_and_returns_json(mock_print, mock_post):
+def test_shorten_posts_payload_and_returns_json(mock_requests_post, capsys):
     # arrange
     token = "ak"
     u = UrlShortener(access_token=token)
@@ -16,19 +14,19 @@ def test_shorten_posts_payload_and_returns_json(mock_print, mock_post):
     resp = MagicMock()
     resp.text = "ok"
     resp.json.return_value = {"link": "http://short"}
-    mock_post.return_value = resp
+    mock_requests_post.return_value = resp
 
     # act
     result = u.shorten(long_url="http://example.com")
 
     # assert
     assert result == {"link": "http://short"}
-    mock_post.assert_called_once()
+    mock_requests_post.assert_called_once()
     # requests.post is called with the url as the first positional arg
-    call_args = mock_post.call_args[0]
+    call_args = mock_requests_post.call_args[0]
     assert call_args[0].endswith("/api/shorten")
     # headers included
-    call_kwargs = mock_post.call_args[1]
+    call_kwargs = mock_requests_post.call_args[1]
     assert call_kwargs["headers"]["X-ACCESS-TOKEN"] == token
     # data is json string of payload
     assert json.loads(call_kwargs["data"]) == {"long_url": "http://example.com"}
@@ -71,9 +69,7 @@ def test_init_non_secure_url_without_enforce_https_ok():
     assert u.api_url.startswith("http://")
 
 
-@patch("bot.lib.UrlShortener.requests.post")
-@patch("builtins.print")
-def test_shorten_raises_when_response_json_errors(mock_print, mock_post):
+def test_shorten_raises_when_response_json_errors(mock_requests_post):
     u = UrlShortener(access_token="at")
 
     resp = MagicMock()
@@ -83,25 +79,23 @@ def test_shorten_raises_when_response_json_errors(mock_print, mock_post):
         raise ValueError("invalid json")
 
     resp.json.side_effect = json_raises
-    mock_post.return_value = resp
+    mock_requests_post.return_value = resp
 
     with pytest.raises(ValueError):
         u.shorten(long_url="http://example.com")
 
 
-@patch("bot.lib.UrlShortener.requests.post")
-@patch("builtins.print")
-def test_shorten_payload_keys_used(mock_print, mock_post):
+def test_shorten_payload_keys_used(mock_requests_post):
     u = UrlShortener(access_token="tok", api_url="https://myapi")
     resp = MagicMock()
     resp.text = "ok"
     resp.json.return_value = {"ok": True}
-    mock_post.return_value = resp
+    mock_requests_post.return_value = resp
 
     r = u.shorten(a=1, b=2)
     assert r == {"ok": True}
     # confirm both keys present in payload
-    call_kwargs = mock_post.call_args[1]
+    call_kwargs = mock_requests_post.call_args[1]
     assert json.loads(call_kwargs["data"]) == {"a": 1, "b": 2}
 
 

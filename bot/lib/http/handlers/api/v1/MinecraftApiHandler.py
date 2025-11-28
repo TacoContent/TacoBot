@@ -51,7 +51,7 @@ from bot.lib.models.MinecraftOpUser import MinecraftOpUser
 from bot.lib.models.MinecraftServerSettings import MinecraftServerSettingsSettingsModel
 from bot.lib.models.MinecraftServerStatus import MinecraftServerStatus
 from bot.lib.models.MinecraftSettingsUpdatePayload import MinecraftSettingsUpdatePayload
-from bot.lib.models.MinecraftUser import MinecraftUser
+from bot.lib.models.MojangMinecraftUser import MojangMinecraftUser
 from bot.lib.models.MinecraftUserStats import MinecraftUserStats
 from bot.lib.models.MinecraftWhiteListUser import MinecraftWhiteListUser
 from bot.lib.models.openapi import openapi
@@ -118,6 +118,7 @@ class MinecraftApiHandler(BaseHttpHandler):
         Errors:
             500 - Internal server error
         """
+        _method = inspect.stack()[0][3]
         try:
             headers = HttpHeaders()
             headers.add("Content-Type", "application/json")
@@ -133,7 +134,7 @@ class MinecraftApiHandler(BaseHttpHandler):
         except HttpResponseException as e:
             return self._create_error_from_exception(exception=e)
         except Exception as e:
-            self.log.error(0, f"{self._module}.{self._class}.minecraft_whitelist", f"{str(e)}", traceback.format_exc())
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
             return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
 
     @uri_mapping("/tacobot/minecraft/ops.json", method=HTTPMethod.GET)
@@ -165,6 +166,7 @@ class MinecraftApiHandler(BaseHttpHandler):
         Errors:
             500 - Internal server error
         """
+        _method = inspect.stack()[0][3]
         try:
             headers = HttpHeaders()
             headers.add("Content-Type", "application/json")
@@ -172,14 +174,14 @@ class MinecraftApiHandler(BaseHttpHandler):
 
             payload = []
             for user in oplist:
-                if user.op is not None and user.op.get('enabled', False):
+                if user.op is not None and user.op.enabled:
                     payload.append(
                         MinecraftOpUser(
                             {
                                 "uuid": user.uuid,
                                 "name": user.username,
-                                "level": user.op.get('level', 0),
-                                "bypassPlayerLimit": user.op.get('bypassPlayerLimit', False),
+                                "level": user.op.level,
+                                "bypassPlayerLimit": user.op.bypassesPlayerLimit,
                             }
                         )
                     )
@@ -188,7 +190,7 @@ class MinecraftApiHandler(BaseHttpHandler):
         except HttpResponseException as e:
             return self._create_error_from_exception(exception=e)
         except Exception as e:
-            self.log.error(0, f"{self._module}.{self._class}.minecraft_oplist", f"{str(e)}", traceback.format_exc())
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{str(e)}", traceback.format_exc())
             return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
 
     @uri_mapping("/tacobot/minecraft/status", method=HTTPMethod.GET)
@@ -673,7 +675,7 @@ class MinecraftApiHandler(BaseHttpHandler):
         200,
         description="Minecraft user with UUID and name",
         contentType="application/json",
-        schema=MinecraftUser,
+        schema=MojangMinecraftUser,
         methods=[HTTPMethod.GET],
     )
     @openapi.response(
@@ -718,7 +720,7 @@ class MinecraftApiHandler(BaseHttpHandler):
             response = requests.get(url)
             if response.status_code == 200:
                 data = response.json()
-                payload = MinecraftUser(data)
+                payload = MojangMinecraftUser(data)
                 return HttpResponse(200, headers, json.dumps(payload, indent=4).encode("utf-8"))
             return self._create_error_response(404, "No user found", headers=headers)
         except HttpResponseException as e:
