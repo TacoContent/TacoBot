@@ -73,6 +73,10 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
 ]
 
+# Suppress noisy deprecation warnings from pytest-xdist about rsyncdir
+# rsyncdir/rsyncdirs are deprecated by pytest-xdist 3.x and will be removed in 4.0.
+# These warnings can be safely ignored while we upgrade or align plugins.
+
 [tool.coverage.run]
 branch = true
 source = ["bot"]

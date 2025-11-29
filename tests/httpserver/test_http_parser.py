@@ -1,4 +1,104 @@
 import asyncio
+import pytest
+
+from httpserver.HttpParser import http_parser
+from httpserver.HttpHeaders import HttpHeaders
+from httpserver.HttpRequest import HttpRequest
+
+
+@pytest.mark.asyncio
+async def test_simple_get_no_body():
+    reader = asyncio.StreamReader()
+    data = b"GET /hello HTTP/1.1\r\nHost: example\r\n\r\n"
+    reader.feed_data(data)
+    reader.feed_eof()
+
+    req = await http_parser(reader, timeout=0.5, http_trace=False)
+    assert isinstance(req, HttpRequest)
+    assert req.method == "GET"
+    assert req.path == "/hello"
+    # header case-insensitive handling -> header keys lower-cased in storage
+    assert req.headers.get("host") == "example"
+    assert req.body is None
+
+
+@pytest.mark.asyncio
+async def test_parse_query_params_and_multi_headers():
+    reader = asyncio.StreamReader()
+    data = b"GET /search?q=foo&q=bar&x=1 HTTP/1.1\r\nX-Test: one\r\nX-Test: two\r\n\r\n"
+    reader.feed_data(data)
+    reader.feed_eof()
+
+    req = await http_parser(reader, timeout=0.5, http_trace=False)
+    assert req.path == "/search"
+    assert req.query_params["q"] == ["foo", "bar"]
+    # repeated header values are usable via get_list
+    assert req.headers.get_list("X-Test") == ["one", "two"] or req.headers.get_list("x-test") == ["one", "two"]
+
+
+@pytest.mark.asyncio
+async def test_content_length_body_and_zero():
+    # With a positive content-length we should get the exact body
+    reader = asyncio.StreamReader()
+    payload = b"hello-body"
+    data = b"POST /p HTTP/1.1\r\nContent-Length: %d\r\n\r\n" % len(payload) + payload
+    reader.feed_data(data)
+    reader.feed_eof()
+    req = await http_parser(reader, timeout=0.5)
+    assert req.body == payload
+
+    # Content-Length: 0 should produce no body
+    reader2 = asyncio.StreamReader()
+    reader2.feed_data(b"POST /p HTTP/1.1\r\nContent-Length: 0\r\n\r\n")
+    reader2.feed_eof()
+    req2 = await http_parser(reader2, timeout=0.5)
+    assert req2.body is None
+
+
+@pytest.mark.asyncio
+async def test_chunked_transfer_is_ignored_by_parser():
+    # Parser doesn't implement chunked transfer decoding — without content-length
+    # the body will be None even if Transfer-Encoding is 'chunked'
+    reader = asyncio.StreamReader()
+    chunked = b"4\r\nWiki\r\n0\r\n\r\n"
+    data = b"POST /chunked HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n" + chunked
+    reader.feed_data(data)
+    reader.feed_eof()
+
+    req = await http_parser(reader, timeout=0.5)
+    # no content-length -> parser returns body None
+    assert req.body is None
+
+
+@pytest.mark.asyncio
+async def test_bad_start_line_raises():
+    reader = asyncio.StreamReader()
+    # not enough words in the start-line
+    reader.feed_data(b"BADLINE\r\n")
+    reader.feed_eof()
+
+    with pytest.raises(Exception):
+        await http_parser(reader, timeout=0.5)
+
+
+@pytest.mark.asyncio
+async def test_http_trace_calls_debug_dump(monkeypatch):
+    reader = asyncio.StreamReader()
+    data = b"GET / HTTP/1.1\r\nHost: example\r\n\r\n"
+    reader.feed_data(data)
+    reader.feed_eof()
+
+    called = {}
+
+    class StubDump:
+        def dump_http_request(self, request):
+            called['request'] = request
+
+    monkeypatch.setattr("httpserver.HttpParser.HttpDebugDump", lambda *a, **k: StubDump())
+
+    req = await http_parser(reader, timeout=0.5, http_trace=True)
+    assert called.get('request') is req
+import asyncio
 from unittest.mock import MagicMock, patch
 
 import pytest

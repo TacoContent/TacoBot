@@ -23,7 +23,7 @@ class DummyEntry:
         self.channel_id = 11
         self.message_id = 222
         self.author_id = 5
-        self.created_at = int(datetime.datetime.utcnow().timestamp())
+        self.created_at = int(datetime.datetime.now(tz=datetime.timezone.utc).timestamp())
         self.updated_at = self.created_at
         self.deleted_at = None
         self.message = types.SimpleNamespace(to_dict=lambda: {'content': 'x'})

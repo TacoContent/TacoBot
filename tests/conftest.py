@@ -1,3 +1,52 @@
+import pytest
+
+from bot.lib.mongodb import mongo_singleton
+
+
+class _FastDummyMongoClient:
+    """A very small fake MongoClient used in tests to avoid real network
+    connections and long timeouts when code attempts to `MongoClient(url)`.
+
+    This object implements __getitem__ to provide simple dict-like
+    namespaces for tests and a close() method that is a no-op.
+    """
+
+    def __init__(self, url=None):
+        self._url = url
+        self.closed = False
+
+    def __getitem__(self, name):
+        # Provide a simple in-memory collection holder so tests that do
+        # connection['logs'] or connection['something'] will not hit the network.
+        if not hasattr(self, '_dbs'):
+            self._dbs = {}
+        if name not in self._dbs:
+            self._dbs[name] = {}
+        return self._dbs[name]
+
+    def close(self):
+        self.closed = True
+
+
+@pytest.fixture(autouse=True)
+def fast_mongo_client(monkeypatch):
+    """Autouse fixture that patches the MongoClient in the singleton to a
+    lightweight in-memory fake. This prevents tests from creating real
+    PyMongo clients and waiting on network timeouts.
+
+    Tests that need to exercise the original behavior can still monkeypatch
+    the module-level `MongoClient` themselves inside the test.
+    """
+    # Reset any existing singleton instance to avoid cross-test contamination
+    mongo_singleton.MongoClientSingleton._instance = None
+
+    # Replace the MongoClient class used by the singleton with our fast fake
+    monkeypatch.setattr(mongo_singleton, 'MongoClient', _FastDummyMongoClient)
+
+    yield
+
+    # Ensure we clear the singleton after each test
+    mongo_singleton.MongoClientSingleton._instance = None
 """Shared pytest fixtures for all test modules.
 
 This conftest.py provides session and module-scoped fixtures to reduce

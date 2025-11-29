@@ -91,7 +91,7 @@ class WDYCTWDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow().date()
+            date = datetime.datetime.now(tz=self.settings.timezone).date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
             payload = {
@@ -122,7 +122,7 @@ class WDYCTWDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.utcnow().date()
+            date = datetime.datetime.now(tz=self.settings.timezone).date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
             result = self.connection.wdyctw.find_one({"guild_id": str(guildId), "timestamp": timestamp})  # type: ignore
@@ -144,7 +144,7 @@ class WDYCTWDatabase(Database):
                             return True
                     return False
                 else:
-                    raise Exception(f"No WDYCTW found for guild {guildId} for {datetime.datetime.utcnow().date()}")
+                    raise Exception(f"No WDYCTW found for guild {guildId} for {datetime.datetime.now(tz=self.settings.timezone).date()}")
         except Exception as ex:
             self.log(
                 guildId=guildId,

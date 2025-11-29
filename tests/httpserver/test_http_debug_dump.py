@@ -1,3 +1,93 @@
+import pytest
+
+from httpserver.HttpDebugDump import HttpDebugDump
+from httpserver.HttpHeaders import HttpHeaders
+from httpserver.HttpRequest import HttpRequest
+from httpserver.HttpResponse import HttpResponse
+
+
+class FakeLog:
+    def __init__(self, *args, **kwargs):
+        # capture the minimumLogLevel kwarg for tests that want it
+        self.minimum_log_level = kwargs.get("minimumLogLevel") or kwargs.get("minimum_log_level")
+        self.debug_calls = []
+
+    def debug(self, *args, **kwargs):
+        self.debug_calls.append((args, kwargs))
+
+
+class DummySettings:
+    def __init__(self, *, log_level="INFO"):
+        self.log_level = log_level
+
+
+def make_request(method="GET", path="/", body=None, headers=None):
+    if headers is None:
+        headers = HttpHeaders()
+    return HttpRequest(stamp=0.0, method=method, path=path, query_params={}, version="1.1", headers=headers, body=body)
+
+
+def make_response(status=200, headers=None, body=None):
+    return HttpResponse(status_code=status, headers=headers, body=body)
+
+
+def test_dump_http_request_text_body(monkeypatch):
+    fake = FakeLog()
+    monkeypatch.setattr("bot.lib.settings.Settings", lambda *a, **k: DummySettings())
+    monkeypatch.setattr("bot.lib.logger.Log", lambda *a, **k: fake)
+
+    headers = HttpHeaders()
+    headers.set("content-type", "text/plain")
+    req = make_request(body=b"hello world", headers=headers)
+
+    d = HttpDebugDump()
+    d.dump_http_request(req)
+
+    # Ensure request line and headers were logged
+    texts = [args[2] for args, kw in fake.debug_calls]
+    assert any("REQUEST:" in t for t in texts)
+    assert any("REQUEST-HEADERS" in t for t in texts)
+    # text body should include the body content in the debug output
+    assert any(b"hello world" in (a if isinstance(a, (bytes, bytearray)) else str(a).encode() ) or "hello world" in str(a) for a in texts)
+
+
+def test_dump_http_response_binary_body(monkeypatch):
+    fake = FakeLog()
+    monkeypatch.setattr("bot.lib.settings.Settings", lambda *a, **k: DummySettings())
+    monkeypatch.setattr("bot.lib.logger.Log", lambda *a, **k: fake)
+
+    headers = HttpHeaders()
+    headers.set("content-type", "application/octet-stream")
+    resp = make_response(status=201, headers=headers, body=b"\x00\x01\x02")
+    req = make_request()
+
+    d = HttpDebugDump()
+    d.dump_http_response(req, resp)
+
+    texts = [args[2] for args, kw in fake.debug_calls]
+    assert any("RESPONSE:" in t for t in texts)
+    # response headers represented
+    assert any("RESPONSE-HEADERS" in t for t in texts)
+    # binary body should only emit length, not the bytes themselves
+    assert any("RESPONSE-BODY: length:" in t for t in texts)
+
+
+def test_dump_http_response_no_headers_and_no_body(monkeypatch):
+    fake = FakeLog()
+    monkeypatch.setattr("bot.lib.settings.Settings", lambda *a, **k: DummySettings())
+    monkeypatch.setattr("bot.lib.logger.Log", lambda *a, **k: fake)
+
+    resp = make_response(status=204, headers=None, body=None)
+    req = make_request()
+
+    d = HttpDebugDump()
+    d.dump_http_response(req, resp)
+
+    texts = [args[2] for args, kw in fake.debug_calls]
+    # When headers missing we should see 'RESPONSE-HEADERS: NONE'
+    assert any("RESPONSE-HEADERS: NONE" in t for t in texts)
+    # no-body branch should be logged
+    assert any("RESPONSE-BODY: length:0 NO-BODY" in t for t in texts)
 from unittest.mock import ANY, MagicMock, patch
 
 import pytest

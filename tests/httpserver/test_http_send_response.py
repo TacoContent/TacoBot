@@ -1,3 +1,122 @@
+import asyncio
+import io
+import os
+from http import HTTPStatus
+
+import pytest
+
+from httpserver.HttpRequest import HttpRequest
+from httpserver.HttpResponse import HttpResponse
+from httpserver.HttpHeaders import HttpHeaders
+from httpserver.HttpSendResponse import http_send_response
+
+
+class FakeWriter:
+    def __init__(self):
+        self._buffer = bytearray()
+        # transport is a unique sentinel that fake_sendfile will map back to this
+        self.transport = object()
+
+    def write(self, data: bytes):
+        # writer.write receives bytes
+        if isinstance(data, str):
+            data = data.encode("utf-8")
+        self._buffer.extend(data)
+
+    async def drain(self):
+        # no-op for tests
+        await asyncio.sleep(0)
+
+    def contents(self) -> bytes:
+        return bytes(self._buffer)
+
+
+@pytest.mark.asyncio
+async def test_write_body_sets_content_length_and_writes_body():
+    w = FakeWriter()
+    req = HttpRequest(stamp=0.0, method="GET", path="/", query_params={}, version="1.1", headers=HttpHeaders())
+    body = b"hello world"
+    resp = HttpResponse(status_code=HTTPStatus.OK.value, headers={"Content-Type": "text/plain"}, body=body)
+
+    out = await http_send_response(w, req, resp, http_trace=False)
+
+    assert out is req
+    data = w.contents()
+    # check the status line
+    assert b"HTTP/1.1 200 OK" in data
+    # header content-length should equal body length
+    assert b"content-length: %d" % len(body) in data.lower()
+    # body should be present at the end
+    assert data.endswith(body)
+
+
+@pytest.mark.asyncio
+async def test_file_send_uses_sendfile_and_writes_file(tmp_path, monkeypatch):
+    # prepare a temporary file with known bytes
+    p = tmp_path / "testdata.bin"
+    content = b"file-contents-12345"
+    p.write_bytes(content)
+
+    w = FakeWriter()
+
+    # map transport->writer so our fake sendfile can write
+    transport_map = {w.transport: w}
+
+    async def fake_sendfile(transport, fd, offset, fallback=True):
+        # read from the provided file-like object and write to the mapped writer
+        writer = transport_map.get(transport)
+        assert writer is not None
+        # ensure file position seeks to requested offset
+        fd.seek(offset)
+        data = fd.read()
+        # emulate kernel sendfile by writing bytes into the writer
+        writer.write(data)
+
+    # monkeypatch the asyncio loop's sendfile
+    loop = asyncio.get_event_loop()
+    monkeypatch.setattr(loop, "sendfile", fake_sendfile)
+
+    req = HttpRequest(stamp=0.0, method="GET", path="/file", query_params={}, version="1.1", headers=HttpHeaders())
+    resp = HttpResponse(status_code=HTTPStatus.OK.value, headers=None, file_path=str(p))
+
+    out = await http_send_response(w, req, resp, http_trace=False)
+    assert out is req
+    data = w.contents()
+    # verify the content-length header uses the file size
+    assert b"content-length: %d" % p.stat().st_size in data.lower()
+    # and the file contents were delivered
+    assert content in data
+
+
+@pytest.mark.asyncio
+async def test_file_not_found_raises(monkeypatch):
+    w = FakeWriter()
+    req = HttpRequest(stamp=0.0, method="GET", path="/missing", query_params={}, version="1.1", headers=HttpHeaders())
+    resp = HttpResponse(status_code=HTTPStatus.NOT_FOUND.value, file_path="/does/not/exist.bin")
+
+    with pytest.raises(FileNotFoundError):
+        await http_send_response(w, req, resp, http_trace=False)
+
+
+@pytest.mark.asyncio
+async def test_http_trace_calls_dump(monkeypatch):
+    w = FakeWriter()
+    req = HttpRequest(stamp=0.0, method="POST", path="/trace", query_params={}, version="1.1", headers=HttpHeaders())
+    resp = HttpResponse(status_code=HTTPStatus.ACCEPTED.value, headers={})
+
+    called = {}
+
+    class FakeDump:
+        def dump_http_response(self, r, rr):
+            called['req'] = r
+            called['resp'] = rr
+
+    monkeypatch.setattr("httpserver.HttpSendResponse.HttpDebugDump", lambda *a, **k: FakeDump())
+
+    out = await http_send_response(w, req, resp, http_trace=True)
+    assert out is req
+    assert called.get('req') is req
+    assert called.get('resp') is resp
 from unittest.mock import AsyncMock, MagicMock, mock_open, patch
 
 import pytest

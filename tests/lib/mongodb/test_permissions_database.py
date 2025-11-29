@@ -28,14 +28,12 @@ def test_has_user_permission_true_and_false():
     db = PermissionsDatabase()
     db.db_url = "mongodb://ok"
 
-    # has permission
     coll = FakePermsColl(find_val={'permissions': ['claim_game_disabled']})
     db.connection = types.SimpleNamespace(permissions=coll)
     db.client = object()
 
     assert db.has_user_permission(1, 2, TacoPermissions.CLAIM_GAME_DISABLED) is True
 
-    # does not have permission
     coll2 = FakePermsColl(find_val={'permissions': []})
     db.connection = types.SimpleNamespace(permissions=coll2)
     assert db.has_user_permission(1, 2, TacoPermissions.CLAIM_GAME_DISABLED) is False
@@ -45,7 +43,6 @@ def test_get_user_permissions_returns_list_and_handles_error(capsys):
     db = PermissionsDatabase()
     db.db_url = "mongodb://ok"
 
-    # happy path
     coll = FakePermsColl(find_val={'permissions': ['tacos_no_give', 'pulltab_no_redeem']})
     db.connection = types.SimpleNamespace(permissions=coll)
     db.client = object()
@@ -55,7 +52,6 @@ def test_get_user_permissions_returns_list_and_handles_error(capsys):
     assert all(isinstance(p, TacoPermissions) for p in perms)
     assert TacoPermissions.TACOS_NO_GIVE in perms
 
-    # exception path -> returns empty
     coll_bad = FakePermsColl(should_raise=True)
     db.connection = types.SimpleNamespace(permissions=coll_bad)
     res = db.get_user_permissions(1, 2)

@@ -1,6 +1,66 @@
 from httpserver.HttpHeaders import HttpHeaders
 
 
+def test_set_get_and_len_and_dict():
+    h = HttpHeaders()
+    returned = h.set('Content-Type', 'text/plain')
+    assert returned is h
+    assert h.get('content-type') == 'text/plain'
+    assert h.get('missing', 'x') == 'x'
+    assert len(h) == 1
+
+    # dict-like representation returns first values
+    d = h.__dict__()
+    assert d == {'content-type': 'text/plain'}
+
+
+def test_add_and_get_list_and_getitem():
+    h = HttpHeaders()
+    h.set('X-Test', 'one')
+    h.add('X-Test', 'two')
+
+    vals = h.get_list('x-test')
+    assert vals == ['one', 'two']
+
+    # __getitem__ returns raw list for that key
+    assert h['x-test'] == ['one', 'two']
+
+
+def test_from_dict_and_items_keys():
+    h = HttpHeaders.from_dict({'A': '1', 'B': '2'})
+    keys = list(h.keys())
+    assert 'a' in keys and 'b' in keys
+
+    # items yields pairs for each value
+    items = list(h.items())
+    assert ('a', '1') in items and ('b', '2') in items
+
+
+def test_merge_headers_and_dict_list_values():
+    base = HttpHeaders()
+    base.set('X', 'v1')
+
+    other = HttpHeaders()
+    other.set('X', 'v2')
+    other.set('Y', 'val')
+
+    base.merge(other)
+    assert base.get_list('x') == ['v1', 'v2']
+
+    # merge with a dict that contains list values and scalars
+    base.merge({'x': ['v3', 'v4'], 'z': 'single'})
+    assert base.get_list('x') == ['v1', 'v2', 'v3', 'v4']
+    assert base.get('z') == 'single'
+
+
+def test_repr_contains_internal_structure():
+    h = HttpHeaders()
+    h.set('One', '1')
+    r = repr(h)
+    assert 'one' in r and '1' in r
+from httpserver.HttpHeaders import HttpHeaders
+
+
 def test_set_and_get_list_and_get_default_and_transform():
     headers = HttpHeaders()
     # set will lowercase key

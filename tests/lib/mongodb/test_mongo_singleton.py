@@ -13,19 +13,13 @@ class DummyClient:
 
 
 def test_get_client_uses_env_and_singleton(monkeypatch):
-    # Ensure no instance lingering
     mongo_singleton.MongoClientSingleton._instance = None
-
-    # monkeypatch the MongoClient used in module
     monkeypatch.setattr(mongo_singleton, "MongoClient", DummyClient)
-
-    # set environment var and ensure it is used
     monkeypatch.setenv("MONGODB_URL", "mongodb://env-host:27017/testdb")
 
     c1 = mongo_singleton.MongoClientSingleton.get_client()
     assert isinstance(c1, DummyClient) and c1.url.endswith("testdb")
 
-    # subsequent calls return the same instance
     c2 = mongo_singleton.MongoClientSingleton.get_client()
     assert c1 is c2
 
@@ -38,5 +32,4 @@ def test_get_client_with_explicit_url_and_close(monkeypatch):
     assert isinstance(c, DummyClient) and c.url.endswith("mydb")
 
     mongo_singleton.MongoClientSingleton.close_client()
-    # after closing, instance should be None
     assert mongo_singleton.MongoClientSingleton._instance is None

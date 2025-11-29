@@ -40,7 +40,6 @@ def test_track_invite_code_without_user(monkeypatch):
     db.connection = conn
     db.client = object()
 
-    # should not raise
     db.track_invite_code(guildId=123, inviteCode='ABC', inviteInfo=types.SimpleNamespace(to_dict=lambda: {'k': 'v'}), userInvite=None)
 
     assert len(updater.calls) == 1
@@ -92,9 +91,7 @@ def test_track_invite_code_exception_is_logged(monkeypatch, capsys):
     db.connection = conn
     db.client = object()
 
-    # Should not raise; internal exception is handled and logged
     db.track_invite_code(guildId=10, inviteCode='E', inviteInfo=types.SimpleNamespace(to_dict=lambda: {}), userInvite=None)
 
     out = capsys.readouterr()
-    # expect an ERROR level log message to have been printed
     assert 'ERROR' in out.out or 'ERROR' in out.err
