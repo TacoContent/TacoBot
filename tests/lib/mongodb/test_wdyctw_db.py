@@ -11,7 +11,9 @@ from bot.lib import utils
 def db():
     d = WDYCTWDatabase()
     d.settings = MagicMock()
-    d.settings.timezone = 'UTC'
+    # tests previously used a string ("UTC") which causes save_wdyctw to pass that string as tz to
+    # datetime.now(tz=...), raising a TypeError. Use a proper tzinfo object instead.
+    d.settings.timezone = datetime.timezone.utc
     d.client = object()
     d.connection = MagicMock()
     d.connection.wdyctw = MagicMock()
@@ -149,7 +151,7 @@ def test_wdyctw_user_message_tracked_yesterday_match_returns_true(db):
 def test_save_wdyctw_triggers_open_when_no_client(monkeypatch):
     db = WDYCTWDatabase()
     db.settings = MagicMock()
-    db.settings.timezone = 'UTC'
+    db.settings.timezone = datetime.timezone.utc
     db.log = MagicMock()
 
     fake_conn = MagicMock()

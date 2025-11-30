@@ -122,7 +122,7 @@ class WDYCTWDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            date = datetime.datetime.now(tz=self.settings.timezone).date()
+            date = datetime.datetime.now(tz=datetime.timezone.utc).date()
             ts_date = datetime.datetime.combine(date, datetime.time.min)
             timestamp = utils.to_timestamp(ts_date)
             result = self.connection.wdyctw.find_one({"guild_id": str(guildId), "timestamp": timestamp})  # type: ignore
