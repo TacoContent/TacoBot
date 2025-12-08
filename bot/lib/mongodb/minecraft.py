@@ -3,6 +3,8 @@ import os
 import traceback
 import typing
 
+from bot.lib.models.MinecraftUserStorageEntry import MinecraftUserStorageEntry, MinecraftUserStorageItem
+
 
 from bot.lib.enums import loglevel
 from bot.lib.enums.minecraft_op import MinecraftOpLevel
@@ -21,6 +23,36 @@ class MinecraftDatabase(Database):
         self.SETTINGS_SECTION = "minecraft"
         pass
 
+    def get_discord_user(self, **kwargs: typing.Any) -> typing.Optional[MinecraftUserEntry]:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            query = {}
+
+            # use or filter to find by uuid or username
+            if "uuid" in kwargs:
+                query["uuid"] = kwargs["uuid"]
+            if "username" in kwargs:
+                query["username"] = kwargs["username"]
+
+            if "uuidOrUsername" in kwargs:
+                query["$or"] = [{"uuid": kwargs["uuidOrUsername"]}, {"username": kwargs["uuidOrUsername"]}]
+
+            result = self.connection.minecraft_users.find_one(query)  # type: ignore
+            if result:
+                return MinecraftUserEntry(**result)
+            return None
+        except Exception as ex:
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
+
     def get_minecraft_user(self, guildId: int, userId: int) -> typing.Optional[MinecraftUserEntry]:
         _method = inspect.stack()[0][3]
         try:
@@ -38,6 +70,7 @@ class MinecraftDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
+            return None
 
     def whitelist_minecraft_user(
         self, guildId: int, userId: int, username: str, uuid: str, whitelist: bool = True
@@ -190,6 +223,115 @@ class MinecraftDatabase(Database):
         except Exception as ex:
             self.log(
                 guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return False
+
+    def get_user_storage(self, guild_id: int, user_id: int, uuid: str) -> typing.Optional[MinecraftUserStorageEntry]:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            result = self.connection.minecraft_user_storage.find_one(  # type: ignore
+                {"guild_id": str(guild_id), "user_id": str(user_id), "uuid": uuid}
+            )
+            if result:
+                return MinecraftUserStorageEntry(**result)
+            return None
+        except Exception as ex:
+            self.log(
+                guildId=guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
+
+    def withdraw_user_storage(
+        self, guild_id: int, user_id: int, uuid: str, item_id: str, quantity: int
+    ) -> bool:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+
+            existing_entry = self.get_user_storage(guild_id, user_id, uuid)
+            if existing_entry is None or item_id not in existing_entry.storage:
+                return False
+
+            existing_item = existing_entry.storage[item_id]
+            if existing_item.quantity < quantity:
+                return False  # Not enough quantity to withdraw
+
+            existing_item.quantity -= quantity
+            if existing_item.quantity <= 0:
+                # Remove the item from storage if quantity is zero or less
+                del existing_entry.storage[item_id]
+                self.connection.minecraft_user_storage.update_one(  # type: ignore
+                    {"guild_id": str(guild_id), "user_id": str(user_id), "uuid": uuid},
+                    {"$unset": {f"storage.{item_id}": ""}},
+                )
+            else:
+                # Update the item quantity in storage
+                self.connection.minecraft_user_storage.update_one(  # type: ignore
+                    {"guild_id": str(guild_id), "user_id": str(user_id), "uuid": uuid},
+                    {"$set": {f"storage.{item_id}.quantity": existing_item.quantity}},
+                )
+
+            return True
+        except Exception as ex:
+            self.log(
+                guildId=guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return False
+
+    def deposit_user_storage(
+        self, guild_id: int, user_id: int, uuid: str, item: MinecraftUserStorageItem
+    ) -> bool:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+
+            existing_entry = self.get_user_storage(guild_id, user_id, uuid)
+            if existing_entry is None:
+                existing_entry = MinecraftUserStorageEntry(
+                    guild_id=str(guild_id), user_id=str(user_id), uuid=uuid, storage={}
+                )
+
+            # find the item in storage if it exists
+            if item.item_id in existing_entry.storage:
+                # update quantity
+                existing_item = existing_entry.storage[item.item_id]
+                existing_item.quantity += item.quantity
+                existing_entry.storage[item.item_id] = existing_item
+            else:
+                # Add the new item to storage
+                existing_entry.storage[item.item_id] = MinecraftUserStorageItem(
+                    item_id=item.item_id,
+                    quantity=item.quantity,
+                metadata=item.metadata,
+            )
+
+            # only update the changed entry storage item
+            self.connection.minecraft_user_storage.update_one(  # type: ignore
+                {"guild_id": str(guild_id), "user_id": str(user_id), "uuid": uuid},
+                {"$set": {f"storage.{item.item_id}": existing_entry.storage[item.item_id].to_dict()}},
+                upsert=True,
+            )
+
+            return True
+        except Exception as ex:
+            self.log(
+                guildId=guild_id,
                 level=loglevel.LogLevel.ERROR,
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"{ex}",

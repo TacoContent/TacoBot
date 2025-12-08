@@ -43,6 +43,7 @@ from http import HTTPMethod
 
 import requests
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
+from bot.lib.helpers import EntityHelper
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.minecraft.status import MinecraftStatus
@@ -51,9 +52,12 @@ from bot.lib.models.MinecraftOpUser import MinecraftOpUser
 from bot.lib.models.MinecraftServerSettings import MinecraftServerSettingsSettingsModel
 from bot.lib.models.MinecraftServerStatus import MinecraftServerStatus
 from bot.lib.models.MinecraftSettingsUpdatePayload import MinecraftSettingsUpdatePayload
-from bot.lib.models.MojangMinecraftUser import MojangMinecraftUser
+from bot.lib.models.MinecraftTacoBalance import MinecraftTacoBalance
+from bot.lib.models.MinecraftUserEntry import MinecraftUserEntry
 from bot.lib.models.MinecraftUserStats import MinecraftUserStats
+from bot.lib.models.MinecraftStorageItemPayload import MinecraftStorageItemPayload
 from bot.lib.models.MinecraftWhiteListUser import MinecraftWhiteListUser
+from bot.lib.models.MojangMinecraftUser import MojangMinecraftUser
 from bot.lib.models.openapi import openapi
 from bot.lib.models.SimpleStatusResponse import SimpleStatusResponse
 from bot.lib.models.TacoMinecraftWorldInfo import TacoMinecraftWorldInfo
@@ -80,7 +84,7 @@ class MinecraftApiHandler(BaseHttpHandler):
             payload rather than raising, assisting external health dashboards.
     """
 
-    def __init__(self, bot: TacoBot, settings: Settings, minecraft_db: MinecraftDatabase):
+    def __init__(self, bot: TacoBot, settings: Settings, minecraft_db: MinecraftDatabase, entity_helper: EntityHelper):
         super().__init__(bot, settings=settings)
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
@@ -88,6 +92,7 @@ class MinecraftApiHandler(BaseHttpHandler):
         self.SETTINGS_SECTION = f"minecraft/api/{API_VERSION}"
 
         self.minecraft_db = minecraft_db
+        self.entity_helper = entity_helper
         # self.tracking_db = TrackingDatabase()
 
     @uri_mapping(f"/api/{API_VERSION}/minecraft/whitelist.json", method=HTTPMethod.GET)
@@ -970,9 +975,93 @@ class MinecraftApiHandler(BaseHttpHandler):
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
 
+    def user_store_item(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """Store an item for a Minecraft user (Placeholder).
+
+        Path Parameters:
+            identifier: Mojang account UUID/username or discord user ID.
+        Returns:
+            200 JSON with status (TBD).
+            404 JSON error if identifier missing or user not found.
+            500 JSON error on unexpected failure.
+        """
+        _method = inspect.stack()[0][3]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+        try:
+            uuid: typing.Optional[str] = uri_variables.get("uuid", None)
+            if not uuid:
+                return self._create_error_response(404, "No UUID provided", headers=headers)
+
+            # MinecraftStorageItemPayload from request body
+            if not request.body:
+                return self._create_error_response(400, "No body provided", headers=headers)
+
+            data = None
+            payload: MinecraftStorageItemPayload
+            try:
+                data = json.loads(request.body.decode("utf-8"))
+                payload = MinecraftStorageItemPayload(**data)
+            except json.JSONDecodeError:
+                return self._create_error_response(400, "Invalid JSON body", headers=headers)
+
+            if payload is None or payload.is_empty():
+                return self._create_error_response(400, "No data payload provided", headers=headers)
+
+            # self.tracking_db.store_minecraft_user_item(uuid, payload)
+
+            # get updated storage info (placeholder)
+            return HttpResponse(200, headers, json.dumps(payload, indent=4).encode("utf-8"))
+        except HttpResponseException as e:
+            return self._create_error_from_exception(exception=e)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
+
+    def get_minecraft_user_available_tacos(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """Calculate the number of available tacos for a Minecraft user.
+
+        Args:
+            uuid (str): The UUID of the Minecraft user.
+        Returns:
+            int: The number of available tacos.
+        """
+        _method = inspect.stack()[0][3]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+        try:
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, "Unauthorized", headers)
+
+            uuid: typing.Optional[str] = uri_variables.get("uuid", None)
+            if not uuid:
+                self.log.error(0, f"{self._module}.{self._class}.{_method}", "No UUID/Username provided")
+                return self._create_error_response(400, "No UUID/Username provided", headers=headers)
+
+
+            # find user by minecraft uuid/username
+            minecraft_user: MinecraftUserEntry = self.minecraft_db.get_discord_user(uuidOrUsername=uuid)
+            if not minecraft_user:
+                return self._create_error_response(404, "User not found", headers=headers)
+            # discord_user_id = minecraft_user.
+            # discord_user = self.entity_helper.
+
+            # Placeholder logic for calculating available tacos
+            # This should be replaced with actual logic to fetch and calculate tacos
+            available_tacos = 42  # Example fixed value
+            taco_balance = MinecraftTacoBalance(uuid=uuid, balance=available_tacos)
+
+            return HttpResponse(200, headers, json.dumps(taco_balance.to_dict(), indent=4).encode("utf-8"))
+        except HttpResponseException as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_from_exception(exception=e)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
 
 def setup(bot: TacoBot, http_server: HttpServer):
     settings = Settings()
     minecraft_db = MinecraftDatabase()
-    handler = MinecraftApiHandler(bot=bot, settings=settings, minecraft_db=minecraft_db)
+    entity_helper = EntityHelper(bot)
+    handler = MinecraftApiHandler(bot=bot, settings=settings, minecraft_db=minecraft_db, entity_helper=entity_helper)
     http_server.add_handler(handler)

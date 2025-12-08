@@ -1,0 +1,31 @@
+# This is used by the Minecraft storage system to represent an item payload.
+import typing
+
+
+class MinecraftStorageItemPayload:
+    def __init__(self, **kwargs):
+        self.uuid: str = kwargs.get("uuid", "")
+        # support either key name `item` (used by to_dict) or `item_id` (used by some callers)
+        self.item_id: str = kwargs.get("item", kwargs.get("item_id", ""))
+        self.quantity: int = kwargs.get("quantity", 0)
+        self.metadata: dict = kwargs.get("metadata", {})
+
+    def to_dict(self) -> typing.Dict[str, typing.Any]:
+        return {
+            "uuid": self.uuid,
+            "item": self.item_id,
+            "quantity": self.quantity,
+            "metadata": self.metadata,
+        }
+
+    def is_empty(self) -> bool:
+        return self.uuid == "" and self.item_id == "" and self.quantity == 0 and self.metadata == {}
+
+    @classmethod
+    def from_dict(cls, data: typing.Dict[str, typing.Any]) -> "MinecraftStorageItemPayload":
+        return MinecraftStorageItemPayload(
+            uuid=data.get("uuid", ""),
+            item=data.get("item", ""),
+            quantity=data.get("quantity", 0),
+            metadata=data.get("metadata", {}),
+        )
