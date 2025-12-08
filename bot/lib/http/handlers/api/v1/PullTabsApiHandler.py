@@ -5,7 +5,6 @@ import os
 import traceback
 import typing
 
-from lib.models.PullTabTicketStatus import PullTabTicketStatus
 
 from bot.lib.enums.tacotypes import TacoTypes
 from bot.lib.helpers import Numbers
@@ -16,6 +15,7 @@ from bot.lib.models import openapi
 from bot.lib.models import PullTabRedeemedTicket
 from bot.lib.models.PullTabTicketPurchasePayload import PullTabTicketPurchasePayload
 from bot.lib.models.PullTabTicketPurchaseResult import PullTabTicketPurchaseResult
+from bot.lib.models.PullTabTicketStatus import PullTabTicketStatus
 from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
 from bot.lib.models.PullTabTicketEntry import PullTabTicketEntry
 from bot.lib.mongodb.pulltabs import PullTabTicketsDatabase

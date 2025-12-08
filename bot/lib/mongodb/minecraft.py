@@ -235,9 +235,16 @@ class MinecraftDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            result = self.connection.minecraft_user_storage.find_one(  # type: ignore
+            self.log(
+                guildId=guild_id,
+                level=loglevel.LogLevel.DEBUG,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"Fetching storage for guild_id={guild_id}, user_id={user_id}, uuid={uuid}",
+            )
+            result = self.connection.minecraft_storage.find_one(  # type: ignore
                 {"guild_id": str(guild_id), "user_id": str(user_id), "uuid": uuid}
             )
+
             if result:
                 return MinecraftUserStorageEntry(**result)
             return None

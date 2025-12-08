@@ -1,8 +1,7 @@
 
 import typing
 
-from lib.models.PullTabTicketEntry import PullTabTicketEntry
-
+from bot.lib.models.PullTabTicketEntry import PullTabTicketEntry
 from bot.lib.models import openapi
 
 

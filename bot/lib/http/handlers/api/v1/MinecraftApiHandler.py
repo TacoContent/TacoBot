@@ -44,8 +44,8 @@ from http import HTTPMethod
 import requests
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
 from bot.lib.helpers import EntityHelper
+from bot.lib.http.handlers.ApiHttpHandler import ApiHttpHandler
 from bot.lib.http.handlers.api.v1.const import API_VERSION
-from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.minecraft.status import MinecraftStatus
 from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
 from bot.lib.models.MinecraftOpUser import MinecraftOpUser
@@ -69,7 +69,7 @@ from httpserver import HttpHeaders, HttpRequest, HttpResponse, HttpResponseExcep
 from httpserver.EndpointDecorators import uri_mapping, uri_variable_mapping
 
 
-class MinecraftApiHandler(BaseHttpHandler):
+class MinecraftApiHandler(ApiHttpHandler):
     """Expose Minecraft integration endpoints.
     @openapi: ignore
     Responsibilities:
@@ -975,6 +975,50 @@ class MinecraftApiHandler(BaseHttpHandler):
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
 
+    @uri_variable_mapping("/tacobot/minecraft/player/{identifier}/storage", method=HTTPMethod.GET)
+    @uri_variable_mapping(f"/api/{API_VERSION}/minecraft/player/{{identifier}}/storage", method=HTTPMethod.GET)
+    def get_user_storage_items(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """Get stored items for a Minecraft user.
+        Path Parameters:
+            identifier: Mojang account UUID/username or discord user ID.
+        Returns:
+            200 JSON with stored items.
+            404 JSON error if identifier missing or user not found.
+            500 JSON error on unexpected failure.
+        """
+
+        _method = inspect.stack()[0][3]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+        try:
+            if not self.validate_auth_token(request=request):
+                return self._create_error_response(403, "Unauthorized", headers=headers)
+
+            identifier: typing.Optional[str] = uri_variables.get("identifier", None)
+            if not identifier:
+                return self._create_error_response(404, "No identifier provided", headers=headers)
+
+            # find user by minecraft uuid/username
+            minecraft_user: MinecraftUserEntry = self.minecraft_db.get_discord_user(uuidOrUsername=identifier)
+            if not minecraft_user:
+                return self._create_error_response(404, "User not found", headers=headers)
+            user_id: int = minecraft_user.user_id
+            guild_id = self.settings.primary_guild_id
+            uuid: str = minecraft_user.uuid
+
+            storage = self.minecraft_db.get_user_storage(guild_id, user_id, uuid)
+            if not storage:
+                return self._create_error_response(404, "No storage found", headers=headers)
+
+            return HttpResponse(200, headers=headers, body=json.dumps(storage.to_dict(), indent=4).encode("utf-8"))
+        except HttpResponseException as e:
+            return self._create_error_from_exception(exception=e)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
+
+    @uri_variable_mapping("/tacobot/minecraft/player/{identifier}/storage", method=HTTPMethod.PUT)
+    @uri_variable_mapping(f"/api/{API_VERSION}/minecraft/player/{{identifier}}/storage", method=HTTPMethod.PUT)
     def user_store_item(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Store an item for a Minecraft user (Placeholder).
 
@@ -989,6 +1033,9 @@ class MinecraftApiHandler(BaseHttpHandler):
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
         try:
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, "Unauthorized", headers)
+
             uuid: typing.Optional[str] = uri_variables.get("uuid", None)
             if not uuid:
                 return self._create_error_response(404, "No UUID provided", headers=headers)

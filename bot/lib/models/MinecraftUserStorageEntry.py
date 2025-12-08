@@ -35,7 +35,6 @@ class MinecraftUserStorageEntry:
         self.user_id: str = kwargs.get("user_id", "")
         self.guild_id: str = kwargs.get("guild_id", "")
         self.uuid: str = kwargs.get("uuid", "")
-        self.username: str = kwargs.get("username", "")
         storage_data = kwargs.get("storage", {})
         # Convert storage data to MinecraftUserStorageItem instances
         self.storage: typing.Dict[str, MinecraftUserStorageItem] = {
@@ -47,7 +46,6 @@ class MinecraftUserStorageEntry:
             "user_id": self.user_id,
             "guild_id": self.guild_id,
             "uuid": self.uuid,
-            "username": self.username,
             "storage": {item_id: item.to_dict() for item_id, item in self.storage.items()},
         }
 
@@ -56,7 +54,6 @@ class MinecraftUserStorageEntry:
             self.user_id == ""
             and self.guild_id == ""
             and self.uuid == ""
-            and self.username == ""
             and len(self.storage) == 0
         )
 
