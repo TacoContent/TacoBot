@@ -993,6 +993,14 @@ class MinecraftApiHandler(BaseHttpHandler):
             if not uuid:
                 return self._create_error_response(404, "No UUID provided", headers=headers)
 
+            # find user by minecraft uuid/username
+            minecraft_user: MinecraftUserEntry = self.minecraft_db.get_discord_user(uuidOrUsername=uuid)
+            if not minecraft_user:
+                return self._create_error_response(404, "User not found", headers=headers)
+
+            user_id: int = minecraft_user.user_id
+            # guild_id = minecraft_user.guild_id
+
             # MinecraftStorageItemPayload from request body
             if not request.body:
                 return self._create_error_response(400, "No body provided", headers=headers)
@@ -1009,6 +1017,9 @@ class MinecraftApiHandler(BaseHttpHandler):
                 return self._create_error_response(400, "No data payload provided", headers=headers)
 
             # self.tracking_db.store_minecraft_user_item(uuid, payload)
+
+            guild_id = self.settings.primary_guild_id
+            self.minecraft_db.deposit_user_storage(guild_id, user_id, uuid, payload)
 
             # get updated storage info (placeholder)
             return HttpResponse(200, headers, json.dumps(payload, indent=4).encode("utf-8"))

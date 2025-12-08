@@ -1,7 +1,15 @@
 # This is used by the Minecraft storage system to represent an item payload.
 import typing
 
+from bot.lib.models import openapi
 
+
+@openapi.component("MinecraftStorageItemPayload", description="Represents a Minecraft storage item payload.")
+@openapi.property("uuid", description="The UUID of the Minecraft user.")
+@openapi.property("item", description="The Minecraft item ID.")
+@openapi.property("quantity", description="The quantity of the item.")
+@openapi.property("metadata", description="Additional metadata for the item.")
+@openapi.managed()
 class MinecraftStorageItemPayload:
     def __init__(self, **kwargs):
         self.uuid: str = kwargs.get("uuid", "")
