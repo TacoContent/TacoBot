@@ -9,8 +9,8 @@ from bot.lib.models import openapi
 @openapi.managed()
 class MinecraftTacoBalance:
     def __init__(self, **kwargs):
-        self.balance = kwargs.get("balance", 0)
-        self.uuid = kwargs.get("uuid", "")
+        self.balance: int = kwargs.get("balance", 0)
+        self.uuid: str = kwargs.get("uuid", "")
 
     def to_dict(self) -> typing.Dict[str, typing.Any]:
         return {"balance": self.balance, "uuid": self.uuid}

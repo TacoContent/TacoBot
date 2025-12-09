@@ -40,10 +40,13 @@ import os
 import traceback
 import typing
 from http import HTTPMethod
+import uuid
 
+from bot.lib.models.MinecraftPlayerEventPayload import MinecraftPlayerEventPayload, MinecraftPlayerEventPayloadResponse
+from bot.lib.models.MinecraftUserLookupPayload import MinecraftUserLookupPayload
 import requests
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
-from bot.lib.helpers import EntityHelper
+from bot.lib.helpers import EntityHelper, TacoHelper
 from bot.lib.http.handlers.ApiHttpHandler import ApiHttpHandler
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.minecraft.status import MinecraftStatus
@@ -56,6 +59,7 @@ from bot.lib.models.MinecraftTacoBalance import MinecraftTacoBalance
 from bot.lib.models.MinecraftUserEntry import MinecraftUserEntry
 from bot.lib.models.MinecraftUserStats import MinecraftUserStats
 from bot.lib.models.MinecraftStorageItemPayload import MinecraftStorageItemPayload
+from bot.lib.models.MinecraftUserStorageEntry import MinecraftUserStorageEntry, MinecraftUserStorageItem
 from bot.lib.models.MinecraftWhiteListUser import MinecraftWhiteListUser
 from bot.lib.models.MojangMinecraftUser import MojangMinecraftUser
 from bot.lib.models.openapi import openapi
@@ -84,7 +88,7 @@ class MinecraftApiHandler(ApiHttpHandler):
             payload rather than raising, assisting external health dashboards.
     """
 
-    def __init__(self, bot: TacoBot, settings: Settings, minecraft_db: MinecraftDatabase, entity_helper: EntityHelper):
+    def __init__(self, bot: TacoBot, settings: Settings, minecraft_db: MinecraftDatabase, entity_helper: EntityHelper, taco_helper: TacoHelper):
         super().__init__(bot, settings=settings)
         self._class = self.__class__.__name__
         # get the file name without the extension and without the directory
@@ -93,6 +97,7 @@ class MinecraftApiHandler(ApiHttpHandler):
 
         self.minecraft_db = minecraft_db
         self.entity_helper = entity_helper
+        self.taco_helper = taco_helper
         # self.tracking_db = TrackingDatabase()
 
     @uri_mapping(f"/api/{API_VERSION}/minecraft/whitelist.json", method=HTTPMethod.GET)
@@ -975,6 +980,41 @@ class MinecraftApiHandler(ApiHttpHandler):
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
 
+    @openapi.tags("minecraft")
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.summary("Get stored items for a Minecraft user")
+    @openapi.description("Get stored items for a Minecraft user.")
+    @openapi.pathParameter(
+        name="identifier",
+        description="Mojang account UUID/username or discord user ID",
+        schema=str,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        200,
+        description="Stored items object",
+        contentType="application/json",
+        schema=MinecraftUserStorageEntry,
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        404,
+        description="Identifier missing or user not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.managed()
     @uri_variable_mapping("/tacobot/minecraft/player/{identifier}/storage", method=HTTPMethod.GET)
     @uri_variable_mapping(f"/api/{API_VERSION}/minecraft/player/{{identifier}}/storage", method=HTTPMethod.GET)
     def get_user_storage_items(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
@@ -988,25 +1028,35 @@ class MinecraftApiHandler(ApiHttpHandler):
         """
 
         _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
+        headers.add("X-TACOBOT-EVENT", "MinecraftPlayerEvent")
+        headers.add("X-Request-ID", request_id)
         try:
             if not self.validate_auth_token(request=request):
-                return self._create_error_response(403, "Unauthorized", headers=headers)
+                return self._create_error_response(401, "Unauthorized", headers=headers)
 
             identifier: typing.Optional[str] = uri_variables.get("identifier", None)
             if not identifier:
                 return self._create_error_response(404, "No identifier provided", headers=headers)
 
+            guild_id = self.settings.primary_guild_id
+
+            self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Fetching storage for identifier {identifier} in guild {guild_id}")
+
             # find user by minecraft uuid/username
-            minecraft_user: MinecraftUserEntry = self.minecraft_db.get_discord_user(uuidOrUsername=identifier)
+            minecraft_user: MinecraftUserEntry = self.minecraft_db.get_discord_user(
+                uuidOrUsername=identifier, guild_id=guild_id
+            )
             if not minecraft_user:
                 return self._create_error_response(404, "User not found", headers=headers)
             user_id: int = minecraft_user.user_id
             guild_id = self.settings.primary_guild_id
-            uuid: str = minecraft_user.uuid
 
-            storage = self.minecraft_db.get_user_storage(guild_id, user_id, uuid)
+            storage: typing.Optional[MinecraftUserStorageEntry] = self.minecraft_db.get_user_storage(
+                guild_id=guild_id, user_id=user_id, uuid=minecraft_user.uuid
+            )
             if not storage:
                 return self._create_error_response(404, "No storage found", headers=headers)
 
@@ -1017,7 +1067,55 @@ class MinecraftApiHandler(ApiHttpHandler):
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
 
+    @openapi.tags("minecraft")
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.summary("Store an item for a Minecraft user")
+    @openapi.description("Store an item for a Minecraft user.")
+    @openapi.pathParameter(
+        name="identifier",
+        description="Mojang account UUID/username or discord user ID",
+        schema=str,
+        methods=[HTTPMethod.PUT],
+    )
+    @openapi.requestBody(
+        description="Storage item payload",
+        contentType="application/json",
+        schema=MinecraftStorageItemPayload,
+        methods=[HTTPMethod.PUT],
+    )
+    @openapi.response(
+        200,
+        description="Stored item payload",
+        contentType="application/json",
+        schema=MinecraftStorageItemPayload,
+    )
+    @openapi.response(
+        400,
+        description="Bad request",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        404,
+        description="User not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.managed()
     @uri_variable_mapping("/tacobot/minecraft/player/{identifier}/storage", method=HTTPMethod.PUT)
+    @uri_variable_mapping("/taco/minecraft/player/{identifier}/storage", method=HTTPMethod.PUT)
     @uri_variable_mapping(f"/api/{API_VERSION}/minecraft/player/{{identifier}}/storage", method=HTTPMethod.PUT)
     def user_store_item(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Store an item for a Minecraft user (Placeholder).
@@ -1030,18 +1128,21 @@ class MinecraftApiHandler(ApiHttpHandler):
             500 JSON error on unexpected failure.
         """
         _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
+        headers.add("X-TACOBOT-EVENT", "MinecraftPlayerEvent")
+        headers.add("X-Request-ID", request_id)
         try:
             if not self.validate_auth_token(request):
                 return self._create_error_response(401, "Unauthorized", headers)
 
-            uuid: typing.Optional[str] = uri_variables.get("uuid", None)
-            if not uuid:
-                return self._create_error_response(404, "No UUID provided", headers=headers)
+            identifier: typing.Optional[str] = uri_variables.get("identifier", None)
+            if not identifier:
+                return self._create_error_response(400, "No user identifier provided", headers=headers)
 
             # find user by minecraft uuid/username
-            minecraft_user: MinecraftUserEntry = self.minecraft_db.get_discord_user(uuidOrUsername=uuid)
+            minecraft_user: MinecraftUserEntry = self.minecraft_db.get_discord_user(uuidOrUsername=identifier)
             if not minecraft_user:
                 return self._create_error_response(404, "User not found", headers=headers)
 
@@ -1057,25 +1158,202 @@ class MinecraftApiHandler(ApiHttpHandler):
             try:
                 data = json.loads(request.body.decode("utf-8"))
                 payload = MinecraftStorageItemPayload(**data)
+                self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Storing item for user {user_id} with identifier {identifier}")
+                print(payload.to_dict())
             except json.JSONDecodeError:
                 return self._create_error_response(400, "Invalid JSON body", headers=headers)
 
             if payload is None or payload.is_empty():
                 return self._create_error_response(400, "No data payload provided", headers=headers)
 
-            # self.tracking_db.store_minecraft_user_item(uuid, payload)
+            # self.tracking_db.store_minecraft_user_item(user_id, identifier, payload)
 
             guild_id = self.settings.primary_guild_id
-            self.minecraft_db.deposit_user_storage(guild_id, user_id, uuid, payload)
+            storage_item = MinecraftUserStorageItem(
+                item_id=payload.item_id,
+                variant_id=payload.variant_id,
+                quantity=payload.quantity,
+                metadata=payload.metadata,
+            )
+            result: bool = self.minecraft_db.deposit_user_storage(guild_id, user_id, identifier, storage_item)
+            if not result:
+                return self._create_error_response(500, "Failed to store item", headers=headers)
 
-            # get updated storage info (placeholder)
-            return HttpResponse(200, headers, json.dumps(payload, indent=4).encode("utf-8"))
+            storage: typing.Optional[MinecraftUserStorageEntry] = self.minecraft_db.get_user_storage(
+                guild_id=guild_id, user_id=user_id, uuid=identifier
+            )
+            if not storage:
+                return self._create_error_response(500, "No storage found after deposit", headers=headers)
+
+            return HttpResponse(200, headers, json.dumps(storage.to_dict(), indent=4).encode("utf-8"))
         except HttpResponseException as e:
             return self._create_error_from_exception(exception=e)
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
 
+    @openapi.tags("minecraft")
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.summary("Withdraw an item for a Minecraft user")
+    @openapi.description("Withdraw an item from a Minecraft user's storage.")
+    @openapi.pathParameter(
+        name="identifier",
+        description="Mojang account UUID/username or discord user ID",
+        schema=str,
+        methods=[HTTPMethod.PUT],
+    )
+    @openapi.requestBody(
+        description="Storage item payload",
+        contentType="application/json",
+        schema=MinecraftStorageItemPayload,
+        methods=[HTTPMethod.PUT],
+    )
+    @openapi.response(
+        200,
+        description="Withdrawn item payload",
+        contentType="application/json",
+        schema=MinecraftStorageItemPayload,
+    )
+    @openapi.response(
+        400,
+        description="Bad request",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        404,
+        description="User not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @uri_variable_mapping("/tacobot/minecraft/player/{identifier}/storage", method=HTTPMethod.DELETE)
+    @uri_variable_mapping("/taco/minecraft/player/{identifier}/storage", method=HTTPMethod.DELETE)
+    @uri_variable_mapping(f"/api/{API_VERSION}/minecraft/player/{{identifier}}/storage", method=HTTPMethod.DELETE)
+    def user_withdraw_item(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """Withdraw an item from a Minecraft user's storage."""
+        _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+        headers.add("X-TACOBOT-EVENT", "MinecraftPlayerEvent")
+        headers.add("X-Request-ID", request_id)
+        try:
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, "Unauthorized", headers)
+
+            identifier: typing.Optional[str] = uri_variables.get("identifier", None)
+            if not identifier:
+                return self._create_error_response(400, "No user identifier provided", headers=headers)
+            # find user by minecraft uuid/username
+            minecraft_user: MinecraftUserEntry = self.minecraft_db.get_discord_user(uuidOrUsername=identifier)
+            if not minecraft_user:
+                return self._create_error_response(404, "User not found", headers=headers)
+
+            user_id: int = minecraft_user.user_id
+            # guild_id = minecraft_user.guild_id
+
+            # MinecraftStorageItemPayload from request body
+            if not request.body:
+                return self._create_error_response(400, "No body provided", headers=headers)
+
+            data = None
+            payload: MinecraftStorageItemPayload
+            try:
+                data = json.loads(request.body.decode("utf-8"))
+                payload = MinecraftStorageItemPayload(**data)
+                self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Storing item for user {user_id} with identifier {identifier}")
+                print(payload.to_dict())
+            except json.JSONDecodeError:
+                return self._create_error_response(400, "Invalid JSON body", headers=headers)
+
+            if payload is None or payload.is_empty():
+                return self._create_error_response(400, "No data payload provided", headers=headers)
+
+            # self.tracking_db.withdraw_minecraft_user_item(user_id, identifier, payload)
+
+            guild_id = self.settings.primary_guild_id
+            storage_item = MinecraftUserStorageItem(
+                item_id=payload.item_id,
+                variant_id=payload.variant_id,
+                quantity=payload.quantity,
+                metadata=payload.metadata,
+            )
+            withdrawn_item: typing.Optional[MinecraftUserStorageItem]
+            result: bool
+            withdrawn_item, result = self.minecraft_db.withdraw_user_storage(
+                guild_id, user_id, identifier, storage_item.variant_id, storage_item.quantity
+            )
+            if not result:
+                return self._create_error_response(500, "Failed to retrieve item", headers=headers)
+            if not withdrawn_item:
+                return self._create_error_response(500, "No item found after withdrawal", headers=headers)
+
+            result_payload = MinecraftStorageItemPayload(
+                uuid=identifier,
+                item_id=withdrawn_item.item_id,
+                variant_id=withdrawn_item.variant_id,
+                quantity=withdrawn_item.quantity,
+                metadata=withdrawn_item.metadata,
+            )
+
+            return HttpResponse(200, headers, json.dumps(result_payload.to_dict(), indent=4).encode("utf-8"))
+
+        except HttpResponseException as e:
+            return self._create_error_from_exception(exception=e)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
+
+    @openapi.tags("minecraft")
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.summary("Get available tacos for a Minecraft user")
+    @openapi.description("Calculate the number of available tacos for a Minecraft user.")
+    @openapi.pathParameter(
+        name="identifier",
+        description="Mojang account UUID/username or discord user ID",
+        schema=str,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        200,
+        description="Taco balance object",
+        contentType="application/json",
+        schema=MinecraftTacoBalance,
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        404,
+        description="Identifier missing or user not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+    )
+    @openapi.managed()
+    @uri_variable_mapping("/taco/minecraft/player/{identifier}/tacos/balance", method=HTTPMethod.GET)
+    @uri_variable_mapping("/tacobot/minecraft/player/{identifier}/tacos/balance", method=HTTPMethod.GET)
+    @uri_variable_mapping(f"/api/{API_VERSION}/minecraft/player/{{identifier}}/tacos/balance", method=HTTPMethod.GET)
     def get_minecraft_user_available_tacos(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
         """Calculate the number of available tacos for a Minecraft user.
 
@@ -1085,29 +1363,31 @@ class MinecraftApiHandler(ApiHttpHandler):
             int: The number of available tacos.
         """
         _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
+        headers.add("X-TACOBOT-EVENT", "MinecraftPlayerEvent")
+        headers.add("X-Request-ID", request_id)
         try:
             if not self.validate_auth_token(request):
                 return self._create_error_response(401, "Unauthorized", headers)
 
-            uuid: typing.Optional[str] = uri_variables.get("uuid", None)
-            if not uuid:
-                self.log.error(0, f"{self._module}.{self._class}.{_method}", "No UUID/Username provided")
-                return self._create_error_response(400, "No UUID/Username provided", headers=headers)
+            identifier: typing.Optional[str] = uri_variables.get("identifier", None)
+            if not identifier:
+                self.log.error(0, f"{self._module}.{self._class}.{_method}", "No user identifier provided")
+                return self._create_error_response(400, "No user identifier provided", headers=headers)
 
+            guild_id = self.settings.primary_guild_id
 
             # find user by minecraft uuid/username
-            minecraft_user: MinecraftUserEntry = self.minecraft_db.get_discord_user(uuidOrUsername=uuid)
+            minecraft_user: MinecraftUserEntry = self.minecraft_db.get_discord_user(uuidOrUsername=identifier, guild_id=guild_id)
             if not minecraft_user:
                 return self._create_error_response(404, "User not found", headers=headers)
-            # discord_user_id = minecraft_user.
-            # discord_user = self.entity_helper.
 
-            # Placeholder logic for calculating available tacos
-            # This should be replaced with actual logic to fetch and calculate tacos
-            available_tacos = 42  # Example fixed value
-            taco_balance = MinecraftTacoBalance(uuid=uuid, balance=available_tacos)
+            user_id: int = minecraft_user.user_id
+            balance = self.taco_helper.get_taco_count(guildId=guild_id, userId=user_id)
+
+            taco_balance = MinecraftTacoBalance(uuid=minecraft_user.uuid, balance=balance)
 
             return HttpResponse(200, headers, json.dumps(taco_balance.to_dict(), indent=4).encode("utf-8"))
         except HttpResponseException as e:
@@ -1117,9 +1397,178 @@ class MinecraftApiHandler(ApiHttpHandler):
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
 
+    @uri_variable_mapping("/tacobot/minecraft/player/event/{event}", method=HTTPMethod.POST)
+    @uri_variable_mapping("/taco/minecraft/player/event/{event}", method=HTTPMethod.POST)
+    @uri_variable_mapping(f"/api/{API_VERSION}/minecraft/player/event/{{event}}", method=HTTPMethod.POST)
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.tags("minecraft")
+    @openapi.summary("Handle Minecraft player event (Placeholder)")
+    @openapi.description("(Placeholder) Handle Minecraft player event.")
+    @openapi.pathParameter(
+        name="event",
+        description="Event identifier",
+        schema=str,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.requestBody(
+        description="Player event payload",
+        contentType="application/json",
+        schema=MinecraftUserLookupPayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        200,
+        description="Player event response",
+        contentType="application/json",
+        schema=MinecraftPlayerEventPayloadResponse,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        400,
+        description="Bad request",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        404,
+        description="user not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.managed()
+    def player_event(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """Handle player event (Placeholder).
+
+        Path Parameters:
+            event: Event identifier.
+        Returns:
+            200 JSON with status (TBD).
+            404 JSON error if identifier missing or user not found.
+            500 JSON error on unexpected failure.
+        """
+        _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+        headers.add("X-TACOBOT-EVENT", "MinecraftPlayerEvent")
+        headers.add("X-Request-ID", request_id)
+        try:
+
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, "Unauthorized", headers=headers)
+
+            guild_id = self.settings.primary_guild_id
+            if not request.body:
+                return self._create_error_response(400, "No body provided", headers=headers)
+            req_payload: MinecraftUserLookupPayload
+            try:
+                data = json.loads(request.body.decode("utf-8"))
+                req_payload = MinecraftUserLookupPayload(**data)
+                if req_payload is None or req_payload.is_empty():
+                    return self._create_error_response(400, "No data payload provided", headers=headers)
+            except json.JSONDecodeError:
+                return self._create_error_response(400, "Invalid JSON body", headers=headers)
+            minecraft_user: MinecraftUserEntry = self.minecraft_db.get_discord_user(
+                guild_id=guild_id,
+                uuid=req_payload.uuid,
+                username=req_payload.username,
+                user_id=req_payload.user_id
+            )
+            if not minecraft_user:
+                return self._create_error_response(404, "User not found", headers=headers)
+
+            event_name: typing.Optional[str] = uri_variables.get("event", None)
+            if not event_name:
+                return self._create_error_response(404, "No event provided", headers=headers)
+
+            event = MinecraftPlayerEvents.from_str(event_name)
+            if event == MinecraftPlayerEvents.UNKNOWN:
+                self._create_error_response(404, f"Unknown event type: {event_name}", headers=headers)
+
+            # Route to event handler
+            # event_handlers = {
+            #     MinecraftPlayerEvents.LOGIN: self._handle_login_event,
+            #     MinecraftPlayerEvents.LOGOUT: self._handle_logout_event,
+            #     MinecraftPlayerEvents.DEATH: self._handle_death_event,
+            # }
+
+            # self.tracking_db.log_minecraft_player_event(
+            #     guild_id=minecraft_user.guild_id,
+            #     user_id=minecraft_user.user_id,
+            #     uuid=minecraft_user.uuid,
+            #     username=minecraft_user.username,
+            #     event=event,
+            #     request_id=request_id,
+            # )
+
+            data_payload: typing.Dict[str, typing.Any] = {
+                "user_id": minecraft_user.user_id,
+                "uuid": minecraft_user.uuid,
+                "username": minecraft_user.username,
+            }
+
+            result: MinecraftPlayerEventPayloadResponse = MinecraftPlayerEventPayloadResponse(
+                {
+                    "status": "ok",
+                    "data": MinecraftPlayerEventPayload(
+                        {
+                            "user_id": str(minecraft_user.user_id),
+                            "guild_id": str(minecraft_user.guild_id),
+                            "event": str(event),
+                            "payload": data_payload,
+                        }
+                    ).to_dict(),
+                }
+            )
+
+            # handler_func = event_handlers.get(event)
+            # if handler_func is None:
+            #     return self._create_error_response(404, f"No handler for event: {event}", headers)
+
+            # return await handler_func(minecraft_user, user_id, data_payload, headers)
+
+            return HttpResponse(200, headers, json.dumps(result.to_dict(), indent=4).encode("utf-8"))
+        except HttpResponseException as e:
+            return self._create_error_from_exception(exception=e)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
+
+    def _validate_event_type(self, event_str: str, headers: HttpHeaders) -> MinecraftPlayerEvents:
+        """Validate and parse event type.
+
+        Returns:
+            MinecraftPlayerEvents enum value
+
+        Raises:
+            HttpResponseException: If event type is unknown
+        """
+        event = MinecraftPlayerEvents.from_str(event_str)
+        if event == MinecraftPlayerEvents.UNKNOWN:
+            self._create_error_response(404, f"Unknown event type: {event_str}", headers=headers)
+        return event
+
+
 def setup(bot: TacoBot, http_server: HttpServer):
     settings = Settings()
     minecraft_db = MinecraftDatabase()
     entity_helper = EntityHelper(bot)
-    handler = MinecraftApiHandler(bot=bot, settings=settings, minecraft_db=minecraft_db, entity_helper=entity_helper)
+    taco_helper = TacoHelper(bot, entity_helper=entity_helper)
+    handler = MinecraftApiHandler(bot=bot, settings=settings, minecraft_db=minecraft_db, entity_helper=entity_helper, taco_helper=taco_helper)
     http_server.add_handler(handler)

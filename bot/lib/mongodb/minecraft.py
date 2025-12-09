@@ -30,14 +30,27 @@ class MinecraftDatabase(Database):
                 self.open()
             query = {}
 
+            if "guild_id" in kwargs and kwargs["guild_id"] != "":
+                query["guild_id"] = str(kwargs["guild_id"])
+            else:
+                query["guild_id"] = str(self.settings.primary_guild_id)
+
             # use or filter to find by uuid or username
-            if "uuid" in kwargs:
+            if "uuid" in kwargs and kwargs["uuid"] != "":
                 query["uuid"] = kwargs["uuid"]
-            if "username" in kwargs:
+            if "username" in kwargs and kwargs["username"] != "":
                 query["username"] = kwargs["username"]
+            if "user_id" in kwargs and kwargs["user_id"] != "":
+                query["user_id"] = str(kwargs["user_id"])
 
             if "uuidOrUsername" in kwargs:
-                query["$or"] = [{"uuid": kwargs["uuidOrUsername"]}, {"username": kwargs["uuidOrUsername"]}]
+                query["$or"] = [
+                    {"uuid": kwargs["uuidOrUsername"]},
+                    {"username": kwargs["uuidOrUsername"]},
+                    {"user_id": str(kwargs["uuidOrUsername"])},
+                ]
+
+            print(f"get_discord_user query: {query}")
 
             result = self.connection.minecraft_users.find_one(query)  # type: ignore
             if result:
@@ -241,7 +254,7 @@ class MinecraftDatabase(Database):
                 method=f"{self._module}.{self._class}.{_method}",
                 message=f"Fetching storage for guild_id={guild_id}, user_id={user_id}, uuid={uuid}",
             )
-            result = self.connection.minecraft_storage.find_one(  # type: ignore
+            result = self.connection.minecraft_user_storage.find_one(  # type: ignore
                 {"guild_id": str(guild_id), "user_id": str(user_id), "uuid": uuid}
             )
 
@@ -259,37 +272,44 @@ class MinecraftDatabase(Database):
             return None
 
     def withdraw_user_storage(
-        self, guild_id: int, user_id: int, uuid: str, item_id: str, quantity: int
-    ) -> bool:
+        self, guild_id: int, user_id: int, uuid: str, variant_id: str, quantity: int
+    ) -> typing.Tuple[typing.Optional[MinecraftUserStorageItem], bool]:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
                 self.open()
 
             existing_entry = self.get_user_storage(guild_id, user_id, uuid)
-            if existing_entry is None or item_id not in existing_entry.storage:
-                return False
+            if existing_entry is None or variant_id not in existing_entry.storage:
+                return None, False
 
-            existing_item = existing_entry.storage[item_id]
+            existing_item = existing_entry.storage[variant_id]
             if existing_item.quantity < quantity:
-                return False  # Not enough quantity to withdraw
-
+                return None, False  # Not enough quantity to withdraw
             existing_item.quantity -= quantity
             if existing_item.quantity <= 0:
                 # Remove the item from storage if quantity is zero or less
-                del existing_entry.storage[item_id]
+                del existing_entry.storage[variant_id]
                 self.connection.minecraft_user_storage.update_one(  # type: ignore
                     {"guild_id": str(guild_id), "user_id": str(user_id), "uuid": uuid},
-                    {"$unset": {f"storage.{item_id}": ""}},
+                    {"$unset": {f"storage.{variant_id}": ""}},
                 )
             else:
                 # Update the item quantity in storage
                 self.connection.minecraft_user_storage.update_one(  # type: ignore
                     {"guild_id": str(guild_id), "user_id": str(user_id), "uuid": uuid},
-                    {"$set": {f"storage.{item_id}.quantity": existing_item.quantity}},
+                    {"$set": {f"storage.{variant_id}.quantity": existing_item.quantity}},
                 )
 
-            return True
+            # create a new item instance to return with the withdrawn quantity
+            withdrawn_item = MinecraftUserStorageItem(
+                item_id=existing_item.item_id,
+                variant_id=existing_item.variant_id,
+                quantity=quantity,
+                metadata=existing_item.metadata,
+            )
+
+            return withdrawn_item, True
         except Exception as ex:
             self.log(
                 guildId=guild_id,
@@ -298,7 +318,7 @@ class MinecraftDatabase(Database):
                 message=f"{ex}",
                 stackTrace=traceback.format_exc(),
             )
-            return False
+            return None, False
 
     def deposit_user_storage(
         self, guild_id: int, user_id: int, uuid: str, item: MinecraftUserStorageItem
@@ -315,23 +335,31 @@ class MinecraftDatabase(Database):
                 )
 
             # find the item in storage if it exists
-            if item.item_id in existing_entry.storage:
+            if item.variant_id in existing_entry.storage:
                 # update quantity
-                existing_item = existing_entry.storage[item.item_id]
+                existing_item = existing_entry.storage[item.variant_id]
+                if existing_item.item_id != item.item_id:
+                    # If item IDs don't match, we can't combine them
+                    raise ValueError("Item ID mismatch for the same variant ID")
                 existing_item.quantity += item.quantity
-                existing_entry.storage[item.item_id] = existing_item
+                existing_item.variant_id = item.variant_id
+                existing_item.item_id = item.item_id
+                existing_item.metadata = item.metadata
+                existing_entry.storage[item.variant_id] = existing_item
             else:
                 # Add the new item to storage
-                existing_entry.storage[item.item_id] = MinecraftUserStorageItem(
+                existing_entry.storage[item.variant_id] = MinecraftUserStorageItem(
                     item_id=item.item_id,
+                    variant_id=item.variant_id,
                     quantity=item.quantity,
-                metadata=item.metadata,
-            )
+                    metadata=item.metadata,
+                )
 
-            # only update the changed entry storage item
+            # the storage item is unique by item_id and variant_id
+            # upsert the entire entry that has variant_id as key, and has item_id as a property
             self.connection.minecraft_user_storage.update_one(  # type: ignore
                 {"guild_id": str(guild_id), "user_id": str(user_id), "uuid": uuid},
-                {"$set": {f"storage.{item.item_id}": existing_entry.storage[item.item_id].to_dict()}},
+                {"$set": {f"storage.{item.variant_id}": existing_entry.storage[item.variant_id].to_dict()}},
                 upsert=True,
             )
 

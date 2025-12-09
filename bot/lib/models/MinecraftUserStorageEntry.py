@@ -28,7 +28,15 @@
 
 import typing
 
+from bot.lib.models import openapi
 
+@openapi.component("MinecraftUserStorageEntry", description="Represents a Minecraft user's storage entry.")
+@openapi.property("user_id", description="The ID of the user.")
+@openapi.property("guild_id", description="The ID of the guild.")
+@openapi.property("uuid", description="The UUID of the Minecraft user.")
+@openapi.property("username", description="The username of the Minecraft user.")
+@openapi.property("storage", description="The storage items of the Minecraft user.")
+@openapi.managed()
 class MinecraftUserStorageEntry:
 
     def __init__(self, **kwargs):
@@ -38,7 +46,7 @@ class MinecraftUserStorageEntry:
         storage_data = kwargs.get("storage", {})
         # Convert storage data to MinecraftUserStorageItem instances
         self.storage: typing.Dict[str, MinecraftUserStorageItem] = {
-            item_id: MinecraftUserStorageItem(**item_info) for item_id, item_info in storage_data.items()
+            variant_id: MinecraftUserStorageItem(**item_info) for variant_id, item_info in storage_data.items()
         }
 
     def to_dict(self) -> dict:
@@ -46,7 +54,7 @@ class MinecraftUserStorageEntry:
             "user_id": self.user_id,
             "guild_id": self.guild_id,
             "uuid": self.uuid,
-            "storage": {item_id: item.to_dict() for item_id, item in self.storage.items()},
+            "storage": {variant_id: item.to_dict() for variant_id, item in self.storage.items()},
         }
 
     def is_empty(self) -> bool:
@@ -64,18 +72,20 @@ class MinecraftUserStorageEntry:
 class MinecraftUserStorageItem:
     def __init__(self, **kwargs):
         self.item_id: str = kwargs.get("item_id", "")
+        self.variant_id: str = kwargs.get("variant_id", "")
         self.quantity: int = kwargs.get("quantity", 0)
         self.metadata: dict = kwargs.get("metadata", {})
 
     def to_dict(self) -> dict:
         return {
             "item_id": self.item_id,
+            "variant_id": self.variant_id,
             "quantity": self.quantity,
             "metadata": self.metadata,
         }
 
     def is_empty(self) -> bool:
-        return self.item_id == "" and self.quantity == 0 and self.metadata == {}
+        return self.item_id == "" and self.quantity == 0 and self.metadata == {} and self.variant_id == ""
 
     @classmethod
     def from_dict(cls, data: dict) -> "MinecraftUserStorageItem":

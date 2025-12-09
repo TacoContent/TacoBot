@@ -1837,6 +1837,58 @@ paths:
       tags:
         - minecraft
         - nodered
+    post:
+      responses:
+        '200':
+          description: Player event response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftPlayerEventPayloadResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: event
+          description: Event identifier
+          schema:
+            type: string
+      summary: Handle Minecraft player event (Placeholder)
+      description: (Placeholder) Handle Minecraft player event.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      requestBody:
+        description: Player event payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftUserLookupPayload'
   /api/v1/permissions/{guildId}/{userId}:
     get:
       summary: Get user permissions
@@ -3010,6 +3062,58 @@ paths:
       tags:
         - minecraft
         - nodered
+    post:
+      responses:
+        '200':
+          description: Player event response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftPlayerEventPayloadResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: event
+          description: Event identifier
+          schema:
+            type: string
+      summary: Handle Minecraft player event (Placeholder)
+      description: (Placeholder) Handle Minecraft player event.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      requestBody:
+        description: Player event payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftUserLookupPayload'
   /taco/minecraft/player/event/{event}:
     get:
       summary: Redirect Minecraft player event to Node-RED
@@ -3041,6 +3145,58 @@ paths:
       tags:
         - minecraft
         - nodered
+    post:
+      responses:
+        '200':
+          description: Player event response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftPlayerEventPayloadResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: event
+          description: Event identifier
+          schema:
+            type: string
+      summary: Handle Minecraft player event (Placeholder)
+      description: (Placeholder) Handle Minecraft player event.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      requestBody:
+        description: Player event payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftUserLookupPayload'
   /taco/guild/{guild}/invite/{channel}:
     post:
       parameters:
@@ -3663,6 +3819,506 @@ paths:
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
+  /tacobot/minecraft/player/{identifier}/storage:
+    get:
+      responses:
+        '200':
+          description: Stored items object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftUserStorageEntry'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Identifier missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      summary: Get stored items for a Minecraft user
+      description: Get stored items for a Minecraft user.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+    put:
+      summary: Store an item for a Minecraft user
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      description: Store an item for a Minecraft user.
+      requestBody:
+        description: Storage item payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftStorageItemPayload'
+      responses:
+        '200':
+          description: Stored item payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftStorageItemPayload'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+    delete:
+      summary: Withdraw an item for a Minecraft user
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      description: Withdraw an item from a Minecraft user's storage.
+      responses:
+        '200':
+          description: Withdrawn item payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftStorageItemPayload'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+  /api/v1/minecraft/player/{identifier}/storage:
+    get:
+      responses:
+        '200':
+          description: Stored items object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftUserStorageEntry'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Identifier missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      summary: Get stored items for a Minecraft user
+      description: Get stored items for a Minecraft user.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+    put:
+      summary: Store an item for a Minecraft user
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      description: Store an item for a Minecraft user.
+      requestBody:
+        description: Storage item payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftStorageItemPayload'
+      responses:
+        '200':
+          description: Stored item payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftStorageItemPayload'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+    delete:
+      summary: Withdraw an item for a Minecraft user
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      description: Withdraw an item from a Minecraft user's storage.
+      responses:
+        '200':
+          description: Withdrawn item payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftStorageItemPayload'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+  /taco/minecraft/player/{identifier}/storage:
+    put:
+      summary: Store an item for a Minecraft user
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      description: Store an item for a Minecraft user.
+      requestBody:
+        description: Storage item payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftStorageItemPayload'
+      responses:
+        '200':
+          description: Stored item payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftStorageItemPayload'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+    delete:
+      summary: Withdraw an item for a Minecraft user
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      description: Withdraw an item from a Minecraft user's storage.
+      responses:
+        '200':
+          description: Withdrawn item payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftStorageItemPayload'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+  /taco/minecraft/player/{identifier}/tacos/balance:
+    get:
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      responses:
+        '200':
+          description: Taco balance object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftTacoBalance'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Identifier missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get available tacos for a Minecraft user
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      description: Calculate the number of available tacos for a Minecraft user.
+      tags:
+        - minecraft
+  /tacobot/minecraft/player/{identifier}/tacos/balance:
+    get:
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      responses:
+        '200':
+          description: Taco balance object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftTacoBalance'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Identifier missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get available tacos for a Minecraft user
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      description: Calculate the number of available tacos for a Minecraft user.
+      tags:
+        - minecraft
+  /api/v1/minecraft/player/{identifier}/tacos/balance:
+    get:
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      responses:
+        '200':
+          description: Taco balance object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftTacoBalance'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Identifier missing or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      summary: Get available tacos for a Minecraft user
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      description: Calculate the number of available tacos for a Minecraft user.
+      tags:
+        - minecraft
 components:
   schemas:
     ErrorStatusCodePayload:
@@ -5083,6 +5739,84 @@ components:
         - name
         - uuid
       description: Represents a Minecraft user with a unique ID.
+      x-tacobot-managed: true
+    MinecraftStorageItemPayload:
+      type: object
+      properties:
+        uuid:
+          type: string
+          description: The UUID of the Minecraft user.
+        item_id:
+          type: string
+        variant_id:
+          type: string
+        quantity:
+          type: integer
+          description: The quantity of the item.
+        metadata:
+          type: object
+          description: Additional metadata for the item.
+      required:
+        - item_id
+        - metadata
+        - quantity
+        - uuid
+        - variant_id
+      description: Represents a Minecraft storage item payload.
+      x-tacobot-managed: true
+    MinecraftTacoBalance:
+      type: object
+      properties:
+        balance:
+          type: integer
+          description: The Taco balance of the Minecraft user.
+        uuid:
+          type: string
+          description: The UUID of the Minecraft user.
+      required:
+        - balance
+        - uuid
+      description: Represents a Minecraft Taco balance.
+      x-tacobot-managed: true
+    MinecraftUserLookupPayload:
+      type: object
+      properties:
+        uuid:
+          type: string
+          description: The UUID of the Minecraft user.
+        username:
+          type: string
+          description: The username of the Minecraft user.
+        user_id:
+          type: string
+          description: The Discord user ID associated with the Minecraft user.
+      required:
+        - user_id
+        - username
+        - uuid
+      description: Payload for looking up a Minecraft user.
+      x-tacobot-managed: true
+    MinecraftUserStorageEntry:
+      type: object
+      properties:
+        user_id:
+          type: string
+          description: The ID of the user.
+        guild_id:
+          type: string
+          description: The ID of the guild.
+        uuid:
+          type: string
+          description: The UUID of the Minecraft user.
+        storage:
+          type: object
+          description: The storage items of the Minecraft user.
+      required:
+        - guild_id
+        - storage
+        - user_id
+        - uuid
+      description: Represents a Minecraft user's storage entry.
       x-tacobot-managed: true
   securitySchemes:
     X-AUTH-TOKEN:
