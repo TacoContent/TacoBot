@@ -995,24 +995,28 @@ class MinecraftApiHandler(ApiHttpHandler):
         description="Stored items object",
         contentType="application/json",
         schema=MinecraftUserStorageEntry,
+        methods=[HTTPMethod.GET],
     )
     @openapi.response(
         401,
         description="Unauthorized",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
     )
     @openapi.response(
         404,
         description="Identifier missing or user not found",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
     )
     @openapi.response(
         '5XX',
         description="Internal server error",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
     )
     @openapi.managed()
     @uri_variable_mapping("/tacobot/minecraft/player/{identifier}/storage", method=HTTPMethod.GET)
@@ -1031,7 +1035,6 @@ class MinecraftApiHandler(ApiHttpHandler):
         request_id = str(uuid.uuid4())[:8]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
-        headers.add("X-TACOBOT-EVENT", "MinecraftPlayerEvent")
         headers.add("X-Request-ID", request_id)
         try:
             if not self.validate_auth_token(request=request):
@@ -1088,30 +1091,35 @@ class MinecraftApiHandler(ApiHttpHandler):
         description="Stored item payload",
         contentType="application/json",
         schema=MinecraftStorageItemPayload,
+        methods=[HTTPMethod.PUT],
     )
     @openapi.response(
         400,
         description="Bad request",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.PUT],
     )
     @openapi.response(
         401,
         description="Unauthorized",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.PUT],
     )
     @openapi.response(
         404,
         description="User not found",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.PUT],
     )
     @openapi.response(
         '5XX',
         description="Internal server error",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.PUT],
     )
     @openapi.managed()
     @uri_variable_mapping("/tacobot/minecraft/player/{identifier}/storage", method=HTTPMethod.PUT)
@@ -1131,7 +1139,6 @@ class MinecraftApiHandler(ApiHttpHandler):
         request_id = str(uuid.uuid4())[:8]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
-        headers.add("X-TACOBOT-EVENT", "MinecraftPlayerEvent")
         headers.add("X-Request-ID", request_id)
         try:
             if not self.validate_auth_token(request):
@@ -1200,43 +1207,48 @@ class MinecraftApiHandler(ApiHttpHandler):
         name="identifier",
         description="Mojang account UUID/username or discord user ID",
         schema=str,
-        methods=[HTTPMethod.PUT],
+        methods=[HTTPMethod.DELETE],
     )
     @openapi.requestBody(
         description="Storage item payload",
         contentType="application/json",
         schema=MinecraftStorageItemPayload,
-        methods=[HTTPMethod.PUT],
+        methods=[HTTPMethod.DELETE],
     )
     @openapi.response(
         200,
         description="Withdrawn item payload",
         contentType="application/json",
         schema=MinecraftStorageItemPayload,
+        methods=[HTTPMethod.DELETE],
     )
     @openapi.response(
         400,
         description="Bad request",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.DELETE],
     )
     @openapi.response(
         401,
         description="Unauthorized",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.DELETE],
     )
     @openapi.response(
         404,
         description="User not found",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.DELETE],
     )
     @openapi.response(
         '5XX',
         description="Internal server error",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.DELETE],
     )
     @uri_variable_mapping("/tacobot/minecraft/player/{identifier}/storage", method=HTTPMethod.DELETE)
     @uri_variable_mapping("/taco/minecraft/player/{identifier}/storage", method=HTTPMethod.DELETE)
@@ -1247,7 +1259,6 @@ class MinecraftApiHandler(ApiHttpHandler):
         request_id = str(uuid.uuid4())[:8]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
-        headers.add("X-TACOBOT-EVENT", "MinecraftPlayerEvent")
         headers.add("X-Request-ID", request_id)
         try:
             if not self.validate_auth_token(request):
@@ -1331,24 +1342,28 @@ class MinecraftApiHandler(ApiHttpHandler):
         description="Taco balance object",
         contentType="application/json",
         schema=MinecraftTacoBalance,
+        methods=[HTTPMethod.GET],
     )
     @openapi.response(
         401,
         description="Unauthorized",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
     )
     @openapi.response(
         404,
         description="Identifier missing or user not found",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
     )
     @openapi.response(
         '5XX',
         description="Internal server error",
         contentType="application/json",
         schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
     )
     @openapi.managed()
     @uri_variable_mapping("/taco/minecraft/player/{identifier}/tacos/balance", method=HTTPMethod.GET)
@@ -1366,7 +1381,6 @@ class MinecraftApiHandler(ApiHttpHandler):
         request_id = str(uuid.uuid4())[:8]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
-        headers.add("X-TACOBOT-EVENT", "MinecraftPlayerEvent")
         headers.add("X-Request-ID", request_id)
         try:
             if not self.validate_auth_token(request):
@@ -1390,6 +1404,324 @@ class MinecraftApiHandler(ApiHttpHandler):
             taco_balance = MinecraftTacoBalance(uuid=minecraft_user.uuid, balance=balance)
 
             return HttpResponse(200, headers, json.dumps(taco_balance.to_dict(), indent=4).encode("utf-8"))
+        except HttpResponseException as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_from_exception(exception=e)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
+
+    @openapi.tags("minecraft")
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.summary("Add item to sell for a Minecraft user (Placeholder)")
+    @openapi.description("Add item to sell for a Minecraft user. Requires Op Level 3+.")
+    @openapi.requestBody(
+        description="Item to sell payload (TBD)",
+        contentType="application/json",
+        schema=typing.Dict[str, typing.Any],
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        200,
+        description="Item to sell response (TBD)",
+        contentType="application/json",
+        schema=typing.Dict[str, typing.Any],
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        400,
+        description="Bad request",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        403,
+        description="Forbidden",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        404,
+        description="User not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @uri_variable_mapping("/tacobot/minecraft/shop/item/sell", method=HTTPMethod.POST)
+    @uri_variable_mapping("/taco/minecraft/shop/item/sell", method=HTTPMethod.POST)
+    @uri_variable_mapping(f"/api/{API_VERSION}/minecraft/shop/item/sell", method=HTTPMethod.POST)
+    @openapi.managed()
+    def admin_add_item_to_sell(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """Admin add item to sell (Placeholder)."""
+        _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+        headers.add("X-Request-ID", request_id)
+
+        try:
+            MIN_OP_LEVEL: int = 3
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, "Unauthorized", headers=headers)
+
+            if not self._has_op_level({}, required_level=MIN_OP_LEVEL):
+                return self._create_error_response(403, "Forbidden: Insufficient operator level", headers=headers)
+
+            # Placeholder for future implementation
+            return self._create_error_response(501, "Not Implemented", headers=headers)
+        except HttpResponseException as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_from_exception(exception=e)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
+
+    @openapi.tags("minecraft")
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.summary("Admin add item to buy for a Minecraft user (Placeholder)")
+    @openapi.description("Add item to buy for a Minecraft user. Requires Op Level 3+.")
+    @openapi.requestBody(
+        description="Item to buy payload (TBD)",
+        contentType="application/json",
+        schema=typing.Dict[str, typing.Any],
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        200,
+        description="Item to buy response (TBD)",
+        contentType="application/json",
+        schema=typing.Dict[str, typing.Any],
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        400,
+        description="Bad request",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        403,
+        description="Forbidden",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        404,
+        description="User not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @uri_variable_mapping("/tacobot/minecraft/shop/item/buy", method=HTTPMethod.POST)
+    @uri_variable_mapping("/taco/minecraft/shop/item/buy", method=HTTPMethod.POST)
+    @uri_variable_mapping(f"/api/{API_VERSION}/minecraft/shop/item/buy", method=HTTPMethod.POST)
+    @openapi.managed()
+    def admin_add_item_to_buy(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """Admin add item to buy (Placeholder)."""
+        _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+        headers.add("X-Request-ID", request_id)
+        try:
+            MIN_OP_LEVEL: int = 3
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, "Unauthorized", headers=headers)
+
+            if not self._has_op_level({}, required_level=MIN_OP_LEVEL):
+                return self._create_error_response(403, "Forbidden: Insufficient operator level", headers=headers)
+
+            return self._create_error_response(501, "Not Implemented", headers=headers)
+        except HttpResponseException as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_from_exception(exception=e)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
+
+    @openapi.tags("minecraft")
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.summary("Admin remove item from sell for a Minecraft user (Placeholder)")
+    @openapi.description("Remove item from sell for a Minecraft user. Requires Op Level 3+.")
+    @openapi.requestBody(
+        description="Item to remove from sell payload (TBD)",
+        contentType="application/json",
+        schema=typing.Dict[str, typing.Any],
+        methods=[HTTPMethod.DELETE],
+    )
+    @openapi.response(
+        200,
+        description="Item removed from sell response (TBD)",
+        contentType="application/json",
+        schema=typing.Dict[str, typing.Any],
+        methods=[HTTPMethod.DELETE],
+    )
+    @openapi.response(
+        400,
+        description="Bad request",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.DELETE],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.DELETE],
+    )
+    @openapi.response(
+        403,
+        description="Forbidden",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.DELETE],
+    )
+    @openapi.response(
+        404,
+        description="User not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.DELETE],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.DELETE],
+    )
+    @uri_variable_mapping("/tacobot/minecraft/shop/item/sell", method=[HTTPMethod.DELETE])
+    @uri_variable_mapping("/taco/minecraft/shop/item/sell", method=[HTTPMethod.DELETE])
+    @uri_variable_mapping(f"/api/{API_VERSION}/minecraft/shop/item/sell", method=[HTTPMethod.DELETE])
+    @openapi.managed()
+    def admin_remove_item_from_sell(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """Admin remove item from sell (Placeholder)."""
+        _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+        headers.add("X-Request-ID", request_id)
+        try:
+            MIN_OP_LEVEL: int = 3
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, "Unauthorized", headers=headers)
+
+            if not self._has_op_level({}, required_level=MIN_OP_LEVEL):
+                return self._create_error_response(403, "Forbidden: Insufficient operator level", headers=headers)
+
+            return self._create_error_response(501, "Not Implemented", headers=headers)
+        except HttpResponseException as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_from_exception(exception=e)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
+
+    @openapi.tags("minecraft")
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.summary("Remove item from buy for a Minecraft user (Placeholder)")
+    @openapi.description("Remove item from buy for a Minecraft user. Requires Op Level 3+.")
+    @openapi.requestBody(
+        description="Item to remove from buy payload (TBD)",
+        contentType="application/json",
+        schema=typing.Dict[str, typing.Any],
+        methods=[HTTPMethod.DELETE],
+    )
+    @openapi.response(
+        200,
+        description="Item removed from buy response (TBD)",
+        contentType="application/json",
+        schema=typing.Dict[str, typing.Any],
+        methods=[HTTPMethod.DELETE],
+    )
+    @openapi.response(
+        400,
+        description="Bad request",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.DELETE],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.DELETE],
+    )
+    @openapi.response(
+        403,
+        description="Forbidden",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.DELETE],
+    )
+    @openapi.response(
+        404,
+        description="User not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.DELETE],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.DELETE],
+    )
+    @uri_variable_mapping("/tacobot/minecraft/shop/item/buy", method=HTTPMethod.DELETE)
+    @uri_variable_mapping("/taco/minecraft/shop/item/buy", method=HTTPMethod.DELETE)
+    @uri_variable_mapping(f"/api/{API_VERSION}/minecraft/shop/item/buy", method=HTTPMethod.DELETE)
+    @openapi.managed()
+    def admin_remove_item_from_buy(self, request: HttpRequest, uri_variables: dict) -> HttpResponse:
+        """Admin remove item from buy (Placeholder)."""
+        _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+        headers.add("X-Request-ID", request_id)
+        try:
+            MIN_OP_LEVEL: int = 3
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, "Unauthorized", headers=headers)
+
+            if not self._has_op_level({}, required_level=MIN_OP_LEVEL):
+                return self._create_error_response(403, "Forbidden: Insufficient operator level", headers=headers)
+
+            return self._create_error_response(501, "Not Implemented", headers=headers)
         except HttpResponseException as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return self._create_error_from_exception(exception=e)
@@ -1564,6 +1896,26 @@ class MinecraftApiHandler(ApiHttpHandler):
             self._create_error_response(404, f"Unknown event type: {event_str}", headers=headers)
         return event
 
+    def _has_op_level(self, user: MinecraftUserEntry, required_level: int) -> bool:
+        """Check if a user has the required op level.
+
+        Args:
+            user (MinecraftUserEntry): The Minecraft user entry.
+            required_level (int): The required op level.
+        Returns:
+            bool: True if the user has the required op level, False otherwise.
+        """
+        if not user:
+            return False
+        if not user.whitelist:
+            return False
+        if user.op is None:
+            return False
+        if not user.op.enabled:
+            return False
+        if user.op.level is None:
+            return False
+        return user.op.level >= required_level
 
 def setup(bot: TacoBot, http_server: HttpServer):
     settings = Settings()

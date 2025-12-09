@@ -3914,17 +3914,15 @@ paths:
         - minecraft
     delete:
       summary: Withdraw an item for a Minecraft user
+      requestBody:
+        description: Storage item payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftStorageItemPayload'
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
-      parameters:
-        - in: path
-          required: true
-          name: identifier
-          description: Mojang account UUID/username or discord user ID
-          schema:
-            type: string
-      description: Withdraw an item from a Minecraft user's storage.
       responses:
         '200':
           description: Withdrawn item payload
@@ -3958,6 +3956,14 @@ paths:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
       tags:
         - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      description: Withdraw an item from a Minecraft user's storage.
   /api/v1/minecraft/player/{identifier}/storage:
     get:
       responses:
@@ -4053,17 +4059,15 @@ paths:
         - minecraft
     delete:
       summary: Withdraw an item for a Minecraft user
+      requestBody:
+        description: Storage item payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftStorageItemPayload'
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
-      parameters:
-        - in: path
-          required: true
-          name: identifier
-          description: Mojang account UUID/username or discord user ID
-          schema:
-            type: string
-      description: Withdraw an item from a Minecraft user's storage.
       responses:
         '200':
           description: Withdrawn item payload
@@ -4097,6 +4101,14 @@ paths:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
       tags:
         - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      description: Withdraw an item from a Minecraft user's storage.
   /taco/minecraft/player/{identifier}/storage:
     put:
       summary: Store an item for a Minecraft user
@@ -4152,17 +4164,15 @@ paths:
         - minecraft
     delete:
       summary: Withdraw an item for a Minecraft user
+      requestBody:
+        description: Storage item payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftStorageItemPayload'
       security:
         - X-AUTH-TOKEN: []
         - X-TACOBOT-TOKEN: []
-      parameters:
-        - in: path
-          required: true
-          name: identifier
-          description: Mojang account UUID/username or discord user ID
-          schema:
-            type: string
-      description: Withdraw an item from a Minecraft user's storage.
       responses:
         '200':
           description: Withdrawn item payload
@@ -4196,6 +4206,14 @@ paths:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
       tags:
         - minecraft
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      description: Withdraw an item from a Minecraft user's storage.
   /taco/minecraft/player/{identifier}/tacos/balance:
     get:
       security:
@@ -4319,6 +4337,648 @@ paths:
       description: Calculate the number of available tacos for a Minecraft user.
       tags:
         - minecraft
+  /tacobot/minecraft/shop/item/sell:
+    post:
+      summary: Add item to sell for a Minecraft user (Placeholder)
+      requestBody:
+        description: Item to sell payload (TBD)
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      responses:
+        '200':
+          description: Item to sell response (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+      description: Add item to sell for a Minecraft user. Requires Op Level 3+.
+    delete:
+      summary: Admin remove item from sell for a Minecraft user (Placeholder)
+      requestBody:
+        description: Item to remove from sell payload (TBD)
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      responses:
+        '200':
+          description: Item removed from sell response (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+      description: Remove item from sell for a Minecraft user. Requires Op Level 3+.
+  /taco/minecraft/shop/item/sell:
+    post:
+      summary: Add item to sell for a Minecraft user (Placeholder)
+      requestBody:
+        description: Item to sell payload (TBD)
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      responses:
+        '200':
+          description: Item to sell response (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+      description: Add item to sell for a Minecraft user. Requires Op Level 3+.
+    delete:
+      summary: Admin remove item from sell for a Minecraft user (Placeholder)
+      requestBody:
+        description: Item to remove from sell payload (TBD)
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      responses:
+        '200':
+          description: Item removed from sell response (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+      description: Remove item from sell for a Minecraft user. Requires Op Level 3+.
+  /api/v1/minecraft/shop/item/sell:
+    post:
+      summary: Add item to sell for a Minecraft user (Placeholder)
+      requestBody:
+        description: Item to sell payload (TBD)
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      responses:
+        '200':
+          description: Item to sell response (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+      description: Add item to sell for a Minecraft user. Requires Op Level 3+.
+    delete:
+      summary: Admin remove item from sell for a Minecraft user (Placeholder)
+      requestBody:
+        description: Item to remove from sell payload (TBD)
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      responses:
+        '200':
+          description: Item removed from sell response (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+      description: Remove item from sell for a Minecraft user. Requires Op Level 3+.
+  /tacobot/minecraft/shop/item/buy:
+    post:
+      summary: Admin add item to buy for a Minecraft user (Placeholder)
+      requestBody:
+        description: Item to buy payload (TBD)
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      responses:
+        '200':
+          description: Item to buy response (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+      description: Add item to buy for a Minecraft user. Requires Op Level 3+.
+    delete:
+      summary: Remove item from buy for a Minecraft user (Placeholder)
+      requestBody:
+        description: Item to remove from buy payload (TBD)
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      responses:
+        '200':
+          description: Item removed from buy response (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+      description: Remove item from buy for a Minecraft user. Requires Op Level 3+.
+  /taco/minecraft/shop/item/buy:
+    post:
+      summary: Admin add item to buy for a Minecraft user (Placeholder)
+      requestBody:
+        description: Item to buy payload (TBD)
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      responses:
+        '200':
+          description: Item to buy response (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+      description: Add item to buy for a Minecraft user. Requires Op Level 3+.
+    delete:
+      summary: Remove item from buy for a Minecraft user (Placeholder)
+      requestBody:
+        description: Item to remove from buy payload (TBD)
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      responses:
+        '200':
+          description: Item removed from buy response (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+      description: Remove item from buy for a Minecraft user. Requires Op Level 3+.
+  /api/v1/minecraft/shop/item/buy:
+    post:
+      summary: Admin add item to buy for a Minecraft user (Placeholder)
+      requestBody:
+        description: Item to buy payload (TBD)
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      responses:
+        '200':
+          description: Item to buy response (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+      description: Add item to buy for a Minecraft user. Requires Op Level 3+.
+    delete:
+      summary: Remove item from buy for a Minecraft user (Placeholder)
+      requestBody:
+        description: Item to remove from buy payload (TBD)
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      responses:
+        '200':
+          description: Item removed from buy response (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      tags:
+        - minecraft
+      description: Remove item from buy for a Minecraft user. Requires Op Level 3+.
 components:
   schemas:
     ErrorStatusCodePayload:
