@@ -53,17 +53,20 @@ def test_get_minecraft_user_open_branch_and_exception(capsys):
     db.client = None
     db.connection = None
     db.open = make_open_stub(db, {'minecraft_users': fake})
-    assert db.get_minecraft_user(1, 2) is None
+    assert db.get_minecraft_user(guild_id='1', user_id='2') is None
 
     db.client = None
     db.connection = None
     fake2 = FakeColl(find_one_val={'guild_id': '1', 'user_id': '2'})
     db.open = make_open_stub(db, {'minecraft_users': fake2})
-    assert db.get_minecraft_user(1, 2) == {'guild_id': '1', 'user_id': '2'}
+    got = db.get_minecraft_user(guild_id='1', user_id='2')
+    assert isinstance(got, MinecraftUserEntry)
+    for k, v in {'guild_id': '1', 'user_id': '2'}.items():
+        assert got.to_dict().get(k) == v
 
     db.connection = types.SimpleNamespace(minecraft_users=FakeColl(should_raise=True))
     db.client = object()
-    assert db.get_minecraft_user(1, 2) is None
+    assert db.get_minecraft_user(guild_id=1, user_id=2) is None
     out = capsys.readouterr()
     assert 'ERROR' in out.out or 'ERROR' in out.err
 

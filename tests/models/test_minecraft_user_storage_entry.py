@@ -13,7 +13,7 @@ def test_empty_entry_is_empty():
         "user_id": "",
         "guild_id": "",
         "uuid": "",
-        "username": "",
+        "slots": 0,
         "storage": {},
     }
 

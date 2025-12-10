@@ -1049,7 +1049,7 @@ class MinecraftApiHandler(ApiHttpHandler):
             self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Fetching storage for identifier {identifier} in guild {guild_id}")
 
             # find user by minecraft uuid/username
-            minecraft_user: MinecraftUserEntry = self.minecraft_db.get_discord_user(
+            minecraft_user: MinecraftUserEntry = self.minecraft_db.get_minecraft_user(
                 uuidOrUsername=identifier, guild_id=guild_id
             )
             if not minecraft_user:
@@ -1149,7 +1149,7 @@ class MinecraftApiHandler(ApiHttpHandler):
                 return self._create_error_response(400, "No user identifier provided", headers=headers)
 
             # find user by minecraft uuid/username
-            minecraft_user: MinecraftUserEntry = self.minecraft_db.get_discord_user(uuidOrUsername=identifier)
+            minecraft_user: MinecraftUserEntry = self.minecraft_db.get_minecraft_user(uuidOrUsername=identifier)
             if not minecraft_user:
                 return self._create_error_response(404, "User not found", headers=headers)
 
@@ -1268,7 +1268,7 @@ class MinecraftApiHandler(ApiHttpHandler):
             if not identifier:
                 return self._create_error_response(400, "No user identifier provided", headers=headers)
             # find user by minecraft uuid/username
-            minecraft_user: MinecraftUserEntry = self.minecraft_db.get_discord_user(uuidOrUsername=identifier)
+            minecraft_user: MinecraftUserEntry = self.minecraft_db.get_minecraft_user(uuidOrUsername=identifier)
             if not minecraft_user:
                 return self._create_error_response(404, "User not found", headers=headers)
 
@@ -1394,7 +1394,7 @@ class MinecraftApiHandler(ApiHttpHandler):
             guild_id = self.settings.primary_guild_id
 
             # find user by minecraft uuid/username
-            minecraft_user: MinecraftUserEntry = self.minecraft_db.get_discord_user(uuidOrUsername=identifier, guild_id=guild_id)
+            minecraft_user: MinecraftUserEntry = self.minecraft_db.get_minecraft_user(uuidOrUsername=identifier, guild_id=guild_id)
             if not minecraft_user:
                 return self._create_error_response(404, "User not found", headers=headers)
 
@@ -1816,7 +1816,7 @@ class MinecraftApiHandler(ApiHttpHandler):
                     return self._create_error_response(400, "No data payload provided", headers=headers)
             except json.JSONDecodeError:
                 return self._create_error_response(400, "Invalid JSON body", headers=headers)
-            minecraft_user: MinecraftUserEntry = self.minecraft_db.get_discord_user(
+            minecraft_user: MinecraftUserEntry = self.minecraft_db.get_minecraft_user(
                 guild_id=guild_id,
                 uuid=req_payload.uuid,
                 username=req_payload.username,

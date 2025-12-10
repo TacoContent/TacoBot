@@ -59,10 +59,17 @@ class FakeCollection:
         if current or upsert:
             self._store[key] = current
 
+    def insert_one(self, document):
+        # For logs only - just store under a reserved key
+        self._store.setdefault('_inserts', []).append(document)
+        return True
+
 
 class FakeConnection:
     def __init__(self):
         self.minecraft_user_storage = FakeCollection()
+        self.minecraft_users = FakeCollection()
+        self.logs = FakeCollection()
 
 
 @pytest.fixture
@@ -100,8 +107,8 @@ def test_get_user_storage_returns_entry(db):
 
 
 def test_withdraw_user_storage_missing_or_not_enough(db):
-    # empty db -> missing
-    assert db.withdraw_user_storage(1, 2, "uuid-x", "minecraft:stick", 1) is False
+    # empty db -> missing (use a variant id key)
+    assert db.withdraw_user_storage(1, 2, "uuid-x", "stick-variant", 1) == (None, False)
 
     # add entry with item quantity 1, withdraw 2 -> not enough
     col = db.connection.minecraft_user_storage
@@ -111,10 +118,11 @@ def test_withdraw_user_storage_missing_or_not_enough(db):
         "guild_id": "1",
         "uuid": "uuid-x",
         "username": "Test",
-        "storage": {"minecraft:stick": {"item_id": "minecraft:stick", "quantity": 1, "metadata": {}}},
+        "storage": {"stick-variant": {"item_id": "minecraft:stick", "variant_id": "stick-variant", "quantity": 1, "metadata": {}}},
     }
 
-    assert db.withdraw_user_storage(1, 2, "uuid-x", "minecraft:stick", 2) is False
+    # supply the correct variant id when withdrawing
+    assert db.withdraw_user_storage(1, 2, "uuid-x", "stick-variant", 2) == (None, False)
 
 
 def test_withdraw_user_storage_decrement_and_remove(db):
@@ -126,39 +134,43 @@ def test_withdraw_user_storage_decrement_and_remove(db):
         "guild_id": "1",
         "uuid": "uuid-dep",
         "username": "DepositTest",
-        "storage": {"minecraft:egg": {"item_id": "minecraft:egg", "quantity": 5, "metadata": {}}},
+        "storage": {"egg-variant": {"item_id": "minecraft:egg", "variant_id": "egg-variant", "quantity": 5, "metadata": {}}},
     }
 
     # withdraw 3 -> quantity becomes 2
-    ok = db.withdraw_user_storage(1, 2, "uuid-dep", "minecraft:egg", 3)
+    # withdraw using the variant id key
+    withdrawn_item, ok = db.withdraw_user_storage(1, 2, "uuid-dep", "egg-variant", 3)
     assert ok is True
     stored = col._store[key]
-    assert stored["storage"]["minecraft:egg"]["quantity"] == 2
+    assert stored["storage"]["egg-variant"]["quantity"] == 2
 
     # withdraw remaining 2 -> should remove item
-    ok2 = db.withdraw_user_storage(1, 2, "uuid-dep", "minecraft:egg", 2)
+    withdrawn_item2, ok2 = db.withdraw_user_storage(1, 2, "uuid-dep", "egg-variant", 2)
     assert ok2 is True
     stored2 = col._store[key]
-    assert "minecraft:egg" not in stored2.get("storage", {})
+    assert "egg-variant" not in stored2.get("storage", {})
 
 
 def test_deposit_user_storage_new_and_existing(db):
     col = db.connection.minecraft_user_storage
     key = ("10", "20", "uuid-dp")
 
+    # Create a match for minecraft user record so deposit can validate user exists
+    db.connection.minecraft_users._store[("10", "20", None)] = {"user_id": "20", "guild_id": "10", "uuid": "uuid-dp", "username": "TestUser"}
+
     # deposit into new user -> should add upsert
-    item = MinecraftUserStorageItem(item_id="minecraft:pearl", quantity=4, metadata={"note": "test"})
+    item = MinecraftUserStorageItem(item_id="minecraft:pearl", variant_id="pearl-variant", quantity=4, metadata={"note": "test"})
     ok = db.deposit_user_storage(10, 20, "uuid-dp", item)
     assert ok is True
 
     stored = col._store[key]
-    assert "minecraft:pearl" in stored["storage"]
-    assert stored["storage"]["minecraft:pearl"]["quantity"] == 4
+    assert "pearl-variant" in stored["storage"]
+    assert stored["storage"]["pearl-variant"]["quantity"] == 4
 
     # deposit additional quantity to existing item -> should increment
-    item2 = MinecraftUserStorageItem(item_id="minecraft:pearl", quantity=6, metadata={})
+    item2 = MinecraftUserStorageItem(item_id="minecraft:pearl", variant_id="pearl-variant", quantity=6, metadata={})
     ok2 = db.deposit_user_storage(10, 20, "uuid-dp", item2)
     assert ok2 is True
 
     stored2 = col._store[key]
-    assert stored2["storage"]["minecraft:pearl"]["quantity"] == 10
+    assert stored2["storage"]["pearl-variant"]["quantity"] == 10

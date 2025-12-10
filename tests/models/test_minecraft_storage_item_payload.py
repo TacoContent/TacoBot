@@ -6,7 +6,7 @@ from bot.lib.models.MinecraftStorageItemPayload import MinecraftStorageItemPaylo
 def test_empty_payload_is_empty():
     p = MinecraftStorageItemPayload()
     assert p.is_empty()
-    assert p.to_dict() == {"uuid": "", "item": "", "quantity": 0, "metadata": {}}
+    assert p.to_dict() == {"uuid": "", "item": "", "variant_id": "", "quantity": 0, "metadata": {}}
 
 
 def test_payload_fields_and_from_dict():

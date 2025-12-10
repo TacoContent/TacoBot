@@ -15,7 +15,7 @@ class WhitelistManager:
 
     def get_minecraft_user(self, guild_id: int, user_id: int) -> typing.Optional[MinecraftUserEntry]:
         # get the minecraft user entry from the database
-        return self.minecraft_db.get_minecraft_user(guildId=guild_id, userId=user_id)
+        return self.minecraft_db.get_minecraft_user(guild_id=guild_id, user_id=user_id)
 
     def get_whitelist_status(self, guild_id: int, user_id: int) -> bool:
         # get the whitelist status for a user
@@ -37,7 +37,7 @@ class WhitelistManager:
 
     def is_user_whitelisted(self, guild_id: int, user_id: int) :
         # check if user is in the whitelist
-        minecraft_user = self.minecraft_db.get_minecraft_user(guildId=guild_id, userId=user_id)
+        minecraft_user = self.minecraft_db.get_minecraft_user(guild_id=guild_id, user_id=user_id)
         if not minecraft_user:
             return False
 
@@ -49,7 +49,7 @@ class WhitelistManager:
 
     def set_user_whitelist_status(self, guild_id: int, user_id: int, username: str, uuid: str, status: bool):
         # set the whitelist status for a user
-        minecraft_user = self.minecraft_db.get_minecraft_user(guildId=guild_id, userId=user_id)
+        minecraft_user = self.minecraft_db.get_minecraft_user(guild_id=guild_id, user_id=user_id)
         if not minecraft_user:
             return False
 

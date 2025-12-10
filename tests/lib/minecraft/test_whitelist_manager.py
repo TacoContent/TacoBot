@@ -16,7 +16,7 @@ class TestWhitelistManager:
         minecraft_db.get_minecraft_user.return_value = {"username": "TestUser"}
         result = whitelist_manager.get_minecraft_user(guild_id=12345, user_id=33333)
         assert result == {"username": "TestUser"}
-        minecraft_db.get_minecraft_user.assert_called_once_with(guildId=12345, userId=33333)
+        minecraft_db.get_minecraft_user.assert_called_once_with(guild_id=12345, user_id=33333)
 
     def test_get_whitelist_status_true(self, whitelist_manager, minecraft_db):
         mock_user = MagicMock()

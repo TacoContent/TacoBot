@@ -23,7 +23,7 @@ class MinecraftDatabase(Database):
         self.SETTINGS_SECTION = "minecraft"
         pass
 
-    def get_discord_user(self, **kwargs: typing.Any) -> typing.Optional[MinecraftUserEntry]:
+    def get_minecraft_user(self, **kwargs: typing.Any) -> typing.Optional[MinecraftUserEntry]:
         _method = inspect.stack()[0][3]
         try:
             if self.connection is None or self.client is None:
@@ -50,8 +50,6 @@ class MinecraftDatabase(Database):
                     {"user_id": str(kwargs["uuidOrUsername"])},
                 ]
 
-            print(f"get_discord_user query: {query}")
-
             result = self.connection.minecraft_users.find_one(query)  # type: ignore
             if result:
                 return MinecraftUserEntry(**result)
@@ -66,24 +64,24 @@ class MinecraftDatabase(Database):
             )
             return None
 
-    def get_minecraft_user(self, guildId: int, userId: int) -> typing.Optional[MinecraftUserEntry]:
-        _method = inspect.stack()[0][3]
-        try:
-            if self.connection is None or self.client is None:
-                self.open()
-            result = self.connection.minecraft_users.find_one({"user_id": str(userId), "guild_id": str(guildId)})  # type: ignore
-            if result:
-                return result
-            return None
-        except Exception as ex:
-            self.log(
-                guildId=guildId,
-                level=loglevel.LogLevel.ERROR,
-                method=f"{self._module}.{self._class}.{_method}",
-                message=f"{ex}",
-                stackTrace=traceback.format_exc(),
-            )
-            return None
+    # def get_minecraft_user(self, guildId: int, userId: int) -> typing.Optional[MinecraftUserEntry]:
+    #     _method = inspect.stack()[0][3]
+    #     try:
+    #         if self.connection is None or self.client is None:
+    #             self.open()
+    #         result = self.connection.minecraft_users.find_one({"user_id": str(userId), "guild_id": str(guildId)})  # type: ignore
+    #         if result:
+    #             return result
+    #         return None
+    #     except Exception as ex:
+    #         self.log(
+    #             guildId=guildId,
+    #             level=loglevel.LogLevel.ERROR,
+    #             method=f"{self._module}.{self._class}.{_method}",
+    #             message=f"{ex}",
+    #             stackTrace=traceback.format_exc(),
+    #         )
+    #         return None
 
     def whitelist_minecraft_user(
         self, guildId: int, userId: int, username: str, uuid: str, whitelist: bool = True
@@ -271,6 +269,29 @@ class MinecraftDatabase(Database):
             )
             return None
 
+    def has_op_level(self, guild_id: int, user_id: int, op_level: int) -> bool:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+
+            minecraft_user = self.get_minecraft_user(guild_id=guild_id, user_id=user_id)
+            if minecraft_user is None:
+                return False
+
+            if minecraft_user.op is None or not minecraft_user.op.get("enabled", False):
+                return False
+            return minecraft_user.op.get("level", 0) >= op_level
+        except Exception as ex:
+            self.log(
+                guildId=guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return False
+
     def withdraw_user_storage(
         self, guild_id: int, user_id: int, uuid: str, variant_id: str, quantity: int
     ) -> typing.Tuple[typing.Optional[MinecraftUserStorageItem], bool]:
@@ -328,11 +349,20 @@ class MinecraftDatabase(Database):
             if self.connection is None or self.client is None:
                 self.open()
 
+            minecraft_user = self.get_minecraft_user(guild_id=guild_id, user_id=user_id)
+            if minecraft_user is None:
+                raise ValueError("Minecraft user does not exist")
+
+            has_op_level: bool = self.has_op_level(guild_id, user_id, 2)
+
             existing_entry = self.get_user_storage(guild_id, user_id, uuid)
+            INITIAL_SLOTS = 9
             if existing_entry is None:
                 existing_entry = MinecraftUserStorageEntry(
-                    guild_id=str(guild_id), user_id=str(user_id), uuid=uuid, storage={}
+                    guild_id=str(guild_id), user_id=str(user_id), uuid=uuid, storage={}, slots=INITIAL_SLOTS if not has_op_level else -1
                 )
+
+            has_infinite_slots = existing_entry.slots == -1 or has_op_level
 
             # find the item in storage if it exists
             if item.variant_id in existing_entry.storage:
@@ -347,6 +377,9 @@ class MinecraftDatabase(Database):
                 existing_item.metadata = item.metadata
                 existing_entry.storage[item.variant_id] = existing_item
             else:
+                # if its a new item, need to check for storage space
+                if len(existing_entry.storage) >= existing_entry.slots and not has_infinite_slots:
+                    raise ValueError("Not enough storage slots available")
                 # Add the new item to storage
                 existing_entry.storage[item.variant_id] = MinecraftUserStorageItem(
                     item_id=item.item_id,
@@ -373,3 +406,15 @@ class MinecraftDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return False
+
+    def shop_add_item_to_buy(self):
+        pass
+
+    def shop_remove_item_to_buy(self):
+        pass
+
+    def shop_add_item_to_sell(self):
+        pass
+
+    def shop_remove_item_to_sell(self):
+        pass

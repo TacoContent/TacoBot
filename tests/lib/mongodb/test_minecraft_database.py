@@ -46,16 +46,21 @@ def test_get_minecraft_user_found_and_not_found_and_exception(capsys):
 
     fake_none = FakeColl(find_one_val=None)
     db.connection = types.SimpleNamespace(minecraft_users=fake_none)
-    assert db.get_minecraft_user(1, 2) is None
+    assert db.get_minecraft_user(guild_id='1', user_id='2') is None
 
     data = {'guild_id': '1', 'user_id': '2', 'username': 'u'}
     fake_found = FakeColl(find_one_val=data)
     db.connection = types.SimpleNamespace(minecraft_users=fake_found)
-    assert db.get_minecraft_user(1, 2) == data
+    got = db.get_minecraft_user(guild_id='1', user_id='2')
+    assert got is not None
+    assert isinstance(got, MinecraftUserEntry)
+    # Compare subset of fields - model objects include additional properties
+    for k, v in data.items():
+        assert got.to_dict().get(k) == v
 
     bad = FakeColl(should_raise=True)
     db.connection = types.SimpleNamespace(minecraft_users=bad)
-    res = db.get_minecraft_user(1, 2)
+    res = db.get_minecraft_user(guild_id=1, user_id=2)
     assert res is None
     out = capsys.readouterr()
     assert 'ERROR' in out.out or 'ERROR' in out.err

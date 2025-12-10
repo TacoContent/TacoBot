@@ -6468,11 +6468,14 @@ components:
         uuid:
           type: string
           description: The UUID of the Minecraft user.
+        slots:
+          type: integer
         storage:
           type: object
           description: The storage items of the Minecraft user.
       required:
         - guild_id
+        - slots
         - storage
         - user_id
         - uuid
