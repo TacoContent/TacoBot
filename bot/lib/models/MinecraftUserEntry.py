@@ -15,6 +15,8 @@ class MinecraftUserEntry:
     def __init__(self, **kwargs):
         self.guild_id: int = int(kwargs.get("guild_id", "0"))
         self.user_id: int = int(kwargs.get("user_id", "0"))
+        # roles are added after pulling from DB by the bot
+        self.role_ids: typing.List[int] = kwargs.get("role_ids", [])
         self.username: str = kwargs.get("username", "")
         self.whitelist: bool = kwargs.get("whitelist", False)
         self.uuid: str = kwargs.get("uuid", "")
@@ -25,6 +27,7 @@ class MinecraftUserEntry:
         result: typing.Dict[str, typing.Any] = {
             "guild_id": str(self.guild_id),
             "user_id": str(self.user_id),
+            # "role_ids": self.role_ids,
             "username": self.username,
             "uuid": self.uuid,
             "whitelist": self.whitelist,
@@ -42,6 +45,7 @@ class MinecraftUserEntry:
         result: typing.Dict[str, typing.Any] = {
             "guild_id": str(data.get("guild_id", "0")),
             "user_id": str(data.get("user_id", "0")),
+            # "role_ids": data.get("role_ids", []),
             "username": data.get("username", ""),
             "uuid": data.get("uuid", ""),
             "whitelist": data.get("whitelist", False),

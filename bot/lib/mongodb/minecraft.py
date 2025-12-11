@@ -3,13 +3,13 @@ import os
 import traceback
 import typing
 
-from bot.lib.models.MinecraftUserStorageEntry import MinecraftUserStorageEntry, MinecraftUserStorageItem
-
+from bot.lib.models.MinecraftShopEntry import MinecraftShopEntry
 
 from bot.lib.enums import loglevel
 from bot.lib.enums.minecraft_op import MinecraftOpLevel
-# from bot.lib.models.minecraft.whitelist_user import MinecraftWhitelistUser
+from bot.lib.models.MinecraftShopItem import MinecraftShopItem
 from bot.lib.models.MinecraftUserEntry import MinecraftUserEntry
+from bot.lib.models.MinecraftUserStorageEntry import MinecraftUserStorageEntry, MinecraftUserStorageItem
 from bot.lib.models.minecraft.world import MinecraftWorld
 from bot.lib.mongodb.database import Database
 
@@ -361,6 +361,8 @@ class MinecraftDatabase(Database):
                 existing_entry = MinecraftUserStorageEntry(
                     guild_id=str(guild_id), user_id=str(user_id), uuid=uuid, storage={}, slots=INITIAL_SLOTS if not has_op_level else -1
                 )
+                # since its a new storage entry, we need to insert the base entry first
+                self.connection.minecraft_user_storage.insert_one(existing_entry.to_dict())  # type: ignore
 
             has_infinite_slots = existing_entry.slots == -1 or has_op_level
 
@@ -393,7 +395,7 @@ class MinecraftDatabase(Database):
             self.connection.minecraft_user_storage.update_one(  # type: ignore
                 {"guild_id": str(guild_id), "user_id": str(user_id), "uuid": uuid},
                 {"$set": {f"storage.{item.variant_id}": existing_entry.storage[item.variant_id].to_dict()}},
-                upsert=True,
+                upsert=False,  # this should always exist when we reach here
             )
 
             return True
@@ -407,14 +409,96 @@ class MinecraftDatabase(Database):
             )
             return False
 
-    def shop_add_item_to_buy(self):
+    def get_shop_items(self, **kwargs) -> typing.List[MinecraftShopEntry]:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+
+            action = None
+            if "action" in kwargs and kwargs["action"] in ["buy", "sell"]:
+                action = kwargs["action"]
+
+            # build query
+            query = {}
+            admin_list = False
+            if "admin_list" in kwargs:
+                admin_list = bool(kwargs.get("admin_list", False))
+                action = "admin" if admin_list else action
+
+            # if not admin_list, only get enabled shops
+            if not admin_list:
+                query["enabled"] = True
+
+            if "shop_id" in kwargs and kwargs["shop_id"] != "":
+                query["shop_id"] = str(kwargs["shop_id"])
+
+            # if guild_id is provided, filter by it, but also include global shops (guild_id = 0)
+            default_guild_id = str(self.settings.primary_guild_id)
+
+            if "guild_id" in kwargs and kwargs["guild_id"] != "":
+                query["guild_id"] = {"$in": [str(kwargs["guild_id"]), "0"]}
+            else:
+                query["guild_id"] = {"$in": [default_guild_id, "0"]}  # only global shops since no guild_id provided
+            # if user id is provided, filter by it, but also include global shops (user_id = None)
+            if "user_id" in kwargs and kwargs["user_id"] != "":
+                # user_id == user_id or user_id == None or user_id not exists
+                query["$or"] = [{"user_id": str(kwargs["user_id"])}, {"user_id": None}, {"user_id": {"$exists": False}}]
+
+            # if role_ids is provided, filter by it, but also include shops with no role restrictions
+            if "role_ids" in kwargs and kwargs["role_ids"]:
+                query["$or"] = [
+                    {"role_ids": {"$in": kwargs["role_ids"]}},
+                    {"role_ids": []},
+                    {"role_ids": {"$exists": False}},
+                ]
+
+            # need to filter shop items by buy/sell price > 0
+            results = self.connection.minecraft_shops.find(query)  # type: ignore
+            filtered: typing.List[MinecraftShopEntry] = []
+
+            result_count = self.connection.minecraft_shops.count_documents(query)  # type: ignore
+
+            print(f"Shop query: {query}")
+            print(f"Shop results count: {result_count}")
+
+            # create copy of the MinecraftShopEntry with no shop items
+            for result in results:
+                shop_entry = MinecraftShopEntry(**result)
+                shop_entry_copy = MinecraftShopEntry(**result)
+                shop_entry_copy.shop = {}
+                if not shop_entry.shop:
+                    continue
+                for variant_id, item in shop_entry.shop.items():
+                    shop_item = MinecraftShopItem(**item) if isinstance(item, dict) else item if isinstance(item, MinecraftShopItem) else None
+
+                    if shop_item is None:
+                        continue
+
+                    if not shop_item.enabled:
+                        continue
+                    if action == "buy" and (shop_item.buy > 0 or admin_list):
+                        shop_entry_copy.shop[variant_id] = shop_item
+                    elif action == "sell" and (shop_item.sell > 0 or admin_list):
+                        shop_entry_copy.shop[variant_id] = shop_item
+                    elif action == "admin":
+                        shop_entry_copy.shop[variant_id] = shop_item
+                    else:
+                        continue
+                filtered.append(shop_entry_copy)
+            return filtered
+        except Exception as ex:
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return []
+
+    def shop_add_item(self):
         pass
 
-    def shop_remove_item_to_buy(self):
-        pass
-
-    def shop_add_item_to_sell(self):
-        pass
-
-    def shop_remove_item_to_sell(self):
+    def shop_remove_item(self):
         pass
