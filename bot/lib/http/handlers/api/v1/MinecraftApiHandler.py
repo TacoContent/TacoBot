@@ -42,7 +42,6 @@ import typing
 from http import HTTPMethod
 import uuid
 
-
 import requests
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
 from bot.lib.helpers import EntityHelper, TacoHelper
@@ -56,6 +55,7 @@ from bot.lib.models.MinecraftServerSettings import MinecraftServerSettingsSettin
 from bot.lib.models.MinecraftServerStatus import MinecraftServerStatus
 from bot.lib.models.MinecraftSettingsUpdatePayload import MinecraftSettingsUpdatePayload
 from bot.lib.models.MinecraftShopEntry import MinecraftShopEntry
+from bot.lib.models.MinecraftShopSettings import MinecraftShopSettings
 from bot.lib.models.MinecraftTacoBalance import MinecraftTacoBalance
 from bot.lib.models.MinecraftUserEntry import MinecraftUserEntry
 from bot.lib.models.MinecraftUserStats import MinecraftUserStats
@@ -131,9 +131,11 @@ class MinecraftApiHandler(ApiHttpHandler):
             500 - Internal server error
         """
         _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+        headers.add("X-Request-ID", request_id)
         try:
-            headers = HttpHeaders()
-            headers.add("Content-Type", "application/json")
             # response = self._nodered_request(request.path, "GET").json()
 
             whitelist = self.minecraft_db.get_whitelist(self.settings.primary_guild_id)
@@ -179,9 +181,11 @@ class MinecraftApiHandler(ApiHttpHandler):
             500 - Internal server error
         """
         _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+        headers.add("X-Request-ID", request_id)
         try:
-            headers = HttpHeaders()
-            headers.add("Content-Type", "application/json")
             oplist = self.minecraft_db.get_oplist(self.settings.primary_guild_id)
 
             payload = []
@@ -237,8 +241,10 @@ class MinecraftApiHandler(ApiHttpHandler):
         """
         _method = inspect.stack()[0][3]
 
+        request_id = str(uuid.uuid4())[:8]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
+        headers.add("X-Request-ID", request_id)
         try:
             minecraft_host_internal = "vader.bit13.local"
             minecraft_host_external = "mc.fuku.io"
@@ -343,8 +349,10 @@ class MinecraftApiHandler(ApiHttpHandler):
             should upsert the provided settings document.
         """
         _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
+        headers.add("X-Request-ID", request_id)
         try:
             if not self.validate_auth_token(request):
                 self.log.error(0, f"{self._module}.{self._class}.{_method}", "Invalid authentication token")
@@ -419,9 +427,11 @@ class MinecraftApiHandler(ApiHttpHandler):
             500 - internal server error
         """
         _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+        headers.add("X-Request-ID", request_id)
         try:
-            headers = HttpHeaders()
-            headers.add("Content-Type", "application/json")
 
             if not self.validate_auth_token(request):
                 self.log.error(0, f"{self._module}.{self._class}.{_method}", "Invalid authentication token")
@@ -480,9 +490,11 @@ class MinecraftApiHandler(ApiHttpHandler):
             500 - internal server error
         """
         _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+        headers.add("X-Request-ID", request_id)
         try:
-            headers = HttpHeaders()
-            headers.add("Content-Type", "application/json")
             events = MinecraftPlayerEvents
 
             payload = []
@@ -526,9 +538,11 @@ class MinecraftApiHandler(ApiHttpHandler):
             500 - internal server error
         """
         _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+        headers.add("X-Request-ID", request_id)
         try:
-            headers = HttpHeaders()
-            headers.add("Content-Type", "application/json")
             guild_id = self.settings.primary_guild_id
             worlds = self.minecraft_db.get_worlds(guild_id)
 
@@ -580,9 +594,11 @@ class MinecraftApiHandler(ApiHttpHandler):
             500 - internal server error
         """
         _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+        headers.add("X-Request-ID", request_id)
         try:
-            headers = HttpHeaders()
-            headers.add("Content-Type", "application/json")
 
             # create endpoint to allow passing guild_id?
             guild_id = self.settings.primary_guild_id
@@ -652,8 +668,10 @@ class MinecraftApiHandler(ApiHttpHandler):
             Marks the specified world active via ``set_active_world``.
         """
         _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
+        headers.add("X-Request-ID", request_id)
         try:
             # AUTH?
             if not request.body:
@@ -721,8 +739,10 @@ class MinecraftApiHandler(ApiHttpHandler):
             https://api.mojang.com/users/profiles/minecraft/{username}
         """
         _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
+        headers.add("X-Request-ID", request_id)
         try:
             username: typing.Optional[str] = uri_variables.get("username", None)
             if not username:
@@ -755,7 +775,7 @@ class MinecraftApiHandler(ApiHttpHandler):
         methods=[HTTPMethod.POST],
     )
     @openapi.requestBody(
-        description="Player statistics payload (TBD)",
+        description="Player statistics payload",
         contentType="application/json",
         schema=MinecraftUserStats,
         methods=[HTTPMethod.POST],
@@ -812,8 +832,10 @@ class MinecraftApiHandler(ApiHttpHandler):
             This endpoint is a placeholder for future implementation.
         """
         _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
+        headers.add("X-Request-ID", request_id)
         try:
 
             if not self.validate_auth_token(request):
@@ -833,12 +855,12 @@ class MinecraftApiHandler(ApiHttpHandler):
             if data is None:
                 return self._create_error_response(400, "No data provided", headers=headers)
 
-            uuid: typing.Optional[str] = uri_variables.get("uuid", None)
-            if not uuid:
+            uid: typing.Optional[str] = uri_variables.get("uuid", None)
+            if not uid:
                 return self._create_error_response(404, "No UUID provided", headers=headers)
 
             # Placeholder logic for future implementation
-            payload = {"message": f"Player statistics for {uuid} are not yet implemented."}
+            payload = {"message": f"Player statistics for {uid} are not yet implemented."}
             return HttpResponse(200, headers, json.dumps(payload, indent=4).encode("utf-8"))
         except HttpResponseException as e:
             return self._create_error_from_exception(exception=e)
@@ -895,15 +917,17 @@ class MinecraftApiHandler(ApiHttpHandler):
             This method is a placeholder for future implementation.
         """
         _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
+        headers.add("X-Request-ID", request_id)
         try:
-            uuid: typing.Optional[str] = uri_variables.get("uuid", None)
-            if not uuid:
+            uid: typing.Optional[str] = uri_variables.get("uuid", None)
+            if not uid:
                 return self._create_error_response(404, "No UUID provided", headers=headers)
 
             # Placeholder logic for future implementation
-            payload = {"message": f"Player statistics for {uuid} are not yet implemented."}
+            payload = {"message": f"Player statistics for {uid} are not yet implemented."}
             return HttpResponse(200, headers, json.dumps(payload, indent=4).encode("utf-8"))
         except HttpResponseException as e:
             return self._create_error_from_exception(exception=e)
@@ -962,8 +986,10 @@ class MinecraftApiHandler(ApiHttpHandler):
             This method is a placeholder for future implementation.
         """
         _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
         headers = HttpHeaders()
         headers.add("Content-Type", "application/json")
+        headers.add("X-Request-ID", request_id)
         try:
             identifier: typing.Optional[str] = uri_variables.get("identifier", None)
             if not identifier:
@@ -1667,8 +1693,30 @@ class MinecraftApiHandler(ApiHttpHandler):
                 guild_id=guild_id, admin_list=False, action=action, user_id=minecraft_user.user_id
             )
 
+            user_discount: float = self.minecraft_db.get_user_shop_discount(
+                guild_id=guild_id, user_id=minecraft_user.user_id
+            )
+
+            print(f"User discount: {user_discount:.2f}%")
+
             if not shops:
                 shops = []
+
+            if user_discount > 0:
+                for store in shops:
+                    store.discount = user_discount
+                    if store.shop is None:
+                        continue
+                    # adjust price based on discount
+                    for _, item in store.shop.items():
+                        # user gets to pay less for the item
+                        new_buy_price = int(item.buy * (1 - user_discount))
+                        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Adjusting buy price for item {item.item_id} to {new_buy_price} (discount: {user_discount:.2f}%)")
+                        item.buy = new_buy_price
+                        # user gets to sell more for the item
+                        new_sell_price = int(item.sell * (1 + user_discount))
+                        self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"Adjusting sell price for item {item.item_id} to {new_sell_price} (discount: {user_discount:.2f}%)")
+                        item.sell = new_sell_price
 
             return HttpResponse(200, headers, json.dumps([shop.to_dict() for shop in shops], indent=4).encode("utf-8"))
         except HttpResponseException as e:
@@ -1780,6 +1828,42 @@ class MinecraftApiHandler(ApiHttpHandler):
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
 
+    @openapi.tags("minecraft")
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.summary("Get Minecraft shop settings")
+    @openapi.description("Get Minecraft shop settings.")
+    @openapi.response(
+        200,
+        description="Minecraft shop settings",
+        contentType="application/json",
+        schema=MinecraftShopSettings,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        404,
+        description="Settings not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.GET],
+    )
+    @openapi.managed()
+    @uri_mapping("/tacobot/minecraft/shop/settings", method=HTTPMethod.GET)
+    @uri_mapping("/taco/minecraft/shop/settings", method=HTTPMethod.GET)
+    @uri_mapping(f"/api/{API_VERSION}/minecraft/shop/settings", method=HTTPMethod.GET)
     def get_shop_settings(self, request: HttpRequest) -> HttpResponse:
         """Get shop settings (Placeholder)."""
         _method = inspect.stack()[0][3]
@@ -1788,11 +1872,17 @@ class MinecraftApiHandler(ApiHttpHandler):
         headers.add("Content-Type", "application/json")
         headers.add("X-Request-ID", request_id)
         try:
-            
+
             if not self.validate_auth_token(request):
                 return self._create_error_response(401, "Unauthorized", headers=headers)
 
-            return self._create_error_response(501, "Not Implemented", headers=headers)
+            guild_id = self.settings.primary_guild_id
+            settings = self.settings.get_settings(guildId=guild_id, name="minecraft_shop")
+            if not settings:
+                return self._create_error_response(404, "Settings not found", headers=headers)
+            shop_settings = MinecraftShopSettings(**settings)
+
+            return HttpResponse(200, headers, json.dumps(shop_settings.to_dict(), indent=4).encode("utf-8"))
         except HttpResponseException as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return self._create_error_from_exception(exception=e)

@@ -1,3 +1,4 @@
+import datetime
 import inspect
 import os
 import traceback
@@ -257,6 +258,23 @@ class MinecraftDatabase(Database):
             )
 
             if result:
+                # get the settings for shop
+                shop_settings = self.settings.get_settings(guildId=guild_id, name="minecraft_shop")
+                discount: float = self.get_user_shop_discount(guild_id=guild_id, user_id=user_id)
+
+                if shop_settings is not None and "storage" in shop_settings:
+                    # add storage settings to the result
+                    result["settings"] = shop_settings.get("storage", {})
+                    result["settings"]["discount"] = discount
+                    # need to adjust the price of increase_cost based on discount
+                    if "increase_cost" in result["settings"]:
+                        original_cost = result["settings"]["increase_cost"]
+                        discounted_cost = original_cost * (1 - discount)
+                        result["settings"]["increase_cost"] = max(0, int(discounted_cost))
+                        result["settings"]["original_increase_cost"] = original_cost
+
+                print(result["settings"])
+
                 return MinecraftUserStorageEntry(**result)
             return None
         except Exception as ex:
@@ -457,11 +475,6 @@ class MinecraftDatabase(Database):
             results = self.connection.minecraft_shops.find(query)  # type: ignore
             filtered: typing.List[MinecraftShopEntry] = []
 
-            result_count = self.connection.minecraft_shops.count_documents(query)  # type: ignore
-
-            print(f"Shop query: {query}")
-            print(f"Shop results count: {result_count}")
-
             # create copy of the MinecraftShopEntry with no shop items
             for result in results:
                 shop_entry = MinecraftShopEntry(**result)
@@ -502,3 +515,68 @@ class MinecraftDatabase(Database):
 
     def shop_remove_item(self):
         pass
+
+    def get_user_shop_discount(self, **kwargs) -> float:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            discount = 0.0
+
+            mc_user = self.get_minecraft_user(**kwargs)
+            if mc_user is None:
+                return discount
+
+            # get roles for user...
+
+            settings = self.settings.get_settings(guildId=mc_user.guild_id, name="minecraft_shop")
+            # fetched settings for debugging removed
+            if settings is None:
+                self.log(
+                    guildId=mc_user.guild_id,
+                    level=loglevel.LogLevel.ERROR,
+                    method=f"{self._module}.{self._class}.{_method}",
+                    message=f"Shop settings not found for guild {mc_user.guild_id}",
+                )
+                return discount
+
+            # loop through the settings.discount and check if any of the roles match the user's user_id or role_ids
+            # and that the discount is greater than 0 and that the discount is not expired.
+            # if so, return the highest discount found
+            # settings.discounts is list of dict with keys: user_id, roles, discount, expires
+
+            for discount_setting in settings.get("discounts", []):
+                user_discount = discount_setting.get("discount", 0.0)
+                if user_discount <= 0:
+                    continue
+                expires = discount_setting.get("expires", None)
+                if expires is not None and expires < datetime.datetime.now(tz=datetime.timezone.utc):
+                    continue
+                # settings may store user_id and role ids as strings; normalize comparisons to strings
+                user_id = discount_setting.get("user_id", None)
+                roles = discount_setting.get("roles", None)
+                # internal comparison debug removed
+                try:
+                    if user_id is not None and str(user_id) == str(mc_user.user_id):
+                        discount = max(discount, user_discount)
+                except Exception:
+                    # defensive: ignore mismatched types that cannot be stringified
+                    pass
+                if roles is not None:
+                    # compare role ids as strings to be robust to string/int mix
+                    user_role_strs = {str(r) for r in mc_user.role_ids}
+                    for role in roles:
+                        if str(role) in user_role_strs:
+                            discount = max(discount, user_discount)
+                            break
+
+            return discount
+        except Exception as ex:
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return 0.0

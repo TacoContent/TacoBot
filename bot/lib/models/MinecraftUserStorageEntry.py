@@ -36,6 +36,8 @@ from bot.lib.models import openapi
 @openapi.property("uuid", description="The UUID of the Minecraft user.")
 @openapi.property("username", description="The username of the Minecraft user.")
 @openapi.property("storage", description="The storage items of the Minecraft user.")
+@openapi.property("slots", description="The number of storage slots available to the user.")
+@openapi.property("settings", description="The storage settings for the user.")
 @openapi.managed()
 class MinecraftUserStorageEntry:
 
@@ -45,6 +47,7 @@ class MinecraftUserStorageEntry:
         self.uuid: str = kwargs.get("uuid", "")
         storage_data = kwargs.get("storage", {})
         self.slots: int = kwargs.get("slots", 0)
+        self.settings: MinecraftStorageSettings = MinecraftStorageSettings(**kwargs.get("settings", {}))
         # Convert storage data to MinecraftUserStorageItem instances
         self.storage: typing.Dict[str, MinecraftUserStorageItem] = {
             variant_id: MinecraftUserStorageItem(**item_info) for variant_id, item_info in storage_data.items()
@@ -72,6 +75,11 @@ class MinecraftUserStorageEntry:
     def from_dict(cls, data: dict) -> "MinecraftUserStorageEntry":
         return cls(**data)
 
+@openapi.component("MinecraftUserStorageItem", description="Represents an item in the Minecraft user's storage.")
+@openapi.property("item_id", description="The ID of the item.")
+@openapi.property("variant_id", description="The variant ID of the item.")
+@openapi.property("quantity", description="The quantity of the item.")
+@openapi.property("metadata", description="The metadata of the item.")
 class MinecraftUserStorageItem:
     def __init__(self, **kwargs):
         self.item_id: str = kwargs.get("item_id", "")
@@ -92,4 +100,28 @@ class MinecraftUserStorageItem:
 
     @classmethod
     def from_dict(cls, data: dict) -> "MinecraftUserStorageItem":
+        return cls(**data)
+
+@openapi.component("MinecraftStorageSettings", description="Represents the storage settings for a Minecraft user.")
+@openapi.property("initial_slots", description="The initial number of storage slots available to the user.")
+@openapi.property("increase_slots_by", description="The number of storage slots to increase by.")
+@openapi.property("increase_cost", description="The cost to increase the number of storage slots.")
+class MinecraftStorageSettings:
+    def __init__(self, **kwargs):
+        self.initial_slots: int = kwargs.get("initial_slots", 9)
+        self.increase_slots_by: int = kwargs.get("increase_slots_by", 9)
+        self.increase_cost: int = kwargs.get("increase_cost", 1000)
+
+    def to_dict(self) -> dict:
+        return {
+            "initial_slots": self.initial_slots,
+            "increase_slots_by": self.increase_slots_by,
+            "increase_cost": self.increase_cost,
+        }
+
+    def is_empty(self) -> bool:
+        return self.initial_slots == 0 and self.increase_slots_by == 0 and self.increase_cost == 0
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "MinecraftStorageSettings":
         return cls(**data)

@@ -13,6 +13,7 @@ class MinecraftShopEntry:
         self.role_ids: typing.List[str] = kwargs.get("role_ids", [])  # roles that can access the shop
         self.enabled: bool = kwargs.get("enabled", True)
         self.shop_id: str = kwargs.get("shop_id", "")
+        self.discount: float = kwargs.get("discount", 0.0)
         self.shop: typing.Optional[typing.Dict[str, MinecraftShopItem]] = kwargs.get("shop", {})
 
     def to_dict(self) -> typing.Dict[str, typing.Any]:
@@ -22,6 +23,7 @@ class MinecraftShopEntry:
             "role_ids": self.role_ids,
             "enabled": self.enabled,
             "shop_id": self.shop_id,
+            "discount": self.discount,
             "shop": {item_id: item.to_dict() for item_id, item in self.shop.items()} if self.shop else {},
         }
 
