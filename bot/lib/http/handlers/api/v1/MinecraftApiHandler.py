@@ -42,7 +42,8 @@ import typing
 import uuid
 from http import HTTPMethod
 
-from lib.models.MinecraftShopItem import MinecraftShopItem
+from bot.lib.minecraft.item import calculate_variant_id, calculate_variant_id_from_snbt
+from bot.lib.models.MinecraftShopItem import MinecraftShopItem
 import requests
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
 from bot.lib.enums.tacotypes import TacoTypes
@@ -2181,11 +2182,17 @@ class MinecraftApiHandler(ApiHttpHandler):
 
             guild_id = user.guild_id
 
+            if payload.variant_id == "default":
+                return self._create_error_response(
+                    400, "Invalid variant ID provided. Must be a specific variant ID.", headers=headers
+                )
+
             shop_item: typing.Optional[MinecraftShopItem] = self.minecraft_db.get_shop_item(
                 shop_id=payload.shop_id,
                 item_id=payload.item_id,
                 variant_id=payload.variant_id
             )
+
             if not shop_item:
                 return self._create_error_response(404, "Invalid shop item for purchase", headers=headers)
 
@@ -2362,6 +2369,24 @@ class MinecraftApiHandler(ApiHttpHandler):
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
+
+    def _calculate_variant_id(self, item_id: str, variant_data: typing.Union[typing.Dict[str, typing.Any], str]) -> str:
+        """Calculate the variant ID for a Minecraft item.
+
+        Args:
+            item_id (str): The item ID.
+            variant_data (dict): The variant data.
+        Returns:
+            str: The variant ID.
+        """
+        if not variant_data:
+            raise ValueError("Variant data is required")
+
+        if isinstance(variant_data, dict):
+            return calculate_variant_id(item_id=item_id, nbt=variant_data)
+
+        if isinstance(variant_data, str):
+            return calculate_variant_id_from_snbt(item_id=item_id, snbt_str=variant_data)
 
     def _validate_event_type(self, event_str: str, headers: HttpHeaders) -> MinecraftPlayerEvents:
         """Validate and parse event type.

@@ -118,6 +118,7 @@
 		"setuptools",
 		"sighandler",
 		"signum",
+		"snbt",
 		"spendings",
 		"splitlines",
 		"startswith",

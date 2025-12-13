@@ -296,9 +296,9 @@ class MinecraftDatabase(Database):
             if minecraft_user is None:
                 return False
 
-            if minecraft_user.op is None or not minecraft_user.op.get("enabled", False):
+            if minecraft_user.op is None or not minecraft_user.op.enabled:
                 return False
-            return minecraft_user.op.get("level", 0) >= op_level
+            return minecraft_user.op.level >= op_level
         except Exception as ex:
             self.log(
                 guildId=guild_id,
