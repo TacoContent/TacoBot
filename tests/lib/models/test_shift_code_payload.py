@@ -1,6 +1,5 @@
 import pytest
-
-from bot.lib.models.ShiftCodePayload import ShiftCodePayload, ShiftCodeGame
+from bot.lib.models.ShiftCodePayload import ShiftCodeGame, ShiftCodePayload
 
 
 def test_shift_code_payload_and_game():

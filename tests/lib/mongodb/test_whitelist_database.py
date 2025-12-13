@@ -1,5 +1,4 @@
 import pytest
-
 from bot.lib.mongodb.whitelist import WhitelistDatabase
 
 

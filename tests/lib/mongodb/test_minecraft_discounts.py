@@ -1,10 +1,9 @@
 import datetime
 import types
-
 from unittest.mock import MagicMock
 
-from bot.lib.mongodb.minecraft import MinecraftDatabase
 from bot.lib.models.MinecraftUserEntry import MinecraftUserEntry
+from bot.lib.mongodb.minecraft import MinecraftDatabase
 
 
 def make_settings(discounts=None):

@@ -1,7 +1,6 @@
 from unittest.mock import MagicMock
 
 import pytest
-
 from bot.lib.mongodb.logs import LogsDatabase
 
 

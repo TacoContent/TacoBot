@@ -1,11 +1,10 @@
 import datetime
 from unittest.mock import MagicMock
 
-import pytz
 import pytest
-
-from bot.lib.mongodb.birthdays import BirthdaysDatabase
+import pytz
 from bot.lib import utils
+from bot.lib.mongodb.birthdays import BirthdaysDatabase
 
 
 @pytest.fixture

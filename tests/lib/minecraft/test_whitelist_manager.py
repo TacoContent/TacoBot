@@ -1,7 +1,9 @@
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from bot.lib.minecraft.whitelist import WhitelistManager
+
 
 @pytest.fixture
 def minecraft_db():

@@ -1,9 +1,9 @@
 import types
-import pytest
 
+import pytest
+from bot.lib.enums.loglevel import LogLevel
 from bot.lib.models.PullTabTicketEntry import PullTabTicketEntry
 from bot.lib.mongodb.pulltabs import PullTabTicketsDatabase
-from bot.lib.enums.loglevel import LogLevel
 
 
 class FakeColl:

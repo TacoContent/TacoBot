@@ -39,14 +39,16 @@ import json
 import os
 import traceback
 import typing
-from http import HTTPMethod
 import uuid
+from http import HTTPMethod
 
+from lib.models.MinecraftShopItem import MinecraftShopItem
 import requests
 from bot.lib.enums.minecraft_player_events import MinecraftPlayerEvents
+from bot.lib.enums.tacotypes import TacoTypes
 from bot.lib.helpers import EntityHelper, TacoHelper
-from bot.lib.http.handlers.ApiHttpHandler import ApiHttpHandler
 from bot.lib.http.handlers.api.v1.const import API_VERSION
+from bot.lib.http.handlers.ApiHttpHandler import ApiHttpHandler
 from bot.lib.minecraft.status import MinecraftStatus
 from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
 from bot.lib.models.MinecraftOpUser import MinecraftOpUser
@@ -54,13 +56,14 @@ from bot.lib.models.MinecraftPlayerEventPayload import MinecraftPlayerEventPaylo
 from bot.lib.models.MinecraftServerSettings import MinecraftServerSettingsSettingsModel
 from bot.lib.models.MinecraftServerStatus import MinecraftServerStatus
 from bot.lib.models.MinecraftSettingsUpdatePayload import MinecraftSettingsUpdatePayload
+from bot.lib.models.MinecraftShopBuySellPayload import MinecraftShopBuySellPayload
 from bot.lib.models.MinecraftShopEntry import MinecraftShopEntry
 from bot.lib.models.MinecraftShopSettings import MinecraftShopSettings
+from bot.lib.models.MinecraftStorageItemPayload import MinecraftStorageItemPayload
 from bot.lib.models.MinecraftTacoBalance import MinecraftTacoBalance
 from bot.lib.models.MinecraftUserEntry import MinecraftUserEntry
-from bot.lib.models.MinecraftUserStats import MinecraftUserStats
-from bot.lib.models.MinecraftStorageItemPayload import MinecraftStorageItemPayload
 from bot.lib.models.MinecraftUserLookupPayload import MinecraftUserLookupPayload
+from bot.lib.models.MinecraftUserStats import MinecraftUserStats
 from bot.lib.models.MinecraftUserStorageEntry import MinecraftUserStorageEntry, MinecraftUserStorageItem
 from bot.lib.models.MinecraftWhiteListUser import MinecraftWhiteListUser
 from bot.lib.models.MojangMinecraftUser import MojangMinecraftUser
@@ -1883,6 +1886,323 @@ class MinecraftApiHandler(ApiHttpHandler):
             shop_settings = MinecraftShopSettings(**settings)
 
             return HttpResponse(200, headers, json.dumps(shop_settings.to_dict(), indent=4).encode("utf-8"))
+        except HttpResponseException as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_from_exception(exception=e)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
+
+    @openapi.tags("minecraft")
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.summary("User sell item to Minecraft shop")
+    @openapi.description("User sell item from user inventory or storage to Minecraft shop.")
+    @openapi.requestBody(
+        description="Shop sell payload",
+        contentType="application/json",
+        schema=MinecraftShopBuySellPayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        200,
+        description="Shop sell response",
+        contentType="application/json",
+        schema=MinecraftShopItem,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        400,
+        description="Bad request",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        404,
+        description="User not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.managed()
+    @uri_mapping("/tacobot/minecraft/shop/sell", method=HTTPMethod.POST)
+    @uri_mapping("/taco/minecraft/shop/sell", method=HTTPMethod.POST)
+    @uri_mapping(f"/api/{API_VERSION}/minecraft/shop/sell", method=HTTPMethod.POST)
+    async def user_shop_item_sell(self, request: HttpRequest) -> HttpResponse:
+        """User sell item from user inventory to shop (Placeholder)."""
+        _method = inspect.stack()[0][3]
+        return await self._user_shop_item_sell(request, from_storage=False)
+
+    @openapi.tags("minecraft")
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.summary("User sell item from storage to Minecraft shop")
+    @openapi.description("User sell item from user storage to Minecraft shop.")
+    @openapi.requestBody(
+        description="Shop sell payload",
+        contentType="application/json",
+        schema=MinecraftShopBuySellPayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        200,
+        description="Shop sell response",
+        contentType="application/json",
+        schema=MinecraftShopItem,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        400,
+        description="Bad request",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        404,
+        description="User not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @uri_mapping("/tacobot/minecraft/shop/sell/storage", method=HTTPMethod.POST)
+    @uri_mapping("/taco/minecraft/shop/sell/storage", method=HTTPMethod.POST)
+    @uri_mapping(f"/api/{API_VERSION}/minecraft/shop/sell/storage", method=HTTPMethod.POST)
+    async def user_shop_item_sell_from_storage(self, request: HttpRequest) -> HttpResponse:
+        """User sell item from user storage to shop."""
+        _method = inspect.stack()[0][3]
+        return await self._user_shop_item_sell(request, from_storage=True)
+
+    async def _user_shop_item_sell(self, request: HttpRequest, from_storage: bool = False) -> HttpResponse:
+        """User sell item from user storage to shop."""
+        _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+        headers.add("X-Request-ID", request_id)
+        try:
+
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, "Unauthorized", headers=headers)
+
+            if not request.body:
+                return self._create_error_response(400, "No body provided", headers=headers)
+
+            payload: MinecraftShopBuySellPayload = None
+            try:
+                body_data = json.loads(request.body.decode("utf-8"))
+                payload = MinecraftShopBuySellPayload(**body_data)
+            except json.JSONDecodeError:
+                return self._create_error_response(400, "Invalid JSON body", headers=headers)
+
+            if payload is None or payload.is_empty():
+                return self._create_error_response(400, "No data payload provided", headers=headers)
+
+            user: MinecraftUserEntry = self.minecraft_db.get_minecraft_user(
+                uuidOrUsername=payload.uuid, guild_id=self.settings.primary_guild_id
+            )
+            if not user:
+                return self._create_error_response(404, "User not found", headers=headers)
+
+            discord_user = await self.entity_helper.get_or_fetch_user(user.user_id)
+            if not discord_user:
+                return self._create_error_response(404, "Discord user not found for transaction", headers=headers)
+
+            if self.bot.user is None:
+                return self._create_error_response(404, "Bot user not available for transaction", headers=headers)
+
+            guild_id = user.guild_id
+
+            shop_item: typing.Optional[MinecraftShopItem] = self.minecraft_db.get_shop_item(
+                shop_id=payload.shop_id,
+                item_id=payload.item_id,
+                variant_id=payload.variant_id
+            )
+            if not shop_item:
+                return self._create_error_response(404, "Invalid shop item for sale", headers=headers)
+
+            # TODO:
+            # check that this item is actually sellable in the shop
+            # need to also verify the cost_per_item matches the shop entry to avoid exploits
+            # but also need to allow for user discounts
+            # shop_entry = self.minecraft_db.get_shop_item_by_variant_id(guild_id=guild_id, variant_id=payload.variant_id, action="sell")
+            # varify_transaction = self._verify_shop_transaction(user=user, shop_entry=shop_entry, payload=payload, action="sell")
+            # if not varify_transaction:
+            #     return self._create_error_response(400, "Invalid shop sell transaction", headers=headers)
+
+            if from_storage:
+                self.log.info(0, f"{self._module}.{self._class}.{_method}", f"User {user.user_id} selling {payload.quantity} of item {payload.item_id} (variant {payload.variant_id[:8]}) from storage to shop")
+                storage_item = self.minecraft_db.get_user_storage_item(guild_id=guild_id, user_id=user.user_id, variant_id=payload.variant_id, uuid=user.uuid)
+
+                if not storage_item or storage_item.quantity < payload.quantity:
+                    return self._create_error_response(400, "Insufficient item quantity in storage", headers=headers)
+
+                item, success = self.minecraft_db.withdraw_user_storage(guild_id=guild_id, user_id=user.user_id, variant_id=payload.variant_id, uuid=user.uuid, quantity=payload.quantity)
+
+                if not success or not item:
+                    return self._create_error_response(500, "Failed to withdraw item from storage", headers=headers)
+            else:
+                self.log.info(0, f"{self._module}.{self._class}.{_method}", f"User {user.user_id} selling {payload.quantity} of item {payload.item_id} (variant {payload.variant_id[:8]}) from inventory to shop")
+
+            await self.taco_helper.give_tacos(
+                guildId=guild_id,
+                toUser=discord_user,
+                fromUser=self.bot.user,
+                taco_amount=payload.quantity * payload.cost_per_item,
+                give_type=TacoTypes.MINECRAFT_SHOP_SELL,
+                reason=f"Sold {payload.quantity} of item {shop_item.item_id} (variant {shop_item.variant_id[:8]}) to the shop (Shop ID: {payload.shop_id})",
+            )
+
+            # update the quantity of the shop_item to return in response
+            shop_item.quantity = payload.quantity
+            shop_item.sell = payload.cost_per_item # reflect the actual sell price used
+
+            return HttpResponse(200, headers, json.dumps(shop_item.to_dict(), indent=4).encode("utf-8"))
+        except HttpResponseException as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_from_exception(exception=e)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
+
+    @openapi.tags("minecraft")
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.summary("User buy item from Minecraft shop")
+    @openapi.description("User buy item from Minecraft shop.")
+    @openapi.requestBody(
+        description="Shop buy payload",
+        contentType="application/json",
+        schema=MinecraftShopBuySellPayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        200,
+        description="Shop buy response",
+        contentType="application/json",
+        schema=MinecraftShopItem,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        400,
+        description="Bad request",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        404,
+        description="Not found",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.managed()
+    @uri_mapping("/tacobot/minecraft/shop/buy", method=HTTPMethod.POST)
+    @uri_mapping("/taco/minecraft/shop/buy", method=HTTPMethod.POST)
+    @uri_mapping(f"/api/{API_VERSION}/minecraft/shop/buy", method=HTTPMethod.POST)
+    async def user_shop_item_buy(self, request: HttpRequest) -> HttpResponse:
+        """User buy item from shop."""
+        _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+        headers.add("X-Request-ID", request_id)
+        try:
+
+            if not self.validate_auth_token(request):
+                return self._create_error_response(401, "Unauthorized", headers=headers)
+
+            if not request.body:
+                return self._create_error_response(400, "No body provided", headers=headers)
+
+            payload: MinecraftShopBuySellPayload = None
+            try:
+                body_data = json.loads(request.body.decode("utf-8"))
+                payload = MinecraftShopBuySellPayload(**body_data)
+            except json.JSONDecodeError:
+                return self._create_error_response(400, "Invalid JSON body", headers=headers)
+
+            if payload is None or payload.is_empty():
+                return self._create_error_response(400, "No data payload provided", headers=headers)
+
+            user: MinecraftUserEntry = self.minecraft_db.get_minecraft_user(
+                uuidOrUsername=payload.uuid, guild_id=self.settings.primary_guild_id
+            )
+            if not user:
+                return self._create_error_response(404, "User not found", headers=headers)
+
+            discord_user = await self.entity_helper.get_or_fetch_user(user.user_id)
+            if not discord_user:
+                return self._create_error_response(404, "Discord user not found for transaction", headers=headers)
+
+            if self.bot.user is None:
+                return self._create_error_response(404, "Bot user not available for transaction", headers=headers)
+
+            guild_id = user.guild_id
+
+            shop_item: typing.Optional[MinecraftShopItem] = self.minecraft_db.get_shop_item(
+                shop_id=payload.shop_id,
+                item_id=payload.item_id,
+                variant_id=payload.variant_id
+            )
+            if not shop_item:
+                return self._create_error_response(404, "Invalid shop item for purchase", headers=headers)
+
+            await self.taco_helper.spend_tacos(
+                guild_id=guild_id,
+                user_id=user.user_id,
+                amount=payload.quantity * payload.cost_per_item,
+                type=TacoTypes.MINECRAFT_SHOP_PURCHASE,
+                reason=f"Bought {payload.quantity} of item {shop_item.item_id} (variant {shop_item.variant_id[:8]}) from the shop (Shop ID: {payload.shop_id})",
+
+            )
+
+            # update the quantity of the shop_item to return in response
+            shop_item.quantity = payload.quantity
+            shop_item.buy = payload.cost_per_item # reflect the actual sell price used
+
+            return HttpResponse(200, headers, json.dumps(shop_item.to_dict(), indent=4).encode("utf-8"))
         except HttpResponseException as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return self._create_error_from_exception(exception=e)

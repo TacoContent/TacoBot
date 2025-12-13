@@ -1,7 +1,6 @@
 import types
 
 import pytest
-
 from bot.lib.enums.permissions import TacoPermissions
 from bot.lib.mongodb.permissions import PermissionsDatabase
 

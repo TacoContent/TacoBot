@@ -1,5 +1,4 @@
 import pytest
-
 from bot.lib.mongodb.shift_codes import ShiftCodesDatabase
 
 

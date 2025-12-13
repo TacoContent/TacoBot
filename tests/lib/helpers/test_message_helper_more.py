@@ -1,8 +1,7 @@
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 import discord
-
+import pytest
 from bot.lib.helpers.message_helper import MessageHelper
 
 

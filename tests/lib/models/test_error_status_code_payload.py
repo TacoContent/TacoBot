@@ -1,5 +1,4 @@
 import pytest
-
 from bot.lib.models.ErrorStatusCodePayload import ErrorStatusCodePayload
 
 

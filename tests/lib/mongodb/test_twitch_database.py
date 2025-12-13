@@ -1,9 +1,9 @@
-import types
 import datetime
-import pytest
+import types
 
-from bot.lib.mongodb.twitch import TwitchDatabase
+import pytest
 from bot.lib import utils
+from bot.lib.mongodb.twitch import TwitchDatabase
 
 
 class FakeColl:

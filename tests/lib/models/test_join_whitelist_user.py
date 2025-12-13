@@ -1,4 +1,4 @@
-from bot.lib.models.JoinWhitelistUser import JoinWhitelistUser, JoinWhitelistAddedBy
+from bot.lib.models.JoinWhitelistUser import JoinWhitelistAddedBy, JoinWhitelistUser
 
 
 def test_join_whitelist_user_and_added_by():

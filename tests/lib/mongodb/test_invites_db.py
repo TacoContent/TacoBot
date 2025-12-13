@@ -1,8 +1,7 @@
-import types
 import traceback
+import types
 
 import pytest
-
 from bot.lib.mongodb.invites import InvitesDatabase
 
 

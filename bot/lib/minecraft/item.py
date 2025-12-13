@@ -2,6 +2,7 @@ import hashlib
 import re
 from typing import Any, Dict, Optional
 
+
 def _escape_snbt_string(s: str) -> str:
     # Minimal JS style escaping for SNBT compatibility
     return '"' + s.replace('\\', '\\\\').replace('"', '\\"') + '"'

@@ -1,5 +1,4 @@
 import pytest
-
 from httpserver.HttpDebugDump import HttpDebugDump
 from httpserver.HttpHeaders import HttpHeaders
 from httpserver.HttpRequest import HttpRequest

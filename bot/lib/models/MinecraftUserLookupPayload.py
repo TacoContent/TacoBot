@@ -2,6 +2,7 @@ import typing
 
 import bot.lib.models.openapi as openapi
 
+
 @openapi.component("MinecraftUserLookupPayload", description="Payload for looking up a Minecraft user.")
 @openapi.property("uuid", description="The UUID of the Minecraft user.")
 @openapi.property("username", description="The username of the Minecraft user.")

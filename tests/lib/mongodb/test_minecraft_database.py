@@ -1,10 +1,10 @@
 import types
-import pytest
 
-from bot.lib.mongodb.minecraft import MinecraftDatabase
+import pytest
 from bot.lib.enums.minecraft_op import MinecraftOpLevel
-from bot.lib.models.MinecraftUserEntry import MinecraftUserEntry
 from bot.lib.models.minecraft.world import MinecraftWorld
+from bot.lib.models.MinecraftUserEntry import MinecraftUserEntry
+from bot.lib.mongodb.minecraft import MinecraftDatabase
 
 
 class FakeColl:

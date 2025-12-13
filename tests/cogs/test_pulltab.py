@@ -2,8 +2,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bot.cogs.pulltab import PullTabCog
-from bot.lib.models.PullTabTicketEntry import PullTabTicketEntry
 from bot.lib.enums.permissions import TacoPermissions
+from bot.lib.models.PullTabTicketEntry import PullTabTicketEntry
 from discord import Interaction
 
 

@@ -4,10 +4,9 @@ import os
 from http import HTTPStatus
 
 import pytest
-
+from httpserver.HttpHeaders import HttpHeaders
 from httpserver.HttpRequest import HttpRequest
 from httpserver.HttpResponse import HttpResponse
-from httpserver.HttpHeaders import HttpHeaders
 from httpserver.HttpSendResponse import http_send_response
 
 

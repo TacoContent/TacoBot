@@ -1,7 +1,6 @@
 import pytest
-
-from bot.lib.mongodb.minecraft import MinecraftDatabase
 from bot.lib.models.MinecraftUserStorageEntry import MinecraftUserStorageItem
+from bot.lib.mongodb.minecraft import MinecraftDatabase
 
 
 class FakeCollection:
@@ -74,10 +73,14 @@ class FakeConnection:
 
 @pytest.fixture
 def db():
+    from unittest.mock import MagicMock
+
     mdb = MinecraftDatabase()
     # inject fake connection and a truthy client so open() is not required
     mdb.connection = FakeConnection()
     mdb.client = True
+    # ensure settings.get_settings is safe to call and returns None for shop settings lookup
+    mdb.settings.get_settings = MagicMock(return_value={"storage": {"initial_slots": 9, "increase_cost": 1000}})
     return mdb
 
 
@@ -174,3 +177,23 @@ def test_deposit_user_storage_new_and_existing(db):
 
     stored2 = col._store[key]
     assert stored2["storage"]["pearl-variant"]["quantity"] == 10
+
+
+def test_get_user_storage_item_returns_item_and_none(db):
+    col = db.connection.minecraft_user_storage
+    key = ("1", "2", "uuid-x")
+    col._store[key] = {
+        "user_id": "2",
+        "guild_id": "1",
+        "uuid": "uuid-x",
+        "username": "Player",
+        "storage": {"var-1": {"item_id": "minecraft:apple", "variant_id": "var-1", "quantity": 3, "metadata": {}}},
+    }
+
+    item = db.get_user_storage_item(1, 2, "uuid-x", "var-1")
+    assert item is not None
+    assert item.item_id == "minecraft:apple"
+
+    # missing variant returns None
+    none_item = db.get_user_storage_item(1, 2, "uuid-x", "missing")
+    assert none_item is None

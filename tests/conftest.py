@@ -1,5 +1,4 @@
 import pytest
-
 from bot.lib.mongodb import mongo_singleton
 
 

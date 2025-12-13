@@ -1,6 +1,6 @@
 import types
-import pytest
 
+import pytest
 from bot.lib.mongodb.settings import SettingsDatabase
 
 

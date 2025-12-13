@@ -2,9 +2,8 @@ import datetime
 from unittest.mock import MagicMock
 
 import pytest
-
-from bot.lib.mongodb.wdyctw import WDYCTWDatabase
 from bot.lib import utils
+from bot.lib.mongodb.wdyctw import WDYCTWDatabase
 
 
 @pytest.fixture

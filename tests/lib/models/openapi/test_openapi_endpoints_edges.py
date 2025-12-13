@@ -1,7 +1,6 @@
-import pytest
-
 from http import HTTPMethod
 
+import pytest
 from bot.lib.models.openapi import endpoints
 
 

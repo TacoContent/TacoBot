@@ -1,9 +1,8 @@
-from unittest.mock import MagicMock
 import inspect
 import re
+from unittest.mock import MagicMock
 
 import pytest
-
 from bot.lib.mongodb.tacos import TacosDatabase
 
 

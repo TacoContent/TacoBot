@@ -1,9 +1,9 @@
-import types
 import datetime
+import types
 
+from bot.lib.enums.system_actions import SystemActions
 from bot.lib.models.DiscordUser import DiscordUser
 from bot.lib.models.triviaquestion import TriviaQuestion
-from bot.lib.enums.system_actions import SystemActions
 from bot.lib.mongodb.tracking import TrackingDatabase
 
 

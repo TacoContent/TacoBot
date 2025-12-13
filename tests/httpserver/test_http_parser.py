@@ -1,8 +1,8 @@
 import asyncio
-import pytest
 
-from httpserver.HttpParser import http_parser
+import pytest
 from httpserver.HttpHeaders import HttpHeaders
+from httpserver.HttpParser import http_parser
 from httpserver.HttpRequest import HttpRequest
 
 

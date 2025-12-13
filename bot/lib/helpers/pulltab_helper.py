@@ -3,15 +3,14 @@ import random
 import typing
 from collections import Counter
 
-
-
 from bot.lib import utils
-from bot.lib.helpers import Numbers, IdentityHelper
+from bot.lib.helpers import IdentityHelper, Numbers
 from bot.lib.models.PullTabRedeemedTicket import PullTabRedeemedTicket
 from bot.lib.models.PullTabTicketEntry import PullTabTicketEntry
 from bot.lib.mongodb.pulltabs import PullTabTicketsDatabase
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
+
 
 class PullTabHelper:
     def __init__(self, bot: TacoBot, identity_helper: IdentityHelper, pulltabs_db: PullTabTicketsDatabase, settings: Settings):

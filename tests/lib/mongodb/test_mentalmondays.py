@@ -2,9 +2,8 @@ import datetime
 from unittest.mock import MagicMock
 
 import pytest
-
-from bot.lib.mongodb.mentalmondays import MentalMondaysDatabase
 from bot.lib import utils
+from bot.lib.mongodb.mentalmondays import MentalMondaysDatabase
 
 
 @pytest.fixture

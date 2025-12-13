@@ -3,6 +3,7 @@ import typing
 
 from bot.lib.models import openapi
 
+
 @openapi.component("MinecraftUserEntry", description="Represents a Minecraft user entry in a guild.")
 @openapi.property("guild_id", description="The ID of the guild.")
 @openapi.property("user_id", description="The ID of the user.")

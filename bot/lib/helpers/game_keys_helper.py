@@ -5,11 +5,12 @@ import datetime
 import inspect
 import typing
 
+import discord
 from bot.lib.exceptions import (
+    ExistingOpenGameKeyOfferFoundException,
     IncompatibleChannelException,
     NegativeCostException,
     NoGameKeysFoundException,
-    ExistingOpenGameKeyOfferFoundException
 )
 from bot.lib.helpers import EntityHelper, MessageHelper
 from bot.lib.mongodb.gamekeys import GameKeysDatabase
@@ -17,7 +18,6 @@ from bot.lib.settings import Settings
 from bot.lib.steam.steamapi import SteamApiClient
 from bot.tacobot import TacoBot
 from bot.ui.GameRewardView import GameRewardView
-import discord
 
 
 class GameKeysHelper:

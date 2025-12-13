@@ -1,8 +1,8 @@
 import types
 
-from bot.lib.mongodb.minecraft import MinecraftDatabase
-from bot.lib.models.MinecraftUserEntry import MinecraftUserEntry
 from bot.lib.models.minecraft.world import MinecraftWorld
+from bot.lib.models.MinecraftUserEntry import MinecraftUserEntry
+from bot.lib.mongodb.minecraft import MinecraftDatabase
 
 
 class FakeColl:

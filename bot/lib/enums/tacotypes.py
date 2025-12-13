@@ -49,10 +49,11 @@ class TacoTypes(Enum):
     TWITCH_GIVE_TACOS = 32
     TWITCH_RECEIVE_TACOS = 1006
     TWITCH_FOLLOW = 1007  # not yet implemented until i can figure out how to get the event from eventsub
-
     TWITCH_STREAM_AVATARS = 1008
 
     MINECRAFT_LOGIN = 2000
+    MINECRAFT_SHOP_PURCHASE = 2001
+    MINECRAFT_SHOP_SELL = 2002
 
     MINECRAFT_CUSTOM = 2999
 
@@ -166,6 +167,12 @@ class TacoTypes(Enum):
             return TacoTypes.TWITCH_CUSTOM
         elif taco_type_string == "minecraft_login":
             return TacoTypes.MINECRAFT_LOGIN
+        elif taco_type_string == "minecraft_shop_purchase":
+            return TacoTypes.MINECRAFT_SHOP_PURCHASE
+        elif taco_type_string == "minecraft_shop_sell":
+            return TacoTypes.MINECRAFT_SHOP_SELL
+        elif taco_type_string == "minecraft_custom":
+            return TacoTypes.MINECRAFT_CUSTOM
         else:
             return TacoTypes.CUSTOM
 
@@ -269,6 +276,10 @@ class TacoTypes(Enum):
             return "twitch_custom"
         elif taco_type == TacoTypes.MINECRAFT_LOGIN:
             return "minecraft_login"
+        elif taco_type == TacoTypes.MINECRAFT_SHOP_PURCHASE:
+            return "minecraft_shop_purchase"
+        elif taco_type == TacoTypes.MINECRAFT_SHOP_SELL:
+            return "minecraft_shop_sell"
         elif taco_type == TacoTypes.MINECRAFT_CUSTOM:
             return "minecraft_custom"
         else:

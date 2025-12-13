@@ -3,9 +3,8 @@ import inspect
 from unittest.mock import MagicMock
 
 import pytest
-
-from bot.lib.mongodb.suggestions import SuggestionsDatabase
 from bot.lib.models.suggestionstates import SuggestionStates
+from bot.lib.mongodb.suggestions import SuggestionsDatabase
 
 
 @pytest.fixture

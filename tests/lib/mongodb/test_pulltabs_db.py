@@ -1,7 +1,6 @@
 from unittest.mock import MagicMock
 
 import pytest
-
 from bot.lib.models.PullTabTicketEntry import PullTabTicketEntry
 from bot.lib.mongodb.pulltabs import PullTabTicketsDatabase
 

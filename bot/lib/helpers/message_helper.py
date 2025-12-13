@@ -17,6 +17,7 @@ from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
 from discord.ext.commands import Context
 
+
 class MessageHelper:
     """Helper class for message manipulation and bot notification messages."""
 

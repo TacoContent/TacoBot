@@ -3,7 +3,6 @@ import inspect
 import typing
 
 import requests
-
 from bot.lib.models.MinecraftUserEntry import MinecraftUserEntry
 from bot.lib.mongodb.minecraft import MinecraftDatabase
 

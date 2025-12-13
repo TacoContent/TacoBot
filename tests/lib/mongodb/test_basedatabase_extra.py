@@ -1,8 +1,8 @@
 import io
 import types
 
-from bot.lib.mongodb.basedatabase import BaseDatabase
 from bot.lib.enums.loglevel import LogLevel
+from bot.lib.mongodb.basedatabase import BaseDatabase
 
 
 class DummyBase(BaseDatabase):

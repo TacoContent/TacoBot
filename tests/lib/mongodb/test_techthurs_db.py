@@ -2,9 +2,8 @@ import datetime
 from unittest.mock import MagicMock
 
 import pytest
-
-from bot.lib.mongodb.techthurs import TechThursDatabase
 from bot.lib import utils
+from bot.lib.mongodb.techthurs import TechThursDatabase
 
 
 @pytest.fixture

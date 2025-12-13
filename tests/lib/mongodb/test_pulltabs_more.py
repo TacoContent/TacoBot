@@ -1,7 +1,7 @@
 import types
 
-from bot.lib.mongodb.pulltabs import PullTabTicketsDatabase
 from bot.lib.models.PullTabTicketEntry import PullTabTicketEntry
+from bot.lib.mongodb.pulltabs import PullTabTicketsDatabase
 
 
 class FakeColl:

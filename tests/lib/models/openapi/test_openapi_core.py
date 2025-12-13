@@ -1,7 +1,6 @@
 import typing
 
 import pytest
-
 from bot.lib.models.openapi import core
 
 

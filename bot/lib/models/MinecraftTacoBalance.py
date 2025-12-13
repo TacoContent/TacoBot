@@ -3,6 +3,7 @@ import typing
 
 from bot.lib.models import openapi
 
+
 @openapi.component("MinecraftTacoBalance", description="Represents a Minecraft Taco balance.")
 @openapi.property("balance", description="The Taco balance of the Minecraft user.")
 @openapi.property("uuid", description="The UUID of the Minecraft user.")

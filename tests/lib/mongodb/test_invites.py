@@ -1,9 +1,8 @@
 from unittest.mock import MagicMock
 
 import pytest
-
-from bot.lib.mongodb.invites import InvitesDatabase
 from bot.lib.models.InvitePayload import InvitePayload
+from bot.lib.mongodb.invites import InvitesDatabase
 
 
 @pytest.fixture

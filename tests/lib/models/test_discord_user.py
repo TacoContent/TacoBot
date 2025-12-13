@@ -80,8 +80,9 @@ def test_discord_user_from_user_with_timestamp_and_numeric_discriminator(monkeyp
 
 
 def test_discord_user_status_and_created_at_datetime(monkeypatch):
-    import bot.lib.models.DiscordUser as du_mod
     from datetime import datetime, timezone
+
+    import bot.lib.models.DiscordUser as du_mod
 
     class FakeUser:
         pass

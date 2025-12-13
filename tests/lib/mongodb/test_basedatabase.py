@@ -1,8 +1,8 @@
 import types
-import pytest
 
-from bot.lib.mongodb import basedatabase
+import pytest
 from bot.lib.enums import loglevel
+from bot.lib.mongodb import basedatabase
 
 
 class FakeCollection:

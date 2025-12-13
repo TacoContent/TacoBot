@@ -1,8 +1,7 @@
-import types
 import datetime
+import types
 
 import pytest
-
 from bot.lib.mongodb.tacos import TacosDatabase
 
 

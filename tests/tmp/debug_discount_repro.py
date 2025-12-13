@@ -1,7 +1,8 @@
-from bot.lib.mongodb.minecraft import MinecraftDatabase
-from bot.lib.models.MinecraftUserEntry import MinecraftUserEntry
 import types
 from unittest.mock import MagicMock
+
+from bot.lib.models.MinecraftUserEntry import MinecraftUserEntry
+from bot.lib.mongodb.minecraft import MinecraftDatabase
 
 print('starting quick repro')
 db = MinecraftDatabase()

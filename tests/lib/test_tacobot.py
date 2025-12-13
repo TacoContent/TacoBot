@@ -3,10 +3,9 @@ import inspect
 import types
 
 import discord
-import discordhealthcheck
 import discord.errors
+import discordhealthcheck
 import pytest
-
 from bot.tacobot import TacoBot
 
 

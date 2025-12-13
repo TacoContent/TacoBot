@@ -30,6 +30,7 @@ import typing
 
 from bot.lib.models import openapi
 
+
 @openapi.component("MinecraftUserStorageEntry", description="Represents a Minecraft user's storage entry.")
 @openapi.property("user_id", description="The ID of the user.")
 @openapi.property("guild_id", description="The ID of the guild.")
@@ -59,6 +60,7 @@ class MinecraftUserStorageEntry:
             "guild_id": self.guild_id,
             "uuid": self.uuid,
             "slots": self.slots,
+            "settings": self.settings.to_dict(),
             "storage": {variant_id: item.to_dict() for variant_id, item in self.storage.items()},
         }
 
@@ -112,11 +114,16 @@ class MinecraftStorageSettings:
         self.increase_slots_by: int = kwargs.get("increase_slots_by", 9)
         self.increase_cost: int = kwargs.get("increase_cost", 1000)
 
+        self.discount: typing.Optional[float] = kwargs.get("discount", None)
+        self.original_increase_cost: typing.Optional[int] = kwargs.get("original_increase_cost", None)
+
     def to_dict(self) -> dict:
         return {
             "initial_slots": self.initial_slots,
             "increase_slots_by": self.increase_slots_by,
             "increase_cost": self.increase_cost,
+            "discount": self.discount,
+            "original_increase_cost": self.original_increase_cost,
         }
 
     def is_empty(self) -> bool:

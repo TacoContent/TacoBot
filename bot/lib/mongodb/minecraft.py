@@ -4,14 +4,13 @@ import os
 import traceback
 import typing
 
-from bot.lib.models.MinecraftShopEntry import MinecraftShopEntry
-
 from bot.lib.enums import loglevel
 from bot.lib.enums.minecraft_op import MinecraftOpLevel
+from bot.lib.models.minecraft.world import MinecraftWorld
+from bot.lib.models.MinecraftShopEntry import MinecraftShopEntry
 from bot.lib.models.MinecraftShopItem import MinecraftShopItem
 from bot.lib.models.MinecraftUserEntry import MinecraftUserEntry
 from bot.lib.models.MinecraftUserStorageEntry import MinecraftUserStorageEntry, MinecraftUserStorageItem
-from bot.lib.models.minecraft.world import MinecraftWorld
 from bot.lib.mongodb.database import Database
 
 
@@ -310,6 +309,27 @@ class MinecraftDatabase(Database):
             )
             return False
 
+    def get_user_storage_item(self, guild_id: int, user_id: int, uuid: str, variant_id: str) -> typing.Optional[MinecraftUserStorageItem]:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+
+            existing_entry = self.get_user_storage(guild_id, user_id, uuid)
+            if existing_entry is None or variant_id not in existing_entry.storage:
+                return None
+
+            return existing_entry.storage[variant_id]
+        except Exception as ex:
+            self.log(
+                guildId=guild_id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
+
     def withdraw_user_storage(
         self, guild_id: int, user_id: int, uuid: str, variant_id: str, quantity: int
     ) -> typing.Tuple[typing.Optional[MinecraftUserStorageItem], bool]:
@@ -509,6 +529,35 @@ class MinecraftDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
             return []
+
+    def get_shop_item(self, shop_id: str, item_id: str, variant_id: str) -> typing.Optional[MinecraftShopItem]:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+
+            query = {"shop_id": shop_id}
+
+            result = self.connection.minecraft_shops.find_one(query)  # type: ignore
+            if result:
+                shop_entry = MinecraftShopEntry(**result)
+                if shop_entry.is_empty() or not shop_entry.shop:
+                    return None
+                if variant_id in shop_entry.shop:
+                    item = shop_entry.shop[variant_id]
+                    shop_item = MinecraftShopItem(**item) if isinstance(item, dict) else item if isinstance(item, MinecraftShopItem) else None
+                    if shop_item and shop_item.item_id == item_id:
+                        return shop_item
+            return None
+        except Exception as ex:
+            self.log(
+                guildId=0,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+            return None
 
     def shop_add_item(self):
         pass
