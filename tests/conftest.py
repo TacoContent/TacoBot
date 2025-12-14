@@ -427,6 +427,11 @@ def minecraft_db():
     db = MagicMock()
     db.get_minecraft_user = MagicMock()
     db.whitelist_minecraft_user = MagicMock()
+    # Default get_shop_item returns a real MinecraftShopItem for code paths that
+    # don't explicitly set this return value. Tests that need a specific item
+    # should override this on their own fixture per-test.
+    from bot.lib.models.MinecraftShopItem import MinecraftShopItem
+    db.get_shop_item = MagicMock(return_value=MinecraftShopItem(item_id='minecraft:dirt', variant_id='default', buy=0, sell=0, quantity=0))
     return db
 
 

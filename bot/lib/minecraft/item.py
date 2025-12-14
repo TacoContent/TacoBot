@@ -50,16 +50,16 @@ def calculate_variant_id(item_id: str, nbt: Optional[Dict[str, Any]] = None) -> 
     # then append `count:1` and finally `id:"<item_id>"`. This ordering (tag fields, count, id)
     # matches the SNBT examples used by the project and keeps canonicalization deterministic
     # by delegating nested dict serialization to _to_snbt_value (which sorts object keys).
+    # Build a top-level mapping and delegate to _to_snbt_value which sorts keys
+    top_level = {}
     if nbt:
-        # _to_snbt_value yields a mapping surrounded by braces, e.g. '{components:{...}}'
-        # strip the outer braces and inline the contents first
-        inner = _to_snbt_value(nbt)
-        if inner.startswith('{') and inner.endswith('}'):
-            inner = inner[1:-1]
-        # use count:1 (no byte suffix) to match how SNBT strings are commonly provided
-        snbt = '{' + inner + ',count:1,id:' + _to_snbt_value(item_id) + '}'
-    else:
-        snbt = '{count:1,id:' + _to_snbt_value(item_id) + '}'
+        # copy provided NBT fields into top-level
+        for k, v in nbt.items():
+            top_level[k] = v
+    # add count and id as top-level fields
+    top_level["count"] = 1
+    top_level["id"] = item_id
+    snbt = _to_snbt_value(top_level)
 
     # Some people want to use a provided SNBT string directly; normalize "Count" if present.
     # This code uses the canonicalization above so it's not necessary, but it's provided for completeness.
@@ -68,30 +68,17 @@ def calculate_variant_id(item_id: str, nbt: Optional[Dict[str, Any]] = None) -> 
     digest = hashlib.sha256(snbt.encode('utf-8')).hexdigest()
     return digest
 
-# Convenience helper if you already have a SNBT string:
-def calculate_variant_id_from_snbt(item_id: str, snbt_str: Optional[str] = None) -> str:
-    """
-    Given an SNBT string for the ItemStack, normalize Count:...b to Count:1b and hash.
-    This is useful if you can export SNBT from the server and want to validate it in Python.
-    """
-    # If the provided SNBT string is empty or just an empty compound, use a basic
-    # default representation for the item with a single unit: {count:1,id:"<item_id>"}
-    if not snbt_str or snbt_str.strip() == "{}":
-        snbt = '{count:1,id:' + _to_snbt_value(item_id) + '}'
-        return hashlib.sha256(snbt.encode('utf-8')).hexdigest()
 
-    # Ensure the normalized SNBT is wrapped inside braces so both "{count:1,...}"
-    # and the shorter 'count:1,...' variants hash consistently
-    normalized = snbt_str.strip()
+def _normalize_compound_str(item_id: str, s: str, ensure_id: bool = True) -> str:
+    """Normalize a compound SNBT string by sorting top-level keys and recursively
+    normalizing nested compounds. Missing `id` will be set to `item_id`, and
+    top-level `count` is normalized to `1`.
+    """
+    normalized = s.strip()
     if not normalized.startswith('{'):
         normalized = '{' + normalized + '}'
-
-    # We want to normalize only the top-level `count` field (not nested counts
-    # inside e.g. container item lists). Split the top-level compound into
-    # comma-separated pairs while respecting nested braces so nested commas do
-    # not break the top-level splitting.
     inner = normalized[1:-1]
-    pairs = []
+    parts = []
     cur = []
     depth = 0
     for ch in inner:
@@ -102,44 +89,98 @@ def calculate_variant_id_from_snbt(item_id: str, snbt_str: Optional[str] = None)
             depth -= 1
             cur.append(ch)
         elif ch == ',' and depth == 0:
-            pairs.append(''.join(cur).strip())
+            parts.append(''.join(cur).strip())
             cur = []
         else:
             cur.append(ch)
     if cur:
-        pairs.append(''.join(cur).strip())
+        parts.append(''.join(cur).strip())
 
-    # Normalize only top-level count key values and detect whether id is present
-    saw_id = False
-    normalized_pairs = []
-    for p in pairs:
+    mapping2: dict[str, str] = {}
+    saw_id2 = False
+    # helper to split the first top-level colon (ignore colons inside quotes or nested compounds)
+    def _split_key_val(pair: str) -> tuple[str, str]:
+        in_quote = False
+        quote_char = ''
+        depth2 = 0
+        for i, ch in enumerate(pair):
+            if ch in ('"', "'"):
+                if not in_quote:
+                    in_quote = True
+                    quote_char = ch
+                elif ch == quote_char:
+                    in_quote = False
+            elif ch == '{' and not in_quote:
+                depth2 += 1
+            elif ch == '}' and not in_quote:
+                depth2 -= 1
+            elif ch == ':' and not in_quote and depth2 == 0:
+                return pair[:i], pair[i + 1 :]
+        return pair, ''
+    for p in parts:
         if not p:
             continue
-        # split on first ':' to get key
         if ':' in p:
-            key, val = p.split(':', 1)
+            key, val = _split_key_val(p)
             key_stripped = key.strip().strip('"').strip("'")
+            val_str = val.strip()
+            # recursively normalize nested compounds
+            if val_str.startswith('{') and val_str.endswith('}'):
+                # don't inject top-level only fields (like id/count) into nested compounds
+                val_str = _normalize_compound_str(item_id, val_str, ensure_id=False)
             if key_stripped.lower() == 'count':
-                normalized_pairs.append('count:1')
-                continue
+                if ensure_id:
+                    mapping2['count'] = '1'
+                    continue
             if key_stripped.lower() == 'id':
-                saw_id = True
-                # keep original id formatting (quotes etc)
-                normalized_pairs.append(f'id:{val.strip()}')
+                saw_id2 = True
+                mapping2['id'] = val_str
                 continue
-        # otherwise keep original pair as-is
-        normalized_pairs.append(p)
+            mapping2[key_stripped] = val_str
+        else:
+            mapping2[p] = p
 
-    if not saw_id:
-        # add top-level id if missing
-        normalized_pairs.append('id:' + _to_snbt_value(item_id))
+    if ensure_id and not saw_id2:
+        mapping2['id'] = _to_snbt_value(item_id)
 
-    final = '{' + ','.join(normalized_pairs) + '}'
+    def _format_key2(k: str) -> str:
+        if re.fullmatch(r"[A-Za-z0-9_]+", k):
+            return k
+        return _escape_snbt_string(k)
+
+    items_sorted2 = sorted(mapping2.items(), key=lambda kv: kv[0])
+    return '{' + ','.join(f"{_format_key2(k)}:{v}" for k, v in items_sorted2) + '}'
+
+
+def calculate_variant_id_from_snbt(item_id: str, snbt: Optional[str] = None) -> str:
+    """Given an SNBT string for the ItemStack, normalize Count:... to Count:1 and hash.
+    This is useful if you can export SNBT from the server and want to validate it in Python.
+    """
+    # If the provided SNBT string is empty or just an empty compound, use a basic
+    # default representation for the item with a single unit: {count:1,id:"<item_id>"}
+    if not snbt or snbt.strip() == "{}":
+        snbt = '{count:1,id:' + _to_snbt_value(item_id) + '}'
+        return hashlib.sha256(snbt.encode('utf-8')).hexdigest()
+
+    normalized = snbt.strip()
+    if not normalized.startswith('{'):
+        normalized = '{' + normalized + '}'
+
+    inner = normalized[1:-1]
+    final = _normalize_compound_str(item_id, '{' + inner + '}')
     return hashlib.sha256(final.encode('utf-8')).hexdigest()
 
-# Example usage
-# if __name__ == "__main__":
-#     # Example item with a nested tag compound (name)
-#     item = "minecraft:stone"
-#     nbt_data = {"display": {"Name": '{"text":"My Stone"}'}}
-#     print("Variant ID:", calculate_variant_id(item, nbt_data))
+
+def canonicalize_snbt(item_id: str, snbt: Optional[str]) -> str:
+    """Return the normalized, canonical SNBT string for the provided SNBT or item_id.
+
+    This mirrors the normalization performed before hashing in
+    calculate_variant_id_from_snbt and is useful for testing and debugging.
+    """
+    if not snbt or snbt.strip() == "{}":
+        return '{count:1,id:' + _to_snbt_value(item_id) + '}'
+    normalized = snbt.strip()
+    if not normalized.startswith('{'):
+        normalized = '{' + normalized + '}'
+    inner = normalized[1:-1]
+    return _normalize_compound_str(item_id, '{' + inner + '}')

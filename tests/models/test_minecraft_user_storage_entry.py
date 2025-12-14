@@ -13,6 +13,13 @@ def test_empty_entry_is_empty():
         "guild_id": "",
         "uuid": "",
         "slots": 0,
+        "settings": {
+            "initial_slots": 9,
+            "increase_slots_by": 9,
+            "increase_cost": 1000,
+            "discount": None,
+            "original_increase_cost": None,
+        },
         "storage": {},
     }
 

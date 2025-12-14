@@ -3362,18 +3362,9 @@ paths:
     post:
       tags:
         - minecraft
-      parameters:
-        - in: path
-          required: true
-          name: identifier
-          description: Mojang account UUID/username or discord user ID
-          schema:
-            type: string
-      security:
-        - X-AUTH-TOKEN: []
-        - X-TACOBOT-TOKEN: []
+      summary: Push Minecraft player statistics (Placeholder)
       requestBody:
-        description: Player statistics payload (TBD)
+        description: Player statistics payload
         content:
           application/json:
             schema:
@@ -3411,7 +3402,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
       description: (Placeholder) Push Minecraft player statistics.
-      summary: Push Minecraft player statistics (Placeholder)
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
   /api/v1/minecraft/player/{identifier}/stats:
     get:
       tags:
@@ -3447,18 +3447,9 @@ paths:
     post:
       tags:
         - minecraft
-      parameters:
-        - in: path
-          required: true
-          name: identifier
-          description: Mojang account UUID/username or discord user ID
-          schema:
-            type: string
-      security:
-        - X-AUTH-TOKEN: []
-        - X-TACOBOT-TOKEN: []
+      summary: Push Minecraft player statistics (Placeholder)
       requestBody:
-        description: Player statistics payload (TBD)
+        description: Player statistics payload
         content:
           application/json:
             schema:
@@ -3496,23 +3487,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
       description: (Placeholder) Push Minecraft player statistics.
-      summary: Push Minecraft player statistics (Placeholder)
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
   /taco/minecraft/player/{identifier}/stats:
     post:
       tags:
         - minecraft
-      parameters:
-        - in: path
-          required: true
-          name: identifier
-          description: Mojang account UUID/username or discord user ID
-          schema:
-            type: string
-      security:
-        - X-AUTH-TOKEN: []
-        - X-TACOBOT-TOKEN: []
+      summary: Push Minecraft player statistics (Placeholder)
       requestBody:
-        description: Player statistics payload (TBD)
+        description: Player statistics payload
         content:
           application/json:
             schema:
@@ -3550,7 +3541,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorStatusCodePayload'
       description: (Placeholder) Push Minecraft player statistics.
-      summary: Push Minecraft player statistics (Placeholder)
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
     get:
       tags:
         - minecraft
@@ -4337,6 +4337,1281 @@ paths:
       description: Calculate the number of available tacos for a Minecraft user.
       tags:
         - minecraft
+  /tacobot/minecraft/admin/{identifier}/shop/item:
+    post:
+      tags:
+        - minecraft
+      summary: Admin add item to buy for a Minecraft user (Placeholder)
+      requestBody:
+        description: Item to buy payload (TBD)
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Item to buy response (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Add item to buy for a Minecraft user. Requires Op Level 3+.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+    delete:
+      tags:
+        - minecraft
+      summary: Admin remove item from a Minecraft user's shop (Placeholder)
+      requestBody:
+        description: Item to remove from sell payload (TBD)
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Item removed from sell response (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Remove item from a Minecraft user's shop. Requires Op Level 3+.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /taco/minecraft/admin/{identifier}/shop/item:
+    post:
+      tags:
+        - minecraft
+      summary: Admin add item to buy for a Minecraft user (Placeholder)
+      requestBody:
+        description: Item to buy payload (TBD)
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Item to buy response (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Add item to buy for a Minecraft user. Requires Op Level 3+.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+    delete:
+      tags:
+        - minecraft
+      summary: Admin remove item from a Minecraft user's shop (Placeholder)
+      requestBody:
+        description: Item to remove from sell payload (TBD)
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Item removed from sell response (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Remove item from a Minecraft user's shop. Requires Op Level 3+.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /api/v1/minecraft/admin/{identifier}/shop/item:
+    post:
+      tags:
+        - minecraft
+      summary: Admin add item to buy for a Minecraft user (Placeholder)
+      requestBody:
+        description: Item to buy payload (TBD)
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Item to buy response (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Add item to buy for a Minecraft user. Requires Op Level 3+.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+    delete:
+      tags:
+        - minecraft
+      summary: Admin remove item from a Minecraft user's shop (Placeholder)
+      requestBody:
+        description: Item to remove from sell payload (TBD)
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Item removed from sell response (TBD)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Remove item from a Minecraft user's shop. Requires Op Level 3+.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /tacobot/minecraft/player/{identifier}/shop/items/{action}:
+    get:
+      tags:
+        - minecraft
+      summary: List shop items for a Minecraft user (Placeholder)
+      responses:
+        '200':
+          description: List of shop items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MinecraftShopEntry'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: List shop items for a Minecraft user.
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: action
+          description: Action to perform (buy/sell)
+          schema:
+            type: string
+            enum:
+              - buy
+              - sell
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /taco/minecraft/player/{identifier}/shop/items/{action}:
+    get:
+      tags:
+        - minecraft
+      summary: List shop items for a Minecraft user (Placeholder)
+      responses:
+        '200':
+          description: List of shop items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MinecraftShopEntry'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: List shop items for a Minecraft user.
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: action
+          description: Action to perform (buy/sell)
+          schema:
+            type: string
+            enum:
+              - buy
+              - sell
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /api/v1/minecraft/player/{identifier}/shop/items/{action}:
+    get:
+      tags:
+        - minecraft
+      summary: List shop items for a Minecraft user (Placeholder)
+      responses:
+        '200':
+          description: List of shop items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MinecraftShopEntry'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: List shop items for a Minecraft user.
+      parameters:
+        - in: path
+          required: true
+          name: identifier
+          description: Mojang account UUID/username or discord user ID
+          schema:
+            type: string
+        - in: path
+          required: true
+          name: action
+          description: Action to perform (buy/sell)
+          schema:
+            type: string
+            enum:
+              - buy
+              - sell
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /tacobot/minecraft/admin/{identifier}/shop/items:
+    get:
+      tags:
+        - minecraft
+      summary: Admin list all shop items
+      responses:
+        '200':
+          description: List of shop items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MinecraftShopEntry'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: List all shop items. Requires Op Level 3+.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /taco/minecraft/admin/{identifier}/shop/items:
+    get:
+      tags:
+        - minecraft
+      summary: Admin list all shop items
+      responses:
+        '200':
+          description: List of shop items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MinecraftShopEntry'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: List all shop items. Requires Op Level 3+.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /api/v1/minecraft/admin/{identifier}/shop/items:
+    get:
+      tags:
+        - minecraft
+      summary: Admin list all shop items
+      responses:
+        '200':
+          description: List of shop items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MinecraftShopEntry'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: List all shop items. Requires Op Level 3+.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /tacobot/minecraft/shop/settings:
+    get:
+      tags:
+        - minecraft
+      summary: Get Minecraft shop settings
+      responses:
+        '200':
+          description: Minecraft shop settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftShopSettings'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Settings not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Get Minecraft shop settings.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /taco/minecraft/shop/settings:
+    get:
+      tags:
+        - minecraft
+      summary: Get Minecraft shop settings
+      responses:
+        '200':
+          description: Minecraft shop settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftShopSettings'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Settings not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Get Minecraft shop settings.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /api/v1/minecraft/shop/settings:
+    get:
+      tags:
+        - minecraft
+      summary: Get Minecraft shop settings
+      responses:
+        '200':
+          description: Minecraft shop settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftShopSettings'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Settings not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: Get Minecraft shop settings.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /tacobot/minecraft/shop/sell:
+    post:
+      tags:
+        - minecraft
+      summary: User sell item to Minecraft shop
+      requestBody:
+        description: Shop sell payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftShopBuySellPayload'
+      responses:
+        '200':
+          description: Shop sell response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftShopItem'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: User sell item from user inventory or storage to Minecraft shop.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /taco/minecraft/shop/sell:
+    post:
+      tags:
+        - minecraft
+      summary: User sell item to Minecraft shop
+      requestBody:
+        description: Shop sell payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftShopBuySellPayload'
+      responses:
+        '200':
+          description: Shop sell response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftShopItem'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: User sell item from user inventory or storage to Minecraft shop.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /api/v1/minecraft/shop/sell:
+    post:
+      tags:
+        - minecraft
+      summary: User sell item to Minecraft shop
+      requestBody:
+        description: Shop sell payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftShopBuySellPayload'
+      responses:
+        '200':
+          description: Shop sell response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftShopItem'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: User sell item from user inventory or storage to Minecraft shop.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /tacobot/minecraft/shop/sell/storage:
+    post:
+      tags:
+        - minecraft
+      summary: User sell item from storage to Minecraft shop
+      requestBody:
+        description: Shop sell payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftShopBuySellPayload'
+      responses:
+        '200':
+          description: Shop sell response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftShopItem'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: User sell item from user storage to Minecraft shop.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /taco/minecraft/shop/sell/storage:
+    post:
+      tags:
+        - minecraft
+      summary: User sell item from storage to Minecraft shop
+      requestBody:
+        description: Shop sell payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftShopBuySellPayload'
+      responses:
+        '200':
+          description: Shop sell response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftShopItem'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: User sell item from user storage to Minecraft shop.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /api/v1/minecraft/shop/sell/storage:
+    post:
+      tags:
+        - minecraft
+      summary: User sell item from storage to Minecraft shop
+      requestBody:
+        description: Shop sell payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftShopBuySellPayload'
+      responses:
+        '200':
+          description: Shop sell response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftShopItem'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: User sell item from user storage to Minecraft shop.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /tacobot/minecraft/shop/buy:
+    post:
+      tags:
+        - minecraft
+      summary: User buy item from Minecraft shop
+      requestBody:
+        description: Shop buy payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftShopBuySellPayload'
+      responses:
+        '200':
+          description: Shop buy response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftShopItem'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: User buy item from Minecraft shop.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /taco/minecraft/shop/buy:
+    post:
+      tags:
+        - minecraft
+      summary: User buy item from Minecraft shop
+      requestBody:
+        description: Shop buy payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftShopBuySellPayload'
+      responses:
+        '200':
+          description: Shop buy response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftShopItem'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: User buy item from Minecraft shop.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /api/v1/minecraft/shop/buy:
+    post:
+      tags:
+        - minecraft
+      summary: User buy item from Minecraft shop
+      requestBody:
+        description: Shop buy payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftShopBuySellPayload'
+      responses:
+        '200':
+          description: Shop buy response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftShopItem'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+      description: User buy item from Minecraft shop.
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+  /tacobot/minecraft/item/variant-id:
+    post:
+      summary: Get Minecraft item variant ID
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      requestBody:
+        description: Item variant ID request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftItemVariantIdRequestPayload'
+      description: Get the variant ID for a Minecraft item based on its item ID and variant data (NBT or SNBT).
+      tags:
+        - minecraft
+      responses:
+        '200':
+          description: Item variant ID response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftItemVariantIdResponsePayload'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /taco/minecraft/item/variant-id:
+    post:
+      summary: Get Minecraft item variant ID
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      requestBody:
+        description: Item variant ID request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftItemVariantIdRequestPayload'
+      description: Get the variant ID for a Minecraft item based on its item ID and variant data (NBT or SNBT).
+      tags:
+        - minecraft
+      responses:
+        '200':
+          description: Item variant ID response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftItemVariantIdResponsePayload'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+  /api/v1/minecraft/item/variant-id:
+    post:
+      summary: Get Minecraft item variant ID
+      security:
+        - X-AUTH-TOKEN: []
+        - X-TACOBOT-TOKEN: []
+      requestBody:
+        description: Item variant ID request payload
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinecraftItemVariantIdRequestPayload'
+      description: Get the variant ID for a Minecraft item based on its item ID and variant data (NBT or SNBT).
+      tags:
+        - minecraft
+      responses:
+        '200':
+          description: Item variant ID response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinecraftItemVariantIdResponsePayload'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
+        5XX:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorStatusCodePayload'
 components:
   schemas:
     ErrorStatusCodePayload:
@@ -5706,6 +6981,10 @@ components:
         user_id:
           type: integer
           description: The ID of the user.
+        role_ids:
+          type: array
+          items:
+            type: string
         username:
           type: string
           description: The username of the Minecraft user.
@@ -5720,6 +6999,7 @@ components:
           description: Operator status data for the Minecraft user.
       required:
         - guild_id
+        - role_ids
         - user_id
         - username
         - uuid
@@ -5828,16 +7108,121 @@ components:
           description: The UUID of the Minecraft user.
         slots:
           type: integer
+          description: The number of storage slots available to the user.
+        settings:
+          $ref: '#/components/schemas/MinecraftStorageSettings'
+          description: The storage settings for the user.
         storage:
           type: object
           description: The storage items of the Minecraft user.
       required:
         - guild_id
+        - settings
         - slots
         - storage
         - user_id
         - uuid
       description: Represents a Minecraft user's storage entry.
+      x-tacobot-managed: true
+    MinecraftShopBuySellPayload:
+      type: object
+      properties:
+        uuid:
+          type: string
+          description: The UUID of the Minecraft user selling the item.
+        item_id:
+          type: string
+          description: The Minecraft item ID being sold.
+        variant_id:
+          type: string
+          description: The variant ID of the item being sold.
+        quantity:
+          type: integer
+          description: The quantity of the item being sold.
+        cost_per_item:
+          type: integer
+          description: The cost per item being sold.
+        shop_id:
+          type: string
+      required:
+        - cost_per_item
+        - item_id
+        - quantity
+        - shop_id
+        - uuid
+        - variant_id
+      description: Payload for selling items in the Minecraft shop.
+      x-tacobot-managed: true
+    MinecraftUserStorageItem:
+      type: object
+      properties:
+        item_id:
+          type: string
+          description: The ID of the item.
+        variant_id:
+          type: string
+          description: The variant ID of the item.
+        quantity:
+          type: integer
+          description: The quantity of the item.
+        metadata:
+          type: object
+          description: The metadata of the item.
+      required:
+        - item_id
+        - metadata
+        - quantity
+        - variant_id
+      description: Represents an item in the Minecraft user's storage.
+    MinecraftStorageSettings:
+      type: object
+      properties:
+        initial_slots:
+          type: integer
+          description: The initial number of storage slots available to the user.
+        increase_slots_by:
+          type: integer
+          description: The number of storage slots to increase by.
+        increase_cost:
+          type: integer
+          description: The cost to increase the number of storage slots.
+        discount:
+          type: number
+          nullable: true
+        original_increase_cost:
+          type: integer
+          nullable: true
+      required:
+        - increase_cost
+        - increase_slots_by
+        - initial_slots
+      description: Represents the storage settings for a Minecraft user.
+    MinecraftItemVariantIdRequestPayload:
+      type: object
+      properties:
+        item_id:
+          type: string
+          description: The Minecraft item ID.
+        nbt:
+          type: object
+          description: The NBT data of the item, either as a string or a dictionary.
+      required:
+        - item_id
+        - nbt
+      description: Payload to request calculation of a Minecraft item variant ID.
+    MinecraftItemVariantIdResponsePayload:
+      type: object
+      properties:
+        item_id:
+          type: string
+          description: The Minecraft item ID.
+        variant_id:
+          type: string
+          description: The calculated variant ID of the item.
+      required:
+        - item_id
+        - variant_id
+      description: Payload containing the Minecraft item variant ID response.
       x-tacobot-managed: true
   securitySchemes:
     X-AUTH-TOKEN:

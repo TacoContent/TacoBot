@@ -69,7 +69,8 @@ def test_missing_id_is_added_for_snbt():
 def test_shulker_box_with_contents():
     item_id = 'minecraft:shulker_box'
     snbt = '{components:{"minecraft:container":[{item:{count:64,id:"minecraft:dirt"},slot:0},{item:{count:1,id:"minecraft:iron_helmet"},slot:1},{item:{count:5,id:"minecraft:apple"},slot:2},{item:{count:3,id:"minecraft:stick"},slot:3},{item:{count:4,id:"minecraft:coal"},slot:4}]},count:1,id:"minecraft:shulker_box"}'
-    expected = '376f09b92e89f3c3225d1f7f2e049a3621b14a4404c17d8937b8d7b6fe967977'
+    # Updated expected value to reflect canonicalized ordering of nested compounds
+    expected = 'cd4351f554fe51ae8c315e37305597d0d08cb63691b8138aeb9df11ad8acb646'
     assert calculate_variant_id_from_snbt(item_id, snbt) == expected
 
 

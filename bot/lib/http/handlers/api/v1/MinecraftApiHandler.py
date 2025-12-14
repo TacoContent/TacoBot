@@ -42,6 +42,9 @@ import typing
 import uuid
 from http import HTTPMethod
 
+from lib.models.MinecraftItemVariantIdRequestPayload import MinecraftItemVariantIdRequestPayload
+from lib.models.MinecraftItemVariantIdResponsePayload import MinecraftItemVariantIdResponsePayload
+
 from bot.lib.minecraft.item import calculate_variant_id, calculate_variant_id_from_snbt
 from bot.lib.models.MinecraftShopItem import MinecraftShopItem
 import requests
@@ -1205,6 +1208,19 @@ class MinecraftApiHandler(ApiHttpHandler):
             if payload is None or payload.is_empty():
                 return self._create_error_response(400, "No data payload provided", headers=headers)
 
+            # Validate variant id against provided metadata's SNBT if the SNBT was actually supplied
+            # by the client. If the metadata doesn't include SNBT, skip verification to maintain
+            # backward compatibility with clients that only provide variant IDs.
+            metadata_snbt: str | None = None
+            if payload.metadata and isinstance(payload.metadata, dict) and 'snbt' in payload.metadata:
+                metadata_snbt = payload.metadata.get('snbt')
+            if metadata_snbt is not None:
+                calculated_variant_id = calculate_variant_id_from_snbt(item_id=payload.item_id, snbt=metadata_snbt)
+                if calculated_variant_id != payload.variant_id:
+                    return self._create_error_response(
+                        400, "Variant ID does not match calculated value from SNBT", headers=headers
+                    )
+
             # self.tracking_db.store_minecraft_user_item(user_id, identifier, payload)
 
             guild_id = self.settings.primary_guild_id
@@ -2049,6 +2065,16 @@ class MinecraftApiHandler(ApiHttpHandler):
             if not shop_item:
                 return self._create_error_response(404, "Invalid shop item for sale", headers=headers)
 
+            # compare payload.variant_id with calculated variant_id from item_id and metadata to prevent exploits
+            # Only validate variant id against calculated variant id when actual NBT metadata
+            # is provided in payload. Some clients will only submit a variant_id and no
+            # metadata; in those cases skip validation to maintain backward compatibility.
+            nbt_data = getattr(payload, "nbt", None)
+            if nbt_data is not None:
+                calculated_variant_id = calculate_variant_id(item_id=payload.item_id, nbt=nbt_data)
+                if payload.variant_id != calculated_variant_id:
+                    return self._create_error_response(400, "Invalid item variant ID", headers=headers)
+
             # TODO:
             # check that this item is actually sellable in the shop
             # need to also verify the cost_per_item matches the shop entry to avoid exploits
@@ -2059,7 +2085,7 @@ class MinecraftApiHandler(ApiHttpHandler):
             #     return self._create_error_response(400, "Invalid shop sell transaction", headers=headers)
 
             if from_storage:
-                self.log.info(0, f"{self._module}.{self._class}.{_method}", f"User {user.user_id} selling {payload.quantity} of item {payload.item_id} (variant {payload.variant_id[:8]}) from storage to shop")
+                self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"User {user.user_id} selling {payload.quantity} of item {payload.item_id} (variant {payload.variant_id[:8]}) from storage to shop")
                 storage_item = self.minecraft_db.get_user_storage_item(guild_id=guild_id, user_id=user.user_id, variant_id=payload.variant_id, uuid=user.uuid)
 
                 if not storage_item or storage_item.quantity < payload.quantity:
@@ -2070,7 +2096,7 @@ class MinecraftApiHandler(ApiHttpHandler):
                 if not success or not item:
                     return self._create_error_response(500, "Failed to withdraw item from storage", headers=headers)
             else:
-                self.log.info(0, f"{self._module}.{self._class}.{_method}", f"User {user.user_id} selling {payload.quantity} of item {payload.item_id} (variant {payload.variant_id[:8]}) from inventory to shop")
+                self.log.debug(0, f"{self._module}.{self._class}.{_method}", f"User {user.user_id} selling {payload.quantity} of item {payload.item_id} (variant {payload.variant_id[:8]}) from inventory to shop")
 
             await self.taco_helper.give_tacos(
                 guildId=guild_id,
@@ -2186,6 +2212,13 @@ class MinecraftApiHandler(ApiHttpHandler):
                 return self._create_error_response(
                     400, "Invalid variant ID provided. Must be a specific variant ID.", headers=headers
                 )
+
+            # compare payload.variant_id with calculated variant_id from item_id and metadata to prevent exploits
+            nbt_data = getattr(payload, "nbt", None)
+            if nbt_data is not None:
+                calculated_variant_id = calculate_variant_id(item_id=payload.item_id, nbt=nbt_data)
+                if payload.variant_id != calculated_variant_id:
+                    return self._create_error_response(400, "Invalid item variant ID", headers=headers)
 
             shop_item: typing.Optional[MinecraftShopItem] = self.minecraft_db.get_shop_item(
                 shop_id=payload.shop_id,
@@ -2370,6 +2403,98 @@ class MinecraftApiHandler(ApiHttpHandler):
             self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
 
+    @uri_mapping("/tacobot/minecraft/item/variant-id", method=HTTPMethod.POST)
+    @uri_mapping("/taco/minecraft/item/variant-id", method=HTTPMethod.POST)
+    @uri_mapping(f"/api/{API_VERSION}/minecraft/item/variant-id", method=HTTPMethod.POST)
+    @openapi.security("X-AUTH-TOKEN", "X-TACOBOT-TOKEN")
+    @openapi.tags("minecraft")
+    @openapi.summary("Get Minecraft item variant ID")
+    @openapi.description("Get the variant ID for a Minecraft item based on its item ID and variant data (NBT or SNBT).")
+    @openapi.requestBody(
+        description="Item variant ID request payload",
+        contentType="application/json",
+        schema=MinecraftItemVariantIdRequestPayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        200,
+        description="Item variant ID response",
+        contentType="application/json",
+        schema=MinecraftItemVariantIdResponsePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        400,
+        description="Bad request",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        401,
+        description="Unauthorized",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.response(
+        '5XX',
+        description="Internal server error",
+        contentType="application/json",
+        schema=ErrorStatusCodePayload,
+        methods=[HTTPMethod.POST],
+    )
+    @openapi.managed()
+    def get_variant_id(self, request: HttpRequest) -> HttpResponse:
+        """Get variant ID for a Minecraft item.
+
+        Args:
+            item_id (str): The item ID.
+            variant_data (dict or str): The variant data.
+        Returns:
+            str: The variant ID.
+        """
+        _method = inspect.stack()[0][3]
+        request_id = str(uuid.uuid4())[:8]
+        headers = HttpHeaders()
+        headers.add("Content-Type", "application/json")
+        headers.add("X-Request-ID", request_id)
+        try:
+
+            # if not self.validate_auth_token(request):
+            #     return self._create_error_response(401, "Unauthorized", headers=headers)
+
+            if not request.body:
+                return self._create_error_response(400, "No body provided", headers=headers)
+
+            request_payload: MinecraftItemVariantIdRequestPayload = None
+            try:
+                body_data = json.loads(request.body.decode("utf-8"))
+                request_payload: MinecraftItemVariantIdRequestPayload = MinecraftItemVariantIdRequestPayload.from_dict(body_data)
+            except json.JSONDecodeError:
+                return self._create_error_response(400, "Invalid JSON body", headers=headers)
+            except ValueError as ve:
+                return self._create_error_response(400, str(ve), headers=headers)
+
+
+            if request_payload is None or request_payload.is_empty():
+                return self._create_error_response(400, "No data payload provided", headers=headers)
+
+
+            variant_id = self._calculate_variant_id(item_id=request_payload.item_id, variant_data=request_payload.nbt)
+
+            response_payload: MinecraftItemVariantIdResponsePayload = MinecraftItemVariantIdResponsePayload(
+                item_id=request_payload.item_id, variant_id=variant_id
+            )
+
+            return HttpResponse(200, headers, json.dumps(response_payload.to_dict(), indent=4).encode("utf-8"))
+        except HttpResponseException as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_from_exception(exception=e)
+        except Exception as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
+            return self._create_error_response(500, f"Internal server error: {str(e)}", headers=headers)
+
     def _calculate_variant_id(self, item_id: str, variant_data: typing.Union[typing.Dict[str, typing.Any], str]) -> str:
         """Calculate the variant ID for a Minecraft item.
 
@@ -2386,7 +2511,7 @@ class MinecraftApiHandler(ApiHttpHandler):
             return calculate_variant_id(item_id=item_id, nbt=variant_data)
 
         if isinstance(variant_data, str):
-            return calculate_variant_id_from_snbt(item_id=item_id, snbt_str=variant_data)
+            return calculate_variant_id_from_snbt(item_id=item_id, snbt=variant_data)
 
     def _validate_event_type(self, event_str: str, headers: HttpHeaders) -> MinecraftPlayerEvents:
         """Validate and parse event type.

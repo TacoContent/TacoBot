@@ -261,7 +261,7 @@ class TestTacoTypesEnum:
     def test_enum_iteration(self):
         """Test that enum can be iterated over."""
         taco_types = list(TacoTypes)
-        assert len(taco_types) == 49  # Total number of enum members
+        assert len(taco_types) == 51  # Total number of enum members
         assert TacoTypes.JOIN_SERVER in taco_types
         assert TacoTypes.CUSTOM in taco_types
 

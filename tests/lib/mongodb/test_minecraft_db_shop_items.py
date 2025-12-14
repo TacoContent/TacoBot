@@ -83,7 +83,7 @@ def test_has_op_level_true_false_and_missing_user():
     db.db_url = "mongodb://ok"
     # user has op enabled level 3; simulate mc_user object with op as a dict-like to satisfy .get()
     import types
-    mc_user = types.SimpleNamespace(op={'enabled': True, 'level': 3})
+    mc_user = types.SimpleNamespace(op=types.SimpleNamespace(enabled=True, level=3))
     db.get_minecraft_user = lambda guild_id, user_id: mc_user
     assert db.has_op_level(1, 10, 2) is True
     assert db.has_op_level(1, 10, 4) is False
