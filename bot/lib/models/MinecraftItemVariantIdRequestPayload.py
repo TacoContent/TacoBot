@@ -3,6 +3,7 @@ import typing
 
 from bot.lib.models.openapi import openapi
 
+
 @openapi.component("MinecraftItemVariantIdRequestPayload", description="Payload to request calculation of a Minecraft item variant ID.")
 @openapi.property("item_id", description="The Minecraft item ID.")
 @openapi.property("nbt", description="The NBT data of the item, either as a string or a dictionary.")

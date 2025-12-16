@@ -13,11 +13,10 @@ import json
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from bot.lib.http.handlers.api.v1.MinecraftApiHandler import MinecraftApiHandler
+from bot.lib.models.MinecraftShopItem import MinecraftShopItem
 from bot.lib.models.MinecraftUserStorageEntry import MinecraftUserStorageItem
 from httpserver import HttpRequest
-from bot.lib.models.MinecraftShopItem import MinecraftShopItem
 
 
 @pytest.fixture

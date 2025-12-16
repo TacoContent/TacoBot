@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from bot.lib.minecraft.item import calculate_variant_id, calculate_variant_id_from_snbt
 from scripts.snbt_variant import main
 

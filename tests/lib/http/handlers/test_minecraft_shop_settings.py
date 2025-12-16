@@ -8,7 +8,6 @@ import json
 from unittest.mock import MagicMock
 
 import pytest
-
 from bot.lib.http.handlers.api.v1.MinecraftApiHandler import MinecraftApiHandler
 from bot.lib.models.MinecraftShopSettings import MinecraftShopSettings
 from httpserver import HttpRequest
