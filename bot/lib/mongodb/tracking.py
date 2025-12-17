@@ -286,6 +286,71 @@ class TrackingDatabase(Database):
                 stackTrace=traceback.format_exc(),
             )
 
+    def track_roles(
+        self,
+        roles: typing.Union[typing.Set[discord.Role], typing.Sequence[discord.Role], typing.List[discord.Role]],
+    ) -> None:
+            for role in roles:
+                self.track_role(role)
+
+    def track_role(self, role: discord.Role) -> None:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            date = datetime.datetime.now(tz=datetime.timezone.utc)
+            timestamp = utils.to_timestamp(date)
+            payload = {
+                "guild_id": str(role.guild.id),
+                "role_id": str(role.id),
+                "created_at": utils.to_timestamp(role.created_at),
+                "name": role.name,
+                "color": role.color.value,
+                "secondary_color": role.secondary_color.value if role.secondary_color else None,
+                "tertiary_color": role.tertiary_color.value if role.tertiary_color else None,
+                "hoist": role.hoist,
+                "position": role.position,
+                "permissions": role.permissions.value,
+                "managed": role.managed,
+                "mentionable": role.mentionable,
+                "display_icon": role.display_icon.url if isinstance(role.display_icon, discord.Asset) else role.display_icon,
+                "icon": role.icon.url if role.icon else None,
+                "unicode_emoji": role.unicode_emoji,
+                "members": [str(member.id) for member in role.members],
+                "timestamp": timestamp,
+                "deleted": False,
+            }
+            self.connection.guild_roles.update_one(  # type: ignore
+                {"guild_id": str(role.guild.id), "role_id": str(role.id)}, {"$set": payload}, upsert=True)
+        except Exception as ex:
+            self.log(
+                guildId=role.guild.id,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+    def track_role_deletion(self, guildId: int, roleId: int) -> None:
+        _method = inspect.stack()[0][3]
+        try:
+            if self.connection is None or self.client is None:
+                self.open()
+            date = datetime.datetime.now(tz=datetime.timezone.utc)
+            timestamp = utils.to_timestamp(date)
+            self.connection.guild_roles.update_one(  # type: ignore
+                {"guild_id": str(guildId), "role_id": str(roleId)},
+                {"$set": {"deleted": True, "timestamp": timestamp}},
+                upsert=True,
+            )
+        except Exception as ex:
+            self.log(
+                guildId=guildId,
+                level=loglevel.LogLevel.ERROR,
+                method=f"{self._module}.{self._class}.{_method}",
+                message=f"{ex}",
+                stackTrace=traceback.format_exc(),
+            )
+
     def track_guild(self, guild: discord.Guild) -> None:
         _method = inspect.stack()[0][3]
         try:

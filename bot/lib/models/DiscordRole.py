@@ -47,6 +47,7 @@ from discord import Role
 @openapi.property("mention", description="The mention string for the role")
 @openapi.property("mentionable", description="Whether the role is mentionable")
 @openapi.property("name", description="The name of the role")
+@openapi.property("members", description="The list of member IDs that have this role")
 @openapi.property("permissions", description="The permissions of the role as an integer value")
 @openapi.property("position", description="The position of the role in the guild's role list")
 @openapi.property("secondary_color", description="The secondary color of the role as an integer value")
@@ -62,29 +63,31 @@ class DiscordRole:
         Role attribute mapping.
     """
 
-    def __init__(self, data):
+    def __init__(self, **kwargs):
         self.type: typing.Literal["role"] = "role"
-        self.id: str = data.get("id", "0")
-        self.guild_id: str = data.get("guild_id", "0")
+        self.id: str = kwargs.get("id", kwargs.get("role_id", "0"))
+        self.guild_id: str = kwargs.get("guild_id", "0")
 
-        self.color: typing.Optional[int] = data.get("color", 0)
-        self.created_at: typing.Optional[int] = data.get("created_at", None)
-        self.display_icon: typing.Optional[str] = data.get("display_icon", None)
-        self.flags: typing.Optional[int] = data.get("flags", None)
-        self.hoist: typing.Optional[bool] = data.get("hoist", None)
-        self.icon: typing.Optional[str] = data.get("icon", None)
-        self.managed: typing.Optional[bool] = data.get("managed", None)
-        self.mention: str = data.get("mention", "")
-        self.mentionable: bool = data.get("mentionable", False)
-        self.name: str = data.get("name", "")
-        self.permissions: int = data.get("permissions", 0)
-        self.position: int = data.get("position", 0)
-        self.secondary_color: typing.Optional[int] = data.get("secondary_color", 0)
-        self.tertiary_color: typing.Optional[int] = data.get("tertiary_color", 0)
-        self.unicode_emoji: typing.Optional[str] = data.get("unicode_emoji")
+        self.color: typing.Optional[int] = kwargs.get("color", 0)
+        self.created_at: typing.Optional[int] = kwargs.get("created_at", None)
+        self.display_icon: typing.Optional[str] = kwargs.get("display_icon", None)
+        self.flags: typing.Optional[int] = kwargs.get("flags", None)
+        self.hoist: typing.Optional[bool] = kwargs.get("hoist", None)
+        self.icon: typing.Optional[str] = kwargs.get("icon", None)
+        self.managed: typing.Optional[bool] = kwargs.get("managed", None)
+        self.mention: str = kwargs.get("mention", "")
+        self.mentionable: bool = kwargs.get("mentionable", False)
+        self.members: typing.Optional[typing.List[str]] = kwargs.get("members", None)
+        self.name: str = kwargs.get("name", "")
+        self.permissions: int = kwargs.get("permissions", 0)
+        self.position: int = kwargs.get("position", 0)
+        self.secondary_color: typing.Optional[int] = kwargs.get("secondary_color", 0)
+        self.tertiary_color: typing.Optional[int] = kwargs.get("tertiary_color", 0)
+        self.unicode_emoji: typing.Optional[str] = kwargs.get("unicode_emoji")
+        self.deleted: bool = kwargs.get("deleted", False)
 
-    @staticmethod
-    def fromRole(role: typing.Union[Role, dict]) -> "DiscordRole":
+    @classmethod
+    def fromRole(cls, role: typing.Union[Role, dict]) -> "DiscordRole":
         """Build a :class:`DiscordRole` from a live role or dictionary.
 
         Parameters
@@ -127,7 +130,23 @@ class DiscordRole:
                     "unicode_emoji": getattr(role, "unicode_emoji", None),
                 }
             )
-        return DiscordRole(role)
+        return DiscordRole.from_dict(role)
+
+    @classmethod
+    def from_dict(cls, data: typing.Dict[str, typing.Any]) -> "DiscordRole":
+        """Build a :class:`DiscordRole` from a dictionary.
+
+        Parameters
+        ----------
+        data : dict
+            Source role attribute mapping.
+
+        Returns
+        -------
+        DiscordRole
+            Normalized role model.
+        """
+        return cls(**data)
 
     def to_dict(self):
         """Return a safe dictionary serialization of the role.

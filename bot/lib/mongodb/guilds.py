@@ -21,7 +21,7 @@ class GuildsDatabase(Database):
         try:
             if self.connection is None or self.client is None:
                 self.open()
-            return list(self.connection.guilds.distinct("guild_id"))
+            return list(self.connection.guilds.distinct("guild_id"))  # type: ignore
         except Exception as ex:
             self.log(
                 guildId=0,

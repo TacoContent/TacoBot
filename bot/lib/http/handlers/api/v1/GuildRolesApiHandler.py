@@ -5,6 +5,8 @@ import traceback
 import typing
 from http import HTTPMethod
 
+from bot.lib.mongodb.guild_roles import GuildRolesDatabase
+
 from bot.lib.http.handlers.api.v1.const import API_VERSION
 from bot.lib.http.handlers.BaseHttpHandler import BaseHttpHandler
 from bot.lib.models.DiscordMentionable import DiscordMentionable
@@ -20,10 +22,11 @@ from httpserver.EndpointDecorators import uri_variable_mapping
 
 
 class GuildRolesApiHandler(BaseHttpHandler):
-    def __init__(self, bot: TacoBot, settings: Settings):
+    def __init__(self, bot: TacoBot, roles_db: GuildRolesDatabase, settings: Settings):
         super().__init__(bot, settings=settings)
         self._class = self.__class__.__name__
         self._module = os.path.basename(__file__)[:-3]
+        self.roles_db = roles_db
 
     @uri_variable_mapping(f"/api/{API_VERSION}/guild/{{guild_id}}/roles", method=HTTPMethod.GET)
     @openapi.summary("List guild roles")
@@ -92,7 +95,8 @@ class GuildRolesApiHandler(BaseHttpHandler):
             guild = self.bot.get_guild(int(guild_id))
             if guild is None:
                 return self._create_error_response(404, "guild not found", headers)
-            roles = [DiscordRole.fromRole(role) for role in guild.roles]
+            # roles = [DiscordRole.fromRole(role) for role in guild.roles]
+            roles = self.roles_db.get_roles_by_guild_id(guild.id)
             return HttpResponse(200, headers, json.dumps([r.to_dict() for r in roles]).encode('utf-8'))
         except HttpResponseException as e:
             return self._create_error_from_exception(exception=e)
@@ -426,5 +430,6 @@ class GuildRolesApiHandler(BaseHttpHandler):
 
 def setup(bot: TacoBot, http_server: HttpServer):
     settings = Settings()
-    handler = GuildRolesApiHandler(bot, settings)
+    roles_db = GuildRolesDatabase()
+    handler = GuildRolesApiHandler(bot=bot, roles_db=roles_db, settings=settings)
     http_server.add_handler(handler)

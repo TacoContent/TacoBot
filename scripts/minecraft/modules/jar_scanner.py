@@ -34,30 +34,60 @@ class JarScanner:
                 # Load language file
                 lang_data = self.load_language_file(zip_ref)
 
-                # List all files
-                file_list = zip_ref.namelist()
+                # List all files once (for membership tests)
+                file_list = set(zip_ref.namelist())
 
-                # Filter for textures
+                # Find all item definitions
+                # Support both formats:
+                # - New (1.21+): assets/<namespace>/items/<name>.json
+                # - Old/Mods: assets/<namespace>/models/item/<name>.json
+                item_definitions = {}
                 for file_path in file_list:
-                    if not file_path.endswith(".png"):
+                    if not file_path.endswith(".json"):
                         continue
-
-                    # Check if it is an item or block texture
-                    # Expected format: assets/<namespace>/textures/item/<name>.png
-                    # or assets/<namespace>/textures/block/<name>.png
                     parts = file_path.split('/')
-                    if len(parts) < 5 or parts[0] != 'assets' or parts[2] != 'textures':
+
+                    # New format: assets/<namespace>/items/<name>.json
+                    if len(parts) >= 4 and parts[0] == 'assets' and parts[2] == 'items':
+                        namespace = parts[1]
+                        name_stem = parts[-1][:-5]  # remove .json
+                        item_id = f"{namespace}:{name_stem}"
+                        item_definitions[item_id] = file_path
+
+                    # Old format: assets/<namespace>/models/item/<name>.json
+                    elif len(parts) >= 5 and parts[0] == 'assets' and parts[2] == 'models' and parts[3] == 'item':
+                        namespace = parts[1]
+                        name_stem = parts[-1][:-5]  # remove .json
+                        item_id = f"{namespace}:{name_stem}"
+                        # Don't overwrite if new format already exists
+                        if item_id not in item_definitions:
+                            item_definitions[item_id] = file_path
+
+                logger.info(f"Found {len(item_definitions)} item definitions in {jar_path.name}")
+
+                # Process each item definition
+                for item_id, item_def_path in item_definitions.items():
+                    # Skip model variants that aren't actual inventory items
+                    if self.is_model_variant(item_id):
+                        logger.debug(f"Skipping model variant: {item_id}")
                         continue
 
-                    category = parts[3] # item or block
-                    if category not in ['item', 'block']:
+                    # Skip if already exists in metadata
+                    if self.metadata_handler.item_exists(item_id):
+                        logger.warning(f"Duplicate item ID found: {item_id} in {jar_path.name}. Skipping.")
                         continue
 
-                    namespace = parts[1]
-                    filename = parts[-1]
-                    name_stem = filename[:-4] # remove .png
+                    # Determine the texture path for this item
+                    namespace, name_stem = item_id.split(':')
+                    texture_path = self.find_item_texture(zip_ref, file_list, namespace, name_stem, item_def_path)
 
-                    item_id = f"{namespace}:{name_stem}"
+                    if not texture_path:
+                        logger.debug(f"No texture found for item {item_id} in {jar_path.name}.")
+                        continue
+
+                    if not texture_path:
+                        logger.debug(f"No texture found for item {item_id} in {jar_path.name}.")
+                        continue
 
                     # Skip if already exists in metadata (optimization to avoid extraction check if not needed)
                     if self.metadata_handler.item_exists(item_id):
@@ -65,11 +95,11 @@ class JarScanner:
                         continue
 
                     # Determine Name
-                    display_name = self.get_display_name(item_id, category, lang_data)
+                    display_name = self.get_display_name(item_id, "item", lang_data)
 
                     # Extract Asset (optionally include base64 in metadata)
                     asset_filename, asset_b64 = self.asset_extractor.extract_asset(
-                        zip_ref, file_path, item_id, jar_path.name, include_asset=self.include_asset
+                        zip_ref, texture_path, item_id, jar_path.name, include_asset=self.include_asset
                     )
 
                     if asset_filename:
@@ -78,6 +108,157 @@ class JarScanner:
 
         except Exception as e:
             logger.error(f"Error processing JAR {jar_path.name}: {e}")
+
+    def is_model_variant(self, item_id: str) -> bool:
+        """
+        Check if an item is a model variant (not an actual inventory item).
+        These are typically animation frames or trim variants that reference the base item.
+
+        Examples to exclude:
+        - minecraft:diamond_chestplate_amethyst_trim (armor trim variant)
+        - minecraft:bow_pulling_0 (bow animation frame)
+        - minecraft:trident_throwing (trident animation frame)
+        - minecraft:fishing_rod_cast (fishing rod animation frame)
+        """
+        variant_patterns = [
+            '_trim',        # Armor trim variants (e.g., diamond_chestplate_amethyst_trim)
+            '_pulling',     # Bow pulling animation frames
+            '_throwing',    # Trident/spear throwing animation
+            '_in_hand',     # Item held in hand variant models
+            '_cast',        # Fishing rod cast animation
+        ]
+
+        # Check if the item ID ends with any variant pattern
+        item_name = item_id.split(':', 1)[1] if ':' in item_id else item_id
+        return any(item_name.endswith(pattern) or pattern + '_' in item_name for pattern in variant_patterns)
+
+    def find_item_texture(self, zip_ref: ZipFile, file_list: set, namespace: str, name_stem: str, item_def_path: str) -> Optional[str]:
+        """
+        Find the texture path for an item by checking:
+        1. Item texture: assets/<namespace>/textures/item/<name>.png
+        2. Block texture: assets/<namespace>/textures/block/<name>.png
+        3. Parse item definition/model and follow texture references
+
+        Supports both old (models/item/) and new (items/) formats.
+        """
+        # Try direct item texture first
+        item_texture = f"assets/{namespace}/textures/item/{name_stem}.png"
+        if item_texture in file_list:
+            return item_texture
+
+        # Try block texture
+        block_texture = f"assets/{namespace}/textures/block/{name_stem}.png"
+        if block_texture in file_list:
+            return block_texture
+
+        # Parse the item definition/model to find texture references
+        try:
+            with zip_ref.open(item_def_path) as f:
+                item_data = json.load(f)
+
+            # Handle new format (assets/<ns>/items/<name>.json)
+            if "/items/" in item_def_path:
+                return self._find_texture_from_new_format(zip_ref, file_list, item_data, namespace)
+
+            # Handle old format (assets/<ns>/models/item/<name>.json)
+            elif "/models/item/" in item_def_path:
+                return self._find_texture_from_old_format(zip_ref, file_list, item_data, namespace)
+
+        except Exception as e:
+            logger.debug(f"Failed to parse item definition for {namespace}:{name_stem}: {e}")
+
+        return None
+
+    def _find_texture_from_new_format(self, zip_ref: ZipFile, file_list: set, item_data: dict, namespace: str) -> Optional[str]:
+        """Parse new format item definitions (1.21+) and find textures."""
+        if "model" not in item_data or not isinstance(item_data["model"], dict):
+            return None
+
+        model_ref = item_data["model"].get("model", "")
+        if not model_ref:
+            return None
+
+        # Parse model reference like "minecraft:block/crafting_table"
+        if ":" in model_ref:
+            model_ns, model_path = model_ref.split(":", 1)
+        else:
+            model_ns = namespace
+            model_path = model_ref
+
+        # Construct path to the model file
+        model_file_path = f"assets/{model_ns}/models/{model_path}.json"
+
+        if model_file_path not in file_list:
+            return None
+
+        # Load the model and extract texture references
+        try:
+            with zip_ref.open(model_file_path) as mf:
+                model_data = json.load(mf)
+
+            if "textures" in model_data:
+                textures = model_data["textures"]
+                # Prefer "particle" texture (used as item icon), then "north", then any texture
+                texture_ref = textures.get("particle") or textures.get("north") or textures.get("layer0") or next(iter(textures.values()), None)
+
+                if texture_ref:
+                    # Parse texture reference like "minecraft:block/crafting_table_front"
+                    if ":" in texture_ref:
+                        tex_ns, tex_path = texture_ref.split(":", 1)
+                    else:
+                        tex_ns = model_ns
+                        tex_path = texture_ref
+
+                    # Construct texture file path
+                    texture_file = f"assets/{tex_ns}/textures/{tex_path}.png"
+                    if texture_file in file_list:
+                        return texture_file
+        except Exception as e:
+            logger.debug(f"Failed to parse model {model_file_path}: {e}")
+
+        return None
+
+    def _find_texture_from_old_format(self, zip_ref: ZipFile, file_list: set, model_data: dict, namespace: str) -> Optional[str]:
+        """Parse old format item models (pre-1.21, mods) and find textures."""
+        # Old format models have textures directly in the model JSON
+        if "textures" in model_data:
+            textures = model_data["textures"]
+            # Prefer "layer0" for items, "particle" for blocks, then any texture
+            texture_ref = textures.get("layer0") or textures.get("particle") or textures.get("north") or next(iter(textures.values()), None)
+
+            if texture_ref:
+                # Parse texture reference
+                if ":" in texture_ref:
+                    tex_ns, tex_path = texture_ref.split(":", 1)
+                else:
+                    tex_ns = namespace
+                    tex_path = texture_ref
+
+                # Construct texture file path
+                texture_file = f"assets/{tex_ns}/textures/{tex_path}.png"
+                if texture_file in file_list:
+                    return texture_file
+
+        # Check for parent model reference
+        if "parent" in model_data:
+            parent_ref = model_data["parent"]
+            if ":" in parent_ref:
+                parent_ns, parent_path = parent_ref.split(":", 1)
+            else:
+                parent_ns = namespace
+                parent_path = parent_ref
+
+            parent_file = f"assets/{parent_ns}/models/{parent_path}.json"
+            if parent_file in file_list:
+                try:
+                    with zip_ref.open(parent_file) as pf:
+                        parent_data = json.load(pf)
+                    # Recursively check parent
+                    return self._find_texture_from_old_format(zip_ref, file_list, parent_data, parent_ns)
+                except Exception:
+                    pass
+
+        return None
 
     def load_language_file(self, zip_ref: ZipFile) -> Dict[str, str]:
         # Try to find en_us.json

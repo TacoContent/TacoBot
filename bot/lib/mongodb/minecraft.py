@@ -415,6 +415,8 @@ class MinecraftDatabase(Database):
                 existing_item.variant_id = item.variant_id
                 existing_item.item_id = item.item_id
                 existing_item.metadata = item.metadata
+                existing_item.name = item.name
+                existing_item.nbt = item.nbt
                 existing_entry.storage[item.variant_id] = existing_item
             else:
                 # if its a new item, need to check for storage space
@@ -424,7 +426,9 @@ class MinecraftDatabase(Database):
                 existing_entry.storage[item.variant_id] = MinecraftUserStorageItem(
                     item_id=item.item_id,
                     variant_id=item.variant_id,
+                    name=item.name,
                     quantity=item.quantity,
+                    nbt=item.nbt,
                     metadata=item.metadata,
                 )
 

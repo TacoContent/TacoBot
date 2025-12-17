@@ -1226,6 +1226,8 @@ class MinecraftApiHandler(ApiHttpHandler):
             storage_item = MinecraftUserStorageItem(
                 item_id=payload.item_id,
                 variant_id=payload.variant_id,
+                name=payload.name,
+                nbt=payload.nbt,
                 quantity=payload.quantity,
                 metadata=payload.metadata,
             )

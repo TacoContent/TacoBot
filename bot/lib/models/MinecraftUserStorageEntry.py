@@ -81,19 +81,25 @@ class MinecraftUserStorageEntry:
 @openapi.property("item_id", description="The ID of the item.")
 @openapi.property("variant_id", description="The variant ID of the item.")
 @openapi.property("quantity", description="The quantity of the item.")
+@openapi.property("name", description="The name of the item.")
+@openapi.property("nbt", description="The NBT data of the item.")
 @openapi.property("metadata", description="The metadata of the item.")
 class MinecraftUserStorageItem:
     def __init__(self, **kwargs):
         self.item_id: str = kwargs.get("item_id", "")
         self.variant_id: str = kwargs.get("variant_id", "")
+        self.name: str = kwargs.get("name", "")
         self.quantity: int = kwargs.get("quantity", 0)
         self.metadata: dict = kwargs.get("metadata", {})
+        self.nbt: dict = kwargs.get("nbt", {})
 
     def to_dict(self) -> dict:
         return {
             "item_id": self.item_id,
             "variant_id": self.variant_id,
+            "name": self.name,
             "quantity": self.quantity,
+            "nbt": self.nbt,
             "metadata": self.metadata,
         }
 
