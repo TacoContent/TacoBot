@@ -13,6 +13,10 @@ COMMIT_MESSAGE.txt
 .coverage
 .coverage.*
 
+scripts/minecraft/jars/
+scripts/minecraft/TEMP/
+scripts/minecraft/output
+
 tests/tmp_*/
 
 reports/*
