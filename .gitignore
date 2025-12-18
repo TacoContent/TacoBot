@@ -16,6 +16,7 @@ COMMIT_MESSAGE.txt
 scripts/minecraft/jars/
 scripts/minecraft/simple-jars/
 scripts/minecraft/TEMP/
+scripts/minecraft/temp_*
 scripts/minecraft/temp/
 scripts/minecraft/output
 

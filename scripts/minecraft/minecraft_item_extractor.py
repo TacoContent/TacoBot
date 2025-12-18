@@ -29,9 +29,9 @@ def parse_arguments():
         help="Enable base64-encoded asset data in metadata files and MongoDB (if enabled).",
     )
     parser.add_argument(
-        "--experimental",
+        "--overwrite",
         action="store_true",
-        help="Enable experimental features (e.g., 3D isometric block rendering).",
+        help="Overwrite existing items in metadata and MongoDB.",
     )
     return parser.parse_args()
 
@@ -43,14 +43,14 @@ def main():
         logger.info(f"MongoDB enabled. Collection: {args.collection}")
     if args.include_asset:
         logger.info("Including base64-encoded assets in metadata and MongoDB (if enabled).")
-    if args.experimental:
-        logger.info("Experimental features enabled (3D block rendering).")
+    if args.overwrite:
+        logger.info("Overwrite enabled. Existing items will be updated.")
 
     scanner = JarScanner(
         use_mongodb=args.mongodb,
         collection_name=args.collection,
         include_asset=args.include_asset,
-        experimental=args.experimental
+        overwrite=args.overwrite
     )
     scanner.scan_jars()
     logger.info("Extraction complete.")

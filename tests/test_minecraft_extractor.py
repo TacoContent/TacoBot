@@ -248,6 +248,129 @@ def test_skip_when_asset_file_exists(tmp_path, monkeypatch):
     assert len(items) == 0
 
 
+def test_skip_neoforge_bucket_drip(tmp_path, monkeypatch):
+    """Items whose model parent is neoforge:item/bucket_drip should be ignored."""
+    jars_dir = tmp_path / "jars"
+    assets_dir = tmp_path / "output" / "assets"
+    output_dir = tmp_path / "output"
+    jars_dir.mkdir()
+    assets_dir.mkdir(parents=True)
+
+    jar_file = jars_dir / "neoforge_bucket.jar"
+
+    # Model references the NeoForge bucket_drip parent which we don't have assets for
+    files = {
+        "assets/allthemodium/models/item/vapor_unobtainium_bucket.json": json.dumps({
+            "parent": "neoforge:item/bucket_drip",
+            "loader": "neoforge:fluid_container",
+            "fluid": "allthemodium:vapor_unobtainium"
+        }),
+        "assets/allthemodium/lang/en_us.json": json.dumps({"item.allthemodium.vapor_unobtainium_bucket": "Vapor Bucket"}),
+    }
+    write_jar(jar_file, files)
+
+    import modules.constants as constants
+    monkeypatch.setattr(constants, "JARS_DIR", jars_dir)
+    monkeypatch.setattr(constants, "OUTPUT_DIR", output_dir)
+    monkeypatch.setattr(constants, "ASSETS_DIR", assets_dir)
+    monkeypatch.setattr(constants, "METADATA_FILE", output_dir / "items.json")
+
+    importlib.reload(importlib.import_module("modules.metadata_handler"))
+    importlib.reload(importlib.import_module("modules.asset_extractor"))
+    importlib.reload(importlib.import_module("modules.db"))
+    importlib.reload(importlib.import_module("modules.jar_scanner"))
+    from modules.jar_scanner import JarScanner
+
+    scanner = JarScanner()
+    scanner.process_jar(jar_file)
+    scanner.metadata_handler.save_metadata()
+
+    items = load_items_json(constants.METADATA_FILE)
+    # The bucket_drip item should be skipped entirely
+    assert not any(item["id"] == "allthemodium:vapor_unobtainium_bucket" for item in items)
+
+
+def test_skip_source_jar_parent(tmp_path, monkeypatch):
+    """Items whose model parent contains 'source_jar' should be ignored."""
+    jars_dir = tmp_path / "jars"
+    assets_dir = tmp_path / "output" / "assets"
+    output_dir = tmp_path / "output"
+    jars_dir.mkdir()
+    assets_dir.mkdir(parents=True)
+
+    jar_file = jars_dir / "source_jar.jar"
+
+    files = {
+        "assets/allthemodium/models/item/allthemodium_source_jar.json": json.dumps({
+            "parent": "allthemodium:block/source_jar/source_jar0",
+            "overrides": []
+        }),
+        "assets/allthemodium/lang/en_us.json": json.dumps({"item.allthemodium_source_jar": "Source Jar"}),
+    }
+    write_jar(jar_file, files)
+
+    import modules.constants as constants
+    monkeypatch.setattr(constants, "JARS_DIR", jars_dir)
+    monkeypatch.setattr(constants, "OUTPUT_DIR", output_dir)
+    monkeypatch.setattr(constants, "ASSETS_DIR", assets_dir)
+    monkeypatch.setattr(constants, "METADATA_FILE", output_dir / "items.json")
+
+    importlib.reload(importlib.import_module("modules.metadata_handler"))
+    importlib.reload(importlib.import_module("modules.asset_extractor"))
+    importlib.reload(importlib.import_module("modules.db"))
+    importlib.reload(importlib.import_module("modules.jar_scanner"))
+    from modules.jar_scanner import JarScanner
+
+    scanner = JarScanner()
+    scanner.process_jar(jar_file)
+    scanner.metadata_handler.save_metadata()
+
+    items = load_items_json(constants.METADATA_FILE)
+    # The source_jar item should be skipped entirely
+    assert len(items) == 0
+
+
+def test_include_asset_skips_when_no_b64(tmp_path, monkeypatch):
+    """When include_asset is True, items without base64 should be skipped."""
+    jars_dir = tmp_path / "jars"
+    assets_dir = tmp_path / "output" / "assets"
+    output_dir = tmp_path / "output"
+    jars_dir.mkdir()
+    assets_dir.mkdir(parents=True)
+
+    jar_file = jars_dir / "no_asset.jar"
+
+    # Provide a model but no texture files; include_asset=True should cause it to be skipped
+    files = {
+        "assets/testmod/models/item/no_asset_item.json": json.dumps({
+            "parent": "item/generated",
+            "textures": {"layer0": "testmod:item/missing_texture"}
+        }),
+        "assets/testmod/lang/en_us.json": json.dumps({"item.testmod.no_asset_item": "No Asset Item"}),
+    }
+    write_jar(jar_file, files)
+
+    import modules.constants as constants
+    monkeypatch.setattr(constants, "JARS_DIR", jars_dir)
+    monkeypatch.setattr(constants, "OUTPUT_DIR", output_dir)
+    monkeypatch.setattr(constants, "ASSETS_DIR", assets_dir)
+    monkeypatch.setattr(constants, "METADATA_FILE", output_dir / "items.json")
+
+    importlib.reload(importlib.import_module("modules.metadata_handler"))
+    importlib.reload(importlib.import_module("modules.asset_extractor"))
+    importlib.reload(importlib.import_module("modules.db"))
+    importlib.reload(importlib.import_module("modules.jar_scanner"))
+    from modules.jar_scanner import JarScanner
+
+    scanner = JarScanner(include_asset=True)
+    scanner.process_jar(jar_file)
+    scanner.metadata_handler.save_metadata()
+
+    items = load_items_json(constants.METADATA_FILE)
+    # Should be skipped because no base64 asset was generated
+    assert not any(item["id"] == "testmod:no_asset_item" for item in items)
+
+
 def test_mongodb_insertion_with_mock(tmp_path, monkeypatch):
     jars_dir = tmp_path / "jars"
     assets_dir = tmp_path / "output" / "assets"

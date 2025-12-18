@@ -3,17 +3,14 @@ minecraft_rail
 minecraft_anvil
 minecraft_chipped_anvil
 minecraft_andesite_wall
-minecraft_birch_sapling
-minecraft_brown_mushroom
-minecraft_bubble_coral_fan
-minecraft_bubble_coral_block
-minecraft_bubble_coral
-minecraft_cactus - the side textures are slightly off.
+
+
+
+minecraft_cactus - the side textures are slightly off. cactus item is not the same size as a regular block. they are slightly smaller.
+
 minecraft_calibrated_sculk_sensor
 minecraft_chain_command_block
 minecraft_cherry_sapling
-minecraft_cobbled_deepslate_wall
-minecraft_cobblestone_wall
 minecraft_cornflower
 minecraft_crimson_fungus
 minecraft_crimson_roots
@@ -22,3 +19,5 @@ minecraft_dead_brain_coral_block
 minecraft_lightning_rod
 minecraft_tripwire_hook
 minecraft_warped_roots
+chipped:inscribed_basalt
+allthemodium:vibranium_ore - this has

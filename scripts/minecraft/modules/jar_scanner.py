@@ -1,20 +1,44 @@
 import json
 import re
+import tomllib
 from pathlib import Path
+import typing
 from zipfile import ZipFile
 from typing import Dict, Optional, Tuple
 
-from .constants import JARS_DIR
+from .constants import JARS_DIR, ASSETS_DIR
 from .logger import logger
 from .metadata_handler import MetadataHandler
 from .asset_extractor import AssetExtractor
 
 class JarScanner:
-    def __init__(self, use_mongodb: bool = False, collection_name: Optional[str] = None, include_asset: bool = False, experimental: bool = False):
-        self.metadata_handler = MetadataHandler(use_mongodb=use_mongodb, collection_name=collection_name)
+    def __init__(self, use_mongodb: bool = False, collection_name: Optional[str] = None, include_asset: bool = False, overwrite: bool = False):
+        self.metadata_handler = MetadataHandler(use_mongodb=use_mongodb, collection_name=collection_name, overwrite=overwrite)
         self.asset_extractor = AssetExtractor()
         self.include_asset = include_asset
-        self.experimental = experimental
+        self.overwrite = overwrite
+
+    def extract_mod_info(self, zip_ref: ZipFile) -> Optional[Dict[str, str]]:
+        """
+        Extract mod information from META-INF/*.toml files.
+        """
+        for file_path in zip_ref.namelist():
+            if file_path.startswith("META-INF/") and file_path.endswith(".toml"):
+                try:
+                    with zip_ref.open(file_path) as f:
+                        data = tomllib.load(f)
+
+                        # Check for 'mods' list which is common in mods.toml
+                        if "mods" in data and isinstance(data["mods"], list) and len(data["mods"]) > 0:
+                            mod = data["mods"][0] # Take the first mod
+                            return {
+                                "id": mod.get("modId", ""),
+                                "version": mod.get("version", ""),
+                                "name": mod.get("displayName", "")
+                            }
+                except Exception as e:
+                    logger.warning(f"Failed to parse TOML file {file_path}: {e}")
+        return None
 
     def scan_jars(self):
         jar_files = list(JARS_DIR.glob("*.jar"))
@@ -28,12 +52,48 @@ class JarScanner:
         self.metadata_handler.save_metadata()
         self.metadata_handler.close()
 
+    def get_tint_for_item(self, item_id: str, name_stem: str) -> Optional[Tuple[int, int, int]]:
+        """Returns a tint color (R, G, B) for specific items like grass or banners."""
+        if "grass" in name_stem:
+            return (145, 189, 89)  # Standard grass color
+
+        # Banner colors
+        COLOR_MAP = {
+            "white": (255, 255, 255),
+            "orange": (216, 127, 51),
+            "magenta": (178, 76, 216),
+            "light_blue": (102, 153, 216),
+            "yellow": (229, 229, 51),
+            "lime": (127, 204, 25),
+            "pink": (242, 127, 165),
+            "gray": (76, 76, 76),
+            "light_gray": (153, 153, 153),
+            "cyan": (76, 127, 153),
+            "purple": (127, 63, 178),
+            "blue": (51, 76, 178),
+            "brown": (102, 76, 51),
+            "green": (102, 127, 51),
+            "red": (153, 51, 51),
+            "black": (25, 25, 25)
+        }
+
+        for color, rgb in COLOR_MAP.items():
+            if color in name_stem:
+                return rgb
+
+        return None
+
     def process_jar(self, jar_path: Path):
         logger.info(f"Processing JAR: {jar_path.name}")
         try:
             with ZipFile(jar_path, 'r') as zip_ref:
                 # Load language file
                 lang_data = self.load_language_file(zip_ref)
+
+                # Extract mod info
+                mod_info = self.extract_mod_info(zip_ref)
+                if mod_info:
+                    logger.info(f"Found mod info: {mod_info.get('name')} ({mod_info.get('version')})")
 
                 # List all files once (for membership tests)
                 file_list = set(zip_ref.namelist())
@@ -74,53 +134,331 @@ class JarScanner:
                         continue
 
                     # Skip if already exists in metadata
-                    if self.metadata_handler.item_exists(item_id):
+                    if self.metadata_handler.item_exists(item_id) and not self.overwrite:
                         logger.warning(f"Duplicate item ID found: {item_id} in {jar_path.name}. Skipping.")
                         continue
 
+                    # Extract parent from model definition
+                    parent = None
+                    try:
+                        with zip_ref.open(item_def_path) as f:
+                            model_data = json.load(f)
+                            parent = model_data.get("parent")
+                    except Exception:
+                        pass
+
                     # Determine the texture path for this item
                     namespace, name_stem = item_id.split(':')
+
+                    # Skip items that are variants we don't want (e.g. _bottom leaves)
+                    if name_stem.endswith("_bottom") and ("leaves" in name_stem or "log" in name_stem):
+                        logger.info(f"Skipping variant item: {item_id}")
+                        continue
 
                     asset_filename = None
                     asset_b64 = None
                     asset_w = None
                     asset_h = None
+                    asset_model_path = None
+                    asset_model_data = None
                     block_type = None
                     rendered_3d = False
+                    tint_color = self.get_tint_for_item(item_id, name_stem)
 
-                    # Experimental 3D rendering for blocks
-                    if self.experimental:
-                        block_textures, detected_block_type = self.find_block_textures(zip_ref, file_list, namespace, name_stem, item_def_path)
-                        block_type = detected_block_type or block_type
+                    # Check for special rendering overrides
+                    force_2d = False
+                    if "coral_fan" in name_stem:
+                        force_2d = True
+                    elif "coral" in name_stem and "coral_block" not in name_stem:
+                        force_2d = True
+
+                    fungus_include_list: typing.List[str] = ["mushroom", "fungus"]
+                    fungus_ignore_list: typing.List[str] = ["block", "stem", "stew", "rice", "pizza", "basket", "wreath", "nether_wart", "burger" "stuffed", "cream", "lasagna", "omelette", "steak", "item", "cap", "food", "barrel", ]
+
+                    crystals_include_list: typing.List[str] = ["amethyst", "bud", "cluster"]
+                    crystals_ignore_list: typing.List[str] = ["block", "shard", "budding_amethyst"]
+                    is_cross_crystal: bool = any(crystal in name_stem for crystal in crystals_include_list) and all(ign not in name_stem for ign in crystals_ignore_list)
+
+                    # check if the name_stem includes any fungus terms, excluding ignore terms
+                    is_cross_fungus: bool = any(fungus in name_stem for fungus in fungus_include_list) and all(ign not in name_stem for ign in fungus_ignore_list)
+
+                    # Check for Cross rendering
+                    is_cross = False
+                    if item_id == "minecraft:cobweb" or \
+                        is_cross_fungus or \
+                        is_cross_crystal or \
+                       "sapling" in name_stem or \
+                       item_id in ["minecraft:short_grass", "minecraft:long_grass", "minecraft:fern", "minecraft:dead_bush"]:
+                        is_cross = True
+                        block_type = "cross"
+
+                    # Check for Flower rendering (Force 2D)
+                    flower_items = [
+                        "minecraft:poppy",
+                        "minecraft:white_tulip",
+                        "minecraft:orange_tulip",
+                        "minecraft:pink_tulip",
+                        "minecraft:red_tulip",
+                        "minecraft:cornflower",
+                        "minecraft:torchflower",
+                        "minecraft:dandelion",
+                        "minecraft:wither_rose",
+                        "minecraft:rose_bush",
+                        "minecraft:oxeye_daisy",
+                        "minecraft:closed_eyeblossom",
+                        "minecraft:open_eyeblossom",
+                        "minecraft:peony",
+                        "minecraft:crimson_roots",
+                        "minecraft:hanging_roots",
+                        "minecraft:warped_roots",
+                        "minecraft:twisting_vines",
+                        "minecraft:weeping_vines",
+                        "minecraft:vine",
+                        "minecraft:large_fern",
+                        "minecraft:fern",
+                        "minecraft:tall_grass",
+                        "minecraft:short_grass"
+                    ]
+                    if item_id in flower_items:
+                        force_2d = True
+                        block_type = "flower"
+
+                    # Check for Tinting (Grass Block, Ferns, Grass)
+                    tint_items = ["minecraft:grass_block", "minecraft:fern", "minecraft:large_fern", "minecraft:tall_grass", "minecraft:short_grass", "minecraft:lily_pad"]
+                    if item_id in tint_items:
+                        # Plains biome color: #91BD59 -> (145, 189, 89)
+                        tint_color = (145, 189, 89)
+
+                    # Check for Lily Pad (render as pad: bottom has asset, sides/top transparent)
+                    if item_id.endswith(":lily_pad") or item_id.endswith("_lily_pad") or item_id.endswith("_lily_pads"):
+                        force_2d = False
+                        block_type = "pad"
+
+                    # Check for Sprite Flat (render as sprite_flat: flat on ground)
+                    if item_id in ["actuallyadditions:worm", "actuallyadditions:snail"]:
+                        force_2d = True
+                        block_type = "sprite_flat"
+
+                    # Attempt to extract model JSON for ALL items (don't write to disk) so we can include
+                    # the model information in metadata if present.
+                    try:
+                        model_info = self.extract_model_asset(zip_ref, file_list, namespace, name_stem, item_def_path)
+                        if model_info:
+                            asset_model_path, asset_model_data = model_info
+                    except Exception:
+                        # Non-fatal — continue without model info
+                        asset_model_path = None
+                        asset_model_data = None
+
+                    # Ignore certain model parents/loaders that don't have asset support (pattern-based)
+                    IGNORE_PARENT_SUBSTRINGS = ["neoforge:item/bucket_drip", "allthemodium:block/source_jar"]
+                    IGNORE_LOADER_SUBSTRINGS = ["neoforge:item/bucket_drip"]
+                    try:
+                        if asset_model_data and isinstance(asset_model_data, dict):
+                            parent_ref = asset_model_data.get("parent")
+                            loader_ref = asset_model_data.get("loader")
+
+                            def matches_ignore(ref: str, patterns: list) -> bool:
+                                if not ref:
+                                    return False
+                                return any(pat in ref for pat in patterns)
+
+                            if matches_ignore(parent_ref, IGNORE_PARENT_SUBSTRINGS) or matches_ignore(loader_ref, IGNORE_LOADER_SUBSTRINGS):
+                                logger.info(f"Skipping item {item_id} because model parent/loader '{parent_ref or loader_ref}' matches ignore patterns (no assets available).")
+                                continue
+                    except Exception:
+                        # Safe fallback — if anything goes wrong, don't block processing
+                        pass
+
+                    # Check for 3D Blocks (Force 3D)
+                    if item_id in [
+                        "minecraft:flowering_azalea_leaves",
+                        "minecraft:dried_kelp_block",
+                        "minecraft:brain_coral_block",
+                        "minecraft:horn_coral_block",
+                        "minecraft:dead_bubble_coral_block",
+                        "minecraft:dead_brain_coral_block",
+                        "minecraft:bubble_coral_block",
+                        "minecraft:dead_tube_coral_block",
+                        "minecraft:dead_fire_coral_block",
+                        "minecraft:fire_coral_block",
+                        "minecraft:dead_horn_coral_block",
+                        "minecraft:tube_coral_block"
+                    ]:
+                        force_2d = False
+                        block_type = "block"
+
+                    # Check for Dragon Egg
+                    if item_id == "minecraft:dragon_egg":
+                        force_2d = False
+                        block_type = "dragon_egg"
+
+                    # force 2d
+                    enforce_2d_include_list = ["torch", "wormhole_frame"]
+                    enforce_2d_ignore_list = ["block", "wall"]
+                    is_enforced_2d: bool = any(term in name_stem for term in enforce_2d_include_list) and all(ign not in name_stem for ign in enforce_2d_ignore_list)
+
+                    if is_enforced_2d:
+                        force_2d = True
+
+
+                    # Try 3D rendering for blocks first (now default)
+                    if not force_2d:
+                        # If it's a cross type, we need to find the texture differently?
+                        # find_block_textures usually looks for 'up', 'left', 'right'.
+                        # For cross, we just need one texture.
+                        # Let's see if find_block_textures handles it or if we need to hack it.
+                        # Usually cross models in json have "cross": "texture".
+                        # find_block_textures might fail if it looks for cube faces.
+
+                        block_textures = None
+                        detected_block_type = None
+
+                        # Check for Mob Heads (8x8x8)
+                        head_textures_map = {
+                            "minecraft:player_head": "assets/minecraft/textures/entity/steve.png",
+                            "minecraft:zombie_head": "assets/minecraft/textures/entity/zombie/zombie.png",
+                            "minecraft:creeper_head": "assets/minecraft/textures/entity/creeper/creeper.png",
+                            "minecraft:skeleton_skull": "assets/minecraft/textures/entity/skeleton/skeleton.png",
+                            "minecraft:wither_skeleton_skull": "assets/minecraft/textures/entity/skeleton/wither_skeleton.png",
+                            "minecraft:piglin_head": "assets/minecraft/textures/entity/piglin/piglin.png"
+                        }
+                        is_mob_head = item_id in head_textures_map
+
+                        if is_cross:
+                            # Special handling for cross textures
+                            # We need to find the texture and populate 'up', 'left', 'right' with it so render_3d_block works
+                            # Or just pass it.
+                            # Let's try to find the texture using find_item_texture logic but keep it as bytes.
+                            tex_path = self.find_item_texture(zip_ref, file_list, namespace, name_stem, item_def_path)
+                            if tex_path:
+                                try:
+                                    with zip_ref.open(tex_path) as f:
+                                        tex_data = f.read()
+                                    block_textures = {'up': tex_data, 'left': tex_data, 'right': tex_data}
+                                    detected_block_type = "cross"
+                                except Exception:
+                                    pass
+                        elif is_mob_head:
+                            tex_path = head_textures_map[item_id]
+                            if tex_path in file_list:
+                                try:
+                                    with zip_ref.open(tex_path) as f:
+                                        tex_data = f.read()
+                                    block_textures = {'skin': tex_data}
+                                    detected_block_type = "mob_head"
+                                except Exception:
+                                    pass
+                        else:
+                            block_textures, detected_block_type = self.find_block_textures(zip_ref, file_list, namespace, name_stem, item_def_path)
+
+                        # Special handling for sprite_flat if find_block_textures failed
+                        if not block_textures and block_type == "sprite_flat":
+                            tex_path = self.find_item_texture(zip_ref, file_list, namespace, name_stem, item_def_path)
+                            if tex_path:
+                                try:
+                                    with zip_ref.open(tex_path) as f:
+                                        tex_data = f.read()
+                                    block_textures = {"all": tex_data}
+                                except Exception:
+                                    pass
+
+                        # Only overwrite block_type if it's still the default 'block' or None
+                        if block_type in ["block", None]:
+                            block_type = detected_block_type or block_type
+
                         if block_textures:
                             asset_filename, asset_b64, asset_w, asset_h = self.asset_extractor.render_3d_block(
-                                item_id, block_textures, jar_path.name, include_asset=self.include_asset, block_type=block_type
+                                item_id, block_textures, jar_path.name, include_asset=self.include_asset, block_type=block_type, tint=tint_color, overwrite=self.overwrite
                             )
                             if asset_filename:
                                 rendered_3d = True
 
-                    # Fallback to 2D extraction if not experimental or 3D failed
+                    # Fallback to 2D extraction if 3D failed or not applicable
                     if not asset_filename:
                         texture_path = self.find_item_texture(zip_ref, file_list, namespace, name_stem, item_def_path)
 
                         if not texture_path:
                             logger.debug(f"No texture found for item {item_id} in {jar_path.name}.")
-                            continue
 
-                        # Infer block_type when texture is under block textures
-                        if "/textures/block/" in texture_path or ("block/" in texture_path and "/textures/" in texture_path):
-                            block_type = block_type or "block"
+                            # If we have a model JSON available, try to infer a texture reference from the model
+                            if asset_model_data and isinstance(asset_model_data, dict):
+                                textures_map = asset_model_data.get("textures", {})
+                                # Prefer 'layer0', 'particle', 'texture', 'all', 'north', then any
+                                keys_to_try = ["layer0", "particle", "texture", "all", "north", "side", "top", "bottom"]
+                                for k in keys_to_try:
+                                    tex_ref = textures_map.get(k)
+                                    if not tex_ref:
+                                        continue
+                                    if ":" in tex_ref:
+                                        tex_ns, tex_path = tex_ref.split(":", 1)
+                                    else:
+                                        tex_ns = namespace
+                                        tex_path = tex_ref
+                                    candidate = f"assets/{tex_ns}/textures/{tex_path}.png"
+                                    if candidate in file_list:
+                                        texture_path = candidate
+                                        logger.debug(f"Inferred texture for {item_id} from model: {texture_path}")
+                                        break
 
-                        # Extract Asset (optionally include base64 in metadata)
-                        asset_filename, asset_b64, asset_w, asset_h = self.asset_extractor.extract_asset(
-                            zip_ref, texture_path, item_id, jar_path.name, include_asset=self.include_asset
-                        )
+                        if texture_path:
+                            # Infer block_type when texture is under block textures
+                            if "/textures/block/" in texture_path or ("block/" in texture_path and "/textures/" in texture_path):
+                                block_type = block_type or "block"
 
+                            # Extract Asset (optionally include base64 in metadata)
+                            asset_filename, asset_b64, asset_w, asset_h = self.asset_extractor.extract_asset(
+                                zip_ref, texture_path, item_id, jar_path.name, include_asset=self.include_asset, tint=tint_color, overwrite=self.overwrite
+                            )
+
+                            # If it's 2D and no specific block type is set, mark it as flat
+                            if not block_type and (force_2d or is_enforced_2d):
+                                block_type = "flat"
+                                force_2d = True
+
+                    # Always add the item to metadata even if asset or model are missing
+                    display_name = self.get_display_name(item_id, "item", lang_data)
+
+                    # Ensure lily pad specifically uses the 'pad' block type
+                    if item_id.endswith(":lily_pad") or item_id.endswith("_lily_pad") or item_id.endswith("_lily_pads"):
+                        block_type = "pad"
+
+                    # Ensure sprite flat items use the 'sprite_flat' block type
+                    if item_id in ["actuallyadditions:worm", "actuallyadditions:snail"]:
+                        block_type = "sprite_flat"
+
+                    # If user requested base64 assets but none were generated, skip the item
+                    if self.include_asset and not asset_b64:
+                        logger.info(f"Skipping item {item_id} because include_asset is set but no base64 asset was available.")
+                        continue
+
+                    # Ensure asset field is a string (filename). If we didn't extract an asset, default to expected filename
                     if asset_filename:
-                        # Determine Name
-                        display_name = self.get_display_name(item_id, "item", lang_data)
-                        # Add to metadata (pass base64 data, sizes, and block_type when available)
-                        self.metadata_handler.add_item(item_id, asset_filename, display_name, jar_path.name, asset_b64=asset_b64, width=asset_w, height=asset_h, block_type=block_type, rendered_3d=rendered_3d)
+                        final_asset_name = asset_filename
+                    else:
+                        # Create a placeholder visible asset so UIs don't render a blank/transparent PNG
+                        final_asset_name = AssetExtractor.create_placeholder_asset(item_id)
+
+                    # Build model object for metadata if we found it, otherwise None
+                    model_obj = None
+                    if asset_model_data:
+                        model_obj = {"path": asset_model_path, **asset_model_data}
+
+                    # Add to metadata (pass base64 data, sizes, block_type, rendered_3d, mod_info)
+                    self.metadata_handler.add_item(
+                        item_id,
+                        final_asset_name,
+                        display_name,
+                        jar_path.name,
+                        asset_b64=asset_b64,
+                        width=asset_w,
+                        height=asset_h,
+                        block_type=block_type,
+                        rendered_3d=rendered_3d,
+                        mod_info=mod_info,
+                        parent=parent,
+                        model=model_obj
+                    )
 
         except Exception as e:
             logger.error(f"Error processing JAR {jar_path.name}: {e}")
@@ -232,6 +570,9 @@ class JarScanner:
             # Detect block type from model reference and any parent models.
             # Use a comprehensive mapping of parent models to block types.
             PARENT_TO_BLOCK_TYPE = {
+                "minecraft:block/cross": "cross",
+                "block/block": "slab",
+                "minecraft:block/template_torch": "flat",
                 "minecraft:block/cube": "block",
                 "minecraft:block/cube_all": "block",
                 "minecraft:block/cube_column": "block",
@@ -303,6 +644,8 @@ class JarScanner:
                     block_type = "cauldron"
                 elif "daylight_detector" in model_ref:
                     block_type = "daylight_detector"
+                elif "coral_block" in model_ref:
+                    block_type = "block"
                 elif "beacon" in model_ref:
                     block_type = "beacon"
                 elif "anvil" in model_ref:
@@ -353,13 +696,13 @@ class JarScanner:
                 pass
 
             # Force 2D for saplings, clusters, and other cross models
-            # Also force 2D for complex entities like beds, shulker boxes, banners, boats, rafts
+            # Also force 2D for complex entities like beds, shulker boxes, banners, boats, rafts, bundles, buckets
             # Note: "raft" matches "minecraft", so use "_raft"
-            exclusion_keywords = ["sapling", "cluster", "cross", "plant", "coral", "weed", "grass", "fern", "flower", "fungus", "roots", "sprouts", "bamboo", "cane", "kelp", "vine", "bars", "chain", "ladder", "rail", "bed", "shulker", "banner", "boat", "_raft", "shield", "trident"]
+            exclusion_keywords = ["sapling", "cluster", "cross", "plant", "coral", "weed", "grass", "fern", "flower", "fungus", "roots", "sprouts", "bamboo", "cane", "kelp", "vine", "bars", "chain", "ladder", "rail", "bed", "shulker", "banner", "boat", "_raft", "shield", "trident", "bundle", "bucket"]
 
             matched_keyword = None
             for keyword in exclusion_keywords:
-                if keyword in model_ref:
+                if keyword in model_ref or keyword in name_stem:
                     matched_keyword = keyword
                     break
 
@@ -504,6 +847,39 @@ class JarScanner:
             with zip_ref.open(model_path) as f:
                 model_data = json.load(f)
 
+            # Handle NeoForge fluid container
+            if model_data.get("loader") == "neoforge:fluid_container":
+                fluid_ref = model_data.get("fluid")
+                if fluid_ref:
+                    if ":" in fluid_ref:
+                        f_ns, f_path = fluid_ref.split(":", 1)
+                    else:
+                        f_ns = ns
+                        f_path = fluid_ref
+
+                    # Try common fluid texture paths
+                    # Strip 'molten_' prefix if present for texture matching
+                    base_path = f_path.replace("molten_", "")
+
+                    possible_tex_paths = [
+                        f"block/fluid/{f_path}_still",
+                        f"block/{f_path}_still",
+                        f"block/fluid/{f_path}",
+                        f"block/{f_path}",
+                        f"block/fluid/{base_path}_still",
+                        f"block/{base_path}_still",
+                        f"block/fluid/{base_path}",
+                        f"block/{base_path}",
+                    ]
+
+                    for p in possible_tex_paths:
+                        full_path = f"assets/{f_ns}/textures/{p}.png"
+                        if full_path in file_list:
+                            return {"layer0": f"{f_ns}:{p}"}
+
+                    # Fallback to just the fluid path
+                    return {"layer0": f"{f_ns}:block/{f_path}"}
+
             textures = model_data.get("textures", {}) or {}
 
             # If there's a parent, merge its textures (child overrides parent)
@@ -587,6 +963,23 @@ class JarScanner:
         if item_texture in file_list:
             return item_texture
 
+        # Special case for banners
+        if "banner" in name_stem:
+            # Banners use a base texture that is tinted
+            banner_tex = "assets/minecraft/textures/entity/banner/base.png"
+            if banner_tex in file_list:
+                return banner_tex
+
+            # Fallback to color-specific texture if it exists
+            color = name_stem.replace("_banner", "")
+            banner_tex = f"assets/{namespace}/textures/entity/banner/{color}.png"
+            if banner_tex in file_list:
+                return banner_tex
+            # Fallback to minecraft namespace for banners
+            banner_tex_mc = f"assets/minecraft/textures/entity/banner/{color}.png"
+            if banner_tex_mc in file_list:
+                return banner_tex_mc
+
         # Try block texture
         block_texture = f"assets/{namespace}/textures/block/{name_stem}.png"
         if block_texture in file_list:
@@ -610,12 +1003,94 @@ class JarScanner:
 
         return None
 
+    def extract_model_asset(self, zip_ref: ZipFile, file_list: set, namespace: str, name_stem: str, item_def_path: str) -> Optional[tuple]:
+        """
+        Attempt to locate and load the model JSON associated with an item (without writing it to disk).
+        Returns a tuple (relative_path, model_json) on success.
+        """
+        # Prefer new format item definitions
+        if "/items/" in item_def_path:
+            try:
+                with zip_ref.open(item_def_path) as f:
+                    item_data = json.load(f)
+                model_ref = item_data.get("model", {}).get("model", "")
+                if not model_ref:
+                    return None
+
+                if ":" in model_ref:
+                    model_ns, model_path = model_ref.split(":", 1)
+                else:
+                    model_ns = namespace
+                    model_path = model_ref
+
+                model_file_in_jar = f"assets/{model_ns}/models/{model_path}.json"
+                if model_file_in_jar in file_list:
+                    with zip_ref.open(model_file_in_jar) as mf:
+                        model_json = json.load(mf)
+
+                    # Return a path relative to the assets root and the model JSON (do not write to disk)
+                    return f"assets/{model_ns}/models/{model_path}.json", model_json
+            except Exception:
+                return None
+
+        # Old format: model file is likely the item_def_path itself under models/item/
+        if "/models/item/" in item_def_path and item_def_path in file_list:
+            try:
+                with zip_ref.open(item_def_path) as mf:
+                    model_json = json.load(mf)
+
+                # Derive relative path for metadata but do not write to disk
+                return f"assets/{namespace}/models/item/{name_stem}.json", model_json
+            except Exception:
+                return None
+
+        # Fallback: try block model
+        model_file = f"assets/{namespace}/models/block/{name_stem}.json"
+        if model_file in file_list:
+            try:
+                with zip_ref.open(model_file) as mf:
+                    model_json = json.load(mf)
+                return f"assets/{namespace}/models/block/{name_stem}.json", model_json
+            except Exception:
+                return None
+
+        return None
+
     def _find_texture_from_new_format(self, zip_ref: ZipFile, file_list: set, item_data: dict, namespace: str) -> Optional[str]:
         """Parse new format item definitions (1.21+) and find textures."""
         if "model" not in item_data or not isinstance(item_data["model"], dict):
             return None
 
-        model_ref = item_data["model"].get("model", "")
+        model_info = item_data["model"]
+
+        # NeoForge fluid container loader (buckets)
+        if model_info.get("loader") == "neoforge:fluid_container":
+            fluid_ref = model_info.get("fluid")
+            if fluid_ref:
+                if ":" in fluid_ref:
+                    f_ns, f_path = fluid_ref.split(":", 1)
+                else:
+                    f_ns = namespace
+                    f_path = fluid_ref
+
+                # Try common fluid texture paths
+                candidates = [
+                    f"assets/{f_ns}/textures/block/{f_path}.png",
+                    f"assets/{f_ns}/textures/block/{f_path}_still.png",
+                    f"assets/{f_ns}/textures/fluid/{f_path}.png",
+                    f"assets/{f_ns}/textures/fluid/{f_path}_still.png",
+                    f"assets/{f_ns}/textures/item/{f_path}_bucket.png",
+                ]
+                for cand in candidates:
+                    if cand in file_list:
+                        return cand
+
+            # Fallback to standard bucket
+            bucket_tex = "assets/minecraft/textures/item/bucket.png"
+            if bucket_tex in file_list:
+                return bucket_tex
+
+        model_ref = model_info.get("model", "")
         if not model_ref:
             return None
 
@@ -643,6 +1118,33 @@ class JarScanner:
 
     def _find_texture_from_old_format(self, zip_ref: ZipFile, file_list: set, model_data: dict, namespace: str) -> Optional[str]:
         """Parse old format item models (pre-1.21, mods) and find textures."""
+        # NeoForge fluid container loader (buckets)
+        if model_data.get("loader") == "neoforge:fluid_container":
+            fluid_ref = model_data.get("fluid")
+            if fluid_ref:
+                if ":" in fluid_ref:
+                    f_ns, f_path = fluid_ref.split(":", 1)
+                else:
+                    f_ns = namespace
+                    f_path = fluid_ref
+
+                # Try common fluid texture paths
+                candidates = [
+                    f"assets/{f_ns}/textures/block/{f_path}.png",
+                    f"assets/{f_ns}/textures/block/{f_path}_still.png",
+                    f"assets/{f_ns}/textures/fluid/{f_path}.png",
+                    f"assets/{f_ns}/textures/fluid/{f_path}_still.png",
+                    f"assets/{f_ns}/textures/item/{f_path}_bucket.png",
+                ]
+                for cand in candidates:
+                    if cand in file_list:
+                        return cand
+
+            # Fallback to standard bucket if fluid texture not found
+            bucket_tex = "assets/minecraft/textures/item/bucket.png"
+            if bucket_tex in file_list:
+                return bucket_tex
+
         # Old format models have textures directly in the model JSON
         if "textures" in model_data:
             textures = model_data["textures"]
@@ -718,9 +1220,59 @@ class JarScanner:
             f"{category}.{namespace}.{name}"
         ]
 
+        raw_name = None
         for key in keys_to_try:
             if key in lang_data:
-                return lang_data[key]
+                raw_name = lang_data[key]
+                break
+
+        if raw_name:
+            if "%" in raw_name:
+                return self.format_display_name(raw_name, namespace, name, lang_data)
+            return raw_name
 
         # Fallback: format the name (acacia_boat -> Acacia Boat)
         return name.replace("_", " ").title()
+
+    def format_display_name(self, raw_name: str, namespace: str, name_stem: str, lang_data: Dict[str, str]) -> str:
+        """
+        Handle dynamic name formatting (e.g. %1$s%2$s%3$s).
+        Assumes pattern:
+        1. Prefix (gui.<namespace>.prefix)
+        2. Base Item Name (resolved from name_stem)
+        3. Suffix (gui.<namespace>.suffix)
+        """
+        try:
+            # Check if indexed (Java style %1$s)
+            if re.search(r'%\d+\$s', raw_name):
+                # Convert to Python format {0}, {1}, {2}
+                python_format = re.sub(r'%(\d+)\$s', lambda m: f"{{{int(m.group(1))-1}}}", raw_name)
+
+                prefix = lang_data.get(f"gui.{namespace}.prefix", "")
+                suffix = lang_data.get(f"gui.{namespace}.suffix", "")
+                base_name = self._resolve_base_name(name_stem, lang_data)
+
+                return python_format.format(prefix, base_name, suffix)
+
+            # Check if simple %s
+            elif "%s" in raw_name:
+                python_format = raw_name.replace("%s", "{0}")
+                base_name = self._resolve_base_name(name_stem, lang_data)
+                return python_format.format(base_name)
+
+        except Exception as e:
+            logger.debug(f"Failed to format display name '{raw_name}': {e}")
+
+        return raw_name
+
+    def _resolve_base_name(self, name_stem: str, lang_data: Dict[str, str]) -> str:
+        """Resolve the display name of the base item (assuming minecraft namespace)."""
+        keys = [
+            f"block.minecraft.{name_stem}",
+            f"item.minecraft.{name_stem}",
+            f"entity.minecraft.{name_stem}"
+        ]
+        for key in keys:
+            if key in lang_data:
+                return lang_data[key]
+        return name_stem.replace("_", " ").title()

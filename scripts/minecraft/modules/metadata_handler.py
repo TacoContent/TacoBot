@@ -5,11 +5,12 @@ from .logger import logger
 from .db import db_connection
 
 class MetadataHandler:
-    def __init__(self, use_mongodb: bool = False, collection_name: Optional[str] = None):
+    def __init__(self, use_mongodb: bool = False, collection_name: Optional[str] = None, overwrite: bool = False):
         self.items: List[Dict[str, Any]] = []
         self.existing_ids: Set[str] = set()
         self.use_mongodb = use_mongodb
         self.collection_name = collection_name
+        self.overwrite = overwrite
         self.db_collection = None
 
         if self.use_mongodb and self.collection_name:
@@ -51,8 +52,8 @@ class MetadataHandler:
     def item_exists(self, item_id: str) -> bool:
         return item_id in self.existing_ids
 
-    def add_item(self, item_id: str, asset_name: str, name: str, source_jar: str, asset_b64: Optional[str] = None, width: Optional[int] = None, height: Optional[int] = None, block_type: Optional[str] = None, rendered_3d: Optional[bool] = None) -> bool:
-        if self.item_exists(item_id):
+    def add_item(self, item_id: str, asset_name: str, name: str, source_jar: str, asset_b64: Optional[str] = None, width: Optional[int] = None, height: Optional[int] = None, block_type: Optional[str] = None, rendered_3d: Optional[bool] = None, mod_info: Optional[Dict[str, str]] = None, parent: Optional[str] = None, model: Optional[Dict[str, Any]] = None) -> bool:
+        if self.item_exists(item_id) and not self.overwrite:
             logger.warning(f"Duplicate item data found for ID: {item_id}. Source: {source_jar}. Skipping.")
             return False
 
@@ -63,28 +64,58 @@ class MetadataHandler:
             "source": source_jar,
         }
 
+        # Preserve 'asset' as the image filename string. If a model is provided, add it
+        # as a separate 'model' object with path and JSON content.
+        if mod_info:
+            new_item["mod"] = mod_info
+
+        # Always include the model field; it may be None when no model was found
+        if model is None:
+            new_item["model"] = None
+        else:
+            # Ensure the model includes the 'path' key—if not, assume the path is unknown
+            if "path" not in model:
+                model = {"path": None, **model}
+            new_item["model"] = model
+
         if asset_b64:
             new_item["asset_b64"] = asset_b64
         if width is not None and height is not None:
             new_item["width"] = int(width)
             new_item["height"] = int(height)
-            # Preferred display size: use 32px when any texture exceeds 16px
-            new_item["preferred_size"] = 32 if width and width > 16 else 16
         if block_type:
             new_item["block_type"] = block_type
+        if parent:
+            new_item["parent"] = parent
 
         if rendered_3d:
             new_item["rendered_3d"] = True
 
-        self.items.append(new_item)
-        self.existing_ids.add(item_id)
+        # Update in-memory list
+        if self.item_exists(item_id):
+            # Find and replace
+            for i, item in enumerate(self.items):
+                if item['id'] == item_id:
+                    self.items[i] = new_item
+                    break
+        else:
+            self.items.append(new_item)
+            self.existing_ids.add(item_id)
 
         if self.use_mongodb and self.db_collection is not None:
             try:
-                self.db_collection.insert_one(new_item.copy())
-                logger.info(f"Added item {item_id} (source: {source_jar}) to MongoDB.")
+                if self.overwrite:
+                    self.db_collection.update_one(
+                        {"id": item_id},
+                        {"$set": new_item},
+                        upsert=True
+                    )
+                    logger.info(f"Upserted item {item_id} (source: {source_jar}) to MongoDB.")
+                else:
+                    self.db_collection.insert_one(new_item.copy())
+                    logger.info(f"Added item {item_id} (source: {source_jar}) to MongoDB.")
             except Exception as e:
-                logger.error(f"Failed to insert item {item_id} into MongoDB: {e}")
+                logger.error(f"Failed to insert/update item {item_id} into MongoDB: {e}")
                 # If DB write fails, do we continue?
                 # Probably yes, but log error.
 

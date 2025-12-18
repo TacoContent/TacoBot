@@ -17,7 +17,22 @@ class AssetExtractor:
         return item_id.replace(":", "_") + ".png"
 
     @staticmethod
-    def extract_asset(zip_file: ZipFile, zip_path: str, item_id: str, source_jar: str, include_asset: bool = False) -> Tuple[Optional[str], Optional[str], Optional[int], Optional[int]]:
+    def create_placeholder_asset(item_id: str) -> str:
+        """Create a visible placeholder PNG for items without an extracted asset and return the filename."""
+        filename = AssetExtractor.get_asset_filename(item_id)
+        dest = ASSETS_DIR / filename
+        if dest.exists():
+            return filename
+        try:
+            img = Image.new("RGBA", (32, 32), (255, 0, 255, 255))
+            img.save(dest)
+            return filename
+        except Exception as e:
+            logger.error(f"Failed to create placeholder asset for {item_id}: {e}")
+            return filename
+
+    @staticmethod
+    def extract_asset(zip_file: ZipFile, zip_path: str, item_id: str, source_jar: str, include_asset: bool = False, tint: Optional[Tuple[int, int, int]] = None, overwrite: bool = False) -> Tuple[Optional[str], Optional[str], Optional[int], Optional[int]]:
         """
         Extracts the asset from the zip file to the assets directory.
         If include_asset is True, also returns a base64-encoded string of the image data.
@@ -26,25 +41,50 @@ class AssetExtractor:
         filename = AssetExtractor.get_asset_filename(item_id)
         destination_path = ASSETS_DIR / filename
 
-        if destination_path.exists():
-            logger.warning(f"Duplicate item asset found for ID: {item_id}. Target: {filename}. Source: {source_jar}. Skipping.")
-            return None, None, None, None
+        if destination_path.exists() and not overwrite:
+            # If we need the base64 but it's not being returned because we're skipping,
+            # we should still return the filename and base64 if requested.
+            asset_b64 = None
+            width, height = None, None
+            if include_asset:
+                try:
+                    with open(destination_path, "rb") as f:
+                        data = f.read()
+                        asset_b64 = base64.b64encode(data).decode("ascii")
+                        with Image.open(io.BytesIO(data)) as img:
+                            width, height = img.size
+                except Exception:
+                    pass
+            return filename, asset_b64, width, height
 
         try:
             with zip_file.open(zip_path) as source:
                 data = source.read()
 
-            # Save file to disk
-            with open(destination_path, "wb") as target:
-                target.write(data)
-
-            # Get image size
+            # Load image to check size and apply tint if needed
             try:
                 img = Image.open(io.BytesIO(data)).convert("RGBA")
+
+                if tint:
+                    r, g, b, a = img.split()
+                    r = r.point(lambda p: int(p * tint[0] / 255))
+                    g = g.point(lambda p: int(p * tint[1] / 255))
+                    b = b.point(lambda p: int(p * tint[2] / 255))
+                    img = Image.merge('RGBA', (r, g, b, a))
+
+                    # Save tinted image back to bytes for writing
+                    buffered = io.BytesIO()
+                    img.save(buffered, format="PNG")
+                    data = buffered.getvalue()
+
                 width, height = img.size
             except Exception:
                 width = None
                 height = None
+
+            # Save file to disk
+            with open(destination_path, "wb") as target:
+                target.write(data)
 
             asset_b64 = None
             if include_asset:
@@ -56,24 +96,107 @@ class AssetExtractor:
             return None, None, None, None
 
     @staticmethod
-    def render_3d_block(item_id: str, textures: Dict[str, bytes], source_jar: str, include_asset: bool = False, block_type: str = "block") -> Tuple[Optional[str], Optional[str]]:
+    def render_3d_block(item_id: str, textures: Dict[str, bytes], source_jar: str, include_asset: bool = False, block_type: str = "block", tint: Optional[Tuple[int, int, int]] = None, overwrite: bool = False) -> Tuple[Optional[str], Optional[str], Optional[int], Optional[int]]:
         """
         Renders a 3D isometric block from provided face textures.
         textures: Dict mapping face name ('up', 'left', 'right') to raw bytes.
-        block_type: 'block', 'slab', 'stairs'
+        block_type: 'block', 'slab', 'stairs', 'wall', 'fence', 'fence_gate', 'cross'
+        tint: Optional (r, g, b) tuple to tint the 'up' and 'overlay' textures (for grass).
         """
         filename = AssetExtractor.get_asset_filename(item_id)
         destination_path = ASSETS_DIR / filename
 
-        if destination_path.exists():
-            logger.warning(f"Duplicate item asset found for ID: {item_id}. Target: {filename}. Source: {source_jar}. Skipping.")
-            return None, None
+        if destination_path.exists() and not overwrite:
+            # If we need the base64 but it's not being returned because we're skipping,
+            # we should still return the filename and base64 if requested.
+            asset_b64 = None
+            width, height = None, None
+            if include_asset:
+                try:
+                    with open(destination_path, "rb") as f:
+                        data = f.read()
+                        asset_b64 = base64.b64encode(data).decode("ascii")
+                        with Image.open(io.BytesIO(data)) as img:
+                            width, height = img.size
+                except Exception:
+                    pass
+            return filename, asset_b64, width, height
 
         try:
             # Load textures (don't immediately force a fixed size)
-            raw_up = Image.open(io.BytesIO(textures['up'])).convert("RGBA")
-            raw_left = Image.open(io.BytesIO(textures['left'])).convert("RGBA")
-            raw_right = Image.open(io.BytesIO(textures['right'])).convert("RGBA")
+            # For 'cross' type, we expect a single texture, usually passed as 'all' or 'cross' or just use the first one found
+            if block_type in ["cross"]:
+                # Use the first available texture
+                tex_data = next(iter(textures.values()))
+                raw_tex = Image.open(io.BytesIO(tex_data)).convert("RGBA")
+                raw_up = raw_tex # Not used but keeps variables defined
+                raw_left = raw_tex
+                raw_right = raw_tex
+            elif block_type in ["sprite_flat"]:
+                # find the first texture in the sprite and use that as a 2d flat image
+                # need to get the image, get the size. if the width > height, scale width to 32, else scale height to 32
+                # then use that as the image
+                tex_data = next(iter(textures.values()))
+                raw_tex = Image.open(io.BytesIO(tex_data)).convert("RGBA")
+                # Determine scaling
+                w, h = raw_tex.size
+                if w >= h:
+                    new_w = 32
+                    new_h = int(h * (32 / w))
+                else:
+                    new_h = 32
+                    new_w = int(w * (32 / h))
+                img = raw_tex.resize((new_w, new_h), resample=Image.LANCZOS)
+                canvas = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+                offset_x = (32 - new_w) // 2
+                offset_y = (32 - new_h) // 2
+                canvas.paste(img, (offset_x, offset_y))
+                raw_tex = canvas
+                raw_up = raw_tex
+                raw_left = raw_tex
+                raw_right = raw_tex
+            elif block_type == "mob_head":
+                # Initialize with dummy images, will be overwritten later
+                dummy = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+                raw_up = dummy
+                raw_left = dummy
+                raw_right = dummy
+            else:
+                raw_up = Image.open(io.BytesIO(textures['up'])).convert("RGBA")
+                raw_left = Image.open(io.BytesIO(textures['left'])).convert("RGBA")
+                raw_right = Image.open(io.BytesIO(textures['right'])).convert("RGBA")
+
+            # Apply tint if provided
+            if tint:
+                # Helper to apply tint
+                def apply_tint(img, color):
+                    if img.mode != 'RGBA':
+                        img = img.convert('RGBA')
+                    r, g, b, a = img.split()
+                    # Multiply
+                    r = r.point(lambda p: int(p * color[0] / 255))
+                    g = g.point(lambda p: int(p * color[1] / 255))
+                    b = b.point(lambda p: int(p * color[2] / 255))
+                    return Image.merge('RGBA', (r, g, b, a))
+
+                # Apply to UP face (grass top)
+                if 'up' in textures: # Only if we actually loaded it
+                     raw_up = apply_tint(raw_up, tint)
+
+                # For grass block, side overlay might need tinting too, but we usually just get 'left'/'right' which are pre-composed or just side.
+                # If the side texture is actually an overlay, we should tint it.
+                # But usually 'grass_block_side' is the dirt+grass combo or just dirt.
+                # If we are rendering a grass block, 'up' is the main one to tint.
+                # If we have 'overlay' in textures, we might need to handle it, but find_block_textures usually resolves to up/left/right.
+                # Let's assume for now only 'up' needs tinting for standard grass block top view.
+                # Wait, in isometric view, we see Top, Left (South), Right (East).
+                # Grass block top is tinted.
+                # Grass block side has an overlay that is tinted.
+                # If our texture extractor just grabbed 'grass_block_side.png', it's the dirt part.
+                # The overlay is 'grass_block_side_overlay.png'.
+                # If we want perfect grass, we need to compose them.
+                # For now, let's just tint the Top face, as that's the most obvious one.
+                pass
 
             # Decide output final size: always use 32x32 for 3D blocks to ensure quality
             # If textures are larger than 16px, we could potentially go larger, but 32x32 is standard for isometric view of 16x16 blocks.
@@ -176,7 +299,9 @@ class AssetExtractor:
                                 canvas.putpixel((tx, ty), p)
 
             # Render based on type
-            if block_type == "slab":
+            if block_type == "block":
+                draw_cuboid(0, 0, 0, 16, 16, 16)
+            elif block_type == "slab":
                 draw_cuboid(0, 0, 0, 16, 16, 8)
             elif block_type == "stairs":
                 # Bottom Slab
@@ -214,6 +339,48 @@ class AssetExtractor:
                 # So posts and bars get the same texture.
                 # This is correct for wood fences.
                 pass # Keep existing for now, maybe tweak later if specific feedback.
+
+            elif block_type == "cross":
+                # Render two intersecting planes at 45 degrees (which aligns them with X and Z axes in iso view)
+                # Plane 2 (Z-aligned, East Face)
+                # X=8, Z=0..16
+                for u in range(16): # Height
+                    for s in range(16): # South/Z
+                        # Texture coords: x=15-s (inverted for Right face logic), y=15-u
+                        tex_x = 15 - s
+                        tex_y = 15 - u
+
+                        x = 8
+                        z = s
+                        y = u
+
+                        tx = 16 + x - z
+                        ty = (x + z) // 2 + (16 - y)
+
+                        if 0 <= tx < 32 and 0 <= ty < 32:
+                            p = img_right.getpixel((tex_x, tex_y))
+                            if p[3] > 0:
+                                canvas.putpixel((tx, ty), p)
+
+                # Plane 1 (X-aligned, South Face)
+                # Z=8, X=0..16
+                for u in range(16): # Height
+                    for e in range(16): # East/X
+                        # Texture coords: x=e, y=15-u
+                        tex_x = e
+                        tex_y = 15 - u
+
+                        x = e
+                        z = 8
+                        y = u
+
+                        tx = 16 + x - z
+                        ty = (x + z) // 2 + (16 - y)
+
+                        if 0 <= tx < 32 and 0 <= ty < 32:
+                            p = img_left.getpixel((tex_x, tex_y))
+                            if p[3] > 0:
+                                canvas.putpixel((tx, ty), p)
 
             elif block_type == "fence_gate":
                 # Improved Fence Gate
@@ -265,6 +432,14 @@ class AssetExtractor:
             elif block_type == "carpet":
                 # Thin layer
                 draw_cuboid(0, 0, 0, 16, 16, 1)
+            elif block_type == "pad":
+                # Flat layer at the bottom, sides/top transparent
+                draw_cuboid(0, 0, 0, 16, 16, 0)
+            elif block_type == "sprite_flat":
+                # Flat layer at the bottom, sides/top transparent
+                # draw like 2d flat
+                draw_cuboid(0, 0, 0, 16, 16, 0)
+                # draw_cuboid(0, 7, 0, 16, 2, 16)?
             elif block_type == "snow":
                 # Snow layer (height 2)
                 draw_cuboid(0, 0, 0, 16, 16, 2)
@@ -312,8 +487,73 @@ class AssetExtractor:
                 draw_cuboid(0, 0, 0, 16, 16, 3)
                 # Glass
                 draw_cuboid(2, 2, 3, 12, 12, 13)
-            else:
-                draw_cuboid(0, 0, 0, 16, 16, 16)
+            elif block_type == "dragon_egg":
+                # Dragon Egg Geometry (7 layers)
+                # Layer 7 (Bottom): 12x12, height 2
+                draw_cuboid(2, 2, 0, 12, 12, 2)
+                # Layer 6: 14x14, height 2
+                draw_cuboid(1, 1, 2, 14, 14, 2)
+                # Layer 5 (Middle/Widest): 16x16, height 3
+                draw_cuboid(0, 0, 4, 16, 16, 3)
+                # Layer 4: 14x14, height 3
+                draw_cuboid(1, 1, 7, 14, 14, 3)
+                # Layer 3: 12x12, height 2
+                draw_cuboid(2, 2, 10, 12, 12, 2)
+                # Layer 2: 8x8, height 2
+                draw_cuboid(4, 4, 12, 8, 8, 2)
+                # Layer 1 (Top): 6x6, height 2 (Button-like)
+                draw_cuboid(5, 5, 14, 6, 6, 2)
+            elif block_type == "mob_head":
+                # Mob Head (8x8x8)
+                # Expects 'skin' in textures
+                if 'skin' in textures:
+                    skin_data = textures['skin']
+                    skin_img = Image.open(io.BytesIO(skin_data)).convert("RGBA")
+
+                    # Crop faces from standard skin layout
+                    # Top: (8, 0, 16, 8)
+                    # Front: (8, 8, 16, 16)
+                    # Right: (0, 8, 8, 16)
+
+                    face_top = skin_img.crop((8, 0, 16, 8))
+                    face_front = skin_img.crop((8, 8, 16, 16))
+                    face_right = skin_img.crop((0, 8, 8, 16))
+
+                    # Create 16x16 canvas for each face to align with draw_cuboid coordinate system
+                    # Top: Centered at (4, 4)
+                    new_up = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+                    new_up.paste(face_top, (4, 4))
+
+                    # Left (Front): Centered horizontally (4), Bottom aligned (8) for y=0..8
+                    new_left = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+                    new_left.paste(face_front, (4, 8))
+
+                    # Right: Centered horizontally (4), Bottom aligned (8)
+                    new_right = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+                    new_right.paste(face_right, (4, 8))
+
+                    # Update images used by draw_cuboid
+                    img_up = new_up
+                    img_left = apply_shading(new_left, 0.8)
+                    img_right = apply_shading(new_right, 0.6)
+
+                    draw_cuboid(4, 4, 0, 8, 8, 8)
+                else:
+                    draw_cuboid(4, 4, 0, 8, 8, 8)
+            elif block_type == "pad":
+                # Pad: Draw only a thin top-facing plane (no sides/top transparency)
+                # We draw the top face for a cuboid of height=1 (thin plane)
+                y_shift = 16 - (0 + 1)
+                for s in range(0, 1):
+                    for e in range(0, 16):
+                        tex_x = e
+                        tex_y = s
+                        tx = 16 + e - s
+                        ty = (e + s) // 2 + y_shift
+                        if 0 <= tx < 32 and 0 <= ty < 32:
+                            p = img_up.getpixel((tex_x, tex_y))
+                            if p[3] > 0:
+                                canvas.putpixel((tx, ty), p)
 
             # If desired final size is 16x16, downscale the rendered canvas
             if final_size == 16:
