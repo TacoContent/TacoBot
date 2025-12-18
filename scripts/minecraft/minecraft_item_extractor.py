@@ -14,18 +14,19 @@ load_dotenv(find_dotenv())
 current_dir = Path(__file__).parent.resolve()
 sys.path.append(str(current_dir))
 
-from modules.jar_scanner import JarScanner
-from modules.logger import logger
+from modules.jar_scanner import JarScanner  # noqa: E402
+from modules.logger import logger  # noqa: E402
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Extract items and blocks from Minecraft JAR files.")
     parser.add_argument("--mongodb", action="store_true", help="Enable writing item info to MongoDB.")
-    parser.add_argument("--collection", type=str, default="minecraft_items", help="MongoDB collection name (default: minecraft_items).")
+    parser.add_argument(
+        "--collection", type=str, default="minecraft_items", help="MongoDB collection name (default: minecraft_items)."
+    )
     parser.add_argument(
         "--include-asset",
-        type=lambda s: str(s).lower() in ("1", "true", "yes"),
-        default=False,
-        help="Include base64-encoded asset data in metadata (true/false). Accepts '--include-asset=true' or '--include-asset false'.",
+        action="store_true",
+        help="Enable base64-encoded asset data in metadata files and MongoDB (if enabled).",
     )
     parser.add_argument(
         "--experimental",

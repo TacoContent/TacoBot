@@ -51,7 +51,7 @@ class MetadataHandler:
     def item_exists(self, item_id: str) -> bool:
         return item_id in self.existing_ids
 
-    def add_item(self, item_id: str, asset_name: str, name: str, source_jar: str, asset_b64: Optional[str] = None) -> bool:
+    def add_item(self, item_id: str, asset_name: str, name: str, source_jar: str, asset_b64: Optional[str] = None, width: Optional[int] = None, height: Optional[int] = None, block_type: Optional[str] = None, rendered_3d: Optional[bool] = None) -> bool:
         if self.item_exists(item_id):
             logger.warning(f"Duplicate item data found for ID: {item_id}. Source: {source_jar}. Skipping.")
             return False
@@ -65,6 +65,17 @@ class MetadataHandler:
 
         if asset_b64:
             new_item["asset_b64"] = asset_b64
+        if width is not None and height is not None:
+            new_item["width"] = int(width)
+            new_item["height"] = int(height)
+            # Preferred display size: use 32px when any texture exceeds 16px
+            new_item["preferred_size"] = 32 if width and width > 16 else 16
+        if block_type:
+            new_item["block_type"] = block_type
+
+        if rendered_3d:
+            new_item["rendered_3d"] = True
+
         self.items.append(new_item)
         self.existing_ids.add(item_id)
 
