@@ -27,6 +27,11 @@ def parse_arguments():
         default=False,
         help="Include base64-encoded asset data in metadata (true/false). Accepts '--include-asset=true' or '--include-asset false'.",
     )
+    parser.add_argument(
+        "--experimental",
+        action="store_true",
+        help="Enable experimental features (e.g., 3D isometric block rendering).",
+    )
     return parser.parse_args()
 
 def main():
@@ -37,8 +42,15 @@ def main():
         logger.info(f"MongoDB enabled. Collection: {args.collection}")
     if args.include_asset:
         logger.info("Including base64-encoded assets in metadata and MongoDB (if enabled).")
+    if args.experimental:
+        logger.info("Experimental features enabled (3D block rendering).")
 
-    scanner = JarScanner(use_mongodb=args.mongodb, collection_name=args.collection, include_asset=args.include_asset)
+    scanner = JarScanner(
+        use_mongodb=args.mongodb,
+        collection_name=args.collection,
+        include_asset=args.include_asset,
+        experimental=args.experimental
+    )
     scanner.scan_jars()
     logger.info("Extraction complete.")
 

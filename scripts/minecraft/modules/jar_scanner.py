@@ -2,7 +2,7 @@ import json
 import re
 from pathlib import Path
 from zipfile import ZipFile
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 from .constants import JARS_DIR
 from .logger import logger
@@ -10,10 +10,11 @@ from .metadata_handler import MetadataHandler
 from .asset_extractor import AssetExtractor
 
 class JarScanner:
-    def __init__(self, use_mongodb: bool = False, collection_name: Optional[str] = None, include_asset: bool = False):
+    def __init__(self, use_mongodb: bool = False, collection_name: Optional[str] = None, include_asset: bool = False, experimental: bool = False):
         self.metadata_handler = MetadataHandler(use_mongodb=use_mongodb, collection_name=collection_name)
         self.asset_extractor = AssetExtractor()
         self.include_asset = include_asset
+        self.experimental = experimental
 
     def scan_jars(self):
         jar_files = list(JARS_DIR.glob("*.jar"))
@@ -79,30 +80,34 @@ class JarScanner:
 
                     # Determine the texture path for this item
                     namespace, name_stem = item_id.split(':')
-                    texture_path = self.find_item_texture(zip_ref, file_list, namespace, name_stem, item_def_path)
 
-                    if not texture_path:
-                        logger.debug(f"No texture found for item {item_id} in {jar_path.name}.")
-                        continue
+                    asset_filename = None
+                    asset_b64 = None
 
-                    if not texture_path:
-                        logger.debug(f"No texture found for item {item_id} in {jar_path.name}.")
-                        continue
+                    # Experimental 3D rendering for blocks
+                    if self.experimental:
+                        block_textures, block_type = self.find_block_textures(zip_ref, file_list, namespace, name_stem, item_def_path)
+                        if block_textures:
+                            asset_filename, asset_b64 = self.asset_extractor.render_3d_block(
+                                item_id, block_textures, jar_path.name, include_asset=self.include_asset, block_type=block_type
+                            )
 
-                    # Skip if already exists in metadata (optimization to avoid extraction check if not needed)
-                    if self.metadata_handler.item_exists(item_id):
-                        logger.warning(f"Duplicate item ID found: {item_id} in {jar_path.name}. Skipping.")
-                        continue
+                    # Fallback to 2D extraction if not experimental or 3D failed
+                    if not asset_filename:
+                        texture_path = self.find_item_texture(zip_ref, file_list, namespace, name_stem, item_def_path)
 
-                    # Determine Name
-                    display_name = self.get_display_name(item_id, "item", lang_data)
+                        if not texture_path:
+                            logger.debug(f"No texture found for item {item_id} in {jar_path.name}.")
+                            continue
 
-                    # Extract Asset (optionally include base64 in metadata)
-                    asset_filename, asset_b64 = self.asset_extractor.extract_asset(
-                        zip_ref, texture_path, item_id, jar_path.name, include_asset=self.include_asset
-                    )
+                        # Extract Asset (optionally include base64 in metadata)
+                        asset_filename, asset_b64 = self.asset_extractor.extract_asset(
+                            zip_ref, texture_path, item_id, jar_path.name, include_asset=self.include_asset
+                        )
 
                     if asset_filename:
+                        # Determine Name
+                        display_name = self.get_display_name(item_id, "item", lang_data)
                         # Add to metadata (pass base64 data when available)
                         self.metadata_handler.add_item(item_id, asset_filename, display_name, jar_path.name, asset_b64=asset_b64)
 
@@ -131,6 +136,114 @@ class JarScanner:
         # Check if the item ID ends with any variant pattern
         item_name = item_id.split(':', 1)[1] if ':' in item_id else item_id
         return any(item_name.endswith(pattern) or pattern + '_' in item_name for pattern in variant_patterns)
+
+    def find_block_textures(self, zip_ref: ZipFile, file_list: set, namespace: str, name_stem: str, item_def_path: str) -> Tuple[Optional[Dict[str, bytes]], str]:
+        """
+        Finds textures for 3D rendering (up, left, right).
+        Returns (textures, block_type).
+        block_type can be 'block', 'slab', 'stairs'.
+        """
+        block_type = "block"
+        try:
+            with zip_ref.open(item_def_path) as f:
+                item_data = json.load(f)
+
+            model_ref = None
+            if "/items/" in item_def_path:
+                if "model" in item_data and isinstance(item_data["model"], dict):
+                    model_ref = item_data["model"].get("model")
+            elif "/models/item/" in item_def_path:
+                model_ref = item_data.get("parent")
+
+            if not model_ref or "block/" not in model_ref:
+                return None, block_type
+
+            # Detect block type from model reference
+            if "slab" in model_ref:
+                block_type = "slab"
+            elif "stairs" in model_ref:
+                block_type = "stairs"
+            elif "fence_gate" in model_ref:
+                block_type = "fence_gate"
+            elif "fence" in model_ref:
+                block_type = "fence"
+            elif "wall" in model_ref:
+                block_type = "wall"
+
+            # Resolve the model to find textures
+            textures = self._resolve_model_textures(zip_ref, file_list, model_ref, namespace)
+            if not textures:
+                return None, block_type
+
+            # Map Minecraft face names to our 3D renderer faces
+            # Minecraft faces: up, down, north, south, east, west
+            # We want: up, left (north/west), right (east/south)
+
+            # Try to find the best matches
+            up_ref = textures.get("up") or textures.get("top") or textures.get("all") or textures.get("end")
+            left_ref = textures.get("north") or textures.get("west") or textures.get("side") or textures.get("all")
+            right_ref = textures.get("east") or textures.get("south") or textures.get("side") or textures.get("all")
+
+            if not (up_ref and left_ref and right_ref):
+                return None, block_type
+
+            def get_tex_bytes(ref):
+                if ":" in ref:
+                    ns, path = ref.split(":", 1)
+                else:
+                    ns = namespace
+                    path = ref
+                tex_path = f"assets/{ns}/textures/{path}.png"
+                if tex_path in file_list:
+                    with zip_ref.open(tex_path) as tf:
+                        return tf.read()
+                return None
+
+            up_bytes = get_tex_bytes(up_ref)
+            left_bytes = get_tex_bytes(left_ref)
+            right_bytes = get_tex_bytes(right_ref)
+
+            if up_bytes and left_bytes and right_bytes:
+                return {"up": up_bytes, "left": left_bytes, "right": right_bytes}, block_type
+
+        except Exception as e:
+            logger.debug(f"Failed to find block textures for {namespace}:{name_stem}: {e}")
+
+        return None, block_type
+
+    def _resolve_model_textures(self, zip_ref: ZipFile, file_list: set, model_ref: str, namespace: str, depth: int = 0) -> Dict[str, str]:
+        """Recursively resolve model textures, following parents."""
+        if depth > 10: # Prevent infinite recursion
+            return {}
+
+        if ":" in model_ref:
+            ns, path = model_ref.split(":", 1)
+        else:
+            ns = namespace
+            path = model_ref
+
+        model_path = f"assets/{ns}/models/{path}.json"
+        if model_path not in file_list:
+            return {}
+
+        try:
+            with zip_ref.open(model_path) as f:
+                model_data = json.load(f)
+
+            textures = model_data.get("textures", {})
+
+            # If there's a parent, merge its textures (child overrides parent)
+            parent_ref = model_data.get("parent")
+            if parent_ref:
+                parent_textures = self._resolve_model_textures(zip_ref, file_list, parent_ref, ns, depth + 1)
+                # Merge: child textures override parent textures
+                merged = parent_textures.copy()
+                merged.update(textures)
+                return merged
+
+            return textures
+        except Exception:
+            return {}
 
     def find_item_texture(self, zip_ref: ZipFile, file_list: set, namespace: str, name_stem: str, item_def_path: str) -> Optional[str]:
         """
