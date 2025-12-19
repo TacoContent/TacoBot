@@ -33,10 +33,13 @@ def parse_arguments():
         action="store_true",
         help="Overwrite existing items in metadata and MongoDB.",
     )
+    # Experimental features are now enabled by default. Provide a flag to opt out.
+    parser.set_defaults(experimental=True)
     parser.add_argument(
-        "--experimental",
-        action="store_true",
-        help="Enable experimental features (e.g. model rendering).",
+        "--no-experimental",
+        action="store_false",
+        dest="experimental",
+        help="Disable experimental features (e.g. model rendering).",
     )
 
     return parser.parse_args()
@@ -53,6 +56,8 @@ def main():
         logger.info("Overwrite enabled. Existing items will be updated.")
     if args.experimental:
         logger.info("Experimental features enabled.")
+    else:
+        logger.info("Experimental features disabled.")
 
     scanner = JarScanner(
         use_mongodb=args.mongodb,

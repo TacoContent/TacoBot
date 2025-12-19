@@ -94,3 +94,50 @@ def test_parent_chain_detects_stairs(tmp_path):
 
     assert textures is not None
     assert btype == 'stairs'
+
+
+def test_default_experimental_is_enabled():
+    js = JarScanner()
+    assert js.experimental is True
+
+
+def test_can_disable_experimental():
+    js = JarScanner(experimental=False)
+    assert js.experimental is False
+
+
+def test_find_block_textures_prefers_block_texture_when_larger(tmp_path):
+    zpath = tmp_path / 'test_block_prefers.jar'
+    files = {}
+
+    # item model uses an item texture (small)
+    files['assets/actuallyadditions/models/item/black_quartz_block.json'] = {"parent": "item/generated", "textures": {"layer0": "actuallyadditions:item/black_quartz_block"}}
+
+    from PIL import Image
+    # small item texture (16x16)
+    img16 = Image.new('RGBA', (16, 16), (10, 20, 30, 255))
+    b16 = tempfile.NamedTemporaryFile(delete=False)
+    img16.save(b16.name, 'PNG')
+    with open(b16.name, 'rb') as fh:
+        files['assets/actuallyadditions/textures/item/black_quartz_block.png'] = fh.read()
+
+    # larger block texture (32x32) that should be preferred
+    img32 = Image.new('RGBA', (32, 32), (80, 90, 100, 255))
+    b32 = tempfile.NamedTemporaryFile(delete=False)
+    img32.save(b32.name, 'PNG')
+    with open(b32.name, 'rb') as fh:
+        files['assets/actuallyadditions/textures/block/black_quartz_block.png'] = fh.read()
+
+    _write_zip(zpath, files)
+
+    js = JarScanner()
+    with ZipFile(zpath, 'r') as z:
+        file_list = set(z.namelist())
+        textures, btype = js.find_block_textures(z, file_list, 'actuallyadditions', 'black_quartz_block', 'assets/actuallyadditions/models/item/black_quartz_block.json')
+
+    assert textures is not None
+    # All returned images should be the larger block texture (32x32)
+    from PIL import Image as _Image
+    import io as _io
+    up_img = _Image.open(_io.BytesIO(textures['up']))
+    assert up_img.size == (32, 32)

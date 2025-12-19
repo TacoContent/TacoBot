@@ -12,7 +12,7 @@ from .metadata_handler import MetadataHandler
 from .asset_extractor import AssetExtractor
 
 class JarScanner:
-    def __init__(self, use_mongodb: bool = False, collection_name: Optional[str] = None, include_asset: bool = False, overwrite: bool = False, experimental: bool = False):
+    def __init__(self, use_mongodb: bool = False, collection_name: Optional[str] = None, include_asset: bool = False, overwrite: bool = False, experimental: bool = True):
         self.metadata_handler = MetadataHandler(use_mongodb=use_mongodb, collection_name=collection_name, overwrite=overwrite)
         self.asset_extractor = AssetExtractor()
         self.include_asset = include_asset
@@ -1050,10 +1050,11 @@ class JarScanner:
 
             # Special handling for Ores/Generated blocks (layer0 -> all)
             if "layer0" in textures:
-                # Check if layer0 points to a block texture
-                l0 = textures["layer0"]
-                if "block/" in l0 or "blocks/" in l0:
-                    textures["all"] = l0
+                # Prefer layer0 as the 'all' texture regardless of whether it references 'block/'
+                # so that item/generated models that only define layer0 can still be rendered
+                # as simple block textures (this allows the block fallback path to prefer a
+                # larger block-level PNG if present).
+                textures["all"] = textures["layer0"]
 
             # Special handling for Wall models (often provide 'wall' -> block reference)
             if "wall" in textures and "all" not in textures:
@@ -1102,6 +1103,35 @@ class JarScanner:
             right_bytes = get_tex_bytes(right_ref)
 
             if up_bytes and left_bytes and right_bytes:
+                # If the resolved textures are small (16) but there exists a block texture
+                # with a larger size (e.g., 32 or 64), prefer the block texture so that
+                # the rendered final asset can use the highest true resolution available.
+                try:
+                    import io as _io
+                    from PIL import Image as _Image
+
+                    up_img = _Image.open(_io.BytesIO(up_bytes))
+                    left_img = _Image.open(_io.BytesIO(left_bytes))
+                    right_img = _Image.open(_io.BytesIO(right_bytes))
+
+                    current_max = max(up_img.width, up_img.height, left_img.width, left_img.height, right_img.width, right_img.height)
+                except Exception:
+                    current_max = 0
+
+                # Check for a block-level single texture that may be higher resolution
+                block_tex_path = f"assets/{namespace}/textures/block/{name_stem}.png"
+                if block_tex_path in file_list:
+                    try:
+                        with zip_ref.open(block_tex_path) as bf:
+                            block_bytes = bf.read()
+                        block_img = _Image.open(_io.BytesIO(block_bytes))
+                        block_max = max(block_img.width, block_img.height)
+                        if block_max > current_max:
+                            return {"up": block_bytes, "left": block_bytes, "right": block_bytes}, block_type
+                    except Exception:
+                        # On any error, fall back to the resolved textures
+                        pass
+
                 return {"up": up_bytes, "left": left_bytes, "right": right_bytes}, block_type
 
         except Exception as e:

@@ -38,7 +38,7 @@ def test_experimental_renders_all_items(tmp_path, monkeypatch):
 
     called = {'was_called': False, 'args': None}
 
-    def fake_render_model(zip_ref, model_data, namespace, item_id, include_asset, overwrite):
+    def fake_render_model(zip_ref, model_data, namespace, item_id, include_asset, overwrite, **kwargs):
         called['was_called'] = True
         called['args'] = (item_id, model_data.get('textures'))
         # Return a dummy asset filename
