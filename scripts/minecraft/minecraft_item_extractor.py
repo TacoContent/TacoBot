@@ -33,6 +33,11 @@ def parse_arguments():
         action="store_true",
         help="Overwrite existing items in metadata and MongoDB.",
     )
+    parser.add_argument(
+        "--experimental",
+        action="store_true",
+        help="Enable experimental features (e.g. model rendering).",
+    )
 
     return parser.parse_args()
 
@@ -46,12 +51,15 @@ def main():
         logger.info("Including base64-encoded assets in metadata and MongoDB (if enabled).")
     if args.overwrite:
         logger.info("Overwrite enabled. Existing items will be updated.")
+    if args.experimental:
+        logger.info("Experimental features enabled.")
 
     scanner = JarScanner(
         use_mongodb=args.mongodb,
         collection_name=args.collection,
         include_asset=args.include_asset,
         overwrite=args.overwrite,
+        experimental=args.experimental,
     )
     scanner.scan_jars()
     logger.info("Extraction complete.")

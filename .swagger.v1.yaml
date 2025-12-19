@@ -6162,6 +6162,12 @@ components:
         mentionable:
           type: boolean
           description: Whether the role is mentionable
+        members:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: The list of member IDs that have this role
         name:
           type: string
           description: The name of the role
@@ -6183,7 +6189,10 @@ components:
           type: string
           nullable: true
           description: The unicode emoji associated with the role, if any
+        deleted:
+          type: boolean
       required:
+        - deleted
         - guild_id
         - id
         - mention
@@ -7046,21 +7055,31 @@ components:
           description: The UUID of the Minecraft user.
         item_id:
           type: string
+          description: The Minecraft item ID.
         variant_id:
           type: string
+          description: The variant ID of the Minecraft item.
+        name:
+          type: string
+          description: The name of the Minecraft item.
         quantity:
           type: integer
           description: The quantity of the item.
+        nbt:
+          type: object
+          description: The NBT data of the item.
         metadata:
           type: object
           description: Additional metadata for the item.
       required:
         - item_id
         - metadata
+        - name
+        - nbt
         - quantity
         - uuid
         - variant_id
-      description: Represents a Minecraft storage item payload.
+      description: Represents a Minecraft storage item payload
       x-tacobot-managed: true
     MinecraftTacoBalance:
       type: object
@@ -7162,15 +7181,23 @@ components:
         variant_id:
           type: string
           description: The variant ID of the item.
+        name:
+          type: string
+          description: The name of the item.
         quantity:
           type: integer
           description: The quantity of the item.
         metadata:
           type: object
           description: The metadata of the item.
+        nbt:
+          type: object
+          description: The NBT data of the item.
       required:
         - item_id
         - metadata
+        - name
+        - nbt
         - quantity
         - variant_id
       description: Represents an item in the Minecraft user's storage.
@@ -7224,6 +7251,110 @@ components:
         - variant_id
       description: Payload containing the Minecraft item variant ID response.
       x-tacobot-managed: true
+    MinecraftShopEntry:
+      type: object
+      properties:
+        guild_id:
+          type: string
+          description: The guild ID where the shop is located. '0' means global shop.
+        user_id:
+          type: string
+          nullable: true
+          description: The user ID this shop belongs to. 'None' means all users.
+        role_ids:
+          type: array
+          items:
+            type: string
+          description: List of role IDs that can access the shop.
+        enabled:
+          type: boolean
+          description: Whether the shop is enabled.
+        shop_id:
+          type: string
+          description: The unique identifier for the shop.
+        name:
+          type: string
+          description: The name of the shop.
+        discount:
+          type: number
+          description: The discount percentage for the shop.
+        created_at:
+          type: integer
+          nullable: true
+          description: Timestamp when the shop was created.
+        created_by:
+          type: string
+          nullable: true
+          description: User ID of the creator of the shop.
+        updated_at:
+          type: integer
+          nullable: true
+          description: Timestamp when the shop was last updated.
+        updated_by:
+          type: string
+          nullable: true
+          description: User ID of the last updater of the shop.
+        expires_at:
+          type: integer
+          nullable: true
+          description: Timestamp when the shop expires.
+        shop:
+          type: object
+          nullable: true
+          description: Dictionary of shop items, keyed by item ID.
+      required:
+        - discount
+        - enabled
+        - guild_id
+        - name
+        - role_ids
+        - shop_id
+      description: A Minecraft shop entry.
+    MinecraftShopItem:
+      type: object
+      properties:
+        item_id:
+          type: string
+          description: The Minecraft item ID.
+        name:
+          type: string
+          description: The display name of the item.
+        nbt:
+          type: object
+          nullable: true
+          description: The NBT data for the item, if any.
+        variant_id:
+          type: string
+          description: The variant ID for the item, if any.
+        quantity:
+          type: integer
+          description: The quantity of the item available in the shop. -1 means unlimited.
+        buy:
+          type: integer
+          description: The buy price of the item. -1 means not for sale. 0 means free.
+        sell:
+          type: integer
+          description: The sell price of the item. 0 means not for sale.
+        enabled:
+          type: boolean
+          description: Whether the item is enabled in the shop.
+        expires_at:
+          type: integer
+          nullable: true
+          description: Timestamp when the item expires, if any.
+        metadata:
+          type: object
+          description: Additional metadata for the item.
+      required:
+        - buy
+        - enabled
+        - item_id
+        - metadata
+        - name
+        - quantity
+        - sell
+        - variant_id
+      description: An item in a Minecraft shop.
   securitySchemes:
     X-AUTH-TOKEN:
       type: apiKey

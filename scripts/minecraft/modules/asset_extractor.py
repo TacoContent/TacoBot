@@ -1,6 +1,7 @@
 import shutil
 import base64
 import io
+import json
 from pathlib import Path
 from zipfile import ZipFile
 from typing import Optional, Tuple, Dict
@@ -96,6 +97,534 @@ class AssetExtractor:
             return None, None, None, None
 
     @staticmethod
+    def render_model(zip_file: ZipFile, model_data: Dict, namespace: str, item_id: str, include_asset: bool = False, overwrite: bool = False, tint: Optional[Tuple[int, int, int]] = None) -> Tuple[Optional[str], Optional[str], Optional[int], Optional[int]]:
+        """
+        Experimental: Render a model from its JSON definition.
+        """
+        import math
+
+        filename = AssetExtractor.get_asset_filename(item_id)
+        destination_path = ASSETS_DIR / filename
+
+        if destination_path.exists() and not overwrite:
+            asset_b64 = None
+            width, height = None, None
+            if include_asset:
+                try:
+                    with open(destination_path, "rb") as f:
+                        data = f.read()
+                        asset_b64 = base64.b64encode(data).decode("ascii")
+                        with Image.open(io.BytesIO(data)) as img:
+                            width, height = img.size
+                except Exception:
+                    pass
+            return filename, asset_b64, width, height
+
+        if not model_data:
+            return None, None, None, None
+
+        # Helper to load model JSON
+        def load_model_json(path, default_ns):
+            if ":" in path:
+                ns, p = path.split(":", 1)
+            else:
+                ns = default_ns
+                p = path
+
+            candidates = [
+                f"assets/{ns}/models/{p}.json",
+                f"assets/{ns}/models/item/{p}.json",
+                f"assets/{ns}/models/block/{p}.json"
+            ]
+
+            for c in candidates:
+                if c in zip_file.namelist():
+                    with zip_file.open(c) as f:
+                        return json.load(f), ns
+            return None, None
+
+        # Helper to resolve model inheritance
+        def resolve_model(data, current_ns):
+            if "parent" in data:
+                parent_path = data["parent"]
+                if ":" in parent_path:
+                    p_ns, p_path = parent_path.split(":", 1)
+                else:
+                    p_ns = "minecraft"
+                    p_path = parent_path
+
+                parent_file_path = f"assets/{p_ns}/models/{p_path}.json"
+                try:
+                    if parent_file_path in zip_file.namelist():
+                        with zip_file.open(parent_file_path) as f:
+                            parent_data = json.load(f)
+                            resolved_parent = resolve_model(parent_data, p_ns)
+
+                            merged_textures = resolved_parent.get("textures", {}).copy()
+                            merged_textures.update(data.get("textures", {}))
+
+                            merged_elements = data.get("elements", resolved_parent.get("elements", []))
+
+                            return {
+                                "textures": merged_textures,
+                                "elements": merged_elements
+                            }
+                except Exception as e:
+                    logger.warning(f"Failed to resolve parent {parent_path}: {e}")
+
+            return {
+                "textures": data.get("textures", {}),
+                "elements": data.get("elements", [])
+            }
+
+        # Helper to render a resolved model
+        def render_resolved_model(full_model):
+            if not full_model:
+                return [], []
+
+            elements = full_model.get("elements", [])
+            is_flat_item = False
+
+            # Handle item/generated (no elements, just textures)
+            if not elements and "textures" in full_model:
+                # Check for layer0
+                layer0 = full_model["textures"].get("layer0")
+                if layer0:
+                    is_flat_item = True
+
+            if not elements and not is_flat_item:
+                return [], []
+
+            # Canvas setup
+            w, h = 64, 64
+
+            # Texture cache
+            texture_cache = {}
+            texture_defs = full_model.get("textures", {})
+            animated_textures = {}
+
+            def get_texture(tex_ref):
+                if not tex_ref: return None
+                while tex_ref.startswith("#"):
+                    tex_ref = texture_defs.get(tex_ref[1:])
+                    if not tex_ref: return None
+
+                if tex_ref in texture_cache:
+                    return texture_cache[tex_ref]
+
+                if ":" in tex_ref:
+                    ns, path = tex_ref.split(":", 1)
+                else:
+                    ns = namespace
+                    path = tex_ref
+
+                possible_paths = [
+                    f"assets/{ns}/textures/{path}.png",
+                    f"assets/{ns}/textures/{path}",
+                ]
+
+                for p in possible_paths:
+                    try:
+                        if p in zip_file.namelist():
+                            with zip_file.open(p) as f:
+                                raw_data = f.read()
+                                tex = Image.open(io.BytesIO(raw_data)).convert("RGBA")
+                                texture_cache[tex_ref] = tex
+
+                                mcmeta_path = p + ".mcmeta"
+                                if mcmeta_path in zip_file.namelist():
+                                    try:
+                                        with zip_file.open(mcmeta_path) as mf:
+                                            mcmeta = json.load(mf)
+                                            if "animation" in mcmeta:
+                                                animated_textures[tex_ref] = (mcmeta, raw_data)
+                                    except Exception:
+                                        pass
+
+                                return tex
+                    except Exception:
+                        continue
+                return None
+
+            used_textures = set()
+            if is_flat_item:
+                used_textures.add(full_model["textures"]["layer0"])
+            else:
+                for el in full_model.get("elements", []):
+                    for face_data in el.get("faces", {}).values():
+                        if "texture" in face_data:
+                            used_textures.add(face_data["texture"])
+
+            for tex_ref in used_textures:
+                get_texture(tex_ref)
+
+            is_animated = len(animated_textures) > 0
+
+            frames = []
+            durations = []
+
+            if is_animated:
+                primary_anim_ref = next(iter(animated_textures))
+                mcmeta, raw_data = animated_textures[primary_anim_ref]
+
+                animation_data = mcmeta.get("animation", {})
+                frametime = animation_data.get("frametime", 1)
+
+                raw_img = Image.open(io.BytesIO(raw_data))
+                w_tex, h_tex = raw_img.size
+
+                num_frames_total = h_tex // w_tex
+                frames_order = animation_data.get("frames", list(range(num_frames_total)))
+
+                for i in frames_order:
+                    frame_index = i
+                    frame_duration = frametime
+
+                    if isinstance(i, dict):
+                        frame_index = i.get("index", 0)
+                        frame_duration = i.get("time", frametime)
+
+                    if frame_index >= num_frames_total:
+                        continue
+
+                    durations.append(frame_duration * 50)
+
+                    frame_texture_cache = {}
+                    for tex_ref, (meta, data) in animated_textures.items():
+                        img = Image.open(io.BytesIO(data)).convert("RGBA")
+                        fw, fh = img.size
+                        fsize = fw
+                        local_frames = fh // fw
+                        local_index = frame_index % local_frames
+                        box = (0, local_index * fsize, fsize, (local_index + 1) * fsize)
+                        frame_tex = img.crop(box)
+                        frame_texture_cache[tex_ref] = frame_tex
+
+                    frames.append(frame_texture_cache)
+            else:
+                frames.append({})
+                durations.append(0)
+
+            iso_scale = 2.0
+
+            def project(x, y, z):
+                cx, cy, cz = x - 8, y - 8, z - 8
+                sx = (cx - cz) * 0.866 * iso_scale + w/2
+                sy = (cx + cz) * 0.5 * iso_scale - cy * iso_scale + h/2
+                return sx, sy
+
+            def rotate_point(point, origin, axis, angle):
+                px, py, pz = point
+                ox, oy, oz = origin
+                px -= ox
+                py -= oy
+                pz -= oz
+                rad = math.radians(angle)
+                c = math.cos(rad)
+                s = math.sin(rad)
+                if axis == "x":
+                    new_y = py * c - pz * s
+                    new_z = py * s + pz * c
+                    py = new_y
+                    pz = new_z
+                elif axis == "y":
+                    new_x = px * c - pz * s
+                    new_z = px * s + pz * c
+                    px = new_x
+                    pz = new_z
+                elif axis == "z":
+                    new_x = px * c - py * s
+                    new_y = px * s + py * c
+                    px = new_x
+                    py = new_y
+                px += ox
+                py += oy
+                pz += oz
+                return (px, py, pz)
+
+            global_rotation_y = 0
+
+            # Rotation Fixes
+            # Rotate stairs and lectern by -90 degrees
+            ROTATION_NEGATIVE_90_FIX_ITEMS = [
+                "stairs", "stair", "minecraft:lectern", "heavy_core"
+            ]
+            if any(x in item_id for x in ROTATION_NEGATIVE_90_FIX_ITEMS):
+                global_rotation_y = -90
+
+            ROTATION_POSITIVE_90_FIX_ITEMS = [
+                "minecraft:blast_furnace", "minecraft:dropper", "minecraft:dispenser",
+                "minecraft:furnace", "minecraft:observer", "minecraft:smoker", "minecraft:vault"
+            ]
+            if item_id in ROTATION_POSITIVE_90_FIX_ITEMS:
+                global_rotation_y = 90
+
+            rendered_frames = []
+
+            for frame_idx, frame_tex_cache in enumerate(frames):
+                img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+
+                def get_frame_texture(tex_ref):
+                    resolved_ref = tex_ref
+                    while resolved_ref.startswith("#"):
+                        resolved_ref = texture_defs.get(resolved_ref[1:])
+                        if not resolved_ref: return None
+                    if resolved_ref in frame_tex_cache:
+                        return frame_tex_cache[resolved_ref]
+                    return get_texture(tex_ref)
+
+                if is_flat_item:
+                    tex_ref = full_model["textures"]["layer0"]
+                    tex = get_frame_texture(tex_ref)
+                    if tex:
+                        # Apply Tint for Flat Items (Layer 0)
+                        if tint:
+                            r, g, b, a = tex.split()
+                            r = r.point(lambda p: int(p * tint[0] / 255))
+                            g = g.point(lambda p: int(p * tint[1] / 255))
+                            b = b.point(lambda p: int(p * tint[2] / 255))
+                            tex = Image.merge("RGBA", (r, g, b, a))
+
+                        tex = tex.resize((w, h), Image.NEAREST)
+                        img.paste(tex, (0, 0))
+                    rendered_frames.append(img)
+                    continue
+
+                elements = full_model.get("elements", [])
+                faces_to_draw = []
+
+                for el in elements:
+                    efrom = el["from"]
+                    eto = el["to"]
+                    efaces = el.get("faces", {})
+                    x1, y1, z1 = efrom
+                    x2, y2, z2 = eto
+                    element_faces = []
+
+                    if "up" in efaces:
+                        element_faces.append({
+                            "face": "up",
+                            "corners": [(x1, y2, z1), (x2, y2, z1), (x2, y2, z2), (x1, y2, z2)],
+                            "center": ((x1+x2)/2, y2, (z1+z2)/2),
+                            "data": efaces["up"]
+                        })
+                    if "down" in efaces:
+                        element_faces.append({
+                            "face": "down",
+                            "corners": [(x1, y1, z2), (x2, y1, z2), (x2, y1, z1), (x1, y1, z1)],
+                            "center": ((x1+x2)/2, y1, (z1+z2)/2),
+                            "data": efaces["down"]
+                        })
+                    if "north" in efaces:
+                        element_faces.append({
+                            "face": "north",
+                            "corners": [(x2, y2, z1), (x1, y2, z1), (x1, y1, z1), (x2, y1, z1)],
+                            "center": ((x1+x2)/2, (y1+y2)/2, z1),
+                            "data": efaces["north"]
+                        })
+                    if "south" in efaces:
+                        element_faces.append({
+                            "face": "south",
+                            "corners": [(x1, y2, z2), (x2, y2, z2), (x2, y1, z2), (x1, y1, z2)],
+                            "center": ((x1+x2)/2, (y1+y2)/2, z2),
+                            "data": efaces["south"]
+                        })
+                    if "west" in efaces:
+                        element_faces.append({
+                            "face": "west",
+                            "corners": [(x1, y2, z1), (x1, y2, z2), (x1, y1, z2), (x1, y1, z1)],
+                            "center": (x1, (y1+y2)/2, (z1+z2)/2),
+                            "data": efaces["west"]
+                        })
+                    if "east" in efaces:
+                        element_faces.append({
+                            "face": "east",
+                            "corners": [(x2, y2, z2), (x2, y2, z1), (x2, y1, z1), (x2, y1, z2)],
+                            "center": (x2, (y1+y2)/2, (z1+z2)/2),
+                            "data": efaces["east"]
+                        })
+
+                    rot = el.get("rotation")
+                    if rot:
+                        origin = rot.get("origin", [8, 8, 8])
+                        axis = rot.get("axis", "y")
+                        angle = rot.get("angle", 0)
+                        for face in element_faces:
+                            face["corners"] = [rotate_point(c, origin, axis, angle) for c in face["corners"]]
+                            face["center"] = rotate_point(face["center"], origin, axis, angle)
+
+                    current_global_rotation = global_rotation_y
+                    if item_id == "minecraft:lectern" and efrom[1] > 0:
+                        current_global_rotation += 180
+
+                    if current_global_rotation != 0:
+                        origin = [8, 8, 8]
+                        axis = "y"
+                        angle = current_global_rotation
+                        for face in element_faces:
+                            face["corners"] = [rotate_point(c, origin, axis, angle) for c in face["corners"]]
+                            face["center"] = rotate_point(face["center"], origin, axis, angle)
+
+                    faces_to_draw.extend(element_faces)
+
+                faces_to_draw.sort(key=lambda f: f["center"][0] + f["center"][1] + f["center"][2])
+
+                for face in faces_to_draw:
+                    tex_ref = face["data"].get("texture")
+                    tex = get_frame_texture(tex_ref)
+                    if not tex: continue
+
+                    # Apply Tint if tintindex is present
+                    if "tintindex" in face["data"] and tint:
+                        r, g, b, a = tex.split()
+                        r = r.point(lambda p: int(p * tint[0] / 255))
+                        g = g.point(lambda p: int(p * tint[1] / 255))
+                        b = b.point(lambda p: int(p * tint[2] / 255))
+                        tex = Image.merge("RGBA", (r, g, b, a))
+
+                    uv = face["data"].get("uv", [0, 0, 16, 16])
+                    tw, th = tex.size
+                    u1, v1, u2, v2 = uv
+                    u1 = u1 * tw / 16
+                    v1 = v1 * th / 16
+                    u2 = u2 * tw / 16
+                    v2 = v2 * th / 16
+
+                    crop_box = (min(u1, u2), min(v1, v2), max(u1, u2), max(v1, v2))
+                    face_tex = tex.crop(crop_box)
+
+                    quad = [project(*c) for c in face["corners"]]
+                    p0 = quad[0]
+                    p1 = quad[1]
+                    p3 = quad[3]
+
+                    fw, fh = face_tex.size
+                    if fw == 0 or fh == 0: continue
+
+                    x0, y0 = p0
+                    x1, y1 = p1
+                    x3, y3 = p3
+
+                    a = (x1 - x0) / fw
+                    b = (x3 - x0) / fh
+                    c = x0
+                    d = (y1 - y0) / fw
+                    e = (y3 - y0) / fh
+                    f = y0
+
+                    det = a*e - b*d
+                    if det == 0: continue
+
+                    ia = e / det
+                    ib = -b / det
+                    ic = (b*f - c*e) / det
+                    id = -d / det
+                    ie = a / det
+                    if_val = (c*d - a*f) / det
+
+                    xs = [p[0] for p in quad]
+                    ys = [p[1] for p in quad]
+                    minx, maxx = min(xs), max(xs)
+                    miny, maxy = min(ys), max(ys)
+
+                    bw = int(maxx - minx) + 1
+                    bh = int(maxy - miny) + 1
+
+                    nic = ia*minx + ib*miny + ic
+                    nif = id*minx + ie*miny + if_val
+
+                    transformed_face = face_tex.transform(
+                        (bw, bh),
+                        Image.AFFINE,
+                        (ia, ib, nic, id, ie, nif),
+                        resample=Image.NEAREST
+                    )
+
+                    img.paste(transformed_face, (int(minx), int(miny)), transformed_face)
+
+                rendered_frames.append(img)
+
+            return rendered_frames, durations
+
+        # Main Logic
+        all_frames = []
+        all_durations = []
+
+        overrides = model_data.get("overrides", [])
+        # Check for animation predicates (angle, time)
+        anim_overrides = [o for o in overrides if any(k in o["predicate"] for k in ["angle", "time"])]
+
+        if anim_overrides:
+            # Sort by predicate value
+            def get_predicate_value(o):
+                p = o["predicate"]
+                return p.get("angle", p.get("time", 0))
+
+            anim_overrides.sort(key=get_predicate_value)
+
+            # Render each frame
+            for o in anim_overrides:
+                model_path = o["model"]
+                sub_model_data, sub_ns = load_model_json(model_path, namespace)
+                if sub_model_data:
+                    sub_full_model = resolve_model(sub_model_data, sub_ns)
+                    frames, sub_durations = render_resolved_model(sub_full_model)
+                    if frames:
+                        all_frames.append(frames[0])  # Take first frame of sub-model
+                        # Use sub-model duration if provided, otherwise default to 50 ms (20 FPS)
+                        if sub_durations and sub_durations[0] and sub_durations[0] > 0:
+                            all_durations.append(sub_durations[0])
+                        else:
+                            all_durations.append(50)  # 50 ms per frame -> 20 FPS
+        else:
+            # Standard rendering
+            full_model = resolve_model(model_data, namespace)
+            all_frames, all_durations = render_resolved_model(full_model)
+
+        # Save output
+        if not all_frames:
+            return None, None, None, None
+
+        is_animated = len(all_frames) > 1
+        w, h = all_frames[0].size
+
+        if is_animated:
+            filename = filename.replace(".png", ".webp")
+            destination_path = ASSETS_DIR / filename
+
+            output = io.BytesIO()
+            all_frames[0].save(
+                output,
+                format="WEBP",
+                save_all=True,
+                append_images=all_frames[1:],
+                duration=all_durations,
+                loop=0,
+                background=(0,0,0,0)
+            )
+            data = output.getvalue()
+            with open(destination_path, "wb") as f:
+                f.write(data)
+
+            asset_b64 = None
+            if include_asset:
+                asset_b64 = base64.b64encode(data).decode("ascii")
+
+            return filename, asset_b64, w, h
+        else:
+            img = all_frames[0]
+            img.save(destination_path)
+
+            asset_b64 = None
+            if include_asset:
+                with open(destination_path, "rb") as f:
+                    asset_b64 = base64.b64encode(f.read()).decode("ascii")
+
+            return filename, asset_b64, w, h
+
+
+
+    @staticmethod
     def render_animated_sprite(item_id: str, texture_data: bytes, mcmeta: Dict, source_jar: str, include_asset: bool = False, overwrite: bool = False) -> Tuple[Optional[str], Optional[str], Optional[int], Optional[int]]:
         """
         Renders an animated GIF from a sprite sheet and mcmeta.
@@ -120,12 +649,12 @@ class AssetExtractor:
         try:
             img = Image.open(io.BytesIO(texture_data)).convert("RGBA")
             w, h = img.size
-            
+
             # Determine frame size
             # Assume vertical strip if h > w and h % w == 0
             # Assume horizontal strip if w > h and w % h == 0
             # Default to square frames based on min dimension
-            
+
             if h > w and h % w == 0:
                 frame_size = w
                 num_frames_total = h // w
@@ -143,29 +672,29 @@ class AssetExtractor:
             animation_data = mcmeta.get("animation", {})
             frametime = animation_data.get("frametime", 1)
             frames_order = animation_data.get("frames", list(range(num_frames_total)))
-            
+
             # Extract frames
             frames = []
             durations = []
-            
+
             for i in frames_order:
                 frame_index = i
                 frame_duration = frametime
-                
+
                 if isinstance(i, dict):
                     frame_index = i.get("index", 0)
                     frame_duration = i.get("time", frametime)
-                
+
                 if frame_index >= num_frames_total:
                     continue
-                    
+
                 if is_vertical:
                     box = (0, frame_index * frame_size, frame_size, (frame_index + 1) * frame_size)
                 else:
                     box = (frame_index * frame_size, 0, (frame_index + 1) * frame_size, frame_size)
-                
+
                 frame = img.crop(box)
-                
+
                 # Scale to 32x32 for consistency with other assets
                 if frame.size != (32, 32):
                      frame = frame.resize((32, 32), Image.NEAREST)
@@ -188,18 +717,18 @@ class AssetExtractor:
                 loop=0,
                 disposal=2
             )
-            
+
             data = output.getvalue()
-            
+
             with open(destination_path, "wb") as f:
                 f.write(data)
-                
+
             asset_b64 = None
             width, height = frames[0].size
-            
+
             if include_asset:
                 asset_b64 = base64.b64encode(data).decode("ascii")
-                
+
             return filename, asset_b64, width, height
 
         except Exception as e:
@@ -353,22 +882,30 @@ class AssetExtractor:
                 raw_left = Image.open(io.BytesIO(textures['left'])).convert("RGBA")
                 raw_right = Image.open(io.BytesIO(textures['right'])).convert("RGBA")
 
+            # Special-case default tint for some block types BEFORE applying tints
+            if block_type == 'conduit' and tint is None:
+                # Subtle cyan tint for conduits
+                tint = (160, 200, 255)
+
             # Apply tint if provided
             if tint:
                 # Helper to apply tint
                 def apply_tint(img, color):
+                    """Blend the image toward the given color to create a visible tint effect."""
                     if img.mode != 'RGBA':
                         img = img.convert('RGBA')
-                    r, g, b, a = img.split()
-                    # Multiply
-                    r = r.point(lambda p: int(p * color[0] / 255))
-                    g = g.point(lambda p: int(p * color[1] / 255))
-                    b = b.point(lambda p: int(p * color[2] / 255))
-                    return Image.merge('RGBA', (r, g, b, a))
+                    # Create a solid color image and blend toward it
+                    tint_img = Image.new('RGBA', img.size, color + (255,))
+                    # Blend alpha >0.5 to favor the tint (value tuned empirically)
+                    return Image.blend(img, tint_img, alpha=0.6)
 
-                # Apply to UP face (grass top)
-                if 'up' in textures: # Only if we actually loaded it
-                     raw_up = apply_tint(raw_up, tint)
+                # Apply to faces we loaded (ensure conduits get full tinting)
+                if 'up' in textures:
+                    raw_up = apply_tint(raw_up, tint)
+                if 'left' in textures:
+                    raw_left = apply_tint(raw_left, tint)
+                if 'right' in textures:
+                    raw_right = apply_tint(raw_right, tint)
 
                 # For grass block, side overlay might need tinting too, but we usually just get 'left'/'right' which are pre-composed or just side.
                 # If the side texture is actually an overlay, we should tint it.
@@ -385,11 +922,14 @@ class AssetExtractor:
                 # For now, let's just tint the Top face, as that's the most obvious one.
                 pass
 
-            # Decide output final size: always use 32x32 for 3D blocks to ensure quality
-            # If textures are larger than 16px, we could potentially go larger, but 32x32 is standard for isometric view of 16x16 blocks.
-            # The user requested "largest possible scale" and "32x32 where possible".
-            # So we default to 32.
-            final_size = 32
+            # Decide output final size: prefer 64 when textures support >=64, then 32 when >=32, otherwise 16
+            max_tex_side = max(raw_up.width, raw_up.height, raw_left.width, raw_left.height, raw_right.width, raw_right.height)
+            if max_tex_side >= 64:
+                final_size = 64
+            elif max_tex_side >= 32:
+                final_size = 32
+            else:
+                final_size = 16
 
             logger.debug(f"Rendering 3D block for {item_id}: final_size={final_size}")
 
@@ -590,19 +1130,38 @@ class AssetExtractor:
                 # Let's just draw the horizontal bars connecting the posts.
 
             elif block_type == "wall":
-                # Two posts
-                # Post 1: x=4..8, z=4..12
-                draw_cuboid(4, 4, 0, 4, 8, 16)
-                # Post 2: x=12..16, z=4..12
-                # Wait, walls are usually thick posts.
-                # Let's do a single thick post for wall? No, inventory is usually two.
-                # Let's do:
-                # Post 1: x=2..6, z=5..11
-                draw_cuboid(2, 5, 0, 4, 6, 16)
-                # Post 2: x=10..14, z=5..11
-                draw_cuboid(10, 5, 0, 4, 6, 16)
-                # Wall segment: x=6..10, z=6..10, y=0..14
+                # Improved wall geometry to better match vanilla inventory icons
+                # Left post: x=3..6, z=5..11 (slightly inset)
+                draw_cuboid(3, 5, 0, 3, 6, 16)
+                # Right post: x=10..13, z=5..11
+                draw_cuboid(10, 5, 0, 3, 6, 16)
+                # Central wall segment: x=6..10, z=6..10, height=14 (connects posts)
                 draw_cuboid(6, 6, 0, 4, 4, 14)
+
+            elif block_type == "scaffolding":
+                # Scaffolding: four corner posts and horizontal crossbars
+                # Corner posts (thin, tall)
+                draw_cuboid(2, 2, 0, 2, 2, 16)
+                draw_cuboid(12, 2, 0, 2, 2, 16)
+                draw_cuboid(2, 12, 0, 2, 2, 16)
+                draw_cuboid(12, 12, 0, 2, 2, 16)
+                # Horizontal crossbars at multiple heights
+                for y in (3, 7, 11):
+                    draw_cuboid(2, 2, y, 12, 12, 1)
+                    # Inner supports
+                    draw_cuboid(5, 2, y, 6, 1, 1)
+                    draw_cuboid(5, 12, y, 6, 1, 1)
+
+            elif block_type == "conduit":
+                # Conduit: small centered cube with subtle cyan tint if none provided
+                # Centered 8x8x8 cube at x=4..12, z=4..12, y=4..12
+                draw_cuboid(4, 4, 4, 8, 8, 8)
+                # Add an outer frame/ring to give the 'ridges' visual
+                draw_cuboid(3, 3, 3, 10, 10, 1)  # top rim
+                draw_cuboid(3, 3, 12, 10, 10, 1)  # bottom rim
+                # If a tint wasn't provided, apply a bluish tint to the 'up' face texture
+                if tint is None:
+                    tint = (160, 200, 255)
             elif block_type == "teleport_pad":
                 # Teleport Pad (AllTheModium)
                 # Slab-like, height 3
@@ -742,9 +1301,11 @@ class AssetExtractor:
                             if p[3] > 0:
                                 canvas.putpixel((tx, ty), p)
 
-            # If desired final size is 16x16, downscale the rendered canvas
+            # If a smaller final size was requested, downscale; if larger (64) requested, upscale.
             if final_size == 16:
                 final_canvas = canvas.resize((16, 16), resample=Image.LANCZOS)
+            elif final_size == 64:
+                final_canvas = canvas.resize((64, 64), resample=Image.LANCZOS)
             else:
                 final_canvas = canvas
 

@@ -12,11 +12,25 @@ from .metadata_handler import MetadataHandler
 from .asset_extractor import AssetExtractor
 
 class JarScanner:
-    def __init__(self, use_mongodb: bool = False, collection_name: Optional[str] = None, include_asset: bool = False, overwrite: bool = False):
+    def __init__(self, use_mongodb: bool = False, collection_name: Optional[str] = None, include_asset: bool = False, overwrite: bool = False, experimental: bool = False):
         self.metadata_handler = MetadataHandler(use_mongodb=use_mongodb, collection_name=collection_name, overwrite=overwrite)
         self.asset_extractor = AssetExtractor()
         self.include_asset = include_asset
         self.overwrite = overwrite
+        self.experimental = experimental
+        self.experimental_items = [
+            "minecraft:enchanting_table",
+            "minecraft:sculk_sensor",
+            "minecraft:birch_sapling",
+            "minecraft:crafting_table",
+            "minecraft:stonecutter",
+            "minecraft:lectern",
+            "minecraft:compass",
+            "minecraft:clock",
+            "minecraft:grindstone",
+            "minecraft:chest",
+            "minecraft:magma_block",
+        ]
 
     def extract_mod_info(self, zip_ref: ZipFile) -> Optional[Dict[str, str]]:
         """
@@ -52,8 +66,127 @@ class JarScanner:
         self.metadata_handler.save_metadata()
         self.metadata_handler.close()
 
+    def get_spawn_egg_color(self, item_id: str) -> Tuple[int, int, int]:
+        """Returns the primary color for a spawn egg."""
+        # Map of mob names to their primary spawn egg color
+        # This is a partial list; ideally this would be extracted from game code
+        EGG_COLORS = {
+            "allay": (0, 176, 255),
+            "armadillo": (175, 108, 80),
+            "axolotl": (247, 199, 218),
+            "bat": (76, 62, 48),
+            "bee": (237, 195, 67),
+            "blaze": (246, 182, 1),
+            "bogged": (138, 142, 109),
+            "breeze": (174, 168, 210),
+            "camel": (255, 204, 92),
+            "cat": (239, 190, 104),
+            "cave_spider": (12, 66, 62),
+            "chicken": (161, 161, 161),
+            "cod": (193, 161, 115),
+            "cow": (68, 54, 38),
+            "creeper": (13, 167, 2),
+            "dolphin": (34, 165, 240),
+            "donkey": (83, 69, 51),
+            "drowned": (143, 241, 215),
+            "elder_guardian": (206, 206, 206),
+            "ender_dragon": (28, 28, 28),
+            "enderman": (22, 22, 22),
+            "endermite": (22, 22, 22),
+            "evoker": (149, 155, 155),
+            "fox": (213, 182, 153),
+            "frog": (208, 116, 68),
+            "ghast": (249, 249, 249),
+            "glow_squid": (9, 86, 86),
+            "goat": (166, 158, 149),
+            "guardian": (90, 171, 165),
+            "hoglin": (198, 109, 85),
+            "horse": (192, 158, 125),
+            "husk": (121, 112, 97),
+            "iron_golem": (220, 210, 200),
+            "llama": (192, 158, 125),
+            "magma_cube": (52, 0, 0),
+            "mooshroom": (160, 15, 16),
+            "mule": (28, 18, 13),
+            "ocelot": (239, 190, 104),
+            "panda": (230, 230, 230),
+            "parrot": (14, 167, 222),
+            "phantom": (68, 84, 147),
+            "pig": (240, 165, 162),
+            "piglin": (153, 95, 64),
+            "piglin_brute": (22, 14, 11),
+            "pillager": (83, 49, 43),
+            "polar_bear": (236, 236, 236),
+            "pufferfish": (246, 182, 1),
+            "rabbit": (153, 95, 64),
+            "ravager": (117, 116, 112),
+            "salmon": (160, 15, 16),
+            "sheep": (231, 231, 231),
+            "shulker": (148, 103, 148),
+            "silverfish": (110, 110, 110),
+            "skeleton": (193, 193, 193),
+            "skeleton_horse": (104, 104, 104),
+            "slime": (81, 160, 62),
+            "sniffer": (137, 23, 23),
+            "snow_golem": (255, 255, 255),
+            "spider": (52, 45, 45),
+            "squid": (34, 59, 77),
+            "stray": (97, 118, 119),
+            "strider": (156, 53, 49),
+            "tadpole": (110, 108, 108),
+            "trader_llama": (231, 192, 141),
+            "tropical_fish": (239, 105, 119),
+            "turtle": (231, 231, 231),
+            "vex": (128, 152, 203),
+            "villager": (86, 60, 51),
+            "vindicator": (149, 155, 155),
+            "wandering_trader": (69, 70, 138),
+            "warden": (15, 70, 73),
+            "witch": (52, 0, 0),
+            "wither": (20, 20, 20),
+            "wither_skeleton": (20, 20, 20),
+            "wolf": (215, 211, 211),
+            "zoglin": (198, 109, 85),
+            "zombie": (0, 175, 175),
+            "zombie_horse": (49, 82, 52),
+            "zombie_villager": (86, 60, 51),
+            "zombified_piglin": (234, 153, 153),
+        }
+
+        for mob, color in EGG_COLORS.items():
+            if mob in item_id:
+                return color
+
+        return (255, 255, 255) # Default white
+
     def get_tint_for_item(self, item_id: str, name_stem: str) -> Optional[Tuple[int, int, int]]:
         """Returns a tint color (R, G, B) for specific items like grass or banners."""
+
+        # Vegetation (Plains Biome Tint)
+        # fern, large_fern, lily_pad, grass_block, short_grass, tall_grass, vine
+        if item_id in [
+            "minecraft:fern", "minecraft:large_fern", "minecraft:lily_pad",
+            "minecraft:grass_block", "minecraft:short_grass", "minecraft:tall_grass",
+            "minecraft:vine", "minecraft:sugar_cane"
+        ] or "leaves" in name_stem:
+             return (145, 189, 89)
+
+        # Leather Armor (Default Brown)
+        if item_id in [
+            "minecraft:leather_boots", "minecraft:leather_chestplate",
+            "minecraft:leather_helmet", "minecraft:leather_horse_armor",
+            "minecraft:leather_leggings"
+        ]:
+            return (160, 101, 64)
+
+        # Potion Colors (Basic approximation)
+        if "potion" in name_stem:
+             return (56, 93, 198) # Water color default
+
+        # Spawn Eggs
+        if "spawn_egg" in name_stem:
+            return self.get_spawn_egg_color(item_id)
+
         if "grass" in name_stem:
             return (145, 189, 89)  # Standard grass color
 
@@ -128,6 +261,8 @@ class JarScanner:
 
                 # Process each item definition
                 for item_id, item_def_path in item_definitions.items():
+                    # (If experimental mode is enabled, all items should be considered for experimental rendering.)
+
                     # Skip model variants that aren't actual inventory items
                     if self.is_model_variant(item_id):
                         logger.debug(f"Skipping model variant: {item_id}")
@@ -184,46 +319,79 @@ class JarScanner:
                     # check if the name_stem includes any fungus terms, excluding ignore terms
                     is_cross_fungus: bool = any(fungus in name_stem for fungus in fungus_include_list) and all(ign not in name_stem for ign in fungus_ignore_list)
 
+                    cross_include_list = ["sapling", "cobweb", "dead_bush"]
+                    cross_exclude_list = ["block", "wall", "head", "skull", "item"]
+                    is_cross_item = any(cross in name_stem for cross in cross_include_list) and all(ign not in name_stem for ign in cross_exclude_list)
+
                     # Check for Cross rendering
                     is_cross = False
-                    if item_id == "minecraft:cobweb" or \
+                    if is_cross_item or \
                         is_cross_fungus or \
-                        is_cross_crystal or \
-                       "sapling" in name_stem or \
-                       item_id in ["minecraft:short_grass", "minecraft:long_grass", "minecraft:fern", "minecraft:dead_bush"]:
+                        is_cross_crystal:
                         is_cross = True
                         block_type = "cross"
 
-                    # Check for Flower rendering (Force 2D)
-                    flower_items = [
-                        "minecraft:poppy",
-                        "minecraft:white_tulip",
-                        "minecraft:orange_tulip",
-                        "minecraft:pink_tulip",
-                        "minecraft:red_tulip",
-                        "minecraft:cornflower",
-                        "minecraft:torchflower",
-                        "minecraft:dandelion",
-                        "minecraft:wither_rose",
-                        "minecraft:rose_bush",
-                        "minecraft:oxeye_daisy",
-                        "minecraft:closed_eyeblossom",
-                        "minecraft:open_eyeblossom",
-                        "minecraft:peony",
-                        "minecraft:crimson_roots",
-                        "minecraft:hanging_roots",
-                        "minecraft:warped_roots",
-                        "minecraft:twisting_vines",
-                        "minecraft:weeping_vines",
-                        "minecraft:vine",
-                        "minecraft:large_fern",
-                        "minecraft:fern",
-                        "minecraft:tall_grass",
-                        "minecraft:short_grass"
+                    flower_include_list = [
+                        "snowdrops",
+                        "poppy",
+                        "tulip",
+                        "cornflower",
+                        "dandelion",
+                        "wither_rose",
+                        "torchflower",
+                        "rose_bush",
+                        "oxeye_daisy",
+                        "peony",
+                        "eyeblossom",
+                        "crimson_roots",
+                        "warped_roots",
+                        "hanging_roots",
+                        "vines",
+                        "fern",
+                        "grass"
+                        "snowdrops",
+                        "snowbelle",
                     ]
-                    if item_id in flower_items:
+                    flower_exclude_list = [
+                        "block",
+                        "wall",
+                        "pot",
+                    ]
+                    is_flower: bool = any(flower in name_stem for flower in flower_include_list) and all(ign not in name_stem for ign in flower_exclude_list)
+                    if is_flower:
                         force_2d = True
                         block_type = "flower"
+
+                    # Check for Flower rendering (Force 2D)
+                    # flower_items = [
+                    #     "minecraft:poppy",
+                    #     "minecraft:white_tulip",
+                    #     "minecraft:orange_tulip",
+                    #     "minecraft:pink_tulip",
+                    #     "minecraft:red_tulip",
+                    #     "minecraft:cornflower",
+                    #     "minecraft:torchflower",
+                    #     "minecraft:dandelion",
+                    #     "minecraft:wither_rose",
+                    #     "minecraft:rose_bush",
+                    #     "minecraft:oxeye_daisy",
+                    #     "minecraft:closed_eyeblossom",
+                    #     "minecraft:open_eyeblossom",
+                    #     "minecraft:peony",
+                    #     "minecraft:crimson_roots",
+                    #     "minecraft:hanging_roots",
+                    #     "minecraft:warped_roots",
+                    #     "minecraft:twisting_vines",
+                    #     "minecraft:weeping_vines",
+                    #     "minecraft:vine",
+                    #     "minecraft:large_fern",
+                    #     "minecraft:fern",
+                    #     "minecraft:tall_grass",
+                    #     "minecraft:short_grass"
+                    # ]
+                    # if item_id in flower_items:
+                    #     force_2d = True
+                    #     block_type = "flower"
 
                     # Check for Tinting (Grass Block, Ferns, Grass)
                     tint_items = ["minecraft:grass_block", "minecraft:fern", "minecraft:large_fern", "minecraft:tall_grass", "minecraft:short_grass", "minecraft:lily_pad"]
@@ -237,7 +405,7 @@ class JarScanner:
                         block_type = "pad"
 
                     # Check for Sprite Flat (render as sprite_flat: flat on ground)
-                    if item_id in ["actuallyadditions:worm", "actuallyadditions:snail"]:
+                    if item_id in []:
                         force_2d = True
                         block_type = "sprite_flat"
 
@@ -251,6 +419,29 @@ class JarScanner:
                         # Non-fatal — continue without model info
                         asset_model_path = None
                         asset_model_data = None
+
+                    # Experimental Model Rendering
+                    # When experimental mode is enabled, prefer rendering using model definitions
+                    # for all items (not just the watch list). Fall back to texture-based extraction
+                    # when no model definition is available or rendering fails.
+                    if self.experimental:
+                        if asset_model_data and isinstance(asset_model_data, dict):
+                            logger.info(f"Attempting experimental model rendering for {item_id}")
+                            try:
+                                asset_filename, asset_b64, asset_w, asset_h = self.asset_extractor.render_model(
+                                    zip_ref, asset_model_data, namespace, item_id, self.include_asset, self.overwrite, tint=tint_color
+                                )
+                                if asset_filename:
+                                    rendered_3d = True
+                                    if asset_filename.endswith(".webp"):
+                                        content_type = "image/webp"
+                                    elif asset_filename.endswith(".gif"):
+                                        content_type = "image/gif"
+                            except Exception as e:
+                                logger.exception(f"Experimental rendering failed for {item_id}: {e}")
+                        else:
+                            # No model JSON available; will fall back to texture extraction below
+                            logger.debug(f"Experimental rendering requested but no model found for {item_id}")
 
                     # Ignore certain model parents/loaders that don't have asset support (pattern-based)
                     IGNORE_PARENT_SUBSTRINGS = ["neoforge:item/bucket_drip", "allthemodium:block/source_jar"]
@@ -305,7 +496,7 @@ class JarScanner:
 
 
                     # Try 3D rendering for blocks first (now default)
-                    if not force_2d:
+                    if not force_2d and not asset_filename:
                         # If it's a cross type, we need to find the texture differently?
                         # find_block_textures usually looks for 'up', 'left', 'right'.
                         # For cross, we just need one texture.
@@ -316,6 +507,20 @@ class JarScanner:
                         block_textures = None
                         detected_block_type = None
 
+                        mob_head_include_list = [
+                            "player_head",
+                            "zombie_head",
+                            "creeper_head",
+                            "skeleton_skull",
+                            "wither_skeleton_skull",
+                            "piglin_head",
+
+                            # not specifically a mob head, but renders as 8x8x8
+                            "conduit"
+                        ]
+                        mob_head_exclude_list = []
+                        is_mob_head: bool = any(head in name_stem for head in mob_head_include_list) and all(ign not in name_stem for ign in mob_head_exclude_list)
+
                         # Check for Mob Heads (8x8x8)
                         head_textures_map = {
                             "minecraft:player_head": "assets/minecraft/textures/entity/steve.png",
@@ -325,7 +530,7 @@ class JarScanner:
                             "minecraft:wither_skeleton_skull": "assets/minecraft/textures/entity/skeleton/wither_skeleton.png",
                             "minecraft:piglin_head": "assets/minecraft/textures/entity/piglin/piglin.png"
                         }
-                        is_mob_head = item_id in head_textures_map
+                        # is_mob_head = item_id in head_textures_map
 
                         if is_cross:
                             # Special handling for cross textures
@@ -341,7 +546,7 @@ class JarScanner:
                                     detected_block_type = "cross"
                                 except Exception:
                                     pass
-                        elif is_mob_head:
+                        elif is_mob_head and item_id in head_textures_map:
                             tex_path = head_textures_map[item_id]
                             if tex_path in file_list:
                                 try:
@@ -375,6 +580,25 @@ class JarScanner:
                             )
                             if asset_filename:
                                 rendered_3d = True
+                                # Validate resulting image isn't fully transparent. If it is,
+                                # attempt one more render pass (overwrite) as a fallback.
+                                try:
+                                    from PIL import Image
+                                    p = ASSETS_DIR / asset_filename
+                                    if p.exists():
+                                        with Image.open(p) as img:
+                                            non_trans = sum(1 for px in img.getdata() if px[3] > 10)
+                                        if non_trans == 0:
+                                            logger.warning(f"Rendered asset for {item_id} is fully transparent - retrying render.")
+                                            # Retry rendering (overwrite) - preserve tint/block_type
+                                            asset_filename, asset_b64, asset_w, asset_h = self.asset_extractor.render_3d_block(
+                                                item_id, block_textures, jar_path.name, include_asset=self.include_asset, block_type=block_type, tint=tint_color, overwrite=True
+                                            )
+                                            if asset_filename:
+                                                rendered_3d = True
+                                except Exception:
+                                    # Non-fatal - continue
+                                    pass
 
                     # Fallback to 2D extraction if 3D failed or not applicable
                     if not asset_filename:
@@ -470,7 +694,7 @@ class JarScanner:
                         block_type = "pad"
 
                     # Ensure sprite flat items use the 'sprite_flat' block type
-                    if item_id in ["actuallyadditions:worm", "actuallyadditions:snail"]:
+                    if item_id in []:
                         block_type = "sprite_flat"
 
                     # If user requested base64 assets but none were generated, skip the item
@@ -667,7 +891,7 @@ class JarScanner:
                 # Fallback to substring matching if not in exact map
                 if "slab" in model_ref:
                     block_type = "slab"
-                elif "stairs" in model_ref:
+                elif "stair" in model_ref:
                     block_type = "stairs"
                 elif "fence_gate" in model_ref:
                     block_type = "fence_gate"
@@ -725,7 +949,7 @@ class JarScanner:
                     if "slab" in pref:
                         block_type = "slab"
                         break
-                    if "stairs" in pref:
+                    if "stair" in pref:
                         block_type = "stairs"
                         break
                     if "fence" in pref:
@@ -743,6 +967,15 @@ class JarScanner:
             except Exception:
                 # Be conservative: if anything goes wrong, keep default 'block'
                 pass
+
+            # Special-case detection for some known items where 3D geometry differs from default
+            # Conduit is best rendered as a small centered cube with a subtle cyan tint
+            if "conduit" in model_ref or "conduit" in name_stem:
+                block_type = "conduit"
+
+            # Scaffolding is a framed structure and benefits from a dedicated geometry
+            if "scaffold" in model_ref or "scaffolding" in model_ref or "scaffold" in name_stem or "scaffolding" in name_stem:
+                block_type = "scaffolding"
 
             # Force 2D for saplings, clusters, and other cross models
             # Also force 2D for complex entities like beds, shulker boxes, banners, boats, rafts, bundles, buckets
@@ -763,7 +996,7 @@ class JarScanner:
                  # But "bamboo_planks" contains "bamboo".
 
                  # Refined check:
-                 is_blocky_bamboo = "planks" in model_ref or "mosaic" in model_ref or "bamboo_block" in model_ref or "stripped" in model_ref or "slab" in model_ref or "stairs" in model_ref or "fence" in model_ref or "door" in model_ref or "trapdoor" in model_ref or "button" in model_ref or "pressure_plate" in model_ref
+                 is_blocky_bamboo = "planks" in model_ref or "mosaic" in model_ref or "bamboo_block" in model_ref or "stripped" in model_ref or "slab" in model_ref or "stair" in model_ref or "fence" in model_ref or "door" in model_ref or "trapdoor" in model_ref or "button" in model_ref or "pressure_plate" in model_ref
 
                  if matched_keyword == "bamboo" and is_blocky_bamboo:
                      pass # Allow 3D rendering
@@ -1094,6 +1327,8 @@ class JarScanner:
                 return None
 
         # Fallback: try block model
+        # Some items (like enchanting_table) use a block model directly or via a simple item model wrapper
+        # If we haven't found a model yet, check if there is a block model with the same name
         model_file = f"assets/{namespace}/models/block/{name_stem}.json"
         if model_file in file_list:
             try:
@@ -1101,7 +1336,18 @@ class JarScanner:
                     model_json = json.load(mf)
                 return f"assets/{namespace}/models/block/{name_stem}.json", model_json
             except Exception:
-                return None
+                pass
+
+        # Fallback: try item model if we started with a block definition or something else
+        # This handles cases where we might be looking at a block but want the item model
+        model_file = f"assets/{namespace}/models/item/{name_stem}.json"
+        if model_file in file_list:
+            try:
+                with zip_ref.open(model_file) as mf:
+                    model_json = json.load(mf)
+                return f"assets/{namespace}/models/item/{name_stem}.json", model_json
+            except Exception:
+                pass
 
         return None
 
