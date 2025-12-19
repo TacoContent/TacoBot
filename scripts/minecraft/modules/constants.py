@@ -4,7 +4,7 @@ from pathlib import Path
 # Base directory is the parent of the 'modules' directory (i.e., scripts/minecraft)
 BASE_DIR = Path(__file__).parent.parent.resolve()
 
-JARS_DIR = BASE_DIR / "jars"
+JARS_DIR = BASE_DIR / "simple-jars"
 OUTPUT_DIR = BASE_DIR / "output"
 ASSETS_DIR = OUTPUT_DIR / "assets"
 METADATA_FILE = OUTPUT_DIR / "items.json"

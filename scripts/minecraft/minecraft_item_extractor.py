@@ -33,6 +33,7 @@ def parse_arguments():
         action="store_true",
         help="Overwrite existing items in metadata and MongoDB.",
     )
+
     return parser.parse_args()
 
 def main():
@@ -50,7 +51,7 @@ def main():
         use_mongodb=args.mongodb,
         collection_name=args.collection,
         include_asset=args.include_asset,
-        overwrite=args.overwrite
+        overwrite=args.overwrite,
     )
     scanner.scan_jars()
     logger.info("Extraction complete.")

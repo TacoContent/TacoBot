@@ -34,7 +34,7 @@ def test_builtin_entity_falls_back_to_block_model(tmp_path):
 
     _write_zip(zpath, files)
 
-    js = JarScanner(experimental=True)
+    js = JarScanner()
     with ZipFile(zpath, 'r') as z:
         file_list = set(z.namelist())
         print('zip contains:', sorted(list(file_list)))
@@ -81,7 +81,7 @@ def test_parent_chain_detects_stairs(tmp_path):
 
     _write_zip(zpath, files)
 
-    js = JarScanner(experimental=True)
+    js = JarScanner()
     with ZipFile(zpath, 'r') as z:
         file_list = set(z.namelist())
         print('zip contains:', sorted(list(file_list)))

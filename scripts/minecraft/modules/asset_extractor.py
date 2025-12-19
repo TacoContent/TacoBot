@@ -96,6 +96,117 @@ class AssetExtractor:
             return None, None, None, None
 
     @staticmethod
+    def render_animated_sprite(item_id: str, texture_data: bytes, mcmeta: Dict, source_jar: str, include_asset: bool = False, overwrite: bool = False) -> Tuple[Optional[str], Optional[str], Optional[int], Optional[int]]:
+        """
+        Renders an animated GIF from a sprite sheet and mcmeta.
+        """
+        filename = AssetExtractor.get_asset_filename(item_id).replace(".png", ".gif")
+        destination_path = ASSETS_DIR / filename
+
+        if destination_path.exists() and not overwrite:
+            asset_b64 = None
+            width, height = None, None
+            if include_asset:
+                try:
+                    with open(destination_path, "rb") as f:
+                        data = f.read()
+                        asset_b64 = base64.b64encode(data).decode("ascii")
+                        with Image.open(io.BytesIO(data)) as img:
+                            width, height = img.size
+                except Exception:
+                    pass
+            return filename, asset_b64, width, height
+
+        try:
+            img = Image.open(io.BytesIO(texture_data)).convert("RGBA")
+            w, h = img.size
+            
+            # Determine frame size
+            # Assume vertical strip if h > w and h % w == 0
+            # Assume horizontal strip if w > h and w % h == 0
+            # Default to square frames based on min dimension
+            
+            if h > w and h % w == 0:
+                frame_size = w
+                num_frames_total = h // w
+                is_vertical = True
+            elif w > h and w % h == 0:
+                frame_size = h
+                num_frames_total = w // h
+                is_vertical = False
+            else:
+                # Fallback or single frame
+                frame_size = min(w, h)
+                num_frames_total = 1
+                is_vertical = True
+
+            animation_data = mcmeta.get("animation", {})
+            frametime = animation_data.get("frametime", 1)
+            frames_order = animation_data.get("frames", list(range(num_frames_total)))
+            
+            # Extract frames
+            frames = []
+            durations = []
+            
+            for i in frames_order:
+                frame_index = i
+                frame_duration = frametime
+                
+                if isinstance(i, dict):
+                    frame_index = i.get("index", 0)
+                    frame_duration = i.get("time", frametime)
+                
+                if frame_index >= num_frames_total:
+                    continue
+                    
+                if is_vertical:
+                    box = (0, frame_index * frame_size, frame_size, (frame_index + 1) * frame_size)
+                else:
+                    box = (frame_index * frame_size, 0, (frame_index + 1) * frame_size, frame_size)
+                
+                frame = img.crop(box)
+                
+                # Scale to 32x32 for consistency with other assets
+                if frame.size != (32, 32):
+                     frame = frame.resize((32, 32), Image.NEAREST)
+
+                frames.append(frame)
+                durations.append(frame_duration * 50) # Convert ticks to ms
+
+            if not frames:
+                return None, None, None, None
+
+            output = io.BytesIO()
+            # Use the first frame duration as default, or list if supported/needed
+            # Pillow supports list of durations
+            frames[0].save(
+                output,
+                format="GIF",
+                save_all=True,
+                append_images=frames[1:],
+                duration=durations,
+                loop=0,
+                disposal=2
+            )
+            
+            data = output.getvalue()
+            
+            with open(destination_path, "wb") as f:
+                f.write(data)
+                
+            asset_b64 = None
+            width, height = frames[0].size
+            
+            if include_asset:
+                asset_b64 = base64.b64encode(data).decode("ascii")
+                
+            return filename, asset_b64, width, height
+
+        except Exception as e:
+            logger.error(f"Failed to render animated sprite for {item_id}: {e}")
+            return None, None, None, None
+
+    @staticmethod
     def render_3d_block(item_id: str, textures: Dict[str, bytes], source_jar: str, include_asset: bool = False, block_type: str = "block", tint: Optional[Tuple[int, int, int]] = None, overwrite: bool = False) -> Tuple[Optional[str], Optional[str], Optional[int], Optional[int]]:
         """
         Renders a 3D isometric block from provided face textures.
@@ -133,28 +244,104 @@ class AssetExtractor:
                 raw_left = raw_tex
                 raw_right = raw_tex
             elif block_type in ["sprite_flat"]:
-                # find the first texture in the sprite and use that as a 2d flat image
-                # need to get the image, get the size. if the width > height, scale width to 32, else scale height to 32
-                # then use that as the image
+                # Sprite sheets: use only the FIRST frame from the sprite, resize that frame to
+                # scale based on the smaller side (min width/height -> 32), bottom-center align,
+                # and save the 32x32 canvas directly as the final asset (skip isometric renderer).
                 tex_data = next(iter(textures.values()))
                 raw_tex = Image.open(io.BytesIO(tex_data)).convert("RGBA")
-                # Determine scaling
+
                 w, h = raw_tex.size
-                if w >= h:
-                    new_w = 32
-                    new_h = int(h * (32 / w))
+                # Detect frame orientation and crop the first frame (assume square frames stacked horizontally or vertically)
+                if w > h and w % h == 0:
+                    # Horizontal strip of square frames
+                    frame_size = h
+                elif h > w and h % w == 0:
+                    # Vertical strip of square frames
+                    frame_size = w
                 else:
-                    new_h = 32
-                    new_w = int(w * (32 / h))
-                img = raw_tex.resize((new_w, new_h), resample=Image.LANCZOS)
-                canvas = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+                    # Fallback: use the smallest dimension as frame size
+                    frame_size = min(w, h)
+
+                # Crop the first frame (top-left corner) for strip sprites, otherwise use full image
+                # Detect strip sprites carefully. If it *looks* like a strip but
+                # frames are not identical, treat it as a single tall/wide image.
+                if w > h and w % h == 0:
+                    frames = w // h
+                    if frames > 1:
+                        f1 = raw_tex.crop((0, 0, h, h))
+                        # If first frame is mostly transparent, it's probably a single tall image; use full image
+                        non_transparent = sum(1 for p in f1.getdata() if p[3] > 10)
+                        if non_transparent / float(h * h) < 0.1:
+                            frame = raw_tex
+                        else:
+                            frame = f1
+                    else:
+                        frame = raw_tex.crop((0, 0, h, h))
+                elif h > w and h % w == 0:
+                    frames = h // w
+                    if frames > 1:
+                        f1 = raw_tex.crop((0, 0, w, w))
+                        non_transparent = sum(1 for p in f1.getdata() if p[3] > 10)
+                        if non_transparent / float(w * w) < 0.1:
+                            frame = raw_tex
+                        else:
+                            frame = f1
+                    else:
+                        frame = raw_tex.crop((0, 0, w, w))
+                else:
+                    # Single image - use the full texture as the frame
+                    frame = raw_tex
+
+                # Scale frame appropriately:
+                # - If this was a cropped frame (square from a strip), scale so the small side becomes 32 (square -> 32x32)
+                # - If this is the full image (single-frame), scale to *fit* within 32x32 (scale = 32 / max(width,height))
+                if frame.size != raw_tex.size:
+                    # cropped square frame (or strip crop) -> scale so small side becomes 32 (square -> 32)
+                    min_side = min(frame.width, frame.height)
+                    if min_side == 0:
+                        scale = 1.0
+                    else:
+                        scale = 32.0 / float(min_side)
+                else:
+                    # single image: scale to fit within 32x32
+                    max_side = max(frame.width, frame.height)
+                    if max_side == 0:
+                        scale = 1.0
+                    else:
+                        scale = 32.0 / float(max_side)
+
+                new_w = max(1, int(round(frame.width * scale)))
+                new_h = max(1, int(round(frame.height * scale)))
+
+                frame_resized = frame.resize((new_w, new_h), resample=Image.LANCZOS)
+
+                # Place the resized frame on a 32x32 canvas and align it bottom-center
+                canvas32 = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
                 offset_x = (32 - new_w) // 2
-                offset_y = (32 - new_h) // 2
-                canvas.paste(img, (offset_x, offset_y))
-                raw_tex = canvas
-                raw_up = raw_tex
-                raw_left = raw_tex
-                raw_right = raw_tex
+                offset_y = 32 - new_h
+                canvas32.paste(frame_resized, (offset_x, offset_y), frame_resized)
+
+                # Save the canvas directly as the output asset and return early
+                try:
+                    with open(destination_path, "wb") as target:
+                        import io as _io
+                        buf = _io.BytesIO()
+                        canvas32.save(buf, format="PNG")
+                        data = buf.getvalue()
+                        target.write(data)
+
+                    asset_b64 = None
+                    if include_asset:
+                        import base64 as _base64
+                        asset_b64 = _base64.b64encode(data).decode("ascii")
+
+                    return filename, asset_b64, 32, 32
+                except Exception as e:
+                    logger.error(f"Failed to write sprite_flat asset for {item_id}: {e}")
+                    # Fallthrough to normal rendering as a fallback
+                    raw_up = canvas32
+                    raw_left = canvas32
+                    raw_right = canvas32
             elif block_type == "mob_head":
                 # Initialize with dummy images, will be overwritten later
                 dummy = Image.new("RGBA", (16, 16), (0, 0, 0, 0))

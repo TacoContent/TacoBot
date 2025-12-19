@@ -52,7 +52,7 @@ class MetadataHandler:
     def item_exists(self, item_id: str) -> bool:
         return item_id in self.existing_ids
 
-    def add_item(self, item_id: str, asset_name: str, name: str, source_jar: str, asset_b64: Optional[str] = None, width: Optional[int] = None, height: Optional[int] = None, block_type: Optional[str] = None, rendered_3d: Optional[bool] = None, mod_info: Optional[Dict[str, str]] = None, parent: Optional[str] = None, model: Optional[Dict[str, Any]] = None) -> bool:
+    def add_item(self, item_id: str, asset_name: str, name: str, source_jar: str, asset_b64: Optional[str] = None, width: Optional[int] = None, height: Optional[int] = None, block_type: Optional[str] = None, rendered_3d: Optional[bool] = None, mod_info: Optional[Dict[str, str]] = None, parent: Optional[str] = None, model: Optional[Dict[str, Any]] = None, mcmeta: Optional[Dict[str, Any]] = None, content_type: Optional[str] = None) -> bool:
         if self.item_exists(item_id) and not self.overwrite:
             logger.warning(f"Duplicate item data found for ID: {item_id}. Source: {source_jar}. Skipping.")
             return False
@@ -87,6 +87,10 @@ class MetadataHandler:
             new_item["block_type"] = block_type
         if parent:
             new_item["parent"] = parent
+        if mcmeta:
+            new_item["mcmeta"] = mcmeta
+        if content_type:
+            new_item["content_type"] = content_type
 
         if rendered_3d:
             new_item["rendered_3d"] = True

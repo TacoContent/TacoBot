@@ -163,6 +163,8 @@ class JarScanner:
                     asset_model_data = None
                     block_type = None
                     rendered_3d = False
+                    mcmeta_data = None
+                    content_type = "image/png"
                     tint_color = self.get_tint_for_item(item_id, name_stem)
 
                     # Check for special rendering overrides
@@ -401,15 +403,59 @@ class JarScanner:
                                         logger.debug(f"Inferred texture for {item_id} from model: {texture_path}")
                                         break
 
-                        if texture_path:
-                            # Infer block_type when texture is under block textures
-                            if "/textures/block/" in texture_path or ("block/" in texture_path and "/textures/" in texture_path):
-                                block_type = block_type or "block"
+                        mcmeta_data = None
+                        content_type = "image/png"
 
-                            # Extract Asset (optionally include base64 in metadata)
-                            asset_filename, asset_b64, asset_w, asset_h = self.asset_extractor.extract_asset(
-                                zip_ref, texture_path, item_id, jar_path.name, include_asset=self.include_asset, tint=tint_color, overwrite=self.overwrite
-                            )
+                        if texture_path:
+                            # Check for animated sprite (mcmeta)
+                            mcmeta_path = texture_path + ".mcmeta"
+
+                            if mcmeta_path in file_list:
+                                try:
+                                    with zip_ref.open(mcmeta_path) as f:
+                                        mcmeta_data = json.load(f)
+
+                                    if mcmeta_data and "animation" in mcmeta_data:
+                                        block_type = "sprite_animated"
+                                        content_type = "image/gif"
+
+                                        with zip_ref.open(texture_path) as f:
+                                            tex_data = f.read()
+
+                                        asset_filename, asset_b64, asset_w, asset_h = self.asset_extractor.render_animated_sprite(
+                                            item_id, tex_data, mcmeta_data, jar_path.name, include_asset=self.include_asset, overwrite=self.overwrite
+                                        )
+                                except Exception as e:
+                                    logger.warning(f"Failed to process animated sprite for {item_id}: {e}")
+                                    # Fallback to normal extraction if animation fails
+                                    mcmeta_data = None
+                                    block_type = block_type or "flat"
+                                    content_type = "image/png"
+
+                            # Infer block_type when texture is under block textures
+                            if not mcmeta_data:
+                                if "/textures/block/" in texture_path or ("block/" in texture_path and "/textures/" in texture_path):
+                                    block_type = block_type or "block"
+
+                                # If this is a sprite_flat, prefer rendering the final 32x32 asset directly
+                                if block_type == "sprite_flat":
+                                    try:
+                                        with zip_ref.open(texture_path) as f:
+                                            tex_data = f.read()
+                                        # Render the sprite_flat and overwrite any existing asset
+                                        asset_filename, asset_b64, asset_w, asset_h = self.asset_extractor.render_3d_block(
+                                            item_id, {"all": tex_data}, jar_path.name, include_asset=self.include_asset, block_type=block_type, tint=tint_color, overwrite=True
+                                        )
+                                    except Exception:
+                                        asset_filename = None
+                                        asset_b64 = None
+                                        asset_w = None
+                                        asset_h = None
+                                else:
+                                    # Extract Asset (optionally include base64 in metadata)
+                                    asset_filename, asset_b64, asset_w, asset_h = self.asset_extractor.extract_asset(
+                                        zip_ref, texture_path, item_id, jar_path.name, include_asset=self.include_asset, tint=tint_color, overwrite=self.overwrite
+                                    )
 
                             # If it's 2D and no specific block type is set, mark it as flat
                             if not block_type and (force_2d or is_enforced_2d):
@@ -457,7 +503,9 @@ class JarScanner:
                         rendered_3d=rendered_3d,
                         mod_info=mod_info,
                         parent=parent,
-                        model=model_obj
+                        model=model_obj,
+                        mcmeta=mcmeta_data,
+                        content_type=content_type
                     )
 
         except Exception as e:
@@ -589,6 +637,7 @@ class JarScanner:
                 "minecraft:block/pressure_plate_up": "pressure_plate",
                 "minecraft:block/button_inventory": "button",
                 "minecraft:block/carpet": "carpet",
+                "minecraft:block/snow_height2": "snow",
                 "minecraft:block/thin_block": "pane",
                 "minecraft:block/anvil": "anvil",
                 "minecraft:block/template_anvil": "anvil",
