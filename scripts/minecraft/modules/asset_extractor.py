@@ -127,13 +127,13 @@ class AssetExtractor:
             if p_ns == namespace and parent_path.startswith("block/") and "minecraft" not in parent_path:
                  # Check if it exists in local namespace, if not, try minecraft
                  pass
-            
+
             # Check for circular dependency
             parent_key = f"{p_ns}:{p_path}"
             if parent_key in visited:
                 logger.warning(f"Circular dependency detected: {parent_key}")
                 return model_data
-            
+
             new_visited = visited.copy()
             new_visited.add(parent_key)
 

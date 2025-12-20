@@ -1,10 +1,13 @@
 import json
 import re
 import tomllib
+import base64
+import io
 from pathlib import Path
 import typing
 from zipfile import ZipFile
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Any
+from PIL import Image
 
 from .constants import JARS_DIR, ASSETS_DIR
 from .logger import logger
@@ -19,7 +22,7 @@ class JarScanner:
         self.overwrite = overwrite
         self.experimental = experimental
 
-    def extract_mod_info(self, zip_ref: ZipFile) -> Optional[Dict[str, str]]:
+    def extract_mod_info(self, zip_ref: ZipFile) -> Optional[Dict[str, Any]]:
         """
         Extract mod information from META-INF/*.toml files.
         """
@@ -32,11 +35,37 @@ class JarScanner:
                         # Check for 'mods' list which is common in mods.toml
                         if "mods" in data and isinstance(data["mods"], list) and len(data["mods"]) > 0:
                             mod = data["mods"][0] # Take the first mod
-                            return {
+                            mod_info = {
                                 "id": mod.get("modId", ""),
                                 "version": mod.get("version", ""),
                                 "name": mod.get("displayName", "")
                             }
+
+                            logo_file = mod.get("logoFile")
+                            if logo_file:
+                                logo_path = logo_file.strip()
+                                if logo_path in zip_ref.namelist():
+                                    try:
+                                        with zip_ref.open(logo_path) as logo_f:
+                                            logo_content = logo_f.read()
+
+                                            # Check size < 5KB
+                                            if len(logo_content) < 5 * 1024:
+                                                # Check dimensions
+                                                with Image.open(io.BytesIO(logo_content)) as img:
+                                                    if img.width == img.height:
+                                                        # It's valid
+                                                        b64_content = base64.b64encode(logo_content).decode('utf-8')
+                                                        content_type = f"image/{img.format.lower()}"
+
+                                                        mod_info["icon"] = {
+                                                            "asset_b64": b64_content,
+                                                            "content_type": content_type
+                                                        }
+                                    except Exception as e:
+                                        logger.warning(f"Failed to process logo file {logo_path}: {e}")
+
+                            return mod_info
                 except Exception as e:
                     logger.warning(f"Failed to parse TOML file {file_path}: {e}")
         return None
