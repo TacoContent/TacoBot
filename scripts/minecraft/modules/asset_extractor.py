@@ -334,6 +334,17 @@ class AssetExtractor:
                                     raw_data = f.read()
                                     tex = Image.open(io.BytesIO(raw_data)).convert("RGBA")
                                     texture_cache[tex_ref] = tex
+
+                                    mcmeta_path = p + ".mcmeta"
+                                    if mcmeta_path in fallback_zip.namelist():
+                                        try:
+                                            with fallback_zip.open(mcmeta_path) as mf:
+                                                mcmeta = json.load(mf)
+                                                if "animation" in mcmeta:
+                                                    animated_textures[tex_ref] = (mcmeta, raw_data)
+                                        except Exception:
+                                            pass
+
                                     return tex
                         except Exception:
                             continue
@@ -443,32 +454,50 @@ class AssetExtractor:
                 translation = [0, 0, 0]
                 scale = [0.625, 0.625, 0.625]
 
+            # Apply manual rotation fixes for specific items
+            # These items have model geometries that are oriented differently than standard blocks
+
+            # Fix 1: Items that need +90 degrees Y rotation (Under-rotated)
+            # Stairs, Gates, Fences, etc. often face a different direction in their model
+            FIX_POS_90 = ["stairs", "stair", "fence", "gate", "beehive", "bee_nest", "loom", "crafting_table", "ladder", "rail"]
+            if any(x in item_id for x in FIX_POS_90) and "chest" not in item_id:
+                 rotation = [rotation[0], rotation[1] + 90, rotation[2]]
+
+            # Fix 2: Items that need -90 degrees Y rotation (Over-rotated)
+            # Jack o' Lantern, etc.
+            FIX_NEG_90 = ["jack_o_lantern", "pumpkin", "carved_pumpkin", "observer", "dispenser", "dropper", "furnace", "smoker", "blast_furnace", "chest", "ender_chest", "trapped_chest"]
+            if any(x in item_id for x in FIX_NEG_90):
+                 rotation = [rotation[0], rotation[1] - 90, rotation[2]]
+
             global_scale = 3.5 # Scale to fit 64x64
 
             def transform_point(p):
                 # 1. Center
                 p = (p[0] - 8, p[1] - 8, p[2] - 8)
 
-                # 2. Rotation (Order: Y -> X -> Z)
-                rx, ry, rz = rotation
-                p = rotate_point(p, (0,0,0), "y", -ry)
-                p = rotate_point(p, (0,0,0), "x", rx)
-                p = rotate_point(p, (0,0,0), "z", rz)
+                # 2. Scale (Model Display Scale)
+                sx, sy, sz = scale
+                p = (p[0] * sx, p[1] * sy, p[2] * sz)
 
-                # 3. Translation
+                # 3. Rotation (Order: Z -> Y -> X)
+                rx, ry, rz = rotation
+                p = rotate_point(p, (0,0,0), "z", rz)
+                p = rotate_point(p, (0,0,0), "y", ry)
+                p = rotate_point(p, (0,0,0), "x", rx)
+
+                # 4. Translation
                 tx, ty, tz = translation
                 p = (p[0] + tx, p[1] + ty, p[2] + tz)
 
-                # 4. Scale
-                sx, sy, sz = scale
-                p = (p[0] * sx * global_scale, p[1] * sy * global_scale, p[2] * sz * global_scale)
+                # 5. Global Scale
+                p = (p[0] * global_scale, p[1] * global_scale, p[2] * global_scale)
 
                 return p
 
             def project(x, y, z):
                 p = transform_point((x, y, z))
 
-                # 5. Screen coordinates
+                # 6. Screen coordinates
                 screen_x = p[0] + 32
                 screen_y = 32 - p[1]
 
