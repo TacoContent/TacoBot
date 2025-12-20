@@ -401,14 +401,6 @@ class AssetExtractor:
                 frames.append({})
                 durations.append(0)
 
-            iso_scale = 2.0
-
-            def project(x, y, z):
-                cx, cy, cz = x - 8, y - 8, z - 8
-                sx = (cx - cz) * 0.866 * iso_scale + w/2
-                sy = (cx + cz) * 0.5 * iso_scale - cy * iso_scale + h/2
-                return sx, sy
-
             def rotate_point(point, origin, axis, angle):
                 px, py, pz = point
                 ox, oy, oz = origin
@@ -438,28 +430,55 @@ class AssetExtractor:
                 pz += oz
                 return (px, py, pz)
 
-            global_rotation_y = 0
+            # Handle Display Settings (GUI)
+            gui_display = full_model.get("display", {}).get("gui")
 
-            # Rotation Fixes
-            # Rotate stairs and lectern by -90 degrees
-            ROTATION_NEGATIVE_90_FIX_ITEMS = [
-                "stairs", "stair", "minecraft:lectern", "heavy_core"
-            ]
-            if any(x in item_id for x in ROTATION_NEGATIVE_90_FIX_ITEMS):
-                global_rotation_y = -90
+            if gui_display:
+                rotation = gui_display.get("rotation", [0, 0, 0])
+                translation = gui_display.get("translation", [0, 0, 0])
+                scale = gui_display.get("scale", [1, 1, 1])
+            else:
+                # Fallback to standard block view
+                rotation = [30, 225, 0]
+                translation = [0, 0, 0]
+                scale = [0.625, 0.625, 0.625]
 
-            ROTATION_POSITIVE_90_FIX_ITEMS = [
-                "minecraft:blast_furnace", "minecraft:dropper", "minecraft:dispenser",
-                "minecraft:furnace", "minecraft:observer", "minecraft:smoker", "minecraft:vault"
-            ]
-            if item_id in ROTATION_POSITIVE_90_FIX_ITEMS:
-                global_rotation_y = 90
+            global_scale = 3.5 # Scale to fit 64x64
 
-            ROTATION_180_FIX_ITEMS = [
-                "actuallyadditions:coffee_machine"
-            ]
-            if item_id in ROTATION_180_FIX_ITEMS:
-                global_rotation_y = 180
+            def transform_point(p):
+                # 1. Center
+                p = (p[0] - 8, p[1] - 8, p[2] - 8)
+
+                # 2. Rotation (Order: Y -> X -> Z)
+                rx, ry, rz = rotation
+                p = rotate_point(p, (0,0,0), "y", -ry)
+                p = rotate_point(p, (0,0,0), "x", rx)
+                p = rotate_point(p, (0,0,0), "z", rz)
+
+                # 3. Translation
+                tx, ty, tz = translation
+                p = (p[0] + tx, p[1] + ty, p[2] + tz)
+
+                # 4. Scale
+                sx, sy, sz = scale
+                p = (p[0] * sx * global_scale, p[1] * sy * global_scale, p[2] * sz * global_scale)
+
+                return p
+
+            def project(x, y, z):
+                p = transform_point((x, y, z))
+
+                # 5. Screen coordinates
+                screen_x = p[0] + 32
+                screen_y = 32 - p[1]
+
+                return screen_x, screen_y
+
+            # Rotation Fixes - REMOVED as we now use display settings
+            # global_rotation_y = 0
+            # ROTATION_NEGATIVE_90_FIX_ITEMS = ...
+            # ROTATION_POSITIVE_90_FIX_ITEMS = ...
+            # ROTATION_180_FIX_ITEMS = ...
 
             rendered_frames = []
 
@@ -555,21 +574,26 @@ class AssetExtractor:
                             face["corners"] = [rotate_point(c, origin, axis, angle) for c in face["corners"]]
                             face["center"] = rotate_point(face["center"], origin, axis, angle)
 
-                    current_global_rotation = global_rotation_y
-                    if item_id == "minecraft:lectern" and efrom[1] > 0:
-                        current_global_rotation += 180
-
-                    if current_global_rotation != 0:
-                        origin = [8, 8, 8]
-                        axis = "y"
-                        angle = current_global_rotation
-                        for face in element_faces:
-                            face["corners"] = [rotate_point(c, origin, axis, angle) for c in face["corners"]]
-                            face["center"] = rotate_point(face["center"], origin, axis, angle)
+                    # Removed manual global rotation fixes
+                    # current_global_rotation = global_rotation_y
+                    # ...
 
                     faces_to_draw.extend(element_faces)
 
-                faces_to_draw.sort(key=lambda f: f["center"][0] + f["center"][1] + f["center"][2])
+                # Sort faces by depth (Z) after transformation
+                # We want to draw furthest faces first (Painter's Algorithm)
+                # In our coordinate system, +Z is towards the viewer (after rotation?)
+                # Let's check:
+                # Front face (Z=16) -> Center (0,0,8)
+                # Back face (Z=0) -> Center (0,0,-8)
+                # If we rotate 180 Y: Front -> (0,0,-8), Back -> (0,0,8)
+                # If we look from +Z infinity, +Z is closer. So we draw smallest Z first.
+
+                def get_transformed_z(face):
+                    p = transform_point(face["center"])
+                    return p[2]
+
+                faces_to_draw.sort(key=get_transformed_z)
 
                 for face in faces_to_draw:
                     tex_ref = face["data"].get("texture")

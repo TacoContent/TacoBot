@@ -18,19 +18,6 @@ class JarScanner:
         self.include_asset = include_asset
         self.overwrite = overwrite
         self.experimental = experimental
-        self.experimental_items = [
-            "minecraft:enchanting_table",
-            "minecraft:sculk_sensor",
-            "minecraft:birch_sapling",
-            "minecraft:crafting_table",
-            "minecraft:stonecutter",
-            "minecraft:lectern",
-            "minecraft:compass",
-            "minecraft:clock",
-            "minecraft:grindstone",
-            "minecraft:chest",
-            "minecraft:magma_block",
-        ]
 
     def extract_mod_info(self, zip_ref: ZipFile) -> Optional[Dict[str, str]]:
         """
@@ -62,13 +49,13 @@ class JarScanner:
 
         # Find Minecraft JAR (client or minecraft in name)
         minecraft_jar = next((j for j in jar_files if "client" in j.name.lower() or "minecraft" in j.name.lower()), None)
-        
+
         # Sort so Minecraft is first
         if minecraft_jar:
             if minecraft_jar in jar_files:
                 jar_files.remove(minecraft_jar)
             jar_files.insert(0, minecraft_jar)
-            
+
         # Open Minecraft JAR for fallback
         fallback_zip = None
         if minecraft_jar:
@@ -80,7 +67,7 @@ class JarScanner:
 
         for jar_path in jar_files:
             self.process_jar(jar_path, fallback_zip)
-            
+
         if fallback_zip:
             fallback_zip.close()
 
@@ -760,21 +747,21 @@ class JarScanner:
                             # We need to convert it back to a model ref or just start the chain from the item ID's model
                             # Actually, asset_model_data comes from extract_model_asset which parses the item definition.
                             # Let's try to get the starting model ref from asset_model_data if possible, or infer it.
-                            
+
                             start_model_ref = None
                             if "parent" in asset_model_data:
                                 start_model_ref = asset_model_data["parent"]
-                            
+
                             # If we have a starting ref (parent of the item model), get its chain
                             if start_model_ref:
                                 hierarchy = self._get_model_parent_chain(zip_ref, file_list, start_model_ref, namespace)
-                            
+
                             # Resolve the full model data for metadata
                             try:
                                 resolved_model = self.asset_extractor.resolve_model_data(zip_ref, asset_model_data, namespace, fallback_zip=fallback_zip)
                             except Exception:
                                 pass
-                        
+
                         model_obj = {"path": asset_model_path, "hierarchy": hierarchy, "resolved": resolved_model, "missing_textures": missing_textures, **asset_model_data}
 
                     # Add to metadata (pass base64 data, sizes, block_type, rendered_3d, mod_info)
@@ -1306,7 +1293,7 @@ class JarScanner:
 
         # Try standard model path first
         model_path = f"assets/{ns}/models/{path}.json"
-        
+
         # If not found, try item/ and block/ subdirectories if path doesn't already have them
         if model_path not in file_list:
              if "item/" not in path and "block/" not in path:
@@ -1329,7 +1316,7 @@ class JarScanner:
                     chain.extend(self._get_model_parent_chain(zip_ref, file_list, parent, ns, depth + 1))
             except Exception:
                 pass
-        
+
         return chain
         if model_path not in file_list:
             return chain
