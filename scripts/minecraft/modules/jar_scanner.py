@@ -60,8 +60,29 @@ class JarScanner:
             logger.warning(f"No .jar files found in {JARS_DIR}")
             return
 
+        # Find Minecraft JAR (client or minecraft in name)
+        minecraft_jar = next((j for j in jar_files if "client" in j.name.lower() or "minecraft" in j.name.lower()), None)
+        
+        # Sort so Minecraft is first
+        if minecraft_jar:
+            if minecraft_jar in jar_files:
+                jar_files.remove(minecraft_jar)
+            jar_files.insert(0, minecraft_jar)
+            
+        # Open Minecraft JAR for fallback
+        fallback_zip = None
+        if minecraft_jar:
+             try:
+                 fallback_zip = ZipFile(minecraft_jar, 'r')
+                 logger.info(f"Using {minecraft_jar.name} as fallback asset source.")
+             except Exception as e:
+                 logger.warning(f"Failed to open fallback JAR {minecraft_jar.name}: {e}")
+
         for jar_path in jar_files:
-            self.process_jar(jar_path)
+            self.process_jar(jar_path, fallback_zip)
+            
+        if fallback_zip:
+            fallback_zip.close()
 
         self.metadata_handler.save_metadata()
         self.metadata_handler.close()
@@ -216,7 +237,7 @@ class JarScanner:
 
         return None
 
-    def process_jar(self, jar_path: Path):
+    def process_jar(self, jar_path: Path, fallback_zip: Optional[ZipFile] = None):
         logger.info(f"Processing JAR: {jar_path.name}")
         try:
             with ZipFile(jar_path, 'r') as zip_ref:
@@ -424,13 +445,32 @@ class JarScanner:
                     # When experimental mode is enabled, prefer rendering using model definitions
                     # for all items (not just the watch list). Fall back to texture-based extraction
                     # when no model definition is available or rendering fails.
-                    if self.experimental:
+                    missing_textures = []
+                    if self.experimental and not force_2d:
                         if asset_model_data and isinstance(asset_model_data, dict):
                             logger.info(f"Attempting experimental model rendering for {item_id}")
                             try:
-                                asset_filename, asset_b64, asset_w, asset_h = self.asset_extractor.render_model(
-                                    zip_ref, asset_model_data, namespace, item_id, self.include_asset, self.overwrite, tint=tint_color
+                                asset_filename, asset_b64, asset_w, asset_h, missing_textures = self.asset_extractor.render_model(
+                                    zip_ref, asset_model_data, namespace, item_id, self.include_asset, self.overwrite, tint=tint_color, fallback_zip=fallback_zip
                                 )
+                                if asset_filename:
+                                    # Validate resulting image isn't fully transparent. If it is,
+                                    # we'll fall back to texture extraction.
+                                    try:
+                                        from PIL import Image
+                                        p = ASSETS_DIR / asset_filename
+                                        if p.exists():
+                                            with Image.open(p) as img:
+                                                non_trans = sum(1 for px in img.getdata() if px[3] > 10)
+                                            if non_trans == 0:
+                                                logger.warning(f"Experimental render for {item_id} is fully transparent - falling back.")
+                                                asset_filename = None
+                                                asset_b64 = None
+                                                asset_w = None
+                                                asset_h = None
+                                    except Exception:
+                                        pass
+
                                 if asset_filename:
                                     rendered_3d = True
                                     if asset_filename.endswith(".webp"):
@@ -489,7 +529,7 @@ class JarScanner:
                     # force 2d
                     enforce_2d_include_list = ["torch", "wormhole_frame"]
                     enforce_2d_ignore_list = ["block", "wall"]
-                    is_enforced_2d: bool = any(term in name_stem for term in enforce_2d_include_list) and all(ign not in name_stem for ign in enforce_2d_ignore_list)
+                    is_enforced_2d: bool = (any(term in name_stem for term in enforce_2d_include_list) and all(ign not in name_stem for ign in enforce_2d_ignore_list)) or item_id.startswith("additional_lights:")
 
                     if is_enforced_2d:
                         force_2d = True
@@ -712,7 +752,30 @@ class JarScanner:
                     # Build model object for metadata if we found it, otherwise None
                     model_obj = None
                     if asset_model_data:
-                        model_obj = {"path": asset_model_path, **asset_model_data}
+                        # Extract full hierarchy
+                        hierarchy = []
+                        resolved_model = None
+                        if asset_model_path:
+                            # asset_model_path is like "assets/namespace/models/item/name.json"
+                            # We need to convert it back to a model ref or just start the chain from the item ID's model
+                            # Actually, asset_model_data comes from extract_model_asset which parses the item definition.
+                            # Let's try to get the starting model ref from asset_model_data if possible, or infer it.
+                            
+                            start_model_ref = None
+                            if "parent" in asset_model_data:
+                                start_model_ref = asset_model_data["parent"]
+                            
+                            # If we have a starting ref (parent of the item model), get its chain
+                            if start_model_ref:
+                                hierarchy = self._get_model_parent_chain(zip_ref, file_list, start_model_ref, namespace)
+                            
+                            # Resolve the full model data for metadata
+                            try:
+                                resolved_model = self.asset_extractor.resolve_model_data(zip_ref, asset_model_data, namespace, fallback_zip=fallback_zip)
+                            except Exception:
+                                pass
+                        
+                        model_obj = {"path": asset_model_path, "hierarchy": hierarchy, "resolved": resolved_model, "missing_textures": missing_textures, **asset_model_data}
 
                     # Add to metadata (pass base64 data, sizes, block_type, rendered_3d, mod_info)
                     self.metadata_handler.add_item(
@@ -1022,6 +1085,17 @@ class JarScanner:
                     textures["all"] = l0
 
             if not textures:
+                # If we have no textures but we have a model_ref, try to find a direct block texture
+                # as a last resort before giving up on 3D.
+                direct_block_tex = f"assets/{namespace}/textures/block/{name_stem}.png"
+                if direct_block_tex not in file_list:
+                    direct_block_tex = f"assets/{namespace}/textures/blocks/{name_stem}.png"
+
+                if direct_block_tex in file_list:
+                    with zip_ref.open(direct_block_tex) as pf:
+                        img_bytes = pf.read()
+                    return {"up": img_bytes, "left": img_bytes, "right": img_bytes}, block_type
+
                 return None, block_type
 
             # Map Minecraft face names to our 3D renderer faces
@@ -1119,18 +1193,29 @@ class JarScanner:
                     current_max = 0
 
                 # Check for a block-level single texture that may be higher resolution
-                block_tex_path = f"assets/{namespace}/textures/block/{name_stem}.png"
-                if block_tex_path in file_list:
-                    try:
-                        with zip_ref.open(block_tex_path) as bf:
-                            block_bytes = bf.read()
-                        block_img = _Image.open(_io.BytesIO(block_bytes))
-                        block_max = max(block_img.width, block_img.height)
-                        if block_max > current_max:
-                            return {"up": block_bytes, "left": block_bytes, "right": block_bytes}, block_type
-                    except Exception:
-                        # On any error, fall back to the resolved textures
-                        pass
+                # Check both 'block/' and 'blocks/' (older mods)
+                # Also try stripping 'block_' prefix
+                candidates = [
+                    f"assets/{namespace}/textures/block/{name_stem}.png",
+                    f"assets/{namespace}/textures/blocks/{name_stem}.png",
+                ]
+                if name_stem.startswith("block_"):
+                    stripped = name_stem[6:]
+                    candidates.append(f"assets/{namespace}/textures/block/{stripped}.png")
+                    candidates.append(f"assets/{namespace}/textures/blocks/{stripped}.png")
+
+                for bp in candidates:
+                    if bp in file_list:
+                        try:
+                            with zip_ref.open(bp) as bf:
+                                block_bytes = bf.read()
+                            block_img = _Image.open(_io.BytesIO(block_bytes))
+                            block_max = max(block_img.width, block_img.height)
+                            if block_max > current_max:
+                                return {"up": block_bytes, "left": block_bytes, "right": block_bytes}, block_type
+                        except Exception:
+                            # On any error, fall back to the resolved textures
+                            pass
 
                 return {"up": up_bytes, "left": left_bytes, "right": right_bytes}, block_type
 
@@ -1219,7 +1304,33 @@ class JarScanner:
             ns = namespace
             path = model_ref
 
+        # Try standard model path first
         model_path = f"assets/{ns}/models/{path}.json"
+        
+        # If not found, try item/ and block/ subdirectories if path doesn't already have them
+        if model_path not in file_list:
+             if "item/" not in path and "block/" not in path:
+                 candidates = [
+                     f"assets/{ns}/models/item/{path}.json",
+                     f"assets/{ns}/models/block/{path}.json"
+                 ]
+                 for c in candidates:
+                     if c in file_list:
+                         model_path = c
+                         break
+
+        if model_path in file_list:
+            chain.append(model_ref)
+            try:
+                with zip_ref.open(model_path) as f:
+                    model_data = json.load(f)
+                parent = model_data.get("parent")
+                if parent:
+                    chain.extend(self._get_model_parent_chain(zip_ref, file_list, parent, ns, depth + 1))
+            except Exception:
+                pass
+        
+        return chain
         if model_path not in file_list:
             return chain
 
@@ -1271,9 +1382,9 @@ class JarScanner:
         Supports both old (models/item/) and new (items/) formats.
         """
         # Try direct item texture first
-        item_texture = f"assets/{namespace}/textures/item/{name_stem}.png"
-        if item_texture in file_list:
-            return item_texture
+        for p in [f"assets/{namespace}/textures/item/{name_stem}.png", f"assets/{namespace}/textures/items/{name_stem}.png"]:
+            if p in file_list:
+                return p
 
         # Special case for banners
         if "banner" in name_stem:
@@ -1293,9 +1404,9 @@ class JarScanner:
                 return banner_tex_mc
 
         # Try block texture
-        block_texture = f"assets/{namespace}/textures/block/{name_stem}.png"
-        if block_texture in file_list:
-            return block_texture
+        for p in [f"assets/{namespace}/textures/block/{name_stem}.png", f"assets/{namespace}/textures/blocks/{name_stem}.png"]:
+            if p in file_list:
+                return p
 
         # Parse the item definition/model to find texture references
         try:

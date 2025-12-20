@@ -4,7 +4,7 @@ import io
 import json
 from pathlib import Path
 from zipfile import ZipFile
-from typing import Optional, Tuple, Dict
+from typing import Optional, Tuple, Dict, List
 
 from PIL import Image
 from .constants import ASSETS_DIR
@@ -97,7 +97,94 @@ class AssetExtractor:
             return None, None, None, None
 
     @staticmethod
-    def render_model(zip_file: ZipFile, model_data: Dict, namespace: str, item_id: str, include_asset: bool = False, overwrite: bool = False, tint: Optional[Tuple[int, int, int]] = None) -> Tuple[Optional[str], Optional[str], Optional[int], Optional[int]]:
+    def resolve_model_data(zip_file: ZipFile, model_data: Dict, namespace: str, fallback_zip: Optional[ZipFile] = None) -> Dict:
+        """
+        Recursively resolves a model definition by merging it with its parents.
+        Returns a dict containing the merged 'textures' and 'elements'.
+        """
+        if "parent" in model_data:
+            parent_path = model_data["parent"]
+            if ":" in parent_path:
+                p_ns, p_path = parent_path.split(":", 1)
+            else:
+                p_ns = namespace # Default to current namespace if no namespace provided, unless it's a built-in
+                p_path = parent_path
+                if parent_path.startswith("builtin/"):
+                    p_ns = "minecraft"
+                elif "minecraft" not in parent_path and "/" not in parent_path:
+                     # If it's just a name like "block/cube", it might be minecraft or local.
+                     # Usually if no namespace, it implies the same namespace.
+                     pass
+
+            # If p_ns is still not set or we want to be safe, check if it's a common minecraft parent
+            if p_ns == namespace and parent_path.startswith("block/") and "minecraft" not in parent_path:
+                 # Check if it exists in local namespace, if not, try minecraft
+                 pass
+
+            # Construct potential paths
+            candidates = []
+
+            # 1. Exact path
+            candidates.append(f"assets/{p_ns}/models/{p_path}.json")
+
+            # 2. If path doesn't have item/ or block/, try adding them
+            if "item/" not in p_path and "block/" not in p_path:
+                candidates.append(f"assets/{p_ns}/models/item/{p_path}.json")
+                candidates.append(f"assets/{p_ns}/models/block/{p_path}.json")
+
+            # 3. Fallback to minecraft namespace if not found in local
+            if p_ns != "minecraft":
+                candidates.append(f"assets/minecraft/models/{p_path}.json")
+                if "item/" not in p_path and "block/" not in p_path:
+                    candidates.append(f"assets/minecraft/models/item/{p_path}.json")
+                    candidates.append(f"assets/minecraft/models/block/{p_path}.json")
+
+            found_parent_path = None
+            source_zip = zip_file
+
+            for c in candidates:
+                if c in zip_file.namelist():
+                    found_parent_path = c
+                    source_zip = zip_file
+                    break
+                elif fallback_zip and c in fallback_zip.namelist():
+                    found_parent_path = c
+                    source_zip = fallback_zip
+                    break
+
+            try:
+                if found_parent_path:
+                    with source_zip.open(found_parent_path) as f:
+                        parent_data = json.load(f)
+                        # Recursively resolve the parent
+                        resolved_parent = AssetExtractor.resolve_model_data(zip_file, parent_data, p_ns, fallback_zip)
+
+                        merged_textures = resolved_parent.get("textures", {}).copy()
+                        merged_textures.update(model_data.get("textures", {}))
+
+                        merged_elements = model_data.get("elements", resolved_parent.get("elements", []))
+
+                        # Also merge 'display' if present (optional, but good for completeness)
+                        merged_display = resolved_parent.get("display", {}).copy()
+                        merged_display.update(model_data.get("display", {}))
+
+                        return {
+                            "textures": merged_textures,
+                            "elements": merged_elements,
+                            "display": merged_display,
+                            "parent": parent_path # Keep track of immediate parent
+                        }
+            except Exception as e:
+                logger.warning(f"Failed to resolve parent {parent_path}: {e}")
+
+        return {
+            "textures": model_data.get("textures", {}),
+            "elements": model_data.get("elements", []),
+            "display": model_data.get("display", {})
+        }
+
+    @staticmethod
+    def render_model(zip_file: ZipFile, model_data: Dict, namespace: str, item_id: str, include_asset: bool = False, overwrite: bool = False, tint: Optional[Tuple[int, int, int]] = None, fallback_zip: Optional[ZipFile] = None) -> Tuple[Optional[str], Optional[str], Optional[int], Optional[int], List[str]]:
         """
         Experimental: Render a model from its JSON definition.
         """
@@ -105,6 +192,7 @@ class AssetExtractor:
 
         filename = AssetExtractor.get_asset_filename(item_id)
         destination_path = ASSETS_DIR / filename
+        missing_textures = []
 
         if destination_path.exists() and not overwrite:
             asset_b64 = None
@@ -118,10 +206,10 @@ class AssetExtractor:
                             width, height = img.size
                 except Exception:
                     pass
-            return filename, asset_b64, width, height
+            return filename, asset_b64, width, height, []
 
         if not model_data:
-            return None, None, None, None
+            return None, None, None, None, []
 
         # Helper to load model JSON
         def load_model_json(path, default_ns):
@@ -145,37 +233,7 @@ class AssetExtractor:
 
         # Helper to resolve model inheritance
         def resolve_model(data, current_ns):
-            if "parent" in data:
-                parent_path = data["parent"]
-                if ":" in parent_path:
-                    p_ns, p_path = parent_path.split(":", 1)
-                else:
-                    p_ns = "minecraft"
-                    p_path = parent_path
-
-                parent_file_path = f"assets/{p_ns}/models/{p_path}.json"
-                try:
-                    if parent_file_path in zip_file.namelist():
-                        with zip_file.open(parent_file_path) as f:
-                            parent_data = json.load(f)
-                            resolved_parent = resolve_model(parent_data, p_ns)
-
-                            merged_textures = resolved_parent.get("textures", {}).copy()
-                            merged_textures.update(data.get("textures", {}))
-
-                            merged_elements = data.get("elements", resolved_parent.get("elements", []))
-
-                            return {
-                                "textures": merged_textures,
-                                "elements": merged_elements
-                            }
-                except Exception as e:
-                    logger.warning(f"Failed to resolve parent {parent_path}: {e}")
-
-            return {
-                "textures": data.get("textures", {}),
-                "elements": data.get("elements", [])
-            }
+            return AssetExtractor.resolve_model_data(zip_file, data, current_ns, fallback_zip)
 
         # Helper to render a resolved model
         def render_resolved_model(full_model):
@@ -242,8 +300,46 @@ class AssetExtractor:
                                         pass
 
                                 return tex
+                        elif fallback_zip and p in fallback_zip.namelist():
+                            with fallback_zip.open(p) as f:
+                                raw_data = f.read()
+                                tex = Image.open(io.BytesIO(raw_data)).convert("RGBA")
+                                texture_cache[tex_ref] = tex
+
+                                mcmeta_path = p + ".mcmeta"
+                                if mcmeta_path in fallback_zip.namelist():
+                                    try:
+                                        with fallback_zip.open(mcmeta_path) as mf:
+                                            mcmeta = json.load(mf)
+                                            if "animation" in mcmeta:
+                                                animated_textures[tex_ref] = (mcmeta, raw_data)
+                                    except Exception:
+                                        pass
+
+                                return tex
                     except Exception:
                         continue
+
+                # If we reached here, texture was not found
+                # Try fallback to minecraft namespace if not already tried
+                if ns != "minecraft" and fallback_zip:
+                    fallback_paths = [
+                        f"assets/minecraft/textures/{path}.png",
+                        f"assets/minecraft/textures/{path}",
+                    ]
+                    for p in fallback_paths:
+                        try:
+                            if p in fallback_zip.namelist():
+                                with fallback_zip.open(p) as f:
+                                    raw_data = f.read()
+                                    tex = Image.open(io.BytesIO(raw_data)).convert("RGBA")
+                                    texture_cache[tex_ref] = tex
+                                    return tex
+                        except Exception:
+                            continue
+
+                if tex_ref not in missing_textures:
+                    missing_textures.append(tex_ref)
                 return None
 
             used_textures = set()
@@ -358,6 +454,12 @@ class AssetExtractor:
             ]
             if item_id in ROTATION_POSITIVE_90_FIX_ITEMS:
                 global_rotation_y = 90
+
+            ROTATION_180_FIX_ITEMS = [
+                "actuallyadditions:coffee_machine"
+            ]
+            if item_id in ROTATION_180_FIX_ITEMS:
+                global_rotation_y = 180
 
             rendered_frames = []
 
@@ -583,7 +685,7 @@ class AssetExtractor:
 
         # Save output
         if not all_frames:
-            return None, None, None, None
+            return None, None, None, None, missing_textures
 
         is_animated = len(all_frames) > 1
         w, h = all_frames[0].size
@@ -610,7 +712,7 @@ class AssetExtractor:
             if include_asset:
                 asset_b64 = base64.b64encode(data).decode("ascii")
 
-            return filename, asset_b64, w, h
+            return filename, asset_b64, w, h, missing_textures
         else:
             img = all_frames[0]
             img.save(destination_path)
@@ -620,7 +722,7 @@ class AssetExtractor:
                 with open(destination_path, "rb") as f:
                     asset_b64 = base64.b64encode(f.read()).decode("ascii")
 
-            return filename, asset_b64, w, h
+            return filename, asset_b64, w, h, missing_textures
 
 
 
@@ -924,20 +1026,35 @@ class AssetExtractor:
 
             # Decide output final size: prefer 64 when textures support >=64, then 32 when >=32, otherwise 16
             max_tex_side = max(raw_up.width, raw_up.height, raw_left.width, raw_left.height, raw_right.width, raw_right.height)
+
+            # Force minimum 32x32 for 3D blocks to ensure detail is visible
             if max_tex_side >= 64:
                 final_size = 64
             elif max_tex_side >= 32:
                 final_size = 32
             else:
-                final_size = 16
+                # Even if texture is 16x16, render at 32x32 for better 3D block visibility
+                final_size = 32
 
             logger.debug(f"Rendering 3D block for {item_id}: final_size={final_size}")
 
-            # Our internal renderer expects 16x16 face tiles and produces a 32x32 canvas.
-            # So normalize textures to 16x16 for the drawing step.
-            img_up = raw_up.resize((16, 16), resample=Image.LANCZOS)
-            img_left = raw_left.resize((16, 16), resample=Image.LANCZOS)
-            img_right = raw_right.resize((16, 16), resample=Image.LANCZOS)
+            # Determine internal rendering scale
+            # scale=1 -> 16x16 textures, 32x32 canvas
+            # scale=2 -> 32x32 textures, 64x64 canvas
+            # scale=4 -> 64x64 textures, 128x128 canvas
+            if final_size >= 64:
+                scale = 4
+            elif final_size >= 32:
+                scale = 2
+            else:
+                scale = 1
+            tex_size = 16 * scale
+            canvas_size = 32 * scale
+
+            # Resize textures to the target internal resolution
+            img_up = raw_up.resize((tex_size, tex_size), resample=Image.LANCZOS)
+            img_left = raw_left.resize((tex_size, tex_size), resample=Image.LANCZOS)
+            img_right = raw_right.resize((tex_size, tex_size), resample=Image.LANCZOS)
 
             # Apply shading
             def apply_shading(img, factor):
@@ -953,7 +1070,7 @@ class AssetExtractor:
             img_left = apply_shading(img_left, 0.8)
             img_right = apply_shading(img_right, 0.6)
 
-            canvas = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+            canvas = Image.new("RGBA", (canvas_size, canvas_size), (0, 0, 0, 0))
 
             def draw_cuboid(e_off, s_off, u_off, w, d, h):
                 # e_off, s_off, u_off: Origin (East, South, Up)
@@ -961,16 +1078,16 @@ class AssetExtractor:
 
                 # Top Face (at u_off + h)
                 # Texture: x=East, y=South
-                y_shift = 16 - (u_off + h)
+                y_shift = (16 * scale) - (u_off + h)
                 for s in range(s_off, s_off + d):
                     for e in range(e_off, e_off + w):
                         # Texture coords
                         tex_x = e
                         tex_y = s
                         # Screen coords
-                        tx = 16 + e - s
+                        tx = (16 * scale) + e - s
                         ty = (e + s) // 2 + y_shift
-                        if 0 <= tx < 32 and 0 <= ty < 32:
+                        if 0 <= tx < canvas_size and 0 <= ty < canvas_size:
                             p = img_up.getpixel((tex_x, tex_y))
                             if p[3] > 0:
                                 canvas.putpixel((tx, ty), p)
@@ -978,7 +1095,7 @@ class AssetExtractor:
                 # Left Face (South Face, at s_off + d)
                 # Texture: x=East, y=Down (inverted Up)
                 # Shift for South position
-                south_shift = 16 - (s_off + d)
+                south_shift = (16 * scale) - (s_off + d)
                 tx_shift = south_shift
                 ty_shift = -south_shift // 2
 
@@ -986,16 +1103,16 @@ class AssetExtractor:
                     for e in range(e_off, e_off + w):
                         # Texture coords
                         tex_x = e
-                        tex_y = 15 - u
+                        tex_y = (16 * scale) - 1 - u
 
                         # Screen coords (Standard Left Face)
                         tx_base = e
-                        ty_base = 8 + tex_y + e // 2
+                        ty_base = (8 * scale) + tex_y + e // 2
 
                         tx = tx_base + tx_shift
                         ty = ty_base + ty_shift
 
-                        if 0 <= tx < 32 and 0 <= ty < 32:
+                        if 0 <= tx < canvas_size and 0 <= ty < canvas_size:
                             p = img_left.getpixel((tex_x, tex_y))
                             if p[3] > 0:
                                 canvas.putpixel((tx, ty), p)
@@ -1003,51 +1120,49 @@ class AssetExtractor:
                 # Right Face (East Face, at e_off + w)
                 # Texture: x=Inv South, y=Down
                 # Shift for East position
-                east_shift = 16 - (e_off + w)
+                east_shift = (16 * scale) - (e_off + w)
                 tx_shift = -east_shift
                 ty_shift = -east_shift // 2
 
                 for u in range(u_off, u_off + h):
                     for s in range(s_off, s_off + d):
                         # Texture coords
-                        tex_x = 15 - s
-                        tex_y = 15 - u
+                        tex_x = (16 * scale) - 1 - s
+                        tex_y = (16 * scale) - 1 - u
 
                         # Screen coords (Standard Right Face)
-                        tx_base = 16 + tex_x
-                        ty_base = 8 + tex_y + (15 - tex_x) // 2
+                        tx_base = (16 * scale) + tex_x
+                        ty_base = (8 * scale) + tex_y + ((16 * scale) - 1 - tex_x) // 2
 
                         tx = tx_base + tx_shift
                         ty = ty_base + ty_shift
 
-                        if 0 <= tx < 32 and 0 <= ty < 32:
+                        if 0 <= tx < canvas_size and 0 <= ty < canvas_size:
                             p = img_right.getpixel((tex_x, tex_y))
                             if p[3] > 0:
                                 canvas.putpixel((tx, ty), p)
 
             # Render based on type
             if block_type == "block":
-                draw_cuboid(0, 0, 0, 16, 16, 16)
+                draw_cuboid(0, 0, 0, 16*scale, 16*scale, 16*scale)
             elif block_type == "slab":
-                draw_cuboid(0, 0, 0, 16, 16, 8)
+                draw_cuboid(0, 0, 0, 16*scale, 16*scale, 8*scale)
             elif block_type == "stairs":
                 # Bottom Slab
-                draw_cuboid(0, 0, 0, 16, 16, 8)
+                draw_cuboid(0, 0, 0, 16*scale, 16*scale, 8*scale)
                 # Top Step (Back/North half - South=0..8)
-                draw_cuboid(0, 0, 8, 16, 8, 8)
+                draw_cuboid(0, 0, 8*scale, 16*scale, 8*scale, 8*scale)
             elif block_type == "fence":
                 # Two posts connected by bars
                 # Improved Fence Geometry
-                # Post 1: x=6..10, z=6..10 (Centered) - No, inventory is two posts.
-                # Vanilla inventory: Two posts at x=4 and x=12 (approx), connected by rails.
                 # Post 1: x=2..6, z=6..10
-                draw_cuboid(2, 6, 0, 4, 4, 16)
+                draw_cuboid(2*scale, 6*scale, 0, 4*scale, 4*scale, 16*scale)
                 # Post 2: x=10..14, z=6..10
-                draw_cuboid(10, 6, 0, 4, 4, 16)
+                draw_cuboid(10*scale, 6*scale, 0, 4*scale, 4*scale, 16*scale)
                 # Top Bar: x=6..10, z=7..9, y=12..14
-                draw_cuboid(6, 7, 12, 4, 2, 3)
+                draw_cuboid(6*scale, 7*scale, 12*scale, 4*scale, 2*scale, 3*scale)
                 # Bottom Bar: x=6..10, z=7..9, y=6..9
-                draw_cuboid(6, 7, 6, 4, 2, 3)
+                draw_cuboid(6*scale, 7*scale, 6*scale, 4*scale, 2*scale, 3*scale)
                 # Wait, the previous code was exactly this.
                 # Maybe the user wants the posts to be thicker or spaced differently?
                 # Let's try to match the vanilla icon more closely.
@@ -1071,40 +1186,40 @@ class AssetExtractor:
                 # Render two intersecting planes at 45 degrees (which aligns them with X and Z axes in iso view)
                 # Plane 2 (Z-aligned, East Face)
                 # X=8, Z=0..16
-                for u in range(16): # Height
-                    for s in range(16): # South/Z
+                for u in range(16 * scale): # Height
+                    for s in range(16 * scale): # South/Z
                         # Texture coords: x=15-s (inverted for Right face logic), y=15-u
-                        tex_x = 15 - s
-                        tex_y = 15 - u
+                        tex_x = (16 * scale) - 1 - s
+                        tex_y = (16 * scale) - 1 - u
 
-                        x = 8
+                        x = 8 * scale
                         z = s
                         y = u
 
-                        tx = 16 + x - z
-                        ty = (x + z) // 2 + (16 - y)
+                        tx = (16 * scale) + x - z
+                        ty = (x + z) // 2 + ((16 * scale) - y)
 
-                        if 0 <= tx < 32 and 0 <= ty < 32:
+                        if 0 <= tx < canvas_size and 0 <= ty < canvas_size:
                             p = img_right.getpixel((tex_x, tex_y))
                             if p[3] > 0:
                                 canvas.putpixel((tx, ty), p)
 
                 # Plane 1 (X-aligned, South Face)
                 # Z=8, X=0..16
-                for u in range(16): # Height
-                    for e in range(16): # East/X
+                for u in range(16 * scale): # Height
+                    for e in range(16 * scale): # East/X
                         # Texture coords: x=e, y=15-u
                         tex_x = e
-                        tex_y = 15 - u
+                        tex_y = (16 * scale) - 1 - u
 
                         x = e
-                        z = 8
+                        z = 8 * scale
                         y = u
 
-                        tx = 16 + x - z
-                        ty = (x + z) // 2 + (16 - y)
+                        tx = (16 * scale) + x - z
+                        ty = (x + z) // 2 + ((16 * scale) - y)
 
-                        if 0 <= tx < 32 and 0 <= ty < 32:
+                        if 0 <= tx < canvas_size and 0 <= ty < canvas_size:
                             p = img_left.getpixel((tex_x, tex_y))
                             if p[3] > 0:
                                 canvas.putpixel((tx, ty), p)
@@ -1118,13 +1233,13 @@ class AssetExtractor:
                 # No, it has the side posts.
                 # Let's try:
                 # Post 1: x=2..6, z=7..9
-                draw_cuboid(2, 7, 4, 4, 2, 12)
+                draw_cuboid(2*scale, 7*scale, 4*scale, 4*scale, 2*scale, 12*scale)
                 # Post 2: x=10..14, z=7..9
-                draw_cuboid(10, 7, 4, 4, 2, 12)
+                draw_cuboid(10*scale, 7*scale, 4*scale, 4*scale, 2*scale, 12*scale)
                 # Bar: x=6..10, z=7..9, y=12..14
-                draw_cuboid(6, 7, 12, 4, 2, 3)
+                draw_cuboid(6*scale, 7*scale, 12*scale, 4*scale, 2*scale, 3*scale)
                 # Bar: x=6..10, z=7..9, y=6..9
-                draw_cuboid(6, 7, 6, 4, 2, 3)
+                draw_cuboid(6*scale, 7*scale, 6*scale, 4*scale, 2*scale, 3*scale)
                 # Central Plank?
                 # Usually fence gate has a central vertical piece?
                 # Let's just draw the horizontal bars connecting the posts.
@@ -1132,79 +1247,79 @@ class AssetExtractor:
             elif block_type == "wall":
                 # Improved wall geometry to better match vanilla inventory icons
                 # Left post: x=3..6, z=5..11 (slightly inset)
-                draw_cuboid(3, 5, 0, 3, 6, 16)
+                draw_cuboid(3*scale, 5*scale, 0, 3*scale, 6*scale, 16*scale)
                 # Right post: x=10..13, z=5..11
-                draw_cuboid(10, 5, 0, 3, 6, 16)
+                draw_cuboid(10*scale, 5*scale, 0, 3*scale, 6*scale, 16*scale)
                 # Central wall segment: x=6..10, z=6..10, height=14 (connects posts)
-                draw_cuboid(6, 6, 0, 4, 4, 14)
+                draw_cuboid(6*scale, 6*scale, 0, 4*scale, 4*scale, 14*scale)
 
             elif block_type == "scaffolding":
                 # Scaffolding: four corner posts and horizontal crossbars
                 # Corner posts (thin, tall)
-                draw_cuboid(2, 2, 0, 2, 2, 16)
-                draw_cuboid(12, 2, 0, 2, 2, 16)
-                draw_cuboid(2, 12, 0, 2, 2, 16)
-                draw_cuboid(12, 12, 0, 2, 2, 16)
+                draw_cuboid(2*scale, 2*scale, 0, 2*scale, 2*scale, 16*scale)
+                draw_cuboid(12*scale, 2*scale, 0, 2*scale, 2*scale, 16*scale)
+                draw_cuboid(2*scale, 12*scale, 0, 2*scale, 2*scale, 16*scale)
+                draw_cuboid(12*scale, 12*scale, 0, 2*scale, 2*scale, 16*scale)
                 # Horizontal crossbars at multiple heights
                 for y in (3, 7, 11):
-                    draw_cuboid(2, 2, y, 12, 12, 1)
+                    draw_cuboid(2*scale, 2*scale, y*scale, 12*scale, 12*scale, 1*scale)
                     # Inner supports
-                    draw_cuboid(5, 2, y, 6, 1, 1)
-                    draw_cuboid(5, 12, y, 6, 1, 1)
+                    draw_cuboid(5*scale, 2*scale, y*scale, 6*scale, 1*scale, 1*scale)
+                    draw_cuboid(5*scale, 12*scale, y*scale, 6*scale, 1*scale, 1*scale)
 
             elif block_type == "conduit":
                 # Conduit: small centered cube with subtle cyan tint if none provided
                 # Centered 8x8x8 cube at x=4..12, z=4..12, y=4..12
-                draw_cuboid(4, 4, 4, 8, 8, 8)
+                draw_cuboid(4*scale, 4*scale, 4*scale, 8*scale, 8*scale, 8*scale)
                 # Add an outer frame/ring to give the 'ridges' visual
-                draw_cuboid(3, 3, 3, 10, 10, 1)  # top rim
-                draw_cuboid(3, 3, 12, 10, 10, 1)  # bottom rim
+                draw_cuboid(3*scale, 3*scale, 3*scale, 10*scale, 10*scale, 1*scale)  # top rim
+                draw_cuboid(3*scale, 3*scale, 12*scale, 10*scale, 10*scale, 1*scale)  # bottom rim
                 # If a tint wasn't provided, apply a bluish tint to the 'up' face texture
                 if tint is None:
                     tint = (160, 200, 255)
             elif block_type == "teleport_pad":
                 # Teleport Pad (AllTheModium)
                 # Slab-like, height 3
-                draw_cuboid(0, 0, 0, 16, 16, 3)
+                draw_cuboid(0, 0, 0, 16*scale, 16*scale, 3*scale)
             elif block_type == "trapdoor":
                 # Flat block against side or bottom. Inventory is usually flat.
-                draw_cuboid(0, 0, 0, 16, 16, 3)
+                draw_cuboid(0, 0, 0, 16*scale, 16*scale, 3*scale)
             elif block_type == "pressure_plate":
                 # Very thin slab
-                draw_cuboid(1, 1, 0, 14, 14, 1)
+                draw_cuboid(1*scale, 1*scale, 0, 14*scale, 14*scale, 1*scale)
             elif block_type == "button":
                 # Small block
-                draw_cuboid(5, 6, 6, 6, 4, 4)
+                draw_cuboid(5*scale, 6*scale, 6*scale, 6*scale, 4*scale, 4*scale)
             elif block_type == "carpet":
                 # Thin layer
-                draw_cuboid(0, 0, 0, 16, 16, 1)
+                draw_cuboid(0, 0, 0, 16*scale, 16*scale, 1*scale)
             elif block_type == "pad":
                 # Flat layer at the bottom, sides/top transparent
-                draw_cuboid(0, 0, 0, 16, 16, 0)
+                draw_cuboid(0, 0, 0, 16*scale, 16*scale, 0)
             elif block_type == "sprite_flat":
                 # Flat layer at the bottom, sides/top transparent
                 # draw like 2d flat
-                draw_cuboid(0, 0, 0, 16, 16, 0)
+                draw_cuboid(0, 0, 0, 16*scale, 16*scale, 0)
                 # draw_cuboid(0, 7, 0, 16, 2, 16)?
             elif block_type == "snow":
                 # Snow layer (height 2)
-                draw_cuboid(0, 0, 0, 16, 16, 2)
+                draw_cuboid(0, 0, 0, 16*scale, 16*scale, 2*scale)
             elif block_type == "pane":
                 # Glass pane - cross or flat? Inventory is usually flat face.
                 # Let's draw a thin sheet
-                draw_cuboid(0, 7, 0, 16, 2, 16)
+                draw_cuboid(0, 7*scale, 0, 16*scale, 2*scale, 16*scale)
             elif block_type == "daylight_detector":
                 # Slab-like
-                draw_cuboid(0, 0, 0, 16, 16, 6)
+                draw_cuboid(0, 0, 0, 16*scale, 16*scale, 6*scale)
             elif block_type == "hopper":
                 # Funnel shape
                 # Top rim (simplified as solid for now)
-                draw_cuboid(0, 0, 10, 16, 16, 6)
+                draw_cuboid(0, 0, 10*scale, 16*scale, 16*scale, 6*scale)
                 # Bottom spout
-                draw_cuboid(6, 6, 0, 4, 4, 10)
+                draw_cuboid(6*scale, 6*scale, 0, 4*scale, 4*scale, 10*scale)
             elif block_type == "cauldron":
                 # Standard block size for now
-                draw_cuboid(0, 0, 0, 16, 16, 16)
+                draw_cuboid(0, 0, 0, 16*scale, 16*scale, 16*scale)
             elif block_type == "anvil":
                 # Anvil Geometry
                 # Base: x=2..14, z=2..14, y=0..4
@@ -1213,42 +1328,42 @@ class AssetExtractor:
                 # Base (North-South): x=4..12, z=0..16, y=0..4?
                 # Anvil base is wide on X or Z?
                 # Base: 12x12?
-                draw_cuboid(2, 2, 0, 12, 12, 4)
+                draw_cuboid(2*scale, 2*scale, 0, 12*scale, 12*scale, 4*scale)
                 # Neck: x=6..10, z=5..11, y=4..5
-                draw_cuboid(6, 5, 4, 4, 6, 1)
+                draw_cuboid(6*scale, 5*scale, 4*scale, 4*scale, 6*scale, 1*scale)
                 # Neck narrow: x=7..9, z=6..10, y=5..10
-                draw_cuboid(7, 6, 5, 2, 4, 5)
+                draw_cuboid(7*scale, 6*scale, 5*scale, 2*scale, 4*scale, 5*scale)
                 # Top: x=0..16, z=3..13, y=10..16
-                draw_cuboid(0, 3, 10, 16, 10, 6)
+                draw_cuboid(0, 3*scale, 10*scale, 16*scale, 10*scale, 6*scale)
             elif block_type == "chest":
                 # Chest is 14x14x14 centered (simplified)
-                draw_cuboid(1, 1, 0, 14, 14, 14)
+                draw_cuboid(1*scale, 1*scale, 0, 14*scale, 14*scale, 14*scale)
             elif block_type == "lantern":
                 # Lantern: x=5..11, z=5..11, y=0..7 + top
-                draw_cuboid(5, 5, 0, 6, 6, 7)
-                draw_cuboid(6, 6, 7, 4, 4, 2)
+                draw_cuboid(5*scale, 5*scale, 0, 6*scale, 6*scale, 7*scale)
+                draw_cuboid(6*scale, 6*scale, 7*scale, 4*scale, 4*scale, 2*scale)
             elif block_type == "beacon":
                 # Beacon: Inner glass + obsidian base
                 # Base
-                draw_cuboid(0, 0, 0, 16, 16, 3)
+                draw_cuboid(0, 0, 0, 16*scale, 16*scale, 3*scale)
                 # Glass
-                draw_cuboid(2, 2, 3, 12, 12, 13)
+                draw_cuboid(2*scale, 2*scale, 3*scale, 12*scale, 12*scale, 13*scale)
             elif block_type == "dragon_egg":
                 # Dragon Egg Geometry (7 layers)
                 # Layer 7 (Bottom): 12x12, height 2
-                draw_cuboid(2, 2, 0, 12, 12, 2)
+                draw_cuboid(2*scale, 2*scale, 0, 12*scale, 12*scale, 2*scale)
                 # Layer 6: 14x14, height 2
-                draw_cuboid(1, 1, 2, 14, 14, 2)
+                draw_cuboid(1*scale, 1*scale, 2*scale, 14*scale, 14*scale, 2*scale)
                 # Layer 5 (Middle/Widest): 16x16, height 3
-                draw_cuboid(0, 0, 4, 16, 16, 3)
+                draw_cuboid(0, 0, 4*scale, 16*scale, 16*scale, 3*scale)
                 # Layer 4: 14x14, height 3
-                draw_cuboid(1, 1, 7, 14, 14, 3)
+                draw_cuboid(1*scale, 1*scale, 7*scale, 14*scale, 14*scale, 3*scale)
                 # Layer 3: 12x12, height 2
-                draw_cuboid(2, 2, 10, 12, 12, 2)
+                draw_cuboid(2*scale, 2*scale, 10*scale, 12*scale, 12*scale, 2*scale)
                 # Layer 2: 8x8, height 2
-                draw_cuboid(4, 4, 12, 8, 8, 2)
+                draw_cuboid(4*scale, 4*scale, 12*scale, 8*scale, 8*scale, 2*scale)
                 # Layer 1 (Top): 6x6, height 2 (Button-like)
-                draw_cuboid(5, 5, 14, 6, 6, 2)
+                draw_cuboid(5*scale, 5*scale, 14*scale, 6*scale, 6*scale, 2*scale)
             elif block_type == "mob_head":
                 # Mob Head (8x8x8)
                 # Expects 'skin' in textures
@@ -1265,47 +1380,53 @@ class AssetExtractor:
                     face_front = skin_img.crop((8, 8, 16, 16))
                     face_right = skin_img.crop((0, 8, 8, 16))
 
+                    # Resize faces if scale > 1
+                    if scale > 1:
+                        face_top = face_top.resize((8*scale, 8*scale), resample=Image.NEAREST)
+                        face_front = face_front.resize((8*scale, 8*scale), resample=Image.NEAREST)
+                        face_right = face_right.resize((8*scale, 8*scale), resample=Image.NEAREST)
+
                     # Create 16x16 canvas for each face to align with draw_cuboid coordinate system
                     # Top: Centered at (4, 4)
-                    new_up = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
-                    new_up.paste(face_top, (4, 4))
+                    new_up = Image.new("RGBA", (16*scale, 16*scale), (0, 0, 0, 0))
+                    new_up.paste(face_top, (4*scale, 4*scale))
 
                     # Left (Front): Centered horizontally (4), Bottom aligned (8) for y=0..8
-                    new_left = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
-                    new_left.paste(face_front, (4, 8))
+                    new_left = Image.new("RGBA", (16*scale, 16*scale), (0, 0, 0, 0))
+                    new_left.paste(face_front, (4*scale, 8*scale))
 
                     # Right: Centered horizontally (4), Bottom aligned (8)
-                    new_right = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
-                    new_right.paste(face_right, (4, 8))
+                    new_right = Image.new("RGBA", (16*scale, 16*scale), (0, 0, 0, 0))
+                    new_right.paste(face_right, (4*scale, 8*scale))
 
                     # Update images used by draw_cuboid
                     img_up = new_up
                     img_left = apply_shading(new_left, 0.8)
                     img_right = apply_shading(new_right, 0.6)
 
-                    draw_cuboid(4, 4, 0, 8, 8, 8)
+                    draw_cuboid(4*scale, 4*scale, 0, 8*scale, 8*scale, 8*scale)
                 else:
-                    draw_cuboid(4, 4, 0, 8, 8, 8)
+                    draw_cuboid(4*scale, 4*scale, 0, 8*scale, 8*scale, 8*scale)
             elif block_type == "pad":
                 # Pad: Draw only a thin top-facing plane (no sides/top transparency)
                 # We draw the top face for a cuboid of height=1 (thin plane)
-                y_shift = 16 - (0 + 1)
-                for s in range(0, 1):
-                    for e in range(0, 16):
+                y_shift = (16*scale) - (0 + 1*scale)
+                for s in range(0, 1*scale):
+                    for e in range(0, 16*scale):
                         tex_x = e
                         tex_y = s
-                        tx = 16 + e - s
+                        tx = (16*scale) + e - s
                         ty = (e + s) // 2 + y_shift
-                        if 0 <= tx < 32 and 0 <= ty < 32:
+                        if 0 <= tx < canvas_size and 0 <= ty < canvas_size:
                             p = img_up.getpixel((tex_x, tex_y))
                             if p[3] > 0:
                                 canvas.putpixel((tx, ty), p)
 
-            # If a smaller final size was requested, downscale; if larger (64) requested, upscale.
-            if final_size == 16:
-                final_canvas = canvas.resize((16, 16), resample=Image.LANCZOS)
-            elif final_size == 64:
-                final_canvas = canvas.resize((64, 64), resample=Image.LANCZOS)
+            # Resize if needed
+            if canvas.size != (final_size, final_size):
+                # Use LANCZOS for downscaling to preserve detail, NEAREST for upscaling to keep pixels sharp.
+                resample_method = Image.LANCZOS if canvas.width > final_size else Image.NEAREST
+                final_canvas = canvas.resize((final_size, final_size), resample=resample_method)
             else:
                 final_canvas = canvas
 
