@@ -97,11 +97,18 @@ class AssetExtractor:
             return None, None, None, None
 
     @staticmethod
-    def resolve_model_data(zip_file: ZipFile, model_data: Dict, namespace: str, fallback_zip: Optional[ZipFile] = None) -> Dict:
+    def resolve_model_data(zip_file: ZipFile, model_data: Dict, namespace: str, fallback_zip: Optional[ZipFile] = None, visited: Optional[set] = None, depth: int = 0) -> Dict:
         """
         Recursively resolves a model definition by merging it with its parents.
         Returns a dict containing the merged 'textures' and 'elements'.
         """
+        if visited is None:
+            visited = set()
+
+        if depth > 20:
+            logger.warning(f"Max recursion depth exceeded resolving model in namespace {namespace}")
+            return model_data
+
         if "parent" in model_data:
             parent_path = model_data["parent"]
             if ":" in parent_path:
@@ -120,6 +127,15 @@ class AssetExtractor:
             if p_ns == namespace and parent_path.startswith("block/") and "minecraft" not in parent_path:
                  # Check if it exists in local namespace, if not, try minecraft
                  pass
+            
+            # Check for circular dependency
+            parent_key = f"{p_ns}:{p_path}"
+            if parent_key in visited:
+                logger.warning(f"Circular dependency detected: {parent_key}")
+                return model_data
+            
+            new_visited = visited.copy()
+            new_visited.add(parent_key)
 
             # Construct potential paths
             candidates = []
@@ -157,7 +173,7 @@ class AssetExtractor:
                     with source_zip.open(found_parent_path) as f:
                         parent_data = json.load(f)
                         # Recursively resolve the parent
-                        resolved_parent = AssetExtractor.resolve_model_data(zip_file, parent_data, p_ns, fallback_zip)
+                        resolved_parent = AssetExtractor.resolve_model_data(zip_file, parent_data, p_ns, fallback_zip, new_visited, depth + 1)
 
                         merged_textures = resolved_parent.get("textures", {}).copy()
                         merged_textures.update(model_data.get("textures", {}))
