@@ -690,30 +690,24 @@ class TestMinecraftCogStopCommand:
 
 
 class TestMinecraftCogWhitelistCommand:
-    """Tests for minecraft whitelist command."""
+    """Tests for minecraft whitelist command and new slash-based flow."""
 
     @pytest.mark.asyncio
-    async def test_whitelist_already_whitelisted(self, cog, context, whitelist_manager):
-        whitelist_manager.is_user_whitelisted.return_value = True
+    async def test_whitelist_legacy_command_is_disabled(self, cog, context):
+        cog._determine_output_channel = AsyncMock(return_value=(context.channel, 30))
+        cog.get_cog_settings.return_value = {"enabled": True}
 
         await cog.whitelist.callback(cog, context)
 
-        cog.message_helper.send_embed.assert_called_once()
+        # legacy command should inform the user it is unsupported and ask them to use slash commands
+        cog.message_helper.send_embed.assert_called()
         call_args = cog.message_helper.send_embed.call_args
-        assert "minecraft_whitelist_already_whitelisted_message" in str(call_args)
+        assert "/minecraft whitelist" in str(call_args) or "UNSUPPORTED" in str(call_args)
 
     @pytest.mark.asyncio
     @patch('bot.cogs.minecraft.requests.get')
-    async def test_whitelist_success_with_dm(
-        self, mock_get, cog, context, whitelist_manager, prompt_helper, context_helper, tracking_db
-    ):
+    async def test_whitelist_interaction_flow_success(self, mock_get, cog, whitelist_manager, tracking_db):
         whitelist_manager.is_user_whitelisted.return_value = False
-        whitelist_manager.get_minecraft_user.return_value = None
-        prompt_helper.ask_text.return_value = "TestMCUser"
-
-        mock_new_context = MagicMock()
-        mock_new_context.channel = context.author
-        context_helper.create_context.return_value = mock_new_context
 
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -725,101 +719,93 @@ class TestMinecraftCogWhitelistCommand:
                     "id": "test-uuid",
                     "raw_id": "testuuid",
                     "username": "TestMCUser",
-                    "name_history": [{"name": "TestMCUser"}],
+                    "meta": {"name_history": [{"name": "TestMCUser"}]},
                 }
             },
         }
         mock_get.return_value = mock_response
 
-        await cog.whitelist.callback(cog, context)
+        interaction = MagicMock()
+        interaction.guild = MagicMock()
+        interaction.guild.id = 123
+        interaction.user = MagicMock()
+        interaction.user.id = 33333
+        interaction.response = MagicMock()
+        interaction.response.is_done.return_value = False
 
-        prompt_helper.ask_text.assert_called_once()
-        mock_get.assert_called_once_with("https://playerdb.co/api/player/minecraft/testmcuser")
-        prompt_helper.ask_yes_no.assert_called_once()
-        # Verify whitelist was added (called twice - once in callback, once at end)
-        assert whitelist_manager.set_user_whitelist_status.call_count >= 1
-        tracking_db.track_command_usage.assert_called_once()
+        cog._send_message = AsyncMock()
+        await cog._minecraft_whitelist(interaction, "TestMCUser")
 
-    @pytest.mark.asyncio
-    async def test_whitelist_user_cancels(self, cog, context, whitelist_manager, prompt_helper, context_helper):
-        whitelist_manager.is_user_whitelisted.return_value = False
-        whitelist_manager.get_minecraft_user.return_value = None
-        prompt_helper.ask_text.return_value = "cancel"
-
-        mock_new_context = MagicMock()
-        mock_new_context.channel = context.author
-        context_helper.create_context.return_value = mock_new_context
-
-        await cog.whitelist.callback(cog, context)
-
-        prompt_helper.ask_text.assert_called_once()
-        whitelist_manager.set_user_whitelist_status.assert_not_called()
+        cog._send_message.assert_called()
+        called_kwargs = cog._send_message.call_args[1]
+        assert called_kwargs.get("view") is not None
 
     @pytest.mark.asyncio
     @patch('bot.cogs.minecraft.requests.get')
-    async def test_whitelist_player_not_found(
-        self, mock_get, cog, context, whitelist_manager, prompt_helper, context_helper
-    ):
+    async def test_whitelist_interaction_player_not_found(self, mock_get, cog, whitelist_manager):
         whitelist_manager.is_user_whitelisted.return_value = False
-        whitelist_manager.get_minecraft_user.return_value = None
-        prompt_helper.ask_text.return_value = "InvalidUser"
-
-        mock_new_context = MagicMock()
-        mock_new_context.channel = context.author
-        context_helper.create_context.return_value = mock_new_context
 
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"success": False, "code": "player.not_found"}
         mock_get.return_value = mock_response
 
-        await cog.whitelist.callback(cog, context)
+        interaction = MagicMock()
+        interaction.guild = MagicMock()
+        interaction.guild.id = 123
+        interaction.user = MagicMock()
+        interaction.user.id = 33333
+        interaction.response = MagicMock()
+        interaction.response.is_done.return_value = False
 
-        cog.message_helper.send_embed.assert_called()
-        call_args = cog.message_helper.send_embed.call_args
-        assert "minecraft_whitelist_unable_to_verify" in str(call_args)
+        cog._send_message = AsyncMock()
+        await cog._minecraft_whitelist(interaction, "InvalidUser")
+
+        cog._send_message.assert_called()
+        called_kwargs = cog._send_message.call_args[1]
+        assert "minecraft_whitelist_unable_to_verify" in str(called_kwargs)
         whitelist_manager.set_user_whitelist_status.assert_not_called()
 
     @pytest.mark.asyncio
     @patch('bot.cogs.minecraft.requests.get')
-    async def test_whitelist_api_error(self, mock_get, cog, context, whitelist_manager, prompt_helper, context_helper):
+    async def test_whitelist_api_error(self, mock_get, cog, whitelist_manager):
+        """Test the slash-based whitelist when the player DB returns a non-200 status."""
         whitelist_manager.is_user_whitelisted.return_value = False
-        whitelist_manager.get_minecraft_user.return_value = None
-        prompt_helper.ask_text.return_value = "TestUser"
-
-        mock_new_context = MagicMock()
-        mock_new_context.channel = context.author
-        context_helper.create_context.return_value = mock_new_context
 
         mock_response = MagicMock()
         mock_response.status_code = 500
         mock_response.text = "Internal Server Error"
         mock_get.return_value = mock_response
 
-        await cog.whitelist.callback(cog, context)
+        interaction = MagicMock()
+        interaction.guild = MagicMock()
+        interaction.guild.id = 123
+        interaction.user = MagicMock()
+        interaction.user.id = 33333
+        interaction.response = MagicMock()
+        interaction.response.is_done.return_value = False
 
-        cog.log.warn.assert_called()
-        cog.message_helper.send_embed.assert_called()
-        call_args = cog.message_helper.send_embed.call_args
-        assert "minecraft_whitelist_unable_to_verify" in str(call_args)
+        cog._send_message = AsyncMock()
+        await cog._minecraft_whitelist(interaction, "TestUser")
+
+        cog._send_message.assert_called()
+        called_kwargs = cog._send_message.call_args[1]
+        assert "minecraft_whitelist_unable_to_verify" in str(called_kwargs)
 
     @pytest.mark.asyncio
-    async def test_whitelist_dm_forbidden_fallback(self, cog, context, whitelist_manager, prompt_helper, context_helper):
-        whitelist_manager.is_user_whitelisted.return_value = False
-        whitelist_manager.get_minecraft_user.return_value = None
+    async def test_whitelist_is_disabled_and_informs_user(self, cog, context):
+        """The legacy `.minecraft whitelist` command is disabled and should inform the user to use the slash command."""
+        # Ensure output channel is available so _send_message will deliver to channel
+        cog._determine_output_channel = AsyncMock(return_value=(context.channel, 30))
+        cog.get_cog_settings.return_value = {"enabled": True}
 
-        # First call raises Forbidden, second call succeeds
-        prompt_helper.ask_text.side_effect = [discord.Forbidden(MagicMock(), "Cannot send DM"), "cancel"]
-
-        mock_new_context = MagicMock()
-        mock_new_context.channel = context.author
-        context_helper.create_context.return_value = mock_new_context
-
+        # Call the legacy command
         await cog.whitelist.callback(cog, context)
 
-        # Should have been called twice - once for DM (failed), once for channel
-        assert prompt_helper.ask_text.call_count == 2
-
+        # It should send the unsupported/disabled message via MessageHelper for text contexts
+        cog.message_helper.send_embed.assert_called()
+        call_args = cog.message_helper.send_embed.call_args
+        assert "/minecraft whitelist" in str(call_args) or "UNSUPPORTED" in str(call_args)
 
 class TestMinecraftCogMainCommand:
     """Tests for main minecraft command group."""
@@ -859,76 +845,30 @@ class TestMinecraftCogWhitelistCallback:
 
     @pytest.mark.asyncio
     @patch('bot.cogs.minecraft.requests.get')
-    async def test_whitelist_callback_yes_response(
-        self, mock_get, cog, context, whitelist_manager, prompt_helper, context_helper, tracking_db
-    ):
-        """Test whitelist callback when user confirms identity."""
-        whitelist_manager.is_user_whitelisted.return_value = False
-        whitelist_manager.get_minecraft_user.return_value = None
-        prompt_helper.ask_text.return_value = "TestMCUser"
+    async def test_whitelist_interaction_already_whitelisted(self, mock_get, cog, whitelist_manager):
+        """If the user is already whitelisted, the slash command should inform them and exit."""
+        whitelist_manager.is_user_whitelisted.return_value = True
 
-        mock_new_context = MagicMock()
-        mock_new_context.channel = context.author
-        context_helper.create_context.return_value = mock_new_context
+        interaction = MagicMock()
+        interaction.guild = MagicMock()
+        interaction.guild.id = 123
+        interaction.user = MagicMock()
+        interaction.user.id = 33333
+        interaction.response = MagicMock()
+        interaction.response.is_done.return_value = False
 
-        # Set up callback capture - type: ignore to suppress type checker warnings
-        captured_callback = None
+        # Call internal helper used by the slash command
+        cog._send_message = AsyncMock()
+        await cog._minecraft_whitelist(interaction, "TestMCUser")
 
-        async def capture_callback(*args, **kwargs):
-            nonlocal captured_callback
-            captured_callback = kwargs.get('result_callback')
-
-        prompt_helper.ask_yes_no.side_effect = capture_callback
-
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "success": True,
-            "code": "player.found",
-            "data": {
-                "player": {
-                    "id": "test-uuid",
-                    "raw_id": "testuuid",
-                    "username": "TestMCUser",
-                    "meta": {"name_history": [{"name": "TestMCUser"}]},
-                }
-            },
-        }
-        mock_get.return_value = mock_response
-
-        await cog.whitelist.callback(cog, context)
-
-        # Verify callback was captured
-        assert captured_callback is not None
-
-        # Execute the callback with response=True - type: ignore for dynamic function
-        await captured_callback(True)  # type: ignore
-
-        # Verify whitelist was updated (the callback should call it)
-        cog.message_helper.send_embed.assert_called()
+        # Should notify user that they are already whitelisted
+        cog._send_message.assert_called()
 
     @pytest.mark.asyncio
     @patch('bot.cogs.minecraft.requests.get')
-    async def test_whitelist_callback_no_response(
-        self, mock_get, cog, context, whitelist_manager, prompt_helper, context_helper
-    ):
-        """Test whitelist callback when user rejects identity."""
+    async def test_whitelist_interaction_shows_confirmation(self, mock_get, cog, whitelist_manager):
+        """When inserting a valid username, the slash command should present confirmation with embed and view."""
         whitelist_manager.is_user_whitelisted.return_value = False
-        whitelist_manager.get_minecraft_user.return_value = None
-        prompt_helper.ask_text.return_value = "TestMCUser"
-
-        mock_new_context = MagicMock()
-        mock_new_context.channel = context.author
-        context_helper.create_context.return_value = mock_new_context
-
-        # Set up callback capture
-        captured_callback = None
-
-        async def capture_callback(*args, **kwargs):
-            nonlocal captured_callback
-            captured_callback = kwargs.get('result_callback')
-
-        prompt_helper.ask_yes_no.side_effect = capture_callback
 
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -946,18 +886,25 @@ class TestMinecraftCogWhitelistCallback:
         }
         mock_get.return_value = mock_response
 
-        await cog.whitelist.callback(cog, context)
+        interaction = MagicMock()
+        interaction.guild = MagicMock()
+        interaction.guild.id = 123
+        interaction.user = MagicMock()
+        interaction.user.id = 33333
+        interaction.response = MagicMock()
+        interaction.response.is_done.return_value = False
 
-        # Verify callback was captured
-        assert captured_callback is not None
+        # stub out _send_message to capture the call
+        cog._send_message = AsyncMock()
 
-        # Execute the callback with response=False - type: ignore for dynamic function
-        await captured_callback(False)  # type: ignore
+        # Call internal helper used by the slash command
+        cog._send_message = AsyncMock()
+        await cog._minecraft_whitelist(interaction, "TestMCUser")
 
-        # Verify run again message was sent
-        call_args = cog.message_helper.send_embed.call_args
-        assert "minecraft_whitelist_run_again" in str(call_args)
-
+        cog._send_message.assert_called()
+        # ensure we provided a view (confirmation view)
+        called_kwargs = cog._send_message.call_args[1]
+        assert called_kwargs.get("view") is not None
 
 class TestMinecraftCogStopCommandErrors:
     """Additional tests for stop command error paths."""
@@ -1039,9 +986,9 @@ class TestMinecraftCogWhitelistExceptions:
     """Additional tests for whitelist command exception handling."""
 
     @pytest.mark.asyncio
-    async def test_whitelist_exception(self, cog, context, message_helper, whitelist_manager):
-        """Test whitelist handles exceptions gracefully."""
-        whitelist_manager.is_user_whitelisted.side_effect = Exception("Database error")
+    async def test_whitelist_exception(self, cog, context, message_helper):
+        """Test legacy whitelist command handles exceptions gracefully (e.g. settings lookup failure)."""
+        cog.get_cog_settings.side_effect = Exception("Settings error")
 
         await cog.whitelist.callback(cog, context)
 
