@@ -189,6 +189,10 @@
       }
     }
   },
+  "slash_commands": {
+    "enabled": true,
+    "guild_ids": []
+  },
   "commands": {
     "new-account": {
       "title": "New Accounts",
@@ -250,7 +254,7 @@
           ],
           "fields": [],
           "subcommands": {},
-          "enabled": true
+          "enabled": false
         },
         "start": {
           "title": "Start Minecraft Server",

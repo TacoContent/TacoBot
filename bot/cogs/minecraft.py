@@ -5,6 +5,7 @@
 import inspect
 import os
 import traceback
+import typing
 
 import discord
 import requests
@@ -15,11 +16,14 @@ from bot.lib.mongodb.minecraft import MinecraftDatabase
 from bot.lib.mongodb.tracking import TrackingDatabase
 from bot.lib.settings import Settings
 from bot.tacobot import TacoBot
+from bot.ui.MinecraftWhiteListConfirmView import MinecraftWhiteListConfirmView
 from discord.ext import commands
 from discord.ext.commands import Context
+from discord import Interaction, app_commands
 
 
 class MinecraftCog(TacobotCog):
+    minecraft_ac = app_commands.Group(name="minecraft", description="Minecraft commands")
     # API endpoint constants for easier testing and configuration
     DEFAULT_MINECRAFT_API_BASE = "http://andeddu.bit13.local:10070"
     DEFAULT_PLAYER_DB_API = "https://playerdb.co/api/player/minecraft"
@@ -87,59 +91,14 @@ class MinecraftCog(TacobotCog):
             self.log.error(member.guild.id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
 
     @commands.group(name="minecraft", invoke_without_command=True)
+    @commands.guild_only()
     async def minecraft(self, ctx: Context):
         _method = inspect.stack()[0][3]
         if ctx.invoked_subcommand is not None:
             return
         guild_id = 0
         try:
-            await self.status(ctx)
-        except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.message_helper.notify_of_error(ctx)
-
-    async def status(self, ctx):
-        _method = inspect.stack()[0][3]
-        guild_id = 0
-        try:
-            if ctx.guild:
-                await self.message_helper.safe_delete_context_message(ctx)
-                guild_id = ctx.guild.id
-
-            cog_settings = self.get_cog_settings(guild_id)
-
-            if not cog_settings.get("enabled", False):
-                self.log.debug(
-                    guild_id, f"{self._module}.{self._class}.{_method}", f"minecraft is disabled for guild {guild_id}"
-                )
-                return
-
-            # get the output channel from settings:
-            output_channel, AUTO_DELETE_TIMEOUT = await self._determine_output_channel(ctx, cog_settings)
-            self.log.debug(guild_id, f"{self._module}.{self._class}.{_method}", f"output_channel: {output_channel}")
-
-            if not self.whitelist_manager.is_user_whitelisted(guild_id, ctx.author.id):
-                await self.message_helper.send_embed(
-                    channel=output_channel,
-                    title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
-                    message=self.settings.get_string(guild_id, "minecraft_not_whitelisted"),
-                    delete_after=AUTO_DELETE_TIMEOUT,
-                )
-                return
-
-            status = self.whitelist_manager.get_minecraft_status(guild_id=guild_id, minecraft_api_base=self.minecraft_api_base)
-
-            fields = self._build_status_fields(guild_id, status, cog_settings)
-
-            await self.message_helper.send_embed(
-                channel=output_channel,
-                title=self.settings.get_string(guild_id, "minecraft_status_server_status"),
-                message=self.settings.get_string(
-                    guild_id, "minecraft_status_message", title=status['title'], help=cog_settings['help']
-                ),
-                fields=fields,
-                delete_after=AUTO_DELETE_TIMEOUT,
-            )
+            await self._minecraft_status(ctx)
 
             self.tracking_db.track_command_usage(
                 guildId=guild_id,
@@ -149,10 +108,110 @@ class MinecraftCog(TacobotCog):
                 subcommand="status",
                 args=[{"type": "command"}],
             )
-
         except Exception as e:
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.message_helper.notify_of_error(ctx)
+
+    @minecraft_ac.command(name="status", description="Get the current Minecraft server status")
+    async def minecraft_status_interaction(self, interaction: Interaction):
+        await self._minecraft_status(interaction)
+
+        self.tracking_db.track_command_usage(
+            guildId=interaction.guild.id if interaction.guild else 0,
+            channelId=interaction.channel_id if interaction.channel_id else None,
+            userId=interaction.user.id,
+            command="minecraft",
+            subcommand="status",
+            args=[{"type": "slash_command"}],
+        )
+
+    async def _minecraft_status(self, ctx: typing.Union[Interaction, Context, commands.Context]):
+        _method = inspect.stack()[0][3]
+        try:
+            guild_id = 0
+            user_id = 0
+            deprecated_message = self._get_deprecated_message("status")
+            content = None
+            
+            if isinstance(ctx, Interaction):
+                if not ctx.response.is_done():
+                    await ctx.response.defer(ephemeral=True)
+                user_id = ctx.user.id
+                guild_id = ctx.guild.id if ctx.guild else 0
+            elif isinstance(ctx, commands.Context) or isinstance(ctx, Context):
+                if ctx.guild:
+                    await self.message_helper.safe_delete_context_message(ctx)
+                user_id = ctx.author.id
+                guild_id = ctx.guild.id if ctx.guild else 0
+                content = deprecated_message
+            else:
+                context_type = type(ctx).__name__
+                self.log.error(
+                    0,
+                    f"{self._module}.{self._class}.{_method}",
+                    f"Invalid context type passed to _minecraft_status: {context_type}",
+                )
+
+            if self.bot.user is None:
+                return
+
+            cog_settings = self.get_cog_settings(guild_id)
+            if not cog_settings:
+                self.log.warn(
+                    guild_id, f"{self._module}.{self._class}.{_method}", "No minecraft settings found for guild"
+                )
+                return
+            
+            output_channel = None
+            AUTO_DELETE_TIMEOUT = 30
+
+            if isinstance(ctx, Context):
+                output_channel, AUTO_DELETE_TIMEOUT = await self._determine_output_channel(ctx, cog_settings)
+
+            if not cog_settings.get("enabled", False):
+                return
+            
+            # self.log.debug(
+            #     guild_id, f"{self._module}.{self._class}.{_method}", f"CHECK IF WHITELISTED: {guild_id} / {user_id}"
+            # )
+
+            if not self.whitelist_manager.is_user_whitelisted(guild_id, user_id):
+                await self._send_message(
+                    ctx=ctx,
+                    target_channel=output_channel,
+                    content=self.settings.get_string(guild_id, "minecraft_not_whitelisted_message"),
+                    ephemeral=True,
+                )
+                return
+
+            status = self.whitelist_manager.get_minecraft_status(guild_id=guild_id, minecraft_api_base=self.minecraft_api_base)
+            fields = self._build_status_fields(guild_id, status, cog_settings)
+
+            embed = await self._build_embed(
+                ctx=ctx,
+                title=self.settings.get_string(guild_id, "minecraft_status_server_status"),
+                description=self.settings.get_string(
+                    guild_id, "minecraft_status_message", title=status['title'], help=cog_settings['help']
+                ),
+                color=0x00FF00 if status['online'] else 0xFF0000,
+                fields=fields,
+            )
+
+            await self._send_message(
+                ctx=ctx,
+                content=content,
+                target_channel=output_channel,
+                embed=embed,
+                ephemeral=AUTO_DELETE_TIMEOUT > 0 if AUTO_DELETE_TIMEOUT else False,
+            )
+
+        except Exception as e:
+            self.log.error(
+                guild_id,
+                f"{self._module}.{self._class}.{_method}",
+                f"Error processing pulltab info: {e}",
+                traceback.format_exc(),
+            )
 
     @minecraft.command(name="start")
     @commands.guild_only()
@@ -322,195 +381,154 @@ class MinecraftCog(TacobotCog):
             self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
             await self.message_helper.notify_of_error(ctx)
 
-    @minecraft.command()
+    @minecraft.command(name="whitelist")
     @commands.guild_only()
-    async def whitelist(self, ctx: Context):
-        _method = inspect.stack()[0][3]
+    async def whitelist_command(self, ctx: Context):
+        if ctx.guild:
+            await self.message_helper.safe_delete_context_message(ctx)
+
+        unsupported_message = self._get_unsupported_message("whitelist")
+        output_channel, AUTO_DELETE_TIMEOUT = await self._determine_output_channel(ctx, self.get_cog_settings(ctx.guild.id if ctx.guild else 0))
+
+        await self._send_message(ctx, content=unsupported_message, target_channel=output_channel, ephemeral=True if AUTO_DELETE_TIMEOUT else False)
+
+        self.tracking_db.track_command_usage(
+            guildId=ctx.guild.id if ctx.guild else 0,
+            channelId=ctx.channel.id if ctx.channel else None,
+            userId=ctx.author.id,
+            command="minecraft",
+            subcommand="whitelist",
+            args=[{"type": "command"}],
+        )
+
+    @minecraft_ac.command(name="whitelist", description="Join the Minecraft server whitelist")
+    @app_commands.describe(username="Your Minecraft username")
+    async def whitelist_interaction(self, interaction: Interaction, username: str):
+        _METHOD = inspect.stack()[0][3]
         guild_id = 0
         try:
-            if ctx.guild:
-                await self.message_helper.safe_delete_context_message(ctx)
-                guild_id = ctx.guild.id
+            if interaction.guild:
+                guild_id = interaction.guild.id
 
-            if self.whitelist_manager.is_user_whitelisted(guild_id=guild_id, user_id=ctx.author.id):
-                await self.message_helper.send_embed(
-                    channel=ctx.channel,
-                    title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
-                    message=self.settings.get_string(guild_id, "minecraft_whitelist_already_whitelisted_message"),
-                    delete_after=self.SELF_DESTRUCT_TIMEOUT,
+            # TODO: DISABLED FOR TESTING
+            if not self.whitelist_manager.is_user_whitelisted(guild_id=guild_id, user_id=interaction.user.id):
+                await self._send_message(
+                    ctx=interaction,
+                    content=self.settings.get_string(guild_id, "minecraft_whitelist_already_whitelisted_message"),
+                    ephemeral=True,
                 )
                 return
 
-            # try DM first
-            try:
-                _ctx = self.context_helper.create_context(
-                    bot=self.bot, author=ctx.author, channel=ctx.author, guild=ctx.guild
-                )
-                mc_username = await self.prompt_helper.ask_text(
-                    _ctx,
-                    ctx.author,
-                    self.settings.get_string(guild_id, "minecraft_ask_username_title"),
-                    self.settings.get_string(guild_id, "minecraft_ask_username_message"),
-                    timeout=60 * 5,
-                )
-            except discord.Forbidden:
-                _ctx = ctx
-                mc_username = await self.prompt_helper.ask_text(
-                    _ctx,
-                    ctx.author,
-                    self.settings.get_string(guild_id, "minecraft_ask_username_title"),
-                    self.settings.get_string(guild_id, "minecraft_ask_username_message"),
-                    timeout=60 * 5,
-                )
-
-            if mc_username is None or mc_username.lower() == "cancel":
-                return
-
-            # cog_settings = self.get_cog_settings(guild_id)
-            # if not cog_settings:
-            #     self.log.warn(guild_id, "minecraft.whitelist", f"No minecraft settings found for guild {guild_id}")
-            #     return
-            # if not cog_settings.get("enabled", False):
-            #     self.log.debug(guild_id, "minecraft.whitelist", f"minecraft is disabled for guild {guild_id}")
-            #     return
-
-            # {
-            #     "code": "player.found",
-            #     "message": "Successfully found player by given ID.",
-            #     "data": {
-            #         "player": {
-            #             "meta": {
-            #                 "name_history": [
-            #                     {"name": "IcamalotI"},
-            #                     {"name": "DarthMinos", "changedToAt": 1577518972000},
-            #                 ]
-            #             },
-            #             "username": "DarthMinos",
-            #             "id": "1b313cdd-7465-4227-95aa-ca5503beba85",
-            #             "raw_id": "1b313cdd7465422795aaca5503beba85",
-            #             "avatar": "https://crafthead.net/avatar/1b313cdd7465422795aaca5503beba85",
-            #         }
-            #     },
-            #     "success": true,
-            # }
-            result = self._call_player_db_api(mc_username)
-            if result.status_code != 200:
-                # Need to notify of an error
-                self.log.warn(
-                    guild_id,
-                    f"{self._module}.{self._class}.{_method}",
-                    f"Failed to find player {mc_username}. (status_code: {result.status_code}) {result.text})",
-                )
-                await self.message_helper.send_embed(
-                    channel=_ctx.channel,
-                    title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
-                    message=self.settings.get_string(
-                        guild_id, "minecraft_whitelist_unable_to_verify", mc_username=mc_username
-                    ),
-                    color=0xFF0000,
-                    delete_after=30,
-                )
-                return
-                # raise Exception(f"Failed to find player {mc_username} from playerdb.co api call ({result.status_code} - {result.text})")
-
-            data = result.json()
-
-            # Process player data from API response
-            player_info = self._process_player_data(data)
-            if not player_info:
-                self.log.warn(
-                    guild_id, f"{self._module}.{self._class}.{_method}", f"Failed to find player {mc_username}"
-                )
-                await self.message_helper.send_embed(
-                    channel=_ctx.channel,
-                    title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
-                    message=self.settings.get_string(
-                        guild_id, "minecraft_whitelist_unable_to_verify", mc_username=mc_username
-                    ),
-                    color=0xFF0000,
-                    delete_after=30,
-                )
-                return
-
-            mc_uuid = player_info["uuid"]
-            avatar_url = player_info["avatar_url"]
-
-            # Build name history fields
-            fields = []
-            for n in player_info["name_history"]:
-                fields.append({"name": "Name", "value": n["name"]})
-
-            async def yes_no_callback(response: bool):
-                if not response:
-                    await self.message_helper.send_embed(
-                        channel=_ctx.channel,
-                        title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
-                        message=self.settings.get_string(guild_id, "minecraft_whitelist_run_again"),
-                        color=0xFF0000,
-                        delete_after=20,
-                    )
-                else:
-                    # if correct, add to whitelist
-                    # check if user is in the whitelist
-                    # minecraft_user = self.minecraft_db.get_minecraft_user(ctx.author.id)
-                    self.whitelist_manager.set_user_whitelist_status(
-                        guild_id=guild_id, user_id=ctx.author.id, username=mc_username, uuid=mc_uuid, status=True
-                    )
-                    await self.message_helper.send_embed(
-                        channel=_ctx.channel,
-                        title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
-                        message=self.settings.get_string(
-                            guild_id,
-                            "minecraft_whitelist_message",
-                            username=mc_username,
-                            uuid=mc_uuid,
-                            server="mc.fuku.io",
-                            modpack="All The Mods 7 v0.4.0",
-                        ),
-                        color=0x00FF00,
-                        delete_after=30,
-                    )
-
-            await self.prompt_helper.ask_yes_no(
-                _ctx,
-                _ctx.channel,
-                title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
-                question=self.settings.get_string(
-                    guild_id, "minecraft_whitelist_account_verify", mc_username=mc_username
-                ),
-                fields=fields,
-                image=avatar_url,
-                result_callback=yes_no_callback,
-            )
-
-            # if correct, add to whitelist
-            # check if user is in the whitelist
-            # minecraft_user = self.minecraft_db.get_minecraft_user(ctx.author.id)
-            self.whitelist_manager.set_user_whitelist_status(
-                guild_id=guild_id, user_id=ctx.author.id, username=mc_username, uuid=mc_uuid, status=True
-            )
-            await self.message_helper.send_embed(
-                channel=_ctx.channel,
-                title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
-                message=self.settings.get_string(
-                    guild_id, "minecraft_whitelist_success_message", mc_username=mc_username, mc_uuid=mc_uuid
-                ),
-                color=0x00FF00,
-                delete_after=30,
-            )
+            # continue with the whitelist process
+            await self._minecraft_whitelist(interaction, username)
 
             self.tracking_db.track_command_usage(
                 guildId=guild_id,
-                channelId=ctx.channel.id if ctx.channel else None,
-                userId=ctx.author.id,
+                channelId=None,
+                userId=interaction.user.id,
                 command="minecraft",
                 subcommand="whitelist",
-                args=[{"type": "command"}],
+                args=[{"type": "slash_command"}, {"username": username}],
+            )
+        except Exception as e:
+            self.log.error(guild_id, f"{self._module}.{self._class}.{_METHOD}", str(e), traceback.format_exc())
+            await self._send_message(
+                ctx=interaction,
+                content=self.settings.get_string(guild_id, "error_occurred_message"),
+                ephemeral=True,
             )
 
-        except Exception as e:
-            self.log.error(guild_id, f"{self._module}.{self._class}.{_method}", str(e), traceback.format_exc())
-            await self.message_helper.notify_of_error(ctx)
+    async def _minecraft_whitelist(self, ctx: Interaction, username: str):
+        _method = inspect.stack()[0][3]
+        if not username:
+            self.log.error(
+                ctx.guild.id if ctx.guild else 0,
+                f"{self._module}.{self._class}.{_method}",
+                "No username provided for whitelist",
+            )
+            return
+
+        # lookup username to get uuid
+        result = self._call_player_db_api(username=username)
+        if result.status_code != 200:
+            # Need to notify of an error
+            guild_id = ctx.guild.id if ctx.guild else 0
+            self.log.warn(
+                guild_id,
+                f"{self._module}.{self._class}._minecraft_whitelist",
+                f"Failed to find player {username}. (status_code: {result.status_code}) {result.text})",
+            )
+            await self._send_message(
+                ctx=ctx,
+                content=self.settings.get_string(
+                    guild_id, "minecraft_whitelist_unable_to_verify", mc_username=username
+                ),
+                ephemeral=True,
+            )
+            return
+        # get image for user from uuid
+        data = result.json()
+
+        # Process player data from API response
+        player_info = self._process_player_data(data)
+        if not player_info:
+            guild_id = ctx.guild.id if ctx.guild else 0
+            self.log.warn(
+                guild_id, f"{self._module}.{self._class}.{_method}", f"Failed to find player {username}"
+            )
+            await self._send_message(
+                ctx=ctx,
+                title=self.settings.get_string(guild_id, "minecraft_whitelist_title"),
+                content=self.settings.get_string(
+                    guild_id, "minecraft_whitelist_unable_to_verify", mc_username=username
+                ),
+                ephemeral=True,
+            )
+            return
+        # confirm with user
+        mc_uuid = player_info["uuid"]
+        avatar_url = player_info["avatar_url"]
+
+        # Build name history fields
+        fields = []
+        for n in player_info["name_history"]:
+            fields.append({"name": "Name", "value": n["name"]})
+
+        embed = await self._build_embed(
+            ctx=ctx,
+            title=self.settings.get_string(ctx.guild.id if ctx.guild else 0, "minecraft_whitelist_title"),
+            description=self.settings.get_string(
+                ctx.guild.id if ctx.guild else 0, "minecraft_whitelist_account_verify", mc_username=username
+            ),
+            image=avatar_url,
+            fields=fields,
+        )
+
+        await self._send_message(
+            ctx=ctx,
+            embed=embed,
+            view=MinecraftWhiteListConfirmView(
+                cog=self,
+                uuid=mc_uuid,
+                username=username
+            ),
+            ephemeral=True,
+        )
+        # self.settings.get_string(
+        #             guild_id, "minecraft_whitelist_account_verify", mc_username=mc_username
+        #         ),
+        #         fields=fields,
+        #         image=avatar_url,
+        #         result_callback=yes_no_callback,
+        # add user to whitelist once confirmed
+        pass
+
+    async def _handle_whitelist_user_confirmation(self, ctx: Interaction, username: str, uuid: str):
+        guild_id = ctx.guild.id if ctx.guild else 0
+        self.whitelist_manager.set_user_whitelist_status(
+            guild_id=guild_id, user_id=ctx.user.id, username=username, uuid=uuid, status=True
+        )
+        pass
 
     def _clean_username(self, username: str) -> str:
         return username.strip().lower()
@@ -609,7 +627,6 @@ class MinecraftCog(TacobotCog):
 
         return output_channel, AUTO_DELETE_TIMEOUT
 
-
     def _build_status_fields(self, guild_id: int, status: dict, cog_settings: dict) -> list[dict]:
         """Build the status embed fields for the Minecraft server status display.
 
@@ -662,6 +679,87 @@ class MinecraftCog(TacobotCog):
             fields.append({"name": f"{m['name']}", "value": f"{m['version']}", "inline": True})
 
         return fields
+    
+    async def _build_embed(self, ctx: typing.Union[Interaction, Context], **kwargs) -> discord.Embed:
+        fields = kwargs.pop('fields', [])
+        image = kwargs.pop('image', None)
+        footer = kwargs.pop('footer', None)
+        thumbnail = kwargs.pop('thumbnail', None)
+
+        embed = discord.Embed(**kwargs)
+        for field in fields:
+            embed.add_field(**field)
+
+        if image:
+            embed.set_image(url=image)
+
+        if footer:
+            embed.set_footer(text=footer)
+
+        if thumbnail:
+            embed.set_thumbnail(url=thumbnail)
+        return embed
+
+
+    async def _send_message(
+        self, 
+        ctx: typing.Union[Interaction, Context], 
+        **kwargs,
+    ):
+        _method = inspect.stack()[0][3]
+        try:
+            if isinstance(ctx, Interaction):
+                if 'target_channel' in kwargs:
+                    kwargs.pop('target_channel')  # remove target_channel if present
+                use_followup = kwargs.pop('followup', False) or ctx.response.is_done()
+                if use_followup:
+                    await ctx.followup.send(**kwargs)
+                else:
+                    await ctx.response.send_message(**kwargs)
+            elif isinstance(ctx, Context):
+                # remove ephemeral from kwargs if present, as Context.send does not support it
+                if 'followup' in kwargs:
+                    kwargs.pop('followup')
+
+                # get "target_channel" from kwargs if exists
+                target_channel = ctx.channel if ctx.channel else ctx.author
+                if 'target_channel' in kwargs:
+                    target_channel = kwargs.pop('target_channel', ctx.channel)
+                ephemeral = False
+                if 'ephemeral' in kwargs:
+                    ephemeral = kwargs.pop('ephemeral', False)
+
+                kwargs.pop('delete_after', None)  # remove any existing delete_after to avoid conflicts
+
+                if target_channel is None:
+                    self.log.warn(0, f"{self._class}.{self._module}.{_method}", "No target channel found to send message")
+                    return
+
+                await target_channel.send(**kwargs, delete_after=self.SELF_DESTRUCT_TIMEOUT if ephemeral else None)  # type: ignore
+
+                # await self.message_helper.send_embed(
+                #     channel=target_channel,
+                #     title="",
+                #     message=content,
+                #     fields=fields,
+                #     delete_after=self.SELF_DESTRUCT_TIMEOUT if ephemeral else None,
+                # )
+        except Exception as e:
+            self.log.error(0, "MinecraftCog._send_message", str(e), traceback.format_exc())
+
+    def _get_deprecated_message(self, command: str) -> str:
+        return (
+            "⚠️ **DEPRECATION NOTICE** ⚠️\n\n"
+            f"The `.taco minecraft {command}` command has been deprecated and will be removed in a future update. "
+            f"Please use the new slash commands `/minecraft {command}` instead."
+        )
+    
+    def _get_unsupported_message(self, command: str) -> str:
+        return (
+            "❌ **UNSUPPORTED COMMAND** ❌\n\n"
+            f"The `.taco minecraft {command}` command is no longer supported and has been disabled. "
+            f"Please use the new slash commands `/minecraft {command}` instead."
+        )
 
 async def setup(bot):
     settings = Settings()
