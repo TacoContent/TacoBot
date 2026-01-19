@@ -190,7 +190,7 @@ class TriviaCog(TacobotCog):
                                     return True
 
                             reaction, user = await self.bot.wait_for(  # type: ignore
-                                event='reaction_add', timeout=trivia_timeout, check=check
+                                'reaction_add', timeout=trivia_timeout, check=check
                             )
                         except asyncio.TimeoutError:
                             correct_list = '\n'.join([u.mention for u in correct_users])
