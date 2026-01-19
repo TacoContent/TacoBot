@@ -28,7 +28,7 @@ class MinecraftWhiteListConfirmView(discord.ui.View):
         await interaction.followup.send("You have been whitelisted!", ephemeral=True)
 
         await self.cog._minecraft_status(interaction)
-    
+
     async def _on_no_click(self, interaction: discord.Interaction):
         await interaction.response.defer()
         # Handle the "No" confirmation logic here
@@ -36,8 +36,8 @@ class MinecraftWhiteListConfirmView(discord.ui.View):
 
     def _create_button(self, label: str, style: discord.ButtonStyle, callback: typing.Callable) -> discord.ui.Button:
         button = discord.ui.Button(
-            label=label, 
-            style=style, 
+            label=label,
+            style=style,
             disabled=False,
         )
         button.callback = callback

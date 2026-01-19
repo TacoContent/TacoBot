@@ -2,14 +2,14 @@
 """Small helper to compute Minecraft item variant IDs from SNBT or JSON NBT.
 
 Usage examples:
-  # compute default variant for single item unit
-  python scripts/snbt_variant.py minecraft:stone
+    # compute default variant for single item unit
+    python scripts/snbt_variant.py minecraft:stone
 
-  # compute using an SNBT string
-  python scripts/snbt_variant.py minecraft:stone --snbt '{display:{Name:"\"My Stone\""}}'
+    # compute using an SNBT string
+    python scripts/snbt_variant.py minecraft:stone --snbt '{display:{Name:"\"My Stone\""}}'
 
-  # compute using a JSON NBT payload
-  python scripts/snbt_variant.py minecraft:stone --nbt-json '{"display": {"Name": "{\"text\":\"My Stone\"}"}}'
+    # compute using a JSON NBT payload
+    python scripts/snbt_variant.py minecraft:stone --nbt-json '{"display": {"Name": "{\"text\":\"My Stone\"}"}}'
 
 This script uses the canonicalization helpers in `bot.lib.minecraft.item` so
 the results match the project library's behavior.

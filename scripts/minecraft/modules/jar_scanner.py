@@ -56,7 +56,10 @@ class JarScanner:
                                                     if img.width == img.height:
                                                         # It's valid
                                                         b64_content = base64.b64encode(logo_content).decode('utf-8')
-                                                        content_type = f"image/{img.format.lower()}"
+                                                        if img.format:
+                                                            content_type = f"image/{img.format.lower()}"
+                                                        else:
+                                                            content_type = "image/png"
 
                                                         mod_info["icon"] = {
                                                             "asset_b64": b64_content,
@@ -88,11 +91,11 @@ class JarScanner:
         # Open Minecraft JAR for fallback
         fallback_zip = None
         if minecraft_jar:
-             try:
-                 fallback_zip = ZipFile(minecraft_jar, 'r')
-                 logger.info(f"Using {minecraft_jar.name} as fallback asset source.")
-             except Exception as e:
-                 logger.warning(f"Failed to open fallback JAR {minecraft_jar.name}: {e}")
+            try:
+                fallback_zip = ZipFile(minecraft_jar, 'r')
+                logger.info(f"Using {minecraft_jar.name} as fallback asset source.")
+            except Exception as e:
+                logger.warning(f"Failed to open fallback JAR {minecraft_jar.name}: {e}")
 
         for jar_path in jar_files:
             self.process_jar(jar_path, fallback_zip)
@@ -206,7 +209,7 @@ class JarScanner:
             "minecraft:grass_block", "minecraft:short_grass", "minecraft:tall_grass",
             "minecraft:vine", "minecraft:sugar_cane"
         ] or "leaves" in name_stem:
-             return (145, 189, 89)
+            return (145, 189, 89)
 
         # Leather Armor (Default Brown)
         if item_id in [
@@ -218,7 +221,7 @@ class JarScanner:
 
         # Potion Colors (Basic approximation)
         if "potion" in name_stem:
-             return (56, 93, 198) # Water color default
+            return (56, 93, 198) # Water color default
 
         # Spawn Eggs
         if "spawn_egg" in name_stem:
@@ -878,9 +881,11 @@ class JarScanner:
                     model_ref = f"{namespace}:block/{name_stem}"
                 else:
                     # Try a few common block model candidates
-                    candidates = [f"{namespace}:block/{name_stem}",
-                                  f"{namespace}:block/{name_stem}_inventory",
-                                  f"{namespace}:block/{name_stem}_single"]
+                    candidates = [
+                        f"{namespace}:block/{name_stem}",
+                        f"{namespace}:block/{name_stem}_inventory",
+                        f"{namespace}:block/{name_stem}_single",
+                    ]
                     for cand in candidates:
                         # If we can resolve textures from this candidate, use it
                         cand_textures = self._resolve_model_textures(zip_ref, file_list, cand, namespace)
@@ -1068,23 +1073,22 @@ class JarScanner:
                     break
 
             if matched_keyword:
-                 # Exception: bamboo_planks, bamboo_mosaic, bamboo_block are blocks.
-                 # The check "bamboo" in model_ref is too aggressive.
-                 # We should only exclude "bamboo" if it's the plant, not the wood.
-                 # "bamboo_stalk" or just "bamboo" (the item).
-                 # But "bamboo_planks" contains "bamboo".
+                # Exception: bamboo_planks, bamboo_mosaic, bamboo_block are blocks.
+                # The check "bamboo" in model_ref is too aggressive.
+                # We should only exclude "bamboo" if it's the plant, not the wood.
+                # "bamboo_stalk" or just "bamboo" (the item).
+                # But "bamboo_planks" contains "bamboo".
+                # Refined check:
+                is_blocky_bamboo = "planks" in model_ref or "mosaic" in model_ref or "bamboo_block" in model_ref or "stripped" in model_ref or "slab" in model_ref or "stair" in model_ref or "fence" in model_ref or "door" in model_ref or "trapdoor" in model_ref or "button" in model_ref or "pressure_plate" in model_ref
 
-                 # Refined check:
-                 is_blocky_bamboo = "planks" in model_ref or "mosaic" in model_ref or "bamboo_block" in model_ref or "stripped" in model_ref or "slab" in model_ref or "stair" in model_ref or "fence" in model_ref or "door" in model_ref or "trapdoor" in model_ref or "button" in model_ref or "pressure_plate" in model_ref
-
-                 if matched_keyword == "bamboo" and is_blocky_bamboo:
-                     pass # Allow 3D rendering
-                 elif matched_keyword == "grass" and "grass_block" in model_ref:
-                     pass # Allow 3D rendering for grass_block
-                 elif matched_keyword == "bed" and "bedrock" in model_ref:
-                     pass # Allow 3D rendering for bedrock
-                 else:
-                     return None, block_type
+                if matched_keyword == "bamboo" and is_blocky_bamboo:
+                    pass # Allow 3D rendering
+                elif matched_keyword == "grass" and "grass_block" in model_ref:
+                    pass # Allow 3D rendering for grass_block
+                elif matched_keyword == "bed" and "bedrock" in model_ref:
+                    pass # Allow 3D rendering for bedrock
+                else:
+                    return None, block_type
 
             # Resolve the model to find textures
             textures = self._resolve_model_textures(zip_ref, file_list, model_ref, namespace)
@@ -1325,15 +1329,15 @@ class JarScanner:
 
         # If not found, try item/ and block/ subdirectories if path doesn't already have them
         if model_path not in file_list:
-             if "item/" not in path and "block/" not in path:
-                 candidates = [
-                     f"assets/{ns}/models/item/{path}.json",
-                     f"assets/{ns}/models/block/{path}.json"
-                 ]
-                 for c in candidates:
-                     if c in file_list:
-                         model_path = c
-                         break
+            if "item/" not in path and "block/" not in path:
+                candidates = [
+                    f"assets/{ns}/models/item/{path}.json",
+                    f"assets/{ns}/models/block/{path}.json"
+                ]
+                for c in candidates:
+                    if c in file_list:
+                       model_path = c
+                       break
 
         if model_path in file_list:
             chain.append(model_ref)

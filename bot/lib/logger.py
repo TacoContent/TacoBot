@@ -63,5 +63,3 @@ class Log:
         self.__write(
             guildId=guildId, level=loglevel.LogLevel.FATAL, method=method, message=message, stack=stack, file=sys.stderr
         )
-
-    

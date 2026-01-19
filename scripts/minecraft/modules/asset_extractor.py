@@ -119,14 +119,14 @@ class AssetExtractor:
                 if parent_path.startswith("builtin/"):
                     p_ns = "minecraft"
                 elif "minecraft" not in parent_path and "/" not in parent_path:
-                     # If it's just a name like "block/cube", it might be minecraft or local.
-                     # Usually if no namespace, it implies the same namespace.
-                     pass
+                    # If it's just a name like "block/cube", it might be minecraft or local.
+                    # Usually if no namespace, it implies the same namespace.
+                    pass
 
             # If p_ns is still not set or we want to be safe, check if it's a common minecraft parent
             if p_ns == namespace and parent_path.startswith("block/") and "minecraft" not in parent_path:
-                 # Check if it exists in local namespace, if not, try minecraft
-                 pass
+                # Check if it exists in local namespace, if not, try minecraft
+                pass
 
             # Check for circular dependency
             parent_key = f"{p_ns}:{p_path}"
@@ -477,13 +477,13 @@ class AssetExtractor:
             # Stairs, Gates, Fences, etc. often face a different direction in their model
             FIX_POS_90 = ["stairs", "stair", "fence", "gate", "beehive", "bee_nest", "loom", "crafting_table", "ladder", "rail"]
             if any(x in item_id for x in FIX_POS_90) and "chest" not in item_id:
-                 rotation = [rotation[0], rotation[1] + 90, rotation[2]]
+                rotation = [rotation[0], rotation[1] + 90, rotation[2]]
 
             # Fix 2: Items that need -90 degrees Y rotation (Over-rotated)
             # Jack o' Lantern, etc.
             FIX_NEG_90 = ["jack_o_lantern", "pumpkin", "carved_pumpkin", "observer", "dispenser", "dropper", "furnace", "smoker", "blast_furnace", "chest", "ender_chest", "trapped_chest"]
             if any(x in item_id for x in FIX_NEG_90):
-                 rotation = [rotation[0], rotation[1] - 90, rotation[2]]
+                rotation = [rotation[0], rotation[1] - 90, rotation[2]]
 
             global_scale = 3.5 # Scale to fit 64x64
 
@@ -868,7 +868,7 @@ class AssetExtractor:
 
                 # Scale to 32x32 for consistency with other assets
                 if frame.size != (32, 32):
-                     frame = frame.resize((32, 32), Image.NEAREST)
+                    frame = frame.resize((32, 32), Image.NEAREST)
 
                 frames.append(frame)
                 durations.append(frame_duration * 50) # Convert ticks to ms
