@@ -178,7 +178,7 @@ class NewAccountCheckCog(TacobotCog):
                         # find messages by the user and delete them
                         system_channel = member.guild.system_channel
                         if system_channel:
-                            for message in system_channel.history(limit=100):
+                            for message in await system_channel.history(limit=100).flatten():
                                 if message.author.id == member.id:
                                     await message.delete()
                     except Exception as e:
