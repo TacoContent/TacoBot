@@ -162,6 +162,7 @@ class FreeGameWebhookHandler(BaseWebhookHandler):
             return self._success_response(payload)
 
         except HttpResponseException as e:
+            self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
             return HttpResponse(e.status_code, e.headers, e.body)
         except Exception as e:
             self.log.error(0, f"{self._module}.{self._class}.{_method}", f"{e}", traceback.format_exc())
